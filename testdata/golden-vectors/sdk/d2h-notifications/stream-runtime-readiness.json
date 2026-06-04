@@ -1,0 +1,61 @@
+{
+  "id": "d2h-stream-runtime-readiness",
+  "area": "sdk.d2h-notifications",
+  "case": "d2h_stream_runtime_readiness",
+  "source": "D2H stream runtime backlog and stream-runtime-policy shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the D2H notification stream behavior families that must remain covered before stream orchestration delegates to shared KMP runtime code.",
+  "input": {
+    "kind": "d2hStreamRuntimeReadiness",
+    "policyVectorPath": "sdk/d2h-notifications/stream-runtime-policy.json",
+    "requiredBehaviorFamilies": [
+      "mapped-value-before-late-error",
+      "late-upstream-error-propagation",
+      "consumer-cancellation-upstream-cancel",
+      "suppress-notifications-after-cancel",
+      "unknown-notification-filtering",
+      "known-values-continue-after-unknown",
+      "failed-subscribe-no-observer",
+      "active-observer-cleanup-gate",
+      "facade-error-mapping-gate",
+      "platform-facade-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "mapped-value-before-late-error",
+      "late-upstream-error-propagation",
+      "consumer-cancellation-upstream-cancel",
+      "suppress-notifications-after-cancel",
+      "unknown-notification-filtering",
+      "known-values-continue-after-unknown",
+      "failed-subscribe-no-observer",
+      "active-observer-cleanup-gate",
+      "facade-error-mapping-gate",
+      "platform-facade-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "D2H stream runtime migration may proceed only after stream-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, mapped values emitted before late upstream errors are preserved, consumer cancellation cancels upstream work and suppresses later notifications, unknown notifications are filtered without stopping later known values, failed subscribe paths register no observers, public facade error mapping remains pinned, and the shared tests are compile-verified.",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceToHostNotificationsApiTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.D2hStreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for D2H stream behavior-family completeness only; notification payload mapping, public facade error mapping, platform adapter references, observer cleanup, and compile verification remain required before production D2H stream orchestration moves to shared KMP."
+}

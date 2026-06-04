@@ -1,0 +1,50 @@
+{
+  "id": "mag-compressed-type0-factor-half",
+  "area": "sensor-parser",
+  "case": "mag_compressed_type0_factor_applied_to_reference_and_delta_samples",
+  "source": "Android MagDataTest and iOS MagDataTest",
+  "input": {
+    "dataFrameHex": "06660000000000000080e2e6fa15490a06017f20fc",
+    "previousTimeStamp": 100,
+    "factor": 0.5,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "MAG",
+    "frameType": 0,
+    "compressed": true,
+    "timeStamp": 102,
+    "samples": [
+      {
+        "timeStamp": 101,
+        "x": -3215.0,
+        "y": 2813.0,
+        "z": 1316.5,
+        "calibrationStatus": "NOT_AVAILABLE"
+      },
+      {
+        "timeStamp": 102,
+        "x": -3215.5,
+        "y": 2813.5,
+        "z": 1317.5,
+        "calibrationStatus": "NOT_AVAILABLE"
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.MagDataTest"
+    ],
+    "ios": [
+      "MagDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.MagParserCommonPolicyTest"
+    ]
+  }
+}

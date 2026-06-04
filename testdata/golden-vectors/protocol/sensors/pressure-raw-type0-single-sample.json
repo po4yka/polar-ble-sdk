@@ -1,0 +1,41 @@
+{
+  "id": "pressure-raw-type0-single-sample",
+  "area": "sensor-parser",
+  "case": "pressure_raw_type0_ieee754_single_sample",
+  "source": "Android PressureDataTest and iOS TemperatureDataTest pressure characterization",
+  "input": {
+    "dataFrameHex": "0b009435770000000000ae277b44",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PRESSURE",
+    "frameType": 0,
+    "compressed": false,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "timeStamp": 2000000000,
+        "pressure": 1004.619995
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PressureDataTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.TemperatureDataTest"
+    ],
+    "ios": [
+      "TemperatureDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PressureTemperatureParserCommonPolicyTest"
+    ]
+  }
+}

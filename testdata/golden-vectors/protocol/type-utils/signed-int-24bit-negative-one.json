@@ -1,0 +1,30 @@
+{
+  "id": "signed-int-24bit-negative-one",
+  "area": "type-utils",
+  "case": "signed_int_24bit_negative_one",
+  "source": "Android TypeUtils and iOS TypeUtils sign-extension mask characterization",
+  "input": {
+    "hex": "ffffff"
+  },
+  "expected": {
+    "unsignedLong": 16777215,
+    "signedInt": -1
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Pins full 24-bit sign extension for all high bits set.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

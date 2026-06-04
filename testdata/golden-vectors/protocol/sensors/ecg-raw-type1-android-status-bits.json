@@ -1,0 +1,53 @@
+{
+  "id": "ecg-raw-type1-android-status-bits",
+  "area": "sensor-parser",
+  "case": "ecg_raw_type1_android_status_bits",
+  "source": "Android EcgDataTest",
+  "input": {
+    "dataFrameHex": "000094357700000000010280ff800200",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "ECG",
+    "frameType": 1,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "kind": "ecgSample",
+        "timeStamp": 1000000050,
+        "microVolts": 2,
+        "overSampling": true,
+        "skinContactBit": 3,
+        "contactImpedance": 3
+      },
+      {
+        "kind": "ecgSample",
+        "timeStamp": 2000000000,
+        "microVolts": 640,
+        "overSampling": false,
+        "skinContactBit": 0,
+        "contactImpedance": 0
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android supports raw ECG type 1 with oversampling, skin-contact, and contact-impedance status bits. iOS currently supports raw type 0 only.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.EcgDataTest"
+    ],
+    "ios": [
+      "EcgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.EcgParserCommonPolicyTest"
+    ]
+  }
+}

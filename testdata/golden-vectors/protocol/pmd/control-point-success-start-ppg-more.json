@@ -1,0 +1,38 @@
+{
+  "id": "pmd-control-point-success-start-ppg-more",
+  "area": "pmd-control-point",
+  "case": "success_request_measurement_start_ppg_more_parameters",
+  "source": "Android PmdControlPointResponse and iOS PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f002010001aabb"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "REQUEST_MEASUREMENT_START",
+    "opCodeValue": 2,
+    "measurementType": 1,
+    "measurementTypeName": "PPG",
+    "status": "SUCCESS",
+    "statusValue": 0,
+    "more": true,
+    "parametersHex": "aabb"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

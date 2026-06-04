@@ -1,0 +1,35 @@
+{
+  "id": "active-measurement-online-offline-gyro",
+  "area": "pmd-control-point",
+  "case": "active_measurement_online_and_offline_gyro",
+  "source": "Android PmdActiveMeasurementTest and iOS PmdActiveMeasurementTest",
+  "input": {
+    "responseByte": 197
+  },
+  "expected": {
+    "activeBits": 3,
+    "measurementBits": 5,
+    "measurementTypeName": "GYRO",
+    "activeMeasurementAndroid": "ONLINE_AND_OFFLINE_ACTIVE",
+    "activeMeasurementIOS": "online_offline_measurement_active"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Upper bits 11 mean both online and offline active; lower bits identify gyro.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

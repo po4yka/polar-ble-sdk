@@ -1,0 +1,35 @@
+{
+  "id": "active-measurement-no-active-ecg",
+  "area": "pmd-control-point",
+  "case": "active_measurement_no_active_ecg",
+  "source": "Android PmdActiveMeasurementTest and iOS PmdActiveMeasurementTest",
+  "input": {
+    "responseByte": 0
+  },
+  "expected": {
+    "activeBits": 0,
+    "measurementBits": 0,
+    "measurementTypeName": "ECG",
+    "activeMeasurementAndroid": "NO_ACTIVE_MEASUREMENT",
+    "activeMeasurementIOS": "no_measurement_active"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Upper bits 00 mean no active measurement; lower bits identify ECG.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

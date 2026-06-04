@@ -1,0 +1,68 @@
+{
+  "id": "file-read-write-delete-operations",
+  "area": "sdk.file-utils",
+  "case": "file_read_write_delete_operations",
+  "source": "Android and iOS PolarFileUtils characterization tests",
+  "input": {
+    "operations": [
+      {
+        "action": "read",
+        "path": "/U/0/20260101/DSUM/DSUM.BPB",
+        "responseHex": "0a0408d21310"
+      },
+      {
+        "action": "write",
+        "path": "/U/0/20260101/DSUM/DSUM.BPB",
+        "payloadHex": "0a0408d21310"
+      },
+      {
+        "action": "delete",
+        "path": "/U/0/20260101/DSUM/DSUM.BPB",
+        "responseHex": "00"
+      }
+    ]
+  },
+  "expected": {
+    "operations": [
+      {
+        "action": "read",
+        "command": "GET",
+        "path": "/U/0/20260101/DSUM/DSUM.BPB",
+        "resultHex": "0a0408d21310"
+      },
+      {
+        "action": "write",
+        "command": "PUT",
+        "path": "/U/0/20260101/DSUM/DSUM.BPB",
+        "writtenHex": "0a0408d21310"
+      },
+      {
+        "action": "delete",
+        "command": "REMOVE",
+        "path": "/U/0/20260101/DSUM/DSUM.BPB",
+        "resultHex": "00"
+      }
+    ],
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFileUtilsTest"
+    ],
+    "ios": [
+      "PolarFileUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FileFacadeRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Low-level file utility operations preserve PFTP command, normalized path ownership, payload bytes, and returned response bytes. This vector covers deterministic low-level file operations only. Backup expansion, restore failure aggregation, and BLE error mapping still require fake-transport vectors."
+}

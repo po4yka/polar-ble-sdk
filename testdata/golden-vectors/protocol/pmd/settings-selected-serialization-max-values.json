@@ -1,0 +1,63 @@
+{
+  "id": "pmd-settings-selected-serialization-max-values",
+  "area": "pmd-settings",
+  "case": "selected_settings_serialization_max_roundtrippable_values",
+  "source": "Android PmdSettingTest and iOS PmdSettingTest",
+  "input": {
+    "selected": {
+      "SAMPLE_RATE": 32767,
+      "RESOLUTION": 0,
+      "RANGE": 15,
+      "RANGE_MILLIUNIT": 2147483647,
+      "CHANNELS": 4,
+      "FACTOR": 15
+    }
+  },
+  "expected": {
+    "serializedHex": "0001ff7f0101000002010f000301ffffff7f040104",
+    "iosSerializedEntriesHex": [
+      "0001ff7f",
+      "01010000",
+      "02010f00",
+      "0301ffffff7f",
+      "040104"
+    ],
+    "settings": {
+      "SAMPLE_RATE": [
+        32767
+      ],
+      "RESOLUTION": [
+        0
+      ],
+      "RANGE": [
+        15
+      ],
+      "RANGE_MILLIUNIT": [
+        2147483647
+      ],
+      "CHANNELS": [
+        4
+      ]
+    },
+    "missingSettings": [
+      "FACTOR"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Selected-setting serialization emits one value per selected setting, uses values that round-trip through both current parsers, and intentionally skips FACTOR.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSettingTest"
+    ],
+    "ios": [
+      "PmdSettingTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdSettingsCommonPolicyTest"
+    ]
+  }
+}

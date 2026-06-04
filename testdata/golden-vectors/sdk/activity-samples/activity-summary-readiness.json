@@ -1,0 +1,71 @@
+{
+  "id": "activity-summary-readiness",
+  "area": "sdk.activity-summary",
+  "case": "activity_summary_readiness",
+  "source": "Activity sample, automatic sample, and daily summary vectors plus shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the activity, automatic sample, and daily summary behavior families that must remain covered before model conversion delegates to shared KMP code.",
+  "input": {
+    "kind": "activitySummaryReadiness",
+    "policyVectorPaths": [
+      "sdk/activity-samples/two-files-step-aggregation.json",
+      "sdk/activity-samples/malformed-sample-file-platform-policy.json",
+      "sdk/automatic-samples/hr-all-trigger-types.json",
+      "sdk/automatic-samples/ppi-deltas-statuses.json",
+      "sdk/daily-summary/full-summary.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "activity-file-request-paths",
+      "activity-step-aggregation",
+      "activity-interval-projection",
+      "activity-info-projection",
+      "malformed-activity-sample-platform-policy",
+      "automatic-hr-trigger-mapping",
+      "automatic-hr-array-preservation",
+      "automatic-ppi-delta-decompression",
+      "automatic-ppi-status-bit-mapping",
+      "daily-summary-request-path",
+      "daily-summary-scalar-projection",
+      "daily-summary-duration-projection",
+      "platform-activity-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "activity-file-request-paths",
+      "activity-step-aggregation",
+      "activity-interval-projection",
+      "activity-info-projection",
+      "malformed-activity-sample-platform-policy",
+      "automatic-hr-trigger-mapping",
+      "automatic-hr-array-preservation",
+      "automatic-ppi-delta-decompression",
+      "automatic-ppi-status-bit-mapping",
+      "daily-summary-request-path",
+      "daily-summary-scalar-projection",
+      "daily-summary-duration-projection",
+      "platform-activity-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, and compile verification remain explicit before production model mapping moves."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarActivityUtilsTest",
+      "com.polar.sdk.api.model.utils.PolarAutomaticSamplesUtilsTest"
+    ],
+    "ios": [
+      "PolarActivityUtilsTest",
+      "PolarAutomaticSamplesUnitTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.ActivitySummaryCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest gates activity model behavior-family completeness only; unsupported fields, final malformed activity-sample normalization, public facade request/error behavior, and transport runtime behavior remain separate migration decisions."
+}

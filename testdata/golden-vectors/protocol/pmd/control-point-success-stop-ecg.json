@@ -1,0 +1,38 @@
+{
+  "id": "pmd-control-point-success-stop-ecg",
+  "area": "pmd-control-point",
+  "case": "success_stop_measurement_ecg_no_parameters",
+  "source": "Android PmdControlPointResponse and iOS PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f003000000"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "STOP_MEASUREMENT",
+    "opCodeValue": 3,
+    "measurementType": 0,
+    "measurementTypeName": "ECG",
+    "status": "SUCCESS",
+    "statusValue": 0,
+    "more": false,
+    "parametersHex": ""
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

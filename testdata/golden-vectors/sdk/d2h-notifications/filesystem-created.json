@@ -1,0 +1,32 @@
+{
+  "id": "filesystem-created",
+  "area": "sdk-d2h-notifications",
+  "case": "filesystem_modified_created_path",
+  "source": "Android PolarD2HNotificationsUtilsTest and iOS PolarDeviceToHostNotificationsApiTests",
+  "input": {
+    "notificationId": 0,
+    "parametersHex": "080012052f552f302f"
+  },
+  "expected": {
+    "notificationType": "FILESYSTEM_MODIFIED",
+    "parsedProto": "PbPFtpFilesystemModifiedParams",
+    "action": "CREATED",
+    "path": "/U/0/"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceToHostNotificationsApiTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.D2hNotificationCommonPolicyTest"
+    ]
+  }
+}

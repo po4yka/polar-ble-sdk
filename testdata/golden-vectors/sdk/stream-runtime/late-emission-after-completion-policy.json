@@ -1,0 +1,45 @@
+{
+  "id": "late-emission-after-completion-policy",
+  "area": "sdk-stream-runtime",
+  "case": "late_emission_after_completion_is_ignored",
+  "source": "Android ChannelUtilsTests and iOS StreamContinuationListTest post-completion emission characterization",
+  "input": {
+    "kind": "genericStreamCompletionPolicy",
+    "target": "stream",
+    "completionSignals": [
+      "complete"
+    ],
+    "postCompletionEmissions": [
+      "value-after-completion"
+    ]
+  },
+  "expected": {
+    "completionEventCount": 1,
+    "activeObserverCount": 0,
+    "emittedValues": [],
+    "lateEmissionPolicy": "ignore-after-terminal-completion",
+    "commonDecision": "Values emitted after terminal completion must not surface to consumers and must not re-register observers."
+  },
+  "execution": {
+    "kind": "fake-stream-runtime-policy",
+    "transport": "generic-stream-completion",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.ChannelUtilsTests"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.StreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Stream utilities can move to shared KMP code only after post-completion emissions are ignored on Android, iOS, and the shared fake-stream runtime."
+}

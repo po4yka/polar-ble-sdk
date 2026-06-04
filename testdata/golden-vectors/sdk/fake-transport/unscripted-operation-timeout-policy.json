@@ -1,0 +1,42 @@
+{
+  "id": "unscripted-operation-timeout-policy",
+  "area": "sdk.fake-transport",
+  "case": "unscripted_operation_timeout_policy",
+  "source": "KMP fake-transport timeout planning and shared ScriptedCommonFakeTransport prototype",
+  "description": "Pins deterministic timeout behavior when a fake transport operation has no scripted outcome.",
+  "input": {
+    "kind": "unscriptedOperationTimeoutPolicy",
+    "operation": "read",
+    "target": "/missing"
+  },
+  "expected": {
+    "outcome": "timeout:unscripted-operation",
+    "commands": [
+      "READ:/missing"
+    ],
+    "commonDecision": "Shared fake transport must report unscripted operations as deterministic timeouts while still recording the attempted command before runtime code delegates to KMP."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.testutils.FakeTransportContractTest"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FakeTransportContractCommonTest"
+    ]
+  },
+  "execution": {
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest fake-transport contract",
+      "wallClockSafe": true
+    }
+  },
+  "platforms": {
+    "android": false,
+    "ios": false,
+    "common": true
+  },
+  "notes": "This vector covers the shared fake-transport missing-script behavior only. Feature-specific timeout durations and public facade timeout/error mapping remain platform compatibility gates."
+}

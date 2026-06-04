@@ -1,0 +1,30 @@
+{
+  "id": "remove-ex-zero-index",
+  "area": "sdk-kvtx",
+  "case": "remove_ex_zero_length_index_clears_value",
+  "source": "Android KvtxScriptUtilsTest and iOS KvtxScriptUtilsTests",
+  "input": {
+    "scriptHex": "002400000001000000aa08240000000005",
+    "extractKey": 36
+  },
+  "expected": {
+    "extractedHex": null
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "EX remove commands with an empty index clear the current value for the target key.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.KvtxScriptUtilsTest"
+    ],
+    "ios": [
+      "KvtxScriptUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.KvtxCommonPolicyTest"
+    ]
+  }
+}

@@ -1,11 +1,15 @@
 // Copyright 2026 Polar Electro Oy. All rights reserved.
 package com.polar.sdk.api.model.utils
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.sdk.api.model.PolarWatchFaceComplication
 import com.polar.sdk.impl.utils.PolarWatchFaceUtils
 import com.polar.sdk.impl.utils.WatchfaceConfigFields
 import org.junit.Assert.*
 import org.junit.Test
+import java.io.File
+import java.io.FileReader
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -163,5 +167,178 @@ class PolarWatchFaceUtilsTest {
     @Test
     fun `PolarWatchFaceComplication CALORIES uses correct complicationId`() {
         assertEquals("calories-complication", PolarWatchFaceComplication.CALORIES.complicationId)
+    }
+
+    @Test
+    fun watchFaceGoldenVectors_matchAndroidBehavior() {
+        val vectors = loadWatchFaceVectors()
+        assertTrue("Expected watch-face golden vectors", vectors.isNotEmpty())
+
+        vectors.forEach { vector ->
+            val caseId = vector.get("id").asString
+            val input = vector.getAsJsonObject("input")
+            val expected = vector.getAsJsonObject("expected")
+            val parsed = if (input.has("flatBufferHex")) {
+                PolarWatchFaceUtils.parseWatchFaceConfigFlatBuffer(input.get("flatBufferHex").asString.hexToByteArray())
+            } else {
+                val fields = input.getAsJsonObject("fields").toWatchfaceConfigFields()
+                val flatBuffer = PolarWatchFaceUtils.buildWatchFaceConfigFlatBuffer(fields)
+                val roundTripped = PolarWatchFaceUtils.parseWatchFaceConfigFlatBuffer(flatBuffer)
+                if (expected.has("kvtx")) {
+                    assertKvtxScript(caseId, expected.getAsJsonObject("kvtx"), fields)
+                }
+                roundTripped
+            }
+
+            assertWatchfaceConfigFields(caseId, expected.getAsJsonObject("fields"), parsed)
+            if (expected.has("knownComplications")) {
+                expected.getAsJsonArray("knownComplications").forEachIndexed { index, expectedName ->
+                    assertEquals(caseId, expectedName.asString, PolarWatchFaceComplication.fromId(parsed.complicationIds[index])?.name)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `watch face golden vectors follow neutral KMP vector shape`() {
+        loadWatchFaceVectors().forEach { vector ->
+            val id = vector.get("id")?.asString ?: "unknown-vector"
+
+            assertTrue(id, vector.has("area"))
+            assertTrue(id, vector.has("case"))
+            assertTrue(id, vector.has("source"))
+            assertTrue(id, vector.has("input"))
+            assertTrue(id, vector.has("expected"))
+            assertTrue(id, vector.has("platforms"))
+            val platforms = vector.getAsJsonObject("platforms")
+            assertTrue(id, platforms.has("android"))
+            assertTrue(id, platforms.has("ios"))
+            assertTrue(id, platforms.has("common"))
+        }
+    }
+
+    private fun assertKvtxScript(caseId: String, expected: JsonObject, fields: WatchfaceConfigFields) {
+        val script = PolarWatchFaceUtils.buildKvtxScript(fields)
+        assertEquals(caseId, expected.get("firstOpcode").asInt.toByte(), script[0])
+        assertEquals(caseId, expected.get("commitOpcode").asInt.toByte(), script.last())
+        val key = ByteBuffer.wrap(script, 1, 4).order(ByteOrder.LITTLE_ENDIAN).int
+        assertEquals(caseId, expected.get("key").asInt, key)
+        val dataLen = ByteBuffer.wrap(script, 5, 4).order(ByteOrder.LITTLE_ENDIAN).int
+        assertEquals(caseId, 1 + 4 + 4 + dataLen + 1, script.size)
+        val extracted = PolarWatchFaceUtils.extractWatchFaceConfigFromKvtxScript(script)
+        assertNotNull(caseId, extracted)
+        assertWatchfaceConfigFields(caseId, fields, PolarWatchFaceUtils.parseWatchFaceConfigFlatBuffer(extracted!!))
+    }
+
+    private fun assertWatchfaceConfigFields(caseId: String, expected: JsonObject, actual: WatchfaceConfigFields) {
+        assertWatchfaceConfigFields(caseId, expected.toWatchfaceConfigFields(), actual)
+    }
+
+    private fun assertWatchfaceConfigFields(caseId: String, expected: WatchfaceConfigFields, actual: WatchfaceConfigFields) {
+        assertEquals(caseId, expected.timeStyleId, actual.timeStyleId)
+        assertEquals(caseId, expected.complicationLayoutId, actual.complicationLayoutId)
+        assertEquals(caseId, expected.backgroundStyleId, actual.backgroundStyleId)
+        assertEquals(caseId, expected.accentColor, actual.accentColor)
+        assertEquals(caseId, expected.complicationIds, actual.complicationIds)
+        assertEquals(caseId, expected.fontfaceId, actual.fontfaceId)
+    }
+
+    private fun JsonObject.toWatchfaceConfigFields(): WatchfaceConfigFields {
+        return WatchfaceConfigFields(
+            timeStyleId = optionalInt("timeStyleId"),
+            complicationLayoutId = optionalInt("complicationLayoutId"),
+            backgroundStyleId = optionalInt("backgroundStyleId"),
+            accentColor = optionalLong("accentColor"),
+            complicationIds = if (has("complicationIds")) getAsJsonArray("complicationIds").map { it.asInt } else emptyList(),
+            fontfaceId = optionalInt("fontfaceId")
+        )
+    }
+
+    private fun JsonObject.optionalInt(name: String): Int {
+        return if (has(name)) get(name).asInt else 0
+    }
+
+    private fun JsonObject.optionalLong(name: String): Long {
+        return if (has(name)) get(name).asLong else 0L
+    }
+
+    private fun loadWatchFaceVectors(): List<JsonObject> {
+        val vectorDirectory = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/sdk/watch-face")
+        return vectorDirectory
+            .listFiles { file -> file.isFile && file.extension == "json" }
+            .orEmpty()
+            .sortedBy { it.name }
+            .map { file ->
+                FileReader(file).use { reader ->
+                    JsonParser().parse(reader).asJsonObject
+                }
+            }
+            .filterNot { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString == "watchFaceReadiness" }
+    }
+
+    @Test
+    fun `watch face readiness manifest is pinned before model migration`() {
+        val vector = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/watch-face/watch-face-readiness.json")).use { reader ->
+            JsonParser().parse(reader).asJsonObject
+        }
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val policyVectorPaths = input.getAsJsonArray("policyVectorPaths").map { path -> path.asString }
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { family -> family.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { family -> family.asString }
+        assertEquals("watch-face-readiness", vector.get("id").asString)
+        assertEquals("watchFaceReadiness", input.get("kind").asString)
+        assertEquals(
+            listOf(
+                "sdk/watch-face/all-fields-with-complications.json",
+                "sdk/watch-face/default-fields.json",
+                "sdk/watch-face/malformed-too-short.json",
+                "sdk/watch-face/ordered-complications-with-empty.json",
+                "sdk/watch-face/unknown-complication-preserved.json"
+            ),
+            policyVectorPaths
+        )
+        val expectedFamilies = listOf(
+            "default-field-zeroing",
+            "scalar-field-round-trip",
+            "complication-id-order-preservation",
+            "empty-complication-id-preservation",
+            "known-complication-lookup",
+            "unknown-complication-raw-id-preservation",
+            "unknown-complication-null-lookup-policy",
+            "malformed-too-short-defaulting",
+            "kvtx-wrapper-metadata",
+            "platform-watch-face-vector-reference-gate",
+            "compile-verification-gate"
+        )
+        assertEquals(expectedFamilies, requiredFamilies)
+        assertEquals(expectedFamilies, coveredFamilies)
+        assertEquals(
+            "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, KVTX wrapper metadata, and the shared tests are compile-verified.",
+            expected.get("commonDecision").asString
+        )
+        val consumerTests = vector.getAsJsonObject("consumerTests")
+        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarWatchFaceUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        assertEquals(listOf("PolarWatchFaceUtilsTests"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        assertEquals(listOf("com.polar.sharedtest.WatchFaceCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
+    }
+
+    private fun String.hexToByteArray(): ByteArray {
+        require(length % 2 == 0) { "Hex string must have an even length" }
+        return chunked(2)
+            .map { it.toInt(16).toByte() }
+            .toByteArray()
     }
 }

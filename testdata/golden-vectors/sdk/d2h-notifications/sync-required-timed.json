@@ -1,0 +1,35 @@
+{
+  "id": "sync-required-timed",
+  "area": "sdk-d2h-notifications",
+  "case": "sync_required_timed_trigger",
+  "source": "Android PolarD2HNotificationsUtilsTest and iOS PolarDeviceToHostNotificationsApiTests",
+  "input": {
+    "notificationId": 7,
+    "parametersHex": "0a020802"
+  },
+  "expected": {
+    "notificationType": "SYNC_REQUIRED",
+    "parsedProto": "PbPFtpSyncRequiredParams",
+    "syncTriggers": [
+      {
+        "source": "TIMED"
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceToHostNotificationsApiTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.D2hNotificationCommonPolicyTest"
+    ]
+  }
+}

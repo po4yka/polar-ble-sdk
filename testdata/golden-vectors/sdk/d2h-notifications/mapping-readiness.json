@@ -1,0 +1,68 @@
+{
+  "id": "d2h-notification-mapping-readiness",
+  "area": "sdk.d2h-notifications",
+  "case": "d2h_notification_mapping_readiness",
+  "source": "D2H notification mapping vectors and shared mapping prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the D2H notification mapping behavior families that must remain covered before notification decoding delegates to shared KMP code.",
+  "input": {
+    "kind": "d2hNotificationMappingReadiness",
+    "policyVectorPaths": [
+      "sdk/d2h-notifications/filesystem-created.json",
+      "sdk/d2h-notifications/sync-required-timed.json",
+      "sdk/d2h-notifications/autosync-success.json",
+      "sdk/d2h-notifications/start-gps-measurement.json",
+      "sdk/d2h-notifications/stop-gps-empty.json",
+      "sdk/d2h-notifications/sync-required-invalid-payload.json",
+      "sdk/d2h-notifications/unknown-id-filtered.json",
+      "sdk/d2h-notifications/repeated-sync-required-and-stop-gps.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "known-notification-id-mapping",
+      "unknown-notification-id-filtering",
+      "raw-parameter-preservation",
+      "filesystem-created-typed-field-decoding",
+      "sync-required-trigger-decoding",
+      "autosync-status-decoding",
+      "start-gps-measurement-field-decoding",
+      "stop-gps-empty-parameter-policy",
+      "invalid-payload-null-parse-policy",
+      "repeated-notification-ordering",
+      "platform-mapping-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "known-notification-id-mapping",
+      "unknown-notification-id-filtering",
+      "raw-parameter-preservation",
+      "filesystem-created-typed-field-decoding",
+      "sync-required-trigger-decoding",
+      "autosync-status-decoding",
+      "start-gps-measurement-field-decoding",
+      "stop-gps-empty-parameter-policy",
+      "invalid-payload-null-parse-policy",
+      "repeated-notification-ordering",
+      "platform-mapping-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "D2H notification mapping migration may proceed only after every mapping vector named by this readiness manifest is executable from shared commonTest, Android and iOS D2H mapping tests continue to reference the same vectors, known IDs, unknown-ID filtering, raw parameter preservation, typed fields for filesystem, sync-required, autosync, and start-GPS notifications, stop-GPS empty parameters, invalid-payload null parsing, repeated-notification ordering, and the shared tests are compile-verified."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceToHostNotificationsApiTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.D2hNotificationCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for notification mapping behavior-family completeness only; stream lifecycle, cancellation, and facade error propagation are owned by stream-runtime-readiness.json."
+}

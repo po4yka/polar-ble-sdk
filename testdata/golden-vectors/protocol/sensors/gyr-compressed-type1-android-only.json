@@ -1,0 +1,49 @@
+{
+  "id": "gyr-compressed-type1-android-only",
+  "area": "sensor-parser",
+  "case": "gyr_compressed_type1_android_only_float_reference_and_delta_samples",
+  "source": "Android GyrDataTest; iOS parser does not currently support compressed type 1",
+  "input": {
+    "dataFrameHex": "050094357700000000810000803f000020410000a0411c010000a001000008cdccec0d",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "GYR",
+    "frameType": 1,
+    "compressed": true,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "timeStamp": 1000000050,
+        "x": 1.0,
+        "y": 10.0,
+        "z": 20.0
+      },
+      {
+        "timeStamp": 2000000000,
+        "x": 10.0,
+        "y": 20.0,
+        "z": 1.100000023841858
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GyrDataTest"
+    ],
+    "ios": [
+      "GyrDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.GyrParserCommonPolicyTest"
+    ]
+  }
+}

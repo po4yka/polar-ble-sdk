@@ -1,0 +1,51 @@
+{
+  "id": "ordered-emissions-policy",
+  "area": "sdk-stream-runtime",
+  "case": "ordered_emissions_are_preserved_before_completion",
+  "source": "Android ChannelUtilsTests and iOS StreamContinuationListTest ordered stream emission characterization",
+  "input": {
+    "kind": "genericStreamEmissionPolicy",
+    "target": "stream",
+    "emissions": [
+      "first",
+      "second",
+      "third"
+    ],
+    "completionSignals": [
+      "complete"
+    ]
+  },
+  "expected": {
+    "emittedValues": [
+      "first",
+      "second",
+      "third"
+    ],
+    "completionEventCount": 1,
+    "activeObserverCount": 0,
+    "orderingPolicy": "preserve-source-order",
+    "commonDecision": "Stream values emitted before terminal completion must be delivered in source order."
+  },
+  "execution": {
+    "kind": "fake-stream-runtime-policy",
+    "transport": "generic-stream-emission",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.ChannelUtilsTests"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.StreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Stream utilities can move to shared KMP code only after ordered emissions are preserved before completion on Android, iOS, and the shared fake-stream runtime."
+}

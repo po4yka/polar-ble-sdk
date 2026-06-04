@@ -1,0 +1,35 @@
+{
+  "id": "offline-hr-raw-type2-unsupported",
+  "area": "sensor-parser",
+  "case": "offline_hr_raw_type2_unsupported_frame",
+  "source": "Android OfflineHrDataTest and iOS OfflineHrDataTest",
+  "input": {
+    "dataFrameHex": "0e660000000000000002",
+    "previousTimeStamp": 0,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "OFFLINE_HR",
+    "frameType": 2,
+    "compressed": false,
+    "parseError": "unsupportedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Offline HR currently supports only raw type 0 and raw type 1. KMP should keep unsupported raw-frame errors deterministic.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.OfflineHrDataTest"
+    ],
+    "ios": [
+      "OfflineHrDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.OfflineHrParserCommonPolicyTest"
+    ]
+  }
+}

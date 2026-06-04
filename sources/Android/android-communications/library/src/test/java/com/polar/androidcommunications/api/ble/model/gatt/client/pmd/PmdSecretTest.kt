@@ -1,9 +1,14 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.polar.androidcommunications.api.ble.exceptions.SecurityError
 import com.polar.androidcommunications.testrules.BleLoggerTestRule
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
+import java.io.FileReader
 
 internal class PmdSecretTest {
     @Rule
@@ -169,4 +174,185 @@ internal class PmdSecretTest {
         //Assert
         Assert.assertArrayEquals(expectedDecryptedData, decryptedData)
     }
+
+    @Test
+    fun pmdSecretGoldenVectors_matchAndroidBehavior() {
+        val vectors = loadPmdSecretVectors()
+        Assert.assertTrue("Expected PMD secret golden vectors", vectors.isNotEmpty())
+
+        vectors.forEach { vector ->
+            val caseId = vector.get("id").asString
+            val input = vector.getAsJsonObject("input")
+            val expected = vector.getAsJsonObject("expected")
+            val androidExpectations = vector
+                .getAsJsonObject("platformExpectations")
+                ?.getAsJsonObject("android")
+
+            when (input.get("operation").asString) {
+                "serialize" -> {
+                    val secret = PmdSecret(input.strategy(), input.get("keyHex").asString.hexToByteArray())
+                    Assert.assertEquals(caseId, expected.get("serializedHex").asString, secret.serializeToPmdSettings().toHexString())
+                }
+                "decrypt" -> {
+                    val secret = PmdSecret(input.strategy(), input.get("keyHex").asString.hexToByteArray())
+                    val decrypted = secret.decryptArray(input.get("cipherHex").asString.hexToByteArray())
+                    Assert.assertEquals(caseId, expected.get("decryptedHex").asString, decrypted.toHexString())
+                }
+                "construct" -> {
+                    val key = input.get("keyHex").asString.hexToByteArray()
+                    if (androidExpectations?.has("constructorError") == true) {
+                        assertConstructorError(caseId, androidExpectations.get("constructorError").asString, input.strategy(), key)
+                    } else {
+                        PmdSecret(input.strategy(), key)
+                    }
+                }
+                "fromByte" -> {
+                    val strategyByte = input.get("strategyByteHex").asString.hexToByteArray().single().toUByte()
+                    if (androidExpectations?.has("strategyError") == true) {
+                        assertStrategyError(caseId, androidExpectations.get("strategyError").asString, strategyByte)
+                    } else {
+                        Assert.assertEquals(caseId, PmdSecret.SecurityStrategy.valueOf(expected.get("strategy").asString), PmdSecret.SecurityStrategy.fromByte(strategyByte))
+                    }
+                }
+                else -> Assert.fail("$caseId has unsupported operation ${input.get("operation").asString}")
+            }
+        }
+    }
+
+    @Test
+    fun `pmd secret golden vectors follow neutral KMP vector shape`() {
+        loadPmdSecretVectors().forEach { vector ->
+            val id = vector.get("id")?.asString ?: "unknown-vector"
+
+            Assert.assertTrue(id, vector.has("area"))
+            Assert.assertTrue(id, vector.has("case"))
+            Assert.assertTrue(id, vector.has("source"))
+            Assert.assertTrue(id, vector.has("input"))
+            Assert.assertTrue(id, vector.has("expected"))
+            Assert.assertTrue(id, vector.has("platforms"))
+            val platforms = vector.getAsJsonObject("platforms")
+            Assert.assertTrue(id, platforms.has("android"))
+            Assert.assertTrue(id, platforms.has("ios"))
+            Assert.assertTrue(id, platforms.has("common"))
+        }
+    }
+
+    @Test
+    fun `PMD secret readiness manifest is pinned before secret strategy migration`() {
+        val manifest = loadPmdSecretReadinessManifest()
+        val input = manifest.getAsJsonObject("input")
+        val expected = manifest.getAsJsonObject("expected")
+        val consumerTests = manifest.getAsJsonObject("consumerTests")
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+        val policyPaths = input.getAsJsonArray("policyVectorPaths").map { it.asString }
+
+        Assert.assertEquals("pmd-secret-readiness", manifest.get("id").asString)
+        Assert.assertEquals("pmdSecretReadiness", input.get("kind").asString)
+        Assert.assertEquals(PMD_SECRET_READINESS_POLICY_PATHS, policyPaths)
+        Assert.assertEquals(PMD_SECRET_READINESS_FAMILIES, requiredFamilies)
+        Assert.assertEquals(PMD_SECRET_READINESS_FAMILIES, coveredFamilies)
+        Assert.assertEquals(PMD_SECRET_READINESS_DECISION, expected.get("commonDecision").asString)
+        Assert.assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSecretTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("PmdSecretTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.PmdSecretCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    private val PMD_SECRET_READINESS_POLICY_PATHS = listOf(
+        "protocol/pmd/secret-decrypt-aes128.json",
+        "protocol/pmd/secret-decrypt-aes256.json",
+        "protocol/pmd/secret-decrypt-none.json",
+        "protocol/pmd/secret-decrypt-xor.json",
+        "protocol/pmd/secret-invalid-aes128-short-key.json",
+        "protocol/pmd/secret-invalid-aes256-short-key.json",
+        "protocol/pmd/secret-invalid-none-nonempty-key.json",
+        "protocol/pmd/secret-invalid-xor-empty-key.json",
+        "protocol/pmd/secret-serialization-aes128.json",
+        "protocol/pmd/secret-serialization-aes256.json",
+        "protocol/pmd/secret-serialization-none.json",
+        "protocol/pmd/secret-serialization-xor.json",
+        "protocol/pmd/secret-strategy-from-byte-known.json",
+        "protocol/pmd/secret-strategy-from-byte-unknown.json"
+    )
+
+    private val PMD_SECRET_READINESS_FAMILIES = listOf(
+        "security-strategy-byte-mapping",
+        "unknown-security-strategy-rejection",
+        "security-setting-serialization",
+        "none-key-validation",
+        "xor-key-validation",
+        "aes128-key-validation",
+        "aes256-key-validation",
+        "none-decryption-policy",
+        "xor-decryption-policy",
+        "aes-fixture-pinning",
+        "aes-block-alignment-gate",
+        "platform-pmd-secret-vector-reference-gate",
+        "compile-verification-gate"
+    )
+
+    private val PMD_SECRET_READINESS_DECISION = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, NONE and XOR decryption, AES fixture pinning, AES block-alignment gating, and compile verification remain explicit before production secret strategy code moves."
+
+    private fun assertConstructorError(caseId: String, expectedError: String, strategy: PmdSecret.SecurityStrategy, key: ByteArray) {
+        when (expectedError) {
+            "illegalArgumentException" -> Assert.assertThrows(caseId, IllegalArgumentException::class.java) {
+                PmdSecret(strategy, key)
+            }
+            else -> Assert.fail("$caseId has unsupported constructor error expectation $expectedError")
+        }
+    }
+
+    private fun assertStrategyError(caseId: String, expectedError: String, strategyByte: UByte) {
+        when (expectedError) {
+            "securityStrategyUnknown" -> Assert.assertThrows(caseId, SecurityError.SecurityStrategyUnknown::class.java) {
+                PmdSecret.SecurityStrategy.fromByte(strategyByte)
+            }
+            else -> Assert.fail("$caseId has unsupported strategy error expectation $expectedError")
+        }
+    }
+
+    private fun loadPmdSecretVectors(): List<JsonObject> {
+        val vectorDirectory = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/protocol/pmd")
+        return vectorDirectory
+            .listFiles { file -> file.isFile && file.extension == "json" && file.name.startsWith("secret-") }
+            .orEmpty()
+            .sortedBy { it.name }
+            .map { file ->
+                FileReader(file).use { reader ->
+                    JsonParser().parse(reader).asJsonObject
+                }
+            }
+            .filter { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString != "pmdSecretReadiness" }
+    }
+
+    private fun loadPmdSecretReadinessManifest(): JsonObject {
+        val manifestFile = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/protocol/pmd/secret-readiness.json")
+        FileReader(manifestFile).use { reader ->
+            return JsonParser().parse(reader).asJsonObject
+        }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
+    }
+
+    private fun JsonObject.strategy(): PmdSecret.SecurityStrategy = PmdSecret.SecurityStrategy.valueOf(get("strategy").asString)
+
+    private fun String.hexToByteArray(): ByteArray {
+        require(length % 2 == 0) { "Hex string must have an even length" }
+        return chunked(2)
+            .map { it.toInt(16).toByte() }
+            .toByteArray()
+    }
+
+    private fun ByteArray.toHexString(): String = joinToString(separator = "") { "%02x".format(it.toInt() and 0xFF) }
 }

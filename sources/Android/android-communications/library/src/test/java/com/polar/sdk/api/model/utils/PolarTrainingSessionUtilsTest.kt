@@ -1,5 +1,7 @@
 package com.polar.sdk.api.model.utils
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.protobuf.ByteString
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionDataTypes
@@ -23,11 +25,14 @@ import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
 import protocol.PftpResponse.PbPFtpEntry
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileReader
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -186,6 +191,151 @@ class PolarTrainingSessionUtilsTest {
             client.request(PftpRequest.PbPFtpOperation.newBuilder().setCommand(PftpRequest.PbPFtpOperation.Command.GET).setPath("/U/0/20250202/E/163020/01/").build().toByteArray())
         }
         confirmVerified(client)
+    }
+
+    @Test
+    fun `training session reference discovery golden vectors match Android behavior`() = runTest {
+        val vectors = loadTrainingSessionVectors()
+        assertTrue("Expected training-session golden vectors", vectors.isNotEmpty())
+
+        vectors.forEach { vector ->
+            val caseId = vector.get("id").asString
+            val input = vector.getAsJsonObject("input")
+            if (!input.has("directories")) {
+                return@forEach
+            }
+            val client = mockk<BlePsFtpClient>()
+            val directories = input.getAsJsonObject("directories")
+            coEvery { client.request(any<ByteArray>()) } answers {
+                val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+                ByteArrayOutputStream().apply {
+                    buildDirectory(directories.getAsJsonArray(operation.path).map { it.asJsonObject }).writeTo(this)
+                }
+            }
+
+            val emitted = mutableListOf<PolarTrainingSessionReference>()
+            val job = launch {
+                PolarTrainingSessionUtils.getTrainingSessionReferences(client).collect { emitted.add(it) }
+            }
+            job.join()
+
+            assertTrainingSessionReferences(caseId, emitted, vector.getAsJsonObject("expected"))
+        }
+    }
+
+    @Test
+    fun `training session read golden vectors preserve missing exercise file policy`() = runTest {
+        val vector = loadTrainingSessionVectors().first { it.get("id").asString == "missing-exercise-file-platform-policy" }
+        val client = mockk<BlePsFtpClient>()
+        val input = vector.getAsJsonObject("input")
+        val reference = buildTrainingSessionReference(input.getAsJsonObject("reference"), androidPaths = true)
+        val responses = input.getAsJsonObject("responses")
+
+        coEvery { client.request(any<ByteArray>()) } answers {
+            val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+            val responseType = responses.get(operation.path)?.asString ?: throw Exception("Missing file: ${operation.path}")
+            ByteArrayOutputStream().apply { writeTrainingSessionFixture(responseType, this) }
+        }
+
+        val result = PolarTrainingSessionUtils.readTrainingSession(client, reference)
+        val expected = vector.getAsJsonObject("expected").getAsJsonObject("android")
+
+        assertEquals(vector.get("id").asString, expected.get("sessionSummaryPresent").asBoolean, result.sessionSummary != null)
+        assertEquals(vector.get("id").asString, expected.get("exerciseCount").asInt, result.exercises.size)
+        assertEquals(vector.get("id").asString, expected.get("exerciseSummaryPresent").asBoolean, result.exercises[0].exerciseSummary != null)
+        assertEquals(vector.get("id").asString, expected.get("routePresent").asBoolean, result.exercises[0].route != null)
+    }
+
+    @Test
+    fun `training session golden vectors follow neutral KMP vector shape`() {
+        val vectors = loadTrainingSessionVectors()
+        assertTrue("Expected training-session golden vectors", vectors.isNotEmpty())
+        vectors.forEach { vector ->
+            val id = vector.get("id").asString
+            assertTrue(id, vector.has("area"))
+            assertTrue(id, vector.has("case"))
+            assertTrue(id, vector.has("source"))
+            assertTrue(id, vector.has("input"))
+            assertTrue(id, vector.has("expected"))
+            assertTrue(id, vector.has("platforms"))
+            assertTrue(id, vector.getAsJsonObject("input").has("kind"))
+            val platforms = vector.getAsJsonObject("platforms")
+            assertTrue(id, platforms.get("android").asBoolean)
+            assertTrue(id, platforms.get("ios").asBoolean)
+            assertTrue(id, platforms.get("common").asBoolean)
+        }
+    }
+
+    @Test
+    fun `payload parser policy vector is pinned before byte level parser migration`() {
+        val vector = loadTrainingSessionVectors().first { it.get("id").asString == "payload-parser-policy" }
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val consumerTests = vector.getAsJsonObject("consumerTests")
+        val cases = input.getAsJsonArray("cases").map { it.asJsonObject }
+        val prototypeCases = expected.getAsJsonObject("commonParserPrototype").getAsJsonArray("cases").map { it.asJsonObject }
+
+        assertEquals("payloadParserPolicy", input.get("kind").asString)
+        assertEquals(TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS, cases.map { it.get("id").asString })
+        assertEquals(TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS, prototypeCases.map { it.get("id").asString })
+        cases.zip(prototypeCases).forEach { (inputCase, prototypeCase) ->
+            val id = inputCase.get("id").asString
+            assertEquals(id, inputCase.get("parser").asString, prototypeCase.get("parser").asString)
+            assertEquals(id, inputCase.get("encoding").asString, prototypeCase.get("encoding").asString)
+            assertEquals(id, inputCase.getAsJsonArray("expectedFields").map { it.asString }, prototypeCase.getAsJsonArray("fields").map { it.asString })
+        }
+        assertEquals(4, cases.count { it.get("encoding").asString == "gzip-protobuf" })
+        assertEquals("executable shared parser-policy coverage; byte decoding remains gated on common protobuf and gzip dependencies", expected.getAsJsonObject("commonParserPrototype").get("status").asString)
+        assertEquals(TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION, expected.get("commonDecision").asString)
+        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        assertEquals(listOf("PolarTrainingSessionUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        assertEquals(listOf("com.polar.sharedtest.TrainingSessionCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    @Test
+    fun `training session readiness manifest is pinned before migration`() {
+        val readiness = loadTrainingSessionReadinessManifest()
+        val input = readiness.getAsJsonObject("input")
+        val expected = readiness.getAsJsonObject("expected")
+        val policyVectorPaths = input.getAsJsonArray("policyVectorPaths").map { it.asString }
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+
+        assertEquals("training-session-readiness", readiness.get("id").asString)
+        assertEquals("trainingSessionReadiness", input.get("kind").asString)
+        assertEquals(
+            listOf(
+                "sdk/training-session/reference-discovery-two-sessions.json",
+                "sdk/training-session/missing-exercise-file-platform-policy.json",
+                "sdk/training-session/payload-read-policy.json",
+                "sdk/training-session/payload-parser-policy.json"
+            ),
+            policyVectorPaths
+        )
+        val expectedFamilies = listOf(
+            "reference-directory-traversal",
+            "training-summary-discovery",
+            "exercise-file-classification",
+            "unknown-file-ignoring",
+            "aggregate-file-size-policy",
+            "exercise-path-shape-policy",
+            "missing-exercise-file-platform-policy",
+            "payload-fetch-order",
+            "payload-progress-calculation",
+            "malformed-component-isolation",
+            "unknown-advanced-sample-list-ignoring",
+            "known-sample-preservation",
+            "payload-parser-family-ownership",
+            "byte-level-parser-dependency-gate",
+            "platform-training-session-vector-reference-gate",
+            "compile-verification-gate"
+        )
+        assertEquals(expectedFamilies, requiredFamilies)
+        assertEquals(expectedFamilies, coveredFamilies)
+        assertEquals(
+            "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, byte-level parser dependency gates, and compile verification remain explicit before production discovery/read orchestration moves.",
+            expected.get("commonDecision").asString
+        )
     }
 
     @Test
@@ -380,5 +530,130 @@ class PolarTrainingSessionUtilsTest {
             client.request(PftpRequest.PbPFtpOperation.newBuilder().setCommand(PftpRequest.PbPFtpOperation.Command.GET).setPath("/U/0/20250101/E/101200/SAMPLES2.GZB").build().toByteArray())
         }
         confirmVerified(client)
+    }
+
+    private fun buildDirectory(entries: List<JsonObject>): PbPFtpDirectory {
+        return PbPFtpDirectory.newBuilder()
+            .addAllEntries(entries.map { entry ->
+                PbPFtpEntry.newBuilder()
+                    .setName(entry.get("name").asString)
+                    .setSize(entry.get("size").asLong)
+                    .build()
+            })
+            .build()
+    }
+
+    private fun assertTrainingSessionReferences(caseId: String, actual: List<PolarTrainingSessionReference>, expected: JsonObject) {
+        val expectedReferences = expected.getAsJsonArray("references").map { it.asJsonObject }
+        assertEquals("$caseId reference count", expectedReferences.size, actual.size)
+        expectedReferences.forEachIndexed { index, expectedReference ->
+            val actualReference = actual[index]
+            assertEquals("$caseId reference $index date", LocalDate.parse(expectedReference.get("date").asString), actualReference.date)
+            assertEquals("$caseId reference $index path", expectedReference.get("path").asString, actualReference.path)
+            assertEquals("$caseId reference $index fileSize", expectedReference.get("fileSize").asLong, actualReference.fileSize)
+            assertEquals("$caseId reference $index trainingDataTypes", expectedReference.getAsJsonArray("trainingDataTypes").map { PolarTrainingSessionDataTypes.valueOf(it.asString) }, actualReference.trainingDataTypes)
+            val expectedExercises = expectedReference.getAsJsonArray("exercises").map { it.asJsonObject }
+            assertEquals("$caseId reference $index exercises", expectedExercises.size, actualReference.exercises.size)
+            expectedExercises.forEachIndexed { exerciseIndex, expectedExercise ->
+                val actualExercise = actualReference.exercises[exerciseIndex]
+                assertEquals("$caseId exercise $exerciseIndex index", expectedExercise.get("index").asInt, actualExercise.index)
+                assertEquals("$caseId exercise $exerciseIndex path", expectedExercise.get("androidPath").asString, actualExercise.path)
+                assertEquals("$caseId exercise $exerciseIndex dataTypes", expectedExercise.getAsJsonArray("exerciseDataTypes").map { PolarExerciseDataTypes.valueOf(it.asString) }, actualExercise.exerciseDataTypes)
+                assertEquals("$caseId exercise $exerciseIndex fileSizes", expectedExercise.getAsJsonObject("fileSizes").entrySet().associate { it.key to it.value.asLong }, actualExercise.fileSizes)
+            }
+        }
+    }
+
+    private fun buildTrainingSessionReference(fields: JsonObject, androidPaths: Boolean): PolarTrainingSessionReference {
+        return PolarTrainingSessionReference(
+            date = LocalDate.parse(fields.get("date").asString),
+            path = fields.get("path").asString,
+            trainingDataTypes = fields.getAsJsonArray("trainingDataTypes").map { PolarTrainingSessionDataTypes.valueOf(it.asString) },
+            exercises = fields.getAsJsonArray("exercises").map { exercise ->
+                val exerciseFields = exercise.asJsonObject
+                PolarExercise(
+                    index = exerciseFields.get("index").asInt,
+                    path = exerciseFields.get(if (androidPaths) "androidPath" else "iosPath").asString,
+                    exerciseDataTypes = exerciseFields.getAsJsonArray("exerciseDataTypes").map { PolarExerciseDataTypes.valueOf(it.asString) }
+                )
+            }
+        )
+    }
+
+    private fun writeTrainingSessionFixture(responseType: String, outputStream: ByteArrayOutputStream) {
+        when (responseType) {
+            "trainingSessionSummary" -> TrainingSession.PbTrainingSession.newBuilder()
+                .setStart(buildFixtureLocalDateTime())
+                .setExerciseCount(1)
+                .setModelName("Polar 360")
+                .build()
+                .writeTo(outputStream)
+            "exerciseSummary" -> Training.PbExerciseBase.newBuilder()
+                .setStart(buildFixtureLocalDateTime())
+                .setDuration(Types.PbDuration.newBuilder().setSeconds(3600))
+                .setWalkingDistance(1000f)
+                .setSport(Structures.PbSportIdentifier.newBuilder().setValue(3))
+                .build()
+                .writeTo(outputStream)
+            else -> error("Unknown training-session fixture response type $responseType")
+        }
+    }
+
+    private fun buildFixtureLocalDateTime(): Types.PbLocalDateTime {
+        return Types.PbLocalDateTime.newBuilder()
+            .setDate(Types.PbDate.newBuilder().setYear(2025).setMonth(1).setDay(1))
+            .setTime(Types.PbTime.newBuilder().setHour(10).setMinute(12).setSeconds(0))
+            .setOBSOLETETrusted(true)
+            .build()
+    }
+
+    private fun loadTrainingSessionVectors(): List<JsonObject> {
+        val vectorDirectory = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/sdk/training-session")
+        return vectorDirectory
+            .listFiles { file -> file.isFile && file.extension == "json" }
+            .orEmpty()
+            .sortedBy { it.name }
+            .map { file ->
+                FileReader(file).use { reader ->
+                    JsonParser().parse(reader).asJsonObject
+                }
+            }
+            .filterNot { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString == "trainingSessionReadiness" }
+    }
+
+    private fun loadTrainingSessionReadinessManifest(): JsonObject {
+        val vectorFile = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/sdk/training-session/training-session-readiness.json")
+        FileReader(vectorFile).use { reader ->
+            return JsonParser().parse(reader).asJsonObject
+        }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
+    }
+
+    private companion object {
+        val TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS = listOf(
+            "training-session-summary-protobuf",
+            "exercise-summary-protobuf",
+            "route-protobuf",
+            "route-gzip-protobuf",
+            "route-advanced-protobuf",
+            "route-advanced-gzip-protobuf",
+            "samples-protobuf",
+            "samples-gzip-protobuf",
+            "samples-advanced-gzip-protobuf"
+        )
+
+        const val TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing to common code, add production common protobuf and gzip dependencies that can execute these parser cases against real bytes; until then this vector is the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
     }
 }

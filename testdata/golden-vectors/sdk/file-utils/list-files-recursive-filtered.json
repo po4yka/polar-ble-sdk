@@ -1,0 +1,85 @@
+{
+  "id": "list-files-recursive-filtered",
+  "area": "sdk.file-utils",
+  "case": "list_files_recursive_filtered",
+  "source": "Android and iOS PolarFileUtils characterization tests",
+  "input": {
+    "rootPath": "U/0",
+    "recurseDeep": true,
+    "condition": "entry-name-contains-dot",
+    "directories": {
+      "/U/0/": [
+        {
+          "name": "20260101/",
+          "size": 0
+        },
+        {
+          "name": "20260201/",
+          "size": 0
+        }
+      ],
+      "/U/0/20260101/": [
+        {
+          "name": "DSUM/",
+          "size": 0
+        }
+      ],
+      "/U/0/20260101/DSUM/": [
+        {
+          "name": "DSUM.BPB",
+          "size": 1024
+        }
+      ],
+      "/U/0/20260201/": [
+        {
+          "name": "R/",
+          "size": 0
+        }
+      ],
+      "/U/0/20260201/R/": [
+        {
+          "name": "101010/",
+          "size": 0
+        }
+      ],
+      "/U/0/20260201/R/101010/": [
+        {
+          "name": "PPG0.REC",
+          "size": 1024
+        },
+        {
+          "name": "HR0.REC",
+          "size": 1024
+        }
+      ]
+    }
+  },
+  "expected": {
+    "paths": [
+      "/U/0/20260101/DSUM/DSUM.BPB",
+      "/U/0/20260201/R/101010/PPG0.REC",
+      "/U/0/20260201/R/101010/HR0.REC"
+    ],
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFileUtilsTest"
+    ],
+    "ios": [
+      "PolarFileUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FileFacadeRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Recursive listing emits full file paths whose entry names pass the file-like condition."
+}

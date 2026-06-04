@@ -1,0 +1,43 @@
+{
+  "id": "virtual-clock-timeout-policy",
+  "area": "sdk.fake-transport",
+  "case": "virtual_clock_timeout_policy",
+  "source": "KMP fake-transport timeout planning and shared CommonFakeVirtualClock prototype",
+  "description": "Pins wall-clock-free timeout checks before retry, notification, or request timeout policy moves into shared runtime code.",
+  "input": {
+    "kind": "virtualClockTimeoutPolicy",
+    "startMillis": 0,
+    "timeoutMillis": 500,
+    "advanceBeforeTimeoutMillis": 499,
+    "finalAdvanceMillis": 1
+  },
+  "expected": {
+    "timedOutBeforeFinalAdvance": false,
+    "timedOutAfterFinalAdvance": true,
+    "finalTimeMillis": 500,
+    "commonDecision": "Shared runtime timeout tests must advance virtual time deterministically and must not wait for wall-clock protocol constants."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.testutils.FakeTransportContractTest"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FakeTransportContractCommonTest"
+    ]
+  },
+  "execution": {
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest fake-transport contract",
+      "wallClockSafe": true
+    }
+  },
+  "platforms": {
+    "android": false,
+    "ios": false,
+    "common": true
+  },
+  "notes": "This vector covers shared virtual-time control only. Platform timeout constants, public facade error mapping, and BLE adapter timeout behavior remain platform-owned until a feature-specific runtime slice adds Android and iOS compatibility tests."
+}

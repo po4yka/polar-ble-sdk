@@ -1,0 +1,32 @@
+{
+  "id": "offset-signed-int-negative-boundary",
+  "area": "type-utils",
+  "case": "offset_signed_int_negative_boundary",
+  "source": "Android TypeUtils offset overloads and iOS TypeUtils offset overloads",
+  "input": {
+    "hex": "aa0080bb",
+    "offset": 1,
+    "size": 2
+  },
+  "expected": {
+    "unsignedLong": 32768,
+    "signedInt": -32768
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Offset overloads must sign-extend only the selected subrange.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

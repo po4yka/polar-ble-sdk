@@ -1,0 +1,62 @@
+{
+  "id": "notification-ordering",
+  "area": "sdk.psftp-notifications",
+  "case": "notification_ordering",
+  "source": "PSFTP notification ordering fake-transport planning vector with iOS BlePsFtpClient characterization coverage",
+  "input": {
+    "kind": "waitNotificationOrdering",
+    "cases": [
+      {
+        "id": "two-single-frame-notifications",
+        "packets": [
+          {
+            "frameHex": "0201aa",
+            "status": 0
+          },
+          {
+            "frameHex": "0202bbcc",
+            "status": 0
+          }
+        ],
+        "expected": {
+          "sequence": [
+            {
+              "id": 1,
+              "parametersHex": "aa"
+            },
+            {
+              "id": 2,
+              "parametersHex": "bbcc"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "expected": {
+    "policy": "emit-complete-d2h-notifications-in-source-order"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "execution": {
+    "android": "planned-fake-transport-runtime-harness-required",
+    "ios": "ios-blepsftpclient-characterization-consumer",
+    "common": "shared-common-test"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Covers PSFTP wait-notification stream ordering for multiple complete D2H notifications. This is lower-level PSFTP transport-stream behavior; public D2H notification filtering and unknown-ID behavior are covered separately by sdk.d2h-notifications vectors. Android executable coverage should use the future fake-transport notification runtime harness rather than repeated direct waitForNotification collectors, which currently depend on platform coroutine cancellation timing."
+}

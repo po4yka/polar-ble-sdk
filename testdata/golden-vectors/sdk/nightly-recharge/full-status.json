@@ -1,0 +1,99 @@
+{
+  "id": "full-status",
+  "area": "sdk.nightly-recharge",
+  "case": "full_status",
+  "source": "Android and iOS PolarNightlyRechargeUtils characterization tests",
+  "input": {
+    "proto": {
+      "sleepResultDate": {
+        "year": 2024,
+        "month": 12,
+        "day": 5
+      },
+      "createdTimestamp": {
+        "date": {
+          "year": 2023,
+          "month": 12,
+          "day": 5
+        },
+        "time": {
+          "hour": 10,
+          "minute": 0,
+          "second": 0,
+          "millis": 0
+        },
+        "trusted": true
+      },
+      "modifiedTimestamp": {
+        "date": {
+          "year": 2023,
+          "month": 12,
+          "day": 5
+        },
+        "time": {
+          "hour": 10,
+          "minute": 30,
+          "second": 0,
+          "millis": 0
+        },
+        "trusted": true
+      },
+      "ansStatus": 5.5,
+      "recoveryIndicator": 3,
+      "recoveryIndicatorSubLevel": 50,
+      "ansRate": 4,
+      "scoreRateObsolete": 2,
+      "meanNightlyRecoveryRRI": 800,
+      "meanNightlyRecoveryRMSSD": 50,
+      "meanNightlyRecoveryRespirationInterval": 1000,
+      "meanBaselineRRI": 750,
+      "sdBaselineRRI": 30,
+      "meanBaselineRMSSD": 45,
+      "sdBaselineRMSSD": 20,
+      "meanBaselineRespirationInterval": 950,
+      "sdBaselineRespirationInterval": 25,
+      "sleepTip": "Sleep tip 1",
+      "vitalityTip": "Vitality tip 2",
+      "exerciseTip": "Exercise tip 3"
+    }
+  },
+  "expected": {
+    "sleepResultDate": "2024-12-05",
+    "createdTimestamp": "2023-12-05T10:00:00.000",
+    "modifiedTimestamp": "2023-12-05T10:30:00.000",
+    "ansStatus": 5.5,
+    "recoveryIndicator": 3,
+    "recoveryIndicatorSubLevel": 50,
+    "ansRate": 4,
+    "scoreRateObsolete": 2,
+    "meanNightlyRecoveryRRI": 800,
+    "meanNightlyRecoveryRMSSD": 50,
+    "meanNightlyRecoveryRespirationInterval": 1000,
+    "meanBaselineRRI": 750,
+    "sdBaselineRRI": 30,
+    "meanBaselineRMSSD": 45,
+    "sdBaselineRMSSD": 20,
+    "meanBaselineRespirationInterval": 950,
+    "sdBaselineRespirationInterval": 25,
+    "sleepTip": "Sleep tip 1",
+    "vitalityTip": "Vitality tip 2",
+    "exerciseTip": "Exercise tip 3"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarNightlyRechargeUtilsTest"
+    ],
+    "ios": [
+      "PolarNightlyRechargeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SleepNightlyRechargeCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Full nightly recharge payload with created and modified timestamps, scores, baselines, tips, and sleep result date."
+}

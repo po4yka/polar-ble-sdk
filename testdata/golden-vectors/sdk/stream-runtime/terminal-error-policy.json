@@ -1,0 +1,45 @@
+{
+  "id": "terminal-error-policy",
+  "area": "sdk-stream-runtime",
+  "case": "terminal_error_propagates_and_clears_observers",
+  "source": "Android ChannelUtilsTests and iOS StreamContinuationListTest terminal error characterization",
+  "input": {
+    "kind": "genericStreamTerminalErrorPolicy",
+    "target": "stream",
+    "actions": [
+      "subscribe",
+      "terminal-error"
+    ],
+    "terminalError": "stream failure"
+  },
+  "expected": {
+    "activeObserverCount": 0,
+    "terminalError": "stream failure",
+    "completionEventCount": 0,
+    "errorEventCount": 1,
+    "terminalErrorPolicy": "propagate-error-and-clear-observers",
+    "commonDecision": "Terminal stream errors must propagate to consumers and clear observers without reporting normal completion."
+  },
+  "execution": {
+    "kind": "fake-stream-runtime-policy",
+    "transport": "generic-stream-terminal-error",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.ChannelUtilsTests"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.StreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Stream utilities can move to shared KMP code only after terminal errors are propagated and observer cleanup is preserved on Android, iOS, and the shared fake-stream runtime."
+}

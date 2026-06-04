@@ -1,0 +1,61 @@
+{
+  "id": "write-transport-failure-policy",
+  "area": "sdk.psftp-response",
+  "case": "write_transport_failure_policy",
+  "source": "Android and iOS BlePsFtpClient write stream transport-failure characterization tests",
+  "input": {
+    "kind": "writeTransportFailurePolicy",
+    "command": "PUT",
+    "path": "/U/0/20260101/DSUM/DSUM.BPB",
+    "payloadHex": "0a0408d21310",
+    "failure": {
+      "point": "firstMtuTransmit",
+      "domain": "PsFtpTransportFailure",
+      "code": 701,
+      "message": "simulated transport write failure"
+    }
+  },
+  "expected": {
+    "android": {
+      "outcome": "throwsTransportException",
+      "messageContains": [
+        "simulated transport write failure"
+      ]
+    },
+    "ios": {
+      "outcome": "throwsNSError",
+      "domain": "PsFtpTransportFailure",
+      "code": 701
+    },
+    "completion": "failure"
+  },
+  "execution": {
+    "kind": "fake-psftp-runtime-policy",
+    "transport": "scripted-rfc76-write-stream",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "errorPolicy": "both platforms currently surface first-packet transport write failure as the underlying transport error rather than a PFTP response error"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Covers the PSFTP write path when the local BLE transport fails while sending the first MTU packet. Shared KMP runtime should treat this as a transport-layer write failure distinct from peer-side RFC76 response errors and write-ack protocol timeouts."
+}

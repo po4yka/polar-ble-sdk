@@ -85,7 +85,7 @@ class PmdSecret(val strategy: SecurityStrategy, val key: ByteArray) {
                     (strategyByte == XOR.numVal) -> XOR
                     (strategyByte == AES128.numVal) -> AES128
                     (strategyByte == AES256.numVal) -> AES256
-                    else -> throw SecurityError.SecurityStrategyUnknown("Cannot decide security strategy from byte  ${"0x%x".format(strategyByte)}")
+                    else -> throw SecurityError.SecurityStrategyUnknown("Cannot decide security strategy from byte  ${"0x%x".format(strategyByte.toInt())}")
                 }
             }
         }

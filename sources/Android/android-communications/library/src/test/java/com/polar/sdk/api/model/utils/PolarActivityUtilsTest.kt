@@ -1,5 +1,8 @@
 package com.polar.sdk.api.model.utils
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.activity.PolarActiveTime
 import com.polar.sdk.api.model.activity.PolarActiveTimeData
@@ -29,10 +32,13 @@ import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import org.junit.Assert
 import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
 import protocol.PftpResponse.PbPFtpEntry
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileReader
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -532,9 +538,9 @@ class PolarActivityUtilsTest {
         assert(result.polarActivitySamplesDataList?.size == 3)
 
         for (activityInfo in result.polarActivitySamplesDataList!!) {
-            assert(activityInfo.activityInfoList?.get(0)?.activityClass == expectedActivityInfo.activityClass)
-            assert(activityInfo.activityInfoList?.get(0)?.factor == expectedActivityInfo.factor)
-            assert(activityInfo.activityInfoList?.get(0)?.timeStamp == expectedActivityInfo.timeStamp)
+            assert(activityInfo.activityInfoList[0].activityClass == expectedActivityInfo.activityClass)
+            assert(activityInfo.activityInfoList[0].factor == expectedActivityInfo.factor)
+            assert(activityInfo.activityInfoList[0].timeStamp == expectedActivityInfo.timeStamp)
             assert(activityInfo.metSamples == expectedMetSamples)
             assert(activityInfo.stepSamples == expectedStepSamples)
             assert(activityInfo.stepRecordingInterval == expectedStepRecordingInterval)
@@ -649,14 +655,15 @@ class PolarActivityUtilsTest {
         assert(result.date == expectedDate)
         assert(result.steps == expectedSteps)
         assert((result.activityCalories!! + result.bmrCalories!! + result.trainingCalories!!) == expectedCalories)
-        assert((result.activityClassTimes!!.timeLightActivity.hours +
-                result.activityClassTimes!!.timeSleep.hours +
-                result.activityClassTimes!!.timeSedentary.hours +
-                result.activityClassTimes!!.timeContinuousModerateActivity.hours +
-                result.activityClassTimes!!.timeContinuousVigorousActivity.hours +
-                result.activityClassTimes!!.timeIntermittentModerateActivity.hours +
-                result.activityClassTimes!!.timeIntermittentVigorousActivity.hours +
-                result.activityClassTimes!!.timeNonWear.hours) == expectedActiveTime)
+        val activityClassTimes = requireNotNull(result.activityClassTimes)
+        assert((activityClassTimes.timeLightActivity.hours +
+                activityClassTimes.timeSleep.hours +
+                activityClassTimes.timeSedentary.hours +
+                activityClassTimes.timeContinuousModerateActivity.hours +
+                activityClassTimes.timeContinuousVigorousActivity.hours +
+                activityClassTimes.timeIntermittentModerateActivity.hours +
+                activityClassTimes.timeIntermittentVigorousActivity.hours +
+                activityClassTimes.timeNonWear.hours) == expectedActiveTime)
         assert(result.readinessForSpeedAndStrengthTraining == expectedReadiness)
         assert(result.dailyBalanceFeedback == expectedDBFeedBack)
 
@@ -687,5 +694,444 @@ class PolarActivityUtilsTest {
                 .setCommand(PftpRequest.PbPFtpOperation.Command.GET).setPath(expectedPath).build().toByteArray())
         }
         confirmVerified(client)
+    }
+
+    @Test
+    fun `daily summary golden vectors map proto to public model`() = runTest {
+        val vector = loadDailySummaryVector("full-summary.json")
+        val input = vector.getAsJsonObject("input")
+        val client = mockk<BlePsFtpClient>()
+        val date = LocalDate.parse(input.get("requestDate").asString)
+        val outputStream = ByteArrayOutputStream().apply {
+            buildDailySummaryProto(input.getAsJsonObject("proto")).writeTo(this)
+        }
+        coEvery { client.request(any()) } returns outputStream
+
+        val result = PolarActivityUtils.readDailySummaryDataFromDayDirectory(client, date)
+
+        assertDailySummary(vector.get("id").asString, result, vector.getAsJsonObject("expected"))
+        coVerify(exactly = 1) {
+            client.request(PftpRequest.PbPFtpOperation.newBuilder()
+                .setCommand(PftpRequest.PbPFtpOperation.Command.GET).setPath(input.get("expectedPath").asString).build().toByteArray())
+        }
+        confirmVerified(client)
+    }
+
+    @Test
+    fun `daily summary golden vectors cover convenience readers`() = runTest {
+        val vector = loadDailySummaryVector("full-summary.json")
+        val input = vector.getAsJsonObject("input")
+        val proto = buildDailySummaryProto(input.getAsJsonObject("proto"))
+        val date = LocalDate.parse(input.get("requestDate").asString)
+        val expected = vector.getAsJsonObject("expected")
+        val expectedPath = input.get("expectedPath").asString
+
+        val distanceClient = mockDailySummaryClient(proto)
+        val distance = PolarActivityUtils.readDistanceFromDayDirectory(distanceClient, date)
+        assert(distance == expected.get("activityDistance").asFloat) { "${vector.get("id").asString} distance" }
+        verifyDailySummaryPath(distanceClient, expectedPath)
+
+        val activityCaloriesClient = mockDailySummaryClient(proto)
+        val activityCalories = PolarActivityUtils.readSpecificCaloriesFromDayDirectory(activityCaloriesClient, date, CaloriesType.ACTIVITY)
+        assert(activityCalories == expected.get("activityCalories").asInt) { "${vector.get("id").asString} activityCalories" }
+        verifyDailySummaryPath(activityCaloriesClient, expectedPath)
+
+        val trainingCaloriesClient = mockDailySummaryClient(proto)
+        val trainingCalories = PolarActivityUtils.readSpecificCaloriesFromDayDirectory(trainingCaloriesClient, date, CaloriesType.TRAINING)
+        assert(trainingCalories == expected.get("trainingCalories").asInt) { "${vector.get("id").asString} trainingCalories" }
+        verifyDailySummaryPath(trainingCaloriesClient, expectedPath)
+
+        val bmrCaloriesClient = mockDailySummaryClient(proto)
+        val bmrCalories = PolarActivityUtils.readSpecificCaloriesFromDayDirectory(bmrCaloriesClient, date, CaloriesType.BMR)
+        assert(bmrCalories == expected.get("bmrCalories").asInt) { "${vector.get("id").asString} bmrCalories" }
+        verifyDailySummaryPath(bmrCaloriesClient, expectedPath)
+
+        val activeTimeClient = mockDailySummaryClient(proto)
+        val activeTime = PolarActivityUtils.readActiveTimeFromDayDirectory(activeTimeClient, date)
+        assert(activeTime.date == date) { "${vector.get("id").asString} activeTime date" }
+        val times = expected.getAsJsonObject("activityClassTimes")
+        assertActiveTime("${vector.get("id").asString} timeNonWear", activeTime.timeNonWear, times.getAsJsonObject("timeNonWear"))
+        assertActiveTime("${vector.get("id").asString} timeSleep", activeTime.timeSleep, times.getAsJsonObject("timeSleep"))
+        assertActiveTime("${vector.get("id").asString} timeSedentary", activeTime.timeSedentary, times.getAsJsonObject("timeSedentary"))
+        assertActiveTime("${vector.get("id").asString} timeLightActivity", activeTime.timeLightActivity, times.getAsJsonObject("timeLightActivity"))
+        assertActiveTime("${vector.get("id").asString} timeContinuousModerate", activeTime.timeContinuousModerateActivity, times.getAsJsonObject("timeContinuousModerate"))
+        assertActiveTime("${vector.get("id").asString} timeIntermittentModerate", activeTime.timeIntermittentModerateActivity, times.getAsJsonObject("timeIntermittentModerate"))
+        assertActiveTime("${vector.get("id").asString} timeContinuousVigorous", activeTime.timeContinuousVigorousActivity, times.getAsJsonObject("timeContinuousVigorous"))
+        assertActiveTime("${vector.get("id").asString} timeIntermittentVigorous", activeTime.timeIntermittentVigorousActivity, times.getAsJsonObject("timeIntermittentVigorous"))
+        verifyDailySummaryPath(activeTimeClient, expectedPath)
+    }
+
+    @Test
+    fun `daily summary golden vectors follow neutral KMP vector shape`() {
+        val vector = loadDailySummaryVector("full-summary.json")
+        val id = vector.get("id").asString
+        Assert.assertTrue(id, vector.has("area"))
+        Assert.assertTrue(id, vector.has("case"))
+        Assert.assertTrue(id, vector.has("source"))
+        Assert.assertTrue(id, vector.has("input"))
+        Assert.assertTrue(id, vector.has("expected"))
+        Assert.assertTrue(id, vector.has("platforms"))
+        val input = vector.getAsJsonObject("input")
+        Assert.assertTrue(id, input.has("proto"))
+        Assert.assertTrue(id, input.has("requestDate"))
+        Assert.assertTrue(id, input.has("expectedPath"))
+        val platforms = vector.getAsJsonObject("platforms")
+        Assert.assertTrue(id, platforms.get("android").asBoolean)
+        Assert.assertTrue(id, platforms.get("ios").asBoolean)
+        Assert.assertTrue(id, platforms.get("common").asBoolean)
+    }
+
+    @Test
+    fun `activity sample golden vectors cover step aggregation and sample mapping`() = runTest {
+        val vector = loadActivitySamplesVector("two-files-step-aggregation.json")
+        val input = vector.getAsJsonObject("input")
+        val date = LocalDate.parse(input.get("requestDate").asString)
+
+        val stepsClient = mockActivitySamplesClient(vector)
+        val steps = PolarActivityUtils.readStepsFromDayDirectory(stepsClient, date)
+        assert(steps == vector.getAsJsonObject("expected").get("totalSteps").asInt) { "${vector.get("id").asString} totalSteps" }
+        verifyActivitySampleRequests(stepsClient, vector)
+
+        val samplesClient = mockActivitySamplesClient(vector)
+        val samples = PolarActivityUtils.readActivitySamplesDataFromDayDirectory(samplesClient, date)
+        assertActivitySamplesData(vector, samples)
+        verifyActivitySampleRequests(samplesClient, vector)
+    }
+
+    @Test
+    fun `activity sample golden vectors preserve malformed file policy`() = runTest {
+        val vector = loadActivitySamplesVector("malformed-sample-file-platform-policy.json")
+        val input = vector.getAsJsonObject("input")
+        val date = LocalDate.parse(input.get("requestDate").asString)
+
+        val stepsClient = mockActivitySamplesClient(vector)
+        val steps = PolarActivityUtils.readStepsFromDayDirectory(stepsClient, date)
+        assert(steps == vector.getAsJsonObject("expected").get("steps").asInt) { "${vector.get("id").asString} steps" }
+        verifyActivitySampleRequests(stepsClient, vector)
+
+        val samplesClient = mockActivitySamplesClient(vector)
+        val samples = PolarActivityUtils.readActivitySamplesDataFromDayDirectory(samplesClient, date)
+        val expected = vector.getAsJsonObject("expected").getAsJsonObject("androidSamples")
+        assert(samples.polarActivitySamplesDataList.orEmpty().size == expected.get("count").asInt) { "${vector.get("id").asString} android sample count" }
+        verifyActivitySampleRequests(samplesClient, vector)
+    }
+
+    @Test
+    fun `activity sample golden vectors follow neutral KMP vector shape`() {
+        listOf("two-files-step-aggregation.json", "malformed-sample-file-platform-policy.json").forEach { fileName ->
+            val vector = loadActivitySamplesVector(fileName)
+            val id = vector.get("id").asString
+            Assert.assertTrue(id, vector.has("area"))
+            Assert.assertTrue(id, vector.has("case"))
+            Assert.assertTrue(id, vector.has("source"))
+            Assert.assertTrue(id, vector.has("input"))
+            Assert.assertTrue(id, vector.has("expected"))
+            Assert.assertTrue(id, vector.has("platforms"))
+            val input = vector.getAsJsonObject("input")
+            Assert.assertTrue(id, input.has("requestDate"))
+            Assert.assertTrue(id, input.has("directoryPath"))
+            Assert.assertTrue(id, input.has("directoryEntries"))
+            Assert.assertTrue(id, input.has("files"))
+            val platforms = vector.getAsJsonObject("platforms")
+            Assert.assertTrue(id, platforms.get("android").asBoolean)
+            Assert.assertTrue(id, platforms.get("ios").asBoolean)
+            Assert.assertTrue(id, platforms.get("common").asBoolean)
+        }
+    }
+
+    @Test
+    fun `activity summary readiness manifest is pinned before model migration`() {
+        val readiness = loadActivitySamplesVector("activity-summary-readiness.json")
+        val input = readiness.getAsJsonObject("input")
+        val expected = readiness.getAsJsonObject("expected")
+        val consumerTests = readiness.getAsJsonObject("consumerTests")
+        val policyVectorPaths = input.getAsJsonArray("policyVectorPaths").map { it.asString }
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+
+        Assert.assertEquals("activity-summary-readiness", readiness.get("id").asString)
+        Assert.assertEquals("activitySummaryReadiness", input.get("kind").asString)
+        Assert.assertEquals(
+            listOf(
+                "sdk/activity-samples/two-files-step-aggregation.json",
+                "sdk/activity-samples/malformed-sample-file-platform-policy.json",
+                "sdk/automatic-samples/hr-all-trigger-types.json",
+                "sdk/automatic-samples/ppi-deltas-statuses.json",
+                "sdk/daily-summary/full-summary.json"
+            ),
+            policyVectorPaths
+        )
+        val expectedFamilies = listOf(
+            "activity-file-request-paths",
+            "activity-step-aggregation",
+            "activity-interval-projection",
+            "activity-info-projection",
+            "malformed-activity-sample-platform-policy",
+            "automatic-hr-trigger-mapping",
+            "automatic-hr-array-preservation",
+            "automatic-ppi-delta-decompression",
+            "automatic-ppi-status-bit-mapping",
+            "daily-summary-request-path",
+            "daily-summary-scalar-projection",
+            "daily-summary-duration-projection",
+            "platform-activity-vector-reference-gate",
+            "compile-verification-gate"
+        )
+        Assert.assertEquals(expectedFamilies, requiredFamilies)
+        Assert.assertEquals(expectedFamilies, coveredFamilies)
+        Assert.assertEquals(
+            "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, and compile verification remain explicit before production model mapping moves.",
+            expected.get("commonDecision").asString
+        )
+        Assert.assertEquals(
+            listOf(
+                "com.polar.sdk.api.model.utils.PolarActivityUtilsTest",
+                "com.polar.sdk.api.model.utils.PolarAutomaticSamplesUtilsTest"
+            ),
+            consumerTests.getAsJsonArray("android").map { it.asString }
+        )
+        Assert.assertEquals(
+            listOf(
+                "PolarActivityUtilsTest",
+                "PolarAutomaticSamplesUnitTest"
+            ),
+            consumerTests.getAsJsonArray("ios").map { it.asString }
+        )
+        Assert.assertEquals(
+            listOf("com.polar.sharedtest.ActivitySummaryCommonPolicyTest"),
+            consumerTests.getAsJsonArray("commonPrototype").map { it.asString }
+        )
+    }
+
+    private fun buildDailySummaryProto(proto: JsonObject): PbDailySummary {
+        return PbDailySummary.newBuilder()
+            .setDate(buildPbDate(proto.getAsJsonObject("date")))
+            .setActivityCalories(proto.get("activityCalories").asInt)
+            .setTrainingCalories(proto.get("trainingCalories").asInt)
+            .setBmrCalories(proto.get("bmrCalories").asInt)
+            .setSteps(proto.get("steps").asInt)
+            .setActivityDistance(proto.get("activityDistance").asFloat)
+            .setDailyBalanceFeedback(Types.PbDailyBalanceFeedback.valueOf(proto.get("dailyBalanceFeedback").asString))
+            .setReadinessForSpeedAndStrengthTraining(Types.PbReadinessForSpeedAndStrengthTraining.valueOf(proto.get("readinessForSpeedAndStrengthTraining").asString))
+            .setActivityGoalSummary(buildActivityGoalSummary(proto.getAsJsonObject("activityGoalSummary")))
+            .setActivityClassTimes(buildActivityClassTimes(proto.getAsJsonObject("activityClassTimes")))
+            .build()
+    }
+
+    private fun buildActivityGoalSummary(fields: JsonObject): PbActivityGoalSummary {
+        return PbActivityGoalSummary.newBuilder()
+            .setActivityGoal(fields.get("activityGoal").asFloat)
+            .setAchievedActivity(fields.get("achievedActivity").asFloat)
+            .setTimeToGoUp(buildPbDuration(fields.getAsJsonObject("timeToGoUp")))
+            .setTimeToGoWalk(buildPbDuration(fields.getAsJsonObject("timeToGoWalk")))
+            .setTimeToGoJog(buildPbDuration(fields.getAsJsonObject("timeToGoJog")))
+            .build()
+    }
+
+    private fun buildActivityClassTimes(fields: JsonObject): DailySummary.PbActivityClassTimes {
+        return DailySummary.PbActivityClassTimes.newBuilder()
+            .setTimeNonWear(buildPbDuration(fields.getAsJsonObject("timeNonWear")))
+            .setTimeSleep(buildPbDuration(fields.getAsJsonObject("timeSleep")))
+            .setTimeSedentary(buildPbDuration(fields.getAsJsonObject("timeSedentary")))
+            .setTimeLightActivity(buildPbDuration(fields.getAsJsonObject("timeLightActivity")))
+            .setTimeContinuousModerate(buildPbDuration(fields.getAsJsonObject("timeContinuousModerate")))
+            .setTimeIntermittentModerate(buildPbDuration(fields.getAsJsonObject("timeIntermittentModerate")))
+            .setTimeContinuousVigorous(buildPbDuration(fields.getAsJsonObject("timeContinuousVigorous")))
+            .setTimeIntermittentVigorous(buildPbDuration(fields.getAsJsonObject("timeIntermittentVigorous")))
+            .build()
+    }
+
+    private fun buildPbDate(fields: JsonObject): PbDate {
+        return PbDate.newBuilder()
+            .setYear(fields.get("year").asInt)
+            .setMonth(fields.get("month").asInt)
+            .setDay(fields.get("day").asInt)
+            .build()
+    }
+
+    private fun buildPbDuration(fields: JsonObject): PbDuration {
+        return PbDuration.newBuilder()
+            .setHours(fields.get("hours").asInt)
+            .setMinutes(fields.get("minutes").asInt)
+            .setSeconds(fields.get("seconds").asInt)
+            .setMillis(fields.get("millis").asInt)
+            .build()
+    }
+
+    private fun assertDailySummary(caseId: String, actual: com.polar.sdk.api.model.activity.PolarDailySummaryData, expected: JsonObject) {
+        assert(actual.date == LocalDate.parse(expected.get("date").asString)) { "$caseId date" }
+        assert(actual.activityCalories == expected.get("activityCalories").asInt) { "$caseId activityCalories" }
+        assert(actual.trainingCalories == expected.get("trainingCalories").asInt) { "$caseId trainingCalories" }
+        assert(actual.bmrCalories == expected.get("bmrCalories").asInt) { "$caseId bmrCalories" }
+        assert(actual.steps == expected.get("steps").asInt) { "$caseId steps" }
+        assert(actual.activityDistance == expected.get("activityDistance").asFloat) { "$caseId activityDistance" }
+        assert(actual.dailyBalanceFeedback?.name == expected.get("dailyBalanceFeedback").asString) { "$caseId dailyBalanceFeedback" }
+        assert(actual.readinessForSpeedAndStrengthTraining?.name == expected.get("readinessForSpeedAndStrengthTraining").asString) { "$caseId readiness" }
+        val goal = expected.getAsJsonObject("activityGoalSummary")
+        assert(actual.activityGoalSummary?.activityGoal == goal.get("activityGoal").asFloat) { "$caseId activityGoal" }
+        assert(actual.activityGoalSummary?.achievedActivity == goal.get("achievedActivity").asFloat) { "$caseId achievedActivity" }
+        assertActiveTime("$caseId timeToGoUp", actual.activityGoalSummary?.timeToGoUp, goal.getAsJsonObject("timeToGoUp"))
+        assertActiveTime("$caseId timeToGoWalk", actual.activityGoalSummary?.timeToGoWalk, goal.getAsJsonObject("timeToGoWalk"))
+        assertActiveTime("$caseId timeToGoJog", actual.activityGoalSummary?.timeToGoJog, goal.getAsJsonObject("timeToGoJog"))
+        val times = expected.getAsJsonObject("activityClassTimes")
+        assertActiveTime("$caseId timeNonWear", actual.activityClassTimes?.timeNonWear, times.getAsJsonObject("timeNonWear"))
+        assertActiveTime("$caseId timeSleep", actual.activityClassTimes?.timeSleep, times.getAsJsonObject("timeSleep"))
+        assertActiveTime("$caseId timeSedentary", actual.activityClassTimes?.timeSedentary, times.getAsJsonObject("timeSedentary"))
+        assertActiveTime("$caseId timeLightActivity", actual.activityClassTimes?.timeLightActivity, times.getAsJsonObject("timeLightActivity"))
+        assertActiveTime("$caseId timeContinuousModerate", actual.activityClassTimes?.timeContinuousModerateActivity, times.getAsJsonObject("timeContinuousModerate"))
+        assertActiveTime("$caseId timeIntermittentModerate", actual.activityClassTimes?.timeIntermittentModerateActivity, times.getAsJsonObject("timeIntermittentModerate"))
+        assertActiveTime("$caseId timeContinuousVigorous", actual.activityClassTimes?.timeContinuousVigorousActivity, times.getAsJsonObject("timeContinuousVigorous"))
+        assertActiveTime("$caseId timeIntermittentVigorous", actual.activityClassTimes?.timeIntermittentVigorousActivity, times.getAsJsonObject("timeIntermittentVigorous"))
+    }
+
+    private fun assertActiveTime(caseId: String, actual: PolarActiveTime?, expected: JsonObject) {
+        assert(actual == PolarActiveTime(expected.get("hours").asInt, expected.get("minutes").asInt, expected.get("seconds").asInt, expected.get("millis").asInt)) { caseId }
+    }
+
+    private fun mockDailySummaryClient(proto: PbDailySummary): BlePsFtpClient {
+        val client = mockk<BlePsFtpClient>()
+        coEvery { client.request(any()) } answers {
+            ByteArrayOutputStream().apply { proto.writeTo(this) }
+        }
+        return client
+    }
+
+    private fun verifyDailySummaryPath(client: BlePsFtpClient, expectedPath: String) {
+        coVerify(exactly = 1) {
+            client.request(PftpRequest.PbPFtpOperation.newBuilder()
+                .setCommand(PftpRequest.PbPFtpOperation.Command.GET).setPath(expectedPath).build().toByteArray())
+        }
+        confirmVerified(client)
+    }
+
+    private fun mockActivitySamplesClient(vector: JsonObject): BlePsFtpClient {
+        val input = vector.getAsJsonObject("input")
+        val responses = mutableListOf(ByteArrayOutputStream().apply { buildActivityDirectory(vector).writeTo(this) })
+        input.getAsJsonArray("files").forEach { file ->
+            val fields = file.asJsonObject
+            responses.add(ByteArrayOutputStream().apply {
+                if (fields.has("responseHex")) {
+                    write(fields.get("responseHex").asString.hexToByteArray())
+                } else {
+                    buildActivitySamplesProto(fields.getAsJsonObject("proto")).writeTo(this)
+                }
+            })
+        }
+        val client = mockk<BlePsFtpClient>()
+        coEvery { client.request(any()) } answers { responses.removeAt(0) }
+        return client
+    }
+
+    private fun buildActivityDirectory(vector: JsonObject): PbPFtpDirectory {
+        val input = vector.getAsJsonObject("input")
+        val builder = PbPFtpDirectory.newBuilder()
+        input.getAsJsonArray("directoryEntries").forEach { entry ->
+            val fields = entry.asJsonObject
+            builder.addEntries(PbPFtpEntry.newBuilder().setName(fields.get("name").asString).setSize(fields.get("size").asLong).build())
+        }
+        return builder.build()
+    }
+
+    private fun buildActivitySamplesProto(fields: JsonObject): PbActivitySamples {
+        val builder = PbActivitySamples.newBuilder()
+            .setStartTime(buildPbLocalDateTime(fields.getAsJsonObject("startTime")))
+            .setMetRecordingInterval(buildPbDuration(fields.getAsJsonObject("metRecordingInterval")))
+            .setStepsRecordingInterval(buildPbDuration(fields.getAsJsonObject("stepsRecordingInterval")))
+        fields.getAsJsonArray("metSamples").forEach { builder.addMetSamples(it.asFloat) }
+        fields.getAsJsonArray("stepsSamples").forEach { builder.addStepsSamples(it.asInt) }
+        fields.getAsJsonArray("activityInfo").forEach { activityInfo ->
+            val info = activityInfo.asJsonObject
+            builder.addActivityInfo(PbActivityInfo.newBuilder()
+                .setValue(PbActivityInfo.ActivityClass.valueOf(info.get("value").asString))
+                .setTimeStamp(buildPbLocalDateTime(info.getAsJsonObject("timeStamp")))
+                .setFactor(info.get("factor").asFloat)
+                .build())
+        }
+        return builder.build()
+    }
+
+    private fun buildPbLocalDateTime(fields: JsonObject): PbLocalDateTime {
+        return PbLocalDateTime.newBuilder()
+            .setDate(buildPbDate(fields.getAsJsonObject("date")))
+            .setTime(PbTime.newBuilder()
+                .setHour(fields.getAsJsonObject("time").get("hour").asInt)
+                .setMinute(fields.getAsJsonObject("time").get("minute").asInt)
+                .setSeconds(fields.getAsJsonObject("time").get("seconds").asInt)
+                .setMillis(fields.getAsJsonObject("time").get("millis").asInt)
+                .build())
+            .setTimeZoneOffset(fields.get("timeZoneOffset").asInt)
+            .setOBSOLETETrusted(fields.get("trusted").asBoolean)
+            .build()
+    }
+
+    private fun assertActivitySamplesData(vector: JsonObject, actual: com.polar.sdk.api.model.activity.PolarActivitySamplesDayData) {
+        val files = vector.getAsJsonObject("input").getAsJsonArray("files")
+        val samples = actual.polarActivitySamplesDataList ?: error("${vector.get("id").asString} samples missing")
+        assert(samples.size == files.size()) { "${vector.get("id").asString} sample count" }
+        files.forEachIndexed { index, file ->
+            val expected = file.asJsonObject.getAsJsonObject("expected")
+            val sample = samples[index]
+            assert(sample.startTime == LocalDateTime.parse(expected.get("startTime").asString)) { "${vector.get("id").asString}[$index] startTime" }
+            assert(sample.metRecordingInterval == expected.get("metRecordingIntervalSeconds").asInt) { "${vector.get("id").asString}[$index] met interval" }
+            assert(sample.stepRecordingInterval == expected.get("stepRecordingIntervalSeconds").asInt) { "${vector.get("id").asString}[$index] step interval" }
+            assert(sample.metSamples == expected.getAsJsonArray("metSamples").toFloatList()) { "${vector.get("id").asString}[$index] met samples" }
+            assert(sample.stepSamples == expected.getAsJsonArray("stepSamples").toIntList()) { "${vector.get("id").asString}[$index] step samples" }
+            val expectedInfo = expected.getAsJsonArray("activityInfo")
+            assert(sample.activityInfoList.size == expectedInfo.size()) { "${vector.get("id").asString}[$index] info count" }
+            expectedInfo.forEachIndexed { infoIndex, infoElement ->
+                val info = infoElement.asJsonObject
+                val actualInfo = sample.activityInfoList[infoIndex]
+                assert(actualInfo.activityClass?.name == info.get("activityClass").asString) { "${vector.get("id").asString}[$index][$infoIndex] class" }
+                assert(actualInfo.timeStamp == LocalDateTime.parse(info.get("timeStamp").asString)) { "${vector.get("id").asString}[$index][$infoIndex] timestamp" }
+                assert(actualInfo.factor == info.get("factor").asFloat) { "${vector.get("id").asString}[$index][$infoIndex] factor" }
+            }
+        }
+    }
+
+    private fun verifyActivitySampleRequests(client: BlePsFtpClient, vector: JsonObject) {
+        val input = vector.getAsJsonObject("input")
+        coVerify(exactly = 1) {
+            client.request(PftpRequest.PbPFtpOperation.newBuilder()
+                .setCommand(PftpRequest.PbPFtpOperation.Command.GET).setPath(input.get("directoryPath").asString).build().toByteArray())
+        }
+        vector.getAsJsonObject("expected").getAsJsonArray("filePaths").forEach { path ->
+            coVerify(exactly = 1) {
+                client.request(PftpRequest.PbPFtpOperation.newBuilder()
+                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET).setPath(path.asString).build().toByteArray())
+            }
+        }
+        confirmVerified(client)
+    }
+
+    private fun JsonArray.toIntList(): List<Int> = map { it.asInt }
+
+    private fun JsonArray.toFloatList(): List<Float> = map { it.asFloat }
+
+    private fun String.hexToByteArray(): ByteArray {
+        require(length % 2 == 0) { "Hex string must contain an even number of characters" }
+        return chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+    }
+
+    private fun loadActivitySamplesVector(fileName: String): JsonObject {
+        FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/activity-samples/$fileName")).use { reader ->
+            return JsonParser().parse(reader).asJsonObject
+        }
+    }
+
+    private fun loadDailySummaryVector(fileName: String): JsonObject {
+        FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/daily-summary/$fileName")).use { reader ->
+            return JsonParser().parse(reader).asJsonObject
+        }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
     }
 }

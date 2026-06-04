@@ -1,0 +1,29 @@
+{
+  "id": "manufacturer-polar-id-only",
+  "area": "advertisement",
+  "case": "malformed_polar_manufacturer_id_only",
+  "source": "Android BleAdvertisementContentTest and iOS BleAdvertisementContentTest",
+  "input": {
+    "manufacturerDataHex": "6b00"
+  },
+  "expected": {
+    "hrPresent": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "A manufacturer payload containing only the Polar company identifier is malformed and currently clears HR presence."
+}

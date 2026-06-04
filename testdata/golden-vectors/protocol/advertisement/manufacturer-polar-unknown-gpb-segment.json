@@ -1,0 +1,29 @@
+{
+  "id": "manufacturer-polar-unknown-gpb-segment",
+  "area": "advertisement",
+  "case": "unknown_polar_manufacturer_gpb_segment",
+  "source": "Android BleAdvertisementContentTest and iOS BleAdvertisementContentTest",
+  "input": {
+    "manufacturerDataHex": "6b00c000"
+  },
+  "expected": {
+    "hrPresent": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "A Polar manufacturer GPB-style segment with no following HR payload is treated as unknown non-HR data."
+}

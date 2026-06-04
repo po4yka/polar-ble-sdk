@@ -1,0 +1,33 @@
+{
+  "id": "middle-more-frame",
+  "area": "sdk.psftp-rfc76",
+  "case": "middle_more_frame",
+  "source": "Android and iOS BlePsFtpUtils/BlePsFtpUtility characterization tests",
+  "input": {
+    "frameHex": "17ff00"
+  },
+  "expected": {
+    "next": 1,
+    "status": 3,
+    "sequenceNumber": 1,
+    "payloadHex": "ff00",
+    "error": null
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtilsTest"
+    ],
+    "ios": [
+      "BlePsFtpUtilityTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpByteCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Middle MORE frame with next bit set and sequence number one."
+}

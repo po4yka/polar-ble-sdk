@@ -1,0 +1,55 @@
+{
+  "id": "rest-service-mapping-readiness",
+  "area": "sdk.rest-service",
+  "case": "pre_migration_rest_service_json_mapping_readiness_manifest",
+  "source": "KMP migration readiness gate for REST service-list and service-description model mapping",
+  "input": {
+    "kind": "restServiceMappingReadiness",
+    "policyVectorPaths": [
+      "sdk/rest-service/service-list-basic.json",
+      "sdk/rest-service/service-list-empty.json",
+      "sdk/rest-service/service-description-training.json",
+      "sdk/rest-service/service-description-empty.json",
+      "sdk/rest-service/service-list-wrong-type-platform-policy.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "service-list-name-path-mapping",
+      "service-list-empty-defaults",
+      "service-description-action-event-mapping",
+      "service-description-empty-defaults",
+      "wrong-type-services-platform-split",
+      "unknown-field-ignore-policy",
+      "platform-rest-service-vector-references",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "compileVerifiedPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "service-list-name-path-mapping",
+      "service-list-empty-defaults",
+      "service-description-action-event-mapping",
+      "service-description-empty-defaults",
+      "wrong-type-services-platform-split",
+      "unknown-field-ignore-policy",
+      "platform-rest-service-vector-references",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceRestApiServiceTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.RestServiceMappingCommonPolicyTest"
+    ]
+  }
+}

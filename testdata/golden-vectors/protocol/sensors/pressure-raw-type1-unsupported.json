@@ -1,0 +1,37 @@
+{
+  "id": "pressure-raw-type1-unsupported",
+  "area": "sensor-parser",
+  "case": "pressure_raw_type1_unsupported",
+  "source": "Android PressureDataTest and iOS TemperatureDataTest pressure characterization",
+  "input": {
+    "dataFrameHex": "0b010000000000000001",
+    "previousTimeStamp": 0,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PRESSURE",
+    "frameType": 1,
+    "compressed": false,
+    "timeStamp": 1,
+    "parseError": "unsupportedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Pressure currently supports only raw type 0. KMP should keep unsupported frame errors deterministic.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PressureDataTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.TemperatureDataTest"
+    ],
+    "ios": [
+      "TemperatureDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PressureTemperatureParserCommonPolicyTest"
+    ]
+  }
+}

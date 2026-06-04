@@ -1,0 +1,66 @@
+{
+  "id": "notification-continuation-timeout-policy",
+  "area": "sdk.psftp-notifications",
+  "case": "notification_continuation_timeout_policy",
+  "source": "Android and iOS BlePsFtpClient notification continuation timeout planning vector",
+  "input": {
+    "kind": "waitNotificationContinuationTimeoutPolicy",
+    "cases": [
+      {
+        "id": "missing-last-frame-after-more",
+        "packets": [
+          {
+            "frameHex": "0601ff00",
+            "status": 0
+          }
+        ],
+        "missingFrame": "last",
+        "protocolTimeout": "platformProtocolTimeout"
+      }
+    ]
+  },
+  "expected": {
+    "android": {
+      "outcome": "throwsNotificationReceiveFailed",
+      "causeMessageContains": [
+        "Failed to receive notification packet in timeline"
+      ]
+    },
+    "ios": {
+      "outcome": "throwsResponseError",
+      "errorCode": -1
+    },
+    "common": {
+      "outcome": "typedContinuationTimeout"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "execution": {
+    "android": "planned-fake-clock-or-injectable-timeout-required",
+    "ios": "planned-fake-clock-or-injectable-timeout-required",
+    "common": "shared-common-test"
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "errorPolicy": "continuation timeout after an RFC76 MORE frame is a protocol timeout distinct from initial silence, RFC76 error frames, and transport-status failures"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector intentionally documents a long-duration timeout path that should not be executed against wall-clock protocol time. Android waits for the next D2H packet after a MORE frame and wraps the timeout as Notification receive failed. iOS waits for the next D2H packet and currently maps an absent packet to BlePsFtpException.responseError(errorCode: -1). KMP migration should introduce a typed continuation-timeout error and facade adapters should intentionally preserve or normalize the current public error split."
+}

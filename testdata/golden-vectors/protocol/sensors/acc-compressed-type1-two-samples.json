@@ -1,0 +1,48 @@
+{
+  "id": "acc-compressed-type1-two-samples",
+  "area": "sensor-parser",
+  "case": "acc_compressed_type1_reference_and_delta_samples",
+  "source": "Android AccDataTest and iOS AccDataTest",
+  "input": {
+    "dataFrameHex": "02660000000000000081f1ff1400f00306017b0f08",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "ACC",
+    "frameType": 1,
+    "compressed": true,
+    "timeStamp": 102,
+    "samples": [
+      {
+        "timeStamp": 101,
+        "x": -15,
+        "y": 20,
+        "z": 1008
+      },
+      {
+        "timeStamp": 102,
+        "x": -20,
+        "y": 17,
+        "z": 1008
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.AccDataTest"
+    ],
+    "ios": [
+      "AccDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AccParserCommonPolicyTest"
+    ]
+  }
+}

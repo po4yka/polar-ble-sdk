@@ -1,0 +1,29 @@
+{
+  "id": "multiple-keys-select-second",
+  "area": "sdk-kvtx",
+  "case": "multiple_write_bytes_select_second_key",
+  "source": "Android KvtxScriptUtilsTest and iOS KvtxScriptUtilsTests",
+  "input": {
+    "scriptHex": "000100000003000000a1a2a3000200000002000000b1b205",
+    "extractKey": 2
+  },
+  "expected": {
+    "extractedHex": "b1b2"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.KvtxScriptUtilsTest"
+    ],
+    "ios": [
+      "KvtxScriptUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.KvtxCommonPolicyTest"
+    ]
+  }
+}

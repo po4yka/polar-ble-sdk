@@ -1,0 +1,127 @@
+{
+  "id": "stream-runtime-policy",
+  "area": "sdk-d2h-notifications",
+  "case": "stream_runtime_late_error_and_cancellation_policy",
+  "source": "Android PolarD2HNotificationsUtilsTest and iOS PolarDeviceToHostNotificationsApiTests stream orchestration characterization",
+  "input": {
+    "kind": "d2hStreamRuntimePolicy",
+    "target": "d2h",
+    "scenarios": [
+      {
+        "id": "late-error-after-emitted-notification",
+        "subscribeOutcome": "success",
+        "notifications": [
+          {
+            "notificationId": 12,
+            "parametersHex": ""
+          }
+        ],
+        "terminal": {
+          "mode": "transportError",
+          "message": "late upstream failure"
+        }
+      },
+      {
+        "id": "consumer-cancels-after-first-notification",
+        "subscribeOutcome": "success",
+        "notifications": [
+          {
+            "notificationId": 12,
+            "parametersHex": ""
+          },
+          {
+            "notificationId": 7,
+            "parametersHex": "0a020802"
+          }
+        ],
+        "cancelAfterEmitted": 1
+      },
+      {
+        "id": "unknown-notification-between-known-values-is-filtered",
+        "subscribeOutcome": "success",
+        "notifications": [
+          {
+            "notificationId": 12,
+            "parametersHex": ""
+          },
+          {
+            "notificationId": 999,
+            "parametersHex": ""
+          },
+          {
+            "notificationId": 7,
+            "parametersHex": "0a020802"
+          }
+        ]
+      },
+      {
+        "id": "failed-subscribe-does-not-register-observer",
+        "subscribeOutcome": "transportError",
+        "message": "service missing",
+        "notifications": []
+      }
+    ]
+  },
+  "expected": {
+    "cases": [
+      {
+        "id": "late-error-after-emitted-notification",
+        "events": [
+          "STOP_GPS_MEASUREMENT"
+        ],
+        "terminalError": "late upstream failure",
+        "cancelledStreams": []
+      },
+      {
+        "id": "consumer-cancels-after-first-notification",
+        "events": [
+          "STOP_GPS_MEASUREMENT"
+        ],
+        "cancelledStreams": [
+          "d2h"
+        ],
+        "upstreamCancelled": true,
+        "ignoredAfterCancel": [
+          "SYNC_REQUIRED"
+        ]
+      },
+      {
+        "id": "unknown-notification-between-known-values-is-filtered",
+        "events": [
+          "STOP_GPS_MEASUREMENT",
+          "SYNC_REQUIRED"
+        ],
+        "cancelledStreams": []
+      },
+      {
+        "id": "failed-subscribe-does-not-register-observer",
+        "events": [],
+        "subscribeError": "service missing",
+        "activeObserverCount": 0,
+        "cancelledStreams": []
+      }
+    ]
+  },
+  "execution": {
+    "kind": "fake-stream-runtime-policy",
+    "transport": "scripted-d2h-notification-stream",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceToHostNotificationsApiTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.D2hStreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "D2H stream orchestration can move to shared KMP code only after mapped notifications emitted before a late upstream error are preserved, unknown notification ids are filtered without stopping later known values, consumer cancellation cancels the upstream subscription and suppresses later events, and failed subscriptions do not register observers."
+}

@@ -1,0 +1,64 @@
+{
+  "id": "capability-lookup-readiness",
+  "area": "sdk.device-capabilities",
+  "case": "pre_migration_lookup_readiness_manifest",
+  "source": "KMP migration readiness gate for product capability lookup",
+  "input": {
+    "kind": "deviceCapabilityLookupReadiness",
+    "policyVectorPaths": [
+      "sdk/device-capabilities/capability-boolean-flags.json",
+      "sdk/device-capabilities/capability-config-merge.json",
+      "sdk/device-capabilities/capability-lookup-basic.json",
+      "sdk/device-capabilities/capability-lookup-default-h10.json",
+      "sdk/device-capabilities/capability-resource-override-ownership.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "filesystem-type-mapping",
+      "unknown-filesystem-default",
+      "missing-device-defaults",
+      "case-insensitive-device-type",
+      "recording-support-defaults",
+      "firmware-update-defaults",
+      "activity-data-defaults",
+      "sensor-device-defaults",
+      "version-mismatch-user-config-merge",
+      "resource-override-platform-ownership",
+      "platform-capability-vector-references",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "filesystem-type-mapping",
+      "unknown-filesystem-default",
+      "missing-device-defaults",
+      "case-insensitive-device-type",
+      "recording-support-defaults",
+      "firmware-update-defaults",
+      "activity-data-defaults",
+      "sensor-device-defaults",
+      "version-mismatch-user-config-merge",
+      "resource-override-platform-ownership",
+      "platform-capability-vector-references",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Capability lookup migration may proceed only after these vectors are executable from shared commonTest, Android and iOS tests continue to reference the same capability fixtures, firmware-update/activity/sensor flags and version-mismatch user-config merge behavior are covered by shared vectors, resource override behavior is explicitly kept platform-owned, and the shared tests are compile-verified."
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtilityTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceCapabilitiesCommonPolicyTest"
+    ]
+  }
+}

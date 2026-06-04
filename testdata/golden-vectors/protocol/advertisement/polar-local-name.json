@@ -1,0 +1,31 @@
+{
+  "id": "polar-local-name",
+  "area": "advertisement",
+  "case": "polar_complete_local_name",
+  "source": "Android BleAdvertisementContentTest and iOS BleAdvertisementContentTest",
+  "input": {
+    "localName": "Polar GritX Pro AA123459"
+  },
+  "expected": {
+    "name": "Polar GritX Pro AA123459",
+    "deviceType": "GritX Pro",
+    "deviceId": "AA123459"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Baseline Polar local-name parsing."
+}

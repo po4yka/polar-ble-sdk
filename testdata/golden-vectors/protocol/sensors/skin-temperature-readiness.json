@@ -1,0 +1,53 @@
+{
+  "id": "skin-temperature-readiness",
+  "area": "sensors.skin-temperature",
+  "case": "pre_migration_readiness_manifest",
+  "source": "KMP migration readiness gate for skin-temperature parser behavior",
+  "input": {
+    "kind": "skinTemperatureReadiness",
+    "policyVectorPaths": [
+      "protocol/sensors/skin-temperature-raw-type0-estimated-sample-rate.json",
+      "protocol/sensors/skin-temperature-raw-type0-single-sample.json",
+      "protocol/sensors/skin-temperature-raw-type0-truncated-sample-android-error.json",
+      "protocol/sensors/skin-temperature-raw-type0-truncated-sample-ios-empty.json",
+      "protocol/sensors/skin-temperature-raw-type1-unsupported.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "raw-type0-ieee754-skin-temperature-parsing",
+      "sample-rate-timestamp-estimation-policy",
+      "unsupported-raw-frame-policy",
+      "truncated-raw-sample-policy",
+      "ios-empty-malformed-payload-deferral",
+      "platform-skin-temperature-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "raw-type0-ieee754-skin-temperature-parsing",
+      "sample-rate-timestamp-estimation-policy",
+      "unsupported-raw-frame-policy",
+      "truncated-raw-sample-policy",
+      "ios-empty-malformed-payload-deferral",
+      "platform-skin-temperature-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.SkinTemperatureDataTest"
+    ],
+    "ios": [
+      "SkinTemperatureDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SkinTemperatureParserCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "pmd-control-point-error-already-in-state-sdk-mode",
+  "area": "pmd-control-point",
+  "case": "error_already_in_state_request_measurement_start_sdk_mode",
+  "source": "Android PmdControlPointResponse and iOS PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f002090600"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "REQUEST_MEASUREMENT_START",
+    "opCodeValue": 2,
+    "measurementType": 9,
+    "measurementTypeName": "SDK_MODE",
+    "status": "ERROR_ALREADY_IN_STATE",
+    "statusValue": 6,
+    "more": false,
+    "parametersHex": ""
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

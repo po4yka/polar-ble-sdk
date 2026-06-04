@@ -53,8 +53,6 @@ public struct Polar247HrSamplesData: Codable {
     static func fromPbHrDataSamples(samples: [Data_PbAutomaticHeartRateSamples]) throws -> [Polar247HrSample] {
 
         var hrSamples = [Polar247HrSample]()
-        var time = DateComponents()
-        var triggerType = AutomaticSampleTriggerType.manual
         for sample in samples {
             do {
                 hrSamples.append(try .init(time: PolarTimeUtils.pbTimeToDateComponents(pbTime: sample.time), hrSamples: sample.heartRate, triggerType: AutomaticSampleTriggerType.getByValue(value: sample.triggerType)))

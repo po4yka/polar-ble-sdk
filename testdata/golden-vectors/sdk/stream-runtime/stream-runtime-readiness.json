@@ -1,0 +1,80 @@
+{
+  "id": "stream-runtime-readiness",
+  "area": "sdk.stream-runtime",
+  "case": "stream_runtime_readiness",
+  "source": "Generic stream runtime backlog and StreamRuntimePolicyCommonTest shared common prototypes distilled into a pre-KMP readiness manifest",
+  "description": "Pins the platform-neutral stream lifecycle behavior families that must remain covered before generic stream utilities or facade stream orchestration delegate to shared KMP runtime code.",
+  "input": {
+    "kind": "streamRuntimeReadiness",
+    "policyVectorPaths": [
+      "sdk/stream-runtime/ordered-emissions-policy.json",
+      "sdk/stream-runtime/terminal-error-policy.json",
+      "sdk/stream-runtime/initial-disconnected-policy.json",
+      "sdk/stream-runtime/unchecked-subscription-policy.json",
+      "sdk/stream-runtime/consumer-cancellation-policy.json",
+      "sdk/stream-runtime/disconnect-after-subscription-policy.json",
+      "sdk/stream-runtime/duplicate-completion-policy.json",
+      "sdk/stream-runtime/late-emission-after-completion-policy.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "ordered-emission-before-completion",
+      "terminal-error-propagation",
+      "terminal-error-observer-cleanup",
+      "checked-disconnected-fails-before-observer",
+      "unchecked-subscription-skips-connection-check",
+      "consumer-cancellation-observer-cleanup",
+      "consumer-cancellation-upstream-cancel",
+      "consumer-cancellation-idempotence",
+      "disconnect-after-subscription-terminal",
+      "disconnect-after-subscription-observer-cleanup",
+      "disconnect-after-subscription-upstream-cancel",
+      "duplicate-completion-idempotence",
+      "post-completion-emission-suppression",
+      "active-observer-count-gate",
+      "platform-stream-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "ordered-emission-before-completion",
+      "terminal-error-propagation",
+      "terminal-error-observer-cleanup",
+      "checked-disconnected-fails-before-observer",
+      "unchecked-subscription-skips-connection-check",
+      "consumer-cancellation-observer-cleanup",
+      "consumer-cancellation-upstream-cancel",
+      "consumer-cancellation-idempotence",
+      "disconnect-after-subscription-terminal",
+      "disconnect-after-subscription-observer-cleanup",
+      "disconnect-after-subscription-upstream-cancel",
+      "duplicate-completion-idempotence",
+      "post-completion-emission-suppression",
+      "active-observer-count-gate",
+      "platform-stream-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified.",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.ChannelUtilsTests"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.StreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for generic stream lifecycle behavior-family completeness only; facade-specific stream mapping, platform adapter references, observer cleanup, disconnect terminal-error mapping, cancellation, and compile verification remain required before production stream runtime code moves to shared KMP."
+}

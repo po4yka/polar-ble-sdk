@@ -9,13 +9,16 @@ typealias MockPolarGattServiceTransmitter = MockGattServiceTransmitterImpl
 class MockGattServiceTransmitterImpl: BleAttributeTransportProtocol {
     var mockConnectionStatus: Bool = true
     var setCharacteristicsNotifyCache: [(characteristicUuid: CBUUID, notify: Bool)] = []
+    var transmittedMessages: [(serviceUuid: CBUUID, characteristicUuid: CBUUID, packet: Data, withResponse: Bool)] = []
+    var transmitMessageHandler: ((BleGattClientBase, CBUUID, CBUUID, Data, Bool) -> Void)?
     
     func isConnected() -> Bool {
         return mockConnectionStatus
     }
     
     func transmitMessage(_ parent: BleGattClientBase, serviceUuid: CBUUID , characteristicUuid: CBUUID , packet: Data, withResponse: Bool) throws {
-        // Do nothing
+        transmittedMessages.append((serviceUuid, characteristicUuid, packet, withResponse))
+        transmitMessageHandler?(parent, serviceUuid, characteristicUuid, packet, withResponse)
     }
     
     func characteristicWith(uuid: CBUUID) throws -> CBCharacteristic? {

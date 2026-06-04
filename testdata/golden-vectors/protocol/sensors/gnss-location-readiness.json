@@ -1,0 +1,51 @@
+{
+  "id": "gnss-location-readiness",
+  "area": "sensors.gnss-location",
+  "case": "pre_migration_ownership_readiness_manifest",
+  "source": "KMP migration readiness gate for GNSS/location parser ownership",
+  "input": {
+    "kind": "gnssLocationReadiness",
+    "policyVectorPaths": [
+      "protocol/sensors/gnss-location-raw-type0-coordinate.json",
+      "protocol/sensors/gnss-location-raw-type1-satellite-dilution.json",
+      "protocol/sensors/gnss-location-raw-type2-satellite-summary.json",
+      "protocol/sensors/gnss-location-raw-type3-nmea.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "android-owned-raw-type0-coordinate",
+      "android-owned-raw-type1-satellite-dilution",
+      "android-owned-raw-type2-satellite-summary",
+      "android-owned-raw-type3-nmea",
+      "non-ios-parser-ownership",
+      "non-common-parser-ownership",
+      "future-shared-parser-parity-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "androidOwnedPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "android-owned-raw-type0-coordinate",
+      "android-owned-raw-type1-satellite-dilution",
+      "android-owned-raw-type2-satellite-summary",
+      "android-owned-raw-type3-nmea",
+      "non-ios-parser-ownership",
+      "non-common-parser-ownership",
+      "future-shared-parser-parity-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GnssLocationDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.GnssLocationOwnershipCommonPolicyTest"
+    ]
+  }
+}

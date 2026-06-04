@@ -1,0 +1,42 @@
+{
+  "id": "pmd-settings-duplicate-sample-rate-factor",
+  "area": "pmd-settings",
+  "case": "duplicate_sample_rate_last_entry_wins_and_factor",
+  "source": "Android PmdSettingTest and iOS PmdSettingTest",
+  "input": {
+    "hex": "0001340000016400050104030201"
+  },
+  "expected": {
+    "settings": {
+      "SAMPLE_RATE": [
+        100
+      ],
+      "FACTOR": [
+        16909060
+      ]
+    },
+    "missingSettings": [
+      "RESOLUTION",
+      "RANGE",
+      "RANGE_MILLIUNIT",
+      "CHANNELS"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Both current implementations overwrite an earlier setting block when the same setting type appears later in the payload. FACTOR parsing is characterized here even though selected-setting serialization skips FACTOR.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSettingTest"
+    ],
+    "ios": [
+      "PmdSettingTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdSettingsCommonPolicyTest"
+    ]
+  }
+}

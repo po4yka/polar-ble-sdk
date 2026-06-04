@@ -1,0 +1,43 @@
+{
+  "id": "signed-int-min-32bit",
+  "area": "type-utils",
+  "case": "signed_int_min_32bit",
+  "source": "Android TypeUtilsTest and iOS TypeUtilsTest",
+  "input": {
+    "hex": "00000080"
+  },
+  "expected": {
+    "commonDecision": "KMP should return -2147483648 for the little-endian 32-bit signed minimum and avoid Android's current full-width sign-extension mask behavior."
+  },
+  "platformExpectations": {
+    "android": {
+      "unsignedLong": 2147483648,
+      "signedInt": -1
+    },
+    "ios": {
+      "unsignedLong": 2147483648,
+      "signedInt": -2147483648
+    },
+    "commonDecision": {
+      "unsignedLong": 2147483648,
+      "signedInt": -2147483648
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "Android currently returns -1 for the full-width 32-bit signed minimum because its sign-extension mask shifts by 32 bits; iOS returns -2147483648. Shared KMP should define the mathematically correct value.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

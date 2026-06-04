@@ -1,0 +1,50 @@
+{
+  "id": "mag-compressed-type0-two-samples",
+  "area": "sensor-parser",
+  "case": "mag_compressed_type0_reference_and_delta_samples",
+  "source": "Android MagDataTest and iOS MagDataTest",
+  "input": {
+    "dataFrameHex": "06660000000000000080e2e6fa15490a06017f20fc",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "MAG",
+    "frameType": 0,
+    "compressed": true,
+    "timeStamp": 102,
+    "samples": [
+      {
+        "timeStamp": 101,
+        "x": -6430.0,
+        "y": 5626.0,
+        "z": 2633.0,
+        "calibrationStatus": "NOT_AVAILABLE"
+      },
+      {
+        "timeStamp": 102,
+        "x": -6431.0,
+        "y": 5627.0,
+        "z": 2635.0,
+        "calibrationStatus": "NOT_AVAILABLE"
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.MagDataTest"
+    ],
+    "ios": [
+      "MagDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.MagParserCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "polar-device-uuid-valid",
+  "area": "device-id",
+  "case": "uuid_from_valid_device_id",
+  "source": "Android PolarDeviceUuidTest and iOS PolarDeviceUuidTest",
+  "input": {
+    "deviceId": "89643A20"
+  },
+  "expected": {
+    "uuid": "0e030000-0084-0000-0000-000089643A20"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.DeviceIdGoldenVectorTest"
+    ],
+    "ios": [
+      "BlePolarDeviceIdUtilityTest",
+      "PolarDeviceUuidTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Current UUID conversion validates length only and preserves input casing."
+}

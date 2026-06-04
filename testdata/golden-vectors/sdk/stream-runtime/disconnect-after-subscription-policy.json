@@ -1,0 +1,50 @@
+{
+  "id": "disconnect-after-subscription-policy",
+  "area": "sdk-stream-runtime",
+  "case": "disconnect_after_subscription_terminates_stream_and_clears_observer",
+  "source": "Android ChannelUtilsTests and iOS StreamContinuationListTest disconnect-after-subscription characterization",
+  "input": {
+    "kind": "genericStreamDisconnectPolicy",
+    "target": "stream",
+    "actions": [
+      "subscribe",
+      "disconnect-transport"
+    ],
+    "disconnectError": "gattDisconnected"
+  },
+  "expected": {
+    "activeObserverCount": 0,
+    "terminalError": "gattDisconnected",
+    "errorEventCount": 1,
+    "cleanupCallbackCount": 1,
+    "upstreamCancelled": true,
+    "platformTerminalErrors": {
+      "android": "CancellationException after postDisconnectedAndClearList clears observer channels",
+      "ios": "BleGattException.gattDisconnected after active StreamContinuationList finish"
+    },
+    "disconnectPolicy": "disconnect-after-subscription-clears-observer",
+    "commonDecision": "A stream that disconnects after observer registration must terminate consumers, clear observers, and cancel upstream work without leaking an active subscription."
+  },
+  "execution": {
+    "kind": "fake-stream-runtime-policy",
+    "transport": "generic-stream-disconnect",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.ChannelUtilsTests"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.StreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Stream utilities can move to shared KMP code only after disconnect-after-subscription termination clears observers and preserves platform terminal-error mapping on Android, iOS, and the shared fake-stream runtime."
+}

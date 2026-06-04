@@ -1,0 +1,36 @@
+{
+  "id": "ppg-raw-type4-truncated-integration-gain-malformed",
+  "area": "sensor-parser",
+  "case": "ppg_raw_type4_truncated_integration_gain_malformed",
+  "source": "Pre-migration shared PPG parser policy",
+  "input": {
+    "dataFrameHex": "01009435770000000004027f060206040206030201ff0107ff000000000000000001f87f0000000000000102ef",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PPG",
+    "frameType": 4,
+    "compressed": false,
+    "timeStamp": 2000000000,
+    "parseError": "malformedFrame"
+  },
+  "consumerTests": {
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ],
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ]
+  },
+  "platforms": {
+    "android": false,
+    "ios": false,
+    "common": true
+  },
+  "notes": "Future shared PPG parsing should reject raw type-4 integration/gain payloads that do not contain complete 36-byte samples."
+}

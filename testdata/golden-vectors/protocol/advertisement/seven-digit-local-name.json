@@ -1,0 +1,30 @@
+{
+  "id": "seven-digit-local-name",
+  "area": "advertisement",
+  "case": "polar_local_name_with_seven_digit_id",
+  "source": "Android behavior characterization and iOS behavior characterization",
+  "input": {
+    "localName": "Polar H10 1234567"
+  },
+  "expected": {
+    "deviceType": "H10",
+    "deviceId": "1234567C"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Seven-character advertised IDs are assembled to full eight-character IDs."
+}

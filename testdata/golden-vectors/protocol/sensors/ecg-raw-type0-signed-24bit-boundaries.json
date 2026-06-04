@@ -1,0 +1,43 @@
+{
+  "id": "ecg-raw-type0-signed-24bit-boundaries",
+  "area": "sensor-parser",
+  "case": "ecg_raw_type0_signed_24bit_min_max",
+  "source": "Android EcgDataTest and iOS EcgDataTest",
+  "input": {
+    "dataFrameHex": "00660000000000000000000080ffff7f",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "ECG",
+    "frameType": 0,
+    "timeStamp": 102,
+    "samples": [
+      {
+        "timeStamp": 101,
+        "microVolts": -8388608
+      },
+      {
+        "timeStamp": 102,
+        "microVolts": 8388607
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.EcgDataTest"
+    ],
+    "ios": [
+      "EcgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.EcgParserCommonPolicyTest"
+    ]
+  }
+}

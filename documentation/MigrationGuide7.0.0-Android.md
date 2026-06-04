@@ -44,23 +44,20 @@ testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 
 ## Gradle: Minimum SDK Version Change
 
-The SDK now requires **minSdk 33** (Android 13, Tiramisu). Update your app module's `build.gradle`:
+The SDK now requires **minSdk 26**. Update your app module's `build.gradle`:
 
 ```groovy
 android {
     defaultConfig {
-        // Before — could be lower, e.g.:
-        // minSdkVersion 24
+        // Before — could be lower
 
         // After:
-        minSdkVersion 33   // Android 13 required
+        minSdkVersion 26
     }
 }
 ```
 
-If your app currently targets a `minSdk` lower than 33, you must either:
-- Raise `minSdkVersion` to **33** and drop support for older Android versions, or
-- Gate all SDK usage behind a runtime API-level check (`if (Build.VERSION.SDK_INT >= 33)`).
+If your app currently targets a `minSdk` lower than 26, you must either raise `minSdkVersion` to **26** and drop support for older Android versions or gate all SDK usage behind a runtime API-level check.
 
 ---
 

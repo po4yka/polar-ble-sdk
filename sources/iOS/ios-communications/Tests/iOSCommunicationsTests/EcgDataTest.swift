@@ -47,4 +47,135 @@ final class EcgDataTest: XCTestCase {
         XCTAssertEqual(timeStamp, ecgData.timeStamp)
         XCTAssertEqual(timeStamp, ecgData.samples[1].timeStamp)
     }
+
+    func testEcgGoldenVectorsMatchIOSCommunicationsBehavior() throws {
+        let vectors = try loadEcgGoldenVectors()
+        XCTAssertFalse(vectors.isEmpty, "Expected ECG golden vectors")
+
+        for vector in vectors {
+            let id = vector["id"] as? String ?? "unknown-vector"
+            if let platforms = vector["platforms"] as? [String: Any], let supported = platforms["ios"] as? Bool, !supported {
+                continue
+            }
+            let input = try XCTUnwrap(vector["input"] as? [String: Any], id)
+            let expected = try XCTUnwrap(vector["expected"] as? [String: Any], id)
+            let dataFrame = try PmdDataFrame(
+                data: Data(hexString: try XCTUnwrap(input["dataFrameHex"] as? String, id)),
+                { _, _ in UInt64(truncating: input["previousTimeStamp"] as? NSNumber ?? 0) },
+                { _ in Float(truncating: input["factor"] as? NSNumber ?? 1.0) },
+                { _ in UInt(truncating: input["sampleRate"] as? NSNumber ?? 0) })
+            let ecgData = try EcgData.parseDataFromDataFrame(frame: dataFrame)
+
+            XCTAssertEqual(try XCTUnwrap(expected["timeStamp"] as? NSNumber, id).uint64Value, ecgData.timeStamp, id)
+            let samples = try XCTUnwrap(expected["samples"] as? [[String: Any]], id)
+            XCTAssertEqual(samples.count, ecgData.samples.count, id)
+            for (index, expectedSample) in samples.enumerated() {
+                XCTAssertEqual(try XCTUnwrap(expectedSample["timeStamp"] as? NSNumber, id).uint64Value, ecgData.samples[index].timeStamp, id)
+                XCTAssertEqual(try XCTUnwrap(expectedSample["microVolts"] as? NSNumber, id).int32Value, ecgData.samples[index].microVolts, id)
+            }
+        }
+    }
+
+    func testEcgGoldenVectorsFollowNeutralKmpShape() throws {
+        for vector in try loadEcgGoldenVectors() {
+            let id = try XCTUnwrap(vector["id"] as? String)
+            XCTAssertNotNil(vector["area"], id)
+            XCTAssertNotNil(vector["case"], id)
+            XCTAssertNotNil(vector["source"], id)
+            XCTAssertNotNil(vector["input"], id)
+            XCTAssertNotNil(vector["expected"], id)
+            let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], id)
+            XCTAssertNotNil(platforms["android"], id)
+            XCTAssertNotNil(platforms["ios"], id)
+            XCTAssertNotNil(platforms["common"], id)
+        }
+    }
+
+    func testEcgReadinessManifestIsPinnedBeforeParserMigration() throws {
+        let manifest = try loadEcgReadinessManifest()
+        let id = try XCTUnwrap(manifest["id"] as? String)
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any], id)
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any], id)
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String], id)
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String], id)
+        let policyVectorPaths = try XCTUnwrap(input["policyVectorPaths"] as? [String], id)
+
+        XCTAssertEqual("ecg-readiness", id)
+        XCTAssertEqual("ecgReadiness", input["kind"] as? String, id)
+        XCTAssertEqual(ECG_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths, id)
+        XCTAssertEqual(ECG_READINESS_FAMILIES, requiredFamilies, id)
+        XCTAssertEqual(ECG_READINESS_FAMILIES, coveredFamilies, id)
+        XCTAssertEqual(["com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.EcgDataTest"], consumerTests["android"] as? [String], id)
+        XCTAssertEqual(["EcgDataTest"], consumerTests["ios"] as? [String], id)
+        XCTAssertEqual(["com.polar.sharedtest.EcgParserCommonPolicyTest"], consumerTests["commonPrototype"] as? [String], id)
+    }
+
+    private func loadEcgGoldenVectors() throws -> [[String: Any]] {
+        let vectorDirectory = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/protocol/sensors")
+        return try FileManager.default
+            .contentsOfDirectory(at: vectorDirectory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" && $0.lastPathComponent.hasPrefix("ecg-") }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .map { file in
+                let data = try Data(contentsOf: file)
+                return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+            }
+            .filter { vector in
+                guard let input = vector["input"] as? [String: Any] else {
+                    return true
+                }
+                return input["kind"] as? String != "ecgReadiness"
+            }
+    }
+
+    private func loadEcgReadinessManifest() throws -> [String: Any] {
+        let vectorFile = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/protocol/sensors/ecg-readiness.json")
+        let data = try Data(contentsOf: vectorFile)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], vectorFile.path)
+    }
+
+
+    private let ECG_READINESS_POLICY_VECTOR_PATHS = [
+        "protocol/sensors/ecg-raw-type0-signed-24bit-boundaries.json",
+        "protocol/sensors/ecg-raw-type0-truncated-sample-android-error.json",
+        "protocol/sensors/ecg-raw-type0-two-samples.json",
+        "protocol/sensors/ecg-raw-type1-android-status-bits.json",
+        "protocol/sensors/ecg-raw-type2-android-tags.json",
+        "protocol/sensors/ecg-raw-type3-android-frame-samples.json"
+    ]
+
+    private let ECG_READINESS_FAMILIES = [
+        "raw-type0-signed-24bit-parsing",
+        "raw-type0-boundary-values",
+        "raw-type0-timestamp-interpolation",
+        "raw-type0-malformed-short-sample-policy",
+        "android-raw-type1-status-bit-ownership",
+        "android-raw-type2-tag-ownership",
+        "android-raw-type3-frame-sample-ownership",
+        "platform-ecg-vector-reference-gate",
+        "compile-verification-gate"
+    ]
+}
+
+private extension Data {
+    init(hexString: String) throws {
+        guard hexString.count.isMultiple(of: 2) else {
+            throw NSError(domain: "EcgDataTest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Hex string must have an even length"])
+        }
+        var bytes: [UInt8] = []
+        var index = hexString.startIndex
+        while index < hexString.endIndex {
+            let nextIndex = hexString.index(index, offsetBy: 2)
+            let byteString = String(hexString[index..<nextIndex])
+            guard let byte = UInt8(byteString, radix: 16) else {
+                throw NSError(domain: "EcgDataTest", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid hex byte \(byteString)"])
+            }
+            bytes.append(byte)
+            index = nextIndex
+        }
+        self.init(bytes)
+    }
 }

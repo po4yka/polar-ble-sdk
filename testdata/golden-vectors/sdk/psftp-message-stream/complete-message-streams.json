@@ -1,0 +1,71 @@
+{
+  "id": "complete-message-streams",
+  "area": "sdk.psftp-message-stream",
+  "case": "complete_message_streams",
+  "source": "Android and iOS BlePsFtpUtils/BlePsFtpUtility characterization tests",
+  "input": {
+    "cases": [
+      {
+        "id": "request-header-only",
+        "type": "request",
+        "headerHex": "010203",
+        "idValue": 0,
+        "expectedHex": "0300010203"
+      },
+      {
+        "id": "android-request-with-file-data",
+        "type": "request",
+        "headerHex": "010203",
+        "dataHex": "aabbccdd",
+        "idValue": 0,
+        "expectedHex": "0300010203aabbccdd",
+        "platforms": {
+          "android": true,
+          "ios": false
+        },
+        "commonDecision": "Android makeCompleteMessageStream appends file data after the protobuf header while preserving the RFC60 length as header length only; current iOS utility has no file-data parameter."
+      },
+      {
+        "id": "query-with-header",
+        "type": "query",
+        "headerHex": "55aa",
+        "idValue": 4660,
+        "expectedHex": "349255aa"
+      },
+      {
+        "id": "notification-with-header",
+        "type": "notification",
+        "headerHex": "aabbcc",
+        "idValue": 24,
+        "expectedHex": "18aabbcc"
+      },
+      {
+        "id": "notification-empty-header",
+        "type": "notification",
+        "headerHex": "",
+        "idValue": 18,
+        "expectedHex": "12"
+      }
+    ]
+  },
+  "expected": {
+    "policy": "encode-rfc60-complete-message-streams"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtilsTest"
+    ],
+    "ios": [
+      "BlePsFtpUtilityTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpByteCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "RFC60 complete message stream encoding for request, query, and notification messages."
+}

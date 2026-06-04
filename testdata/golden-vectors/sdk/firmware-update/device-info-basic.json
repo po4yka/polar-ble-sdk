@@ -1,0 +1,40 @@
+{
+  "id": "device-info-basic",
+  "area": "sdk.firmware-update",
+  "case": "device_info_basic",
+  "source": "Android and iOS PolarFirmwareUpdateUtils characterization tests",
+  "input": {
+    "kind": "deviceInfo",
+    "proto": {
+      "version": {
+        "major": 1,
+        "minor": 2,
+        "patch": 0
+      },
+      "modelName": "Model",
+      "hardwareCode": "00112233.01"
+    }
+  },
+  "expected": {
+    "deviceFwVersion": "1.2.0",
+    "deviceModelName": "Model",
+    "deviceHardwareCode": "00112233.01"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "DEVICE.BPB protobuf fields map to firmware-version info.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"
+    ],
+    "ios": [
+      "PolarFirmwareUpdateUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FirmwareUpdateUtilityCommonPolicyTest"
+    ]
+  }
+}

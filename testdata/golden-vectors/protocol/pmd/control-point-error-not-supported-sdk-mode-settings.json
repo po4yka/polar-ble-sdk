@@ -1,0 +1,38 @@
+{
+  "id": "pmd-control-point-error-not-supported-sdk-mode-settings",
+  "area": "pmd-control-point",
+  "case": "error_not_supported_get_sdk_mode_measurement_settings",
+  "source": "Android PmdControlPointResponse and iOS PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f004090300"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "GET_SDK_MODE_MEASUREMENT_SETTINGS",
+    "opCodeValue": 4,
+    "measurementType": 9,
+    "measurementTypeName": "SDK_MODE",
+    "status": "ERROR_NOT_SUPPORTED",
+    "statusValue": 3,
+    "more": false,
+    "parametersHex": ""
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

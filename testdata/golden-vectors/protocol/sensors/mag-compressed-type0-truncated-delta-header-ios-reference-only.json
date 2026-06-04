@@ -1,0 +1,45 @@
+{
+  "id": "mag-compressed-type0-truncated-delta-header-ios-reference-only",
+  "area": "sensor-parser",
+  "case": "mag_compressed_type0_truncated_delta_header_ios_reference_only",
+  "source": "iOS MagDataTest; Android currently throws for the same malformed payload",
+  "input": {
+    "dataFrameHex": "06660000000000000080e2e6fa15490a03",
+    "previousTimeStamp": 100,
+    "factor": 0.5,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "MAG",
+    "frameType": 0,
+    "compressed": true,
+    "timeStamp": 102,
+    "samples": [
+      {
+        "timeStamp": 102,
+        "x": -3215.0,
+        "y": 2813.0,
+        "z": 1316.5,
+        "calibrationStatus": "NOT_AVAILABLE"
+      }
+    ]
+  },
+  "platforms": {
+    "android": false,
+    "ios": true,
+    "common": false
+  },
+  "notes": "iOS currently returns the compressed reference sample when a MAG delta block header is truncated after deltaSize.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.MagDataTest"
+    ],
+    "ios": [
+      "MagDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.MagParserCommonPolicyTest"
+    ]
+  }
+}

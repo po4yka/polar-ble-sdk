@@ -1,0 +1,85 @@
+{
+  "id": "file-facade-runtime-readiness",
+  "area": "sdk.file-utils",
+  "case": "file_facade_runtime_readiness",
+  "source": "File facade runtime backlog and file-facade-runtime-policy shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the low-level public file facade behavior families that must remain covered before read, write, and delete command planning delegates to shared KMP runtime code.",
+  "input": {
+    "kind": "fileFacadeRuntimeReadiness",
+    "policyVectorPath": "sdk/file-utils/file-facade-runtime-policy.json",
+    "requiredBehaviorFamilies": [
+      "low-level-file-path-gate",
+      "read-file-get-success",
+      "read-file-empty-success",
+      "read-file-request-failure",
+      "read-file-response-error",
+      "write-file-put-success",
+      "write-file-payload-capture",
+      "write-file-progress-before-completion",
+      "write-file-stream-failure-after-payload",
+      "write-file-response-error-after-payload",
+      "delete-file-remove-success",
+      "delete-file-request-failure",
+      "delete-file-response-error",
+      "directory-list-shallow-vector-reference-gate",
+      "directory-list-recursive-vector-reference-gate",
+      "read-write-delete-model-vector-reference-gate",
+      "runtime-error-policy-reference-gate",
+      "malformed-directory-policy-gate",
+      "response-error-policy-gate",
+      "facade-error-mapping-gate",
+      "platform-facade-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "low-level-file-path-gate",
+      "read-file-get-success",
+      "read-file-empty-success",
+      "read-file-request-failure",
+      "read-file-response-error",
+      "write-file-put-success",
+      "write-file-payload-capture",
+      "write-file-progress-before-completion",
+      "write-file-stream-failure-after-payload",
+      "write-file-response-error-after-payload",
+      "delete-file-remove-success",
+      "delete-file-request-failure",
+      "delete-file-response-error",
+      "directory-list-shallow-vector-reference-gate",
+      "directory-list-recursive-vector-reference-gate",
+      "read-write-delete-model-vector-reference-gate",
+      "runtime-error-policy-reference-gate",
+      "malformed-directory-policy-gate",
+      "response-error-policy-gate",
+      "facade-error-mapping-gate",
+      "platform-facade-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "File facade runtime migration may proceed only after file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified.",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.BDBleApiImplTest",
+      "com.polar.sdk.api.model.utils.PolarFileUtilsTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests",
+      "PolarFileUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FileFacadeRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for low-level public file facade behavior-family completeness only; empty read payloads, delete request failures, write progress before completion, directory traversal, malformed directory parsing, response-error mapping, public facade error mapping, platform adapter references, and compile verification remain required before production file facade runtime code moves to shared KMP."
+}

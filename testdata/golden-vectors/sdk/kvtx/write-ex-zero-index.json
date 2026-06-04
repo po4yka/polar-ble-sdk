@@ -1,0 +1,30 @@
+{
+  "id": "write-ex-zero-index",
+  "area": "sdk-kvtx",
+  "case": "write_bytes_ex_zero_length_index_sets_value",
+  "source": "Android KvtxScriptUtilsTest and iOS KvtxScriptUtilsTests",
+  "input": {
+    "scriptHex": "0624000000000300000011223305",
+    "extractKey": 36
+  },
+  "expected": {
+    "extractedHex": "112233"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "EX write commands with an empty index are treated like WRITE_BYTES for the target key.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.KvtxScriptUtilsTest"
+    ],
+    "ios": [
+      "KvtxScriptUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.KvtxCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "ppi-compressed-type0-unsupported",
+  "area": "sensor-parser",
+  "case": "ppi_compressed_type0_unsupported",
+  "source": "Android PpiDataTest and iOS PpiDataTest",
+  "input": {
+    "dataFrameHex": "03660000000000000080",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PPI",
+    "frameType": 0,
+    "compressed": true,
+    "timeStamp": 102,
+    "parseError": "unsupportedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "PPI currently supports only raw type 0. KMP should keep compressed-frame rejection deterministic.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpiDataTest"
+    ],
+    "ios": [
+      "PpiDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpiParserCommonPolicyTest"
+    ]
+  }
+}

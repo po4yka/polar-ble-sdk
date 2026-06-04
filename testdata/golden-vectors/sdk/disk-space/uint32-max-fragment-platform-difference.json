@@ -1,0 +1,49 @@
+{
+  "id": "uint32-max-fragment-platform-difference",
+  "area": "sdk.disk-space",
+  "case": "uint32_max_fragment_platform_difference",
+  "source": "Android and iOS PolarDiskSpaceData characterization tests",
+  "input": {
+    "proto": {
+      "fragmentSize": 4294967295,
+      "totalFragments": 2,
+      "freeFragments": 1
+    }
+  },
+  "expected": {
+    "totalSpace": 8589934590,
+    "freeSpace": 4294967295
+  },
+  "platformExpectations": {
+    "android": {
+      "totalSpace": -2,
+      "freeSpace": -1
+    },
+    "ios": {
+      "totalSpace": 8589934590,
+      "freeSpace": 4294967295
+    },
+    "commonDecision": {
+      "fragmentSizePolicy": "treat-as-unsigned-uint32",
+      "totalSpace": 8589934590,
+      "freeSpace": 4294967295
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.PolarDiskSpaceTest"
+    ],
+    "ios": [
+      "PolarDiskSpaceDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DiskSpaceCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Current platform difference for protobuf uint32 max fragment size: Android generated Java exposes the raw signed Int value while Swift exposes UInt32."
+}

@@ -1,0 +1,54 @@
+{
+  "id": "pmd-settings-range-milliunit-platform-difference",
+  "area": "pmd-settings",
+  "case": "range_milliunit_signedness_difference",
+  "source": "Android PmdSettingTest and iOS PmdSettingTest",
+  "input": {
+    "hex": "0302ffffffffff00000001010e00"
+  },
+  "expected": {
+    "settings": {
+      "RESOLUTION": [
+        14
+      ]
+    }
+  },
+  "platformExpectations": {
+    "android": {
+      "settings": {
+        "RANGE_MILLIUNIT": [
+          -1,
+          255
+        ]
+      }
+    },
+    "ios": {
+      "settings": {
+        "RANGE_MILLIUNIT": [
+          4294967295,
+          255
+        ]
+      }
+    },
+    "commonDecision": {
+      "status": "undecided"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "Android sign-extends 0xFFFFFFFF to -1; iOS preserves UInt32.max. Decide common signedness before migrating RANGE_MILLIUNIT parsing.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSettingTest"
+    ],
+    "ios": [
+      "PmdSettingTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdSettingsCommonPolicyTest"
+    ]
+  }
+}

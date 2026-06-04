@@ -1,0 +1,70 @@
+{
+  "id": "unknown-enums-platform-policy",
+  "area": "sdk.skin-temperature",
+  "case": "unknown_enums_platform_policy",
+  "source": "Android and iOS PolarSkinTemperatureUtils characterization tests",
+  "input": {
+    "proto": {
+      "sourceDeviceId": "AABBCCDD",
+      "measurementType": 99,
+      "sensorLocation": 99,
+      "samples": [
+        {
+          "recordingTimeDeltaMs": 500,
+          "temperature": -5.25
+        }
+      ]
+    }
+  },
+  "expected": {
+    "samples": [
+      {
+        "recordingTimeDeltaMs": 500,
+        "temperature": -5.25
+      }
+    ]
+  },
+  "platformExpectations": {
+    "android": {
+      "deviceId": "AABBCCDD",
+      "sensorLocation": null,
+      "measurementType": null,
+      "samples": [
+        {
+          "recordingTimeDeltaMs": 500,
+          "temperature": -5.25
+        }
+      ]
+    },
+    "ios": {
+      "sensorLocation": "SL_UNKNOWN",
+      "measurementType": "TM_UNKNOWN",
+      "samples": [
+        {
+          "recordingTimeDeltaMs": 500,
+          "temperature": -5.25
+        }
+      ]
+    },
+    "commonDecision": {
+      "unknownEnumPolicy": "choose-null-or-explicit-unknown-before-shared-model-migration"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarSkinTemperatureUtilsTest"
+    ],
+    "ios": [
+      "PolarSkinTemperatureUnitTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SkinTemperatureDomainCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Unknown measurement type and sensor location currently map to null on Android and UNKNOWN on iOS."
+}

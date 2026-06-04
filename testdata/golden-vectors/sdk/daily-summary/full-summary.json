@@ -1,0 +1,195 @@
+{
+  "id": "full-summary",
+  "area": "sdk.daily-summary",
+  "case": "full_summary",
+  "source": "Android and iOS PolarActivityUtils characterization tests",
+  "input": {
+    "requestDate": "2025-04-06",
+    "expectedPath": "/U/0/20250406/DSUM/DSUM.BPB",
+    "proto": {
+      "date": {
+        "year": 2025,
+        "month": 4,
+        "day": 6
+      },
+      "activityCalories": 345,
+      "trainingCalories": 456,
+      "bmrCalories": 1567,
+      "steps": 9876,
+      "activityDistance": 321.5,
+      "dailyBalanceFeedback": "DB_YOU_SEEM_TO_BE_STRAINED",
+      "readinessForSpeedAndStrengthTraining": "RSST_B4_NOT_RECOVERED_NO_LEG_TRAINING_OR_INTENSIVE_CARDIO",
+      "activityGoalSummary": {
+        "activityGoal": 1000.0,
+        "achievedActivity": 625.5,
+        "timeToGoUp": {
+          "hours": 0,
+          "minutes": 12,
+          "seconds": 13,
+          "millis": 14
+        },
+        "timeToGoWalk": {
+          "hours": 1,
+          "minutes": 2,
+          "seconds": 3,
+          "millis": 4
+        },
+        "timeToGoJog": {
+          "hours": 2,
+          "minutes": 3,
+          "seconds": 4,
+          "millis": 5
+        }
+      },
+      "activityClassTimes": {
+        "timeNonWear": {
+          "hours": 0,
+          "minutes": 1,
+          "seconds": 2,
+          "millis": 3
+        },
+        "timeSleep": {
+          "hours": 7,
+          "minutes": 45,
+          "seconds": 30,
+          "millis": 200
+        },
+        "timeSedentary": {
+          "hours": 4,
+          "minutes": 5,
+          "seconds": 6,
+          "millis": 7
+        },
+        "timeLightActivity": {
+          "hours": 3,
+          "minutes": 4,
+          "seconds": 5,
+          "millis": 6
+        },
+        "timeContinuousModerate": {
+          "hours": 1,
+          "minutes": 15,
+          "seconds": 10,
+          "millis": 100
+        },
+        "timeIntermittentModerate": {
+          "hours": 0,
+          "minutes": 45,
+          "seconds": 5,
+          "millis": 50
+        },
+        "timeContinuousVigorous": {
+          "hours": 0,
+          "minutes": 30,
+          "seconds": 15,
+          "millis": 25
+        },
+        "timeIntermittentVigorous": {
+          "hours": 0,
+          "minutes": 20,
+          "seconds": 10,
+          "millis": 5
+        }
+      }
+    }
+  },
+  "expected": {
+    "date": "2025-04-06",
+    "activityCalories": 345,
+    "trainingCalories": 456,
+    "bmrCalories": 1567,
+    "steps": 9876,
+    "activityDistance": 321.5,
+    "dailyBalanceFeedback": "YOU_SEEM_TO_BE_STRAINED",
+    "readinessForSpeedAndStrengthTraining": "NOT_RECOVERED_NO_LEG_TRAINING_OR_INTENSIVE_CARDIO",
+    "activityGoalSummary": {
+      "activityGoal": 1000.0,
+      "achievedActivity": 625.5,
+      "timeToGoUp": {
+        "hours": 0,
+        "minutes": 12,
+        "seconds": 13,
+        "millis": 14
+      },
+      "timeToGoWalk": {
+        "hours": 1,
+        "minutes": 2,
+        "seconds": 3,
+        "millis": 4
+      },
+      "timeToGoJog": {
+        "hours": 2,
+        "minutes": 3,
+        "seconds": 4,
+        "millis": 5
+      }
+    },
+    "activityClassTimes": {
+      "timeNonWear": {
+        "hours": 0,
+        "minutes": 1,
+        "seconds": 2,
+        "millis": 3
+      },
+      "timeSleep": {
+        "hours": 7,
+        "minutes": 45,
+        "seconds": 30,
+        "millis": 200
+      },
+      "timeSedentary": {
+        "hours": 4,
+        "minutes": 5,
+        "seconds": 6,
+        "millis": 7
+      },
+      "timeLightActivity": {
+        "hours": 3,
+        "minutes": 4,
+        "seconds": 5,
+        "millis": 6
+      },
+      "timeContinuousModerate": {
+        "hours": 1,
+        "minutes": 15,
+        "seconds": 10,
+        "millis": 100
+      },
+      "timeIntermittentModerate": {
+        "hours": 0,
+        "minutes": 45,
+        "seconds": 5,
+        "millis": 50
+      },
+      "timeContinuousVigorous": {
+        "hours": 0,
+        "minutes": 30,
+        "seconds": 15,
+        "millis": 25
+      },
+      "timeIntermittentVigorous": {
+        "hours": 0,
+        "minutes": 20,
+        "seconds": 10,
+        "millis": 5
+      }
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarActivityUtilsTest"
+    ],
+    "ios": [
+      "PolarActivityUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.ActivitySummaryCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Full daily summary payload with goal, active-time buckets, feedback enums, distance, calories, and steps."
+}

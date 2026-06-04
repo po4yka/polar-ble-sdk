@@ -1,0 +1,35 @@
+{
+  "id": "skin-temperature-raw-type1-unsupported",
+  "area": "sensor-parser",
+  "case": "skin_temperature_raw_type1_unsupported_frame",
+  "source": "Android SkinTemperatureDataTest and iOS SkinTemperatureDataTest",
+  "input": {
+    "dataFrameHex": "0740ae21ae31b2ee0a01",
+    "previousTimeStamp": 787762910281000000,
+    "factor": 1.0,
+    "sampleRate": 4
+  },
+  "expected": {
+    "measurementType": "SKIN_TEMPERATURE",
+    "frameType": 1,
+    "compressed": false,
+    "timeStamp": 787762911281000000,
+    "parseError": "unsupportedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.SkinTemperatureDataTest"
+    ],
+    "ios": [
+      "SkinTemperatureDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SkinTemperatureParserCommonPolicyTest"
+    ]
+  }
+}

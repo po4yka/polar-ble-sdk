@@ -164,4 +164,213 @@ final class PmdSecretTest: XCTestCase {
         //Assert
         XCTAssertEqual(expectedData, decrypted)
     }
+
+    func testPmdSecretGoldenVectorsMatchIOSCommunicationsBehavior() throws {
+        let vectors = try loadPmdSecretGoldenVectors()
+        XCTAssertFalse(vectors.isEmpty, "Expected PMD secret golden vectors")
+
+        for vector in vectors {
+            let id = vector["id"] as? String ?? "unknown-vector"
+            let input = try XCTUnwrap(vector["input"] as? [String: Any], id)
+            let expected = try XCTUnwrap(vector["expected"] as? [String: Any], id)
+            let platformExpectations = vector["platformExpectations"] as? [String: Any]
+            let iosExpectations = platformExpectations?["ios"] as? [String: Any]
+            let operation = try XCTUnwrap(input["operation"] as? String, id)
+
+            switch operation {
+            case "serialize":
+                let secret = try PmdSecret(strategy: PmdSecret.SecurityStrategy(vectorName: try XCTUnwrap(input["strategy"] as? String, id)), key: try Data(hexString: try XCTUnwrap(input["keyHex"] as? String, id)))
+                let expectedSerialized = try Data(hexString: try XCTUnwrap(expected["serializedHex"] as? String, id))
+                XCTAssertEqual(expectedSerialized, secret.serializeToPmdSettings(), id)
+            case "decrypt":
+                let secret = try PmdSecret(strategy: PmdSecret.SecurityStrategy(vectorName: try XCTUnwrap(input["strategy"] as? String, id)), key: try Data(hexString: try XCTUnwrap(input["keyHex"] as? String, id)))
+                let cipher = try Data(hexString: try XCTUnwrap(input["cipherHex"] as? String, id))
+                let expectedDecrypted = try Data(hexString: try XCTUnwrap(expected["decryptedHex"] as? String, id))
+                XCTAssertEqual(expectedDecrypted, try secret.decryptArray(cipherArray: cipher), id)
+            case "construct":
+                let strategy = PmdSecret.SecurityStrategy(vectorName: try XCTUnwrap(input["strategy"] as? String, id))
+                let key = try Data(hexString: try XCTUnwrap(input["keyHex"] as? String, id))
+                if let constructorError = iosExpectations?["constructorError"] as? String {
+                    assertConstructorError(constructorError, id: id) {
+                        _ = try PmdSecret(strategy: strategy, key: key)
+                    }
+                } else {
+                    _ = try PmdSecret(strategy: strategy, key: key)
+                }
+            case "fromByte":
+                let strategyByte = try XCTUnwrap(try Data(hexString: try XCTUnwrap(input["strategyByteHex"] as? String, id)).first, id)
+                if let strategyError = iosExpectations?["strategyError"] as? String {
+                    assertStrategyError(strategyError, id: id) {
+                        _ = try PmdSecret.SecurityStrategy.fromByte(strategyByte: strategyByte)
+                    }
+                } else {
+                    XCTAssertEqual(PmdSecret.SecurityStrategy(vectorName: try XCTUnwrap(expected["strategy"] as? String, id)), try PmdSecret.SecurityStrategy.fromByte(strategyByte: strategyByte), id)
+                }
+            default:
+                XCTFail("Unsupported operation in \(id): \(operation)")
+            }
+        }
+    }
+
+    func testPmdSecretGoldenVectorsFollowNeutralKmpVectorShape() throws {
+        for vector in try loadPmdSecretGoldenVectors() {
+            let id = vector["id"] as? String ?? "unknown-vector"
+
+            XCTAssertNotNil(vector["area"], id)
+            XCTAssertNotNil(vector["case"], id)
+            XCTAssertNotNil(vector["source"], id)
+            XCTAssertNotNil(vector["input"], id)
+            XCTAssertNotNil(vector["expected"], id)
+            let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], id)
+            XCTAssertNotNil(platforms["android"], id)
+            XCTAssertNotNil(platforms["ios"], id)
+            XCTAssertNotNil(platforms["common"], id)
+        }
+    }
+
+    func testPmdSecretReadinessManifestIsPinnedBeforeSecretStrategyMigration() throws {
+        let manifest = try loadPmdSecretReadinessManifest()
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any])
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any])
+        let platforms = try XCTUnwrap(manifest["platforms"] as? [String: Any])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+        let policyPaths = try XCTUnwrap(input["policyVectorPaths"] as? [String])
+
+        XCTAssertEqual("pmd-secret-readiness", manifest["id"] as? String)
+        XCTAssertEqual("pmdSecretReadiness", input["kind"] as? String)
+        XCTAssertEqual(pmdSecretReadinessPolicyVectorPaths, policyPaths)
+        XCTAssertEqual(pmdSecretReadinessBehaviorFamilies, requiredFamilies)
+        XCTAssertEqual(pmdSecretReadinessBehaviorFamilies, coveredFamilies)
+        XCTAssertEqual(pmdSecretReadinessDecision, expected["commonDecision"] as? String)
+        XCTAssertEqual(["com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSecretTest"], try XCTUnwrap(consumerTests["android"] as? [String]))
+        XCTAssertEqual(["PmdSecretTest"], try XCTUnwrap(consumerTests["ios"] as? [String]))
+        XCTAssertEqual(["com.polar.sharedtest.PmdSecretCommonPolicyTest"], try XCTUnwrap(consumerTests["commonPrototype"] as? [String]))
+        XCTAssertEqual(platforms["android"] as? Bool, true)
+        XCTAssertEqual(platforms["ios"] as? Bool, true)
+        XCTAssertEqual(platforms["common"] as? Bool, true)
+    }
+
+    private func assertConstructorError(_ expectedError: String, id: String, operation: () throws -> Void) {
+        XCTAssertThrowsError(try operation(), id) { error in
+            switch expectedError {
+            case "gattSecurityError":
+                guard case BleGattException.gattSecurityError = error else {
+                    return XCTFail("Expected gattSecurityError for \(id), got \(error)")
+                }
+            default:
+                XCTFail("Unsupported constructor error expectation in \(id): \(expectedError)")
+            }
+        }
+    }
+
+    private func assertStrategyError(_ expectedError: String, id: String, operation: () throws -> Void) {
+        XCTAssertThrowsError(try operation(), id) { error in
+            switch expectedError {
+            case "gattSecurityError":
+                guard case BleGattException.gattSecurityError = error else {
+                    return XCTFail("Expected gattSecurityError for \(id), got \(error)")
+                }
+            default:
+                XCTFail("Unsupported strategy error expectation in \(id): \(expectedError)")
+            }
+        }
+    }
+
+    private func loadPmdSecretGoldenVectors() throws -> [[String: Any]] {
+        let vectorDirectory = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/protocol/pmd")
+        return try FileManager.default
+            .contentsOfDirectory(at: vectorDirectory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" && $0.lastPathComponent.hasPrefix("secret-") }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .map { file in
+                let data = try Data(contentsOf: file)
+                return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+            }
+            .filter { vector in
+                (vector["input"] as? [String: Any])?["kind"] as? String != "pmdSecretReadiness"
+            }
+    }
+
+    private func loadPmdSecretReadinessManifest() throws -> [String: Any] {
+        let manifestUrl = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/protocol/pmd/secret-readiness.json")
+        let data = try Data(contentsOf: manifestUrl)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], manifestUrl.path)
+    }
+
 }
+
+private extension PmdSecret.SecurityStrategy {
+    init(vectorName: String) {
+        switch vectorName {
+        case "NONE":
+            self = .none
+        case "XOR":
+            self = .xor
+        case "AES128":
+            self = .aes128
+        case "AES256":
+            self = .aes256
+        default:
+            fatalError("Unsupported PMD secret strategy vector name \(vectorName)")
+        }
+    }
+}
+
+private extension Data {
+    init(hexString: String) throws {
+        guard hexString.count.isMultiple(of: 2) else {
+            throw NSError(domain: "PmdSecretTest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Hex string must have an even length"])
+        }
+        var bytes: [UInt8] = []
+        var index = hexString.startIndex
+        while index < hexString.endIndex {
+            let nextIndex = hexString.index(index, offsetBy: 2)
+            let byteString = String(hexString[index..<nextIndex])
+            guard let byte = UInt8(byteString, radix: 16) else {
+                throw NSError(domain: "PmdSecretTest", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid hex byte \(byteString)"])
+            }
+            bytes.append(byte)
+            index = nextIndex
+        }
+        self.init(bytes)
+    }
+}
+
+private let pmdSecretReadinessPolicyVectorPaths = [
+    "protocol/pmd/secret-decrypt-aes128.json",
+    "protocol/pmd/secret-decrypt-aes256.json",
+    "protocol/pmd/secret-decrypt-none.json",
+    "protocol/pmd/secret-decrypt-xor.json",
+    "protocol/pmd/secret-invalid-aes128-short-key.json",
+    "protocol/pmd/secret-invalid-aes256-short-key.json",
+    "protocol/pmd/secret-invalid-none-nonempty-key.json",
+    "protocol/pmd/secret-invalid-xor-empty-key.json",
+    "protocol/pmd/secret-serialization-aes128.json",
+    "protocol/pmd/secret-serialization-aes256.json",
+    "protocol/pmd/secret-serialization-none.json",
+    "protocol/pmd/secret-serialization-xor.json",
+    "protocol/pmd/secret-strategy-from-byte-known.json",
+    "protocol/pmd/secret-strategy-from-byte-unknown.json"
+]
+
+private let pmdSecretReadinessBehaviorFamilies = [
+    "security-strategy-byte-mapping",
+    "unknown-security-strategy-rejection",
+    "security-setting-serialization",
+    "none-key-validation",
+    "xor-key-validation",
+    "aes128-key-validation",
+    "aes256-key-validation",
+    "none-decryption-policy",
+    "xor-decryption-policy",
+    "aes-fixture-pinning",
+    "aes-block-alignment-gate",
+    "platform-pmd-secret-vector-reference-gate",
+    "compile-verification-gate"
+]
+
+private let pmdSecretReadinessDecision = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, NONE and XOR decryption, AES fixture pinning, AES block-alignment gating, and compile verification remain explicit before production secret strategy code moves."

@@ -1,0 +1,38 @@
+{
+  "id": "pmd-control-point-error-invalid-state-stop-temperature",
+  "area": "pmd-control-point",
+  "case": "error_invalid_state_stop_measurement_temperature",
+  "source": "Android PmdControlPointResponse and iOS PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f0030c0c00"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "STOP_MEASUREMENT",
+    "opCodeValue": 3,
+    "measurementType": 12,
+    "measurementTypeName": "TEMPERATURE",
+    "status": "ERROR_INVALID_STATE",
+    "statusValue": 12,
+    "more": false,
+    "parametersHex": ""
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

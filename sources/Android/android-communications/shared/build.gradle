@@ -1,0 +1,33 @@
+apply plugin: 'org.jetbrains.kotlin.multiplatform'
+apply plugin: 'com.android.kotlin.multiplatform.library'
+
+kotlin {
+    jvm()
+    android {
+        namespace = 'com.polar.shared'
+        compileSdk = 35
+        minSdk = 26
+        withHostTest {}
+    }
+    [iosX64(), iosArm64(), iosSimulatorArm64()].each { target ->
+        target.binaries {
+            framework {
+                baseName = 'PolarBleSdkShared'
+                isStatic = true
+            }
+        }
+    }
+
+    sourceSets {
+        commonTest {
+            dependencies {
+                implementation kotlin('test')
+            }
+        }
+    }
+}
+
+def kotlinNativeSimulatorTestClass = Class.forName("org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest")
+tasks.withType(kotlinNativeSimulatorTestClass).configureEach {
+    environment("SIMCTL_CHILD_POLAR_BLE_SDK_REPOSITORY_ROOT", rootProject.projectDir.parentFile.parentFile.parentFile.absolutePath)
+}

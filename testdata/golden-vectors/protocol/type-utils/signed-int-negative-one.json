@@ -1,0 +1,29 @@
+{
+  "id": "signed-int-negative-one",
+  "area": "type-utils",
+  "case": "signed_int_negative_one",
+  "source": "Android TypeUtilsTest and iOS TypeUtilsTest",
+  "input": {
+    "hex": "ff"
+  },
+  "expected": {
+    "signedInt": -1
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Single byte 0xFF is sign-extended to -1.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

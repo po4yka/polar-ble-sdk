@@ -1,0 +1,48 @@
+{
+  "id": "gyr-compressed-type0-two-samples",
+  "area": "sensor-parser",
+  "case": "gyr_compressed_type0_reference_and_delta_samples",
+  "source": "Android GyrDataTest and iOS GyrDataTest",
+  "input": {
+    "dataFrameHex": "05660000000000000080eaff08000d000301df00",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "GYR",
+    "frameType": 0,
+    "compressed": true,
+    "timeStamp": 102,
+    "samples": [
+      {
+        "timeStamp": 101,
+        "x": -22.0,
+        "y": 8.0,
+        "z": 13.0
+      },
+      {
+        "timeStamp": 102,
+        "x": -23.0,
+        "y": 11.0,
+        "z": 16.0
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GyrDataTest"
+    ],
+    "ios": [
+      "GyrDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.GyrParserCommonPolicyTest"
+    ]
+  }
+}

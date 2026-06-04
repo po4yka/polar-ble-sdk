@@ -1,0 +1,38 @@
+{
+  "id": "pmd-control-point-error-invalid-resolution-mag",
+  "area": "pmd-control-point",
+  "case": "error_invalid_resolution_get_measurement_settings_mag",
+  "source": "Android BlePmdClientControlPointResponseTest and iOS PmdControlPointResponse",
+  "input": {
+    "hex": "f001060700"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "GET_MEASUREMENT_SETTINGS",
+    "opCodeValue": 1,
+    "measurementType": 6,
+    "measurementTypeName": "MAG",
+    "status": "ERROR_INVALID_RESOLUTION",
+    "statusValue": 7,
+    "more": false,
+    "parametersHex": ""
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

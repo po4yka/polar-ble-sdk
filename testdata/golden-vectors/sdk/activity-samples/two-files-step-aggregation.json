@@ -1,0 +1,208 @@
+{
+  "id": "two-files-step-aggregation",
+  "area": "sdk.activity-samples",
+  "case": "two_files_step_aggregation",
+  "source": "Android and iOS PolarActivityUtils characterization tests",
+  "input": {
+    "requestDate": "2025-04-07",
+    "directoryPath": "/U/0/20250407/ACT/",
+    "directoryEntries": [
+      {
+        "name": "ASAMPL0.BPB",
+        "size": 64
+      },
+      {
+        "name": "ASAMPL1.BPB",
+        "size": 72
+      }
+    ],
+    "files": [
+      {
+        "path": "/U/0/20250407/ACT/ASAMPL0.BPB",
+        "proto": {
+          "startTime": {
+            "date": {
+              "year": 2025,
+              "month": 4,
+              "day": 7
+            },
+            "time": {
+              "hour": 6,
+              "minute": 15,
+              "seconds": 30,
+              "millis": 0
+            },
+            "timeZoneOffset": 0,
+            "trusted": true
+          },
+          "metRecordingInterval": {
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 30,
+            "millis": 0
+          },
+          "stepsRecordingInterval": {
+            "hours": 0,
+            "minutes": 1,
+            "seconds": 0,
+            "millis": 0
+          },
+          "metSamples": [
+            1.25,
+            2.5
+          ],
+          "stepsSamples": [
+            10,
+            20,
+            30
+          ],
+          "activityInfo": [
+            {
+              "value": "CONTINUOUS_MODERATE",
+              "timeStamp": {
+                "date": {
+                  "year": 2025,
+                  "month": 4,
+                  "day": 7
+                },
+                "time": {
+                  "hour": 6,
+                  "minute": 16,
+                  "seconds": 0,
+                  "millis": 0
+                },
+                "timeZoneOffset": 0,
+                "trusted": true
+              },
+              "factor": 1.5
+            }
+          ]
+        },
+        "expected": {
+          "startTime": "2025-04-07T06:15:30",
+          "metRecordingIntervalSeconds": 30,
+          "stepRecordingIntervalSeconds": 60,
+          "metSamples": [
+            1.25,
+            2.5
+          ],
+          "stepSamples": [
+            10,
+            20,
+            30
+          ],
+          "activityInfo": [
+            {
+              "activityClass": "CONTINUOUS_MODERATE",
+              "timeStamp": "2025-04-07T06:16:00",
+              "factor": 1.5
+            }
+          ]
+        }
+      },
+      {
+        "path": "/U/0/20250407/ACT/ASAMPL1.BPB",
+        "proto": {
+          "startTime": {
+            "date": {
+              "year": 2025,
+              "month": 4,
+              "day": 7
+            },
+            "time": {
+              "hour": 7,
+              "minute": 0,
+              "seconds": 0,
+              "millis": 500
+            },
+            "timeZoneOffset": 0,
+            "trusted": true
+          },
+          "metRecordingInterval": {
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 15,
+            "millis": 0
+          },
+          "stepsRecordingInterval": {
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 30,
+            "millis": 0
+          },
+          "metSamples": [
+            3.75
+          ],
+          "stepsSamples": [
+            40,
+            50
+          ],
+          "activityInfo": [
+            {
+              "value": "LIGHT",
+              "timeStamp": {
+                "date": {
+                  "year": 2025,
+                  "month": 4,
+                  "day": 7
+                },
+                "time": {
+                  "hour": 7,
+                  "minute": 0,
+                  "seconds": 30,
+                  "millis": 500
+                },
+                "timeZoneOffset": 0,
+                "trusted": true
+              },
+              "factor": 0.75
+            }
+          ]
+        },
+        "expected": {
+          "startTime": "2025-04-07T07:00:00.500",
+          "metRecordingIntervalSeconds": 15,
+          "stepRecordingIntervalSeconds": 30,
+          "metSamples": [
+            3.75
+          ],
+          "stepSamples": [
+            40,
+            50
+          ],
+          "activityInfo": [
+            {
+              "activityClass": "LIGHT",
+              "timeStamp": "2025-04-07T07:00:30.500",
+              "factor": 0.75
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "expected": {
+    "totalSteps": 150,
+    "filePaths": [
+      "/U/0/20250407/ACT/ASAMPL0.BPB",
+      "/U/0/20250407/ACT/ASAMPL1.BPB"
+    ]
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarActivityUtilsTest"
+    ],
+    "ios": [
+      "PolarActivityUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.ActivitySummaryCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Activity sample directory with two ASAMPL files, step aggregation, recording intervals, MET samples, and activity-info mapping."
+}

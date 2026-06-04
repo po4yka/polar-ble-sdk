@@ -1,0 +1,52 @@
+{
+  "id": "unknown-complication-preserved",
+  "area": "sdk-watch-face-flatbuffer",
+  "case": "unknown_complication_id_roundtrips_without_enum_mapping",
+  "description": "Unknown complication identifiers are preserved in the flatbuffer field list even when they do not map to a known public enum.",
+  "source": "Android PolarWatchFaceUtilsTest and iOS PolarWatchFaceUtilsTests",
+  "input": {
+    "fields": {
+      "timeStyleId": 1,
+      "complicationLayoutId": 1,
+      "backgroundStyleId": 2,
+      "accentColor": 1193046,
+      "complicationIds": [
+        999999999,
+        -1890171431
+      ],
+      "fontfaceId": 3
+    }
+  },
+  "expected": {
+    "fields": {
+      "timeStyleId": 1,
+      "complicationLayoutId": 1,
+      "backgroundStyleId": 2,
+      "accentColor": 1193046,
+      "complicationIds": [
+        999999999,
+        -1890171431
+      ],
+      "fontfaceId": 3
+    }
+  },
+  "commonDecision": {
+    "unknownComplicationPolicy": "preserve-raw-id-in-config-fields-and-return-null-for-enum-lookup"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarWatchFaceUtilsTest"
+    ],
+    "ios": [
+      "PolarWatchFaceUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.WatchFaceCommonPolicyTest"
+    ]
+  }
+}

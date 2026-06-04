@@ -188,8 +188,6 @@ extension Data_PbUserPhysData {
             gender = .male
         case .female:
             gender = .female
-        default:
-            gender = .male
         }
 
         let birthDate: Date = {

@@ -1,0 +1,46 @@
+{
+  "id": "temperature-raw-type0-ieee754-boundaries",
+  "area": "sensor-parser",
+  "case": "temperature_raw_type0_ieee754_float_boundaries",
+  "source": "Android TemperatureDataTest and iOS TemperatureDataTest",
+  "input": {
+    "dataFrameHex": "0c660000000000000000ffff7f7f00008000",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "TEMPERATURE",
+    "frameType": 0,
+    "compressed": false,
+    "timeStamp": 102,
+    "samples": [
+      {
+        "timeStamp": 101,
+        "temperature": 3.4028235e+38
+      },
+      {
+        "timeStamp": 102,
+        "temperature": 1.17549435e-38
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Covers IEEE-754 maximum finite Float and smallest positive normal Float decoding from little-endian raw type-0 temperature payloads.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PressureDataTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.TemperatureDataTest"
+    ],
+    "ios": [
+      "TemperatureDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PressureTemperatureParserCommonPolicyTest"
+    ]
+  }
+}

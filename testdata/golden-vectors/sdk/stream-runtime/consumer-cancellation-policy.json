@@ -1,0 +1,47 @@
+{
+  "id": "consumer-cancellation-policy",
+  "area": "sdk-stream-runtime",
+  "case": "consumer_cancellation_removes_observer_and_cancels_upstream",
+  "source": "Android ChannelUtilsTests and iOS StreamContinuationListTest consumer cancellation characterization",
+  "input": {
+    "kind": "genericStreamCancellationPolicy",
+    "target": "stream",
+    "actions": [
+      "subscribe",
+      "cancel-consumer",
+      "cancel-consumer"
+    ]
+  },
+  "expected": {
+    "activeObserverCount": 0,
+    "upstreamCancelled": true,
+    "cleanupCallbackCount": 1,
+    "cancelledStreams": [
+      "stream"
+    ],
+    "cancellationPolicy": "idempotent-consumer-cancellation",
+    "commonDecision": "Consumer cancellation must remove the observer, cancel upstream work once, and remain idempotent."
+  },
+  "execution": {
+    "kind": "fake-stream-runtime-policy",
+    "transport": "generic-stream-cancellation",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.ChannelUtilsTests"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.StreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Stream utilities can move to shared KMP code only after consumer cancellation removes observers and cancels upstream work idempotently on Android, iOS, and the shared fake-stream runtime."
+}

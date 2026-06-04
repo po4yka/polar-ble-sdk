@@ -1,0 +1,29 @@
+{
+  "id": "unsigned-long-too-long",
+  "area": "type-utils",
+  "case": "unsigned_long_oversized_payload",
+  "source": "Android TypeUtilsTest and iOS TypeUtils implementation",
+  "input": {
+    "hex": "000000000000000000"
+  },
+  "expected": {
+    "unsignedLongError": "payloadTooLong"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Android throws AssertionError through BleUtils.validate; iOS asserts. Shared KMP should expose a deterministic error.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

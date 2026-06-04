@@ -331,6 +331,78 @@ class PolarTestUtilsTests: XCTestCase {
         }
     }
 
+    // MARK: - Golden vectors
+
+    func testSpo2GoldenVectors_MapProtoFieldsToPublicModel() throws {
+        for vector in try loadSpo2GoldenVectors() {
+            let id = try XCTUnwrap(vector["id"] as? String)
+            let input = try XCTUnwrap(vector["input"] as? [String: Any], id)
+            let protoFields = try XCTUnwrap(input["proto"] as? [String: Any], id)
+            let expected = try expectedForIOS(vector, id: id)
+            let proto = try buildProto(from: protoFields, id: id)
+            let date = try date(from: XCTUnwrap(input["date"] as? String, id))
+            let timeDirName = try XCTUnwrap(input["timeDirName"] as? String, id)
+
+            let result = PolarTestUtils.fromProto(proto: proto, date: date, timeDirName: timeDirName)
+
+            try assertSpo2Result(result, expected: expected, id: id)
+        }
+    }
+
+    func testSpo2GoldenVectorsFollowNeutralKmpShape() throws {
+        for vector in try loadSpo2GoldenVectors() {
+            let id = try XCTUnwrap(vector["id"] as? String)
+            XCTAssertNotNil(vector["area"], id)
+            XCTAssertNotNil(vector["case"], id)
+            XCTAssertNotNil(vector["source"], id)
+            XCTAssertNotNil(vector["input"], id)
+            XCTAssertNotNil(vector["expected"], id)
+            let input = try XCTUnwrap(vector["input"] as? [String: Any], id)
+            XCTAssertNotNil(input["date"], id)
+            XCTAssertNotNil(input["timeDirName"], id)
+            XCTAssertNotNil(input["proto"], id)
+            let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], id)
+            XCTAssertEqual(platforms["android"] as? Bool, true, id)
+            XCTAssertEqual(platforms["ios"] as? Bool, true, id)
+            XCTAssertEqual(platforms["common"] as? Bool, true, id)
+        }
+    }
+
+    func testSpo2ReadinessManifestIsPinnedBeforeModelMigration() throws {
+        let readiness = try loadSpo2ReadinessManifest()
+        let input = try XCTUnwrap(readiness["input"] as? [String: Any])
+        let expected = try XCTUnwrap(readiness["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(readiness["consumerTests"] as? [String: Any])
+        let policyVectorPaths = try XCTUnwrap(input["policyVectorPaths"] as? [String])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+        XCTAssertEqual(readiness["id"] as? String, "spo2-readiness")
+        XCTAssertEqual(input["kind"] as? String, "spo2Readiness")
+        XCTAssertEqual(policyVectorPaths, [
+            "sdk/spo2-test/full-passed-normal.json",
+            "sdk/spo2-test/ios-trigger-automatic.json",
+            "sdk/spo2-test/omitted-optionals.json",
+            "sdk/spo2-test/unknown-spo2-class-platform-difference.json"
+        ])
+        let expectedFamilies = [
+            "full-passed-normal-field-mapping",
+            "optional-protobuf-presence-preservation",
+            "empty-recording-device-normalization",
+            "nullable-trigger-type-policy",
+            "android-no-trigger-field-platform-reference",
+            "ios-trigger-field-platform-reference",
+            "unknown-spo2-class-boundary",
+            "platform-spo2-vector-reference-gate",
+            "compile-verification-gate"
+        ]
+        XCTAssertEqual(requiredFamilies, expectedFamilies)
+        XCTAssertEqual(coveredFamilies, expectedFamilies)
+        XCTAssertEqual(expected["commonDecision"] as? String, "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.")
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.api.model.utils.PolarTestUtilsTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarTestUtilsTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.Spo2CommonPolicyTest"])
+    }
+
     // MARK: - Helpers
 
     private func buildSpo2TestProto() -> Data_PbSpo2TestResult {
@@ -391,5 +463,132 @@ class PolarTestUtilsTests: XCTestCase {
         c.year = year; c.month = month; c.day = day
         c.hour = 0; c.minute = 0; c.second = 0
         return Calendar(identifier: .gregorian).date(from: c)!
+    }
+
+    private func buildProto(from fields: [String: Any], id: String) throws -> Data_PbSpo2TestResult {
+        var proto = Data_PbSpo2TestResult()
+        if let value = fields["recordingDevice"] as? String { proto.recordingDevice = value }
+        if let value = fields["timeZoneOffsetMinutes"] as? NSNumber { proto.timeZoneOffset = value.int32Value }
+        if let value = fields["testStatus"] as? NSNumber {
+            proto.testStatus = try XCTUnwrap(Data_PbSpo2TestStatus(rawValue: value.intValue), id)
+        }
+        if let value = fields["bloodOxygenPercent"] as? NSNumber { proto.bloodOxygenPercent = value.int32Value }
+        if let value = fields["spo2Class"] as? NSNumber {
+            proto.spo2Class = try XCTUnwrap(Data_PbSpo2Class(rawValue: value.intValue), id)
+        }
+        if let value = fields["spo2ValueDeviationFromBaseline"] as? NSNumber {
+            proto.spo2ValueDeviationFromBaseline = try XCTUnwrap(Data_PbDeviationFromBaseline(rawValue: value.intValue), id)
+        }
+        if let value = fields["spo2QualityAveragePercent"] as? NSNumber { proto.spo2QualityAveragePercent = value.floatValue }
+        if let value = fields["averageHeartRateBpm"] as? NSNumber { proto.averageHeartRateBpm = value.uint32Value }
+        if let value = fields["heartRateVariabilityMs"] as? NSNumber { proto.heartRateVariabilityMs = value.floatValue }
+        if let value = fields["spo2HrvDeviationFromBaseline"] as? NSNumber {
+            proto.spo2HrvDeviationFromBaseline = try XCTUnwrap(Data_PbDeviationFromBaseline(rawValue: value.intValue), id)
+        }
+        if let value = fields["altitudeMeters"] as? NSNumber { proto.altitudeMeters = value.floatValue }
+        if let value = fields["triggerType"] as? NSNumber {
+            proto.triggerType = try XCTUnwrap(Data_PbSpo2TestTriggerType(rawValue: value.intValue), id)
+        }
+        return proto
+    }
+
+    private func assertSpo2Result(_ actual: PolarSpo2TestData, expected: [String: Any], id: String) throws {
+        try assertOptionalString(actual.recordingDevice, expected, "recordingDevice", id: id)
+        if let expectedDate = expected["dateIsoUtc"] as? String {
+            XCTAssertEqual(isoUtc(from: actual.date), expectedDate, id)
+        }
+        try assertOptionalInt(actual.timeZoneOffsetMinutes, expected, "timeZoneOffsetMinutes", id: id)
+        try assertOptionalString(actual.testStatus.map { String(describing: $0) }, expected, "testStatus", id: id)
+        try assertOptionalInt(actual.bloodOxygenPercent, expected, "bloodOxygenPercent", id: id)
+        try assertOptionalString(actual.spo2Class.map { String(describing: $0) }, expected, "spo2Class", id: id)
+        try assertOptionalString(actual.spo2ValueDeviationFromBaseline.map { String(describing: $0) }, expected, "spo2ValueDeviationFromBaseline", id: id)
+        try assertOptionalFloat(actual.spo2QualityAveragePercent, expected, "spo2QualityAveragePercent", id: id)
+        try assertOptionalUInt(actual.averageHeartRateBpm, expected, "averageHeartRateBpm", id: id)
+        try assertOptionalFloat(actual.heartRateVariabilityMs, expected, "heartRateVariabilityMs", id: id)
+        try assertOptionalString(actual.spo2HrvDeviationFromBaseline.map { String(describing: $0) }, expected, "spo2HrvDeviationFromBaseline", id: id)
+        try assertOptionalFloat(actual.altitudeMeters, expected, "altitudeMeters", id: id)
+        try assertOptionalString(actual.triggerType.map { String(describing: $0) }, expected, "triggerType", id: id)
+    }
+
+    private func assertOptionalString(_ actual: String?, _ expected: [String: Any], _ key: String, id: String) throws {
+        guard expected.keys.contains(key) else { return }
+        if expected[key] is NSNull {
+            XCTAssertNil(actual, "\(id) \(key)")
+        } else {
+            XCTAssertEqual(actual, try XCTUnwrap(expected[key] as? String, "\(id) \(key)"), "\(id) \(key)")
+        }
+    }
+
+    private func assertOptionalInt(_ actual: Int?, _ expected: [String: Any], _ key: String, id: String) throws {
+        guard expected.keys.contains(key) else { return }
+        if expected[key] is NSNull {
+            XCTAssertNil(actual, "\(id) \(key)")
+        } else {
+            XCTAssertEqual(actual, try XCTUnwrap(expected[key] as? NSNumber, "\(id) \(key)").intValue, "\(id) \(key)")
+        }
+    }
+
+    private func assertOptionalUInt(_ actual: UInt?, _ expected: [String: Any], _ key: String, id: String) throws {
+        guard expected.keys.contains(key) else { return }
+        if expected[key] is NSNull {
+            XCTAssertNil(actual, "\(id) \(key)")
+        } else {
+            XCTAssertEqual(actual, UInt(try XCTUnwrap(expected[key] as? NSNumber, "\(id) \(key)").uintValue), "\(id) \(key)")
+        }
+    }
+
+    private func assertOptionalFloat(_ actual: Float?, _ expected: [String: Any], _ key: String, id: String) throws {
+        guard expected.keys.contains(key) else { return }
+        if expected[key] is NSNull {
+            XCTAssertNil(actual, "\(id) \(key)")
+        } else {
+            XCTAssertEqual(try XCTUnwrap(actual, "\(id) \(key)"), try XCTUnwrap(expected[key] as? NSNumber, "\(id) \(key)").floatValue, accuracy: 0.00001, "\(id) \(key)")
+        }
+    }
+
+    private func loadSpo2GoldenVectors() throws -> [[String: Any]] {
+        let vectorDirectory = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/sdk/spo2-test")
+        return try FileManager.default
+            .contentsOfDirectory(at: vectorDirectory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .map { file in
+                let data = try Data(contentsOf: file)
+                return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+            }
+            .filter { vector in
+                let input = vector["input"] as? [String: Any]
+                return input?["kind"] as? String != "spo2Readiness"
+            }
+    }
+
+    private func loadSpo2ReadinessManifest() throws -> [String: Any] {
+        let vectorFile = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/sdk/spo2-test/spo2-readiness.json")
+        let data = try Data(contentsOf: vectorFile)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], vectorFile.path)
+    }
+
+
+    private func expectedForIOS(_ vector: [String: Any], id: String) throws -> [String: Any] {
+        let platforms = try XCTUnwrap(vector["platformExpectations"] as? [String: Any], id)
+        return try XCTUnwrap(platforms["ios"] as? [String: Any], id)
+    }
+
+    private func date(from value: String) throws -> Date {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return try XCTUnwrap(formatter.date(from: value), value)
+    }
+
+    private func isoUtc(from date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.string(from: date)
     }
 }

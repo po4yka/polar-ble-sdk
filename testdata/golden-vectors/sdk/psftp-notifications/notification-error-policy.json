@@ -1,0 +1,70 @@
+{
+  "id": "notification-error-policy",
+  "area": "sdk.psftp-notifications",
+  "case": "notification_error_policy",
+  "source": "Android and iOS BlePsFtpClient notification error characterization tests",
+  "input": {
+    "kind": "waitNotificationErrorPolicy",
+    "cases": [
+      {
+        "id": "rfc76-error-first-frame",
+        "packets": [
+          {
+            "frameHex": "00ff00",
+            "status": 0
+          }
+        ],
+        "expected": {
+          "android": {
+            "outcome": "noEmission"
+          },
+          "ios": {
+            "outcome": "noEmission"
+          }
+        }
+      },
+      {
+        "id": "transport-error-first-packet",
+        "packets": [
+          {
+            "frameHex": "00ff00",
+            "status": 1
+          }
+        ],
+        "expected": {
+          "android": {
+            "outcome": "noEmission"
+          },
+          "ios": {
+            "outcome": "throwsResponseError",
+            "errorCode": 1
+          }
+        }
+      }
+    ]
+  },
+  "expected": {
+    "policy": "characterize-current-platform-notification-error-semantics",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "RFC76 error frames are ignored on both platforms. Nonzero transport status is a current platform split: Android drops the packet before the notification queue, while iOS terminates the wait-notification stream with a response error. KMP runtime migration must intentionally choose the shared policy and preserve or adapt platform facade compatibility."
+}

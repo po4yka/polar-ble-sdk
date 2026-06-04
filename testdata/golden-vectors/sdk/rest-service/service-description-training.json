@@ -1,0 +1,95 @@
+{
+  "id": "service-description-training",
+  "area": "sdk.rest-service",
+  "case": "service_description_training",
+  "source": "Android and iOS REST API characterization tests",
+  "input": {
+    "kind": "serviceDescription",
+    "json": {
+      "events": [
+        "lap_data",
+        "exercise_summary"
+      ],
+      "endpoints": [
+        "start_training_session"
+      ],
+      "cmd": {
+        "subscribe": "./REST/TRAINING.API?cmd=subscribe&event=&resend=&details=[]&triggers=[]",
+        "unsubscribe": "./REST/TRAINING.API?cmd=unsubscribe&event=",
+        "post": "./REST/TRAINING.API?cmd=post&endpoint="
+      },
+      "lap_data": {
+        "details": [
+          "lap_hr_bpm_avg",
+          "lap_speed_avg",
+          "lap_time"
+        ],
+        "triggers": [
+          "default",
+          "distance",
+          "time"
+        ]
+      },
+      "exercise_summary": {
+        "details": [
+          "duration",
+          "distance",
+          "hr_bpm_avg"
+        ]
+      }
+    }
+  },
+  "expected": {
+    "events": [
+      "lap_data",
+      "exercise_summary"
+    ],
+    "endpoints": [
+      "start_training_session"
+    ],
+    "actions": {
+      "subscribe": "./REST/TRAINING.API?cmd=subscribe&event=&resend=&details=[]&triggers=[]",
+      "unsubscribe": "./REST/TRAINING.API?cmd=unsubscribe&event=",
+      "post": "./REST/TRAINING.API?cmd=post&endpoint="
+    },
+    "eventDetails": {
+      "lap_data": [
+        "lap_hr_bpm_avg",
+        "lap_speed_avg",
+        "lap_time"
+      ],
+      "exercise_summary": [
+        "duration",
+        "distance",
+        "hr_bpm_avg"
+      ],
+      "unknown_event": []
+    },
+    "eventTriggers": {
+      "lap_data": [
+        "default",
+        "distance",
+        "time"
+      ],
+      "exercise_summary": [],
+      "unknown_event": []
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Training service description maps events, commands, details, and triggers.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceRestApiServiceTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.RestServiceMappingCommonPolicyTest"
+    ]
+  }
+}

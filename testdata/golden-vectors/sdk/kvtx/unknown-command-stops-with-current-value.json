@@ -1,0 +1,29 @@
+{
+  "id": "unknown-command-stops-with-current-value",
+  "area": "sdk-kvtx",
+  "case": "unknown_command_stops_scanner_with_current_value",
+  "source": "Android KvtxScriptUtils and iOS KvtxScriptUtils characterization",
+  "input": {
+    "scriptHex": "00050000000100000099ff00050000000100000000",
+    "extractKey": 5
+  },
+  "expected": {
+    "extractedHex": "99"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.KvtxScriptUtilsTest"
+    ],
+    "ios": [
+      "KvtxScriptUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.KvtxCommonPolicyTest"
+    ]
+  }
+}

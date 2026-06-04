@@ -805,7 +805,6 @@ final class PpgDataTest: XCTestCase {
         let expectedPPGChannel1: Int32 = 2537320
         let expectedStatus: Int32 = 3
         let expectedTimeStamp: UInt64 = 23809623
-        let amountOfSamples: UInt = 84
         let previousTimeStamp:UInt64 = 100
         
         // Frame data with timestamps, frame type data etc.
@@ -955,5 +954,233 @@ final class PpgDataTest: XCTestCase {
                 return XCTFail()
             }
         }
+    }
+
+    func testPpgGoldenVectorsMatchIOSCommunicationsBehavior() throws {
+        let vectors = try loadPpgGoldenVectors()
+        XCTAssertFalse(vectors.isEmpty, "Expected PPG golden vectors")
+
+        for vector in vectors {
+            let id = vector["id"] as? String ?? "unknown-vector"
+            if let platforms = vector["platforms"] as? [String: Any],
+               let supported = platforms["ios"] as? Bool,
+               !supported {
+                continue
+            }
+            let input = try XCTUnwrap(vector["input"] as? [String: Any], id)
+            let expected = try XCTUnwrap(vector["expected"] as? [String: Any], id)
+            let platformExpectations = vector["platformExpectations"] as? [String: Any]
+            let iosExpectations = platformExpectations?["ios"] as? [String: Any]
+            let dataFrame = try PmdDataFrame(
+                data: Data(hexString: try XCTUnwrap(input["dataFrameHex"] as? String, id)),
+                { _, _ in UInt64(truncating: input["previousTimeStamp"] as? NSNumber ?? 0) },
+                { _ in Float(truncating: input["factor"] as? NSNumber ?? 1.0) },
+                { _ in UInt(truncating: input["sampleRate"] as? NSNumber ?? 0) })
+
+            if let parseError = expected["parseError"] as? String {
+                XCTAssertThrowsError(try PpgData.parseDataFromDataFrame(frame: dataFrame), id) { error in
+                    switch parseError {
+                    case "unsupportedFrame":
+                        guard case BleGattException.gattDataError = error else {
+                            return XCTFail("Expected gattDataError for \(id), got \(error)")
+                        }
+                    case "malformedFrame":
+                        guard case BleGattException.gattDataError = error else {
+                            return XCTFail("Expected gattDataError for \(id), got \(error)")
+                        }
+                    default:
+                        XCTFail("Unsupported parse error expectation in \(id): \(parseError)")
+                    }
+                }
+                XCTAssertEqual(try XCTUnwrap(expected["timeStamp"] as? NSNumber, id).uint64Value, dataFrame.timeStamp, id)
+                continue
+            }
+
+            let ppgData = try PpgData.parseDataFromDataFrame(frame: dataFrame)
+
+            XCTAssertEqual(try XCTUnwrap(expected["timeStamp"] as? NSNumber, id).uint64Value, ppgData.timeStamp, id)
+            let samples = try XCTUnwrap((iosExpectations?["samples"] as? [[String: Any]]) ?? (expected["samples"] as? [[String: Any]]), id)
+            XCTAssertEqual(samples.count, ppgData.samples.count, id)
+            for (index, expectedSample) in samples.enumerated() {
+                if expectedSample["ppg"] != nil {
+                    let sample = try XCTUnwrap(ppgData.samples[index] as? PpgData.PpgDataFrameType0, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["timeStamp"] as? NSNumber, id).uint64Value, sample.timeStamp, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["ppg"] as? [NSNumber], id).map { $0.int32Value }, sample.ppgDataSamples, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["ambient"] as? NSNumber, id).int32Value, sample.ambientSample, id)
+                } else if expectedSample["operationMode"] != nil {
+                    let sample = try XCTUnwrap(ppgData.samples[index] as? PpgData.PpgDataFrameType5, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["timeStamp"] as? NSNumber, id).uint64Value, sample.timeStamp, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["operationMode"] as? NSNumber, id).uint64Value, sample.operationMode, id)
+                } else if expectedSample["sportId"] != nil {
+                    let sample = try XCTUnwrap(ppgData.samples[index] as? PpgData.PpgDataFrameType6, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["timeStamp"] as? NSNumber, id).uint64Value, sample.timeStamp, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["sportId"] as? NSNumber, id).int32Value, sample.sportId, id)
+                } else if expectedSample["ppgDataSamples"] != nil {
+                    let sample = ppgData.samples[index]
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["timeStamp"] as? NSNumber, id).uint64Value, sample.timeStamp, id)
+                    if let type4 = sample as? PpgData.PpgDataFrameType4 {
+                        XCTAssertEqual(try XCTUnwrap(expectedSample["ppgDataSamples"] as? [NSNumber], id).map { $0.int32Value }, type4.ppgDataSamples, id)
+                    } else if let type9 = sample as? PpgData.PpgDataFrameType9 {
+                        XCTAssertEqual(try XCTUnwrap(expectedSample["ppgDataSamples"] as? [NSNumber], id).map { $0.int32Value }, type9.ppgDataSamples, id)
+                    } else if let type14 = sample as? PpgData.PpgDataFrameType14 {
+                        XCTAssertEqual(try XCTUnwrap(expectedSample["ppgDataSamples"] as? [NSNumber], id).map { $0.int32Value }, type14.ppgDataSamples, id)
+                    } else if let type13 = sample as? PpgData.PpgDataFrameType13 {
+                        XCTAssertEqual(try XCTUnwrap(expectedSample["ppgDataSamples"] as? [NSNumber], id).map { $0.int32Value }, type13.ppgDataSamples, id)
+                        if let statusBits = expectedSample["statusBits"] as? [NSNumber] {
+                            XCTAssertEqual(statusBits.map { Int8(truncating: $0) }, type13.statusBits, id)
+                        }
+                    } else if let type7 = sample as? PpgData.PpgDataFrameType7 {
+                        XCTAssertEqual(try XCTUnwrap(expectedSample["ppgDataSamples"] as? [NSNumber], id).map { $0.int32Value }, type7.ppgDataSamples, id)
+                    } else if let type8 = sample as? PpgData.PpgDataFrameType8 {
+                        XCTAssertEqual(try XCTUnwrap(expectedSample["ppgDataSamples"] as? [NSNumber], id).map { $0.int32Value }, type8.ppgDataSamples, id)
+                        if let statusBits = expectedSample["statusBits"] as? [NSNumber] {
+                            XCTAssertEqual(statusBits.map { Int8(truncating: $0) }, type8.statusBits, id)
+                        }
+                    } else {
+                        XCTFail("Expected type 4, type 7, type 8, type 9, type 13, or type 14 PPG sample in \(id), got \(sample)")
+                    }
+                } else if expectedSample["greenSamples"] != nil {
+                    let sample = try XCTUnwrap(ppgData.samples[index] as? PpgData.PpgDataFrameType10, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["timeStamp"] as? NSNumber, id).uint64Value, sample.timeStamp, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["greenSamples"] as? [NSNumber], id).map { $0.int32Value }, sample.greenSamples, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["redSamples"] as? [NSNumber], id).map { $0.int32Value }, sample.redSamples, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["irSamples"] as? [NSNumber], id).map { $0.int32Value }, sample.irSamples, id)
+                    XCTAssertEqual(try XCTUnwrap(expectedSample["statusBits"] as? [NSNumber], id).map { Int8(truncating: $0) }, sample.statusBits, id)
+                } else {
+                    XCTFail("Unsupported PPG sample expectation in \(id): \(expectedSample)")
+                }
+            }
+        }
+    }
+
+    func testPpgGoldenVectorsFollowNeutralKmpShape() throws {
+        for vector in try loadPpgGoldenVectors() {
+            let id = try XCTUnwrap(vector["id"] as? String)
+            XCTAssertNotNil(vector["area"], id)
+            XCTAssertNotNil(vector["case"], id)
+            XCTAssertNotNil(vector["source"], id)
+            XCTAssertNotNil(vector["input"], id)
+            XCTAssertNotNil(vector["expected"], id)
+            let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], id)
+            XCTAssertNotNil(platforms["android"], id)
+            XCTAssertNotNil(platforms["ios"], id)
+            XCTAssertNotNil(platforms["common"], id)
+        }
+    }
+
+    func testPpgFrameFamilyReadinessManifestPinsIOSMigrationGate() throws {
+        let vector = try loadPpgReadinessManifest()
+        let input = try XCTUnwrap(vector["input"] as? [String: Any])
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
+        let requiredVectorPaths = try XCTUnwrap(input["requiredVectorPaths"] as? [String])
+        let parsedVectorPaths = try loadPpgGoldenVectors().map { vector in
+            "protocol/sensors/\(try XCTUnwrap(vector["id"] as? String)).json"
+        }
+        let requiredFamilies = try XCTUnwrap(input["requiredFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredFamilies"] as? [String])
+        XCTAssertEqual("ppg-frame-family-migration-readiness", vector["id"] as? String)
+        XCTAssertEqual("ppgFrameFamilyMigrationReadiness", input["kind"] as? String)
+        XCTAssertEqual(PPG_READINESS_VECTOR_PATHS, requiredVectorPaths)
+        XCTAssertEqual(parsedVectorPaths, requiredVectorPaths)
+        XCTAssertEqual(PPG_READINESS_FAMILIES, requiredFamilies)
+        XCTAssertEqual(PPG_READINESS_FAMILIES, coveredFamilies)
+        XCTAssertEqual(PPG_READINESS_COMMON_DECISION, try XCTUnwrap(expected["commonDecision"] as? String))
+        let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PpgDataTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.PpgParserCommonPolicyTest"])
+    }
+
+    private func loadPpgGoldenVectors() throws -> [[String: Any]] {
+        let vectorDirectory = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/protocol/sensors")
+        return try FileManager.default
+            .contentsOfDirectory(at: vectorDirectory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" && $0.lastPathComponent.hasPrefix("ppg-") }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .map { file in
+                let data = try Data(contentsOf: file)
+                return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+            }
+            .filter { vector in
+                guard let input = vector["input"] as? [String: Any] else {
+                    return false
+                }
+                return input["dataFrameHex"] != nil
+            }
+    }
+
+    private func loadPpgReadinessManifest() throws -> [String: Any] {
+        let manifest = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/protocol/sensors/ppg-frame-family-migration-readiness.json")
+        let data = try Data(contentsOf: manifest)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], manifest.path)
+    }
+
+    private let PPG_READINESS_VECTOR_PATHS = [
+        "protocol/sensors/ppg-compressed-type10-full-status.json",
+        "protocol/sensors/ppg-compressed-type10-reference-status.json",
+        "protocol/sensors/ppg-compressed-type13-reference-status.json",
+        "protocol/sensors/ppg-compressed-type13-truncated-delta-header-android-error.json",
+        "protocol/sensors/ppg-compressed-type13-truncated-delta-header-ios-reference-only.json",
+        "protocol/sensors/ppg-compressed-type2-unsupported.json",
+        "protocol/sensors/ppg-compressed-type7-reference-status.json",
+        "protocol/sensors/ppg-compressed-type7-truncated-delta-payload-malformed.json",
+        "protocol/sensors/ppg-compressed-type8-reference-status.json",
+        "protocol/sensors/ppg-raw-type0-truncated-sample-malformed.json",
+        "protocol/sensors/ppg-raw-type0-two-samples.json",
+        "protocol/sensors/ppg-raw-type1-unsupported.json",
+        "protocol/sensors/ppg-raw-type14-integration-gain-platform-shape.json",
+        "protocol/sensors/ppg-raw-type4-integration-gain-platform-shape.json",
+        "protocol/sensors/ppg-raw-type4-truncated-integration-gain-malformed.json",
+        "protocol/sensors/ppg-raw-type5-operation-mode-max.json",
+        "protocol/sensors/ppg-raw-type5-truncated-operation-mode-malformed.json",
+        "protocol/sensors/ppg-raw-type6-sport-id.json",
+        "protocol/sensors/ppg-raw-type6-truncated-sport-id-malformed.json",
+        "protocol/sensors/ppg-raw-type9-integration-gain-platform-shape.json"
+    ]
+
+    private let PPG_READINESS_FAMILIES = [
+        "raw-type0",
+        "raw-type4-integration-gain",
+        "raw-type5-operation-mode",
+        "raw-type6-sport-id",
+        "raw-type9-integration-gain",
+        "raw-type14-integration-gain",
+        "compressed-type7",
+        "compressed-type8",
+        "compressed-type10",
+        "compressed-type13",
+        "unsupported-raw",
+        "unsupported-compressed",
+        "malformed-raw",
+        "malformed-fixed",
+        "malformed-compressed",
+        "platform-split-type10-red-green",
+        "platform-split-type13-shape",
+        "platform-split-integration-gain-shape"
+    ]
+
+    private let PPG_READINESS_COMMON_DECISION = "PPG parser migration may proceed only after every required vector path in this manifest is executable from shared commonTest and compile-verified against the common parser prototype; this manifest does not replace parser execution or Gradle commonTest verification."
+
+}
+
+private extension Data {
+    init(hexString: String) throws {
+        guard hexString.count.isMultiple(of: 2) else {
+            throw NSError(domain: "PpgDataTest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Hex string must have an even length"])
+        }
+        var bytes: [UInt8] = []
+        var index = hexString.startIndex
+        while index < hexString.endIndex {
+            let nextIndex = hexString.index(index, offsetBy: 2)
+            let byteString = String(hexString[index..<nextIndex])
+            guard let byte = UInt8(byteString, radix: 16) else {
+                throw NSError(domain: "PpgDataTest", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid hex byte \(byteString)"])
+            }
+            bytes.append(byte)
+            index = nextIndex
+        }
+        self.init(bytes)
     }
 }

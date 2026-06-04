@@ -1,0 +1,52 @@
+{
+  "id": "version-comparison-invalid",
+  "area": "sdk.firmware-update",
+  "case": "version_comparison_invalid",
+  "source": "Android and iOS PolarFirmwareUpdateUtils characterization tests",
+  "input": {
+    "kind": "versionComparisonError",
+    "cases": [
+      {
+        "currentVersion": "1.0.x",
+        "availableVersion": "1.0.1",
+        "expectedError": {
+          "android": "NumberFormatException",
+          "ios": "fatal"
+        }
+      },
+      {
+        "currentVersion": "1.0.0",
+        "availableVersion": "2.beta.0",
+        "expectedError": {
+          "android": "NumberFormatException",
+          "ios": "fatal"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "policy": "invalid-version-error"
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "invalidVersionPolicy": "current-platform-utilities-crash-or-throw-on-non-integer-components; KMP should replace this with a typed parse failure before public workflow migration"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Current firmware version comparison rejects non-integer dotted version components.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"
+    ],
+    "ios": [
+      "PolarFirmwareUpdateUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FirmwareUpdateUtilityCommonPolicyTest"
+    ]
+  }
+}

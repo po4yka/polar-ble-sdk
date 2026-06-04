@@ -1,0 +1,41 @@
+{
+  "id": "initial-disconnected-policy",
+  "area": "sdk-stream-runtime",
+  "case": "initial_disconnected_subscription_fails_without_observer",
+  "source": "Android ChannelUtilsTests and iOS StreamContinuationListTest disconnected subscription characterization",
+  "input": {
+    "kind": "genericStreamConnectionGuardPolicy",
+    "target": "stream",
+    "startConnected": false,
+    "checkConnection": true
+  },
+  "expected": {
+    "activeObserverCount": 0,
+    "terminalError": "gattDisconnected",
+    "upstreamStarted": false,
+    "connectionGuardPolicy": "fail-before-observer-registration",
+    "commonDecision": "A checked stream subscription that starts disconnected must fail before observer registration or upstream work starts."
+  },
+  "execution": {
+    "kind": "fake-stream-runtime-policy",
+    "transport": "generic-stream-connection-guard",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.ChannelUtilsTests"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.StreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Stream utilities can move to shared KMP code only after checked disconnected subscriptions fail without observer leaks or upstream work on Android, iOS, and the shared fake-stream runtime."
+}

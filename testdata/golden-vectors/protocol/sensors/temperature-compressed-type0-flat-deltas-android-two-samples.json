@@ -1,0 +1,47 @@
+{
+  "id": "temperature-compressed-type0-flat-deltas-android-two-samples",
+  "area": "sensor-parser",
+  "case": "temperature_compressed_type0_reference_sample_with_zero_deltas_android_two_samples",
+  "source": "Android TemperatureDataTest; iOS currently returns three samples for the same payload",
+  "input": {
+    "dataFrameHex": "0c00943577000000000080ec51dc41030200",
+    "previousTimeStamp": 120,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "TEMPERATURE",
+    "frameType": 0,
+    "compressed": true,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "timeStamp": 1000000060,
+        "temperature": -2.3635322e+17
+      },
+      {
+        "timeStamp": 2000000000,
+        "temperature": 1.84838e-40
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android currently returns two samples for this compressed type-0 zero-delta payload, with the second sample decoding to a large negative value. KMP should choose an explicit shared interpretation before moving compressed temperature parsing.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PressureDataTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.TemperatureDataTest"
+    ],
+    "ios": [
+      "TemperatureDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PressureTemperatureParserCommonPolicyTest"
+    ]
+  }
+}

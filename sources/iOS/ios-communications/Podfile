@@ -1,4 +1,4 @@
-source 'https://github.com/CocoaPods/Specs.git'
+source 'https://cdn.cocoapods.org/'
 
 platform :ios, '14.0'
 use_frameworks!
@@ -30,4 +30,17 @@ target 'iOSCommunicationsTests' do
 end
 
 target 'PolarBleSdkTests' do
+end
+
+post_install do |installer|
+  minimum_ios = Gem::Version.new('14.0')
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'YES'
+      deployment_target = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+      if deployment_target && Gem::Version.new(deployment_target) < minimum_ios
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = minimum_ios.to_s
+      end
+    end
+  end
 end

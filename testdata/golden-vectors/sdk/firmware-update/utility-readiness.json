@@ -1,0 +1,53 @@
+{
+  "id": "firmware-utility-readiness",
+  "area": "sdk.firmware-update",
+  "case": "pre_migration_firmware_utility_readiness_manifest",
+  "source": "KMP migration readiness gate for firmware update utility mapping and ordering",
+  "input": {
+    "kind": "firmwareUtilityReadiness",
+    "policyVectorPaths": [
+      "sdk/firmware-update/device-info-basic.json",
+      "sdk/firmware-update/device-info-zero-version.json",
+      "sdk/firmware-update/version-comparison.json",
+      "sdk/firmware-update/version-comparison-invalid.json",
+      "sdk/firmware-update/file-ordering.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "device-info-protobuf-mapping",
+      "zero-version-preservation",
+      "dotted-integer-version-comparison",
+      "invalid-version-typed-parse-failure",
+      "system-update-file-ordering-last",
+      "platform-firmware-utility-vector-references",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "compileVerifiedPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "device-info-protobuf-mapping",
+      "zero-version-preservation",
+      "dotted-integer-version-comparison",
+      "invalid-version-typed-parse-failure",
+      "system-update-file-ordering-last",
+      "platform-firmware-utility-vector-references",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"
+    ],
+    "ios": [
+      "PolarFirmwareUpdateUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FirmwareUpdateUtilityCommonPolicyTest"
+    ]
+  }
+}

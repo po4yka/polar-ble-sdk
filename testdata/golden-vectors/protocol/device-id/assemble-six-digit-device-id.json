@@ -1,0 +1,31 @@
+{
+  "id": "assemble-six-digit-device-id",
+  "area": "device-id",
+  "case": "assembly_from_six_hex_digits",
+  "source": "Android BlePolarDeviceIdUtilityTests and iOS BlePolarDeviceIdUtilityTest",
+  "input": {
+    "deviceId": "123456"
+  },
+  "expected": {
+    "assembled": "1234561A",
+    "validAfterAssembly": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.DeviceIdGoldenVectorTest"
+    ],
+    "ios": [
+      "BlePolarDeviceIdUtilityTest",
+      "PolarDeviceUuidTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Width 6 inserts literal 1 before the checksum nibble."
+}

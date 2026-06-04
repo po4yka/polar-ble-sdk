@@ -1,0 +1,29 @@
+{
+  "id": "manufacturer-unknown-company",
+  "area": "advertisement",
+  "case": "unknown_manufacturer_company",
+  "source": "Android BleAdvertisementContentTest and iOS BleAdvertisementContentTest",
+  "input": {
+    "manufacturerDataHex": "ffff01020304"
+  },
+  "expected": {
+    "hrPresent": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Unknown manufacturer company identifiers must not be interpreted as Polar HR advertisements."
+}

@@ -1,0 +1,31 @@
+{
+  "id": "unsigned-int-little-endian",
+  "area": "type-utils",
+  "case": "unsigned_int_little_endian",
+  "source": "Android TypeUtilsTest and iOS TypeUtilsTest characterization",
+  "input": {
+    "hex": "3412"
+  },
+  "expected": {
+    "unsignedInt": 4660,
+    "unsignedLong": 4660,
+    "signedInt": 4660
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "0x1234 encoded as little-endian bytes.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

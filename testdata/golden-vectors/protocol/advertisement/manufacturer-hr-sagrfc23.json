@@ -1,0 +1,29 @@
+{
+  "id": "manufacturer-hr-sagrfc23",
+  "area": "advertisement",
+  "case": "polar_manufacturer_hr_sagrfc23",
+  "source": "Android BleAdvertisementContentTest and iOS BleAdvertisementContentTest",
+  "input": {
+    "manufacturerDataHex": "6b00720897c9c300000000007a0103330000"
+  },
+  "expected": {
+    "hrPresent": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Polar manufacturer data with GPB followed by HR payload."
+}

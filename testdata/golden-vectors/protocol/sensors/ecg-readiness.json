@@ -1,0 +1,58 @@
+{
+  "id": "ecg-readiness",
+  "area": "sensors.ecg",
+  "case": "pre_migration_readiness_manifest",
+  "source": "KMP migration readiness gate for ECG parser behavior",
+  "input": {
+    "kind": "ecgReadiness",
+    "policyVectorPaths": [
+      "protocol/sensors/ecg-raw-type0-signed-24bit-boundaries.json",
+      "protocol/sensors/ecg-raw-type0-truncated-sample-android-error.json",
+      "protocol/sensors/ecg-raw-type0-two-samples.json",
+      "protocol/sensors/ecg-raw-type1-android-status-bits.json",
+      "protocol/sensors/ecg-raw-type2-android-tags.json",
+      "protocol/sensors/ecg-raw-type3-android-frame-samples.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "raw-type0-signed-24bit-parsing",
+      "raw-type0-boundary-values",
+      "raw-type0-timestamp-interpolation",
+      "raw-type0-malformed-short-sample-policy",
+      "android-raw-type1-status-bit-ownership",
+      "android-raw-type2-tag-ownership",
+      "android-raw-type3-frame-sample-ownership",
+      "platform-ecg-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "raw-type0-signed-24bit-parsing",
+      "raw-type0-boundary-values",
+      "raw-type0-timestamp-interpolation",
+      "raw-type0-malformed-short-sample-policy",
+      "android-raw-type1-status-bit-ownership",
+      "android-raw-type2-tag-ownership",
+      "android-raw-type3-frame-sample-ownership",
+      "platform-ecg-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.EcgDataTest"
+    ],
+    "ios": [
+      "EcgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.EcgParserCommonPolicyTest"
+    ]
+  }
+}

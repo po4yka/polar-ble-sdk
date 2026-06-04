@@ -1,0 +1,35 @@
+{
+  "id": "ppg-raw-type1-unsupported",
+  "area": "sensor-parser",
+  "case": "ppg_raw_type1_unsupported",
+  "source": "Android PpgDataTest and iOS PpgDataTest",
+  "input": {
+    "dataFrameHex": "01660000000000000001",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PPG",
+    "frameType": 1,
+    "compressed": false,
+    "timeStamp": 102,
+    "parseError": "unsupportedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ]
+  }
+}

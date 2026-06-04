@@ -1,0 +1,81 @@
+{
+  "id": "rest-event-compression-platform-policy",
+  "area": "sdk.rest-service",
+  "case": "rest_event_compression_platform_policy",
+  "source": "Android and iOS REST API characterization tests",
+  "input": {
+    "kind": "restEventCompression",
+    "cases": [
+      {
+        "id": "uncompressed-batch",
+        "uncompressed": true,
+        "payloads": [
+          "{\"path\":\"/v1/users\",\"operation\":\"created\"}",
+          "{\"path\":\"/v1/users/1\",\"operation\":\"updated\"}"
+        ]
+      },
+      {
+        "id": "empty-uncompressed-batch",
+        "uncompressed": true,
+        "payloads": []
+      },
+      {
+        "id": "compressed-batch",
+        "uncompressed": false,
+        "payloads": [
+          "{\"path\":\"/v1/training\",\"operation\":\"synced\"}",
+          "{\"path\":\"/v1/activity\",\"operation\":\"deleted\"}"
+        ],
+        "compression": {
+          "android": "gzip",
+          "ios": "deflate"
+        }
+      },
+      {
+        "id": "malformed-compressed-payload",
+        "uncompressed": false,
+        "payloads": [
+          "not-a-compressed-rest-event"
+        ],
+        "compression": {
+          "android": "invalid-gzip",
+          "ios": "invalid-deflate"
+        },
+        "expected": {
+          "android": "throws-ioexception",
+          "ios": "emits-original-payload"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "payloadPolicy": "emit-original-utf8-payloads",
+    "batchPolicy": "preserve-notification-payload-order-and-emit-empty-batches",
+    "malformedCompressedPayloadPolicy": {
+      "android": "throws IOException from GZIPInputStream and terminates the flow collection",
+      "ios": "logs inflate failure and emits the original payload bytes"
+    }
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "compressionPolicy": "Android currently uses GZIPInputStream while iOS uses zlib deflate/inflate helpers for REST event payloads; normalize or explicitly preserve this platform split before moving REST event decoding to shared KMP code."
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "REST API event notifications emit original payloads when uncompressed and inflate compressed payloads using the current platform codec.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceRestApiServiceTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.RestEventCompressionPolicyCommonTest"
+    ]
+  }
+}

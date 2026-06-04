@@ -1,0 +1,71 @@
+{
+  "id": "restore-failure-platform-policy",
+  "area": "sdk.backup-utils",
+  "case": "restore_failure_platform_policy",
+  "source": "Android and iOS PolarBackupManager characterization tests",
+  "input": {
+    "restoreFiles": [
+      {
+        "directory": "/SYS/BT/",
+        "fileName": "BTDEV.BPB",
+        "dataHex": "0102",
+        "writeResult": "success"
+      },
+      {
+        "directory": "/SYS/BT/",
+        "fileName": "SVSTATUS.BPB",
+        "dataHex": "0304",
+        "writeResult": "failure"
+      },
+      {
+        "directory": "/RANDOM/",
+        "fileName": "FILE.TXT",
+        "dataHex": "0506",
+        "writeResult": "success"
+      }
+    ]
+  },
+  "expected": {
+    "writes": [
+      {
+        "command": "PUT",
+        "path": "/SYS/BT/BTDEV.BPB",
+        "dataHex": "0102"
+      },
+      {
+        "command": "PUT",
+        "path": "/SYS/BT/SVSTATUS.BPB",
+        "dataHex": "0304"
+      },
+      {
+        "command": "PUT",
+        "path": "/RANDOM/FILE.TXT",
+        "dataHex": "0506"
+      }
+    ],
+    "android": {
+      "throws": false
+    },
+    "ios": {
+      "throws": true,
+      "errorContains": "/SYS/BT/SVSTATUS.BPB"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarBackupManagerTest"
+    ],
+    "ios": [
+      "PolarBackupManagerTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.BackupUtilityCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "KMP should choose whether restore failure aggregation belongs in shared code or remains platform-specific compatibility behavior."
+}

@@ -1,0 +1,169 @@
+{
+  "id": "trigger-mapping",
+  "area": "sdk.offline-recording",
+  "case": "trigger_mapping",
+  "source": "Android and iOS PolarDataUtils characterization tests",
+  "input": {
+    "polarToPmd": {
+      "input": {
+        "triggerMode": "TRIGGER_SYSTEM_START",
+        "features": [
+          {
+            "type": "ACC",
+            "selectedSettings": {
+              "SAMPLE_RATE": 52,
+              "RESOLUTION": 16
+            }
+          },
+          {
+            "type": "PPG",
+            "selectedSettings": {}
+          },
+          {
+            "type": "HR",
+            "selectedSettings": null
+          }
+        ]
+      },
+      "expected": {
+        "triggerMode": {
+          "android": "TRIGGER_SYSTEM_START",
+          "ios": "systemStart"
+        },
+        "triggers": [
+          {
+            "type": {
+              "android": "ACC",
+              "ios": "acc"
+            },
+            "status": {
+              "android": "TRIGGER_ENABLED",
+              "ios": "enabled"
+            },
+            "selectedSettings": {
+              "SAMPLE_RATE": 52,
+              "RESOLUTION": 16
+            }
+          },
+          {
+            "type": {
+              "android": "PPG",
+              "ios": "ppg"
+            },
+            "status": {
+              "android": "TRIGGER_ENABLED",
+              "ios": "enabled"
+            },
+            "selectedSettings": {}
+          },
+          {
+            "type": {
+              "android": "OFFLINE_HR",
+              "ios": "offline_hr"
+            },
+            "status": {
+              "android": "TRIGGER_ENABLED",
+              "ios": "enabled"
+            },
+            "selectedSettings": null
+          }
+        ]
+      }
+    },
+    "pmdToPolar": {
+      "input": {
+        "triggerMode": {
+          "android": "TRIGGER_EXERCISE_START",
+          "ios": "exerciseStart"
+        },
+        "triggers": [
+          {
+            "type": {
+              "android": "ACC",
+              "ios": "acc"
+            },
+            "status": {
+              "android": "TRIGGER_ENABLED",
+              "ios": "enabled"
+            },
+            "availableSettings": {
+              "SAMPLE_RATE": [
+                52,
+                104
+              ],
+              "RESOLUTION": [
+                16
+              ]
+            }
+          },
+          {
+            "type": {
+              "android": "GYRO",
+              "ios": "gyro"
+            },
+            "status": {
+              "android": "TRIGGER_DISABLED",
+              "ios": "disabled"
+            },
+            "availableSettings": null
+          },
+          {
+            "type": {
+              "android": "OFFLINE_HR",
+              "ios": "offline_hr"
+            },
+            "status": {
+              "android": "TRIGGER_ENABLED",
+              "ios": "enabled"
+            },
+            "availableSettings": null
+          }
+        ]
+      },
+      "expected": {
+        "triggerMode": "TRIGGER_EXERCISE_START",
+        "features": [
+          {
+            "type": "ACC",
+            "settings": {
+              "SAMPLE_RATE": [
+                52,
+                104
+              ],
+              "RESOLUTION": [
+                16
+              ]
+            }
+          },
+          {
+            "type": "HR",
+            "settings": null
+          }
+        ],
+        "excludedFeatures": [
+          "GYRO"
+        ]
+      }
+    }
+  },
+  "expected": {
+    "policy": "offline-trigger-mapping"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.PolarDataUtilsTest"
+    ],
+    "ios": [
+      "PolarDataUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.OfflineRecordingMetadataCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector covers pure trigger mapping only. BLE command sequencing, encryption-secret handling, and get/set trigger transport errors still need fake-transport coverage before shared workflow migration."
+}

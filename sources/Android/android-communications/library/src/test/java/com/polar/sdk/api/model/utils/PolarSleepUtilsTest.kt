@@ -1,5 +1,7 @@
 package com.polar.sdk.api.model.utils
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.sleep.OriginalSleepRange
 import com.polar.sdk.api.model.sleep.PolarSleepAnalysisResult
@@ -23,11 +25,16 @@ import io.mockk.confirmVerified
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import protocol.PftpRequest
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileReader
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -118,6 +125,193 @@ class PolarSleepUtilsTest {
         confirmVerified(mockClient)
     }
 
+    @Test
+    fun sleepOffsetGoldenVector_preservesAndroidFieldMapping() = runTest {
+        val vector = loadSleepVector("sleep-offset-platform-policy")
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected").getAsJsonObject("android")
+        val mockClient = mockk<BlePsFtpClient>()
+        val sleepOutputStream = ByteArrayOutputStream()
+        val skinTempOutputStream = ByteArrayOutputStream()
+        val sleepProto = SleepanalysisResult.PbSleepAnalysisResult.newBuilder()
+            .setSleepStartTime(createPbLocalDateTime(22, 0, 0, 0, 1, 1, 2024, 120))
+            .setSleepEndTime(createPbLocalDateTime(6, 30, 0, 0, 2, 1, 2024, 120))
+            .setLastModified(Types.PbSystemDateTime.newBuilder()
+                .setTime(createPbTime(6, 31, 0, 0))
+                .setDate(createPbDate(2, 1, 2024))
+                .setTrusted(true)
+                .build())
+            .setSleepGoalMinutes(480)
+            .setSleepResultDate(Types.PbDate.newBuilder().setDay(2).setMonth(1).setYear(2024).build())
+            .setOriginalSleepRange(Types.PbLocalDateTimeRange.newBuilder()
+                .setStartTime(createPbLocalDateTime(22, 0, 0, 0, 1, 1, 2024, 120))
+                .setEndTime(createPbLocalDateTime(6, 30, 0, 0, 2, 1, 2024, 120))
+                .build())
+            .setSleepStartOffsetSeconds(input.get("sleepStartOffsetSeconds").asInt)
+            .setSleepEndOffsetSeconds(input.get("sleepEndOffsetSeconds").asInt)
+            .build()
+        sleepProto.writeTo(sleepOutputStream)
+        PbSleepSkinTemperatureResult.newBuilder().build().writeTo(skinTempOutputStream)
+        coEvery { mockClient.request(any()) } answers { sleepOutputStream } andThen skinTempOutputStream
+
+        val result = PolarSleepUtils.readSleepDataFromDayDirectory(mockClient, LocalDate.of(2024, 1, 2))
+
+        assertEquals(expected.get("sleepStartOffsetSeconds").asInt, result.sleepStartOffsetSeconds)
+        assertEquals(expected.get("sleepEndOffsetSeconds").asInt, result.sleepEndOffsetSeconds)
+    }
+
+    @Test
+    fun sleepTimezoneGoldenVector_preservesAndroidOffsetsAndInstants() = runTest {
+        val vector = loadSleepVector("sleep-timezone-offsets")
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected").getAsJsonObject("android")
+        val mockClient = mockk<BlePsFtpClient>()
+        val sleepOutputStream = ByteArrayOutputStream()
+        val skinTempOutputStream = ByteArrayOutputStream()
+        val sleepProto = SleepanalysisResult.PbSleepAnalysisResult.newBuilder()
+            .setSleepStartTime(createPbLocalDateTime(input.getAsJsonObject("sleepStartTime")))
+            .setSleepEndTime(createPbLocalDateTime(input.getAsJsonObject("sleepEndTime")))
+            .setLastModified(Types.PbSystemDateTime.newBuilder()
+                .setTime(createPbTime(6, 31, 0, 0))
+                .setDate(createPbDate(1, 4, 2024))
+                .setTrusted(true)
+                .build())
+            .setSleepGoalMinutes(480)
+            .setSleepResultDate(Types.PbDate.newBuilder().setDay(1).setMonth(4).setYear(2024).build())
+            .build()
+        sleepProto.writeTo(sleepOutputStream)
+        PbSleepSkinTemperatureResult.newBuilder().build().writeTo(skinTempOutputStream)
+        coEvery { mockClient.request(any()) } answers { sleepOutputStream } andThen skinTempOutputStream
+
+        val result = PolarSleepUtils.readSleepDataFromDayDirectory(mockClient, LocalDate.of(2024, 4, 1))
+
+        assertEquals(expected.get("sleepStartOffsetMinutes").asInt * 60, result.sleepStartTime?.offset?.totalSeconds)
+        assertEquals(expected.get("sleepEndOffsetMinutes").asInt * 60, result.sleepEndTime?.offset?.totalSeconds)
+        assertEquals(OffsetDateTime.parse(expected.get("sleepStartUtcInstant").asString).toInstant(), result.sleepStartTime?.toInstant())
+        assertEquals(OffsetDateTime.parse(expected.get("sleepEndUtcInstant").asString).toInstant(), result.sleepEndTime?.toInstant())
+    }
+
+    @Test
+    fun sleepStageHypnogramGoldenVector_preservesAndroidStageAndCycleOrder() = runTest {
+        val vector = loadSleepVector("sleep-stage-hypnogram")
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val mockClient = mockk<BlePsFtpClient>()
+        val sleepOutputStream = ByteArrayOutputStream()
+        val skinTempOutputStream = ByteArrayOutputStream()
+        val sleepProtoBuilder = SleepanalysisResult.PbSleepAnalysisResult.newBuilder()
+            .setSleepStartTime(createPbLocalDateTime(22, 0, 0, 0, 1, 1, 2024, 120))
+            .setSleepEndTime(createPbLocalDateTime(6, 0, 0, 0, 2, 1, 2024, 120))
+            .setLastModified(Types.PbSystemDateTime.newBuilder()
+                .setTime(createPbTime(6, 1, 0, 0))
+                .setDate(createPbDate(2, 1, 2024))
+                .setTrusted(true)
+                .build())
+            .setSleepGoalMinutes(480)
+            .setSleepResultDate(Types.PbDate.newBuilder().setDay(2).setMonth(1).setYear(2024).build())
+        input.getAsJsonArray("sleepWakePhases").map { it.asJsonObject }.forEach { phase ->
+            sleepProtoBuilder.addSleepwakePhases(SleepanalysisResult.PbSleepWakePhase.newBuilder()
+                .setSecondsFromSleepStart(phase.get("secondsFromSleepStart").asInt)
+                .setSleepwakeState(SleepanalysisResult.PbSleepWakeState.valueOf(phase.get("protoState").asString))
+                .build())
+        }
+        input.getAsJsonArray("sleepCycles").map { it.asJsonObject }.forEach { cycle ->
+            sleepProtoBuilder.addSleepCycles(SleepanalysisResult.PbSleepCycle.newBuilder()
+                .setSecondsFromSleepStart(cycle.get("secondsFromSleepStart").asInt)
+                .setSleepDepthStart(cycle.get("sleepDepthStart").asFloat)
+                .build())
+        }
+        sleepProtoBuilder.build().writeTo(sleepOutputStream)
+        PbSleepSkinTemperatureResult.newBuilder().build().writeTo(skinTempOutputStream)
+        coEvery { mockClient.request(any()) } answers { sleepOutputStream } andThen skinTempOutputStream
+
+        val result = PolarSleepUtils.readSleepDataFromDayDirectory(mockClient, LocalDate.of(2024, 1, 2))
+
+        val expectedPhases = expected.getAsJsonArray("sleepWakePhases").map { it.asJsonObject }
+        assertEquals(expectedPhases.size, result.sleepWakePhases?.size)
+        expectedPhases.forEachIndexed { index, phase ->
+            assertEquals(phase.get("secondsFromSleepStart").asInt, result.sleepWakePhases?.get(index)?.secondsFromSleepStart)
+            assertEquals(SleepWakeState.valueOf(phase.get("state").asString), result.sleepWakePhases?.get(index)?.state)
+        }
+        val expectedCycles = expected.getAsJsonArray("sleepCycles").map { it.asJsonObject }
+        assertEquals(expectedCycles.size, result.sleepCycles?.size)
+        expectedCycles.forEachIndexed { index, cycle ->
+            assertEquals(cycle.get("secondsFromSleepStart").asInt, result.sleepCycles?.get(index)?.secondsFromSleepStart)
+            assertEquals(cycle.get("sleepDepthStart").asFloat, result.sleepCycles?.get(index)?.sleepDepthStart ?: Float.NaN, 0.0001f)
+        }
+    }
+
+    @Test
+    fun partialNightGoldenVector_preservesAndroidOmittedOptionalPolicy() = runTest {
+        val vector = loadSleepVector("partial-night-omitted-optionals")
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val commonExpected = expected.getAsJsonObject("common")
+        val androidExpected = expected.getAsJsonObject("android")
+        val mockClient = mockk<BlePsFtpClient>()
+        val sleepOutputStream = ByteArrayOutputStream()
+        val skinTempOutputStream = ByteArrayOutputStream()
+        val sleepResultDate = input.getAsJsonObject("sleepResultDate")
+        val sleepProto = SleepanalysisResult.PbSleepAnalysisResult.newBuilder()
+            .setSleepStartTime(createPbLocalDateTime(23, 0, 0, 0, 5, 5, 2024, 180))
+            .setSleepEndTime(createPbLocalDateTime(4, 15, 0, 0, 6, 5, 2024, 180))
+            .setLastModified(Types.PbSystemDateTime.newBuilder()
+                .setTime(createPbTime(4, 16, 0, 0))
+                .setDate(createPbDate(6, 5, 2024))
+                .setTrusted(true)
+                .build())
+            .setSleepGoalMinutes(input.get("sleepGoalMinutes").asInt)
+            .setSleepResultDate(Types.PbDate.newBuilder()
+                .setDay(sleepResultDate.get("day").asInt)
+                .setMonth(sleepResultDate.get("month").asInt)
+                .setYear(sleepResultDate.get("year").asInt)
+                .build())
+            .build()
+        sleepProto.writeTo(sleepOutputStream)
+        PbSleepSkinTemperatureResult.newBuilder().build().writeTo(skinTempOutputStream)
+        coEvery { mockClient.request(any()) } answers { sleepOutputStream } andThen skinTempOutputStream
+
+        val result = PolarSleepUtils.readSleepDataFromDayDirectory(mockClient, LocalDate.of(2024, 5, 6))
+
+        assertEquals(commonExpected.get("sleepGoalMinutes").asInt, result.sleepGoalMinutes)
+        assertEquals(commonExpected.get("sleepWakePhaseCount").asInt, result.sleepWakePhases?.size)
+        assertEquals(commonExpected.get("snoozeTimeCount").asInt, result.snoozeTime?.size)
+        assertNull(result.alarmTime)
+        assertEquals(commonExpected.get("sleepStartOffsetSeconds").asInt, result.sleepStartOffsetSeconds)
+        assertEquals(commonExpected.get("sleepEndOffsetSeconds").asInt, result.sleepEndOffsetSeconds)
+        assertNull(result.userSleepRating)
+        assertEquals(commonExpected.get("sleepCycleCount").asInt, result.sleepCycles?.size)
+        assertEquals(LocalDate.parse(commonExpected.get("sleepResultDate").asString), result.sleepResultDate)
+        assertNull(result.sleepSkinTemperatureResult)
+        assertEquals(androidExpected.get("deviceId").asString, result.deviceId)
+        assertEquals(androidExpected.get("batteryRanOut").asBoolean, result.batteryRanOut)
+        assertNull(result.originalSleepRange)
+    }
+
+    @Test
+    fun sleepGoldenVectors_followNeutralKmpShape() {
+        listOf(
+            "partial-night-omitted-optionals",
+            "sleep-offset-platform-policy",
+            "sleep-stage-hypnogram",
+            "sleep-timezone-offsets"
+        ).forEach { vectorId ->
+            val vector = loadSleepVector(vectorId)
+            val id = vector.get("id").asString
+            assertTrue(id, vector.has("area"))
+            assertTrue(id, vector.has("case"))
+            assertTrue(id, vector.has("source"))
+            assertTrue(id, vector.has("input"))
+            assertTrue(id, vector.has("expected"))
+            assertTrue(id, vector.has("platforms"))
+            assertTrue(id, vector.getAsJsonObject("input").has("kind"))
+            val platforms = vector.getAsJsonObject("platforms")
+            assertTrue(id, platforms.get("android").asBoolean)
+            assertTrue(id, platforms.get("ios").asBoolean)
+            assertTrue(id, platforms.get("common").asBoolean)
+        }
+    }
+
     private fun createPbSleepCycleMock(): SleepanalysisResult.PbSleepCycle {
         return SleepanalysisResult.PbSleepCycle.newBuilder()
             .setSleepDepthStart(1.0f)
@@ -138,6 +332,19 @@ class PolarSleepUtilsTest {
             .setTimeZoneOffset(zoneOffsetInMinutes)
             .setOBSOLETETrusted(true)
             .build()
+    }
+
+    private fun createPbLocalDateTime(json: JsonObject): PbLocalDateTime {
+        return createPbLocalDateTime(
+            json.get("hour").asInt,
+            json.get("minute").asInt,
+            json.get("second").asInt,
+            json.get("millis").asInt,
+            json.get("day").asInt,
+            json.get("month").asInt,
+            json.get("year").asInt,
+            json.get("timeZoneOffsetMinutes").asInt
+        )
     }
 
     private fun createPbDate(day: Int, month: Int, year: Int): PbDate {
@@ -224,5 +431,30 @@ class PolarSleepUtilsTest {
             35.123456f,
             -0.111111f
         )
+    }
+
+    private fun loadSleepVector(id: String): JsonObject {
+        val vectorDirectory = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/sdk/sleep")
+        return vectorDirectory
+            .listFiles { file -> file.isFile && file.extension == "json" }
+            .orEmpty()
+            .map { file ->
+                FileReader(file).use { reader ->
+                    JsonParser().parse(reader).asJsonObject
+                }
+            }
+            .first { it.get("id").asString == id }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
     }
 }

@@ -1,0 +1,33 @@
+{
+  "id": "header-only-more-frame",
+  "area": "sdk.psftp-rfc76",
+  "case": "header_only_more_frame",
+  "source": "Android and iOS BlePsFtpUtils/BlePsFtpUtility characterization tests",
+  "input": {
+    "frameHex": "16"
+  },
+  "expected": {
+    "next": 0,
+    "status": 3,
+    "sequenceNumber": 1,
+    "payloadHex": "",
+    "error": null
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtilsTest"
+    ],
+    "ios": [
+      "BlePsFtpUtilityTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpByteCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Header-only MORE frame produces an empty payload."
+}

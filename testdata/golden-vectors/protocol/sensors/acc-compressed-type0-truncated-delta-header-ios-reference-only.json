@@ -1,0 +1,44 @@
+{
+  "id": "acc-compressed-type0-truncated-delta-header-ios-reference-only",
+  "area": "sensor-parser",
+  "case": "acc_compressed_type0_truncated_delta_header_ios_reference_only",
+  "source": "iOS AccDataTest; Android currently throws for the same malformed payload",
+  "input": {
+    "dataFrameHex": "02660000000000000080eaff08000d0003",
+    "previousTimeStamp": 100,
+    "factor": 0.5,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "ACC",
+    "frameType": 0,
+    "compressed": true,
+    "timeStamp": 102,
+    "samples": [
+      {
+        "timeStamp": 102,
+        "x": -11000,
+        "y": 4000,
+        "z": 6500
+      }
+    ]
+  },
+  "platforms": {
+    "android": false,
+    "ios": true,
+    "common": false
+  },
+  "notes": "iOS currently returns the compressed reference sample when a delta block header is truncated after deltaSize.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.AccDataTest"
+    ],
+    "ios": [
+      "AccDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AccParserCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "id": "psftp-byte-codec-readiness",
+  "area": "sdk.psftp-byte-codec",
+  "case": "psftp_byte_codec_readiness",
+  "source": "PSFTP byte-codec backlog and PsFtpByteCodecCommonPolicyTest shared common prototypes distilled into a pre-KMP readiness manifest",
+  "description": "Pins the PSFTP RFC60/RFC76 byte-codec behavior families that must remain covered before byte-level PSFTP codec logic delegates to shared KMP code.",
+  "input": {
+    "kind": "psFtpByteCodecReadiness",
+    "policyVectorPaths": [
+      "sdk/psftp-rfc76/error-frame-ffff.json",
+      "sdk/psftp-rfc76/final-last-frame.json",
+      "sdk/psftp-rfc76/first-more-frame.json",
+      "sdk/psftp-rfc76/header-only-last-frame.json",
+      "sdk/psftp-rfc76/header-only-more-frame.json",
+      "sdk/psftp-rfc76/middle-more-frame.json",
+      "sdk/psftp-rfc76/single-last-frame.json",
+      "sdk/psftp-message-stream/complete-message-streams.json",
+      "sdk/psftp-message-stream/rfc76-frame-splitting.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "rfc76-header-next-bit",
+      "rfc76-status-decoding",
+      "rfc76-sequence-number-decoding",
+      "rfc76-payload-slicing",
+      "rfc76-error-frame-platform-split",
+      "rfc60-request-stream-encoding",
+      "rfc60-query-stream-encoding",
+      "rfc60-notification-stream-encoding",
+      "android-request-file-data-append-policy",
+      "rfc76-mtu-frame-splitting",
+      "rfc76-sequence-wrap",
+      "platform-codec-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "rfc76-header-next-bit",
+      "rfc76-status-decoding",
+      "rfc76-sequence-number-decoding",
+      "rfc76-payload-slicing",
+      "rfc76-error-frame-platform-split",
+      "rfc60-request-stream-encoding",
+      "rfc60-query-stream-encoding",
+      "rfc60-notification-stream-encoding",
+      "android-request-file-data-append-policy",
+      "rfc76-mtu-frame-splitting",
+      "rfc76-sequence-wrap",
+      "platform-codec-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtilsTest"
+    ],
+    "ios": [
+      "BlePsFtpUtilityTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpByteCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for PSFTP byte-codec behavior-family completeness only; runtime request/notification/write orchestration has a separate psftp-runtime-readiness.json gate."
+}

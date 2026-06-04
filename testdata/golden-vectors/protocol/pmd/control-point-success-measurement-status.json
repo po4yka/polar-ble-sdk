@@ -1,0 +1,38 @@
+{
+  "id": "pmd-control-point-success-measurement-status",
+  "area": "pmd-control-point",
+  "case": "success_get_measurement_status_parameters",
+  "source": "Android PmdControlPointResponse and iOS PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f0050000000209"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "GET_MEASUREMENT_STATUS",
+    "opCodeValue": 5,
+    "measurementType": 0,
+    "measurementTypeName": "ECG",
+    "status": "SUCCESS",
+    "statusValue": 0,
+    "more": false,
+    "parametersHex": "0209"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

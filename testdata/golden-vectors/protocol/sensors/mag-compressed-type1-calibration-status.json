@@ -1,0 +1,50 @@
+{
+  "id": "mag-compressed-type1-calibration-status",
+  "area": "sensor-parser",
+  "case": "mag_compressed_type1_milligauss_with_calibration_status",
+  "source": "Android MagDataTest and iOS MagDataTest",
+  "input": {
+    "dataFrameHex": "0666000000000000008137ff51fd6cf600000301f802",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "MAG",
+    "frameType": 1,
+    "compressed": true,
+    "timeStamp": 102,
+    "samples": [
+      {
+        "timeStamp": 101,
+        "x": -0.201,
+        "y": -0.687,
+        "z": -2.452,
+        "calibrationStatus": "UNKNOWN"
+      },
+      {
+        "timeStamp": 102,
+        "x": -0.201,
+        "y": -0.688,
+        "z": -2.449,
+        "calibrationStatus": "POOR"
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.MagDataTest"
+    ],
+    "ios": [
+      "MagDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.MagParserCommonPolicyTest"
+    ]
+  }
+}

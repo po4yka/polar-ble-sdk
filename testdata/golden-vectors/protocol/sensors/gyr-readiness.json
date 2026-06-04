@@ -1,0 +1,63 @@
+{
+  "id": "gyr-readiness",
+  "area": "sensors.gyr",
+  "case": "pre_migration_readiness_manifest",
+  "source": "KMP migration readiness gate for GYR parser behavior",
+  "input": {
+    "kind": "gyrReadiness",
+    "policyVectorPaths": [
+      "protocol/sensors/gyr-compressed-type0-factor-half.json",
+      "protocol/sensors/gyr-compressed-type0-truncated-delta-header-android-error.json",
+      "protocol/sensors/gyr-compressed-type0-truncated-delta-header-ios-reference-only.json",
+      "protocol/sensors/gyr-compressed-type0-truncated-delta-payload-android-error.json",
+      "protocol/sensors/gyr-compressed-type0-truncated-delta-payload-ios-reference-only.json",
+      "protocol/sensors/gyr-compressed-type0-two-samples.json",
+      "protocol/sensors/gyr-compressed-type1-android-only.json",
+      "protocol/sensors/gyr-compressed-type2-unsupported.json",
+      "protocol/sensors/gyr-raw-type0-unsupported.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "compressed-type0-reference-delta-decoding",
+      "compressed-type0-factor-scaling",
+      "compressed-type0-timestamp-interpolation",
+      "unsupported-raw-frame-policy",
+      "unsupported-compressed-frame-policy",
+      "android-compressed-type1-ownership",
+      "truncated-compressed-delta-header-policy",
+      "truncated-compressed-delta-payload-policy",
+      "platform-gyr-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "compressed-type0-reference-delta-decoding",
+      "compressed-type0-factor-scaling",
+      "compressed-type0-timestamp-interpolation",
+      "unsupported-raw-frame-policy",
+      "unsupported-compressed-frame-policy",
+      "android-compressed-type1-ownership",
+      "truncated-compressed-delta-header-policy",
+      "truncated-compressed-delta-payload-policy",
+      "platform-gyr-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GyrDataTest"
+    ],
+    "ios": [
+      "GyrDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.GyrParserCommonPolicyTest"
+    ]
+  }
+}

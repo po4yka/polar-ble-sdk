@@ -1,0 +1,68 @@
+{
+  "id": "missing-exercise-file-platform-policy",
+  "area": "sdk.training-session",
+  "case": "missing_exercise_file_platform_policy",
+  "source": "Android and iOS PolarTrainingSessionUtils characterization tests",
+  "input": {
+    "kind": "readTrainingSession",
+    "reference": {
+      "date": "2025-01-01",
+      "path": "/U/0/20250101/E/101200/TSESS.BPB",
+      "trainingDataTypes": [
+        "TRAINING_SESSION_SUMMARY"
+      ],
+      "exercises": [
+        {
+          "index": 0,
+          "androidPath": "/U/0/20250101/E/101200/00/BASE.BPB",
+          "iosPath": "/U/0/20250101/E/101200/00",
+          "exerciseDataTypes": [
+            "EXERCISE_SUMMARY",
+            "ROUTE"
+          ]
+        }
+      ]
+    },
+    "responses": {
+      "/U/0/20250101/E/101200/TSESS.BPB": "trainingSessionSummary",
+      "/U/0/20250101/E/101200/00/BASE.BPB": "exerciseSummary"
+    },
+    "missingPaths": [
+      "/U/0/20250101/E/101200/00/ROUTE.BPB"
+    ]
+  },
+  "expected": {
+    "android": {
+      "throws": false,
+      "sessionSummaryPresent": true,
+      "exerciseCount": 1,
+      "exerciseSummaryPresent": true,
+      "routePresent": false
+    },
+    "ios": {
+      "throws": true
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"
+    ],
+    "ios": [
+      "PolarTrainingSessionUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TrainingSessionCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "missingExerciseFilePolicy": "Android currently returns a partial exercise when an exercise data file request fails; iOS currently propagates the request failure. Choose an explicit shared policy before moving training-session read orchestration to KMP."
+    }
+  },
+  "notes": "Training-session read where one exercise file is missing, preserving current Android/iOS policy before shared runtime migration."
+}

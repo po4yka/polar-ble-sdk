@@ -1,0 +1,97 @@
+{
+  "id": "filename-mapping",
+  "area": "sdk.offline-recording",
+  "case": "filename_mapping",
+  "source": "Android and iOS offline recording characterization tests",
+  "input": {
+    "cases": [
+      {
+        "fileName": "ACC.REC",
+        "measurementType": {
+          "android": "ACC",
+          "ios": "acc"
+        }
+      },
+      {
+        "fileName": "ACC0.REC",
+        "measurementType": {
+          "android": "ACC",
+          "ios": "acc"
+        }
+      },
+      {
+        "fileName": "GYRO5.REC",
+        "measurementType": {
+          "android": "GYRO",
+          "ios": "gyro"
+        }
+      },
+      {
+        "fileName": "MAG18.REC",
+        "measurementType": {
+          "android": "MAGNETOMETER",
+          "ios": "mgn"
+        }
+      },
+      {
+        "fileName": "PPG.REC",
+        "measurementType": {
+          "android": "PPG",
+          "ios": "ppg"
+        }
+      },
+      {
+        "fileName": "PPI.REC",
+        "measurementType": {
+          "android": "PPI",
+          "ios": "ppi"
+        }
+      },
+      {
+        "fileName": "HR1.REC",
+        "measurementType": {
+          "android": "OFFLINE_HR",
+          "ios": "offline_hr"
+        }
+      },
+      {
+        "fileName": "TEMP.REC",
+        "measurementType": {
+          "android": "TEMPERATURE",
+          "ios": "temperature"
+        }
+      },
+      {
+        "fileName": "SKINTEMP7.REC",
+        "measurementType": {
+          "android": "SKIN_TEMP",
+          "ios": "skinTemperature"
+        }
+      },
+      {
+        "fileName": "INVALID.REC",
+        "error": "unknownOfflineFile"
+      }
+    ]
+  },
+  "expected": {
+    "policy": "strip-split-file-index-and-map-known-rec-filenames"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.offlinerecording.OfflineRecordingUtilityTest"
+    ],
+    "ios": [
+      "OfflineRecordingUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.OfflineRecordingMetadataCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Offline recording filenames map to PMD measurement types after stripping split-file indices."
+}

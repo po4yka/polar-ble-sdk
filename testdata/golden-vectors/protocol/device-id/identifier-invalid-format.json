@@ -1,0 +1,31 @@
+{
+  "id": "identifier-invalid-format",
+  "area": "device-identifier-routing",
+  "case": "invalid_identifier_format_rejected",
+  "source": "Android and iOS PolarServiceClientUtils fetchSession characterization",
+  "input": {
+    "identifier": "not_a_valid_id",
+    "matchingAddress": "00:11:22:33:44:55",
+    "matchingDeviceId": "E123456F"
+  },
+  "expected": {
+    "error": "invalidArgument"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarServiceClientUtilsTest"
+    ],
+    "ios": [
+      "PolarServiceClientUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Identifier routing rejects strings that are neither platform address format nor 6-8 character hex Polar device IDs."
+}

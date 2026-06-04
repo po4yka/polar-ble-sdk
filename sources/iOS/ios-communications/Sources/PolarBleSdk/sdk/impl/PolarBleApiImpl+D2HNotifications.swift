@@ -3,7 +3,7 @@ import Foundation
 extension PolarBleApiImpl: PolarDeviceToHostNotificationsApi {
     func observeDeviceToHostNotifications(identifier: String) -> AsyncThrowingStream<PolarD2HNotificationData, Error> {
         return AsyncThrowingStream { continuation in
-            Task {
+            let task = Task {
                 do {
                     let session = try self.serviceClientUtils.sessionFtpClientReady(identifier)
                     guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
@@ -30,6 +30,9 @@ extension PolarBleApiImpl: PolarDeviceToHostNotificationsApi {
                     BleLogger.error("D2H notification error for \(identifier): \(error.localizedDescription)")
                     continuation.finish(throwing: error)
                 }
+            }
+            continuation.onTermination = { _ in
+                task.cancel()
             }
         }
     }

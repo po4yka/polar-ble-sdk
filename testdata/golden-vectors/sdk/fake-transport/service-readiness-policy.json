@@ -1,0 +1,62 @@
+{
+  "id": "service-readiness-policy",
+  "area": "sdk.fake-transport",
+  "case": "service_readiness_policy",
+  "source": "KMP fake-transport readiness planning and shared CommonFakeServiceReadinessGate prototype",
+  "description": "Pins deterministic service-readiness waiting before feature readiness or service discovery waits move into shared runtime code.",
+  "input": {
+    "kind": "serviceReadinessPolicy",
+    "readyService": "pmd",
+    "readyAttempts": [
+      false,
+      false,
+      true
+    ],
+    "readyMaxAttempts": 3,
+    "missingService": "psftp",
+    "missingAttempts": [
+      false,
+      false,
+      false
+    ],
+    "missingMaxAttempts": 2
+  },
+  "expected": {
+    "readyOutcome": "complete",
+    "readyChecks": [
+      "pmd",
+      "pmd",
+      "pmd"
+    ],
+    "missingOutcome": "timeout",
+    "missingTimeoutLabel": "service-readiness",
+    "missingChecks": [
+      "psftp",
+      "psftp"
+    ],
+    "commonDecision": "Service-readiness waits in shared runtime must be bounded, observable, deterministic, and free from wall-clock sleeps before feature readiness is delegated to KMP."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.testutils.FakeTransportContractTest"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FakeTransportContractCommonTest"
+    ]
+  },
+  "execution": {
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest fake-transport contract",
+      "wallClockSafe": true
+    }
+  },
+  "platforms": {
+    "android": false,
+    "ios": false,
+    "common": true
+  },
+  "notes": "This vector covers the shared fake-transport readiness gate only. Android and iOS service discovery, BLE service availability, and public facade error mapping remain platform-owned until a feature-specific runtime slice adds facade compatibility tests."
+}

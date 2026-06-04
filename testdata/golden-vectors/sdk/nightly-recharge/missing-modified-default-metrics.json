@@ -1,0 +1,74 @@
+{
+  "id": "missing-modified-default-metrics",
+  "area": "sdk.nightly-recharge",
+  "case": "missing_modified_default_metrics",
+  "source": "Android and iOS PolarNightlyRechargeUtils characterization tests",
+  "input": {
+    "proto": {
+      "sleepResultDate": {
+        "year": 2024,
+        "month": 1,
+        "day": 2
+      },
+      "createdTimestamp": {
+        "date": {
+          "year": 2024,
+          "month": 1,
+          "day": 2
+        },
+        "time": {
+          "hour": 3,
+          "minute": 4,
+          "second": 5,
+          "millis": 6
+        },
+        "trusted": true
+      }
+    }
+  },
+  "expected": {
+    "sleepResultDate": "2024-01-02",
+    "createdTimestamp": "2024-01-02T03:04:05.006",
+    "modifiedTimestamp": null,
+    "ansStatus": 0.0,
+    "recoveryIndicator": 0,
+    "recoveryIndicatorSubLevel": 0,
+    "ansRate": 0,
+    "scoreRateObsolete": 0,
+    "meanNightlyRecoveryRRI": 0,
+    "meanNightlyRecoveryRMSSD": 0,
+    "meanNightlyRecoveryRespirationInterval": 0,
+    "meanBaselineRRI": 0,
+    "sdBaselineRRI": 0,
+    "meanBaselineRMSSD": 0,
+    "sdBaselineRMSSD": 0,
+    "meanBaselineRespirationInterval": 0,
+    "sdBaselineRespirationInterval": 0,
+    "sleepTip": "",
+    "vitalityTip": "",
+    "exerciseTip": ""
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "proto3DefaultPolicy": "preserve-current-zero-and-empty-string-defaults-for-scalar-fields",
+      "modifiedTimestampPolicy": "preserve-null-when-field-is-absent"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarNightlyRechargeUtilsTest"
+    ],
+    "ios": [
+      "PolarNightlyRechargeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SleepNightlyRechargeCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Missing modified timestamp remains null; proto3 scalar defaults map to zero or empty-string public values."
+}

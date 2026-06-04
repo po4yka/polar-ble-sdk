@@ -1,0 +1,200 @@
+{
+  "id": "trigger-runtime-policy",
+  "area": "sdk.offline-recording",
+  "case": "trigger_runtime_policy",
+  "source": "KMP migration fake-transport planning from Android and iOS offline recording trigger orchestration",
+  "input": {
+    "kind": "offlineTriggerRuntimePolicy",
+    "currentDeviceTriggers": [
+      {
+        "type": "ACC",
+        "status": "enabled"
+      },
+      {
+        "type": "GYRO",
+        "status": "enabled"
+      },
+      {
+        "type": "OFFLINE_HR",
+        "status": "enabled"
+      }
+    ],
+    "desiredTrigger": {
+      "mode": "TRIGGER_SYSTEM_START",
+      "features": [
+        {
+          "type": "ACC",
+          "selectedSettings": {
+            "SAMPLE_RATE": 52,
+            "RESOLUTION": 16
+          }
+        },
+        {
+          "type": "HR",
+          "selectedSettings": null
+        }
+      ],
+      "secret": {
+        "present": true
+      }
+    },
+    "scenarios": [
+      {
+        "id": "set-trigger-success-with-secret",
+        "operation": "setOfflineRecordingTrigger",
+        "transport": {
+          "setMode": "success",
+          "getStatus": "success",
+          "setSettings": "success"
+        }
+      },
+      {
+        "id": "set-trigger-mode-error",
+        "operation": "setOfflineRecordingTrigger",
+        "transport": {
+          "setMode": "controlPointError"
+        }
+      },
+      {
+        "id": "set-trigger-status-read-error",
+        "operation": "setOfflineRecordingTrigger",
+        "transport": {
+          "setMode": "success",
+          "getStatus": "transportError"
+        }
+      },
+      {
+        "id": "set-trigger-setting-error",
+        "operation": "setOfflineRecordingTrigger",
+        "transport": {
+          "setMode": "success",
+          "getStatus": "success",
+          "setSettings": "controlPointError"
+        }
+      },
+      {
+        "id": "get-trigger-success",
+        "operation": "getOfflineRecordingTriggerSetup",
+        "transport": {
+          "getStatus": "success"
+        }
+      },
+      {
+        "id": "get-trigger-transport-error",
+        "operation": "getOfflineRecordingTriggerSetup",
+        "transport": {
+          "getStatus": "transportError"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "policy": "offline-trigger-runtime-matrix",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest plus Android-hosted prototype",
+      "cases": [
+        {
+          "id": "set-trigger-success-with-secret",
+          "operations": [
+            "setMode:TRIGGER_SYSTEM_START",
+            "getStatus",
+            "setSetting:ACC:enabled:settings:secret",
+            "setSetting:GYRO:disabled",
+            "setSetting:OFFLINE_HR:enabled:no-settings:secret"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "set-trigger-mode-error",
+          "operations": [
+            "setMode:TRIGGER_SYSTEM_START"
+          ],
+          "terminal": "control-point-error"
+        },
+        {
+          "id": "set-trigger-status-read-error",
+          "operations": [
+            "setMode:TRIGGER_SYSTEM_START",
+            "getStatus"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "set-trigger-setting-error",
+          "operations": [
+            "setMode:TRIGGER_SYSTEM_START",
+            "getStatus",
+            "setSetting:ACC:enabled:settings:secret"
+          ],
+          "terminal": "control-point-error"
+        },
+        {
+          "id": "get-trigger-success",
+          "operations": [
+            "getStatus"
+          ],
+          "terminal": "success",
+          "enabledFeatures": [
+            "ACC",
+            "HR"
+          ],
+          "excludedFeatures": [
+            "GYRO"
+          ]
+        },
+        {
+          "id": "get-trigger-transport-error",
+          "operations": [
+            "getStatus"
+          ],
+          "terminal": "transport-error"
+        }
+      ]
+    },
+    "platformCleanupEvidence": {
+      "android": {
+        "id": "android-stale-wrong-command-response-discard",
+        "policy": "When getOfflineRecordingTriggerStatus is waiting for GET_OFFLINE_RECORDING_TRIGGER_STATUS, a stale successful PMD control-point response for another command is logged and discarded before the matching status response is consumed.",
+        "consumerTest": "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientTest.getOfflineRecordingTriggerStatus ignores stale response for different command"
+      },
+      "ios": {
+        "id": "ios-pre-command-response-queue-clear",
+        "policy": "sendControlPointCommand removes all pre-existing PMD control-point responses before transmitting GET_OFFLINE_RECORDING_TRIGGER_STATUS, so stale queued responses cannot satisfy the new offline-trigger status request.",
+        "consumerTest": "BlePmdClientTest.testGetOfflineRecordingTriggerStatusClearsStaleControlPointResponsesBeforeTransmit"
+      }
+    },
+    "commonDecision": "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientTest",
+      "com.polar.sdk.impl.BDBleApiImplTest",
+      "com.polar.sdk.impl.utils.PolarDataUtilsTest",
+      "com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PolarBleApiImplTests",
+      "PolarDataUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest",
+      "com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"
+    ]
+  },
+  "platformExpectations": {
+    "android": "BDBleApiImplTest pins public facade get/set mapping, secret propagation, and set/get error propagation; BlePmdClientTest pins Android byte-level PMD packet framing with length-prefixed enabled trigger settings and stale wrong-command response discard during offline-trigger status reads",
+    "ios": "PolarBleApiImplTests pins public facade get/set mapping, secret propagation, set-mode error propagation, and get-status error propagation; BlePmdClientTest pins iOS byte-level PMD packet framing without Android's enabled-trigger length prefix and pre-command PMD response queue clearing",
+    "common": "executable shared commonTest covers typed trigger runtime steps before platform facade behavior moves"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "execution": {
+    "status": "shared-common-test",
+    "reason": "Shared commonTest now asserts get/set trigger orchestration steps through the common fake transport, Android plus iOS facade tests pin public get/set mapping, secret propagation, and error propagation, and platform PMD adapter tests pin the Android/iOS packet-framing split plus response-queue cleanup policy. Cancellation remains a production-delegation gate because current offline-trigger operations are synchronous control-point commands without stream observers or cancellable fake-runtime tasks."
+  },
+  "notes": "Android serializes enabled trigger settings with an explicit length byte before setting and secret bytes, while current iOS appends setting and secret bytes directly. Android discards stale PMD control-point responses with an unexpected command byte during offline-trigger status reads; iOS clears the response queue before transmitting a new control-point command. KMP must choose a shared packet and queue-cleanup contract or preserve these platform splits behind platform adapters."
+}

@@ -1,0 +1,34 @@
+{
+  "id": "offline-hr-raw-type0-empty",
+  "area": "sensor-parser",
+  "case": "offline_hr_raw_type0_empty_recording",
+  "source": "Android OfflineHrDataTest and iOS OfflineHrDataTest",
+  "input": {
+    "dataFrameHex": "0e009435770000000000",
+    "previousTimeStamp": 0,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "OFFLINE_HR",
+    "frameType": 0,
+    "compressed": false,
+    "samples": []
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.OfflineHrDataTest"
+    ],
+    "ios": [
+      "OfflineHrDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.OfflineHrParserCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "unchecked-subscription-policy",
+  "area": "sdk-stream-runtime",
+  "case": "unchecked_subscription_does_not_query_connection",
+  "source": "Android ChannelUtilsTests and iOS StreamContinuationListTest unchecked subscription characterization",
+  "input": {
+    "kind": "genericStreamConnectionGuardPolicy",
+    "target": "stream",
+    "startConnected": false,
+    "checkConnection": false
+  },
+  "expected": {
+    "activeObserverCount": 1,
+    "terminalError": null,
+    "upstreamStarted": true,
+    "connectionChecked": false,
+    "connectionGuardPolicy": "skip-connection-check-and-register-observer",
+    "commonDecision": "An unchecked stream subscription must register the observer without querying transport connection state."
+  },
+  "execution": {
+    "kind": "fake-stream-runtime-policy",
+    "transport": "generic-stream-connection-guard",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.ChannelUtilsTests"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.StreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Stream utilities can move to shared KMP code only after unchecked subscriptions avoid transport connection queries while still registering observers on Android, iOS, and the shared fake-stream runtime."
+}

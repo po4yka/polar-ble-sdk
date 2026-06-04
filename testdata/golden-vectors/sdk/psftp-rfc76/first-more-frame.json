@@ -1,0 +1,33 @@
+{
+  "id": "first-more-frame",
+  "area": "sdk.psftp-rfc76",
+  "case": "first_more_frame",
+  "source": "Android and iOS BlePsFtpUtils/BlePsFtpUtility characterization tests",
+  "input": {
+    "frameHex": "06ff00"
+  },
+  "expected": {
+    "next": 0,
+    "status": 3,
+    "sequenceNumber": 0,
+    "payloadHex": "ff00",
+    "error": null
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtilsTest"
+    ],
+    "ios": [
+      "BlePsFtpUtilityTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpByteCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "First MORE frame in a multi-frame sequence."
+}
