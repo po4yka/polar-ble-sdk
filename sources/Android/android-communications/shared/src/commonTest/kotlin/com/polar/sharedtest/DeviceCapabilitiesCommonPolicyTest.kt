@@ -1,5 +1,9 @@
 package com.polar.sharedtest
 
+import com.polar.shared.device.PolarDeviceCapabilities
+import com.polar.shared.device.PolarDeviceCapabilitiesConfig
+import com.polar.shared.device.PolarDeviceCapabilitiesLookup
+import com.polar.shared.device.PolarDeviceCapabilityDefaults
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -18,16 +22,17 @@ class DeviceCapabilitiesCommonPolicyTest {
             assertEquals("deviceCapabilityLookup", input.stringValue("kind"), caseId)
             input.stringArrayValue("queries").zip(results).forEach { (deviceType, expectedResult) ->
                 assertEquals(expectedResult.stringValue("deviceType"), deviceType, caseId)
-                assertEquals(expectedResult.stringValue("fileSystemType"), capabilityConfig.fileSystemType(deviceType), "$caseId filesystem $deviceType")
-                assertEquals(expectedResult.booleanValue("recordingSupported"), capabilityConfig.recordingSupported(deviceType), "$caseId recording $deviceType")
+                val resolved = capabilityConfig.capability(deviceType)
+                assertEquals(expectedResult.stringValue("fileSystemType"), resolved.fileSystemType.name, "$caseId filesystem $deviceType")
+                assertEquals(expectedResult.booleanValue("recordingSupported"), resolved.recordingSupported, "$caseId recording $deviceType")
                 expectedResult.optionalBooleanValue("firmwareUpdateSupported")?.let { expected ->
-                    assertEquals(expected, capabilityConfig.firmwareUpdateSupported(deviceType), "$caseId firmware $deviceType")
+                    assertEquals(expected, resolved.firmwareUpdateSupported, "$caseId firmware $deviceType")
                 }
                 expectedResult.optionalBooleanValue("activityDataSupported")?.let { expected ->
-                    assertEquals(expected, capabilityConfig.activityDataSupported(deviceType), "$caseId activity $deviceType")
+                    assertEquals(expected, resolved.activityDataSupported, "$caseId activity $deviceType")
                 }
                 expectedResult.optionalBooleanValue("isDeviceSensor")?.let { expected ->
-                    assertEquals(expected, capabilityConfig.isDeviceSensor(deviceType), "$caseId sensor $deviceType")
+                    assertEquals(expected, resolved.isDeviceSensor, "$caseId sensor $deviceType")
                 }
             }
         }
@@ -39,7 +44,7 @@ class DeviceCapabilitiesCommonPolicyTest {
         val caseId = vector.stringValue("id")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
-        val mergedConfig = mergeConfigs(
+        val mergedConfig = PolarDeviceCapabilitiesLookup.mergeUserConfig(
             user = parseCapabilityConfig(input.objectValue("userConfig")),
             bundled = parseCapabilityConfig(input.objectValue("bundledConfig"))
         )
@@ -48,12 +53,13 @@ class DeviceCapabilitiesCommonPolicyTest {
         assertEquals(expected.stringValue("mergedVersion"), mergedConfig.version, caseId)
         assertEquals("user-device-fields-win-missing-user-fields-fall-back-to-bundled-user-only-devices-survive-bundled-defaults-win", expected.stringValue("mergePolicy"), caseId)
         input.stringArrayValue("queries").zip(expected.objectArray("results")).forEach { (deviceType, expectedResult) ->
+            val resolved = mergedConfig.capability(deviceType)
             assertEquals(expectedResult.stringValue("deviceType"), deviceType, caseId)
-            assertEquals(expectedResult.stringValue("fileSystemType"), mergedConfig.fileSystemType(deviceType), "$caseId filesystem $deviceType")
-            assertEquals(expectedResult.booleanValue("recordingSupported"), mergedConfig.recordingSupported(deviceType), "$caseId recording $deviceType")
-            assertEquals(expectedResult.booleanValue("firmwareUpdateSupported"), mergedConfig.firmwareUpdateSupported(deviceType), "$caseId firmware $deviceType")
-            assertEquals(expectedResult.booleanValue("activityDataSupported"), mergedConfig.activityDataSupported(deviceType), "$caseId activity $deviceType")
-            assertEquals(expectedResult.booleanValue("isDeviceSensor"), mergedConfig.isDeviceSensor(deviceType), "$caseId sensor $deviceType")
+            assertEquals(expectedResult.stringValue("fileSystemType"), resolved.fileSystemType.name, "$caseId filesystem $deviceType")
+            assertEquals(expectedResult.booleanValue("recordingSupported"), resolved.recordingSupported, "$caseId recording $deviceType")
+            assertEquals(expectedResult.booleanValue("firmwareUpdateSupported"), resolved.firmwareUpdateSupported, "$caseId firmware $deviceType")
+            assertEquals(expectedResult.booleanValue("activityDataSupported"), resolved.activityDataSupported, "$caseId activity $deviceType")
+            assertEquals(expectedResult.booleanValue("isDeviceSensor"), resolved.isDeviceSensor, "$caseId sensor $deviceType")
         }
     }
 
@@ -116,12 +122,12 @@ class DeviceCapabilitiesCommonPolicyTest {
         assertEquals(true, platforms.booleanValue("common"))
     }
 
-    private fun parseCapabilityConfig(config: String): CapabilityConfig {
+    private fun parseCapabilityConfig(config: String): PolarDeviceCapabilitiesConfig {
         val defaults = config.objectValue("defaults")
         val devices = config.objectValue("devices")
         val parsedDevices = DEVICE_TYPES.associateWith { deviceType ->
             devices.optionalObjectValue(deviceType)?.let { device ->
-                Capability(
+                PolarDeviceCapabilities(
                     fileSystemType = device.optionalStringValue("fileSystemType"),
                     recordingSupported = device.optionalBooleanValue("recordingSupported"),
                     firmwareUpdateSupported = device.optionalBooleanValue("firmwareUpdateSupported"),
@@ -131,79 +137,18 @@ class DeviceCapabilitiesCommonPolicyTest {
             }
         }.filterValues { it != null }.mapValues { it.value!! }
 
-        return CapabilityConfig(
+        return PolarDeviceCapabilitiesConfig(
             version = config.stringValue("version"),
             devices = parsedDevices,
-            defaults = Capability(
-                fileSystemType = defaults.optionalStringValue("fileSystemType"),
-                recordingSupported = defaults.optionalBooleanValue("recordingSupported"),
-                firmwareUpdateSupported = defaults.optionalBooleanValue("firmwareUpdateSupported"),
-                activityDataSupported = defaults.optionalBooleanValue("activityDataSupported"),
-                isDeviceSensor = defaults.optionalBooleanValue("isDeviceSensor")
+            defaults = PolarDeviceCapabilityDefaults(
+                fileSystemType = defaults.optionalStringValue("fileSystemType") ?: "POLAR_FILE_SYSTEM_V2",
+                recordingSupported = defaults.optionalBooleanValue("recordingSupported") ?: false,
+                firmwareUpdateSupported = defaults.optionalBooleanValue("firmwareUpdateSupported") ?: true,
+                activityDataSupported = defaults.optionalBooleanValue("activityDataSupported") ?: false,
+                isDeviceSensor = defaults.optionalBooleanValue("isDeviceSensor") ?: false
             )
         )
     }
-
-    private fun mergeConfigs(user: CapabilityConfig, bundled: CapabilityConfig): CapabilityConfig {
-        val mergedDevices = bundled.devices.toMutableMap()
-        user.devices.forEach { (key, userDevice) ->
-            val bundledDevice = bundled.devices[key]
-            mergedDevices[key] = Capability(
-                fileSystemType = userDevice.fileSystemType ?: bundledDevice?.fileSystemType,
-                recordingSupported = userDevice.recordingSupported ?: bundledDevice?.recordingSupported,
-                firmwareUpdateSupported = userDevice.firmwareUpdateSupported ?: bundledDevice?.firmwareUpdateSupported,
-                activityDataSupported = userDevice.activityDataSupported ?: bundledDevice?.activityDataSupported,
-                isDeviceSensor = userDevice.isDeviceSensor ?: bundledDevice?.isDeviceSensor
-            )
-        }
-        return CapabilityConfig(
-            version = bundled.version,
-            devices = mergedDevices,
-            defaults = bundled.defaults
-        )
-    }
-
-    private data class CapabilityConfig(
-        val version: String,
-        val devices: Map<String, Capability>,
-        val defaults: Capability
-    ) {
-        fun fileSystemType(deviceType: String): String {
-            return when (devices[deviceType.lowerAscii()]?.fileSystemType ?: defaults.fileSystemType) {
-                "H10_FILE_SYSTEM" -> "H10_FILE_SYSTEM"
-                "POLAR_FILE_SYSTEM_V2" -> "POLAR_FILE_SYSTEM_V2"
-                else -> "UNKNOWN_FILE_SYSTEM"
-            }
-        }
-
-        fun recordingSupported(deviceType: String): Boolean {
-            return devices[deviceType.lowerAscii()]?.recordingSupported ?: defaults.recordingSupported ?: false
-        }
-
-        fun firmwareUpdateSupported(deviceType: String): Boolean {
-            return devices[deviceType.lowerAscii()]?.firmwareUpdateSupported ?: defaults.firmwareUpdateSupported ?: false
-        }
-
-        fun activityDataSupported(deviceType: String): Boolean {
-            return devices[deviceType.lowerAscii()]?.activityDataSupported ?: defaults.activityDataSupported ?: false
-        }
-
-        fun isDeviceSensor(deviceType: String): Boolean {
-            return devices[deviceType.lowerAscii()]?.isDeviceSensor ?: defaults.isDeviceSensor ?: false
-        }
-
-        private fun String.lowerAscii(): String {
-            return map { char -> if (char in 'A'..'Z') char + 32 else char }.joinToString("")
-        }
-    }
-
-    private data class Capability(
-        val fileSystemType: String?,
-        val recordingSupported: Boolean?,
-        val firmwareUpdateSupported: Boolean?,
-        val activityDataSupported: Boolean?,
-        val isDeviceSensor: Boolean?
-    )
 
     private companion object {
         val DEVICE_TYPES = listOf("h10", "ignite3", "mystery", "partial", "newdevice", "legacy")
