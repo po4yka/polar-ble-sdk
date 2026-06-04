@@ -1,0 +1,56 @@
+{
+  "id": "plain-date-validation",
+  "area": "time-date",
+  "case": "plain_date_validation",
+  "source": "iOS KMP shared migration characterization",
+  "description": "Pins ISO full-date parsing rules used by the Swift PolarPlainDate API and the shared KMP plain-date helper.",
+  "input": {
+    "kind": "plainDateValidation",
+    "cases": [
+      {
+        "value": "2024-02-29",
+        "valid": true
+      },
+      {
+        "value": "2023-02-29",
+        "valid": false
+      },
+      {
+        "value": "2022-13-01",
+        "valid": false
+      },
+      {
+        "value": "2022-03-32",
+        "valid": false
+      },
+      {
+        "value": "2022-03-02T12:00:00Z",
+        "valid": false
+      },
+      {
+        "value": "",
+        "valid": false
+      }
+    ]
+  },
+  "expected": {
+    "format": "yyyy-MM-dd"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTimeUtilsTest"
+    ],
+    "ios": [
+      "PolarPlainDateTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TimeDateCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Swift `PolarPlainDate` remains the public iOS API; shared KMP owns the portable validation contract for future common model consumption."
+}

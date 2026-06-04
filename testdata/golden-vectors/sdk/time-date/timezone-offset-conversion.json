@@ -1,0 +1,57 @@
+{
+  "id": "timezone-offset-conversion",
+  "area": "time-date",
+  "case": "timezone_offset_conversion",
+  "source": "Android iOS shared KMP migration characterization",
+  "description": "Pins timezone offset conversion between seconds and the protobuf minute field.",
+  "input": {
+    "kind": "timezoneOffset",
+    "cases": [
+      {
+        "seconds": 0,
+        "expectedMinutes": 0,
+        "expectedSeconds": 0
+      },
+      {
+        "seconds": 3600,
+        "expectedMinutes": 60,
+        "expectedSeconds": 3600
+      },
+      {
+        "seconds": -3600,
+        "expectedMinutes": -60,
+        "expectedSeconds": -3600
+      },
+      {
+        "seconds": 50400,
+        "expectedMinutes": 840,
+        "expectedSeconds": 50400
+      },
+      {
+        "seconds": -43200,
+        "expectedMinutes": -720,
+        "expectedSeconds": -43200
+      }
+    ]
+  },
+  "expected": {
+    "unit": "minutes"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTimeUtilsTest"
+    ],
+    "ios": [
+      "PolarTimeUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TimeDateCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Timezone database lookup remains platform-owned; shared KMP owns only seconds/minutes arithmetic once the platform adapter has selected an offset."
+}

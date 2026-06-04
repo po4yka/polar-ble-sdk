@@ -112,7 +112,7 @@ Cover endian conversion, unsigned conversion, byte slicing, UUID formatting, dev
 
 ### Time Utilities
 
-Cover epoch conversion, device local time conversion, date-only parsing, timezone-independent behavior, leap-day behavior, and invalid values.
+Cover epoch conversion, device local time conversion, date-only parsing, timezone-independent behavior, leap-day behavior, and invalid values. `TimeDateCommonPolicyTest.kt` now owns the executable common pre-migration gate for portable time/date field mapping, offset conversion, duration math, time-string formatting, and plain-date validation.
 
 ### Product Capabilities
 

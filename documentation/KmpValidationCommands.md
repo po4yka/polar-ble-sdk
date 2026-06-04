@@ -58,7 +58,7 @@ A minimal shared KMP module exists at `sources/Android/android-communications/sh
 ANDROID_HOME=/Users/po4yka/Library/Android/sdk ./gradlew :shared:jvmTest --no-daemon
 ```
 
-The first deferred Gradle batch after a broad non-Gradle coverage sweep should include `:shared:jvmTest` because it executes `GoldenVectorTestDataCommonTest.kt`, the common parser/model policies, PSFTP byte-codec policy, fake-transport contract policy, REST/file/backup/offline-trigger/firmware/PSFTP runtime policies, D2H stream policy, generic stream duplicate-completion policy, and codec-ownership policies in one shared gate. Common-style runtime prototypes that still live under the Android library test source set remain Android-hosted until the shared module owns the corresponding runtime abstractions and fake transports.
+The first deferred Gradle batch after a broad non-Gradle coverage sweep should include `:shared:jvmTest` because it executes `GoldenVectorTestDataCommonTest.kt`, `TimeDateCommonPolicyTest.kt`, the common parser/model policies, PSFTP byte-codec policy, fake-transport contract policy, REST/file/backup/offline-trigger/firmware/PSFTP runtime policies, D2H stream policy, generic stream duplicate-completion policy, and codec-ownership policies in one shared gate. Common-style runtime prototypes that still live under the Android library test source set remain Android-hosted until the shared module owns the corresponding runtime abstractions and fake transports.
 
 When shared target wiring changes, also run the narrow target compile gate:
 

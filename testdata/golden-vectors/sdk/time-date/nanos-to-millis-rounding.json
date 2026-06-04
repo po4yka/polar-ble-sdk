@@ -1,0 +1,52 @@
+{
+  "id": "nanos-to-millis-rounding",
+  "area": "time-date",
+  "case": "nanos_to_millis_rounding",
+  "source": "iOS Android KMP migration characterization",
+  "description": "Pins the round-half-up millisecond policy used when platform nanosecond components are copied into protobuf millisecond fields.",
+  "input": {
+    "kind": "nanosToMillis",
+    "cases": [
+      {
+        "nanoseconds": 0,
+        "expectedMillis": 0
+      },
+      {
+        "nanoseconds": 1000000,
+        "expectedMillis": 1
+      },
+      {
+        "nanoseconds": 1499999,
+        "expectedMillis": 1
+      },
+      {
+        "nanoseconds": 1500000,
+        "expectedMillis": 2
+      },
+      {
+        "nanoseconds": 999000000,
+        "expectedMillis": 999
+      }
+    ]
+  },
+  "expected": {
+    "rounding": "nearestIntegerMilliseconds"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTimeUtilsTest"
+    ],
+    "ios": [
+      "PolarTimeUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TimeDateCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "The common implementation mirrors existing Swift `nanosToMillis` behavior; Android LocalDateTime extraction keeps truncating already-millisecond protobuf values at the adapter boundary."
+}
