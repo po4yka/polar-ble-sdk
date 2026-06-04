@@ -13,9 +13,46 @@ RESULT_BUNDLE="$4"
 ATTEMPTS="${CI_XCODEBUILD_ATTEMPTS:-2}"
 attempt=1
 
+resolve_destination() {
+    ruby -rjson -e '
+destination = ARGV.fetch(0)
+
+begin
+  parts = destination.split(",").map { |part| part.split("=", 2) }.to_h
+  unless parts["platform"] == "iOS Simulator" && parts["OS"] == "latest" && parts["name"]
+    puts destination
+    exit
+  end
+
+  devices = JSON.parse(`xcrun simctl list devices available -j`).fetch("devices")
+  candidates = devices.flat_map do |runtime, runtime_devices|
+    version = runtime[/SimRuntime\.iOS-(.+)\z/, 1]
+    next [] unless version
+
+    runtime_devices.filter_map do |device|
+      next unless device["name"] == parts["name"] && device.fetch("isAvailable", true)
+
+      [Gem::Version.new(version.tr("-", ".")), device.fetch("udid")]
+    end
+  end
+
+  selected = candidates.max_by(&:first)
+  puts(selected ? "platform=iOS Simulator,id=#{selected.last}" : destination)
+rescue StandardError => e
+  warn "Unable to resolve XCTest destination #{destination.inspect}: #{e.message}"
+  puts destination
+end
+' "$1"
+}
+
+RESOLVED_DESTINATION="$(resolve_destination "$DESTINATION")"
+if [ "$RESOLVED_DESTINATION" != "$DESTINATION" ]; then
+    echo "Resolved XCTest destination: $RESOLVED_DESTINATION"
+fi
+
 while [ "$attempt" -le "$ATTEMPTS" ]; do
     rm -rf "$RESULT_BUNDLE"
-    if xcodebuild test -workspace "$WORKSPACE" -scheme "$SCHEME" -destination "$DESTINATION" -resultBundlePath "$RESULT_BUNDLE"; then
+    if xcodebuild test -workspace "$WORKSPACE" -scheme "$SCHEME" -destination "$RESOLVED_DESTINATION" -resultBundlePath "$RESULT_BUNDLE"; then
         exit 0
     fi
     if [ "$attempt" -eq "$ATTEMPTS" ]; then

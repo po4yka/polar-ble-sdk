@@ -40,7 +40,7 @@ ANDROID_HOME="$HOME/Library/Android/sdk" ANDROID_SDK_ROOT="$HOME/Library/Android
 
 ```bash
 ruby scripts/ios_xcode_validation_probe.rb
-sh scripts/ci_xcodebuild_test.sh sources/iOS/ios-communications/iOSCommunications.xcworkspace iOSCommunications 'platform=iOS Simulator,name=iPhone 17,OS=26.5' /tmp/polar-ios-local.xcresult
+sh scripts/ci_xcodebuild_test.sh sources/iOS/ios-communications/iOSCommunications.xcworkspace iOSCommunications 'platform=iOS Simulator,name=iPhone 17,OS=latest' /tmp/polar-ios-local.xcresult
 ```
 
 ## Failure Triage

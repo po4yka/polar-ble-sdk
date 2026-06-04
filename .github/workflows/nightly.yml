@@ -16,7 +16,7 @@ env:
   ANDROID_PROJECT_DIR: sources/Android/android-communications
   IOS_WORKSPACE: sources/iOS/ios-communications/iOSCommunications.xcworkspace
   IOS_SCHEME: iOSCommunications
-  IOS_DESTINATION: platform=iOS Simulator,name=iPhone 17,OS=26.5
+  IOS_DESTINATION: platform=iOS Simulator,name=iPhone 17,OS=latest
 
 jobs:
   repo-policy:
