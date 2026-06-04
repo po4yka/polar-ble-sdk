@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.device.PolarDeviceId
+import com.polar.shared.device.PolarDeviceId.IdentifierClassification
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -15,30 +17,32 @@ class DeviceIdCommonPolicyTest {
             val deviceId = input.optionalStringValue("deviceId")
 
             expected.optionalStringValue("assembled")?.let { expectedAssembled ->
-                assertEquals(expectedAssembled, assembleFullDeviceId(deviceId ?: ""), caseId)
+                assertEquals(expectedAssembled, PolarDeviceId.assembleFull(deviceId ?: ""), caseId)
             }
             expected.optionalBooleanValue("validAfterAssembly")?.let { expectedValid ->
-                assertEquals(expectedValid, validateDeviceId(assembleFullDeviceId(deviceId ?: "")).valid, caseId)
+                assertEquals(expectedValid, PolarDeviceId.isValid(PolarDeviceId.assembleFull(deviceId ?: "")), caseId)
             }
             expected.optionalBooleanValue("valid")?.let { expectedValid ->
-                assertEquals(expectedValid, validateDeviceId(deviceId ?: "").valid, caseId)
+                assertEquals(expectedValid, PolarDeviceId.isValid(deviceId ?: ""), caseId)
             }
             expected.optionalStringValue("uuid")?.let { expectedUuid ->
-                assertEquals(expectedUuid, polarUuidFromDeviceId(deviceId ?: "").value, caseId)
+                assertEquals(expectedUuid, PolarDeviceId.uuidFromDeviceId(deviceId ?: ""), caseId)
             }
             expected.optionalStringValue("uuidError")?.let { expectedError ->
-                assertEquals(expectedError, polarUuidFromDeviceId(deviceId ?: "").error, caseId)
+                val error = runCatching { PolarDeviceId.uuidFromDeviceId(deviceId ?: "") }.exceptionOrNull()
+                assertTrue(error is IllegalArgumentException, caseId)
+                assertEquals(expectedError, "invalidDeviceIdLength", caseId)
                 assertEquals(expected.intValue("expectedLength").toString(), expected.optionalScalarValue("expectedLength"), caseId)
                 assertEquals((deviceId ?: "").length.toString(), expected.optionalScalarValue("actualLength"), caseId)
             }
             expected.optionalStringValue("error")?.let { expectedError ->
-                assertEquals(expectedError, routeIdentifier(input.stringValue("identifier")).error, caseId)
+                assertEquals(expectedError, PolarDeviceId.classifyIdentifier(input.stringValue("identifier")).error, caseId)
             }
             expected.optionalStringValue("status")?.let { status ->
                 assertEquals("undecided", status, caseId)
             }
             expected.optionalStringValue("migrationOwnership")?.let { ownership ->
-                assertEquals("platform-specific", routeIdentifier(input.stringValue("identifier")).ownership, caseId)
+                assertEquals("platform-specific", PolarDeviceId.classifyIdentifier(input.stringValue("identifier")).ownership, caseId)
                 assertEquals(true, ownership.contains("platform-specific"), caseId)
             }
         }
@@ -70,87 +74,11 @@ class DeviceIdCommonPolicyTest {
         }
     }
 
-    private fun assembleFullDeviceId(deviceId: String): String {
-        val numeric = deviceId.hexToLongOrNull() ?: return ""
-        return when (deviceId.length) {
-            6 -> deviceId + "1" + checksum(numeric, width = 6).toUpperHexDigit()
-            7 -> deviceId + checksum(numeric, width = 7).toUpperHexDigit()
-            else -> deviceId
-        }
-    }
+    private val IdentifierClassification.error: String?
+        get() = if (this == IdentifierClassification.Invalid) "invalidArgument" else null
 
-    private fun validateDeviceId(deviceId: String): ValidationResult {
-        val numeric = deviceId.hexToLongOrNull() ?: return ValidationResult(valid = false, error = "invalidHex")
-        return if (deviceId.length == 8) {
-            ValidationResult(valid = checksum(numeric, width = 8).toLong() == (numeric and 0x0F))
-        } else {
-            ValidationResult(valid = checksum(numeric, width = deviceId.length) != 0)
-        }
-    }
-
-    private fun polarUuidFromDeviceId(deviceId: String): PolicyResult {
-        if (deviceId.length != 8) {
-            return PolicyResult(error = "invalidDeviceIdLength")
-        }
-        return PolicyResult(value = "0e030000-0084-0000-0000-0000$deviceId")
-    }
-
-    private fun routeIdentifier(identifier: String): IdentifierRoute {
-        return when {
-            identifier.matches(Regex("[0-9A-Fa-f]{6,8}")) -> IdentifierRoute(match = "deviceId")
-            identifier.contains(":") || identifier.contains("-") -> IdentifierRoute(ownership = "platform-specific")
-            else -> IdentifierRoute(error = "invalidArgument")
-        }
-    }
-
-    private fun checksum(deviceId: Long, width: Int): Int {
-        var shiftOffset = 0
-        var a2 = 0x01
-        when (width) {
-            8 -> {
-                a2 = ((deviceId shr 4) and 0x0F).toInt()
-                shiftOffset = 8
-            }
-            7 -> {
-                a2 = (deviceId and 0x0F).toInt()
-                shiftOffset = 4
-            }
-        }
-        val a3 = ((deviceId shr shiftOffset) and 0x0F).toInt()
-        val a4 = ((deviceId shr shiftOffset + 4) and 0x0F).toInt()
-        val a5 = ((deviceId shr shiftOffset + 8) and 0x0F).toInt()
-        val a6 = ((deviceId shr shiftOffset + 12) and 0x0F).toInt()
-        val a7 = ((deviceId shr shiftOffset + 16) and 0x0F).toInt()
-        val a8 = ((deviceId shr shiftOffset + 20) and 0x0F).toInt()
-        return (3 * (a2 + a4 + a6 + a8) + a3 + a5 + a7) % 16
-    }
-
-    private fun String.hexToLongOrNull(): Long? {
-        if (isEmpty() || any { char -> char.hexDigitValueOrNull() == null }) return null
-        var result = 0L
-        forEach { char ->
-            result = (result shl 4) or char.hexDigitValueOrNull()!!.toLong()
-        }
-        return result
-    }
-
-    private fun Int.toUpperHexDigit(): String {
-        val digit = if (this < 10) {
-            '0' + this
-        } else {
-            'A' + (this - 10)
-        }
-        return digit.toString()
-    }
-
-    private fun Char.hexDigitValueOrNull(): Int? {
-        return when (this) {
-            in '0'..'9' -> this - '0'
-            in 'a'..'f' -> this - 'a' + 10
-            in 'A'..'F' -> this - 'A' + 10
-            else -> null
-        }
-    }
+    private val IdentifierClassification.ownership: String?
+        get() = if (this == IdentifierClassification.PlatformSpecific) "platform-specific" else null
 
     private fun String.optionalObjectValue(field: String): String? {
         val fieldIndex = indexOf("\"$field\"")
@@ -205,22 +133,6 @@ class DeviceIdCommonPolicyTest {
         }
         error("Unbalanced $open$close block")
     }
-
-    private data class ValidationResult(
-        val valid: Boolean,
-        val error: String? = null
-    )
-
-    private data class PolicyResult(
-        val value: String? = null,
-        val error: String? = null
-    )
-
-    private data class IdentifierRoute(
-        val match: String? = null,
-        val error: String? = null,
-        val ownership: String? = null
-    )
 
     private companion object {
         val DEVICE_ID_VECTORS = listOf(

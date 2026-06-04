@@ -2188,7 +2188,7 @@ class GoldenVectorMigrationPolicyTest {
             violations += "shared/build.gradle must keep a JVM target so commonTest is executable now"
         }
         if (!sharedMarker.isFile || !sharedMarker.readText().contains("object SharedModule")) {
-            violations += "shared commonMain must contain only a behavior-free marker before migration"
+            violations += "shared commonMain must retain the module marker"
         }
         if (!completedItems.contains("Add a minimal shared KMP module without moving behavior")) {
             violations += "KmpMigrationChecklist.md must mark the minimal shared module complete"
@@ -2204,7 +2204,7 @@ class GoldenVectorMigrationPolicyTest {
         }
 
         assertTrue(
-            "Minimal shared KMP module must stay behavior-free and expose an executable commonTest gate: $violations",
+            "Shared KMP module must retain the minimal marker and expose an executable commonTest gate: $violations",
             violations.isEmpty()
         )
     }
@@ -2304,8 +2304,8 @@ class GoldenVectorMigrationPolicyTest {
         if (!validationCommands.contains(":shared:compileAndroidMain") || !validationCommands.contains(":shared:compileAndroidHostTest") || !validationCommands.contains(":shared:compileKotlinIosX64")) {
             violations += "KmpValidationCommands.md must document shared Android and iOS target compile gates"
         }
-        if (root.resolve("sources/Android/android-communications/library/build.gradle").readText().contains("project(':shared')")) {
-            violations += "Android library must not consume :shared before a behavior migration slice"
+        if (root.resolve("sources/Android/android-communications/library/build.gradle").readText().contains("project(':shared')") && !deviceIdSliceMigrated(root)) {
+            violations += "Android library must not consume :shared without concrete migrated behavior evidence"
         }
         if (root.resolve("sources/iOS/ios-communications/Package.swift").takeIf { it.isFile }?.readText()?.contains("shared") == true) {
             violations += "iOS package must not consume shared before a behavior migration slice"
@@ -2346,8 +2346,8 @@ class GoldenVectorMigrationPolicyTest {
         if (!completedItems.contains("Document how shared artifacts are consumed by Android and iOS modules")) {
             violations += "KmpMigrationChecklist.md must mark shared artifact consumption documentation complete"
         }
-        if (root.resolve("sources/Android/android-communications/library/build.gradle").readText().contains("implementation project(':shared')")) {
-            violations += "Android production consumption must wait for a behavior migration slice"
+        if (root.resolve("sources/Android/android-communications/library/build.gradle").readText().contains("implementation project(':shared')") && !deviceIdSliceMigrated(root)) {
+            violations += "Android production consumption must name a migrated shared behavior slice"
         }
         if (root.resolve("sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj").readText().contains("PolarBleSdkShared.framework")) {
             violations += "iOS production consumption must wait for a behavior migration slice"
@@ -2815,6 +2815,21 @@ class GoldenVectorMigrationPolicyTest {
         return CHECKLIST_EVIDENCE_ROW.findAll(section)
     }
 
+    private fun deviceIdSliceMigrated(root: File): Boolean {
+        val commonMain = root.resolve("sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/device/PolarDeviceId.kt")
+        val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DeviceIdCommonPolicyTest.kt")
+        val androidDeviceIdUtility = root.resolve("sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/polar/BlePolarDeviceIdUtility.kt")
+        val androidDeviceUuid = root.resolve("sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarDeviceUuid.kt")
+        return commonMain.isFile &&
+            commonMain.readText().contains("object PolarDeviceId") &&
+            commonTest.isFile &&
+            commonTest.readText().contains("PolarDeviceId.uuidFromDeviceId") &&
+            androidDeviceIdUtility.isFile &&
+            androidDeviceIdUtility.readText().contains("PolarDeviceId.assembleFull") &&
+            androidDeviceUuid.isFile &&
+            androidDeviceUuid.readText().contains("PolarDeviceId.uuidFromDeviceId")
+    }
+
     private fun File.gitStatusShort(vararg paths: String): List<String> {
         val process = ProcessBuilder(listOf("git", "status", "--short", "--") + paths)
             .directory(this)
@@ -3010,9 +3025,9 @@ class GoldenVectorMigrationPolicyTest {
             "protocol/device-id/empty-device-id-platform-difference.json",
             "protocol/device-id/non-hex-device-id-platform-difference.json",
             "protocol/device-id/polar-device-uuid-valid.json",
-            "assembleFullDeviceId",
-            "validateDeviceId",
-            "polarUuidFromDeviceId",
+            "PolarDeviceId.assembleFull",
+            "PolarDeviceId.isValid",
+            "PolarDeviceId.uuidFromDeviceId",
             "checksum-width-6-assembly",
             "checksum-width-7-assembly",
             "uuid-invalid-length-error",
