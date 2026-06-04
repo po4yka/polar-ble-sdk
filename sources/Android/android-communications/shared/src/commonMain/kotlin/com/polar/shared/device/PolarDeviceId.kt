@@ -4,14 +4,14 @@ object PolarDeviceId {
     const val REQUIRED_DEVICE_ID_LENGTH: Int = 8
     const val POLAR_UUID_PREFIX: String = "0e030000-0084-0000-0000-0000"
 
-    fun isValid(deviceId: String): Boolean {
+    fun isValid(deviceId: String): Boolean = runCatching {
         val numeric = deviceId.hexToLong()
-        return if (deviceId.length == REQUIRED_DEVICE_ID_LENGTH) {
+        if (deviceId.length == REQUIRED_DEVICE_ID_LENGTH) {
             checksum(numeric, width = REQUIRED_DEVICE_ID_LENGTH).toLong() == (numeric and 0x0F)
         } else {
-            checksum(numeric, width = deviceId.length) != 0
+            checksum(numeric, width = REQUIRED_DEVICE_ID_LENGTH) != 0
         }
-    }
+    }.getOrDefault(false)
 
     fun assembleFull(deviceId: String): String {
         return when (deviceId.length) {

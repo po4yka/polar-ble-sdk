@@ -10,3 +10,4 @@ Package.resolved
 # CocoaPods local installs
 sources/iOS/ios-communications/Pods/
 sources/iOS/ios-communications/Podfile.lock
+sources/iOS/ios-communications/Generated/

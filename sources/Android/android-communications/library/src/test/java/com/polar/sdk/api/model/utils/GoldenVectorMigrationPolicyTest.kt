@@ -2350,8 +2350,8 @@ class GoldenVectorMigrationPolicyTest {
         if (root.resolve("sources/Android/android-communications/library/build.gradle").readText().contains("implementation project(':shared')") && !deviceIdSliceMigrated(root)) {
             violations += "Android production consumption must name a migrated shared behavior slice"
         }
-        if (root.resolve("sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj").readText().contains("PolarBleSdkShared.framework")) {
-            violations += "iOS production consumption must wait for a behavior migration slice"
+        if (root.resolve("sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj").readText().contains("PolarBleSdkShared.framework") && !iosSharedConsumptionMigrated(root)) {
+            violations += "iOS production consumption must name a migrated shared behavior slice"
         }
 
         assertTrue(
@@ -2829,6 +2829,25 @@ class GoldenVectorMigrationPolicyTest {
             androidDeviceIdUtility.readText().contains("PolarDeviceId.assembleFull") &&
             androidDeviceUuid.isFile &&
             androidDeviceUuid.readText().contains("PolarDeviceId.uuidFromDeviceId")
+    }
+
+    private fun iosSharedConsumptionMigrated(root: File): Boolean {
+        val bridge = root.resolve("sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/ios/PolarIosSharedBridge.kt")
+        val deviceIdUtility = root.resolve("sources/iOS/ios-communications/Sources/iOSCommunications/ble/api/model/polar/BlePolarDeviceIdUtility.swift")
+        val deviceUuid = root.resolve("sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/api/model/PolarDeviceUuid.swift")
+        val timeUtils = root.resolve("sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarTimeUtils.swift")
+        val kmpScript = root.resolve("sources/iOS/ios-communications/scripts/build_kmp_ios_framework.sh")
+        return bridge.isFile &&
+            bridge.readText().contains("object PolarIosSharedBridge") &&
+            bridge.readText().contains("PolarDeviceId.uuidFromDeviceId") &&
+            bridge.readText().contains("PolarTimeUtils.nanosToMillis") &&
+            deviceIdUtility.isFile &&
+            deviceIdUtility.readText().contains("PolarIosSharedBridge.shared.isValidDeviceId") &&
+            deviceUuid.isFile &&
+            deviceUuid.readText().contains("PolarIosSharedBridge.shared.uuidFromDeviceId") &&
+            timeUtils.isFile &&
+            timeUtils.readText().contains("PolarIosSharedBridge.shared.durationToMillis") &&
+            kmpScript.isFile
     }
 
     private fun File.gitStatusShort(vararg paths: String): List<String> {
@@ -3583,7 +3602,7 @@ class GoldenVectorMigrationPolicyTest {
             "current Swift facade",
             ":shared:bundleAndroidMainAar",
             ":shared:linkDebugFrameworkIosX64",
-            "must not depend on `:shared` until a behavior slice"
+            "may depend on shared code only when a behavior slice"
         )
         val PLATFORM_OWNED_COVERAGE_ROWS = mapOf(
             "BLE device session lifecycle" to listOf("Partial", "platform-owned", "Keep platform-specific"),

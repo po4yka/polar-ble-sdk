@@ -8,6 +8,9 @@
 ///
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public struct PolarPlainDate {
     /// Returns a date string initialized using their ISO 8601 representation.
@@ -16,8 +19,12 @@ public struct PolarPlainDate {
     ///   - calendar: The calendar — including the time zone — to use. The default is the current calendar.
     /// - Returns: A date string, or `nil` if a valid date could not be created from `dateAsString`.
     public init?(from dateAsString: String, calendar: Calendar = .current) {
-        let formatter = Self.createFormatter(timeZone: calendar.timeZone)
+        #if canImport(PolarBleSdkShared)
+        guard PolarIosSharedBridge.shared.isValidPlainDate(value: dateAsString) else { return nil }
+        #else
         guard dateAsString.count == 10 else { return nil }
+        #endif
+        let formatter = Self.createFormatter(timeZone: calendar.timeZone)
         guard let date = formatter.date(from: dateAsString) else { return nil }
         guard formatter.string(from: date) == dateAsString else { return nil }
         self.init(date: date, calendar: calendar, formatter: formatter)

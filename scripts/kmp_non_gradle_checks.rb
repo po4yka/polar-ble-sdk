@@ -1218,7 +1218,7 @@ SHARED_CONSUMPTION_REQUIRED_TERMS = [
   "current Swift facade",
   ":shared:bundleAndroidMainAar",
   ":shared:linkDebugFrameworkIosX64",
-  "must not depend on `:shared` until a behavior slice"
+  "may depend on shared code only when a behavior slice"
 ].freeze
 KOTLIN_DOCUMENT_REQUIRED_TERM_TARGETS = {
   "VALIDATION_NON_GRADLE_GATE_TERMS" => "documentation/KmpValidationCommands.md",
@@ -2360,6 +2360,11 @@ device_id_common_main = File.join(ROOT, "sources/Android/android-communications/
 device_id_common_test = File.join(ROOT, "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DeviceIdCommonPolicyTest.kt")
 android_device_id_utility = File.join(ROOT, "sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/polar/BlePolarDeviceIdUtility.kt")
 android_device_uuid = File.join(ROOT, "sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarDeviceUuid.kt")
+ios_shared_bridge = File.join(ROOT, "sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/ios/PolarIosSharedBridge.kt")
+ios_device_id_utility = File.join(ROOT, "sources/iOS/ios-communications/Sources/iOSCommunications/ble/api/model/polar/BlePolarDeviceIdUtility.swift")
+ios_device_uuid = File.join(ROOT, "sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/api/model/PolarDeviceUuid.swift")
+ios_time_utils = File.join(ROOT, "sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarTimeUtils.swift")
+ios_kmp_script = File.join(ROOT, "sources/iOS/ios-communications/scripts/build_kmp_ios_framework.sh")
 device_id_slice_migrated = File.file?(device_id_common_main) &&
                            File.read(device_id_common_main).include?("object PolarDeviceId") &&
                            File.file?(device_id_common_test) &&
@@ -2368,6 +2373,17 @@ device_id_slice_migrated = File.file?(device_id_common_main) &&
                            File.read(android_device_id_utility).include?("PolarDeviceId.assembleFull") &&
                            File.file?(android_device_uuid) &&
                            File.read(android_device_uuid).include?("PolarDeviceId.uuidFromDeviceId")
+ios_shared_consumption_migrated = File.file?(ios_shared_bridge) &&
+                                  File.read(ios_shared_bridge).include?("object PolarIosSharedBridge") &&
+                                  File.read(ios_shared_bridge).include?("PolarDeviceId.uuidFromDeviceId") &&
+                                  File.read(ios_shared_bridge).include?("PolarTimeUtils.nanosToMillis") &&
+                                  File.file?(ios_device_id_utility) &&
+                                  File.read(ios_device_id_utility).include?("PolarIosSharedBridge.shared.isValidDeviceId") &&
+                                  File.file?(ios_device_uuid) &&
+                                  File.read(ios_device_uuid).include?("PolarIosSharedBridge.shared.uuidFromDeviceId") &&
+                                  File.file?(ios_time_utils) &&
+                                  File.read(ios_time_utils).include?("PolarIosSharedBridge.shared.durationToMillis") &&
+                                  File.file?(ios_kmp_script)
 errors << "sources/Android/android-communications/settings.gradle: must include :shared" unless android_settings.include?("include ':shared'")
 errors << "sources/Android/android-communications/shared/build.gradle: must apply Kotlin Multiplatform" unless shared_build.include?("org.jetbrains.kotlin.multiplatform")
 errors << "sources/Android/android-communications/shared/build.gradle: must keep JVM target" unless shared_build.include?("jvm()")
@@ -2425,8 +2441,8 @@ if android_library_gradle.include?("implementation project(':shared')") && !devi
   errors << "sources/Android/android-communications/library/build.gradle: Android production consumption must name a migrated shared behavior slice"
 end
 xcode_project = File.join(ROOT, "sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj")
-if File.file?(xcode_project) && File.read(xcode_project).include?("PolarBleSdkShared.framework")
-  errors << "sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj: iOS production consumption must wait for behavior migration"
+if File.file?(xcode_project) && File.read(xcode_project).include?("PolarBleSdkShared.framework") && !ios_shared_consumption_migrated
+  errors << "sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj: iOS production consumption must name a migrated shared behavior slice"
 end
 SHARED_COMMON_PRODUCTION_CODEC_DEPENDENCY_TERMS.each do |term|
   errors << "sources/Android/android-communications/shared/build.gradle: declares #{term} before production common codec ownership evidence is added" if shared_build.include?(term)
