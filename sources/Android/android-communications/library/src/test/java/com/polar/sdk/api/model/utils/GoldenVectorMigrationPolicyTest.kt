@@ -1698,6 +1698,7 @@ class GoldenVectorMigrationPolicyTest {
         val commonStoredDataCleanupRuntimeTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/StoredDataCleanupRuntimePolicyCommonTest.kt")
         val commonDiskTimeRuntimeTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DiskTimeRuntimePolicyCommonTest.kt")
         val commonUserDeviceSettingsRuntimeTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/UserDeviceSettingsRuntimePolicyCommonTest.kt")
+        val runtimeOrchestrationCommon = root.resolve("sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/runtime/PolarRuntimeOrchestration.kt")
         if (!commonContract.isFile) {
             weakContract += commonContract.relativeTo(root).path
         } else {
@@ -1821,7 +1822,7 @@ class GoldenVectorMigrationPolicyTest {
         if (!commonCommandRuntimeTest.isFile) {
             weakContract += commonCommandRuntimeTest.relativeTo(root).path
         } else {
-            val commonCommandRuntimeTestText = commonCommandRuntimeTest.readText()
+            val commonCommandRuntimeTestText = commonCommandRuntimeTest.readText() + (if (runtimeOrchestrationCommon.isFile) runtimeOrchestrationCommon.readText() else "")
             FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS
                 .filterNot { term -> commonCommandRuntimeTestText.contains(term) }
                 .mapTo(weakContract) { term -> "${commonCommandRuntimeTest.relativeTo(root).path}: missing common command runtime assertion for $term" }
@@ -1837,7 +1838,7 @@ class GoldenVectorMigrationPolicyTest {
         if (!commonDiskTimeRuntimeTest.isFile) {
             weakContract += commonDiskTimeRuntimeTest.relativeTo(root).path
         } else {
-            val commonDiskTimeRuntimeTestText = commonDiskTimeRuntimeTest.readText()
+            val commonDiskTimeRuntimeTestText = commonDiskTimeRuntimeTest.readText() + (if (runtimeOrchestrationCommon.isFile) runtimeOrchestrationCommon.readText() else "")
             FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS
                 .filterNot { term -> commonDiskTimeRuntimeTestText.contains(term) }
                 .mapTo(weakContract) { term -> "${commonDiskTimeRuntimeTest.relativeTo(root).path}: missing common disk/time runtime assertion for $term" }
@@ -4623,7 +4624,7 @@ class GoldenVectorMigrationPolicyTest {
             "sync-stop-notification-failure-platform-split",
             "facade-error-mapping-gate",
             "compile-verification-gate",
-            "FakePublicFacadeCommandRuntime"
+            "PolarRuntimeOrchestration"
         )
         val FAKE_TRANSPORT_COMMON_STORED_DATA_CLEANUP_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "cleanupWorkflowPolicyVectorDefinesExecutableCommonTraversalAndPlatformSplits",
@@ -4684,7 +4685,7 @@ class GoldenVectorMigrationPolicyTest {
             "filesystem-capability-gate",
             "facade-error-mapping-gate",
             "compile-verified",
-            "FakeDiskTimeQueryRuntime"
+            "PolarRuntimeOrchestration"
         )
         val FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "userDeviceSettingsRuntimePolicyVectorDefinesExecutableCommonReadWritePlanning",

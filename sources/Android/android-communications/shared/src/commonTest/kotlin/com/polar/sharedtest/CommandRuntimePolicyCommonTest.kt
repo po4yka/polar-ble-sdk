@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarFacadeCommandOperation
+import com.polar.shared.runtime.PolarRuntimeOrchestration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -10,7 +12,7 @@ class CommandRuntimePolicyCommonTest {
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
         val operations = input.objectArray("operations").map { operation ->
-            PublicFacadeCommandOperation(
+            PolarFacadeCommandOperation(
                 id = operation.stringValue("id"),
                 kind = operation.stringValue("kind"),
                 query = operation.optionalStringValue("query"),
@@ -23,7 +25,6 @@ class CommandRuntimePolicyCommonTest {
         }
         val expectedCaseList = expected.objectValue("commonRuntimePrototype").objectArray("cases")
         val expectedCases = expectedCaseList.associateBy { it.stringValue("id") }
-        val runtime = FakePublicFacadeCommandRuntime()
 
         assertEquals("reset-sync-h10-command-policy", vector.stringValue("id"))
         assertEquals("reset_sync_h10_command_policy", vector.stringValue("case"))
@@ -34,7 +35,7 @@ class CommandRuntimePolicyCommonTest {
         assertCommandRuntimePolicyFields(input.objectArray("operations").associateBy { it.stringValue("id") })
 
         operations.forEach { operation ->
-            val outcome = runtime.run(operation)
+            val outcome = PolarRuntimeOrchestration.planCommand(operation)
             val expected = expectedCases.getValue(operation.id)
 
             assertEquals(expected.stringArrayValue("commands"), outcome.commands, operation.id)
@@ -143,72 +144,16 @@ class CommandRuntimePolicyCommonTest {
     private fun assertCommandRuntimePolicyFields(operationsById: Map<String, String>) {
         assertEquals("REQUEST_START_RECORDING", operationsById.getValue("h10-start-recording").stringValue("query"))
         assertEquals(listOf("sampleDataIdentifier=myExercise", "sampleType=SAMPLE_TYPE_HEART_RATE", "recordingIntervalSeconds=1"), operationsById.getValue("h10-start-recording").stringArrayValue("parameters"))
+        assertEquals("queryFailure", operationsById.getValue("h10-start-recording-query-failure").stringValue("kind"))
         assertEquals("REQUEST_START_RECORDING", operationsById.getValue("h10-start-recording-query-failure").stringValue("query"))
         assertEquals("start-recording-query-failed", operationsById.getValue("h10-start-recording-query-failure").stringValue("error"))
         assertEquals("REQUEST_STOP_RECORDING", operationsById.getValue("h10-stop-recording").stringValue("query"))
+        assertEquals("queryFailure", operationsById.getValue("h10-stop-recording-query-failure").stringValue("kind"))
         assertEquals("REQUEST_STOP_RECORDING", operationsById.getValue("h10-stop-recording-query-failure").stringValue("query"))
         assertEquals("stop-recording-query-failed", operationsById.getValue("h10-stop-recording-query-failure").stringValue("error"))
         assertEquals("REQUEST_RECORDING_STATUS", operationsById.getValue("h10-recording-status").stringValue("query"))
+        assertEquals("queryFailure", operationsById.getValue("h10-recording-status-query-failure").stringValue("kind"))
         assertEquals("REQUEST_RECORDING_STATUS", operationsById.getValue("h10-recording-status-query-failure").stringValue("query"))
         assertEquals("recording-status-query-failed", operationsById.getValue("h10-recording-status-query-failure").stringValue("error"))
     }
-
-    private class FakePublicFacadeCommandRuntime {
-        fun run(operation: PublicFacadeCommandOperation): CommandRuntimeOutcome {
-            return when (operation.kind) {
-                "query" -> CommandRuntimeOutcome(operation.queryCommands(), "success")
-                "queryFailure" -> CommandRuntimeOutcome(operation.queryCommands(), "transport-error")
-                "resetNotification" -> CommandRuntimeOutcome(operation.resetCommands(), "success")
-                "resetNotificationFailure" -> CommandRuntimeOutcome(operation.resetCommands(), "transport-error")
-                "syncStart" -> CommandRuntimeOutcome(operation.syncStartCommands(), "success")
-                "syncStartFailure" -> CommandRuntimeOutcome(operation.syncStartCommands(), "platform-split")
-                "syncStop" -> CommandRuntimeOutcome(operation.syncStopCommands(), "success")
-                "syncStopFailure" -> CommandRuntimeOutcome(operation.syncStopCommands(), "platform-split")
-                else -> error("Unsupported public facade command operation ${operation.kind}")
-            }
-        }
-
-        private fun PublicFacadeCommandOperation.queryCommands(): List<String> {
-            val commands = mutableListOf("query:${requireNotNull(query)}")
-            if (parameters.isEmpty()) {
-                commands += "parameters:none"
-            } else {
-                commands += parameters.map { parameter -> "parameter:$parameter" }
-            }
-            return commands
-        }
-
-        private fun PublicFacadeCommandOperation.resetCommands(): List<String> {
-            return listOf(
-                "notification:RESET",
-                "flag:sleep=${requireNotNull(sleep)}",
-                "flag:factoryDefaults=${requireNotNull(factoryDefaults)}",
-                "flag:otaFirmwareUpdate=${requireNotNull(otaFirmwareUpdate)}"
-            )
-        }
-
-        private fun PublicFacadeCommandOperation.syncStartCommands(): List<String> {
-            return queryCommands() + notifications.map { notification -> "notification:$notification" }
-        }
-
-        private fun PublicFacadeCommandOperation.syncStopCommands(): List<String> {
-            return notifications.map { notification -> "notification:$notification" }
-        }
-    }
-
-    private data class PublicFacadeCommandOperation(
-        val id: String,
-        val kind: String,
-        val query: String?,
-        val parameters: List<String>,
-        val notifications: List<String>,
-        val sleep: Boolean?,
-        val factoryDefaults: Boolean?,
-        val otaFirmwareUpdate: Boolean?
-    )
-
-    private data class CommandRuntimeOutcome(
-        val commands: List<String>,
-        val terminal: String
-    )
 }
