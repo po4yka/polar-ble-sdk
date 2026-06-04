@@ -1,11 +1,11 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
 import com.polar.androidcommunications.common.ble.TypeUtils
-import java.io.ByteArrayOutputStream
+import com.polar.shared.pmd.PolarPmdSettingType
+import com.polar.shared.pmd.PolarPmdSettings
 import java.util.AbstractMap
 import java.util.Collections
 import java.util.EnumMap
-import java.util.Objects
 import java.util.TreeMap
 
 class PmdSetting {
@@ -38,67 +38,32 @@ class PmdSetting {
     }
 
     private fun parsePmdSettingsData(data: ByteArray): EnumMap<PmdSettingType, Set<Int>> {
-        val parsedSettings = EnumMap<PmdSettingType, Set<Int>>(PmdSettingType::class.java)
-        if (data.size <= 1) {
-            return parsedSettings
+        val parsed = PolarPmdSettings.parseSettings(data)
+        if (parsed.error != null) {
+            throwAndroidCompatibleParseError(data)
         }
-        var offset = 0
-        while (offset < data.size) {
-            val type = PmdSettingType.values()[data[offset++].toInt()]
-            var count = data[offset++].toInt()
-            val items: MutableSet<Int> = HashSet()
-            while (count-- > 0) {
-                val fieldSize = typeToFieldSize(type)
-
-                val item: Int? = try {
-                    TypeUtils.convertArrayToSignedInt(data, offset, fieldSize)
-                } catch (e: Exception) {
-                    throw e
-                }
-
-                offset += fieldSize
-                if (item != null) {
-                    items.add(item)
-                }
-            }
-            parsedSettings[type] = items
+        val parsedSettings = EnumMap<PmdSettingType, Set<Int>>(PmdSettingType::class.java)
+        parsed.settings.forEach { (type, values) ->
+            parsedSettings[type.toAndroidType()] = values.toSet()
         }
         return parsedSettings
     }
 
     fun updateSelectedFromStartResponse(data: ByteArray) {
 
-        val settingsFromStartResponse:
-                EnumMap<PmdSettingType, Set<Int>>? = try {
+        val settingsFromStartResponse: EnumMap<PmdSettingType, Set<Int>> = try {
             parsePmdSettingsData(data)
         } catch (e: Exception) {
             throw e
         }
 
-        if (settingsFromStartResponse != null) {
-            if (settingsFromStartResponse.containsKey(PmdSettingType.FACTOR)) {
-                selected[PmdSettingType.FACTOR] = settingsFromStartResponse?.get(PmdSettingType.FACTOR)!!.iterator().next()
-            }
+        if (settingsFromStartResponse.containsKey(PmdSettingType.FACTOR)) {
+            selected[PmdSettingType.FACTOR] = settingsFromStartResponse[PmdSettingType.FACTOR]!!.iterator().next()
         }
     }
 
     fun serializeSelected(): ByteArray {
-        val outputStream = ByteArrayOutputStream()
-        for ((key, value) in selected) {
-            if (key == PmdSettingType.FACTOR) {
-                continue
-            }
-
-            outputStream.write(key.numVal)
-            outputStream.write(1)
-
-            val fieldSize = Objects.requireNonNull(typeToFieldSize(key))
-            for (i in 0 until fieldSize) {
-                outputStream.write((value shr i * 8))
-            }
-        }
-
-        return outputStream.toByteArray()
+        return PolarPmdSettings.serializeSelectedSettings(selected.mapKeys { it.key.toSharedType() })
     }
 
     fun maxSettings(): PmdSetting {
@@ -161,6 +126,44 @@ class PmdSetting {
             }
             if (fieldSize == 3 && (value < 0x0 || 0xFFFFFF < value)) {
                 throw RuntimeException("PmdSetting not in valid range. Field size: $fieldSize value: $value")
+            }
+        }
+
+        private fun throwAndroidCompatibleParseError(data: ByteArray): Nothing {
+            var offset = 0
+            while (offset < data.size) {
+                val type = PmdSettingType.values()[data[offset++].toInt()]
+                var count = data[offset++].toInt()
+                while (count-- > 0) {
+                    val fieldSize = typeToFieldSize(type)
+                    TypeUtils.convertArrayToSignedInt(data, offset, fieldSize)
+                    offset += fieldSize
+                }
+            }
+            throw RuntimeException("invalidPMDData")
+        }
+
+        private fun PmdSettingType.toSharedType(): PolarPmdSettingType {
+            return when (this) {
+                PmdSettingType.SAMPLE_RATE -> PolarPmdSettingType.SAMPLE_RATE
+                PmdSettingType.RESOLUTION -> PolarPmdSettingType.RESOLUTION
+                PmdSettingType.RANGE -> PolarPmdSettingType.RANGE
+                PmdSettingType.RANGE_MILLIUNIT -> PolarPmdSettingType.RANGE_MILLIUNIT
+                PmdSettingType.CHANNELS -> PolarPmdSettingType.CHANNELS
+                PmdSettingType.FACTOR -> PolarPmdSettingType.FACTOR
+                PmdSettingType.SECURITY -> PolarPmdSettingType.SECURITY
+            }
+        }
+
+        private fun PolarPmdSettingType.toAndroidType(): PmdSettingType {
+            return when (this) {
+                PolarPmdSettingType.SAMPLE_RATE -> PmdSettingType.SAMPLE_RATE
+                PolarPmdSettingType.RESOLUTION -> PmdSettingType.RESOLUTION
+                PolarPmdSettingType.RANGE -> PmdSettingType.RANGE
+                PolarPmdSettingType.RANGE_MILLIUNIT -> PmdSettingType.RANGE_MILLIUNIT
+                PolarPmdSettingType.CHANNELS -> PmdSettingType.CHANNELS
+                PolarPmdSettingType.FACTOR -> PmdSettingType.FACTOR
+                PolarPmdSettingType.SECURITY -> PmdSettingType.SECURITY
             }
         }
     }

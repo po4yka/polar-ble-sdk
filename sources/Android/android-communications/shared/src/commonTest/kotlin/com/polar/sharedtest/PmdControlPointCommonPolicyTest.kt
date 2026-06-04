@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.pmd.PolarPmdControlPoint
+import com.polar.shared.pmd.PolarPmdParseError
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -22,7 +24,7 @@ class PmdControlPointCommonPolicyTest {
             } else {
                 val parsed = parseControlPointResponse(vector.objectValue("input").stringValue("hex"))
                 expected.optionalStringValue("commonDecision")?.let {
-                    assertEquals("invalidPMDData", parsed.error, caseId)
+                    assertEquals("invalidPMDData", parsed.error?.vectorName, caseId)
                 } ?: run {
                     assertEquals(expected.intValue("responseCode"), parsed.responseCode, caseId)
                     assertEquals(expected.stringValue("opCode"), parsed.opCode, caseId)
@@ -56,111 +58,24 @@ class PmdControlPointCommonPolicyTest {
     }
 
     private fun parseActiveMeasurement(responseByte: Int): ActiveMeasurement {
-        val activeBits = (responseByte shr 6) and 0x03
-        val measurementBits = responseByte and 0x3F
-        return ActiveMeasurement(
-            activeBits = activeBits,
-            measurementBits = measurementBits,
-            measurementTypeName = measurementBits.measurementName(),
-            androidStateName = activeBits.androidActiveStateName(),
-            iosStateName = activeBits.iosActiveStateName()
-        )
+        val parsed = PolarPmdControlPoint.parseActiveMeasurement(responseByte)
+        return ActiveMeasurement(parsed.activeBits, parsed.measurementBits, parsed.measurementTypeName, parsed.androidStateName, parsed.iosStateName)
     }
 
     private fun parseControlPointResponse(hex: String): ControlPointResponse {
-        val bytes = hexToBytes(hex)
-        if (bytes.size < 4) {
-            return ControlPointResponse(error = "invalidPMDData")
-        }
+        val parsed = PolarPmdControlPoint.parseControlPointResponse(hexToBytes(hex))
+        val response = parsed.response ?: return ControlPointResponse(error = parsed.error)
         return ControlPointResponse(
-            responseCode = bytes[0].toInt() and 0xFF,
-            opCodeValue = bytes[1].toInt() and 0xFF,
-            opCode = (bytes[1].toInt() and 0xFF).opCodeName(),
-            measurementType = bytes[2].toInt() and 0xFF,
-            measurementTypeName = (bytes[2].toInt() and 0xFF).measurementName(),
-            statusValue = bytes[3].toInt() and 0xFF,
-            status = (bytes[3].toInt() and 0xFF).statusName(),
-            more = bytes.size >= 5 && bytes[4].toInt() != 0,
-            parametersHex = if (bytes.size > 5) bytes.copyOfRange(5, bytes.size).toHex() else ""
+            responseCode = response.responseCode,
+            opCodeValue = response.opCodeValue,
+            opCode = response.opCodeName,
+            measurementType = response.measurementType,
+            measurementTypeName = response.measurementTypeName,
+            statusValue = response.statusValue,
+            status = response.statusName,
+            more = response.more,
+            parametersHex = response.parametersHex
         )
-    }
-
-    private fun Int.opCodeName(): String {
-        return when (this) {
-            1 -> "GET_MEASUREMENT_SETTINGS"
-            2 -> "REQUEST_MEASUREMENT_START"
-            3 -> "STOP_MEASUREMENT"
-            4 -> "GET_SDK_MODE_MEASUREMENT_SETTINGS"
-            5 -> "GET_MEASUREMENT_STATUS"
-            else -> "UNKNOWN"
-        }
-    }
-
-    private fun Int.measurementName(): String {
-        return when (this) {
-            0 -> "ECG"
-            1 -> "PPG"
-            2 -> "ACC"
-            5 -> "GYRO"
-            6 -> "MAG"
-            9 -> "SDK_MODE"
-            11 -> "PRESSURE"
-            12 -> "TEMPERATURE"
-            13 -> "OFFLINE_RECORDING"
-            else -> "UNKNOWN"
-        }
-    }
-
-    private fun Int.statusName(): String {
-        return when (this) {
-            0 -> "SUCCESS"
-            1 -> "ERROR_INVALID_OP_CODE"
-            2 -> "ERROR_INVALID_MEASUREMENT_TYPE"
-            3 -> "ERROR_NOT_SUPPORTED"
-            4 -> "ERROR_INVALID_LENGTH"
-            5 -> "ERROR_INVALID_PARAMETER"
-            6 -> "ERROR_ALREADY_IN_STATE"
-            7 -> "ERROR_INVALID_RESOLUTION"
-            8 -> "ERROR_INVALID_SAMPLE_RATE"
-            9 -> "ERROR_INVALID_RANGE"
-            10 -> "ERROR_INVALID_MTU"
-            11 -> "ERROR_INVALID_NUMBER_OF_CHANNELS"
-            12 -> "ERROR_INVALID_STATE"
-            13 -> "ERROR_DEVICE_IN_CHARGER"
-            14 -> "ERROR_DISK_FULL"
-            else -> "UNKNOWN"
-        }
-    }
-
-    private fun Int.androidActiveStateName(): String {
-        return when (this) {
-            0 -> "NO_ACTIVE_MEASUREMENT"
-            1 -> "ONLINE_MEASUREMENT_ACTIVE"
-            2 -> "OFFLINE_MEASUREMENT_ACTIVE"
-            3 -> "ONLINE_AND_OFFLINE_ACTIVE"
-            else -> "UNKNOWN"
-        }
-    }
-
-    private fun Int.iosActiveStateName(): String {
-        return when (this) {
-            0 -> "no_measurement_active"
-            1 -> "online_measurement_active"
-            2 -> "offline_measurement_active"
-            3 -> "online_offline_measurement_active"
-            else -> "unknown"
-        }
-    }
-
-    private fun ByteArray.toHex(): String {
-        return joinToString(separator = "") { byte ->
-            val value = byte.toInt() and 0xFF
-            "${(value / 16).toHexDigit()}${(value % 16).toHexDigit()}"
-        }
-    }
-
-    private fun Int.toHexDigit(): Char {
-        return if (this < 10) '0' + this else 'a' + (this - 10)
     }
 
     private fun String.optionalBooleanValue(field: String): Boolean? {
@@ -190,7 +105,7 @@ class PmdControlPointCommonPolicyTest {
         val statusValue: Int? = null,
         val more: Boolean = false,
         val parametersHex: String = "",
-        val error: String? = null
+        val error: PolarPmdParseError? = null
     )
 
     private companion object {

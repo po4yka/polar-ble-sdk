@@ -1,14 +1,18 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
+import com.polar.shared.pmd.PolarPmdControlPoint
+
 class PmdControlPointResponse(data: ByteArray) {
     companion object {
         const val CONTROL_POINT_RESPONSE_CODE = 0xF0.toByte()
     }
 
-    val responseCode: Byte = data[0]
-    val opCode: PmdControlPointCommandClientToService = PmdControlPointCommandClientToService.values()[data[1].toInt()]
-    val measurementType: Byte = data[2]
-    val status: PmdControlPointResponseCode = PmdControlPointResponseCode.values()[data[3].toInt()]
+    private val parsed = PolarPmdControlPoint.parseControlPointResponse(data).response ?: throw IndexOutOfBoundsException("invalidPMDData")
+
+    val responseCode: Byte = parsed.responseCode.toByte()
+    val opCode: PmdControlPointCommandClientToService = PmdControlPointCommandClientToService.values()[parsed.opCodeValue]
+    val measurementType: Byte = parsed.measurementType.toByte()
+    val status: PmdControlPointResponseCode = PmdControlPointResponseCode.values()[parsed.statusValue]
     val more: Boolean
     var parameters: ByteArray
 
@@ -31,16 +35,8 @@ class PmdControlPointResponse(data: ByteArray) {
     }
 
     init {
-        var receivedParams = byteArrayOf()
-        if (status == PmdControlPointResponseCode.SUCCESS) {
-            more = data.size > 4 && data[4] != 0.toByte()
-            if (data.size > 5) {
-                receivedParams = data.copyOfRange(5, data.size)
-            }
-        } else {
-            more = false
-        }
-        parameters = receivedParams
+        more = parsed.more
+        parameters = parsed.parameters
     }
 
     override fun toString(): String {
