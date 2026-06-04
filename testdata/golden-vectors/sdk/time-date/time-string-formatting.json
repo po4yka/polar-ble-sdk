@@ -1,0 +1,46 @@
+{
+  "id": "time-string-formatting",
+  "area": "time-date",
+  "case": "time_string_formatting",
+  "source": "iOS KMP shared migration characterization",
+  "description": "Pins current protobuf time string formatting, including the existing two-digit minimum millisecond width.",
+  "input": {
+    "kind": "timeString",
+    "cases": [
+      {
+        "hour": 3,
+        "minute": 4,
+        "second": 5,
+        "millis": 6,
+        "expected": "03:04:05.06"
+      },
+      {
+        "hour": 23,
+        "minute": 59,
+        "second": 58,
+        "millis": 999,
+        "expected": "23:59:58.999"
+      }
+    ]
+  },
+  "expected": {
+    "millisMinimumWidth": 2
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTimeUtilsTest"
+    ],
+    "ios": [
+      "PolarTimeUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TimeDateCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Android has no current public time-string helper; its consumer test executes the shared policy directly while iOS verifies the existing `PolarTimeUtils.pbTimeToTimeString` adapter behavior."
+}

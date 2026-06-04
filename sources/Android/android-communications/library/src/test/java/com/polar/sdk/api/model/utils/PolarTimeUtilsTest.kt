@@ -1,7 +1,11 @@
 package com.polar.sdk.api.model.utils
 
+import com.google.gson.JsonObject
 import com.polar.androidcommunications.testrules.BleLoggerTestRule
+import com.polar.shared.time.PolarTimeFields
+import com.polar.shared.time.PolarTimeUtils as SharedPolarTimeUtils
 import com.polar.sdk.impl.utils.PolarTimeUtils
+import com.polar.testutils.GoldenVectorTestData
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -830,6 +834,117 @@ internal class PolarTimeUtilsTest {
         Assert.assertEquals(30, result.minute)
         Assert.assertEquals(45, result.second)
         Assert.assertEquals(500 * 1_000_000, result.nano)
+    }
+
+    @Test
+    fun `time date golden vectors pin Android utility migration`() {
+        TIME_DATE_VECTORS.forEach { relativePath ->
+            val vector = GoldenVectorTestData.loadObject(relativePath)
+            val input = vector.objectValue("input")
+            val expected = vector.objectValue("expected")
+            when (input.stringValue("kind")) {
+                "dateTimeFields" -> {
+                    val localDateTime = LocalDateTime.of(
+                        input.intValue("year"),
+                        input.intValue("month"),
+                        input.intValue("day"),
+                        input.intValue("hour"),
+                        input.intValue("minute"),
+                        input.intValue("second"),
+                        input.intValue("millis") * 1_000_000
+                    )
+                    Assert.assertEquals(expected.intValue("year"), localDateTime.year)
+                    Assert.assertEquals(expected.intValue("month"), localDateTime.monthValue)
+                    Assert.assertEquals(expected.intValue("day"), localDateTime.dayOfMonth)
+                    Assert.assertEquals(expected.intValue("hour"), localDateTime.hour)
+                    Assert.assertEquals(expected.intValue("minute"), localDateTime.minute)
+                    Assert.assertEquals(expected.intValue("second"), localDateTime.second)
+                    Assert.assertEquals(expected.intValue("nanos"), localDateTime.nano)
+                }
+                "durationToMillis" -> {
+                    val pbDuration = PbDuration.newBuilder()
+                        .setHours(input.intValue("hours"))
+                        .setMinutes(input.intValue("minutes"))
+                        .setSeconds(input.intValue("seconds"))
+                        .setMillis(input.intValue("millis"))
+                        .build()
+                    Assert.assertEquals(expected.intValue("millis"), PolarTimeUtils.pbDurationToInt(pbDuration))
+                }
+                "nanosToMillis" -> input.objectArray("cases").forEach { sample ->
+                    Assert.assertEquals(sample.intValue("expectedMillis"), SharedPolarTimeUtils.nanosToMillis(sample.intValue("nanoseconds")))
+                }
+                "timezoneOffset" -> input.objectArray("cases").forEach { sample ->
+                    Assert.assertEquals(sample.intValue("expectedMinutes"), SharedPolarTimeUtils.secondsToMinutes(sample.intValue("seconds")))
+                    Assert.assertEquals(sample.intValue("expectedSeconds"), SharedPolarTimeUtils.minutesToSeconds(sample.intValue("expectedMinutes")))
+                }
+                "timeString" -> input.objectArray("cases").forEach { sample ->
+                    val time = PolarTimeFields(sample.intValue("hour"), sample.intValue("minute"), sample.intValue("second"), sample.intValue("millis"))
+                    Assert.assertEquals(sample.stringValue("expected"), SharedPolarTimeUtils.timeString(time))
+                }
+                "plainDateValidation" -> input.objectArray("cases").forEach { sample ->
+                    Assert.assertEquals(sample.booleanValue("valid"), SharedPolarTimeUtils.isValidPlainDate(sample.stringValue("value")))
+                }
+                else -> Assert.fail("Unsupported time/date vector kind ${input.stringValue("kind")}")
+            }
+        }
+    }
+
+    @Test
+    fun `time date readiness manifest is pinned before utility migration`() {
+        val vector = GoldenVectorTestData.loadObject("sdk/time-date/time-date-readiness.json")
+        val input = vector.objectValue("input")
+        val expected = vector.objectValue("expected")
+        val consumerTests = vector.objectValue("consumerTests")
+        Assert.assertEquals("time-date-readiness", vector.stringValue("id"))
+        Assert.assertEquals("timeDateReadiness", input.stringValue("kind"))
+        Assert.assertEquals(TIME_DATE_VECTORS, input.stringArrayValue("policyVectorPaths"))
+        Assert.assertEquals(REQUIRED_TIME_DATE_FAMILIES, input.stringArrayValue("requiredBehaviorFamilies"))
+        Assert.assertEquals(REQUIRED_TIME_DATE_FAMILIES, expected.stringArrayValue("coveredBehaviorFamilies"))
+        Assert.assertEquals(TIME_DATE_READINESS_COMMON_DECISION, expected.stringValue("commonDecision"))
+        Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.PolarTimeUtilsTest"), consumerTests.stringArrayValue("android"))
+        Assert.assertEquals(listOf("PolarTimeUtilsTests", "PolarPlainDateTest"), consumerTests.stringArrayValue("ios"))
+        Assert.assertEquals(listOf("com.polar.sharedtest.TimeDateCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
+    }
+
+    private fun JsonObject.objectValue(field: String): JsonObject = getAsJsonObject(field)
+
+    private fun JsonObject.stringValue(field: String): String = get(field).asString
+
+    private fun JsonObject.intValue(field: String): Int = get(field).asInt
+
+    private fun JsonObject.booleanValue(field: String): Boolean = get(field).asBoolean
+
+    private fun JsonObject.stringArrayValue(field: String): List<String> {
+        return getAsJsonArray(field).map { it.asString }
+    }
+
+    private fun JsonObject.objectArray(field: String): List<JsonObject> {
+        return getAsJsonArray(field).map { it.asJsonObject }
+    }
+
+    private companion object {
+        val TIME_DATE_VECTORS = listOf(
+            "sdk/time-date/local-date-time-field-mapping.json",
+            "sdk/time-date/duration-to-millis.json",
+            "sdk/time-date/nanos-to-millis-rounding.json",
+            "sdk/time-date/timezone-offset-conversion.json",
+            "sdk/time-date/time-string-formatting.json",
+            "sdk/time-date/plain-date-validation.json"
+        )
+        val REQUIRED_TIME_DATE_FAMILIES = listOf(
+            "local-date-time-field-mapping",
+            "trusted-system-time-flag",
+            "timezone-offset-minutes",
+            "millis-nanos-conversion",
+            "nanos-to-millis-rounding",
+            "duration-to-millis",
+            "time-string-formatting",
+            "plain-date-validation",
+            "platform-timezone-calendar-boundary",
+            "platform-vector-reference-gate",
+            "compile-verification-gate"
+        )
+        const val TIME_DATE_READINESS_COMMON_DECISION = "Time/date migration owns portable field mapping, timezone-offset minute conversion, millisecond/nanosecond policy, duration-to-millis math, time-string formatting, and plain-date validation in shared KMP code while platform calendar, timezone database, Date, Calendar, LocalDateTime, protobuf, and public facade conversion remain platform adapters until shared artifacts are consumed by iOS production code."
     }
 
 }

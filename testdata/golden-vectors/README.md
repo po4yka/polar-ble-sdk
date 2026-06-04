@@ -37,6 +37,7 @@ testdata/golden-vectors/sdk/sleep/
 testdata/golden-vectors/sdk/spo2-test/
 testdata/golden-vectors/sdk/stream-runtime/
 testdata/golden-vectors/sdk/stored-data-cleanup/
+testdata/golden-vectors/sdk/time-date/
 testdata/golden-vectors/sdk/training-session/
 testdata/golden-vectors/sdk/user-device-settings/
 testdata/golden-vectors/sdk/user-device-settings-runtime/

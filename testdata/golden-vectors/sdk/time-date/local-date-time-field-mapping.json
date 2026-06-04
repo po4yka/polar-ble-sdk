@@ -1,0 +1,48 @@
+{
+  "id": "local-date-time-field-mapping",
+  "area": "time-date",
+  "case": "local_date_time_field_mapping",
+  "source": "KMP shared migration characterization",
+  "description": "Pins the portable date/time fields that platform Calendar, Date, LocalDateTime, and protobuf adapters pass into or receive from shared KMP code.",
+  "input": {
+    "kind": "dateTimeFields",
+    "year": 2024,
+    "month": 2,
+    "day": 29,
+    "hour": 23,
+    "minute": 59,
+    "second": 58,
+    "millis": 999,
+    "timeZoneOffsetMinutes": 840,
+    "trusted": true
+  },
+  "expected": {
+    "year": 2024,
+    "month": 2,
+    "day": 29,
+    "hour": 23,
+    "minute": 59,
+    "second": 58,
+    "millis": 999,
+    "timeZoneOffsetMinutes": 840,
+    "trusted": true,
+    "nanos": 999000000
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTimeUtilsTest"
+    ],
+    "ios": [
+      "PolarTimeUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TimeDateCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Shared KMP owns the field container and millisecond-to-nanosecond projection; platform adapters still own calendar and protobuf object construction."
+}

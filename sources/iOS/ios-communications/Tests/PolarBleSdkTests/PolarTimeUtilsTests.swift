@@ -522,6 +522,74 @@ class PolarTimeUtilsTests: XCTestCase {
         XCTAssertEqual(result, 23*60*60*1000 + 59*60*1000 + 59*1000 + 999)
     }
 
+    func testTimeDateGoldenVectorsPinIOSUtilityMigration() throws {
+        for relativePath in timeDateUtilityVectorPaths {
+            let vector = try GoldenVectorTestData.loadObject(relativePath)
+            let input = try objectValue(vector, "input")
+            let expected = try objectValue(vector, "expected")
+            switch try stringValue(input, "kind") {
+            case "dateTimeFields":
+                XCTAssertEqual(try intValue(expected, "nanos"), PolarTimeUtils.nanosToMillis(nanoseconds: try intValue(input, "millis") * 1_000_000) * 1_000_000)
+                XCTAssertEqual(try boolValue(expected, "trusted"), try boolValue(input, "trusted"))
+            case "durationToMillis":
+                var pbDuration = PbDuration()
+                pbDuration.hours = UInt32(try intValue(input, "hours"))
+                pbDuration.minutes = UInt32(try intValue(input, "minutes"))
+                pbDuration.seconds = UInt32(try intValue(input, "seconds"))
+                pbDuration.millis = UInt32(try intValue(input, "millis"))
+                XCTAssertEqual(try intValue(expected, "millis"), PolarTimeUtils.pbDurationToMillis(pbDuration: pbDuration))
+            case "nanosToMillis":
+                for sample in try objectArray(input, "cases") {
+                    XCTAssertEqual(try intValue(sample, "expectedMillis"), PolarTimeUtils.nanosToMillis(nanoseconds: try intValue(sample, "nanoseconds")))
+                }
+            case "timezoneOffset":
+                for sample in try objectArray(input, "cases") {
+                    let seconds = try intValue(sample, "seconds")
+                    let timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: seconds))
+                    var components = DateComponents()
+                    components.year = 2024
+                    components.month = 2
+                    components.day = 29
+                    components.hour = 23
+                    components.minute = 59
+                    components.second = 58
+                    components.nanosecond = 999_000_000
+                    components.timeZone = timeZone
+                    let date = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: components))
+                    let result = try XCTUnwrap(PolarTimeUtils.dateToPbPftpSetLocalTime(time: date, zone: timeZone))
+                    XCTAssertEqual(Int32(try intValue(sample, "expectedMinutes")), result.tzOffset)
+                }
+            case "timeString":
+                for sample in try objectArray(input, "cases") {
+                    var pbTime = PbTime()
+                    pbTime.hour = UInt32(try intValue(sample, "hour"))
+                    pbTime.minute = UInt32(try intValue(sample, "minute"))
+                    pbTime.seconds = UInt32(try intValue(sample, "second"))
+                    pbTime.millis = UInt32(try intValue(sample, "millis"))
+                    XCTAssertEqual(try stringValue(sample, "expected"), PolarTimeUtils.pbTimeToTimeString(pbTime))
+                }
+            default:
+                XCTFail("Unsupported time/date vector kind")
+            }
+        }
+    }
+
+    func testTimeDateReadinessManifestIsPinnedBeforeUtilityMigration() throws {
+        let vector = try GoldenVectorTestData.loadObject("sdk/time-date/time-date-readiness.json")
+        let input = try objectValue(vector, "input")
+        let expected = try objectValue(vector, "expected")
+        let consumerTests = try objectValue(vector, "consumerTests")
+        XCTAssertEqual("time-date-readiness", try stringValue(vector, "id"))
+        XCTAssertEqual("timeDateReadiness", try stringValue(input, "kind"))
+        XCTAssertEqual(timeDatePolicyVectorPaths, try stringArrayValue(input, "policyVectorPaths"))
+        XCTAssertEqual(requiredTimeDateFamilies, try stringArrayValue(input, "requiredBehaviorFamilies"))
+        XCTAssertEqual(requiredTimeDateFamilies, try stringArrayValue(expected, "coveredBehaviorFamilies"))
+        XCTAssertEqual(timeDateReadinessCommonDecision, try stringValue(expected, "commonDecision"))
+        XCTAssertEqual(["com.polar.sdk.api.model.utils.PolarTimeUtilsTest"], try stringArrayValue(consumerTests, "android"))
+        XCTAssertEqual(["PolarTimeUtilsTests", "PolarPlainDateTest"], try stringArrayValue(consumerTests, "ios"))
+        XCTAssertEqual(["com.polar.sharedtest.TimeDateCommonPolicyTest"], try stringArrayValue(consumerTests, "commonPrototype"))
+    }
+
     private func getDateComponentsInUTC(_ iso8061: String) throws -> DateComponents {
         var calendar = Calendar(identifier: Calendar.Identifier.iso8601)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -535,6 +603,65 @@ class PolarTimeUtilsTests: XCTestCase {
             throw TestError.dateConversionFromISO8601Error
         }
         return date
+    }
+
+    private func objectValue(_ object: [String: Any], _ field: String) throws -> [String: Any] {
+        try XCTUnwrap(object[field] as? [String: Any])
+    }
+
+    private func objectArray(_ object: [String: Any], _ field: String) throws -> [[String: Any]] {
+        try XCTUnwrap(object[field] as? [[String: Any]])
+    }
+
+    private func stringValue(_ object: [String: Any], _ field: String) throws -> String {
+        try XCTUnwrap(object[field] as? String)
+    }
+
+    private func intValue(_ object: [String: Any], _ field: String) throws -> Int {
+        try XCTUnwrap(object[field] as? Int)
+    }
+
+    private func boolValue(_ object: [String: Any], _ field: String) throws -> Bool {
+        try XCTUnwrap(object[field] as? Bool)
+    }
+
+    private func stringArrayValue(_ object: [String: Any], _ field: String) throws -> [String] {
+        try XCTUnwrap(object[field] as? [String])
+    }
+
+    private var timeDateUtilityVectorPaths: [String] {
+        Array(timeDatePolicyVectorPaths.dropLast())
+    }
+
+    private var timeDatePolicyVectorPaths: [String] {
+        [
+            "sdk/time-date/local-date-time-field-mapping.json",
+            "sdk/time-date/duration-to-millis.json",
+            "sdk/time-date/nanos-to-millis-rounding.json",
+            "sdk/time-date/timezone-offset-conversion.json",
+            "sdk/time-date/time-string-formatting.json",
+            "sdk/time-date/plain-date-validation.json"
+        ]
+    }
+
+    private var requiredTimeDateFamilies: [String] {
+        [
+            "local-date-time-field-mapping",
+            "trusted-system-time-flag",
+            "timezone-offset-minutes",
+            "millis-nanos-conversion",
+            "nanos-to-millis-rounding",
+            "duration-to-millis",
+            "time-string-formatting",
+            "plain-date-validation",
+            "platform-timezone-calendar-boundary",
+            "platform-vector-reference-gate",
+            "compile-verification-gate"
+        ]
+    }
+
+    private var timeDateReadinessCommonDecision: String {
+        "Time/date migration owns portable field mapping, timezone-offset minute conversion, millisecond/nanosecond policy, duration-to-millis math, time-string formatting, and plain-date validation in shared KMP code while platform calendar, timezone database, Date, Calendar, LocalDateTime, protobuf, and public facade conversion remain platform adapters until shared artifacts are consumed by iOS production code."
     }
 }
 
