@@ -4,6 +4,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClien
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient.PmdDataFieldEncoding
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrameUtils
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 import java.lang.Float.intBitsToFloat
 
 internal class PressureData {
@@ -22,17 +23,11 @@ internal class PressureData {
         private const val TYPE_0_CHANNELS_IN_SAMPLE = 1
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): PressureData {
-            return if (frame.isCompressedFrame) {
-                when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromCompressedType0(frame)
-                    else -> throw java.lang.Exception("Compressed FrameType: ${frame.frameType} is not supported by Pressure data parser")
-                }
-            } else {
-                when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromRawType0(frame)
-                    else -> throw java.lang.Exception("Raw FrameType: ${frame.frameType} is not supported by Pressure data parser")
-                }
+            val pressureData = PressureData()
+            PolarSensorDataParser.parsePressure(frame.toPolarSharedFrame()).forEach { sample ->
+                pressureData.pressureSamples.add(PressureSample(timeStamp = sample.timeStamp, pressure = sample.pressure))
             }
+            return pressureData
         }
 
         private fun dataFromCompressedType0(frame: PmdDataFrame): PressureData {

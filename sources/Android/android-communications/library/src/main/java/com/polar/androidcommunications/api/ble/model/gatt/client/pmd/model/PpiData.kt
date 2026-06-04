@@ -2,6 +2,7 @@ package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.common.ble.TypeUtils
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 
 internal class PpiData {
     data class PpiSample internal constructor(
@@ -18,14 +19,21 @@ internal class PpiData {
 
     companion object {
         fun parseDataFromDataFrame(frame: PmdDataFrame): PpiData {
-            return if (frame.isCompressedFrame) {
-                throw java.lang.Exception("Compressed FrameType: ${frame.frameType} is not supported by PPI data parser")
-            } else {
-                when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromType0(frame)
-                    else -> throw java.lang.Exception("Raw FrameType: ${frame.frameType} is not supported by PPI data parser")
-                }
+            val ppiData = PpiData()
+            PolarSensorDataParser.parsePpi(frame.toPolarSharedFrame()).forEach { sample ->
+                ppiData.ppiSamples.add(
+                    PpiSample(
+                        hr = sample.hr,
+                        ppInMs = sample.ppInMs,
+                        ppErrorEstimate = sample.ppErrorEstimate,
+                        blockerBit = sample.blockerBit,
+                        skinContactStatus = sample.skinContactStatus,
+                        skinContactSupported = sample.skinContactSupported,
+                        timeStamp = sample.timeStamp
+                    )
+                )
             }
+            return ppiData
         }
 
         private fun dataFromType0(frame: PmdDataFrame): PpiData {

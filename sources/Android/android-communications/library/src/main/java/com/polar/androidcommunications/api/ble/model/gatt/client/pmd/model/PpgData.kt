@@ -4,6 +4,17 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClien
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrameUtils
 import com.polar.androidcommunications.common.ble.TypeUtils
+import com.polar.shared.pmd.sensors.PolarPpgSportIdSample
+import com.polar.shared.pmd.sensors.PolarPpgType0Sample
+import com.polar.shared.pmd.sensors.PolarPpgType10Sample
+import com.polar.shared.pmd.sensors.PolarPpgType13Sample
+import com.polar.shared.pmd.sensors.PolarPpgType14Sample
+import com.polar.shared.pmd.sensors.PolarPpgType4Sample
+import com.polar.shared.pmd.sensors.PolarPpgType5Sample
+import com.polar.shared.pmd.sensors.PolarPpgType7Sample
+import com.polar.shared.pmd.sensors.PolarPpgType8Sample
+import com.polar.shared.pmd.sensors.PolarPpgType9Sample
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 import java.nio.ByteBuffer
 import kotlin.experimental.and
 
@@ -129,26 +140,42 @@ internal class PpgData {
             TYPE_14_NUM_INTS_SIZE + TYPE_14_CHANNEL_0_AND_1_SIZE
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): PpgData {
-            return if (frame.isCompressedFrame) {
+            if (frame.isCompressedFrame) {
                 when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromCompressedType0(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_7 -> dataFromCompressedType7(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_8 -> dataFromCompressedType8(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_10 -> dataFromCompressedType10(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_13 -> dataFromCompressedType13(frame)
+                    PmdDataFrame.PmdDataFrameType.TYPE_0,
+                    PmdDataFrame.PmdDataFrameType.TYPE_7,
+                    PmdDataFrame.PmdDataFrameType.TYPE_8,
+                    PmdDataFrame.PmdDataFrameType.TYPE_10,
+                    PmdDataFrame.PmdDataFrameType.TYPE_13 -> Unit
                     else -> throw java.lang.Exception("Compressed FrameType: ${frame.frameType} is not supported by PPG data parser")
                 }
             } else {
                 when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromRawType0(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_4 -> dataFromRawType4(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_5 -> dataFromRawType5(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_6 -> dataFromRawType6(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_9 -> dataFromRawType9(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_14 -> dataFromRawType14(frame)
+                    PmdDataFrame.PmdDataFrameType.TYPE_0,
+                    PmdDataFrame.PmdDataFrameType.TYPE_4,
+                    PmdDataFrame.PmdDataFrameType.TYPE_5,
+                    PmdDataFrame.PmdDataFrameType.TYPE_6,
+                    PmdDataFrame.PmdDataFrameType.TYPE_9,
+                    PmdDataFrame.PmdDataFrameType.TYPE_14 -> Unit
                     else -> throw java.lang.Exception("Raw FrameType: ${frame.frameType} is not supported by PPG data parser")
                 }
             }
+            val ppgData = PpgData()
+            PolarSensorDataParser.parsePpg(frame.toPolarSharedFrame()).forEach { sample ->
+                when (sample) {
+                    is PolarPpgType0Sample -> ppgData.ppgSamples.add(PpgDataFrameType0(sample.timeStamp, sample.ppgDataSamples, sample.ambientSample))
+                    is PolarPpgType4Sample -> ppgData.ppgSamples.add(PpgDataFrameType4(sample.timeStamp, sample.numIntTs, sample.channel1GainTs, sample.channel2GainTs))
+                    is PolarPpgType5Sample -> ppgData.ppgSamples.add(PpgDataFrameType5(sample.timeStamp, sample.operationMode))
+                    is PolarPpgType7Sample -> ppgData.ppgSamples.add(PpgDataFrameType7(sample.timeStamp, sample.ppgDataSamples, sample.statusBits))
+                    is PolarPpgType8Sample -> ppgData.ppgSamples.add(PpgDataFrameType8(sample.timeStamp, sample.ppgDataSamples, sample.statusBits))
+                    is PolarPpgType9Sample -> ppgData.ppgSamples.add(PpgDataFrameType9(sample.timeStamp, sample.numIntTs, sample.channel1GainTs, sample.channel2GainTs))
+                    is PolarPpgType10Sample -> ppgData.ppgSamples.add(PpgDataFrameType10(sample.timeStamp, sample.greenSamples, sample.redSamples, sample.irSamples, sample.statusBits))
+                    is PolarPpgType13Sample -> ppgData.ppgSamples.add(PpgDataFrameType13(sample.timeStamp, sample.ppgChannel0, sample.ppgChannel1, sample.statusBits))
+                    is PolarPpgType14Sample -> ppgData.ppgSamples.add(PpgDataFrameType14(sample.timeStamp, sample.numIntTs1, sample.channel1GainTs1, sample.channel2GainTs1))
+                    is PolarPpgSportIdSample -> ppgData.ppgSamples.add(PpgDataSampleSportId(sample.timeStamp, sample.sportId))
+                }
+            }
+            return ppgData
         }
 
         private fun dataFromRawType0(frame: PmdDataFrame): PpgData {

@@ -2,6 +2,8 @@ package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
+import com.polar.shared.pmd.sensors.PolarMagCalibrationStatus
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 
 internal class MagData() {
 
@@ -44,15 +46,23 @@ internal class MagData() {
         private const val TYPE_1_CHANNELS_IN_SAMPLE = 4
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): MagData {
-            return if (frame.isCompressedFrame) {
-                when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataCompressedFromType0(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_1 -> dataCompressedFromType1(frame)
-                    else -> throw java.lang.Exception("Compressed FrameType: ${frame.frameType} is not supported by Magnetometer data parser")
-                }
-            } else {
-                throw java.lang.Exception("Raw FrameType: ${frame.frameType} is not supported by Magnetometer data parser")
+            val magData = MagData()
+            PolarSensorDataParser.parseMag(frame.toPolarSharedFrame()).forEach { sample ->
+                magData.magSamples.add(
+                    MagSample(
+                        timeStamp = sample.timeStamp,
+                        x = sample.x,
+                        y = sample.y,
+                        z = sample.z,
+                        calibrationStatus = sample.calibrationStatus.toAndroidCalibrationStatus()
+                    )
+                )
             }
+            return magData
+        }
+
+        private fun PolarMagCalibrationStatus.toAndroidCalibrationStatus(): CalibrationStatus {
+            return CalibrationStatus.getById(id)
         }
 
         private fun dataCompressedFromType0(frame: PmdDataFrame): MagData {

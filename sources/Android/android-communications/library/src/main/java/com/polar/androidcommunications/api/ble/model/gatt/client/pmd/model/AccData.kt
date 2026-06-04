@@ -4,6 +4,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClien
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient.Companion.parseDeltaFramesAll
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.common.ble.TypeUtils
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 
 internal class AccData {
     data class AccSample internal constructor(
@@ -30,20 +31,11 @@ internal class AccData {
         private const val TYPE_2_CHANNELS_IN_SAMPLE = 3
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): AccData {
-            return if (frame.isCompressedFrame) {
-                when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromCompressedType0(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_1 -> dataFromCompressedType1(frame)
-                    else -> throw java.lang.Exception("Compressed FrameType: ${frame.frameType} is not supported by ACC data parser")
-                }
-            } else {
-                when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromRawType0(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_1 -> dataFromRawType1(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_2 -> dataFromRawType2(frame)
-                    else -> throw java.lang.Exception("Raw FrameType: ${frame.frameType} is not supported by ACC data parser")
-                }
+            val accData = AccData()
+            PolarSensorDataParser.parseAcc(frame.toPolarSharedFrame()).forEach { sample ->
+                accData.accSamples.add(AccSample(timeStamp = sample.timeStamp, x = sample.x, y = sample.y, z = sample.z))
             }
+            return accData
         }
 
         private fun dataFromRawType0(frame: PmdDataFrame): AccData {

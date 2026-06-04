@@ -3,6 +3,7 @@ package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient.PmdDataFieldEncoding
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 import java.lang.Float.intBitsToFloat
 
 internal class GyrData {
@@ -27,15 +28,11 @@ internal class GyrData {
         private const val TYPE_1_CHANNELS_IN_SAMPLE = 3
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): GyrData {
-            return if (frame.isCompressedFrame) {
-                when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromCompressedType0(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_1 -> dataFromCompressedType1(frame)
-                    else -> throw java.lang.Exception("Compressed FrameType: ${frame.frameType} is not supported by Gyro data parser")
-                }
-            } else {
-                throw java.lang.Exception("Raw FrameType: ${frame.frameType} is not supported by Gyro data parser")
+            val gyrData = GyrData()
+            PolarSensorDataParser.parseGyr(frame.toPolarSharedFrame()).forEach { sample ->
+                gyrData.gyrSamples.add(GyrSample(timeStamp = sample.timeStamp, x = sample.x, y = sample.y, z = sample.z))
             }
+            return gyrData
         }
 
         private fun dataFromCompressedType0(frame: PmdDataFrame): GyrData {

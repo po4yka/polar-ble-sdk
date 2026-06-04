@@ -4,6 +4,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClien
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient.PmdDataFieldEncoding
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrameUtils
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 import java.lang.Float.intBitsToFloat
 
 internal class SkinTemperatureData {
@@ -23,17 +24,11 @@ internal class SkinTemperatureData {
         private const val TYPE_0_CHANNELS_IN_SAMPLE = 1
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): SkinTemperatureData {
-            return if (frame.isCompressedFrame) {
-                when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromCompressedType0(frame)
-                    else -> throw java.lang.Exception("Compressed FrameType: ${frame.frameType} is not supported by Skin Temperature data parser")
-                }
-            } else {
-                when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromRawType0(frame)
-                    else -> throw java.lang.Exception("Raw FrameType: ${frame.frameType} is not supported by Skin Temperature data parser")
-                }
+            val skinTemperatureData = SkinTemperatureData()
+            PolarSensorDataParser.parseSkinTemperature(frame.toPolarSharedFrame()).forEach { sample ->
+                skinTemperatureData.skinTemperatureSamples.add(SkinTemperatureSample(timeStamp = sample.timeStamp, skinTemperature = sample.skinTemperature))
             }
+            return skinTemperatureData
         }
 
         private fun dataFromCompressedType0(frame: PmdDataFrame): SkinTemperatureData {

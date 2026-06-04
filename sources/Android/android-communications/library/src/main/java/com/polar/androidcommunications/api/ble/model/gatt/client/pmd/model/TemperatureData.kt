@@ -4,6 +4,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClien
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient.PmdDataFieldEncoding
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrameUtils
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 import java.lang.Float.intBitsToFloat
 
 internal class TemperatureData {
@@ -23,17 +24,11 @@ internal class TemperatureData {
         private const val TYPE_0_CHANNELS_IN_SAMPLE = 1
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): TemperatureData {
-            return if (frame.isCompressedFrame) {
-                when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromCompressedType0(frame)
-                    else -> throw java.lang.Exception("Compressed FrameType: ${frame.frameType} is not supported by Temperature data parser")
-                }
-            } else {
-                when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromRawType0(frame)
-                    else -> throw java.lang.Exception("Raw FrameType: ${frame.frameType} is not supported by Temperature data parser")
-                }
+            val temperatureData = TemperatureData()
+            PolarSensorDataParser.parseTemperature(frame.toPolarSharedFrame()).forEach { sample ->
+                temperatureData.temperatureSamples.add(TemperatureSample(timeStamp = sample.timeStamp, temperature = sample.temperature))
             }
+            return temperatureData
         }
 
         private fun dataFromCompressedType0(frame: PmdDataFrame): TemperatureData {
