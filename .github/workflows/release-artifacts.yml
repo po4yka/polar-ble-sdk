@@ -1,0 +1,140 @@
+name: Release Artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*.*.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  ANDROID_PROJECT_DIR: sources/Android/android-communications
+
+jobs:
+  android-artifacts:
+    name: Android and shared Android artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Android release AAR
+        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
+        run: ./gradlew assembleSdkRelease :shared:bundleAndroidMainAar --no-daemon --warning-mode all
+
+      - name: Stage Android artifacts
+        run: |
+          mkdir -p /tmp/polar-release-artifacts/android
+          cp sources/Android/android-communications/library/build/outputs/aar/library-sdk-release.aar /tmp/polar-release-artifacts/android/polar-ble-sdk.aar
+          find sources/Android/android-communications/shared/build -name '*.aar' -print -exec cp {} /tmp/polar-release-artifacts/android/ \;
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-artifacts
+          path: /tmp/polar-release-artifacts/android
+          if-no-files-found: error
+          retention-days: 30
+
+  ios-artifacts:
+    name: iOS package validation and shared framework
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Kotlin Native
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: release-konan-${{ runner.os }}-${{ hashFiles('sources/Android/android-communications/gradle/wrapper/gradle-wrapper.properties', 'sources/Android/android-communications/build.gradle', 'sources/Android/android-communications/shared/build.gradle') }}
+          restore-keys: |
+            release-konan-${{ runner.os }}-
+            konan-${{ runner.os }}-
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cocoapods
+            sources/iOS/ios-communications/Pods
+          key: release-cocoapods-${{ runner.os }}-${{ hashFiles('sources/iOS/ios-communications/Podfile', 'PolarBleSdk.podspec') }}
+          restore-keys: |
+            release-cocoapods-${{ runner.os }}-
+            cocoapods-${{ runner.os }}-
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            .swiftpm
+          key: release-swiftpm-${{ runner.os }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: |
+            release-swiftpm-${{ runner.os }}-
+            swiftpm-${{ runner.os }}-
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install CocoaPods
+        run: gem install cocoapods --no-document
+
+      - name: Install Pods
+        run: pod install --project-directory=sources/iOS/ios-communications
+
+      - name: Validate Swift Package surface
+        run: swift package describe
+
+      - name: Validate podspec
+        run: pod lib lint PolarBleSdk.podspec --allow-warnings
+
+      - name: Build shared iOS framework
+        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
+        run: ./gradlew :shared:linkDebugFrameworkIosX64 --no-daemon --warning-mode all
+
+      - name: Stage iOS artifacts
+        run: |
+          mkdir -p /tmp/polar-release-artifacts/ios
+          find sources/Android/android-communications/shared/build -name 'PolarBleSdkShared.framework' -type d -print -exec cp -R {} /tmp/polar-release-artifacts/ios/ \;
+
+      - name: Upload iOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-release-artifacts
+          path: /tmp/polar-release-artifacts/ios
+          if-no-files-found: error
+          retention-days: 30
