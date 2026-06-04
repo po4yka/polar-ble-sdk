@@ -17,6 +17,7 @@ Use this checklist to keep KMP migration work scoped, test-first, and reviewable
 - [x] Add `commonMain`, `commonTest`, and platform-specific test source sets only as needed.
 - [x] Add a trivial common test and run it in local validation.
 - [x] Document how shared artifacts are consumed by Android and iOS modules.
+- [x] Delegate Android Device ID and UUID utilities to shared KMP code.
 
 ## Test Infrastructure
 
@@ -41,6 +42,7 @@ Use this checklist to keep KMP migration work scoped, test-first, and reviewable
 | Add a minimal shared KMP module without moving behavior. | `sources/Android/android-communications/settings.gradle` includes `:shared`, `sources/Android/android-communications/shared/build.gradle` applies Kotlin Multiplatform, and `sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/SharedModule.kt` is a behavior-free marker. |
 | Configure Android and Apple targets. | `sources/Android/android-communications/shared/build.gradle` declares the AGP 9 `com.android.kotlin.multiplatform.library` Android target plus `iosX64()`, `iosArm64()`, and `iosSimulatorArm64()` for the behavior-free shared module, `sources/Android/android-communications/shared/src/androidMain/AndroidManifest.xml` provides the minimal Android library manifest, and `KmpValidationCommands.md` names the shared Android/iOS target compile gate. |
 | Document how shared artifacts are consumed by Android and iOS modules. | `documentation/KmpSharedArtifactConsumption.md` defines the Android `project(':shared')` dependency contract, the iOS `PolarBleSdkShared.framework` contract, the required facade/common-test gates before production consumption, and the target artifact smoke commands. |
+| Delegate Android Device ID and UUID utilities to shared KMP code. | `sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/device/PolarDeviceId.kt` owns checksum validation, six- and seven-digit assembly, UUID string construction, and protocol-only identifier classification; `sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DeviceIdCommonPolicyTest.kt` exercises that production common code against the shared golden vectors; `sources/Android/android-communications/library/build.gradle` consumes `project(':shared')`; `sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/polar/BlePolarDeviceIdUtility.kt` and `sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarDeviceUuid.kt` delegate to `PolarDeviceId` while preserving their existing Android public API surface. |
 | Add `commonMain`, `commonTest`, and platform-specific test source sets only as needed. | `sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/SharedModule.kt`, `sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/GoldenVectorTestData.kt`, and `sources/Android/android-communications/shared/src/jvmTest/kotlin/com/polar/sharedtest/GoldenVectorTestDataJvm.kt` establish the minimal source-set shape with only the JVM test target needed to execute common tests now. |
 | Add a trivial common test and run it in local validation. | `sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/GoldenVectorTestDataCommonTest.kt` runs through `:shared:jvmTest`, and `KmpValidationCommands.md` documents the command. |
 | Create a shared golden-vector test-data location. | `testdata/golden-vectors/README.md` defines the shared fixture root and repository-wide vector rules. |
@@ -56,7 +58,7 @@ Use this checklist to keep KMP migration work scoped, test-first, and reviewable
 
 | Open checklist item | Rationale |
 |---|---|
-| Android/iOS production consumption of shared code. | `documentation/KmpSharedArtifactConsumption.md` defines the contract, but production modules intentionally do not consume `:shared` until a behavior migration slice adds failing common tests and platform facade compatibility tests. |
+| Remaining production consumption of shared code. | Android now consumes `:shared` for the Device ID and UUID utility slice only. iOS production framework consumption and every other Android/iOS behavior family remain open until each slice adds failing common tests, platform facade compatibility tests, and a rollback path. |
 | Release readiness. | The release-readiness checklist stays open during pre-migration coverage work until production shared consumption is implemented and verified through Android example AAR consumption, iOS Swift Package or explicit deprecation evidence, CocoaPods verification or explicit deprecation, regenerated API docs when public APIs change, migration guide updates, documented platform differences, and a rollback path for every shared-module adoption step. |
 
 ## Per-Slice TDD Checklist

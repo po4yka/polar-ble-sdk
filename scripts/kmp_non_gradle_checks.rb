@@ -2353,11 +2353,23 @@ android_settings = File.read(File.join(ROOT, "sources/Android/android-communicat
 shared_build_path = File.join(ROOT, "sources/Android/android-communications/shared/build.gradle")
 shared_build = File.read(shared_build_path)
 shared_marker = File.join(ROOT, "sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/SharedModule.kt")
+device_id_common_main = File.join(ROOT, "sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/device/PolarDeviceId.kt")
+device_id_common_test = File.join(ROOT, "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DeviceIdCommonPolicyTest.kt")
+android_device_id_utility = File.join(ROOT, "sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/polar/BlePolarDeviceIdUtility.kt")
+android_device_uuid = File.join(ROOT, "sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarDeviceUuid.kt")
+device_id_slice_migrated = File.file?(device_id_common_main) &&
+                           File.read(device_id_common_main).include?("object PolarDeviceId") &&
+                           File.file?(device_id_common_test) &&
+                           File.read(device_id_common_test).include?("PolarDeviceId.uuidFromDeviceId") &&
+                           File.file?(android_device_id_utility) &&
+                           File.read(android_device_id_utility).include?("PolarDeviceId.assembleFull") &&
+                           File.file?(android_device_uuid) &&
+                           File.read(android_device_uuid).include?("PolarDeviceId.uuidFromDeviceId")
 errors << "sources/Android/android-communications/settings.gradle: must include :shared" unless android_settings.include?("include ':shared'")
 errors << "sources/Android/android-communications/shared/build.gradle: must apply Kotlin Multiplatform" unless shared_build.include?("org.jetbrains.kotlin.multiplatform")
 errors << "sources/Android/android-communications/shared/build.gradle: must keep JVM target" unless shared_build.include?("jvm()")
 unless File.file?(shared_marker) && File.read(shared_marker).include?("object SharedModule")
-  errors << "sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/SharedModule.kt: shared commonMain must contain behavior-free marker"
+  errors << "sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/SharedModule.kt: shared commonMain must retain the module marker"
 end
 [
   "Add a minimal shared KMP module without moving behavior",
@@ -2382,7 +2394,9 @@ errors << "documentation/KmpValidationCommands.md: must document shared target s
 unless validation_commands.include?(":shared:compileAndroidMain") && validation_commands.include?(":shared:compileAndroidHostTest") && validation_commands.include?(":shared:compileKotlinIosX64")
   errors << "documentation/KmpValidationCommands.md: must document shared Android and iOS target compile gates"
 end
-errors << "sources/Android/android-communications/library/build.gradle: Android library must not consume :shared before behavior migration" if android_library_gradle.include?("project(':shared')")
+if android_library_gradle.include?("project(':shared')") && !device_id_slice_migrated
+  errors << "sources/Android/android-communications/library/build.gradle: Android library must not consume :shared without concrete migrated behavior evidence"
+end
 package_swift = File.join(ROOT, "sources/iOS/ios-communications/Package.swift")
 if File.file?(package_swift) && File.read(package_swift).include?("shared")
   errors << "sources/iOS/ios-communications/Package.swift: iOS package must not consume shared before behavior migration"
@@ -2404,7 +2418,9 @@ unless validation_commands.include?(":shared:bundleAndroidMainAar") && validatio
   errors << "documentation/KmpValidationCommands.md: must document shared artifact smoke gates"
 end
 errors << "documentation/KmpMigrationChecklist.md: missing completed shared artifact consumption documentation item" unless completed_items.include?("Document how shared artifacts are consumed by Android and iOS modules")
-errors << "sources/Android/android-communications/library/build.gradle: Android production consumption must wait for behavior migration" if android_library_gradle.include?("implementation project(':shared')")
+if android_library_gradle.include?("implementation project(':shared')") && !device_id_slice_migrated
+  errors << "sources/Android/android-communications/library/build.gradle: Android production consumption must name a migrated shared behavior slice"
+end
 xcode_project = File.join(ROOT, "sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj")
 if File.file?(xcode_project) && File.read(xcode_project).include?("PolarBleSdkShared.framework")
   errors << "sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj: iOS production consumption must wait for behavior migration"
