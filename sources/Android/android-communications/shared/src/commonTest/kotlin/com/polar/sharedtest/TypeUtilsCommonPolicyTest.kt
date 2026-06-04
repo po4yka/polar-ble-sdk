@@ -1,5 +1,8 @@
 package com.polar.sharedtest
 
+import com.polar.shared.ble.PolarTypeConversion
+import com.polar.shared.ble.PolarTypeConversionError
+import com.polar.shared.ble.PolarTypeUtils
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -16,25 +19,25 @@ class TypeUtilsCommonPolicyTest {
             val expected = vector.commonExpectedObject()
 
             expected.optionalScalarValue("unsignedByte")?.let { expectedValue ->
-                assertEquals(expectedValue, convertUnsignedByte(bytes).value, caseId)
+                assertEquals(expectedValue, PolarTypeUtils.convertArrayToUnsignedByte(bytes).value, caseId)
             }
             expected.optionalScalarValue("unsignedInt")?.let { expectedValue ->
-                assertEquals(expectedValue, convertUnsignedInt(bytes, offset, size).value, caseId)
+                assertEquals(expectedValue, bytes.convertUnsignedInt(offset, size).value, caseId)
             }
             expected.optionalScalarValue("unsignedLong")?.let { expectedValue ->
-                assertEquals(expectedValue, convertUnsignedLong(bytes, offset, size).value, caseId)
+                assertEquals(expectedValue, bytes.convertUnsignedLong(offset, size).value, caseId)
             }
             expected.optionalScalarValue("signedInt")?.let { expectedValue ->
-                assertEquals(expectedValue, convertSignedInt(bytes, offset, size).value, caseId)
+                assertEquals(expectedValue, bytes.convertSignedInt(offset, size).value, caseId)
             }
             expected.optionalStringValue("unsignedIntError")?.let { expectedError ->
-                assertEquals(expectedError, convertUnsignedInt(bytes, offset, size).error, caseId)
+                assertEquals(expectedError, bytes.convertUnsignedInt(offset, size).error?.vectorName, caseId)
             }
             expected.optionalStringValue("unsignedLongError")?.let { expectedError ->
-                assertEquals(expectedError, convertUnsignedLong(bytes, offset, size).error, caseId)
+                assertEquals(expectedError, bytes.convertUnsignedLong(offset, size).error?.vectorName, caseId)
             }
             expected.optionalStringValue("signedIntError")?.let { expectedError ->
-                assertEquals(expectedError, convertSignedInt(bytes, offset, size).error, caseId)
+                assertEquals(expectedError, bytes.convertSignedInt(offset, size).error?.vectorName, caseId)
             }
         }
     }
@@ -57,6 +60,8 @@ class TypeUtilsCommonPolicyTest {
         assertEquals(listOf("com.polar.androidcommunications.common.ble.TypeUtilsTest"), consumers.stringArrayValue("android"))
         assertEquals(listOf("TypeUtilsTest"), consumers.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.TypeUtilsCommonPolicyTest"), consumers.stringArrayValue("commonPrototype"))
+        assertEquals("emptyPayload", PolarTypeConversionError.EmptyPayload.vectorName)
+        assertEquals("payloadTooLong", PolarTypeConversionError.PayloadTooLong.vectorName)
         assertEquals(true, platforms.booleanValue("android"))
         assertEquals(true, platforms.booleanValue("ios"))
         assertEquals(true, platforms.booleanValue("common"))
@@ -71,104 +76,28 @@ class TypeUtilsCommonPolicyTest {
         }
     }
 
-    private fun convertUnsignedByte(bytes: ByteArray): ConversionResult {
-        return when {
-            bytes.isEmpty() -> ConversionResult(error = "emptyPayload")
-            bytes.size > 1 -> ConversionResult(error = "payloadTooLong")
-            else -> ConversionResult(value = (bytes[0].toInt() and 0xFF).toString())
-        }
-    }
-
-    private fun convertUnsignedInt(bytes: ByteArray, offset: Int?, size: Int?): ConversionResult {
-        val selected = selectedBytes(bytes, offset, size)
-        return when {
-            selected.isEmpty() -> ConversionResult(error = "emptyPayload")
-            selected.size > 4 -> ConversionResult(error = "payloadTooLong")
-            else -> ConversionResult(value = selected.unsignedLittleEndianLong().toString())
-        }
-    }
-
-    private fun convertUnsignedLong(bytes: ByteArray, offset: Int?, size: Int?): ConversionResult {
-        val selected = selectedBytes(bytes, offset, size)
-        return when {
-            selected.isEmpty() -> ConversionResult(error = "emptyPayload")
-            selected.size > 8 -> ConversionResult(error = "payloadTooLong")
-            else -> ConversionResult(value = selected.unsignedLittleEndianDecimalString())
-        }
-    }
-
-    private fun convertSignedInt(bytes: ByteArray, offset: Int?, size: Int?): ConversionResult {
-        val selected = selectedBytes(bytes, offset, size)
-        return when {
-            selected.isEmpty() -> ConversionResult(error = "emptyPayload")
-            selected.size > 4 -> ConversionResult(error = "payloadTooLong")
-            else -> {
-                val value = selected.unsignedLittleEndianLong()
-                val bitWidth = selected.size * 8
-                val signBit = 1L shl (bitWidth - 1)
-                val signed = if ((value and signBit) != 0L) value - (1L shl bitWidth) else value
-                ConversionResult(value = signed.toString())
-            }
-        }
-    }
-
-    private fun selectedBytes(bytes: ByteArray, offset: Int?, size: Int?): ByteArray {
+    private fun ByteArray.convertUnsignedInt(offset: Int?, size: Int?): PolarTypeConversion<String> {
         return if (offset != null && size != null) {
-            bytes.copyOfRange(offset, offset + size)
+            PolarTypeUtils.convertArrayToUnsignedInt(this, offset, size)
         } else {
-            bytes
+            PolarTypeUtils.convertArrayToUnsignedInt(this)
         }
     }
 
-    private fun ByteArray.unsignedLittleEndianLong(): Long {
-        var result = 0L
-        forEachIndexed { index, byte ->
-            result = result or ((byte.toLong() and 0xFFL) shl (index * 8))
+    private fun ByteArray.convertUnsignedLong(offset: Int?, size: Int?): PolarTypeConversion<String> {
+        return if (offset != null && size != null) {
+            PolarTypeUtils.convertArrayToUnsignedLong(this, offset, size)
+        } else {
+            PolarTypeUtils.convertArrayToUnsignedLong(this)
         }
-        return result
     }
 
-    private fun ByteArray.unsignedLittleEndianDecimalString(): String {
-        var result = "0"
-        reversedArray().forEach { byte ->
-            result = result.multiplyBy(256).add(byte.toInt() and 0xFF)
+    private fun ByteArray.convertSignedInt(offset: Int?, size: Int?): PolarTypeConversion<String> {
+        return if (offset != null && size != null) {
+            PolarTypeUtils.convertArrayToSignedInt(this, offset, size)
+        } else {
+            PolarTypeUtils.convertArrayToSignedInt(this)
         }
-        return result
-    }
-
-    private fun String.multiplyBy(multiplier: Int): String {
-        var carry = 0
-        val digits = StringBuilder()
-        reversed().forEach { char ->
-            val product = (char - '0') * multiplier + carry
-            digits.append(product % 10)
-            carry = product / 10
-        }
-        while (carry > 0) {
-            digits.append(carry % 10)
-            carry /= 10
-        }
-        return digits.reverse().toString().trimLeadingZeroes()
-    }
-
-    private fun String.add(addend: Int): String {
-        var carry = addend
-        val digits = StringBuilder()
-        reversed().forEach { char ->
-            val sum = (char - '0') + carry
-            digits.append(sum % 10)
-            carry = sum / 10
-        }
-        while (carry > 0) {
-            digits.append(carry % 10)
-            carry /= 10
-        }
-        return digits.reverse().toString().trimLeadingZeroes()
-    }
-
-    private fun String.trimLeadingZeroes(): String {
-        val trimmed = trimStart('0')
-        return if (trimmed.isEmpty()) "0" else trimmed
     }
 
     private fun String.optionalObjectValue(field: String): String? {
@@ -215,11 +144,6 @@ class TypeUtilsCommonPolicyTest {
         }
         error("Unbalanced $open$close block")
     }
-
-    private data class ConversionResult(
-        val value: String? = null,
-        val error: String? = null
-    )
 
     private companion object {
         val TYPE_UTILS_VECTORS = listOf(
