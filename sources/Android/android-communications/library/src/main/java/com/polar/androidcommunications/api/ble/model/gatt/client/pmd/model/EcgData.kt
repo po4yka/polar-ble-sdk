@@ -5,6 +5,9 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFram
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame.PmdDataFrameType
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrameUtils
 import com.polar.androidcommunications.common.ble.TypeUtils
+import com.polar.shared.pmd.sensors.PolarEcgType0Sample
+import com.polar.shared.pmd.sensors.PolarEcgType3Sample
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 
 sealed class EcgDataSample
 
@@ -40,17 +43,31 @@ internal class EcgData {
         private const val TYPE_3_SAMPLE_SIZE_IN_BYTES = TYPE_3_DATA_0_SIZE + TYPE_3_DATA_1_SIZE + TYPE_3_STATUS_SIZE
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): EcgData {
-            return if (frame.isCompressedFrame) {
-                throw java.lang.Exception("Compressed FrameType: ${frame.frameType} is not supported by EcgData data parser")
-            } else {
-                when (frame.frameType) {
-                    PmdDataFrameType.TYPE_0 -> dataFromRawType0(frame)
-                    PmdDataFrameType.TYPE_1 -> dataFromRawType1(frame)
-                    PmdDataFrameType.TYPE_2 -> dataFromRawType2(frame)
-                    PmdDataFrameType.TYPE_3 -> dataFromRawType3(frame)
-                    else -> throw java.lang.Exception("Raw FrameType: ${frame.frameType} is not supported by EcgData data parser")
+            val ecgData = EcgData()
+            PolarSensorDataParser.parseEcg(frame.toPolarSharedFrame()).forEach { sample ->
+                when (sample) {
+                    is PolarEcgType0Sample -> ecgData.ecgSamples.add(
+                        EcgSample(
+                            timeStamp = sample.timeStamp,
+                            microVolts = sample.microVolts,
+                            overSampling = sample.overSampling,
+                            skinContactBit = sample.skinContactBit,
+                            contactImpedance = sample.contactImpedance,
+                            ecgDataTag = sample.ecgDataTag,
+                            paceDataTag = sample.paceDataTag
+                        )
+                    )
+                    is PolarEcgType3Sample -> ecgData.ecgSamples.add(
+                        EcgSampleFrameType3(
+                            timeStamp = sample.timeStamp,
+                            data0 = sample.data0,
+                            data1 = sample.data1,
+                            status = sample.status
+                        )
+                    )
                 }
             }
+            return ecgData
         }
 
         private fun dataFromRawType0(frame: PmdDataFrame): EcgData {
