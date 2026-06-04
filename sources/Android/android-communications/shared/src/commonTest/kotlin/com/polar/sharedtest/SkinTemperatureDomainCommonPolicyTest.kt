@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarSdkModelMappers
+import com.polar.shared.sdk.PolarSkinTemperatureSampleModel
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,14 +18,14 @@ class SkinTemperatureDomainCommonPolicyTest {
             val model = parseSkinTemperature(proto)
             val expected = vector.objectValue("expected")
 
-            assertEquals(expected.optionalStringValue("measurementType"), model.measurementType, "$caseId measurementType")
-            assertEquals(expected.optionalStringValue("sensorLocation"), model.sensorLocation, "$caseId sensorLocation")
+            assertEquals(expected.optionalStringValue("measurementType"), model.measurementType?.name, "$caseId measurementType")
+            assertEquals(expected.optionalStringValue("sensorLocation"), model.sensorLocation?.name, "$caseId sensorLocation")
             val expectedSamples = expected.objectArray("samples")
             assertEquals(expectedSamples.size, model.samples.size, "$caseId sample count")
             expectedSamples.forEachIndexed { index, expectedSample ->
                 val actual = model.samples[index]
                 assertEquals(expectedSample.longValue("recordingTimeDeltaMs"), actual.recordingTimeDeltaMs, "$caseId sample $index delta")
-                assertDoubleEquals(expectedSample.doubleValue("temperature"), actual.temperature, "$caseId sample $index temperature")
+                assertDoubleEquals(expectedSample.doubleValue("temperature"), actual.temperature.toDouble(), "$caseId sample $index temperature")
             }
 
             val platformExpectations = vector.objectValue("platformExpectations")
@@ -71,35 +73,18 @@ class SkinTemperatureDomainCommonPolicyTest {
         assertEquals(true, platforms.booleanValue("common"))
     }
 
-    private fun parseSkinTemperature(proto: String): SkinTemperatureDomainModel {
-        return SkinTemperatureDomainModel(
+    private fun parseSkinTemperature(proto: String) =
+        PolarSdkModelMappers.skinTemperature(
             sourceDeviceId = proto.stringValue("sourceDeviceId"),
-            measurementType = measurementTypeOrNull(proto.intValue("measurementType")),
-            sensorLocation = sensorLocationOrNull(proto.intValue("sensorLocation")),
+            measurementType = proto.intValue("measurementType"),
+            sensorLocation = proto.intValue("sensorLocation"),
             samples = proto.objectArray("samples").map { sample ->
-                SkinTemperatureDomainSample(
+                PolarSkinTemperatureSampleModel(
                     recordingTimeDeltaMs = sample.longValue("recordingTimeDeltaMs"),
-                    temperature = sample.doubleValue("temperature")
+                    temperature = sample.doubleValue("temperature").toFloat()
                 )
             }
         )
-    }
-
-    private fun measurementTypeOrNull(value: Int): String? {
-        return when (value) {
-            1 -> "TM_SKIN_TEMPERATURE"
-            2 -> "TM_CORE_TEMPERATURE"
-            else -> null
-        }
-    }
-
-    private fun sensorLocationOrNull(value: Int): String? {
-        return when (value) {
-            1 -> "SL_DISTAL"
-            2 -> "SL_PROXIMAL"
-            else -> null
-        }
-    }
 
     private fun assertDoubleEquals(expected: Double, actual: Double, message: String) {
         val tolerance = maxOf(0.000001, abs(expected) * 0.000001)
@@ -148,18 +133,6 @@ class SkinTemperatureDomainCommonPolicyTest {
         }
         error("Unbalanced $open$close block")
     }
-
-    private data class SkinTemperatureDomainModel(
-        val sourceDeviceId: String,
-        val measurementType: String?,
-        val sensorLocation: String?,
-        val samples: List<SkinTemperatureDomainSample>
-    )
-
-    private data class SkinTemperatureDomainSample(
-        val recordingTimeDeltaMs: Long,
-        val temperature: Double
-    )
 
     private companion object {
         val SKIN_TEMPERATURE_DOMAIN_VECTORS = listOf(

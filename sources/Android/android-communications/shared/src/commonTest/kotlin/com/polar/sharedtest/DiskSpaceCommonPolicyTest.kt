@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarSdkModelMappers
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -19,7 +20,7 @@ class DiskSpaceCommonPolicyTest {
             }
 
             val proto = input.objectValue("proto")
-            val calculated = calculateDiskSpace(
+            val calculated = PolarSdkModelMappers.diskSpace(
                 fragmentSize = proto.longValue("fragmentSize"),
                 totalFragments = proto.longValue("totalFragments"),
                 freeFragments = proto.longValue("freeFragments")
@@ -57,14 +58,6 @@ class DiskSpaceCommonPolicyTest {
         assertEquals(true, platforms.booleanValue("android"))
         assertEquals(true, platforms.booleanValue("ios"))
         assertEquals(true, platforms.booleanValue("common"))
-    }
-
-    private fun calculateDiskSpace(fragmentSize: Long, totalFragments: Long, freeFragments: Long): DiskSpace {
-        val unsignedFragmentSize = fragmentSize and UNSIGNED_32_BIT_MASK
-        return DiskSpace(
-            totalSpace = unsignedFragmentSize * totalFragments,
-            freeSpace = unsignedFragmentSize * freeFragments
-        )
     }
 
     private fun parseDiskSpaceProto(hex: String): DiskSpaceParseResult {
@@ -134,11 +127,6 @@ class DiskSpaceCommonPolicyTest {
         error("Unbalanced $open$close block")
     }
 
-    private data class DiskSpace(
-        val totalSpace: Long,
-        val freeSpace: Long
-    )
-
     private data class DiskSpaceParseResult(
         val error: String? = null
     )
@@ -149,7 +137,7 @@ class DiskSpaceCommonPolicyTest {
     )
 
     private companion object {
-        const val UNSIGNED_32_BIT_MASK = 0xFFFF_FFFFL
+        const val UNSIGNED_32_BIT_MASK = "implemented by PolarSdkModelMappers"
         val DISK_SPACE_VECTORS = listOf(
             "sdk/disk-space/malformed-truncated-varint.json",
             "sdk/disk-space/typical-fragments.json",

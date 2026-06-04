@@ -3,9 +3,7 @@ package com.polar.sdk.impl.utils
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.PolarSkinTemperatureResult
-import com.polar.sdk.api.model.SkinTemperatureMeasurementType
-import com.polar.sdk.api.model.SkinTemperatureSensorLocation
-import com.polar.sdk.api.model.fromPbTemperatureMeasurementSamples
+import com.polar.sdk.api.model.sharedSkinTemperatureResult
 import com.polar.services.datamodels.protobuf.TemperatureMeasurement.TemperatureMeasurementPeriod
 import protocol.PftpRequest
 import java.time.LocalDate
@@ -35,11 +33,11 @@ internal object PolarSkinTemperatureUtils {
                     .toByteArray()
             )
             val proto = TemperatureMeasurementPeriod.parseFrom(response.toByteArray())
-            PolarSkinTemperatureResult(
-                proto.sourceDeviceId,
-                SkinTemperatureSensorLocation.from(proto.sensorLocation.ordinal),
-                SkinTemperatureMeasurementType.from(proto.measurementType.ordinal),
-                fromPbTemperatureMeasurementSamples(proto.temperatureMeasurementSamplesList)
+            sharedSkinTemperatureResult(
+                sourceDeviceId = proto.sourceDeviceId,
+                sensorLocation = proto.sensorLocationValue,
+                measurementType = proto.measurementTypeValue,
+                samples = proto.temperatureMeasurementSamplesList
             )
         } catch (error: Throwable) {
             BleLogger.w(TAG, "Failed to fetch skin temperature data for date: $date, error: $error")

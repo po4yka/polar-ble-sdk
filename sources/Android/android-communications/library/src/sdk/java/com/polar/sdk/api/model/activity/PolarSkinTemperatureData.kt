@@ -1,5 +1,9 @@
 package com.polar.sdk.api.model
 
+import com.polar.shared.sdk.PolarSdkModelMappers
+import com.polar.shared.sdk.PolarSkinTemperatureMeasurementType
+import com.polar.shared.sdk.PolarSkinTemperatureSampleModel
+import com.polar.shared.sdk.PolarSkinTemperatureSensorLocation
 import com.polar.services.datamodels.protobuf.TemperatureMeasurement.TemperatureMeasurementSample
 import java.time.LocalDate
 
@@ -49,15 +53,58 @@ data class PolarSkinTemperatureDataSample(
 
 fun fromPbTemperatureMeasurementSamples(pbTemperatureMeasurementData: List<TemperatureMeasurementSample>):
         List<PolarSkinTemperatureDataSample> {
+    return pbTemperatureMeasurementData.map { sample ->
+        PolarSkinTemperatureSampleModel(
+            recordingTimeDeltaMs = sample.recordingTimeDeltaMilliseconds,
+            temperature = sample.temperatureCelsius
+        )
+    }.toAndroidSkinTemperatureSamples()
+}
 
-    var skinTemperatureSampleList = mutableListOf<PolarSkinTemperatureDataSample>()
-
-    for (sample in pbTemperatureMeasurementData) {
-        skinTemperatureSampleList.add(
-            PolarSkinTemperatureDataSample(
-                sample.recordingTimeDeltaMilliseconds, sample.temperatureCelsius
+internal fun sharedSkinTemperatureResult(
+    sourceDeviceId: String?,
+    measurementType: Int,
+    sensorLocation: Int,
+    samples: List<TemperatureMeasurementSample>
+): PolarSkinTemperatureResult {
+    val shared = PolarSdkModelMappers.skinTemperature(
+        sourceDeviceId = sourceDeviceId,
+        measurementType = measurementType,
+        sensorLocation = sensorLocation,
+        samples = samples.map { sample ->
+            PolarSkinTemperatureSampleModel(
+                recordingTimeDeltaMs = sample.recordingTimeDeltaMilliseconds,
+                temperature = sample.temperatureCelsius
             )
+        }
+    )
+    return PolarSkinTemperatureResult(
+        deviceId = shared.sourceDeviceId,
+        sensorLocation = shared.sensorLocation?.toAndroidSensorLocation(),
+        measurementType = shared.measurementType?.toAndroidMeasurementType(),
+        skinTemperatureList = shared.samples.toAndroidSkinTemperatureSamples()
+    )
+}
+
+private fun List<PolarSkinTemperatureSampleModel>.toAndroidSkinTemperatureSamples(): List<PolarSkinTemperatureDataSample> {
+    return map { sample ->
+        PolarSkinTemperatureDataSample(
+            recordingTimeDeltaMs = sample.recordingTimeDeltaMs,
+            temperature = sample.temperature
         )
     }
-    return skinTemperatureSampleList
+}
+
+private fun PolarSkinTemperatureMeasurementType.toAndroidMeasurementType(): SkinTemperatureMeasurementType {
+    return when (this) {
+        PolarSkinTemperatureMeasurementType.TM_SKIN_TEMPERATURE -> SkinTemperatureMeasurementType.TM_SKIN_TEMPERATURE
+        PolarSkinTemperatureMeasurementType.TM_CORE_TEMPERATURE -> SkinTemperatureMeasurementType.TM_CORE_TEMPERATURE
+    }
+}
+
+private fun PolarSkinTemperatureSensorLocation.toAndroidSensorLocation(): SkinTemperatureSensorLocation {
+    return when (this) {
+        PolarSkinTemperatureSensorLocation.SL_DISTAL -> SkinTemperatureSensorLocation.SL_DISTAL
+        PolarSkinTemperatureSensorLocation.SL_PROXIMAL -> SkinTemperatureSensorLocation.SL_PROXIMAL
+    }
 }
