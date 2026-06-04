@@ -414,6 +414,7 @@ class MyController: UIViewController,
 - [KMP Migration TDD Strategy](./documentation/KmpTddStrategy.md) – Characterization and golden-vector testing strategy before migration
 - [KMP Pre-Migration Coverage Inventory](./documentation/KmpCoverageInventory.md) – Current Android/iOS coverage map and pre-migration coverage obligations
 - [KMP Migration Checklist](./documentation/KmpMigrationChecklist.md) – Per-slice gates for test-first migration work
+- [CI/CD](./documentation/CiCd.md) – GitHub Actions validation, artifact-only release builds, and failure triage
 
 [↑ Back to contents](#contents)
 

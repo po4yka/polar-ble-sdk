@@ -1,0 +1,191 @@
+name: Nightly Validation
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ANDROID_PROJECT_DIR: sources/Android/android-communications
+  IOS_WORKSPACE: sources/iOS/ios-communications/iOSCommunications.xcworkspace
+  IOS_SCHEME: iOSCommunications
+  IOS_DESTINATION: platform=iOS Simulator,name=iPhone 17,OS=latest
+
+jobs:
+  repo-policy:
+    name: Repository policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Whitespace check
+        run: git diff --check HEAD^ HEAD
+
+      - name: KMP policy mirror
+        run: ruby scripts/kmp_non_gradle_checks.rb
+
+      - name: Generated API docs stay generator-owned
+        run: test -z "$(git diff --name-only -- docs/polar-sdk-android docs/polar-sdk-ios)"
+
+      - name: CocoaPods generated artifacts stay untracked
+        shell: bash
+        run: |
+          set -euo pipefail
+          tracked="$(git ls-files sources/iOS/ios-communications/Pods sources/iOS/ios-communications/Podfile.lock)"
+          if [[ -n "$tracked" ]]; then
+            echo "Generated CocoaPods artifacts are tracked:"
+            echo "$tracked"
+            exit 1
+          fi
+
+  android-unit:
+    name: Android unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Android SDK unit test gate
+        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
+        run: ./gradlew :library:testSdkDebugUnitTest --no-daemon --warning-mode all
+
+      - name: Upload Android reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-android-unit-reports
+          path: |
+            sources/Android/android-communications/library/build/reports/tests/
+            sources/Android/android-communications/build/reports/problems/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  shared-kmp:
+    name: Shared KMP (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            tasks: ':shared:jvmTest :shared:compileAndroidMain :shared:compileAndroidHostTest :shared:compileKotlinMetadata'
+          - os: macos-latest
+            tasks: ':shared:compileKotlinIosX64 :shared:linkDebugFrameworkIosX64'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Kotlin Native
+        if: runner.os == 'macOS'
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: nightly-konan-${{ runner.os }}-${{ hashFiles('sources/Android/android-communications/gradle/wrapper/gradle-wrapper.properties', 'sources/Android/android-communications/build.gradle', 'sources/Android/android-communications/shared/build.gradle') }}
+          restore-keys: |
+            nightly-konan-${{ runner.os }}-
+            konan-${{ runner.os }}-
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Shared KMP gate
+        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
+        run: ./gradlew ${{ matrix.tasks }} --no-daemon --warning-mode all
+
+      - name: Upload shared reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-shared-kmp-${{ matrix.os }}-reports
+          path: |
+            sources/Android/android-communications/shared/build/reports/
+            sources/Android/android-communications/build/reports/problems/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  ios-xctest:
+    name: iOS XCTest
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cocoapods
+            sources/iOS/ios-communications/Pods
+          key: nightly-cocoapods-${{ runner.os }}-${{ hashFiles('sources/iOS/ios-communications/Podfile', 'PolarBleSdk.podspec') }}
+          restore-keys: |
+            nightly-cocoapods-${{ runner.os }}-
+            cocoapods-${{ runner.os }}-
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            .swiftpm
+          key: nightly-swiftpm-${{ runner.os }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: |
+            nightly-swiftpm-${{ runner.os }}-
+            swiftpm-${{ runner.os }}-
+
+      - name: Install CocoaPods
+        run: gem install cocoapods --no-document
+
+      - name: Install Pods
+        run: pod install --project-directory=sources/iOS/ios-communications
+
+      - name: iOS Xcode validation probe
+        run: ruby scripts/ios_xcode_validation_probe.rb
+
+      - name: iOS XCTest gate
+        run: sh scripts/ci_xcodebuild_test.sh "${IOS_WORKSPACE}" "${IOS_SCHEME}" "${IOS_DESTINATION}" /tmp/polar-ios-nightly.xcresult
+
+      - name: Upload iOS result bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-ios-xctest-result
+          path: /tmp/polar-ios-nightly.xcresult
+          if-no-files-found: ignore
+          retention-days: 14
