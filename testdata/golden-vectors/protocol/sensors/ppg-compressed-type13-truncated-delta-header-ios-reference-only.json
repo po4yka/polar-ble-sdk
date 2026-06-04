@@ -1,0 +1,50 @@
+{
+  "id": "ppg-compressed-type13-truncated-delta-header-ios-reference-only",
+  "area": "sensor-parser",
+  "case": "ppg_compressed_type13_truncated_delta_header_ios_reference_only",
+  "source": "iOS PpgDataTest; Android currently throws for the same malformed payload",
+  "input": {
+    "dataFrameHex": "0166000000000000008d640000ceffff05000003",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "PPG",
+    "frameType": 13,
+    "compressed": true,
+    "timeStamp": 102,
+    "samples": [
+      {
+        "timeStamp": 102,
+        "ppgDataSamples": [
+          100,
+          -50
+        ],
+        "statusBits": [
+          1,
+          0,
+          1
+        ]
+      }
+    ]
+  },
+  "platforms": {
+    "android": false,
+    "ios": true,
+    "common": false
+  },
+  "notes": "iOS currently returns the compressed type-13 reference sample when a PPG delta block header is truncated after deltaSize.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ]
+  }
+}

@@ -76,7 +76,7 @@ internal class PolarAutomaticSamplesUtils {
     }
 }
 
-extension DateComponents: Comparable {
+extension DateComponents: @retroactive Comparable {
     public static func < (lhs: DateComponents, rhs: DateComponents) -> Bool {
         let now = Date()
         let calendar = Calendar.current

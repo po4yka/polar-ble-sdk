@@ -1,0 +1,108 @@
+{
+  "id": "capability-boolean-flags",
+  "area": "sdk.device-capabilities",
+  "case": "firmware_activity_sensor_lookup",
+  "source": "Android BlePolarDeviceCapabilitiesUtilityTest and iOS PolarBleApiImplTests characterization before KMP capability parsing migration",
+  "input": {
+    "kind": "deviceCapabilityLookup",
+    "config": {
+      "version": "capability-vector-flags-1",
+      "devices": {
+        "h10": {
+          "fileSystemType": "H10_FILE_SYSTEM",
+          "recordingSupported": true,
+          "firmwareUpdateSupported": false,
+          "activityDataSupported": false,
+          "isDeviceSensor": true
+        },
+        "ignite3": {
+          "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+          "recordingSupported": false,
+          "firmwareUpdateSupported": true,
+          "activityDataSupported": true,
+          "isDeviceSensor": false
+        },
+        "partial": {
+          "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+          "recordingSupported": false,
+          "firmwareUpdateSupported": false
+        }
+      },
+      "defaults": {
+        "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+        "recordingSupported": true,
+        "firmwareUpdateSupported": true,
+        "activityDataSupported": true,
+        "isDeviceSensor": false
+      }
+    },
+    "queries": [
+      "h10",
+      "H10",
+      "ignite3",
+      "partial",
+      "unknown-device"
+    ]
+  },
+  "expected": {
+    "results": [
+      {
+        "deviceType": "h10",
+        "fileSystemType": "H10_FILE_SYSTEM",
+        "recordingSupported": true,
+        "firmwareUpdateSupported": false,
+        "activityDataSupported": false,
+        "isDeviceSensor": true
+      },
+      {
+        "deviceType": "H10",
+        "fileSystemType": "H10_FILE_SYSTEM",
+        "recordingSupported": true,
+        "firmwareUpdateSupported": false,
+        "activityDataSupported": false,
+        "isDeviceSensor": true
+      },
+      {
+        "deviceType": "ignite3",
+        "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+        "recordingSupported": false,
+        "firmwareUpdateSupported": true,
+        "activityDataSupported": true,
+        "isDeviceSensor": false
+      },
+      {
+        "deviceType": "partial",
+        "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+        "recordingSupported": false,
+        "firmwareUpdateSupported": false,
+        "activityDataSupported": true,
+        "isDeviceSensor": false
+      },
+      {
+        "deviceType": "unknown-device",
+        "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+        "recordingSupported": true,
+        "firmwareUpdateSupported": true,
+        "activityDataSupported": true,
+        "isDeviceSensor": false
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtilityTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceCapabilitiesCommonPolicyTest"
+    ]
+  },
+  "notes": "This vector covers the portable capability boolean lookup fields exposed by both SDKs. Version-mismatch user-config merge behavior is covered by a sibling vector; app-resource override behavior remains platform-owned until common resource loading is deliberately introduced."
+}

@@ -1,0 +1,113 @@
+{
+  "id": "backup-expansion-and-restore-writes",
+  "area": "sdk.backup-utils",
+  "case": "backup_expansion_and_restore_writes",
+  "source": "Android and iOS PolarBackupManager characterization tests",
+  "input": {
+    "directories": {
+      "/SYS/": [
+        {
+          "name": "BACKUP.TXT",
+          "size": 21
+        },
+        {
+          "name": "BT/",
+          "size": 0
+        }
+      ],
+      "/SYS/BT/": [
+        {
+          "name": "BTDEV.BPB",
+          "size": 2
+        },
+        {
+          "name": "SVSTATUS.BPB",
+          "size": 2
+        }
+      ]
+    },
+    "files": {
+      "/SYS/BACKUP.TXT": "2f5359532f42542f0a2f52414e444f4d2f46494c452e5458540a",
+      "/SYS/BT/BTDEV.BPB": "0102",
+      "/SYS/BT/SVSTATUS.BPB": "0304",
+      "/RANDOM/FILE.TXT": "0506",
+      "/U/0/S/PHYSDATA.BPB": "0708",
+      "/U/0/S/UDEVSET.BPB": "090a",
+      "/U/0/S/PREFS.BPB": "0b0c",
+      "/U/0/USERID.BPB": "0d0e"
+    },
+    "restoreFiles": [
+      {
+        "directory": "/SYS/BT/",
+        "fileName": "BTDEV.BPB",
+        "dataHex": "0102"
+      },
+      {
+        "directory": "/RANDOM/",
+        "fileName": "FILE.TXT",
+        "dataHex": "0506"
+      }
+    ]
+  },
+  "expected": {
+    "backupFiles": [
+      {
+        "path": "/SYS/BT/BTDEV.BPB",
+        "dataHex": "0102"
+      },
+      {
+        "path": "/SYS/BT/SVSTATUS.BPB",
+        "dataHex": "0304"
+      },
+      {
+        "path": "/RANDOM/FILE.TXT",
+        "dataHex": "0506"
+      },
+      {
+        "path": "/U/0/S/PHYSDATA.BPB",
+        "dataHex": "0708"
+      },
+      {
+        "path": "/U/0/S/UDEVSET.BPB",
+        "dataHex": "090a"
+      },
+      {
+        "path": "/U/0/S/PREFS.BPB",
+        "dataHex": "0b0c"
+      },
+      {
+        "path": "/U/0/USERID.BPB",
+        "dataHex": "0d0e"
+      }
+    ],
+    "restoreWrites": [
+      {
+        "command": "PUT",
+        "path": "/SYS/BT/BTDEV.BPB",
+        "dataHex": "0102"
+      },
+      {
+        "command": "PUT",
+        "path": "/RANDOM/FILE.TXT",
+        "dataHex": "0506"
+      }
+    ]
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarBackupManagerTest"
+    ],
+    "ios": [
+      "PolarBackupManagerTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.BackupUtilityCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Successful restore writes are shared. Restore failure behavior is intentionally not covered here because Android currently logs and continues while iOS aggregates failures and throws."
+}

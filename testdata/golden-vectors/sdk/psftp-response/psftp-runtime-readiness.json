@@ -1,0 +1,83 @@
+{
+  "id": "psftp-runtime-readiness",
+  "area": "sdk.psftp-runtime",
+  "case": "psftp_runtime_readiness",
+  "source": "PSFTP runtime backlog and PsFtpRuntimePolicyCommonTest shared common prototypes distilled into a pre-KMP readiness manifest",
+  "description": "Pins the PSFTP request, notification, and write runtime behavior families that must remain covered before higher-level PSFTP runtime orchestration delegates to shared KMP code.",
+  "input": {
+    "kind": "psFtpRuntimeReadiness",
+    "policyVectorPaths": [
+      "sdk/psftp-response/request-response-reassembly.json",
+      "sdk/psftp-response/request-response-error-policy.json",
+      "sdk/psftp-notifications/notification-reassembly.json",
+      "sdk/psftp-notifications/notification-ordering.json",
+      "sdk/psftp-notifications/notification-timeout-policy.json",
+      "sdk/psftp-notifications/notification-error-policy.json",
+      "sdk/psftp-notifications/notification-continuation-timeout-policy.json",
+      "sdk/psftp-response/write-success-progress.json",
+      "sdk/psftp-response/write-interruption-error-policy.json",
+      "sdk/psftp-response/write-transport-failure-policy.json",
+      "sdk/psftp-response/write-ack-timeout-policy.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "request-response-reassembly",
+      "request-response-error-mapping",
+      "notification-reassembly",
+      "notification-ordering",
+      "initial-silence-no-built-in-timeout",
+      "consumer-timeout-observer-cleanup",
+      "notification-rfc76-error-policy",
+      "notification-transport-status-platform-split",
+      "notification-continuation-timeout",
+      "write-progress-platform-split",
+      "write-interruption-response-error",
+      "write-transport-failure",
+      "write-ack-timeout",
+      "fake-clock-timeout-gate",
+      "platform-client-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "request-response-reassembly",
+      "request-response-error-mapping",
+      "notification-reassembly",
+      "notification-ordering",
+      "initial-silence-no-built-in-timeout",
+      "consumer-timeout-observer-cleanup",
+      "notification-rfc76-error-policy",
+      "notification-transport-status-platform-split",
+      "notification-continuation-timeout",
+      "write-progress-platform-split",
+      "write-interruption-response-error",
+      "write-transport-failure",
+      "write-ack-timeout",
+      "fake-clock-timeout-gate",
+      "platform-client-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "PSFTP runtime migration may proceed only after every policy vector listed in this readiness manifest is executable from shared commonTest, Android and iOS PSFTP client tests continue to reference the same vectors, request response reassembly, response-error mapping, notification reassembly and ordering, initial-silence policy, consumer timeout cleanup, notification error platform split, continuation timeout, write progress split, write interruption, transport failure, write acknowledgement timeout, fake-clock timeout gates, and the shared tests are compile-verified.",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for PSFTP runtime behavior-family completeness only; byte-codec migration, timeout injection, platform progress/error compatibility, platform client references, and compile verification remain required before production PSFTP runtime code moves to shared KMP."
+}

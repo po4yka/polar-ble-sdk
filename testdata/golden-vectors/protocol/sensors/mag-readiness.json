@@ -1,0 +1,65 @@
+{
+  "id": "mag-readiness",
+  "area": "sensors.mag",
+  "case": "pre_migration_readiness_manifest",
+  "source": "KMP migration readiness gate for MAG parser behavior",
+  "input": {
+    "kind": "magReadiness",
+    "policyVectorPaths": [
+      "protocol/sensors/mag-compressed-type0-factor-half.json",
+      "protocol/sensors/mag-compressed-type0-truncated-delta-header-android-error.json",
+      "protocol/sensors/mag-compressed-type0-truncated-delta-header-ios-reference-only.json",
+      "protocol/sensors/mag-compressed-type0-truncated-delta-payload-android-error.json",
+      "protocol/sensors/mag-compressed-type0-truncated-delta-payload-ios-reference-only.json",
+      "protocol/sensors/mag-compressed-type0-two-samples.json",
+      "protocol/sensors/mag-compressed-type1-calibration-status.json",
+      "protocol/sensors/mag-compressed-type2-unsupported.json",
+      "protocol/sensors/mag-raw-type0-unsupported.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "compressed-type0-reference-delta-decoding",
+      "compressed-type0-factor-scaling",
+      "compressed-type0-timestamp-interpolation",
+      "compressed-type1-calibration-status-mapping",
+      "compressed-type1-milligauss-to-gauss-conversion",
+      "unsupported-raw-frame-policy",
+      "unsupported-compressed-frame-policy",
+      "truncated-compressed-delta-header-policy",
+      "truncated-compressed-delta-payload-policy",
+      "platform-mag-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "compressed-type0-reference-delta-decoding",
+      "compressed-type0-factor-scaling",
+      "compressed-type0-timestamp-interpolation",
+      "compressed-type1-calibration-status-mapping",
+      "compressed-type1-milligauss-to-gauss-conversion",
+      "unsupported-raw-frame-policy",
+      "unsupported-compressed-frame-policy",
+      "truncated-compressed-delta-header-policy",
+      "truncated-compressed-delta-payload-policy",
+      "platform-mag-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.MagDataTest"
+    ],
+    "ios": [
+      "MagDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.MagParserCommonPolicyTest"
+    ]
+  }
+}

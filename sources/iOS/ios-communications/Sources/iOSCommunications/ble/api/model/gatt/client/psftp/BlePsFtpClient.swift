@@ -292,7 +292,7 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
     }
 
     func request(_ header: Data, progressCallback: BlePsFtpProgressCallback?) async throws -> NSData {
-        var shouldClearProgressCallback = self.progressCallback != nil
+        let shouldClearProgressCallback = self.progressCallback != nil
         return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<NSData, Error>) in
             let block = BlockOperation()
             block.addExecutionBlock { [unowned self, weak block] in

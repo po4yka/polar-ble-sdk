@@ -1,0 +1,35 @@
+{
+  "id": "active-measurement-online-ppg",
+  "area": "pmd-control-point",
+  "case": "active_measurement_online_ppg",
+  "source": "Android PmdActiveMeasurementTest and iOS PmdActiveMeasurementTest",
+  "input": {
+    "responseByte": 65
+  },
+  "expected": {
+    "activeBits": 1,
+    "measurementBits": 1,
+    "measurementTypeName": "PPG",
+    "activeMeasurementAndroid": "ONLINE_MEASUREMENT_ACTIVE",
+    "activeMeasurementIOS": "online_measurement_active"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Upper bits 01 mean online measurement active; lower bits identify PPG.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

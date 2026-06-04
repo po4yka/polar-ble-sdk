@@ -1,0 +1,58 @@
+{
+  "id": "request-response-reassembly",
+  "area": "sdk.psftp-response",
+  "case": "request_response_reassembly",
+  "source": "Android and iOS BlePsFtpClient request response characterization tests",
+  "input": {
+    "kind": "requestResponseReassembly",
+    "requestHeaderHex": "01020304",
+    "cases": [
+      {
+        "id": "single-frame",
+        "responseFramesHex": [
+          "02aabb"
+        ],
+        "expected": {
+          "payloadHex": "aabb"
+        }
+      },
+      {
+        "id": "multi-frame",
+        "responseFramesHex": [
+          "06aabb",
+          "13ccdd"
+        ],
+        "expected": {
+          "payloadHex": "aabbccdd"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "policy": "reassemble-rfc76-mtu-response-frames"
+  },
+  "execution": {
+    "kind": "fake-psftp-runtime-policy",
+    "transport": "scripted-rfc76-response-stream",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Covers higher-level PSFTP request response reassembly above raw RFC76 frame decoding. The request payload is deliberately minimal because this vector targets response collection, not request protobuf semantics."
+}

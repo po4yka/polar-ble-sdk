@@ -1,0 +1,105 @@
+{
+  "id": "sleep-stage-hypnogram",
+  "area": "sdk.sleep",
+  "case": "sleep_stage_hypnogram",
+  "source": "Android and iOS PolarSleepUtils characterization tests",
+  "input": {
+    "kind": "sleepAnalysis",
+    "sleepWakePhases": [
+      {
+        "secondsFromSleepStart": 0,
+        "protoState": "PB_UNKNOWN"
+      },
+      {
+        "secondsFromSleepStart": 300,
+        "protoState": "PB_WAKE"
+      },
+      {
+        "secondsFromSleepStart": 900,
+        "protoState": "PB_REM"
+      },
+      {
+        "secondsFromSleepStart": 1800,
+        "protoState": "PB_NONREM12"
+      },
+      {
+        "secondsFromSleepStart": 2700,
+        "protoState": "PB_NONREM3"
+      }
+    ],
+    "sleepCycles": [
+      {
+        "secondsFromSleepStart": 0,
+        "sleepDepthStart": 0.25
+      },
+      {
+        "secondsFromSleepStart": 5400,
+        "sleepDepthStart": 1.5
+      },
+      {
+        "secondsFromSleepStart": 28800,
+        "sleepDepthStart": 0.0
+      }
+    ]
+  },
+  "expected": {
+    "sleepWakePhases": [
+      {
+        "secondsFromSleepStart": 0,
+        "state": "UNKNOWN"
+      },
+      {
+        "secondsFromSleepStart": 300,
+        "state": "WAKE"
+      },
+      {
+        "secondsFromSleepStart": 900,
+        "state": "REM"
+      },
+      {
+        "secondsFromSleepStart": 1800,
+        "state": "NONREM12"
+      },
+      {
+        "secondsFromSleepStart": 2700,
+        "state": "NONREM3"
+      }
+    ],
+    "sleepCycles": [
+      {
+        "secondsFromSleepStart": 0,
+        "sleepDepthStart": 0.25
+      },
+      {
+        "secondsFromSleepStart": 5400,
+        "sleepDepthStart": 1.5
+      },
+      {
+        "secondsFromSleepStart": 28800,
+        "sleepDepthStart": 0.0
+      }
+    ]
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarSleepUtilsTest"
+    ],
+    "ios": [
+      "PolarSleepUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SleepNightlyRechargeCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "recommendedKmpPolicy": "Shared sleep analysis mapping should preserve hypnogram and cycle order exactly and map the known negative protobuf sleep stage values to stable common enum values."
+    }
+  },
+  "notes": "Sleep wake-phase and cycle projection for every currently defined sleep stage."
+}

@@ -212,4 +212,184 @@ final class MagDataTest: XCTestCase {
         XCTAssertEqual(timeStamp, magData.samples[1].timeStamp)
         
     }
+
+    func testMagGoldenVectorsMatchIOSCommunicationsBehavior() throws {
+        let vectors = try loadMagGoldenVectors()
+        XCTAssertFalse(vectors.isEmpty, "Expected MAG golden vectors")
+
+        for vector in vectors {
+            let id = vector["id"] as? String ?? "unknown-vector"
+            if let platforms = vector["platforms"] as? [String: Any],
+               let supported = platforms["ios"] as? Bool,
+               !supported {
+                continue
+            }
+            let input = try XCTUnwrap(vector["input"] as? [String: Any], id)
+            let expected = try XCTUnwrap(vector["expected"] as? [String: Any], id)
+            let dataFrame = try PmdDataFrame(
+                data: Data(hexString: try XCTUnwrap(input["dataFrameHex"] as? String, id)),
+                { _, _ in UInt64(truncating: input["previousTimeStamp"] as? NSNumber ?? 0) },
+                { _ in Float(truncating: input["factor"] as? NSNumber ?? 1.0) },
+                { _ in UInt(truncating: input["sampleRate"] as? NSNumber ?? 0) })
+
+            if let parseError = expected["parseError"] as? String {
+                XCTAssertThrowsError(try MagData.parseDataFromDataFrame(frame: dataFrame), id) { error in
+                    switch parseError {
+                    case "unsupportedFrame":
+                        guard case BleGattException.gattDataError = error else {
+                            return XCTFail("Expected gattDataError for \(id), got \(error)")
+                        }
+                    case "malformedFrame":
+                        guard case BleGattException.gattDataError = error else {
+                            return XCTFail("Expected gattDataError for \(id), got \(error)")
+                        }
+                    default:
+                        XCTFail("Unsupported parse error expectation in \(id): \(parseError)")
+                    }
+                }
+                XCTAssertEqual(try XCTUnwrap(expected["timeStamp"] as? NSNumber, id).uint64Value, dataFrame.timeStamp, id)
+                continue
+            }
+
+            let magData = try MagData.parseDataFromDataFrame(frame: dataFrame)
+
+            XCTAssertEqual(try XCTUnwrap(expected["timeStamp"] as? NSNumber, id).uint64Value, magData.timeStamp, id)
+            let samples = try XCTUnwrap(expected["samples"] as? [[String: Any]], id)
+            XCTAssertEqual(samples.count, magData.samples.count, id)
+            for (index, expectedSample) in samples.enumerated() {
+                XCTAssertEqual(try XCTUnwrap(expectedSample["timeStamp"] as? NSNumber, id).uint64Value, magData.samples[index].timeStamp, id)
+                XCTAssertEqual(try XCTUnwrap(expectedSample["x"] as? NSNumber, id).floatValue, magData.samples[index].x, id)
+                XCTAssertEqual(try XCTUnwrap(expectedSample["y"] as? NSNumber, id).floatValue, magData.samples[index].y, id)
+                XCTAssertEqual(try XCTUnwrap(expectedSample["z"] as? NSNumber, id).floatValue, magData.samples[index].z, id)
+                XCTAssertEqual(MagData.CalibrationStatus(vectorName: try XCTUnwrap(expectedSample["calibrationStatus"] as? String, id)), magData.samples[index].calibrationStatus, id)
+            }
+        }
+    }
+
+    func testMagGoldenVectorsFollowNeutralKmpShape() throws {
+        for vector in try loadMagGoldenVectors() {
+            let id = try XCTUnwrap(vector["id"] as? String)
+            XCTAssertNotNil(vector["area"], id)
+            XCTAssertNotNil(vector["case"], id)
+            XCTAssertNotNil(vector["source"], id)
+            XCTAssertNotNil(vector["input"], id)
+            XCTAssertNotNil(vector["expected"], id)
+            let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], id)
+            XCTAssertNotNil(platforms["android"], id)
+            XCTAssertNotNil(platforms["ios"], id)
+            XCTAssertNotNil(platforms["common"], id)
+        }
+    }
+
+    func testMagReadinessManifestIsPinnedBeforeParserMigration() throws {
+        let manifest = try loadMagReadinessManifest()
+        let id = try XCTUnwrap(manifest["id"] as? String)
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any], id)
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String], id)
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String], id)
+        let policyVectorPaths = try XCTUnwrap(input["policyVectorPaths"] as? [String], id)
+
+        XCTAssertEqual("mag-readiness", id)
+        XCTAssertEqual("magReadiness", input["kind"] as? String, id)
+        XCTAssertEqual(MAG_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths, id)
+        XCTAssertEqual(MAG_READINESS_FAMILIES, requiredFamilies, id)
+        XCTAssertEqual(MAG_READINESS_FAMILIES, coveredFamilies, id)
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any], id)
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], id), ["com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.MagDataTest"], id)
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], id), ["MagDataTest"], id)
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], id), ["com.polar.sharedtest.MagParserCommonPolicyTest"], id)
+    }
+
+    private func loadMagGoldenVectors() throws -> [[String: Any]] {
+        let vectorDirectory = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/protocol/sensors")
+        return try FileManager.default
+            .contentsOfDirectory(at: vectorDirectory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" && $0.lastPathComponent.hasPrefix("mag-") }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .map { file in
+                let data = try Data(contentsOf: file)
+                return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+            }
+            .filter { vector in
+                guard let input = vector["input"] as? [String: Any] else {
+                    return true
+                }
+                return input["kind"] as? String != "magReadiness"
+            }
+    }
+
+    private func loadMagReadinessManifest() throws -> [String: Any] {
+        let vectorFile = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/protocol/sensors/mag-readiness.json")
+        let data = try Data(contentsOf: vectorFile)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], vectorFile.path)
+    }
+
+
+    private let MAG_READINESS_POLICY_VECTOR_PATHS = [
+        "protocol/sensors/mag-compressed-type0-factor-half.json",
+        "protocol/sensors/mag-compressed-type0-truncated-delta-header-android-error.json",
+        "protocol/sensors/mag-compressed-type0-truncated-delta-header-ios-reference-only.json",
+        "protocol/sensors/mag-compressed-type0-truncated-delta-payload-android-error.json",
+        "protocol/sensors/mag-compressed-type0-truncated-delta-payload-ios-reference-only.json",
+        "protocol/sensors/mag-compressed-type0-two-samples.json",
+        "protocol/sensors/mag-compressed-type1-calibration-status.json",
+        "protocol/sensors/mag-compressed-type2-unsupported.json",
+        "protocol/sensors/mag-raw-type0-unsupported.json"
+    ]
+
+    private let MAG_READINESS_FAMILIES = [
+        "compressed-type0-reference-delta-decoding",
+        "compressed-type0-factor-scaling",
+        "compressed-type0-timestamp-interpolation",
+        "compressed-type1-calibration-status-mapping",
+        "compressed-type1-milligauss-to-gauss-conversion",
+        "unsupported-raw-frame-policy",
+        "unsupported-compressed-frame-policy",
+        "truncated-compressed-delta-header-policy",
+        "truncated-compressed-delta-payload-policy",
+        "platform-mag-vector-reference-gate",
+        "compile-verification-gate"
+    ]
+}
+
+private extension MagData.CalibrationStatus {
+    init(vectorName: String) {
+        switch vectorName {
+        case "NOT_AVAILABLE":
+            self = .notAvailable
+        case "UNKNOWN":
+            self = .unknown
+        case "POOR":
+            self = .poor
+        case "OK":
+            self = .ok
+        case "GOOD":
+            self = .good
+        default:
+            self = .notAvailable
+        }
+    }
+}
+
+private extension Data {
+    init(hexString: String) throws {
+        guard hexString.count.isMultiple(of: 2) else {
+            throw NSError(domain: "MagDataTest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Hex string must have an even length"])
+        }
+        var bytes: [UInt8] = []
+        var index = hexString.startIndex
+        while index < hexString.endIndex {
+            let nextIndex = hexString.index(index, offsetBy: 2)
+            let byteString = String(hexString[index..<nextIndex])
+            guard let byte = UInt8(byteString, radix: 16) else {
+                throw NSError(domain: "MagDataTest", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid hex byte \(byteString)"])
+            }
+            bytes.append(byte)
+            index = nextIndex
+        }
+        self.init(bytes)
+    }
 }

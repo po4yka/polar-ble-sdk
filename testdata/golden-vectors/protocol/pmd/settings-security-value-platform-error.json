@@ -1,0 +1,40 @@
+{
+  "id": "pmd-settings-security-value-platform-error",
+  "area": "pmd-settings",
+  "case": "security_setting_value_platform_error",
+  "source": "Android PmdSetting and iOS PmdSetting characterization",
+  "input": {
+    "hex": "0601000102030405060708090a0b0c0d0e0f"
+  },
+  "expected": {
+    "commonDecision": "KMP should define whether SECURITY belongs in PMD settings parsing and expose one deterministic parse result."
+  },
+  "platformExpectations": {
+    "android": {
+      "parseError": "assertionError"
+    },
+    "ios": {
+      "parseError": "invalidPMDData"
+    },
+    "commonDecision": {
+      "parseError": "invalidPMDData"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "Android declares SECURITY as a 16-byte field but its signed-int parser rejects that width; iOS lists SECURITY but has no field-size mapping.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSettingTest"
+    ],
+    "ios": [
+      "PmdSettingTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdSettingsCommonPolicyTest"
+    ]
+  }
+}

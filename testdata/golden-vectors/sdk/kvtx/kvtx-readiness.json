@@ -1,0 +1,79 @@
+{
+  "id": "kvtx-readiness",
+  "area": "sdk.kvtx",
+  "case": "kvtx_readiness",
+  "source": "KVTX script vectors and shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the KVTX script behavior families that must remain covered before KVTX script parsing and writing delegates to shared KMP code.",
+  "input": {
+    "kind": "kvtxReadiness",
+    "policyVectorPaths": [
+      "sdk/kvtx/write-commit-basic.json",
+      "sdk/kvtx/write-commit-empty-data.json",
+      "sdk/kvtx/write-commit-uint32-max-key.json",
+      "sdk/kvtx/multiple-keys-select-second.json",
+      "sdk/kvtx/append-concatenates.json",
+      "sdk/kvtx/remove-clears-value.json",
+      "sdk/kvtx/write-ex-zero-index.json",
+      "sdk/kvtx/append-ex-zero-index.json",
+      "sdk/kvtx/remove-ex-zero-index.json",
+      "sdk/kvtx/write-ex-nonempty-index-ignored.json",
+      "sdk/kvtx/unknown-command-stops-with-current-value.json",
+      "sdk/kvtx/truncated-write-payload-android-error.json",
+      "sdk/kvtx/truncated-write-payload-ios-nil.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "write-and-commit-framing",
+      "empty-data-write-framing",
+      "unsigned-uint32-key-preservation",
+      "multiple-key-selection",
+      "append-concatenation",
+      "remove-clears-current-value",
+      "extended-write-zero-index",
+      "extended-append-zero-index",
+      "extended-remove-zero-index",
+      "extended-nonempty-index-ignore-policy",
+      "unknown-command-stop-policy",
+      "malformed-script-typed-error-policy",
+      "platform-truncated-payload-vector-reference-gate",
+      "platform-kvtx-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "write-and-commit-framing",
+      "empty-data-write-framing",
+      "unsigned-uint32-key-preservation",
+      "multiple-key-selection",
+      "append-concatenation",
+      "remove-clears-current-value",
+      "extended-write-zero-index",
+      "extended-append-zero-index",
+      "extended-remove-zero-index",
+      "extended-nonempty-index-ignore-policy",
+      "unknown-command-stop-policy",
+      "malformed-script-typed-error-policy",
+      "platform-truncated-payload-vector-reference-gate",
+      "platform-kvtx-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "KVTX migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS KVTX tests continue to reference the same vectors, write-and-commit framing, empty data writes, unsigned 32-bit keys, multiple-key selection, append/remove behavior, EX zero-index behavior, non-empty EX index ignore policy, unknown-command stop policy, malformed-script typed error policy, truncated payload platform vectors, and the shared tests are compile-verified."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.KvtxScriptUtilsTest"
+    ],
+    "ios": [
+      "KvtxScriptUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.KvtxCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for KVTX script behavior-family completeness only; platform compatibility for truncated write payloads remains explicit until shared parsing chooses one typed malformed-script policy and adapters preserve any required public behavior."
+}

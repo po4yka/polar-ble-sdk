@@ -1,0 +1,46 @@
+{
+  "id": "ppi-raw-type0-zero-timestamp-boundary",
+  "area": "sensor-parser",
+  "case": "ppi_raw_type0_zero_timestamp_and_boundary_rr",
+  "source": "Android PpiDataTest and iOS PpiDataTest",
+  "input": {
+    "dataFrameHex": "03000000000000000000c8ffff000007",
+    "previousTimeStamp": 123456789,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PPI",
+    "frameType": 0,
+    "compressed": false,
+    "timeStamp": 0,
+    "samples": [
+      {
+        "timeStamp": 0,
+        "hr": 200,
+        "ppInMs": 65535,
+        "ppErrorEstimate": 0,
+        "blockerBit": 1,
+        "skinContactStatus": 1,
+        "skinContactSupported": 1
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "When the frame timestamp is zero, both implementations leave PPI sample timestamps at zero instead of backfilling from previousTimeStamp. This also captures UInt16 RR boundary handling.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpiDataTest"
+    ],
+    "ios": [
+      "PpiDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpiParserCommonPolicyTest"
+    ]
+  }
+}

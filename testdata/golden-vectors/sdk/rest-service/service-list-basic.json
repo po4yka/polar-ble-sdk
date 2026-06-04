@@ -1,0 +1,51 @@
+{
+  "id": "service-list-basic",
+  "area": "sdk.rest-service",
+  "case": "service_list_basic",
+  "source": "Android and iOS REST API characterization tests",
+  "input": {
+    "kind": "serviceList",
+    "json": {
+      "services": {
+        "ui_states": "/REST/UISTATES.API",
+        "training": "/REST/TRAINING.API",
+        "sleep": "/REST/SLEEP.API"
+      },
+      "ignored_top_level": true
+    }
+  },
+  "expected": {
+    "pathsForServices": {
+      "ui_states": "/REST/UISTATES.API",
+      "training": "/REST/TRAINING.API",
+      "sleep": "/REST/SLEEP.API"
+    },
+    "serviceNames": [
+      "ui_states",
+      "training",
+      "sleep"
+    ],
+    "servicePaths": [
+      "/REST/UISTATES.API",
+      "/REST/TRAINING.API",
+      "/REST/SLEEP.API"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Service discovery payload maps service names to paths and exposes names and paths.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceRestApiServiceTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.RestServiceMappingCommonPolicyTest"
+    ]
+  }
+}

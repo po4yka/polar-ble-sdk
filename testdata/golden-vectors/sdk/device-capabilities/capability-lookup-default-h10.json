@@ -1,0 +1,52 @@
+{
+  "id": "capability-lookup-default-h10",
+  "area": "sdk.device-capabilities",
+  "case": "default_h10_filesystem_and_recording_lookup",
+  "source": "Android BlePolarDeviceCapabilitiesUtilityTest and iOS PolarBleApiImplTests characterization before KMP capability parsing migration",
+  "input": {
+    "kind": "deviceCapabilityLookup",
+    "config": {
+      "version": "capability-vector-2",
+      "devices": {},
+      "defaults": {
+        "fileSystemType": "H10_FILE_SYSTEM",
+        "recordingSupported": true
+      }
+    },
+    "queries": [
+      "unknown-device",
+      "H10"
+    ]
+  },
+  "expected": {
+    "results": [
+      {
+        "deviceType": "unknown-device",
+        "fileSystemType": "H10_FILE_SYSTEM",
+        "recordingSupported": true
+      },
+      {
+        "deviceType": "H10",
+        "fileSystemType": "H10_FILE_SYSTEM",
+        "recordingSupported": true
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtilityTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceCapabilitiesCommonPolicyTest"
+    ]
+  },
+  "notes": "Default fallback remains part of the portable capability policy. Version-mismatch user-config merge behavior is covered by a sibling vector; bundled-resource override behavior stays platform-owned until common resource loading is deliberately introduced."
+}

@@ -1,0 +1,65 @@
+{
+  "id": "offline-recording-metadata-readiness",
+  "area": "sdk.offline-recording",
+  "case": "offline_recording_metadata_readiness",
+  "source": "Offline recording metadata vectors and shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the offline recording metadata behavior families that must remain covered before metadata conversion delegates to shared KMP code.",
+  "input": {
+    "kind": "offlineRecordingMetadataReadiness",
+    "policyVectorPaths": [
+      "sdk/offline-recording/filename-mapping.json",
+      "sdk/offline-recording/pmdfiles-v2-grouping.json",
+      "sdk/offline-recording/trigger-mapping.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "filename-to-measurement-type-mapping",
+      "split-file-index-stripping",
+      "invalid-filename-boundary",
+      "pmdfiles-grouping",
+      "zero-size-recording-filtering",
+      "invalid-entry-filtering",
+      "representative-path-platform-policy",
+      "trigger-model-projection",
+      "disabled-trigger-filtering",
+      "platform-offline-recording-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "filename-to-measurement-type-mapping",
+      "split-file-index-stripping",
+      "invalid-filename-boundary",
+      "pmdfiles-grouping",
+      "zero-size-recording-filtering",
+      "invalid-entry-filtering",
+      "representative-path-platform-policy",
+      "trigger-model-projection",
+      "disabled-trigger-filtering",
+      "platform-offline-recording-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Offline recording metadata migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.offlinerecording.OfflineRecordingUtilityTest",
+      "com.polar.sdk.impl.utils.PolarDataUtilsTest",
+      "com.polar.sdk.api.model.utils.PolarOfflineRecordingUtilsTest"
+    ],
+    "ios": [
+      "OfflineRecordingUtilsTest",
+      "PolarDataUtilsTest",
+      "PolarOfflineRecordingUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.OfflineRecordingMetadataCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest gates offline recording metadata behavior-family completeness only; trigger runtime, byte-level PMD control-point framing, facade error mapping, and sensor payload decoding remain separate migration gates."
+}

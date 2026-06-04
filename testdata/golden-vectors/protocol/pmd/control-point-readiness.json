@@ -1,0 +1,88 @@
+{
+  "id": "pmd-control-point-readiness",
+  "area": "pmd.control-point",
+  "case": "pmd_control_point_readiness",
+  "source": "PMD control-point and active-measurement vectors plus shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the PMD control-point response and active-measurement behavior families that must remain covered before response parsing delegates to shared KMP code.",
+  "input": {
+    "kind": "pmdControlPointReadiness",
+    "policyVectorPaths": [
+      "protocol/pmd/active-measurement-no-active-ecg.json",
+      "protocol/pmd/active-measurement-offline-acc.json",
+      "protocol/pmd/active-measurement-online-offline-gyro.json",
+      "protocol/pmd/active-measurement-online-offline-unknown.json",
+      "protocol/pmd/active-measurement-online-ppg.json",
+      "protocol/pmd/control-point-error-already-in-state-sdk-mode.json",
+      "protocol/pmd/control-point-error-device-in-charger-ecg.json",
+      "protocol/pmd/control-point-error-disk-full-offline-recording.json",
+      "protocol/pmd/control-point-error-invalid-length-acc.json",
+      "protocol/pmd/control-point-error-invalid-measurement-type-unknown.json",
+      "protocol/pmd/control-point-error-invalid-mtu-acc.json",
+      "protocol/pmd/control-point-error-invalid-number-of-channels-ppg.json",
+      "protocol/pmd/control-point-error-invalid-op-code.json",
+      "protocol/pmd/control-point-error-invalid-parameter-pressure.json",
+      "protocol/pmd/control-point-error-invalid-range-gyro.json",
+      "protocol/pmd/control-point-error-invalid-resolution-mag.json",
+      "protocol/pmd/control-point-error-invalid-sample-rate-ppg.json",
+      "protocol/pmd/control-point-error-invalid-state-stop-temperature.json",
+      "protocol/pmd/control-point-error-not-supported-sdk-mode-settings.json",
+      "protocol/pmd/control-point-short-empty-android-error.json",
+      "protocol/pmd/control-point-short-response-only-android-error.json",
+      "protocol/pmd/control-point-short-response-op-android-error.json",
+      "protocol/pmd/control-point-short-response-op-type-android-error.json",
+      "protocol/pmd/control-point-success-measurement-status.json",
+      "protocol/pmd/control-point-success-minimal-no-more-byte.json",
+      "protocol/pmd/control-point-success-settings-acc.json",
+      "protocol/pmd/control-point-success-start-ppg-more.json",
+      "protocol/pmd/control-point-success-stop-ecg.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "active-measurement-bit-decoding",
+      "active-measurement-platform-state-names",
+      "control-point-success-response-parsing",
+      "control-point-more-flag-and-parameters",
+      "control-point-settings-response",
+      "control-point-measurement-status-response",
+      "control-point-status-code-coverage",
+      "unknown-measurement-type-policy",
+      "short-payload-deterministic-error-policy",
+      "platform-control-point-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "active-measurement-bit-decoding",
+      "active-measurement-platform-state-names",
+      "control-point-success-response-parsing",
+      "control-point-more-flag-and-parameters",
+      "control-point-settings-response",
+      "control-point-measurement-status-response",
+      "control-point-status-code-coverage",
+      "unknown-measurement-type-policy",
+      "short-payload-deterministic-error-policy",
+      "platform-control-point-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "PMD control-point migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS control-point and active-measurement tests continue to reference the same vectors, active-measurement bit decoding and platform state names, success response parsing, more flag and parameter extraction, settings and measurement-status responses, all status-code mappings, unknown measurement type handling, deterministic short-payload error policy, and compile verification remain explicit before production response parsing moves."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest gates PMD control-point response and active-measurement parser behavior-family completeness only; command request planning, offline-trigger runtime behavior, PMD settings, and PMD secret strategy handling remain separate migration gates."
+}

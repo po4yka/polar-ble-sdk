@@ -1,0 +1,58 @@
+{
+  "id": "write-ack-timeout-policy",
+  "area": "sdk.psftp-response",
+  "case": "write_ack_timeout_policy",
+  "source": "Android and iOS BlePsFtpClient write acknowledgement timeout planning vector",
+  "input": {
+    "kind": "writeAckTimeoutPolicy",
+    "command": "PUT",
+    "path": "/U/0/20260101/DSUM/DSUM.BPB",
+    "payloadHex": "0a0408d21310",
+    "failure": {
+      "point": "firstMtuWriteAck",
+      "transportTransmit": "success",
+      "writeAck": "never"
+    }
+  },
+  "expected": {
+    "android": {
+      "outcome": "throwsOperationTimeout",
+      "messageContains": [
+        "Operation timeout while waiting packets written"
+      ]
+    },
+    "ios": {
+      "outcome": "throwsAtomicIntegerWaitTimeout"
+    },
+    "completion": "failure"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "execution": {
+    "android": "planned-fake-clock-or-injectable-timeout-required",
+    "ios": "planned-fake-clock-or-injectable-timeout-required",
+    "common": "shared-common-test"
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "errorPolicy": "write acknowledgement timeout is a protocol-timeout path distinct from transport transmit failure and peer-side RFC76 response errors"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector intentionally documents a long-duration timeout path that should not be executed against wall-clock protocol time. Android waits in BlePsFtpClient.waitPacketsWritten until PROTOCOL_TIMEOUT_SECONDS, then throws PftpOperationTimeout and maps it through the write flow. iOS waits through AtomicInteger.checkAndWait and surfaces AtomicIntegerException.waitTimeout. KMP migration must add fake-clock or injectable-timeout support before moving PSFTP write acknowledgement orchestration to common code."
+}

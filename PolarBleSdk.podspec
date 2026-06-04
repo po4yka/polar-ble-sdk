@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
 
     s.ios.deployment_target = '14.0'
     
-    s.source_files = 'Sources/**/*.{swift,h}'
+    s.source_files = 'sources/iOS/ios-communications/Sources/**/*.{swift,h}'
     s.exclude_files = '**/Tests/**/*', '**/*Tests*'
     s.resources		 = ['sources/iOS/ios-communications/Sources/iOSCommunications/Resources/polar_device_capabilities.json']
     s.dependency 'SwiftProtobuf', '~> 1.0'

@@ -1,0 +1,32 @@
+{
+  "id": "identifier-bluetooth-address-android",
+  "area": "device-identifier-routing",
+  "case": "android_fetch_session_by_bluetooth_address",
+  "source": "Android PolarServiceClientUtils fetchSession characterization",
+  "input": {
+    "identifier": "00:11:22:33:44:55",
+    "matchingAddress": "00:11:22:33:44:55",
+    "matchingDeviceId": "E123456F"
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "match": "address"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarServiceClientUtilsTest"
+    ],
+    "ios": [
+      "PolarServiceClientUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android accepts Bluetooth MAC identifiers with colon separators and resolves sessions by address."
+}

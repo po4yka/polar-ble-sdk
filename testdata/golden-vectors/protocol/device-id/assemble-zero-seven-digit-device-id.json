@@ -1,0 +1,31 @@
+{
+  "id": "assemble-zero-seven-digit-device-id",
+  "area": "device-id",
+  "case": "assembly_from_zero_seven_hex_digits",
+  "source": "iOS BlePolarDeviceIdUtilityTest and Android behavior characterization",
+  "input": {
+    "deviceId": "0000000"
+  },
+  "expected": {
+    "assembled": "00000000",
+    "validAfterAssembly": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.DeviceIdGoldenVectorTest"
+    ],
+    "ios": [
+      "BlePolarDeviceIdUtilityTest",
+      "PolarDeviceUuidTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "All-zero seven-digit input assembles to a valid eight-character device ID."
+}

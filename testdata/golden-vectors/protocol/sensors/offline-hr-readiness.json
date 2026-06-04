@@ -1,0 +1,56 @@
+{
+  "id": "offline-hr-readiness",
+  "area": "sensors.offline-hr",
+  "case": "pre_migration_readiness_manifest",
+  "source": "KMP migration readiness gate for offline HR parser behavior",
+  "input": {
+    "kind": "offlineHrReadiness",
+    "policyVectorPaths": [
+      "protocol/sensors/offline-hr-compressed-type0-unsupported.json",
+      "protocol/sensors/offline-hr-raw-type0-empty.json",
+      "protocol/sensors/offline-hr-raw-type0-hr-only-boundaries.json",
+      "protocol/sensors/offline-hr-raw-type1-truncated-tuple-android-error.json",
+      "protocol/sensors/offline-hr-raw-type1-two-samples.json",
+      "protocol/sensors/offline-hr-raw-type2-unsupported.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "raw-type0-hr-only-samples",
+      "raw-type0-empty-recording",
+      "raw-type1-hr-ppg-quality-corrected-hr-triples",
+      "unsupported-compressed-frame-policy",
+      "unsupported-raw-frame-policy",
+      "truncated-raw-type1-tuple-policy",
+      "platform-offline-hr-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "raw-type0-hr-only-samples",
+      "raw-type0-empty-recording",
+      "raw-type1-hr-ppg-quality-corrected-hr-triples",
+      "unsupported-compressed-frame-policy",
+      "unsupported-raw-frame-policy",
+      "truncated-raw-type1-tuple-policy",
+      "platform-offline-hr-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.OfflineHrDataTest"
+    ],
+    "ios": [
+      "OfflineHrDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.OfflineHrParserCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "valid-lowercase-device-id",
+  "area": "device-id",
+  "case": "lowercase_valid_checksum",
+  "source": "iOS BlePolarDeviceIdUtilityTest and Android behavior characterization",
+  "input": {
+    "deviceId": "1234567c"
+  },
+  "expected": {
+    "valid": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.DeviceIdGoldenVectorTest"
+    ],
+    "ios": [
+      "BlePolarDeviceIdUtilityTest",
+      "PolarDeviceUuidTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Hex parsing is case-insensitive."
+}

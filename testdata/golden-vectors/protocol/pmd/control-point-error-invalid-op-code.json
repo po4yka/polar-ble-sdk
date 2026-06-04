@@ -1,0 +1,38 @@
+{
+  "id": "pmd-control-point-error-invalid-op-code",
+  "area": "pmd-control-point",
+  "case": "error_invalid_op_code",
+  "source": "Android PmdControlPointResponse and iOS PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f001000100"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "GET_MEASUREMENT_SETTINGS",
+    "opCodeValue": 1,
+    "measurementType": 0,
+    "measurementTypeName": "ECG",
+    "status": "ERROR_INVALID_OP_CODE",
+    "statusValue": 1,
+    "more": false,
+    "parametersHex": ""
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "service-uuid-membership",
+  "area": "advertisement",
+  "case": "sixteen_bit_service_uuid_membership",
+  "source": "Android BleAdvertisementContentTest and iOS BleAdvertisementContentTest",
+  "input": {
+    "services16Hex": [
+      "180D",
+      "FEEE"
+    ]
+  },
+  "expected": {
+    "containsServices": {
+      "180D": true,
+      "FEEE": true,
+      "180F": false
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Pins 16-bit service UUID membership for HR and PFTP advertisements plus a missing service."
+}

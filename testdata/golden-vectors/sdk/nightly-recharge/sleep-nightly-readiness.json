@@ -1,0 +1,67 @@
+{
+  "id": "sleep-nightly-readiness",
+  "area": "sdk.sleep-nightly-recharge",
+  "case": "sleep_nightly_readiness",
+  "source": "Sleep and nightly recharge vectors plus shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the sleep and nightly recharge behavior families that must remain covered before model conversion delegates to shared KMP code.",
+  "input": {
+    "kind": "sleepNightlyReadiness",
+    "policyVectorPaths": [
+      "sdk/nightly-recharge/full-status.json",
+      "sdk/nightly-recharge/malformed-response.json",
+      "sdk/nightly-recharge/missing-modified-default-metrics.json",
+      "sdk/sleep/partial-night-omitted-optionals.json",
+      "sdk/sleep/sleep-offset-platform-policy.json",
+      "sdk/sleep/sleep-stage-hypnogram.json",
+      "sdk/sleep/sleep-timezone-offsets.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "nightly-result-date-formatting",
+      "nightly-created-modified-timestamp-formatting",
+      "nightly-proto3-default-preservation",
+      "nightly-malformed-payload-null-policy",
+      "sleep-end-offset-field-policy",
+      "sleep-timezone-to-utc-instant-policy",
+      "sleep-hypnogram-order-preservation",
+      "sleep-cycle-order-preservation",
+      "sleep-stage-enum-mapping",
+      "sleep-partial-night-optional-policy",
+      "platform-sleep-nightly-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "nightly-result-date-formatting",
+      "nightly-created-modified-timestamp-formatting",
+      "nightly-proto3-default-preservation",
+      "nightly-malformed-payload-null-policy",
+      "sleep-end-offset-field-policy",
+      "sleep-timezone-to-utc-instant-policy",
+      "sleep-hypnogram-order-preservation",
+      "sleep-cycle-order-preservation",
+      "sleep-stage-enum-mapping",
+      "sleep-partial-night-optional-policy",
+      "platform-sleep-nightly-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Sleep and nightly recharge model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarNightlyRechargeUtilsTest"
+    ],
+    "ios": [
+      "PolarNightlyRechargeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SleepNightlyRechargeCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for sleep and nightly recharge model behavior-family completeness only; public facade request routing and platform compatibility for current sleep offset and omitted-optional differences remain adapter decisions unless deliberately standardized."
+}

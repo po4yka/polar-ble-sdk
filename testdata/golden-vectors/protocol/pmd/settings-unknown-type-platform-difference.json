@@ -1,0 +1,40 @@
+{
+  "id": "pmd-settings-unknown-type-platform-difference",
+  "area": "pmd-settings",
+  "case": "unknown_setting_type_zero_count",
+  "source": "Android PmdSetting and iOS PmdSetting characterization",
+  "input": {
+    "hex": "ff0000"
+  },
+  "expected": {
+    "commonDecision": "KMP should reject unknown PMD setting types with a deterministic error or preserve them in an explicit unknown bucket."
+  },
+  "platformExpectations": {
+    "android": {
+      "parseError": "indexOutOfBounds"
+    },
+    "ios": {
+      "parseError": "publicInitializerEmptyUnknownSelectionCrash"
+    },
+    "commonDecision": {
+      "parseError": "invalidPMDData"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "Android indexes the enum by raw byte and throws for 0xff. The current iOS parser maps 0xff to unknown and can form an empty zero-count block internally, but the public PmdSetting(data:) initializer derives selected settings with max()! and traps on that empty set. KMP should choose a deterministic public parse result before migration.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSettingTest"
+    ],
+    "ios": [
+      "PmdSettingTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdSettingsCommonPolicyTest"
+    ]
+  }
+}

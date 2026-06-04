@@ -1,0 +1,75 @@
+{
+  "id": "request-response-error-policy",
+  "area": "sdk.psftp-response",
+  "case": "request_response_error_policy",
+  "source": "Android and iOS BlePsFtpClient request response error characterization tests",
+  "input": {
+    "kind": "requestResponseErrorPolicy",
+    "requestHeaderHex": "01020304",
+    "cases": [
+      {
+        "id": "known-error-no-such-file",
+        "responseFramesHex": [
+          "006700"
+        ],
+        "expected": {
+          "android": {
+            "outcome": "throwsException",
+            "messageContains": [
+              "PFTP error: NO_SUCH_FILE_OR_DIRECTORY (103)"
+            ]
+          },
+          "ios": {
+            "outcome": "throwsResponseError",
+            "errorCode": 103
+          }
+        }
+      },
+      {
+        "id": "unknown-error-code",
+        "responseFramesHex": [
+          "00ff7f"
+        ],
+        "expected": {
+          "android": {
+            "outcome": "throwsException",
+            "messageContains": [
+              "PFTP error: UNKNOWN (255)"
+            ]
+          },
+          "ios": {
+            "outcome": "throwsResponseError",
+            "errorCode": 32767
+          }
+        }
+      }
+    ]
+  },
+  "expected": {
+    "policy": "characterize-current-request-response-error-surface"
+  },
+  "execution": {
+    "kind": "fake-psftp-runtime-policy",
+    "transport": "scripted-rfc76-response-stream",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Covers request-level RFC76 error response mapping. Android currently wraps the response into a generic Exception message with a known enum name or UNKNOWN and retains the existing RFC76 high-byte masking behavior for unknown FE/7F-style codes, while iOS preserves BlePsFtpException.responseError(errorCode:) with the little-endian UInt16 value. Shared KMP runtime should use typed internal errors and facade adapters should intentionally preserve or normalize this split."
+}

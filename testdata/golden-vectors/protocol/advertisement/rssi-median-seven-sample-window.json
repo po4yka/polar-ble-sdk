@@ -1,0 +1,41 @@
+{
+  "id": "rssi-median-seven-sample-window",
+  "area": "advertisement",
+  "case": "rssi_median_uses_latest_seven_sample_window",
+  "source": "Android BleAdvertisementContentTest and iOS BleAdvertisementContentTest",
+  "input": {
+    "rssiSequence": [
+      -10,
+      -21,
+      -2,
+      -5,
+      -9,
+      0,
+      -8,
+      -1,
+      -8,
+      -2
+    ]
+  },
+  "expected": {
+    "rssi": -2,
+    "medianRssi": -5
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "The median RSSI is the middle value of the rolling seven-sample window after the tenth sample."
+}

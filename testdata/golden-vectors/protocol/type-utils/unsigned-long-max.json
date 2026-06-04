@@ -1,0 +1,29 @@
+{
+  "id": "unsigned-long-max",
+  "area": "type-utils",
+  "case": "unsigned_long_max",
+  "source": "Android TypeUtilsTest and iOS TypeUtils characterization",
+  "input": {
+    "hex": "ffffffffffffffff"
+  },
+  "expected": {
+    "unsignedLong": "18446744073709551615"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Use a string because JSON numbers cannot precisely represent UInt64.MAX_VALUE.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

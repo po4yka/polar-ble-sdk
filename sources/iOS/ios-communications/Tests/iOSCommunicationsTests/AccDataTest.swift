@@ -258,4 +258,166 @@ final class AccDataTest: XCTestCase {
         XCTAssertEqual(101, accData.samples[0].timeStamp)
         XCTAssertEqual(timeStamp, accData.samples[1].timeStamp)
     }
+
+    func testAccGoldenVectorsMatchIOSCommunicationsBehavior() throws {
+        let vectors = try loadAccGoldenVectors()
+        XCTAssertFalse(vectors.isEmpty, "Expected ACC golden vectors")
+
+        for vector in vectors {
+            let id = vector["id"] as? String ?? "unknown-vector"
+            if let platforms = vector["platforms"] as? [String: Any],
+               let supported = platforms["ios"] as? Bool,
+               !supported {
+                continue
+            }
+            let input = try XCTUnwrap(vector["input"] as? [String: Any], id)
+            let expected = try XCTUnwrap(vector["expected"] as? [String: Any], id)
+            let dataFrame = try PmdDataFrame(
+                data: Data(hexString: try XCTUnwrap(input["dataFrameHex"] as? String, id)),
+                { _, _ in UInt64(truncating: input["previousTimeStamp"] as? NSNumber ?? 0) },
+                { _ in Float(truncating: input["factor"] as? NSNumber ?? 1.0) },
+                { _ in UInt(truncating: input["sampleRate"] as? NSNumber ?? 0) })
+
+            if let parseError = expected["parseError"] as? String {
+                XCTAssertThrowsError(try AccData.parseDataFromDataFrame(frame: dataFrame), id) { error in
+                    switch parseError {
+                    case "unsupportedCompressedFrame":
+                        guard case BleGattException.gattDataError = error else {
+                            return XCTFail("Expected gattDataError for \(id), got \(error)")
+                        }
+                    default:
+                        XCTFail("Unsupported parse error expectation in \(id): \(parseError)")
+                    }
+                }
+                XCTAssertEqual(try XCTUnwrap(expected["timeStamp"] as? NSNumber, id).uint64Value, dataFrame.timeStamp, id)
+                continue
+            }
+
+            let accData = try AccData.parseDataFromDataFrame(frame: dataFrame)
+
+            XCTAssertEqual(try XCTUnwrap(expected["timeStamp"] as? NSNumber, id).uint64Value, accData.timeStamp, id)
+            let samples = try XCTUnwrap(expected["samples"] as? [[String: Any]], id)
+            XCTAssertEqual(samples.count, accData.samples.count, id)
+            for (index, expectedSample) in samples.enumerated() {
+                XCTAssertEqual(try XCTUnwrap(expectedSample["timeStamp"] as? NSNumber, id).uint64Value, accData.samples[index].timeStamp, id)
+                XCTAssertEqual(try XCTUnwrap(expectedSample["x"] as? NSNumber, id).int32Value, accData.samples[index].x, id)
+                XCTAssertEqual(try XCTUnwrap(expectedSample["y"] as? NSNumber, id).int32Value, accData.samples[index].y, id)
+                XCTAssertEqual(try XCTUnwrap(expectedSample["z"] as? NSNumber, id).int32Value, accData.samples[index].z, id)
+            }
+        }
+    }
+
+    func testAccGoldenVectorsFollowNeutralKmpShape() throws {
+        for vector in try loadAccGoldenVectors() {
+            let id = try XCTUnwrap(vector["id"] as? String)
+            XCTAssertNotNil(vector["area"], id)
+            XCTAssertNotNil(vector["case"], id)
+            XCTAssertNotNil(vector["source"], id)
+            XCTAssertNotNil(vector["input"], id)
+            XCTAssertNotNil(vector["expected"], id)
+            let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], id)
+            XCTAssertNotNil(platforms["android"], id)
+            XCTAssertNotNil(platforms["ios"], id)
+            XCTAssertNotNil(platforms["common"], id)
+        }
+    }
+
+    func testAccReadinessManifestIsPinnedBeforeParserMigration() throws {
+        let manifest = try loadAccReadinessManifest()
+        let id = try XCTUnwrap(manifest["id"] as? String)
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any], id)
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String], id)
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String], id)
+        let policyVectorPaths = try XCTUnwrap(input["policyVectorPaths"] as? [String], id)
+
+        XCTAssertEqual("acc-readiness", id)
+        XCTAssertEqual("accReadiness", input["kind"] as? String, id)
+        XCTAssertEqual(ACC_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths, id)
+        XCTAssertEqual(ACC_READINESS_FAMILIES, requiredFamilies, id)
+        XCTAssertEqual(ACC_READINESS_FAMILIES, coveredFamilies, id)
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any], id)
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], id), ["com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.AccDataTest"], id)
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], id), ["AccDataTest"], id)
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], id), ["com.polar.sharedtest.AccParserCommonPolicyTest"], id)
+    }
+
+    private func loadAccGoldenVectors() throws -> [[String: Any]] {
+        let vectorDirectory = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/protocol/sensors")
+        return try FileManager.default
+            .contentsOfDirectory(at: vectorDirectory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" && $0.lastPathComponent.hasPrefix("acc-") }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .map { file in
+                let data = try Data(contentsOf: file)
+                return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+            }
+            .filter { vector in
+                guard let input = vector["input"] as? [String: Any] else {
+                    return true
+                }
+                return input["kind"] as? String != "accReadiness"
+            }
+    }
+
+    private func loadAccReadinessManifest() throws -> [String: Any] {
+        let vectorFile = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/protocol/sensors/acc-readiness.json")
+        let data = try Data(contentsOf: vectorFile)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], vectorFile.path)
+    }
+
+
+    private let ACC_READINESS_POLICY_VECTOR_PATHS = [
+        "protocol/sensors/acc-compressed-type0-factor-half.json",
+        "protocol/sensors/acc-compressed-type0-truncated-delta-header-android-error.json",
+        "protocol/sensors/acc-compressed-type0-truncated-delta-header-ios-reference-only.json",
+        "protocol/sensors/acc-compressed-type0-truncated-delta-payload-android-error.json",
+        "protocol/sensors/acc-compressed-type0-truncated-delta-payload-ios-reference-only.json",
+        "protocol/sensors/acc-compressed-type1-two-samples.json",
+        "protocol/sensors/acc-compressed-type2-unsupported.json",
+        "protocol/sensors/acc-raw-type0-signed-boundaries.json",
+        "protocol/sensors/acc-raw-type0-truncated-sample-android-error.json",
+        "protocol/sensors/acc-raw-type1-signed-boundaries.json",
+        "protocol/sensors/acc-raw-type1-truncated-sample-android-error.json",
+        "protocol/sensors/acc-raw-type1-two-samples.json",
+        "protocol/sensors/acc-raw-type2-android-only.json",
+        "protocol/sensors/acc-raw-type2-truncated-sample-android-error.json"
+    ]
+
+    private let ACC_READINESS_FAMILIES = [
+        "raw-type0-signed-axis-boundaries",
+        "raw-type1-signed-axis-parsing",
+        "raw-type1-timestamp-interpolation",
+        "compressed-type0-millig-factor-scaling",
+        "compressed-type1-reference-delta-decoding",
+        "unsupported-compressed-type-policy",
+        "raw-type2-android-ownership",
+        "truncated-raw-sample-policy",
+        "truncated-compressed-delta-header-policy",
+        "truncated-compressed-delta-payload-policy",
+        "platform-acc-vector-reference-gate",
+        "compile-verification-gate"
+    ]
+}
+
+private extension Data {
+    init(hexString: String) throws {
+        guard hexString.count.isMultiple(of: 2) else {
+            throw NSError(domain: "AccDataTest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Hex string must have an even length"])
+        }
+        var bytes: [UInt8] = []
+        var index = hexString.startIndex
+        while index < hexString.endIndex {
+            let nextIndex = hexString.index(index, offsetBy: 2)
+            let byteString = String(hexString[index..<nextIndex])
+            guard let byte = UInt8(byteString, radix: 16) else {
+                throw NSError(domain: "AccDataTest", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid hex byte \(byteString)"])
+            }
+            bytes.append(byte)
+            index = nextIndex
+        }
+        self.init(bytes)
+    }
 }

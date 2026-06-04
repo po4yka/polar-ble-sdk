@@ -1,6 +1,6 @@
 # Polar BLE SDK for sensors and watches
 
-Official SDK for Polar sensors and watches on **Android** (minSdk 24) and **iOS** (14.0+). Build apps that connect via Bluetooth LE and stream real-time heart rate, ECG, accelerometer, PPG, and more from Polar devices.
+Official SDK for Polar sensors and watches on **Android** (minSdk 26) and **iOS** (14.0+). Build apps that connect via Bluetooth LE and stream real-time heart rate, ECG, accelerometer, PPG, and more from Polar devices.
 
 The SDK API uses [ReactiveX](http://reactivex.io) for asynchronous operations.
 
@@ -82,13 +82,13 @@ Get up and running with the Polar BLE SDK.
 
 ### Installation
 
-1.  In `build.gradle` make sure the __minSdk__ is set to __33__ or higher.
+1.  In `build.gradle` make sure the __minSdk__ is set to __26__ or higher.
 ```gradle
 android {
     ...
     defaultConfig {
         ...
-        minSdk 33
+        minSdk 26
     }
 }
 ```
@@ -408,6 +408,12 @@ class MyController: UIViewController,
 
 ## Migration guides
 - [Polar BLE SDK 5.0.0 Migration Guide](./documentation/MigrationGuide5.0.0.md) – Breaking changes from 4.x to 5.x
+- [Android SDK 7.0.0 Migration Guide](./documentation/MigrationGuide7.0.0-Android.md) – RxJava to Kotlin Coroutines
+- [iOS SDK 8.0.0 Migration Guide](./documentation/MigrationGuide8.0.0-iOS.md) – RxSwift to Swift Concurrency
+- [Kotlin Multiplatform Migration Plan](./documentation/KmpMigrationPlan.md) – Proposed shared-core architecture and phased migration path
+- [KMP Migration TDD Strategy](./documentation/KmpTddStrategy.md) – Characterization and golden-vector testing strategy before migration
+- [KMP Pre-Migration Coverage Inventory](./documentation/KmpCoverageInventory.md) – Current Android/iOS coverage map and pre-migration coverage obligations
+- [KMP Migration Checklist](./documentation/KmpMigrationChecklist.md) – Per-slice gates for test-first migration work
 
 [↑ Back to contents](#contents)
 

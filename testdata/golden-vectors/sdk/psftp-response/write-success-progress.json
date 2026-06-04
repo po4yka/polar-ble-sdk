@@ -1,0 +1,59 @@
+{
+  "id": "write-success-progress",
+  "area": "sdk.psftp-response",
+  "case": "write_success_progress",
+  "source": "Android and iOS BlePsFtpClient write stream characterization tests",
+  "input": {
+    "kind": "writeSuccessProgress",
+    "command": "PUT",
+    "path": "/U/0/20260101/DSUM/DSUM.BPB",
+    "payloadHex": "0a0408d21310",
+    "responseFramesHex": [
+      "000000"
+    ]
+  },
+  "expected": {
+    "android": {
+      "progress": [
+        -14,
+        6
+      ]
+    },
+    "ios": {
+      "progress": [
+        0,
+        5,
+        6
+      ]
+    },
+    "completion": "success",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "platformExpectations": {
+    "commonDecision": {
+    "progressPolicy": "android-currently-emits-negative-header-overhead-progress-before-payload-count-while-ios-emits-initial-zero-header-progress-and-final-payload-count"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Covers the PSFTP write stream success path with a device success response. Android currently emits an initial negative progress value while RFC60 header bytes are being consumed, then the payload byte count. iOS emits an initial zero progress value, an intermediate header/payload stream position, and the same final payload byte count. Shared KMP runtime should choose one progress policy before moving write orchestration to common code."
+}

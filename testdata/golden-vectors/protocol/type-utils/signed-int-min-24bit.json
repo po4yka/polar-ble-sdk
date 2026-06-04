@@ -1,0 +1,30 @@
+{
+  "id": "signed-int-min-24bit",
+  "area": "type-utils",
+  "case": "signed_int_min_24bit",
+  "source": "Android TypeUtils and iOS TypeUtils sign-extension mask characterization",
+  "input": {
+    "hex": "000080"
+  },
+  "expected": {
+    "unsignedLong": 8388608,
+    "signedInt": -8388608
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Pins the sign-extension mask for the 24-bit signed minimum used by sensor sample parsers.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

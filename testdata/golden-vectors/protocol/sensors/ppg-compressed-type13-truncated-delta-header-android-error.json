@@ -1,0 +1,37 @@
+{
+  "id": "ppg-compressed-type13-truncated-delta-header-android-error",
+  "area": "sensor-parser",
+  "case": "ppg_compressed_type13_truncated_delta_header_android_error",
+  "source": "Android PpgDataTest; iOS currently keeps the reference sample for the same malformed payload",
+  "input": {
+    "dataFrameHex": "0166000000000000008d640000ceffff05000003",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "PPG",
+    "frameType": 13,
+    "compressed": true,
+    "timeStamp": 102,
+    "parseError": "malformedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android currently throws when a compressed type-13 PPG frame contains a reference sample followed by only deltaSize without sampleCount.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ]
+  }
+}

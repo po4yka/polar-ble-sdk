@@ -1,11 +1,16 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
 import com.polar.androidcommunications.testrules.BleLoggerTestRule
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
+import java.io.FileReader
 
 internal class EcgDataTest {
     @Rule
@@ -215,5 +220,186 @@ internal class EcgDataTest {
         Assert.assertEquals(2, ecgData.ecgSamples.size.toLong())
 
         Assert.assertEquals(dataFrame.timeStamp, (ecgData.ecgSamples[1] as EcgData.EcgSampleFrameType3).timeStamp)
+    }
+
+    @Test
+    fun ecgGoldenVectors_matchAndroidBehavior() {
+        val vectors = loadEcgVectors()
+        Assert.assertTrue("Expected ECG golden vectors", vectors.isNotEmpty())
+
+        vectors.forEach { vector ->
+            val caseId = vector.get("id").asString
+            val input = vector.getAsJsonObject("input")
+            val expected = vector.getAsJsonObject("expected")
+            val frame = PmdDataFrame(
+                data = input.get("dataFrameHex").asString.hexToByteArray(),
+                getPreviousTimeStamp = { _, _ -> input.get("previousTimeStamp").asLong.toULong() },
+                getFactor = { input.get("factor").asFloat },
+                getSampleRate = { input.get("sampleRate").asInt }
+            )
+
+            if (expected.has("parseError")) {
+                assertParseError(caseId, expected.get("parseError").asString, frame)
+                Assert.assertEquals(caseId, expected.get("timeStamp").asLong.toULong(), frame.timeStamp)
+                return@forEach
+            }
+
+            val ecgData = EcgData.parseDataFromDataFrame(frame)
+
+            Assert.assertEquals(caseId, expected.get("timeStamp").asLong.toULong(), frame.timeStamp)
+            assertEcgSamples(caseId, expected.getAsJsonArray("samples"), ecgData.ecgSamples)
+        }
+    }
+
+    private fun assertParseError(caseId: String, expectedError: String, frame: PmdDataFrame) {
+        when (expectedError) {
+            "malformedFrame" -> Assert.assertThrows(caseId, Exception::class.java) {
+                EcgData.parseDataFromDataFrame(frame)
+            }
+            else -> Assert.fail("$caseId has unsupported parse error expectation $expectedError")
+        }
+    }
+
+    @Test
+    fun `ecg golden vectors follow neutral KMP vector shape`() {
+        loadEcgVectors().forEach { vector ->
+            val id = vector.get("id").asString
+            Assert.assertTrue(id, vector.has("area"))
+            Assert.assertTrue(id, vector.has("case"))
+            Assert.assertTrue(id, vector.has("source"))
+            Assert.assertTrue(id, vector.has("input"))
+            Assert.assertTrue(id, vector.has("expected"))
+            Assert.assertTrue(id, vector.has("platforms"))
+            val platforms = vector.getAsJsonObject("platforms")
+            Assert.assertTrue(id, platforms.has("android"))
+            Assert.assertTrue(id, platforms.has("ios"))
+            Assert.assertTrue(id, platforms.has("common"))
+        }
+    }
+
+    @Test
+    fun `ECG readiness manifest is pinned before parser migration`() {
+        val manifest = loadEcgReadinessManifest()
+        val id = manifest.get("id").asString
+        val input = manifest.getAsJsonObject("input")
+        val expected = manifest.getAsJsonObject("expected")
+        val consumerTests = manifest.getAsJsonObject("consumerTests")
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+        val policyVectorPaths = input.getAsJsonArray("policyVectorPaths").map { it.asString }
+
+        Assert.assertEquals("ecg-readiness", id)
+        Assert.assertEquals("ecgReadiness", input.get("kind").asString)
+        Assert.assertEquals(id, ECG_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths)
+        Assert.assertEquals(id, ECG_READINESS_FAMILIES, requiredFamilies)
+        Assert.assertEquals(id, ECG_READINESS_FAMILIES, coveredFamilies)
+        Assert.assertEquals(id, listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.EcgDataTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(id, listOf("EcgDataTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(id, listOf("com.polar.sharedtest.EcgParserCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    private fun assertEcgSamples(
+        caseId: String,
+        expectedSamples: JsonArray,
+        actualSamples: List<EcgDataSample>
+    ) {
+        Assert.assertEquals(caseId, expectedSamples.size(), actualSamples.size)
+        expectedSamples.forEachIndexed { index, expectedSample ->
+            val sample = expectedSample.asJsonObject
+            when (sample.get("kind")?.asString ?: "ecgSample") {
+                "ecgSample" -> {
+                    val actualSample = actualSamples[index] as EcgData.EcgSample
+                    Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                    Assert.assertEquals(caseId, sample.get("microVolts").asInt, actualSample.microVolts)
+                    if (sample.has("overSampling")) {
+                        Assert.assertEquals(caseId, sample.get("overSampling").asBoolean, actualSample.overSampling)
+                    }
+                    if (sample.has("skinContactBit")) {
+                        Assert.assertEquals(caseId, sample.get("skinContactBit").asByte, actualSample.skinContactBit)
+                    }
+                    if (sample.has("contactImpedance")) {
+                        Assert.assertEquals(caseId, sample.get("contactImpedance").asByte, actualSample.contactImpedance)
+                    }
+                    if (sample.has("ecgDataTag")) {
+                        Assert.assertEquals(caseId, sample.get("ecgDataTag").asByte, actualSample.ecgDataTag)
+                    }
+                    if (sample.has("paceDataTag")) {
+                        Assert.assertEquals(caseId, sample.get("paceDataTag").asByte, actualSample.paceDataTag)
+                    }
+                }
+                "ecgFrameType3Sample" -> {
+                    val actualSample = actualSamples[index] as EcgData.EcgSampleFrameType3
+                    Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                    Assert.assertEquals(caseId, sample.get("data0").asInt, actualSample.data0)
+                    Assert.assertEquals(caseId, sample.get("data1").asInt, actualSample.data1)
+                    Assert.assertEquals(caseId, sample.get("status").asInt.toUByte(), actualSample.status)
+                }
+                else -> Assert.fail("$caseId has unsupported ECG sample kind ${sample.get("kind").asString}")
+            }
+        }
+    }
+
+    private fun loadEcgVectors(): List<JsonObject> {
+        val vectorDirectory = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/protocol/sensors")
+        return vectorDirectory
+            .listFiles { file -> file.isFile && file.extension == "json" && file.name.startsWith("ecg-") }
+            .orEmpty()
+            .sortedBy { it.name }
+            .map { file ->
+                FileReader(file).use { reader ->
+                    JsonParser().parse(reader).asJsonObject
+                }
+            }
+            .filter { vector -> vector.getAsJsonObject("input").get("kind")?.asString != "ecgReadiness" }
+    }
+
+    private fun loadEcgReadinessManifest(): JsonObject {
+        val vectorFile = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/protocol/sensors/ecg-readiness.json")
+        FileReader(vectorFile).use { reader ->
+            return JsonParser().parse(reader).asJsonObject
+        }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
+    }
+
+    private fun String.hexToByteArray(): ByteArray {
+        require(length % 2 == 0) { "Hex string must have an even length" }
+        return chunked(2)
+            .map { it.toInt(16).toByte() }
+            .toByteArray()
+    }
+
+    private companion object {
+        val ECG_READINESS_POLICY_VECTOR_PATHS = listOf(
+            "protocol/sensors/ecg-raw-type0-signed-24bit-boundaries.json",
+            "protocol/sensors/ecg-raw-type0-truncated-sample-android-error.json",
+            "protocol/sensors/ecg-raw-type0-two-samples.json",
+            "protocol/sensors/ecg-raw-type1-android-status-bits.json",
+            "protocol/sensors/ecg-raw-type2-android-tags.json",
+            "protocol/sensors/ecg-raw-type3-android-frame-samples.json"
+        )
+
+        val ECG_READINESS_FAMILIES = listOf(
+            "raw-type0-signed-24bit-parsing",
+            "raw-type0-boundary-values",
+            "raw-type0-timestamp-interpolation",
+            "raw-type0-malformed-short-sample-policy",
+            "android-raw-type1-status-bit-ownership",
+            "android-raw-type2-tag-ownership",
+            "android-raw-type3-frame-sample-ownership",
+            "platform-ecg-vector-reference-gate",
+            "compile-verification-gate"
+        )
     }
 }

@@ -1,0 +1,202 @@
+{
+  "id": "hr-all-trigger-types",
+  "area": "sdk.automatic-samples",
+  "case": "hr_all_trigger_types",
+  "source": "Android and iOS PolarAutomaticSamplesUtils characterization tests",
+  "input": {
+    "kind": "hr",
+    "proto": {
+      "day": {
+        "year": 2024,
+        "month": 10,
+        "day": 18
+      },
+      "samples": [
+        {
+          "time": {
+            "hour": 10,
+            "minute": 12,
+            "second": 34,
+            "millis": 0
+          },
+          "heartRate": [
+            60,
+            61,
+            63
+          ],
+          "triggerType": 1
+        },
+        {
+          "time": {
+            "hour": 14,
+            "minute": 30,
+            "second": 0,
+            "millis": 0
+          },
+          "heartRate": [
+            70,
+            72,
+            74
+          ],
+          "triggerType": 2
+        },
+        {
+          "time": {
+            "hour": 18,
+            "minute": 0,
+            "second": 0,
+            "millis": 0
+          },
+          "heartRate": [
+            90,
+            91,
+            93
+          ],
+          "triggerType": 3
+        },
+        {
+          "time": {
+            "hour": 12,
+            "minute": 0,
+            "second": 0,
+            "millis": 0
+          },
+          "heartRate": [
+            80,
+            81,
+            83
+          ],
+          "triggerType": 4
+        }
+      ]
+    }
+  },
+  "expected": {
+    "policy": "map-all-known-hr-trigger-types"
+  },
+  "platformExpectations": {
+    "android": {
+      "date": "2024-10-18",
+      "samples": [
+        {
+          "startTime": "10:12:34",
+          "heartRate": [
+            60,
+            61,
+            63
+          ],
+          "triggerType": "TRIGGER_TYPE_HIGH_ACTIVITY"
+        },
+        {
+          "startTime": "14:30",
+          "heartRate": [
+            70,
+            72,
+            74
+          ],
+          "triggerType": "TRIGGER_TYPE_LOW_ACTIVITY"
+        },
+        {
+          "startTime": "18:00",
+          "heartRate": [
+            90,
+            91,
+            93
+          ],
+          "triggerType": "TRIGGER_TYPE_TIMED"
+        },
+        {
+          "startTime": "12:00",
+          "heartRate": [
+            80,
+            81,
+            83
+          ],
+          "triggerType": "TRIGGER_TYPE_MANUAL"
+        }
+      ]
+    },
+    "ios": {
+      "date": {
+        "year": 2024,
+        "month": 10,
+        "day": 18
+      },
+      "samples": [
+        {
+          "time": {
+            "hour": 10,
+            "minute": 12,
+            "second": 34,
+            "nanosecond": 0
+          },
+          "heartRate": [
+            60,
+            61,
+            63
+          ],
+          "triggerType": "highActivity"
+        },
+        {
+          "time": {
+            "hour": 14,
+            "minute": 30,
+            "second": 0,
+            "nanosecond": 0
+          },
+          "heartRate": [
+            70,
+            72,
+            74
+          ],
+          "triggerType": "lowActivity"
+        },
+        {
+          "time": {
+            "hour": 18,
+            "minute": 0,
+            "second": 0,
+            "nanosecond": 0
+          },
+          "heartRate": [
+            90,
+            91,
+            93
+          ],
+          "triggerType": "timed"
+        },
+        {
+          "time": {
+            "hour": 12,
+            "minute": 0,
+            "second": 0,
+            "nanosecond": 0
+          },
+          "heartRate": [
+            80,
+            81,
+            83
+          ],
+          "triggerType": "manual"
+        }
+      ]
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarAutomaticSamplesUtilsTest"
+    ],
+    "ios": [
+      "PolarAutomaticSamplesUnitTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.ActivitySummaryCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "24/7 HR sessions with all known automatic sample trigger types."
+}

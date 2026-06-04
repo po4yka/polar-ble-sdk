@@ -1,0 +1,74 @@
+{
+  "id": "full-passed-normal",
+  "area": "sdk.spo2-test",
+  "case": "full_passed_normal",
+  "source": "Android and iOS PolarTestUtils characterization tests",
+  "input": {
+    "date": "2026-04-14",
+    "timeDirName": "063635",
+    "proto": {
+      "recordingDevice": "0004BF3D",
+      "timeZoneOffsetMinutes": 180,
+      "testStatus": 0,
+      "bloodOxygenPercent": 95,
+      "spo2Class": 3,
+      "spo2ValueDeviationFromBaseline": 0,
+      "spo2QualityAveragePercent": 99.0,
+      "averageHeartRateBpm": 66,
+      "heartRateVariabilityMs": 79.97114,
+      "spo2HrvDeviationFromBaseline": 2,
+      "altitudeMeters": 18.13582
+    }
+  },
+  "expected": {
+    "policy": "map-spo2-proto-fields-to-public-model"
+  },
+  "platformExpectations": {
+    "android": {
+      "recordingDevice": "0004BF3D",
+      "testTime": "2026-04-14 06:36:35",
+      "timeZoneOffsetMinutes": 180,
+      "testStatus": "PASSED",
+      "bloodOxygenPercent": 95,
+      "spo2Class": "NORMAL",
+      "spo2ValueDeviationFromBaseline": "NO_BASELINE",
+      "spo2QualityAveragePercent": 99.0,
+      "averageHeartRateBpm": 66,
+      "heartRateVariabilityMs": 79.97114,
+      "spo2HrvDeviationFromBaseline": "USUAL",
+      "altitudeMeters": 18.13582
+    },
+    "ios": {
+      "recordingDevice": "0004BF3D",
+      "dateIsoUtc": "2026-04-14T03:36:35Z",
+      "timeZoneOffsetMinutes": 180,
+      "testStatus": "passed",
+      "bloodOxygenPercent": 95,
+      "spo2Class": "normal",
+      "spo2ValueDeviationFromBaseline": "noBaseline",
+      "spo2QualityAveragePercent": 99.0,
+      "averageHeartRateBpm": 66,
+      "heartRateVariabilityMs": 79.97114,
+      "spo2HrvDeviationFromBaseline": "usual",
+      "altitudeMeters": 18.13582,
+      "triggerType": null
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTestUtilsTest"
+    ],
+    "ios": [
+      "PolarTestUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.Spo2CommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Full successful SPo2 result with all common fields populated."
+}

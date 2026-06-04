@@ -13,12 +13,15 @@ class PolarBleApiImplWithMockSession: PolarBleApiImpl {
     
     init(mockDeviceSession: MockBleDeviceSession) {
         self.mockDeviceSession = mockDeviceSession
+        self.mockServiceClientUtils = MockPolarServiceClientUtils(listener: MockCBDeviceListenerImpl(), session: mockDeviceSession)
         super.init(DispatchQueue(label: "test"), features: [], restoreIdentifier: nil)
+        self.fileUtils = PolarFileUtils(listener: MockCBDeviceListenerImpl(), serviceClientUtils: mockServiceClientUtils)
     }
     let mockDeviceSession: MockBleDeviceSession
+    private let mockServiceClientUtils: MockPolarServiceClientUtils
     
     override var serviceClientUtils: PolarServiceClientUtils {
-        return MockPolarServiceClientUtils(listener: MockCBDeviceListenerImpl(), session: mockDeviceSession)
+        return mockServiceClientUtils
     }
 }
 
@@ -29,12 +32,15 @@ class PolarBleApiImplWithMockH10Session: PolarBleApiImpl {
 
     init(mockDeviceSession: MockH10BleDeviceSession) {
         self.mockDeviceSession = mockDeviceSession
+        self.mockServiceClientUtils = MockPolarH10ServiceClientUtils(listener: MockCBDeviceListenerImpl(), session: mockDeviceSession)
         super.init(DispatchQueue(label: "test"), features: [], restoreIdentifier: nil)
+        self.fileUtils = PolarFileUtils(listener: MockCBDeviceListenerImpl(), serviceClientUtils: mockServiceClientUtils)
     }
     let mockDeviceSession: MockH10BleDeviceSession
+    private let mockServiceClientUtils: MockPolarH10ServiceClientUtils
 
     override var serviceClientUtils: PolarServiceClientUtils {
-        return MockPolarH10ServiceClientUtils(listener: MockCBDeviceListenerImpl(), session: mockDeviceSession)
+        return mockServiceClientUtils
     }
 }
 
@@ -65,7 +71,31 @@ class MockPolarServiceClientUtils: PolarServiceClientUtils {
     required init(listener: CBDeviceListenerImpl) {
         fatalError("init(listener:) has not been implemented")
     }
+    override func fetchSession(_ identifier: String) throws -> BleDeviceSession? {
+        return mockSession
+    }
+
     override func sessionFtpClientReady(_ identifier: String) throws -> BleDeviceSession {
+        return mockSession
+    }
+
+    override func sessionPmdClientReady(_ identifier: String) throws -> BleDeviceSession {
+        return mockSession
+    }
+
+    override func waitPmdClientReady(_ identifier: String) async throws -> BleDeviceSession {
+        return mockSession
+    }
+
+    override func sessionPfcClientReady(_ identifier: String) throws -> BleDeviceSession {
+        return mockSession
+    }
+
+    override func sessionServiceReady(_ identifier: String, service: CBUUID) throws -> BleDeviceSession {
+        return mockSession
+    }
+
+    override func waitPfcClientReady(_ identifier: String) async throws -> BleDeviceSession {
         return mockSession
     }
 }
@@ -104,7 +134,7 @@ class MockH10AdvertisementContent: BleAdvertisementContent {
 class MockH10BleDeviceSession: BleDeviceSession {
     init(mockFtpClient: MockBlePsFtpClient) {
         self.mockFtpClient = mockFtpClient
-        self.ftpClient = unsafeBitCast(mockFtpClient, to: BleGattClientBase.self)
+        self.ftpClient = mockFtpClient
         super.init(UUID(), advertisementContent: MockH10AdvertisementContent())
     }
     let mockFtpClient: MockBlePsFtpClient
@@ -118,18 +148,37 @@ class MockH10BleDeviceSession: BleDeviceSession {
 }
 
 class MockBleDeviceSession: BleDeviceSession {
-    init(mockFtpClient: MockBlePsFtpClient) {
+    init(mockFtpClient: MockBlePsFtpClient, mockPmdClient: BlePmdClient? = nil, mockPfcClient: BlePfcClient? = nil, mockBatteryClient: BleBasClient? = nil) {
         self.mockFtpClient = mockFtpClient
-        // Store as BlePsFtpClient (iOSCommunications type) so the upcast to
-        // BleGattClientBase succeeds without a cross-module type identity conflict.
-        self.ftpClient = unsafeBitCast(mockFtpClient, to: BleGattClientBase.self)
+        self.mockPmdClient = mockPmdClient
+        self.mockPfcClient = mockPfcClient
+        self.mockBatteryClient = mockBatteryClient
+        self.ftpClient = mockFtpClient
+        self.pmdClient = mockPmdClient
+        self.pfcClient = mockPfcClient
+        self.batteryClient = mockBatteryClient
         super.init(UUID(), advertisementContent: MockAdvertisementContent())
     }
     let mockFtpClient: MockBlePsFtpClient
+    let mockPmdClient: BlePmdClient?
+    let mockPfcClient: BlePfcClient?
+    let mockBatteryClient: BleBasClient?
     private let ftpClient: BleGattClientBase
+    private let pmdClient: BleGattClientBase?
+    private let pfcClient: BleGattClientBase?
+    private let batteryClient: BleGattClientBase?
     public override func fetchGattClient(_ serviceUuid: CBUUID) -> BleGattClientBase? {
         if serviceUuid == BlePsFtpClient.PSFTP_SERVICE {
             return ftpClient
+        }
+        if serviceUuid == BlePmdClient.PMD_SERVICE {
+            return pmdClient
+        }
+        if serviceUuid == BlePfcClient.PFC_SERVICE {
+            return pfcClient
+        }
+        if serviceUuid == BleBasClient.BATTERY_SERVICE {
+            return batteryClient
         }
         return nil
     }
@@ -138,13 +187,16 @@ class MockBleDeviceSession: BleDeviceSession {
 class MockPolarGattServiceTransmitter: BleAttributeTransportProtocol {
     var mockConnectionStatus: Bool = true
     var setCharacteristicsNotifyCache: [(characteristicUuid: CBUUID, notify: Bool)] = []
+    var transmittedMessages: [(serviceUuid: CBUUID, characteristicUuid: CBUUID, packet: Data, withResponse: Bool)] = []
+    var transmitMessageHandler: ((BleGattClientBase, CBUUID, CBUUID, Data, Bool) -> Void)?
     
     func isConnected() -> Bool {
         return mockConnectionStatus
     }
     
     func transmitMessage(_ parent: BleGattClientBase, serviceUuid: CBUUID , characteristicUuid: CBUUID , packet: Data, withResponse: Bool) throws {
-        // Do nothing
+        transmittedMessages.append((serviceUuid, characteristicUuid, packet, withResponse))
+        transmitMessageHandler?(parent, serviceUuid, characteristicUuid, packet, withResponse)
     }
     
     func characteristicWith(uuid: CBUUID) throws -> CBCharacteristic? {
@@ -350,7 +402,7 @@ struct _MockSearchSubjectProxy {
 
 // MARK: - MockBlePmdClient
 
-class MockBlePmdClient: BlePmdClient {
+class MockBlePmdClient: BlePmdClient, @unchecked Sendable {
     var querySettingsCalls: [(type: PmdMeasurementType, recordingType: PmdRecordingType)] = []
     var querySettingsReturnValue: Result<PmdSetting, Error>?
 
@@ -404,7 +456,7 @@ class MockPmdBleDeviceSession: BleDeviceSession {
 
     init(mockPmdClient: MockBlePmdClient) {
         self.mockPmdClient = mockPmdClient
-        self.pmdClientBase = unsafeBitCast(mockPmdClient, to: BleGattClientBase.self)
+        self.pmdClientBase = mockPmdClient
         super.init(UUID())
     }
 
@@ -519,7 +571,7 @@ class MockDisconnectBleApiImpl {
 
 // MARK: - ServiceClientUtils that lets tests control fetchSession output
 
-public class MockBlePsFtpClient: BlePsFtpClient {
+public class MockBlePsFtpClient: BlePsFtpClient, @unchecked Sendable {
     private let requestCallsLock = NSLock()
     public var requestCalls: [Data] = []
     public var requestReturnValues: [Result<Data, Error>] = []
@@ -539,11 +591,12 @@ public class MockBlePsFtpClient: BlePsFtpClient {
     public var sendNotificationError: Error?
 
     public var receiveNotificationCalls: [(notification: Int, parameters: [Data], compressed: Bool)] = []
+    public var receiveNotificationError: Error?
+    public var receiveNotificationWaitsUntilCancelled = false
+    public var receiveNotificationCancellationHandler: (() -> Void)?
 
     override public func request(_ header: Data) async throws -> NSData {
-        requestCallsLock.lock()
-        requestCalls.append(header)
-        requestCallsLock.unlock()
+        appendRequestCall(header)
         if let closure = requestReturnValueClosure {
             return NSData(data: try await closure(header))
         }
@@ -558,6 +611,12 @@ public class MockBlePsFtpClient: BlePsFtpClient {
         case .success(let data): return NSData(data: data)
         case .failure(let error): throw error
         }
+    }
+
+    private func appendRequestCall(_ header: Data) {
+        requestCallsLock.lock()
+        requestCalls.append(header)
+        requestCallsLock.unlock()
     }
 
     override public func query(_ id: Int, parameters: NSData?) async throws -> NSData {
@@ -589,7 +648,7 @@ public class MockBlePsFtpClient: BlePsFtpClient {
     public override func waitNotification() -> AsyncThrowingStream<PsFtpNotification, Error> {
         let calls = receiveNotificationCalls
         return AsyncThrowingStream { continuation in
-            Task {
+            let task = Task {
                 for (id, arrayOfData, compressed) in calls {
                     let notification = PsFtpNotification()
                     notification.id = Int32(id)
@@ -603,7 +662,20 @@ public class MockBlePsFtpClient: BlePsFtpClient {
                     }
                     continuation.yield(notification)
                 }
-                continuation.finish()
+                if self.receiveNotificationWaitsUntilCancelled {
+                    while !Task.isCancelled {
+                        try? await Task.sleep(nanoseconds: 10_000_000)
+                    }
+                }
+                if let receiveNotificationError = self.receiveNotificationError {
+                    continuation.finish(throwing: receiveNotificationError)
+                } else {
+                    continuation.finish()
+                }
+            }
+            continuation.onTermination = { _ in
+                task.cancel()
+                self.receiveNotificationCancellationHandler?()
             }
         }
     }

@@ -1,0 +1,36 @@
+{
+  "id": "ppg-raw-type5-truncated-operation-mode-malformed",
+  "area": "sensor-parser",
+  "case": "ppg_raw_type5_truncated_operation_mode_malformed",
+  "source": "Pre-migration shared PPG parser policy",
+  "input": {
+    "dataFrameHex": "01009435770000000005ffffff",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PPG",
+    "frameType": 5,
+    "compressed": false,
+    "timeStamp": 2000000000,
+    "parseError": "malformedFrame"
+  },
+  "consumerTests": {
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ],
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ]
+  },
+  "platforms": {
+    "android": false,
+    "ios": false,
+    "common": true
+  },
+  "notes": "Future shared PPG parsing should reject raw type-5 operation-mode payloads unless exactly four bytes are present."
+}

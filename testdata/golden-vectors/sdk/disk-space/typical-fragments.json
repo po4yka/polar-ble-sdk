@@ -1,0 +1,34 @@
+{
+  "id": "typical-fragments",
+  "area": "sdk.disk-space",
+  "case": "typical_fragments",
+  "source": "Android and iOS PolarDiskSpaceData characterization tests",
+  "input": {
+    "proto": {
+      "fragmentSize": 512,
+      "totalFragments": 2048,
+      "freeFragments": 1024
+    }
+  },
+  "expected": {
+    "totalSpace": 1048576,
+    "freeSpace": 524288
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.PolarDiskSpaceTest"
+    ],
+    "ios": [
+      "PolarDiskSpaceDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DiskSpaceCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Baseline disk-space result with 512-byte fragments."
+}

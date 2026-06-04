@@ -1,0 +1,39 @@
+{
+  "id": "empty-device-id-platform-difference",
+  "area": "device-id",
+  "case": "empty_input_current_platform_difference",
+  "source": "Android and iOS behavior characterization",
+  "input": {
+    "deviceId": ""
+  },
+  "expected": {},
+  "platformExpectations": {
+    "android": {
+      "isValidThrows": "NumberFormatException"
+    },
+    "ios": {
+      "valid": false
+    },
+    "commonDecision": {
+      "status": "undecided"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.DeviceIdGoldenVectorTest"
+    ],
+    "ios": [
+      "BlePolarDeviceIdUtilityTest",
+      "PolarDeviceUuidTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "Android currently throws through String.toLong(16), while iOS returns false through strtouq/checksum behavior. Decide the KMP common behavior before migrating validation logic."
+}

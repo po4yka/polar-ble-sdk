@@ -1,0 +1,72 @@
+{
+  "id": "ppg-compressed-type13-reference-status",
+  "area": "sensor-parser",
+  "case": "ppg_compressed_type13_reference_channels_and_status_bits",
+  "source": "Android PpgDataTest and iOS PpgDataTest",
+  "input": {
+    "dataFrameHex": "0166000000000000008d640000ceffff050000",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PPG",
+    "frameType": 13,
+    "compressed": true,
+    "timeStamp": 102,
+    "samples": []
+  },
+  "platformExpectations": {
+    "android": {
+      "samples": [
+        {
+          "timeStamp": 102,
+          "ppgChannel0": [
+            100
+          ],
+          "ppgChannel1": [
+            -50
+          ],
+          "statusBits": [
+            1,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    "ios": {
+      "samples": [
+        {
+          "timeStamp": 102,
+          "ppgDataSamples": [
+            100,
+            -50
+          ],
+          "statusBits": [
+            1,
+            0,
+            1
+          ]
+        }
+      ]
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Compressed PPG type-13 exposes channels and status with different public sample shapes on Android and iOS, but both decode the same reference sample and status bits.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ]
+  }
+}

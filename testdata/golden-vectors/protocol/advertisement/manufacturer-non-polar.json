@@ -1,0 +1,29 @@
+{
+  "id": "manufacturer-non-polar",
+  "area": "advertisement",
+  "case": "non_polar_manufacturer",
+  "source": "Android BleAdvertisementContentTest and iOS BleAdvertisementContentTest",
+  "input": {
+    "manufacturerDataHex": "6b01720897c9c300000000007a0103330000"
+  },
+  "expected": {
+    "hrPresent": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "0x016B is not the Polar manufacturer identifier."
+}

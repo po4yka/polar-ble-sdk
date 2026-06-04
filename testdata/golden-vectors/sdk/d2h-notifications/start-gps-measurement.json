@@ -1,0 +1,34 @@
+{
+  "id": "start-gps-measurement",
+  "area": "sdk-d2h-notifications",
+  "case": "start_gps_measurement_coordinates",
+  "source": "Android PolarD2HNotificationsUtilsTest and iOS PolarDeviceToHostNotificationsApiTests",
+  "input": {
+    "notificationId": 11,
+    "parametersHex": "08e80710021904560e2db2154e4021acadd85f76ef3840"
+  },
+  "expected": {
+    "notificationType": "START_GPS_MEASUREMENT",
+    "parsedProto": "PbPftpStartGPSMeasurement",
+    "minimumInterval": 1000,
+    "accuracy": 2,
+    "latitude": 60.1695,
+    "longitude": 24.9354
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceToHostNotificationsApiTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.D2hNotificationCommonPolicyTest"
+    ]
+  }
+}

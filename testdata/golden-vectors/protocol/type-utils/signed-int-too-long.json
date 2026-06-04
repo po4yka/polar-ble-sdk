@@ -1,0 +1,29 @@
+{
+  "id": "signed-int-too-long",
+  "area": "type-utils",
+  "case": "signed_int_oversized_payload",
+  "source": "Android TypeUtilsTest and iOS TypeUtils implementation",
+  "input": {
+    "hex": "0000000000"
+  },
+  "expected": {
+    "signedIntError": "payloadTooLong"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Android throws AssertionError through BleUtils.validate; iOS asserts. Shared KMP should expose a deterministic error.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

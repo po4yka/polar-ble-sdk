@@ -1,0 +1,30 @@
+{
+  "id": "signed-int-min-16bit",
+  "area": "type-utils",
+  "case": "signed_int_min_16bit",
+  "source": "Android TypeUtilsTest and iOS TypeUtilsTest",
+  "input": {
+    "hex": "0080"
+  },
+  "expected": {
+    "unsignedLong": 32768,
+    "signedInt": -32768
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Pins sign extension for two-byte little-endian signed conversion.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

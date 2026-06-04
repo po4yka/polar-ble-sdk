@@ -1,0 +1,33 @@
+{
+  "id": "single-last-frame",
+  "area": "sdk.psftp-rfc76",
+  "case": "single_last_frame",
+  "source": "Android and iOS BlePsFtpUtils/BlePsFtpUtility characterization tests",
+  "input": {
+    "frameHex": "02ff00"
+  },
+  "expected": {
+    "next": 0,
+    "status": 1,
+    "sequenceNumber": 0,
+    "payloadHex": "ff00",
+    "error": null
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtilsTest"
+    ],
+    "ios": [
+      "BlePsFtpUtilityTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpByteCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Single LAST frame with two payload bytes."
+}

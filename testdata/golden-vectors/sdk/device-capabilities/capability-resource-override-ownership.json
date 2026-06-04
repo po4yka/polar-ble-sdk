@@ -1,0 +1,51 @@
+{
+  "id": "capability-resource-override-ownership",
+  "area": "sdk.device-capabilities",
+  "case": "resource_override_platform_ownership",
+  "source": "KMP migration boundary for platform resource override behavior",
+  "input": {
+    "kind": "deviceCapabilityResourceOverrideOwnership",
+    "resourceSurfaces": [
+      {
+        "platform": "android",
+        "surface": "AssetManager polar_device_capabilities.json plus external Documents/PolarConfig override"
+      },
+      {
+        "platform": "ios",
+        "surface": "Bundle.main polar_device_capabilities.json plus SDK bundle fallback and sandbox PolarConfig merge"
+      }
+    ],
+    "commonScope": [
+      "parse portable capability JSON",
+      "merge version-mismatched user config with bundled config",
+      "perform device-type lookup against an already selected config"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "platformOwnedResourceBoundary",
+    "platformDecision": "Resource selection and app-level override precedence remain platform-owned until common resource loading is deliberately introduced with Android asset/external-file tests, iOS Bundle.main/SDK-bundle/sandbox tests, and shared common parser tests.",
+    "commonDecision": "Shared KMP capability code may own parsing, lookup, defaults, boolean fields, and version-mismatch config merge, but must receive an already selected config and must not choose Android AssetManager, external Documents/PolarConfig files, iOS Bundle.main, SDK bundles, or sandbox files.",
+    "coveredBehaviorFamilies": [
+      "android-asset-and-external-config-boundary",
+      "ios-main-bundle-sdk-bundle-sandbox-boundary",
+      "common-selected-config-only-boundary"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtilityTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceCapabilitiesCommonPolicyTest"
+    ]
+  },
+  "notes": "This vector deliberately keeps resource selection platform-owned instead of moving app or SDK bundle precedence into common KMP code during the lookup and merge migration slice."
+}

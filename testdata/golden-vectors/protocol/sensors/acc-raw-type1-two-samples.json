@@ -1,0 +1,47 @@
+{
+  "id": "acc-raw-type1-two-samples",
+  "area": "sensor-parser",
+  "case": "acc_raw_type1_two_signed_xyz_samples",
+  "source": "Android AccDataTest and iOS AccDataTest",
+  "input": {
+    "dataFrameHex": "02009435770000000001f7ffffffe703f8fffeffe503",
+    "previousTimeStamp": 0,
+    "factor": 1.0,
+    "sampleRate": 52
+  },
+  "expected": {
+    "measurementType": "ACC",
+    "frameType": 1,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "timeStamp": 1980769231,
+        "x": -9,
+        "y": -1,
+        "z": 999
+      },
+      {
+        "timeStamp": 2000000000,
+        "x": -8,
+        "y": -2,
+        "z": 997
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.AccDataTest"
+    ],
+    "ios": [
+      "AccDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AccParserCommonPolicyTest"
+    ]
+  }
+}

@@ -1,5 +1,7 @@
 package com.polar.androidcommunications.api.ble.model.advertisement
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.model.gatt.client.BleHrClient.Companion.HR_SERVICE_16BIT_UUID
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils.PFTP_SERVICE_16BIT_UUID
 import com.polar.androidcommunications.common.ble.BleUtils
@@ -8,6 +10,8 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
+import java.io.FileReader
 
 internal class BleAdvertisementContentTest {
     @Rule
@@ -279,5 +283,205 @@ internal class BleAdvertisementContentTest {
         Assert.assertEquals(adType16bitMoreData, bleAdvertisementContent.advertisementDataAll[BleUtils.AD_TYPE.GAP_ADTYPE_16BIT_MORE])
         Assert.assertTrue(bleAdvertisementContent.advertisementData.containsKey(BleUtils.AD_TYPE.GAP_ADTYPE_MANUFACTURER_SPECIFIC))
         Assert.assertEquals(manufacturerData2, bleAdvertisementContent.advertisementData[BleUtils.AD_TYPE.GAP_ADTYPE_MANUFACTURER_SPECIFIC])
+    }
+
+    @Test
+    fun advertisementGoldenVectors_matchAndroidBehavior() {
+        val vectors = loadAdvertisementVectors()
+        Assert.assertTrue("Expected advertisement golden vectors", vectors.isNotEmpty())
+
+        vectors.forEach { vector ->
+            setUp()
+            if (vector.getAsJsonObject("platforms")?.get("android")?.asBoolean == false) {
+                return@forEach
+            }
+            val input = vector.getAsJsonObject("input")
+            val expected = vector.getAsJsonObject("expected")
+            val caseId = vector.get("id").asString
+
+            if (input.has("deviceNamePrefix")) {
+                bleAdvertisementContent.advertisementDeviceNamePrefix = input.get("deviceNamePrefix").asString
+            }
+
+            if (input.has("localName")) {
+                val map = hashMapOf(
+                    BleUtils.AD_TYPE.GAP_ADTYPE_LOCAL_NAME_COMPLETE to input.get("localName").asString.toByteArray()
+                )
+                bleAdvertisementContent.processAdvertisementData(map, BleUtils.EVENT_TYPE.ADV_IND, 0)
+
+                if (expected.has("name")) {
+                    Assert.assertEquals(caseId, expected.get("name").asString, bleAdvertisementContent.name)
+                }
+                if (expected.has("deviceType")) {
+                    Assert.assertEquals(caseId, expected.get("deviceType").asString, bleAdvertisementContent.polarDeviceType)
+                }
+                if (expected.has("deviceId")) {
+                    Assert.assertEquals(caseId, expected.get("deviceId").asString, bleAdvertisementContent.polarDeviceId)
+                }
+
+                val androidExpectations = vector
+                    .getAsJsonObject("platformExpectations")
+                    ?.getAsJsonObject("android")
+                if (androidExpectations?.has("deviceId") == true) {
+                    Assert.assertEquals(caseId, androidExpectations.get("deviceId").asString, bleAdvertisementContent.polarDeviceId)
+                }
+            }
+
+            if (input.has("manufacturerDataHex")) {
+                val map = hashMapOf(
+                    BleUtils.AD_TYPE.GAP_ADTYPE_MANUFACTURER_SPECIFIC to input.get("manufacturerDataHex").asString.hexToByteArray()
+                )
+                bleAdvertisementContent.processAdvertisementData(map, BleUtils.EVENT_TYPE.ADV_IND, 0)
+
+                if (expected.has("hrPresent")) {
+                    Assert.assertEquals(caseId, expected.get("hrPresent").asBoolean, bleAdvertisementContent.polarHrAdvertisement.isPresent)
+                }
+            }
+
+            if (input.has("services16Hex")) {
+                val services = input.getAsJsonArray("services16Hex")
+                    .flatMap { service ->
+                        val value = service.asString.toInt(16)
+                        listOf((value and 0xFF).toByte(), ((value ushr 8) and 0xFF).toByte())
+                    }
+                    .toByteArray()
+                val map = hashMapOf(BleUtils.AD_TYPE.GAP_ADTYPE_16BIT_MORE to services)
+                bleAdvertisementContent.processAdvertisementData(map, BleUtils.EVENT_TYPE.ADV_IND, 0)
+
+                expected.getAsJsonObject("containsServices")?.entrySet()?.forEach { expectation ->
+                    Assert.assertEquals(caseId, expectation.value.asBoolean, bleAdvertisementContent.containsService(expectation.key))
+                }
+            }
+
+            if (input.has("rssiSequence")) {
+                input.getAsJsonArray("rssiSequence").forEach { rssi ->
+                    bleAdvertisementContent.processRssi(rssi.asInt)
+                }
+
+                if (expected.has("rssi")) {
+                    Assert.assertEquals(caseId, expected.get("rssi").asInt, bleAdvertisementContent.rssi)
+                }
+                if (expected.has("medianRssi")) {
+                    Assert.assertEquals(caseId, expected.get("medianRssi").asInt, bleAdvertisementContent.medianRssi)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `advertisement golden vectors follow neutral KMP vector shape`() {
+        loadAdvertisementVectors().forEach { vector ->
+            val id = vector.get("id").asString
+            Assert.assertTrue(id, vector.has("area"))
+            Assert.assertTrue(id, vector.has("case"))
+            Assert.assertTrue(id, vector.has("source"))
+            Assert.assertTrue(id, vector.has("input"))
+            Assert.assertTrue(id, vector.has("expected"))
+            Assert.assertTrue(id, vector.has("platforms"))
+            val platforms = vector.getAsJsonObject("platforms")
+            Assert.assertTrue(id, platforms.has("android"))
+            Assert.assertTrue(id, platforms.has("ios"))
+            Assert.assertTrue(id, platforms.has("common"))
+        }
+    }
+
+    @Test
+    fun `advertisement readiness manifest is pinned before parser migration`() {
+        val manifest = loadAdvertisementReadinessManifest()
+        val input = manifest.getAsJsonObject("input")
+        val expected = manifest.getAsJsonObject("expected")
+        val consumerTests = manifest.getAsJsonObject("consumerTests")
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+        val policyPaths = input.getAsJsonArray("policyVectorPaths").map { it.asString }
+
+        Assert.assertEquals("advertisement-readiness", manifest.get("id").asString)
+        Assert.assertEquals("advertisementReadiness", input.get("kind").asString)
+        Assert.assertEquals(
+            listOf(
+                "protocol/advertisement/custom-prefix-local-name.json",
+                "protocol/advertisement/manufacturer-hr-sagrfc23.json",
+                "protocol/advertisement/manufacturer-no-hr.json",
+                "protocol/advertisement/manufacturer-non-polar.json",
+                "protocol/advertisement/manufacturer-polar-gpb-missing-length-platform-policy.json",
+                "protocol/advertisement/manufacturer-polar-id-only.json",
+                "protocol/advertisement/manufacturer-polar-truncated-hr-candidate.json",
+                "protocol/advertisement/manufacturer-polar-unknown-gpb-segment.json",
+                "protocol/advertisement/manufacturer-unknown-company.json",
+                "protocol/advertisement/non-polar-local-name-platform-difference.json",
+                "protocol/advertisement/polar-local-name.json",
+                "protocol/advertisement/rssi-median-seven-sample-window.json",
+                "protocol/advertisement/service-uuid-membership.json",
+                "protocol/advertisement/seven-digit-local-name.json"
+            ),
+            policyPaths
+        )
+        val expectedFamilies = listOf(
+            "polar-local-name-parsing",
+            "custom-prefix-local-name-parsing",
+            "seven-digit-device-id-assembly",
+            "non-polar-local-name-platform-decision",
+            "manufacturer-polar-hr-presence",
+            "manufacturer-no-hr-policy",
+            "manufacturer-non-polar-policy",
+            "manufacturer-unknown-company-policy",
+            "manufacturer-unknown-segment-policy",
+            "malformed-gpb-missing-length-policy",
+            "malformed-truncated-hr-candidate-policy",
+            "service-uuid-membership",
+            "rssi-median-seven-sample-window",
+            "platform-advertisement-vector-reference-gate",
+            "compile-verification-gate"
+        )
+        Assert.assertEquals(expectedFamilies, requiredFamilies)
+        Assert.assertEquals(expectedFamilies, coveredFamilies)
+        Assert.assertEquals(
+            "Advertisement parsing migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS advertisement tests continue to reference the same vectors, Polar and custom-prefix local-name parsing, seven-digit device ID assembly, non-Polar local-name platform decisions, manufacturer HR presence and absence, non-Polar and unknown company behavior, unknown Polar segment handling, malformed GPB missing-length and truncated HR-candidate policies, service UUID membership, RSSI median calculation, and compile verification remain explicit before production advertisement parsing moves.",
+            expected.get("commonDecision").asString
+        )
+        Assert.assertEquals(listOf("com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("BleAdvertisementContentTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.AdvertisementCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    private fun loadAdvertisementVectors(): List<JsonObject> {
+        val vectorDirectory = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/protocol/advertisement")
+        return vectorDirectory
+            .listFiles { file -> file.isFile && file.extension == "json" }
+            .orEmpty()
+            .sortedBy { it.name }
+            .map { file ->
+                FileReader(file).use { reader ->
+                    JsonParser().parse(reader).asJsonObject
+                }
+            }
+            .filter { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString != "advertisementReadiness" }
+    }
+
+    private fun loadAdvertisementReadinessManifest(): JsonObject {
+        val manifestFile = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/protocol/advertisement/advertisement-readiness.json")
+        FileReader(manifestFile).use { reader ->
+            return JsonParser().parse(reader).asJsonObject
+        }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
+    }
+
+    private fun String.hexToByteArray(): ByteArray {
+        require(length % 2 == 0) { "Hex string must have an even length" }
+        return chunked(2)
+            .map { it.toInt(16).toByte() }
+            .toByteArray()
     }
 }

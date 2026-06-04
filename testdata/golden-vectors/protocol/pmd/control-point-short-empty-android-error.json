@@ -1,0 +1,36 @@
+{
+  "id": "pmd-control-point-short-empty-android-error",
+  "area": "pmd-control-point",
+  "case": "short_empty_payload_android_error",
+  "source": "Android PmdControlPointResponse characterization",
+  "input": {
+    "hex": ""
+  },
+  "expected": {
+    "commonDecision": "KMP should reject an empty control-point response without unsafe indexing."
+  },
+  "platformExpectations": {
+    "android": {
+      "parseError": "indexOutOfBounds"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android currently throws while reading responseCode; Swift Data indexing would trap, so this vector is Android-only until shared parsing defines safe error semantics.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

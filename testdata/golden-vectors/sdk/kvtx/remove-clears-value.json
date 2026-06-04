@@ -1,0 +1,29 @@
+{
+  "id": "remove-clears-value",
+  "area": "sdk-kvtx",
+  "case": "remove_clears_existing_value",
+  "source": "Android KvtxScriptUtilsTest and iOS KvtxScriptUtilsTests",
+  "input": {
+    "scriptHex": "00420000000100000001024200000005",
+    "extractKey": 66
+  },
+  "expected": {
+    "extractedHex": null
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.KvtxScriptUtilsTest"
+    ],
+    "ios": [
+      "KvtxScriptUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.KvtxCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "manufacturer-polar-gpb-missing-length-platform-policy",
+  "area": "advertisement",
+  "case": "malformed_polar_gpb_missing_length_platform_policy",
+  "source": "Android BleAdvertisementContentTest characterization; iOS BleAdvertisementContent currently indexes past the payload",
+  "input": {
+    "manufacturerDataHex": "6b0040"
+  },
+  "expected": {
+    "hrPresent": false
+  },
+  "platformExpectations": {
+    "android": {
+      "hrPresent": false,
+      "policy": "ignore malformed GPB segment and clear HR presence"
+    },
+    "ios": {
+      "executable": false,
+      "policy": "current implementation can trap by reading the missing GPB length byte; KMP should use a typed malformed-advertisement policy instead of inheriting the trap"
+    },
+    "common": {
+      "policy": "reject or ignore malformed GPB segments deterministically without indexing beyond payload bounds"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": true
+  },
+  "notes": "This malformed Polar manufacturer payload contains the company id and one GPB marker byte but omits the GPB length byte."
+}

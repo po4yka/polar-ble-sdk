@@ -1,0 +1,33 @@
+{
+  "id": "header-only-last-frame",
+  "area": "sdk.psftp-rfc76",
+  "case": "header_only_last_frame",
+  "source": "Android and iOS BlePsFtpUtils/BlePsFtpUtility characterization tests",
+  "input": {
+    "frameHex": "02"
+  },
+  "expected": {
+    "next": 0,
+    "status": 1,
+    "sequenceNumber": 0,
+    "payloadHex": "",
+    "error": null
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtilsTest"
+    ],
+    "ios": [
+      "BlePsFtpUtilityTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpByteCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Header-only LAST frame produces an empty payload."
+}

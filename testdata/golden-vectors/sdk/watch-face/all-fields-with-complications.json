@@ -1,0 +1,55 @@
+{
+  "id": "all-fields-with-complications",
+  "area": "sdk-watch-face-flatbuffer",
+  "case": "all_scalars_and_ordered_complication_ids",
+  "source": "Android PolarWatchFaceUtilsTest and iOS PolarWatchFaceUtilsTests",
+  "input": {
+    "fields": {
+      "timeStyleId": 7,
+      "complicationLayoutId": 3,
+      "backgroundStyleId": 4,
+      "accentColor": 11189196,
+      "complicationIds": [
+        -1969696725,
+        -1532782012,
+        932756435
+      ],
+      "fontfaceId": 2
+    }
+  },
+  "expected": {
+    "fields": {
+      "timeStyleId": 7,
+      "complicationLayoutId": 3,
+      "backgroundStyleId": 4,
+      "accentColor": 11189196,
+      "complicationIds": [
+        -1969696725,
+        -1532782012,
+        932756435
+      ],
+      "fontfaceId": 2
+    },
+    "knownComplications": [
+      "SPO2",
+      "HEART_RATE",
+      "ACTIVITY"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarWatchFaceUtilsTest"
+    ],
+    "ios": [
+      "PolarWatchFaceUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.WatchFaceCommonPolicyTest"
+    ]
+  }
+}

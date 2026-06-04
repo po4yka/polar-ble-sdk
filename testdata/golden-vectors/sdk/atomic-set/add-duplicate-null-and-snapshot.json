@@ -1,0 +1,54 @@
+{
+  "id": "add-duplicate-null-and-snapshot",
+  "area": "sdk-atomic-set",
+  "case": "add_duplicate_null_snapshot",
+  "source": "Android AtomicSetTest characterization",
+  "input": {
+    "operations": [
+      {
+        "op": "add",
+        "value": "item1",
+        "expectedReturn": true
+      },
+      {
+        "op": "add",
+        "value": "item1",
+        "expectedReturn": false
+      },
+      {
+        "op": "add",
+        "value": null,
+        "expectedReturn": false
+      },
+      {
+        "op": "snapshot",
+        "name": "beforeRemove"
+      },
+      {
+        "op": "remove",
+        "value": "item1"
+      }
+    ]
+  },
+  "expected": {
+    "migrationOwnership": "Android-only helper characterization. Do not promote AtomicSet itself to common KMP unless a shared concurrency collection is intentionally designed and consumes these semantics as a compatibility fixture.",
+    "size": 0,
+    "contains": {
+      "item1": false
+    },
+    "snapshots": {
+      "beforeRemove": ["item1"]
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.AtomicSetTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android AtomicSet ignores null adds, rejects duplicate adds, and returns independent object snapshots."
+}

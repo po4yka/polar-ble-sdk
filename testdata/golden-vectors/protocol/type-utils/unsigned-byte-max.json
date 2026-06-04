@@ -1,0 +1,29 @@
+{
+  "id": "unsigned-byte-max",
+  "area": "type-utils",
+  "case": "unsigned_byte_max",
+  "source": "Android TypeUtilsTest",
+  "input": {
+    "hex": "ff"
+  },
+  "expected": {
+    "unsignedByte": 255
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": true
+  },
+  "notes": "iOS TypeUtils has no direct unsigned-byte helper today.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "id": "file-ordering",
+  "area": "sdk.firmware-update",
+  "case": "file_ordering",
+  "source": "Android and iOS PolarFirmwareUpdateUtils characterization tests",
+  "input": {
+    "kind": "fileOrdering",
+    "cases": [
+      {
+        "input": [
+          "BTUPDAT.BIN",
+          "SYSUPDAT.IMG",
+          "TCHUPDAT.BIN"
+        ],
+        "expected": [
+          "BTUPDAT.BIN",
+          "TCHUPDAT.BIN",
+          "SYSUPDAT.IMG"
+        ]
+      },
+      {
+        "input": [
+          "APPUPDAT.BIN",
+          "BTUPDAT.BIN",
+          "SYSUPDAT.IMG"
+        ],
+        "expected": [
+          "APPUPDAT.BIN",
+          "BTUPDAT.BIN",
+          "SYSUPDAT.IMG"
+        ]
+      },
+      {
+        "input": [
+          "SYSUPDAT.IMG",
+          "APPUPDAT.BIN",
+          "BTUPDAT.BIN"
+        ],
+        "expected": [
+          "APPUPDAT.BIN",
+          "BTUPDAT.BIN",
+          "SYSUPDAT.IMG"
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "policy": "system-update-last"
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "orderingPolicy": "move-any-file-containing-SYSUPDAT.IMG-after-all-other-files-and-preserve-relative-order-for-equal-priority-files"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "SYSUPDAT.IMG is always sorted last; other firmware files retain stable relative order.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"
+    ],
+    "ios": [
+      "PolarFirmwareUpdateUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FirmwareUpdateUtilityCommonPolicyTest"
+    ]
+  }
+}

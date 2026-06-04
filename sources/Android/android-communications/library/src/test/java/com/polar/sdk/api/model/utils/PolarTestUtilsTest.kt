@@ -1,7 +1,10 @@
 package com.polar.sdk.api.model.utils
 
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.sdk.api.model.DeviationFromBaseline
+import com.polar.sdk.api.model.PolarSpo2TestData
 import com.polar.sdk.api.model.Spo2Class
 import com.polar.sdk.api.model.Spo2TestStatus
 import com.polar.sdk.impl.utils.PolarTestUtils
@@ -23,6 +26,8 @@ import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
 import protocol.PftpResponse.PbPFtpEntry
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileReader
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -265,6 +270,106 @@ class PolarTestUtilsTest {
         assertEquals("2026-04-08 08:39:06", result.testTime)
     }
 
+    @Test
+    fun `spo2 golden vectors map proto fields to public model`() {
+        loadSpo2GoldenVectors()
+            .filterNot { vector ->
+                vector.getAsJsonObject("platformExpectations")
+                    .getAsJsonObject("android")
+                    .has("skipReason")
+            }
+            .forEach { vector ->
+                val caseId = vector.get("id").asString
+                val input = vector.getAsJsonObject("input")
+                val proto = buildProtoFromVector(input.getAsJsonObject("proto"))
+                val date = LocalDate.parse(input.get("date").asString)
+                val timeDirName = input.get("timeDirName").asString
+                val expected = inputExpectedForPlatform(vector, "android")
+
+                val result = runCatching { PolarTestUtils.mapSpo2TestProto(proto, date, timeDirName) }
+
+                if (expected.has("error")) {
+                    assertTrue(caseId, result.isFailure)
+                } else {
+                    assertTrue(caseId, result.isSuccess)
+                    assertSpo2Result(caseId, expected, result.getOrThrow())
+                }
+            }
+    }
+
+    @Test
+    fun `spo2 golden vectors follow neutral KMP vector shape`() {
+        loadSpo2GoldenVectors().forEach { vector ->
+            val id = vector.get("id").asString
+            assertTrue(id, vector.has("area"))
+            assertTrue(id, vector.has("case"))
+            assertTrue(id, vector.has("source"))
+            assertTrue(id, vector.has("input"))
+            assertTrue(id, vector.has("expected"))
+            assertTrue(id, vector.has("platforms"))
+            val input = vector.getAsJsonObject("input")
+            assertTrue(id, input.has("date"))
+            assertTrue(id, input.has("timeDirName"))
+            assertTrue(id, input.has("proto"))
+            val platforms = vector.getAsJsonObject("platforms")
+            assertTrue(id, platforms.get("android").asBoolean)
+            assertTrue(id, platforms.get("ios").asBoolean)
+            assertTrue(id, platforms.get("common").asBoolean)
+        }
+    }
+
+    @Test
+    fun `spo2 readiness manifest is pinned before model migration`() {
+        val readiness = loadSpo2ReadinessManifest()
+        val input = readiness.getAsJsonObject("input")
+        val expected = readiness.getAsJsonObject("expected")
+        val consumerTests = readiness.getAsJsonObject("consumerTests")
+        val policyVectorPaths = input.getAsJsonArray("policyVectorPaths").map { it.asString }
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+
+        assertEquals("spo2-readiness", readiness.get("id").asString)
+        assertEquals("spo2Readiness", input.get("kind").asString)
+        assertEquals(
+            listOf(
+                "sdk/spo2-test/full-passed-normal.json",
+                "sdk/spo2-test/ios-trigger-automatic.json",
+                "sdk/spo2-test/omitted-optionals.json",
+                "sdk/spo2-test/unknown-spo2-class-platform-difference.json"
+            ),
+            policyVectorPaths
+        )
+        val expectedFamilies = listOf(
+            "full-passed-normal-field-mapping",
+            "optional-protobuf-presence-preservation",
+            "empty-recording-device-normalization",
+            "nullable-trigger-type-policy",
+            "android-no-trigger-field-platform-reference",
+            "ios-trigger-field-platform-reference",
+            "unknown-spo2-class-boundary",
+            "platform-spo2-vector-reference-gate",
+            "compile-verification-gate"
+        )
+        assertEquals(expectedFamilies, requiredFamilies)
+        assertEquals(expectedFamilies, coveredFamilies)
+        assertEquals(
+            "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.",
+            expected.get("commonDecision").asString
+        )
+        assertEquals(
+            listOf("com.polar.sdk.api.model.utils.PolarTestUtilsTest"),
+            consumerTests.getAsJsonArray("android").map { it.asString }
+        )
+        assertEquals(
+            listOf("PolarTestUtilsTest"),
+            consumerTests.getAsJsonArray("ios").map { it.asString }
+        )
+        assertEquals(
+            listOf("com.polar.sharedtest.Spo2CommonPolicyTest"),
+            consumerTests.getAsJsonArray("commonPrototype").map { it.asString }
+        )
+    }
+
     // -----------------------------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------------------------
@@ -288,5 +393,114 @@ class PolarTestUtilsTest {
         ByteArrayOutputStream().apply {
             PbSpo2TestResult.newBuilder().block().buildPartial().writeTo(this)
         }
-}
 
+    private fun buildProtoFromVector(protoFields: JsonObject): PbSpo2TestResult {
+        val builder = PbSpo2TestResult.newBuilder()
+        if (protoFields.has("recordingDevice")) builder.recordingDevice = protoFields.get("recordingDevice").asString
+        if (protoFields.has("timeZoneOffsetMinutes")) builder.timeZoneOffset = protoFields.get("timeZoneOffsetMinutes").asInt
+        if (protoFields.has("testStatus")) builder.setTestStatusValue(protoFields.get("testStatus").asInt)
+        if (protoFields.has("bloodOxygenPercent")) builder.bloodOxygenPercent = protoFields.get("bloodOxygenPercent").asInt
+        if (protoFields.has("spo2Class")) builder.setSpo2ClassValue(protoFields.get("spo2Class").asInt)
+        if (protoFields.has("spo2ValueDeviationFromBaseline")) {
+            builder.setSpo2ValueDeviationFromBaselineValue(protoFields.get("spo2ValueDeviationFromBaseline").asInt)
+        }
+        if (protoFields.has("spo2QualityAveragePercent")) builder.spo2QualityAveragePercent = protoFields.get("spo2QualityAveragePercent").asFloat
+        if (protoFields.has("averageHeartRateBpm")) builder.averageHeartRateBpm = protoFields.get("averageHeartRateBpm").asInt
+        if (protoFields.has("heartRateVariabilityMs")) builder.heartRateVariabilityMs = protoFields.get("heartRateVariabilityMs").asFloat
+        if (protoFields.has("spo2HrvDeviationFromBaseline")) {
+            builder.setSpo2HrvDeviationFromBaselineValue(protoFields.get("spo2HrvDeviationFromBaseline").asInt)
+        }
+        if (protoFields.has("altitudeMeters")) builder.altitudeMeters = protoFields.get("altitudeMeters").asFloat
+        return builder.buildPartial()
+    }
+
+    private fun assertSpo2Result(caseId: String, expected: JsonObject, actual: PolarSpo2TestData) {
+        assertNullableString(caseId, expected, "recordingDevice", actual.recordingDevice)
+        assertNullableString(caseId, expected, "testTime", actual.testTime)
+        assertNullableInt(caseId, expected, "timeZoneOffsetMinutes", actual.timeZoneOffsetMinutes)
+        assertNullableString(caseId, expected, "testStatus", actual.testStatus?.name)
+        assertNullableInt(caseId, expected, "bloodOxygenPercent", actual.bloodOxygenPercent)
+        assertNullableString(caseId, expected, "spo2Class", actual.spo2Class?.name)
+        assertNullableString(caseId, expected, "spo2ValueDeviationFromBaseline", actual.spo2ValueDeviationFromBaseline?.name)
+        assertNullableFloat(caseId, expected, "spo2QualityAveragePercent", actual.spo2QualityAveragePercent)
+        assertNullableLong(caseId, expected, "averageHeartRateBpm", actual.averageHeartRateBpm?.toLong())
+        assertNullableFloat(caseId, expected, "heartRateVariabilityMs", actual.heartRateVariabilityMs)
+        assertNullableString(caseId, expected, "spo2HrvDeviationFromBaseline", actual.spo2HrvDeviationFromBaseline?.name)
+        assertNullableFloat(caseId, expected, "altitudeMeters", actual.altitudeMeters)
+    }
+
+    private fun assertNullableString(caseId: String, expected: JsonObject, key: String, actual: String?) {
+        if (!expected.has(key)) return
+        if (expected.get(key).isJsonNull) {
+            assertNull("$caseId $key", actual)
+        } else {
+            assertEquals("$caseId $key", expected.get(key).asString, actual)
+        }
+    }
+
+    private fun assertNullableInt(caseId: String, expected: JsonObject, key: String, actual: Int?) {
+        if (!expected.has(key)) return
+        if (expected.get(key).isJsonNull) {
+            assertNull("$caseId $key", actual)
+        } else {
+            assertEquals("$caseId $key", expected.get(key).asInt, actual)
+        }
+    }
+
+    private fun assertNullableLong(caseId: String, expected: JsonObject, key: String, actual: Long?) {
+        if (!expected.has(key)) return
+        if (expected.get(key).isJsonNull) {
+            assertNull("$caseId $key", actual)
+        } else {
+            assertEquals("$caseId $key", expected.get(key).asLong, actual)
+        }
+    }
+
+    private fun assertNullableFloat(caseId: String, expected: JsonObject, key: String, actual: Float?) {
+        if (!expected.has(key)) return
+        if (expected.get(key).isJsonNull) {
+            assertNull("$caseId $key", actual)
+        } else {
+            assertNotNull("$caseId $key", actual)
+            assertEquals("$caseId $key", expected.get(key).asFloat, actual!!, 0.00001f)
+        }
+    }
+
+    private fun inputExpectedForPlatform(vector: JsonObject, platform: String): JsonObject {
+        return vector.getAsJsonObject("platformExpectations").getAsJsonObject(platform)
+    }
+
+    private fun loadSpo2GoldenVectors(): List<JsonObject> {
+        val vectorDirectory = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/sdk/spo2-test")
+        return vectorDirectory
+            .listFiles { file -> file.isFile && file.extension == "json" }
+            .orEmpty()
+            .sortedBy { it.name }
+            .map { file ->
+                FileReader(file).use { reader ->
+                    JsonParser().parse(reader).asJsonObject
+                }
+            }
+            .filterNot { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString == "spo2Readiness" }
+    }
+
+    private fun loadSpo2ReadinessManifest(): JsonObject {
+        val vectorFile = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/sdk/spo2-test/spo2-readiness.json")
+        FileReader(vectorFile).use { reader ->
+            return JsonParser().parse(reader).asJsonObject
+        }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
+    }
+}

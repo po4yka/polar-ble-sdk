@@ -1,0 +1,80 @@
+{
+  "id": "offline-hr-raw-type0-hr-only-boundaries",
+  "area": "sensor-parser",
+  "case": "offline_hr_raw_type0_hr_only_uint8_boundaries",
+  "source": "Android OfflineHrDataTest and iOS OfflineHrDataTest",
+  "input": {
+    "dataFrameHex": "0e00943577000000000000ff3232333334357f",
+    "previousTimeStamp": 0,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "OFFLINE_HR",
+    "frameType": 0,
+    "compressed": false,
+    "samples": [
+      {
+        "hr": 0,
+        "ppgQuality": 0,
+        "correctedHr": 0
+      },
+      {
+        "hr": 255,
+        "ppgQuality": 0,
+        "correctedHr": 0
+      },
+      {
+        "hr": 50,
+        "ppgQuality": 0,
+        "correctedHr": 0
+      },
+      {
+        "hr": 50,
+        "ppgQuality": 0,
+        "correctedHr": 0
+      },
+      {
+        "hr": 51,
+        "ppgQuality": 0,
+        "correctedHr": 0
+      },
+      {
+        "hr": 51,
+        "ppgQuality": 0,
+        "correctedHr": 0
+      },
+      {
+        "hr": 52,
+        "ppgQuality": 0,
+        "correctedHr": 0
+      },
+      {
+        "hr": 53,
+        "ppgQuality": 0,
+        "correctedHr": 0
+      },
+      {
+        "hr": 127,
+        "ppgQuality": 0,
+        "correctedHr": 0
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.OfflineHrDataTest"
+    ],
+    "ios": [
+      "OfflineHrDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.OfflineHrParserCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "mag-raw-type0-unsupported",
+  "area": "sensor-parser",
+  "case": "mag_raw_type0_unsupported",
+  "source": "Android MagDataTest and iOS MagDataTest",
+  "input": {
+    "dataFrameHex": "06660000000000000000",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "MAG",
+    "frameType": 0,
+    "compressed": false,
+    "timeStamp": 102,
+    "parseError": "unsupportedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.MagDataTest"
+    ],
+    "ios": [
+      "MagDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.MagParserCommonPolicyTest"
+    ]
+  }
+}

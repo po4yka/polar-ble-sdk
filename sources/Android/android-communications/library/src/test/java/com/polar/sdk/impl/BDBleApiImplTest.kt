@@ -4,15 +4,64 @@ import android.bluetooth.le.ScanFilter
 import android.content.Context
 import android.content.IntentFilter
 import android.os.ParcelUuid
+import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.model.BleDeviceSession
 import com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContent
+import com.polar.androidcommunications.api.ble.model.gatt.client.BleBattClient
+import com.polar.androidcommunications.api.ble.model.gatt.client.BleBattClient.Companion.BATTERY_SERVICE
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils
+import com.polar.androidcommunications.api.ble.model.gatt.client.BlePfcClient
+import com.polar.androidcommunications.api.ble.model.gatt.client.BlePfcClient.Companion.PFC_SERVICE
+import com.polar.androidcommunications.api.ble.model.gatt.client.BlePfcClient.PfcMessage
+import com.polar.androidcommunications.api.ble.model.gatt.client.ChargeState
+import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient
+import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
+import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdOfflineRecTriggerMode
+import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdOfflineRecTriggerStatus
+import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdOfflineTrigger
+import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSecret
+import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSetting
+import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtility
+import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtility.Companion.getFileSystemType
+import com.polar.sdk.api.model.PolarUserDeviceSettings
 import com.polar.androidcommunications.enpoints.ble.bluedroid.host.BDScanCallback
 import com.polar.sdk.api.PolarBleApi
+import com.polar.sdk.api.PolarH10OfflineExerciseApi
 import com.polar.sdk.api.errors.PolarBleSdkInstanceException
+import com.polar.sdk.api.errors.PolarOperationNotSupported
+import com.polar.sdk.api.model.LedConfig
+import com.polar.sdk.api.model.LogConfig
+import com.polar.sdk.api.model.PolarFirstTimeUseConfig
+import com.polar.sdk.api.model.PolarFirstTimeUseConfig.Gender
+import com.polar.sdk.api.model.PolarFirstTimeUseConfig.TypicalDay
+import com.polar.sdk.api.model.PolarOfflineRecordingTrigger
+import com.polar.sdk.api.model.PolarOfflineRecordingTriggerMode
+import com.polar.sdk.api.model.PolarRecordingSecret
+import com.polar.sdk.api.model.PolarSensorSetting
+import com.polar.sdk.api.model.UserIdentifierType
+import com.polar.sdk.api.model.toProto
+import com.polar.sdk.api.model.restapi.actionPaths
+import com.polar.sdk.api.model.restapi.events
 import com.polar.sdk.impl.BDBleApiImpl
+import data.SensorDataLog.PbSensorDataLog
+import protocol.PftpError.PbPFtpError
 import com.polar.sdk.impl.utils.PolarServiceClientUtils
+import fi.polar.remote.representation.protobuf.Types.PbDate
+import fi.polar.remote.representation.protobuf.Types.PbDeviceLocation
+import fi.polar.remote.representation.protobuf.Types.PbDuration
+import fi.polar.remote.representation.protobuf.Types.PbSampleType
+import fi.polar.remote.representation.protobuf.Types.PbSystemDateTime
+import fi.polar.remote.representation.protobuf.Types.PbTime
+import fi.polar.remote.representation.protobuf.AutomaticSamples.PbAutomaticSampleSessions
+import fi.polar.remote.representation.protobuf.UserIds.PbUserIdentifier
+import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceGeneralSettings
+import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceTelemetrySettings
+import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceSettings
+import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserAutomaticMeasurementSettings
+import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUsbConnectionSettings
+import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbAutomaticMeasurementSettings
+import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbAutomaticTrainingDetectionSettings
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
@@ -24,14 +73,22 @@ import io.mockk.runs
 import io.mockk.unmockkConstructor
 import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import protocol.PftpNotification
 import protocol.PftpRequest
+import protocol.PftpResponse
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.TimeZone
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -76,6 +133,8 @@ class BDBleApiImplTest {
         unmockkConstructor(IntentFilter::class)
         unmockkConstructor(ScanFilter.Builder::class)
         unmockkConstructor(BDScanCallback::class)
+        unmockkObject(PolarServiceClientUtils)
+        unmockkObject(BlePolarDeviceCapabilitiesUtility)
     }
 
     @Test
@@ -118,6 +177,7 @@ class BDBleApiImplTest {
 
     @Test
     fun `setLocalTime sends different UTC and local time values for non-UTC timezone`() = runTest {
+        assertDiskTimeRuntimePolicyVectorContains("set-local-time-v2")
         // Arrange
         val deviceId = "E123456F"
         val localDateTime = LocalDateTime.of(2024, 3, 15, 12, 0, 0)
@@ -160,13 +220,2560 @@ class BDBleApiImplTest {
         Assert.assertTrue("System time must be marked as trusted", systemTimeParams.trusted)
     }
 
-    private fun mockPsFtpConnection(deviceId: String): Pair<BlePsFtpClient, BleDeviceSession> {
+    @Test
+    fun `setLocalTime propagates local time query failure`() = runTest {
+        val deviceId = "E123456F"
+        val localDateTime = LocalDateTime.of(2024, 3, 15, 12, 0, 0)
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val capturedQueryIds = mutableListOf<Int>()
+        val capturedQueryParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("set local time failed")
+        coEvery { client.query(capture(capturedQueryIds), captureNullable(capturedQueryParams)) } answers {
+            if (firstArg<Int>() == PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE) {
+                throw transportError
+            }
+            ByteArrayOutputStream()
+        }
+
+        try {
+            api.setLocalTime(deviceId, localDateTime)
+            Assert.fail("Expected local time query failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertTrue(capturedQueryIds.contains(PftpRequest.PbPFtpQuery.SET_SYSTEM_TIME_VALUE))
+        Assert.assertTrue(capturedQueryIds.contains(PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE))
+        val localTimeIndex = capturedQueryIds.indexOf(PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE)
+        val localTimeParams = PftpRequest.PbPFtpSetLocalTimeParams.parseFrom(capturedQueryParams[localTimeIndex])
+        Assert.assertEquals(12, localTimeParams.time.hour)
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun `getLocalTime decodes fake query response`() = runTest {
+        assertDiskTimeRuntimePolicyVectorContains("get-local-time")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val localTimeProto = PftpRequest.PbPFtpSetLocalTimeParams.newBuilder()
+            .setDate(PbDate.newBuilder().setYear(2024).setMonth(6).setDay(15).build())
+            .setTime(PbTime.newBuilder().setHour(10).setMinute(30).setSeconds(45).setMillis(123).build())
+            .setTzOffset(120)
+            .build()
+        val response = ByteArrayOutputStream().apply {
+            write(localTimeProto.toByteArray())
+        }
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns response
+
+        val result = api.getLocalTime(deviceId)
+
+        Assert.assertEquals(LocalDateTime.of(2024, 6, 15, 10, 30, 45, 123_000_000), result)
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.GET_LOCAL_TIME_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun `getLocalTime propagates fake query failure`() = runTest {
+        assertDiskTimeRuntimePolicyVectorContains("get-local-time-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("local time query failed")
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } throws transportError
+
+        try {
+            api.getLocalTime(deviceId)
+            Assert.fail("Expected local time query failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.GET_LOCAL_TIME_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+    }
+
+    @Test
+    fun `getLocalTimeWithZone decodes fake query response`() = runTest {
+        assertDiskTimeRuntimePolicyVectorContains("get-local-time-with-zone")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val localTimeProto = PftpRequest.PbPFtpSetLocalTimeParams.newBuilder()
+            .setDate(PbDate.newBuilder().setYear(2025).setMonth(1).setDay(1).build())
+            .setTime(PbTime.newBuilder().setHour(12).setMinute(0).setSeconds(5).setMillis(250).build())
+            .setTzOffset(60)
+            .build()
+        val response = ByteArrayOutputStream().apply {
+            write(localTimeProto.toByteArray())
+        }
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns response
+
+        val result = api.getLocalTimeWithZone(deviceId)
+
+        Assert.assertEquals(LocalDateTime.of(2025, 1, 1, 12, 0, 5, 250_000_000), result.toLocalDateTime())
+        Assert.assertEquals(ZoneOffset.ofHours(1), result.offset)
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.GET_LOCAL_TIME_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+    }
+
+    @Test
+    fun `getLocalTimeWithZone propagates fake query failure`() = runTest {
+        assertDiskTimeRuntimePolicyVectorContains("get-local-time-with-zone-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("local time with zone query failed")
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } throws transportError
+
+        try {
+            api.getLocalTimeWithZone(deviceId)
+            Assert.fail("Expected local time with zone query failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.GET_LOCAL_TIME_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+    }
+
+    @Test
+    fun `setDaylightSavingTime sends set local time query with current local timestamp`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns ByteArrayOutputStream()
+
+        api.setDaylightSavingTime(deviceId)
+
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE), queryIds)
+        val params = PftpRequest.PbPFtpSetLocalTimeParams.parseFrom(queryParams.single())
+        Assert.assertTrue(params.hasDate())
+        Assert.assertTrue(params.hasTime())
+    }
+
+    @Test
+    fun `getBatteryLevel returns cached battery client level`() {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_BATTERY_INFO))
+        val batteryClient = mockk<BleBattClient>()
+        val (_, session) = mockPsFtpConnection(deviceId)
+        every { session.fetchClient(BATTERY_SERVICE) } returns batteryClient
+        every { batteryClient.getBatteryLevel() } returns 87
+
+        val result = api.getBatteryLevel(deviceId)
+
+        Assert.assertEquals(87, result)
+    }
+
+    @Test
+    fun `getChargerState returns cached battery client charger state`() {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_BATTERY_INFO))
+        val batteryClient = mockk<BleBattClient>()
+        val (_, session) = mockPsFtpConnection(deviceId)
+        every { session.fetchClient(BATTERY_SERVICE) } returns batteryClient
+        every { batteryClient.getChargerStatus() } returns ChargeState.CHARGING
+
+        val result = api.getChargerState(deviceId)
+
+        Assert.assertEquals(ChargeState.CHARGING, result)
+    }
+
+    @Test
+    fun `getRSSIValue delegates to service client utils`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_DEVICE_INFO))
+        mockkObject(PolarServiceClientUtils)
+        every { PolarServiceClientUtils.getRSSIValue(deviceId, any()) } returns -57
+
+        val result = api.getRSSIValue(deviceId)
+
+        Assert.assertEquals(-57, result)
+    }
+
+    @Test
+    fun `startRecording sends request start recording query`() = runTest {
+        assertCommandRuntimePolicyVectorContains("h10-start-recording")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        mockRecordingSupported()
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "h10")
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns ByteArrayOutputStream()
+
+        api.startRecording(
+            deviceId,
+            "myExercise",
+            PolarH10OfflineExerciseApi.RecordingInterval.INTERVAL_1S,
+            PolarH10OfflineExerciseApi.SampleType.HR
+        )
+
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.REQUEST_START_RECORDING_VALUE), queryIds)
+        val params = PftpRequest.PbPFtpRequestStartRecordingParams.parseFrom(queryParams.single())
+        Assert.assertEquals("myExercise", params.sampleDataIdentifier)
+        Assert.assertEquals(PbSampleType.SAMPLE_TYPE_HEART_RATE, params.sampleType)
+        Assert.assertEquals(PbDuration.newBuilder().setSeconds(1).build(), params.recordingInterval)
+    }
+
+    @Test
+    fun `startRecording propagates fake query failure`() = runTest {
+        assertCommandRuntimePolicyVectorContains("h10-start-recording-query-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        mockRecordingSupported()
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "h10")
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("start recording failed")
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } throws transportError
+
+        try {
+            api.startRecording(
+                deviceId,
+                "myExercise",
+                PolarH10OfflineExerciseApi.RecordingInterval.INTERVAL_1S,
+                PolarH10OfflineExerciseApi.SampleType.HR
+            )
+            Assert.fail("Expected start recording query failure to propagate")
+        } catch (error: Exception) {
+            Assert.assertSame(transportError, error.cause)
+        }
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.REQUEST_START_RECORDING_VALUE), queryIds)
+    }
+
+    @Test
+    fun `stopRecording sends request stop recording query`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        mockRecordingSupported()
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "h10")
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns ByteArrayOutputStream()
+
+        api.stopRecording(deviceId)
+
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.REQUEST_STOP_RECORDING_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+    }
+
+    @Test
+    fun `stopRecording propagates fake query failure`() = runTest {
+        assertCommandRuntimePolicyVectorContains("h10-stop-recording-query-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        mockRecordingSupported()
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "h10")
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("stop recording failed")
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } throws transportError
+
+        try {
+            api.stopRecording(deviceId)
+            Assert.fail("Expected stop recording query failure to propagate")
+        } catch (error: Exception) {
+            Assert.assertSame(transportError, error.cause)
+        }
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.REQUEST_STOP_RECORDING_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+    }
+
+    @Test
+    fun `requestRecordingStatus decodes fake query response`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        mockRecordingSupported()
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "h10")
+        val statusProto = PftpResponse.PbRequestRecordingStatusResult.newBuilder()
+            .setRecordingOn(true)
+            .setSampleDataIdentifier("exercise123")
+            .build()
+        val response = ByteArrayOutputStream().apply {
+            write(statusProto.toByteArray())
+        }
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns response
+
+        val result = api.requestRecordingStatus(deviceId)
+
+        Assert.assertTrue(result.first)
+        Assert.assertEquals("exercise123", result.second)
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.REQUEST_RECORDING_STATUS_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+    }
+
+    @Test
+    fun `requestRecordingStatus propagates fake query failure`() = runTest {
+        assertCommandRuntimePolicyVectorContains("h10-recording-status-query-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        mockRecordingSupported()
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "h10")
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("recording status failed")
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } throws transportError
+
+        try {
+            api.requestRecordingStatus(deviceId)
+            Assert.fail("Expected recording status query failure to propagate")
+        } catch (error: Exception) {
+            Assert.assertSame(transportError, error.cause)
+        }
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.REQUEST_RECORDING_STATUS_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+    }
+
+    @Test
+    fun `setTelemetryEnabled reads current settings and writes telemetry update`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-telemetry-enabled")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val currentSettings = PbUserDeviceSettings.newBuilder()
+            .setGeneralSettings(
+                PbUserDeviceGeneralSettings.newBuilder()
+                    .setDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT)
+                    .build()
+            )
+            .setLastModified(testTimestamp())
+            .build()
+        val requestResponse = ByteArrayOutputStream().apply {
+            write(currentSettings.toByteArray())
+        }
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        coEvery { client.request(any(), any()) } returns requestResponse
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.setTelemetryEnabled(deviceId, true)
+
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertTrue(writtenSettings.hasTelemetrySettings())
+        Assert.assertTrue(writtenSettings.telemetrySettings.hasTelemetryEnabled())
+        Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+        Assert.assertEquals(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT, writtenSettings.generalSettings.deviceLocation)
+    }
+
+    @Test
+    fun `setTelemetryEnabled propagates current settings read failure without write`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-telemetry-read-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("current settings read failed")
+
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        coEvery { client.request(any(), any()) } throws transportError
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        try {
+            api.setTelemetryEnabled(deviceId, true)
+            Assert.fail("Expected current settings read failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertTrue(writeHeaders.isEmpty())
+        Assert.assertTrue(writePayloads.isEmpty())
+    }
+
+    @Test
+    fun `setTelemetryEnabled propagates settings write failure after payload is prepared`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-telemetry-write-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val currentSettings = PbUserDeviceSettings.newBuilder()
+            .setGeneralSettings(
+                PbUserDeviceGeneralSettings.newBuilder()
+                    .setDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT)
+                    .build()
+            )
+            .setLastModified(testTimestamp())
+            .build()
+        val requestResponse = ByteArrayOutputStream().apply {
+            write(currentSettings.toByteArray())
+        }
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("settings write failed")
+
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        coEvery { client.request(any(), any()) } returns requestResponse
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flow { throw transportError }
+
+        try {
+            api.setTelemetryEnabled(deviceId, true)
+            Assert.fail("Expected settings write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    @Test
+    fun `setUserDeviceLocation reads current settings and writes location update`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-location")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val currentSettings = PbUserDeviceSettings.newBuilder()
+            .setGeneralSettings(
+                PbUserDeviceGeneralSettings.newBuilder()
+                    .setDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT)
+                    .build()
+            )
+            .setTelemetrySettings(
+                PbUserDeviceTelemetrySettings.newBuilder()
+                    .setTelemetryEnabled(true)
+                    .build()
+            )
+            .setLastModified(testTimestamp())
+            .build()
+        val requestResponse = ByteArrayOutputStream().apply {
+            write(currentSettings.toByteArray())
+        }
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        coEvery { client.request(any(), any()) } returns requestResponse
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.setUserDeviceLocation(deviceId, PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT.number)
+
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertEquals(PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT, writtenSettings.generalSettings.deviceLocation)
+        Assert.assertTrue(writtenSettings.hasTelemetrySettings())
+        Assert.assertTrue(writtenSettings.telemetrySettings.hasTelemetryEnabled())
+        Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    @Test
+    fun `setUserDeviceLocation propagates write failure after payload is prepared`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-location-write-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val currentSettings = PbUserDeviceSettings.newBuilder()
+            .setGeneralSettings(
+                PbUserDeviceGeneralSettings.newBuilder()
+                    .setDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT)
+                    .build()
+            )
+            .setTelemetrySettings(
+                PbUserDeviceTelemetrySettings.newBuilder()
+                    .setTelemetryEnabled(true)
+                    .build()
+            )
+            .setLastModified(testTimestamp())
+            .build()
+        val requestResponse = ByteArrayOutputStream().apply {
+            write(currentSettings.toByteArray())
+        }
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("location settings write failed")
+
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        coEvery { client.request(any(), any()) } returns requestResponse
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flow { throw transportError }
+
+        try {
+            api.setUserDeviceLocation(deviceId, PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT.number)
+            Assert.fail("Expected location settings write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertEquals(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT, writtenSettings.generalSettings.deviceLocation)
+        Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    @Test
+    fun `setUsbConnectionMode reads current settings and writes usb mode update`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-usb-connection-mode")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val currentSettings = PbUserDeviceSettings.newBuilder()
+            .setGeneralSettings(
+                PbUserDeviceGeneralSettings.newBuilder()
+                    .setDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT)
+                    .build()
+            )
+            .setTelemetrySettings(
+                PbUserDeviceTelemetrySettings.newBuilder()
+                    .setTelemetryEnabled(true)
+                    .build()
+            )
+            .setLastModified(testTimestamp())
+            .build()
+        val requestResponse = ByteArrayOutputStream().apply {
+            write(currentSettings.toByteArray())
+        }
+        val requestHeaders = mutableListOf<ByteArray>()
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns requestResponse
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.setUsbConnectionMode(deviceId, true)
+
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", requestOperation.path)
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertTrue(writtenSettings.hasUsbConnectionSettings())
+        Assert.assertEquals(PbUsbConnectionSettings.PbUsbConnectionMode.ON, writtenSettings.usbConnectionSettings.mode)
+        Assert.assertEquals(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT, writtenSettings.generalSettings.deviceLocation)
+        Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    @Test
+    fun `setUsbConnectionMode propagates write failure after payload is prepared`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-usb-connection-mode-write-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val currentSettings = PbUserDeviceSettings.newBuilder()
+            .setGeneralSettings(
+                PbUserDeviceGeneralSettings.newBuilder()
+                    .setDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT)
+                    .build()
+            )
+            .setLastModified(testTimestamp())
+            .build()
+        val requestResponse = ByteArrayOutputStream().apply {
+            write(currentSettings.toByteArray())
+        }
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("USB settings write failed")
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(any(), any()) } returns requestResponse
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flow { throw transportError }
+
+        try {
+            api.setUsbConnectionMode(deviceId, false)
+            Assert.fail("Expected USB settings write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertEquals(PbUsbConnectionSettings.PbUsbConnectionMode.OFF, writtenSettings.usbConnectionSettings.mode)
+    }
+
+    @Test
+    fun `setAutomaticTrainingDetectionSettings reads current settings and writes automatic measurement update`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-training-detection")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val currentSettings = PbUserDeviceSettings.newBuilder()
+            .setGeneralSettings(
+                PbUserDeviceGeneralSettings.newBuilder()
+                    .setDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT)
+                    .build()
+            )
+            .setTelemetrySettings(
+                PbUserDeviceTelemetrySettings.newBuilder()
+                    .setTelemetryEnabled(true)
+                    .build()
+            )
+            .setLastModified(testTimestamp())
+            .build()
+        val requestResponse = ByteArrayOutputStream().apply {
+            write(currentSettings.toByteArray())
+        }
+        val requestHeaders = mutableListOf<ByteArray>()
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns requestResponse
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.setAutomaticTrainingDetectionSettings(
+            identifier = deviceId,
+            automaticTrainingDetectionMode = true,
+            automaticTrainingDetectionSensitivity = 77,
+            minimumTrainingDurationSeconds = 300
+        )
+
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", requestOperation.path)
+        Assert.assertEquals(1, writeHeaders.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertTrue(writtenSettings.hasAutomaticMeasurementSettings())
+        val atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
+        Assert.assertEquals(PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.ON, atdSettings.state)
+        Assert.assertEquals(77, atdSettings.sensitivity)
+        Assert.assertEquals(300, atdSettings.minimumTrainingDurationSeconds)
+        Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    @Test
+    fun `setAutomaticTrainingDetectionSettings propagates write failure after payload is prepared`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-training-detection-write-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val currentSettings = PbUserDeviceSettings.newBuilder()
+            .setGeneralSettings(
+                PbUserDeviceGeneralSettings.newBuilder()
+                    .setDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT)
+                    .build()
+            )
+            .setLastModified(testTimestamp())
+            .build()
+        val requestResponse = ByteArrayOutputStream().apply {
+            write(currentSettings.toByteArray())
+        }
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("automatic training detection write failed")
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(any(), any()) } returns requestResponse
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flow { throw transportError }
+
+        try {
+            api.setAutomaticTrainingDetectionSettings(deviceId, false, 11, 120)
+            Assert.fail("Expected automatic training detection write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(1, writeHeaders.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        val atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
+        Assert.assertEquals(PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.OFF, atdSettings.state)
+        Assert.assertEquals(11, atdSettings.sensitivity)
+        Assert.assertEquals(120, atdSettings.minimumTrainingDurationSeconds)
+    }
+
+    @Test
+    fun `setAutomaticOHRMeasurementEnabled reads current settings and writes always on state`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-ohr-measurement")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val currentAtdSettings = PbAutomaticTrainingDetectionSettings.newBuilder()
+            .setState(PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.ON)
+            .setSensitivity(44)
+            .setMinimumTrainingDurationSeconds(180)
+            .build()
+        val currentSettings = PbUserDeviceSettings.newBuilder()
+            .setGeneralSettings(
+                PbUserDeviceGeneralSettings.newBuilder()
+                    .setDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT)
+                    .build()
+            )
+            .setAutomaticMeasurementSettings(
+                PbUserAutomaticMeasurementSettings.newBuilder()
+                    .setAutomaticTrainingDetectionSettings(currentAtdSettings)
+                    .build()
+            )
+            .setLastModified(testTimestamp())
+            .build()
+        val requestResponse = ByteArrayOutputStream().apply {
+            write(currentSettings.toByteArray())
+        }
+        val requestHeaders = mutableListOf<ByteArray>()
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns requestResponse
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.setAutomaticOHRMeasurementEnabled(deviceId, enabled = true)
+
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", requestOperation.path)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        val automaticMeasurementSettings = writtenSettings.automaticMeasurementSettings
+        Assert.assertEquals(PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.ALWAYS_ON, automaticMeasurementSettings.automaticOhrMeasurement.state)
+        Assert.assertEquals(currentAtdSettings, automaticMeasurementSettings.automaticTrainingDetectionSettings)
+    }
+
+    @Test
+    fun `setAutomaticOHRMeasurementEnabled propagates write failure after off payload is prepared`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-ohr-measurement-write-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val currentSettings = PbUserDeviceSettings.newBuilder()
+            .setGeneralSettings(
+                PbUserDeviceGeneralSettings.newBuilder()
+                    .setDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT)
+                    .build()
+            )
+            .setLastModified(testTimestamp())
+            .build()
+        val requestResponse = ByteArrayOutputStream().apply {
+            write(currentSettings.toByteArray())
+        }
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("automatic OHR write failed")
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(any(), any()) } returns requestResponse
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flow { throw transportError }
+
+        try {
+            api.setAutomaticOHRMeasurementEnabled(deviceId, enabled = false)
+            Assert.fail("Expected automatic OHR write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertEquals(PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF, writtenSettings.automaticMeasurementSettings.automaticOhrMeasurement.state)
+    }
+
+    @Test
+    fun `getUserDeviceSettings reads current settings from fake transport`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("get-user-device-settings")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val currentSettings = PbUserDeviceSettings.newBuilder()
+            .setGeneralSettings(
+                PbUserDeviceGeneralSettings.newBuilder()
+                    .setDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT)
+                    .build()
+            )
+            .setTelemetrySettings(
+                PbUserDeviceTelemetrySettings.newBuilder()
+                    .setTelemetryEnabled(true)
+                    .build()
+            )
+            .setLastModified(testTimestamp())
+            .build()
+        val requestResponse = ByteArrayOutputStream().apply {
+            write(currentSettings.toByteArray())
+        }
+        val requestHeaders = mutableListOf<ByteArray>()
+
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        coEvery { client.request(capture(requestHeaders), any()) } returns requestResponse
+
+        val result: PolarUserDeviceSettings = api.getUserDeviceSettings(deviceId)
+
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", requestOperation.path)
+        Assert.assertEquals(PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT.number, result.deviceLocation)
+        Assert.assertEquals(true, result.telemetryEnabled)
+    }
+
+    @Test
+    fun `getUserDeviceSettings propagates fake transport read failure`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("get-user-device-settings-read-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val transportError = RuntimeException("user settings read failed")
+
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        coEvery { client.request(capture(requestHeaders), any()) } throws transportError
+
+        try {
+            api.getUserDeviceSettings(deviceId)
+            Assert.fail("Expected user settings read failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", requestOperation.path)
+    }
+
+    @Test
+    fun `getDiskSpace decodes fake query response`() = runTest {
+        assertDiskTimeRuntimePolicyVectorContains("get-disk-space")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val diskSpaceProto = PftpResponse.PbPFtpDiskSpaceResult.newBuilder()
+            .setFragmentSize(512)
+            .setTotalFragments(200)
+            .setFreeFragments(100)
+            .build()
+        val response = ByteArrayOutputStream().apply {
+            write(diskSpaceProto.toByteArray())
+        }
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns response
+
+        val result = api.getDiskSpace(deviceId)
+
+        Assert.assertEquals(512L * 200L, result.totalSpace)
+        Assert.assertEquals(512L * 100L, result.freeSpace)
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.GET_DISK_SPACE_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+    }
+
+    @Test
+    fun `getDiskSpace propagates fake query failure`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("disk space query failed")
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } throws transportError
+
+        try {
+            api.getDiskSpace(deviceId)
+            Assert.fail("Expected disk space query failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.GET_DISK_SPACE_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+    }
+
+    @Test
+    fun `setLedConfig writes led config payload`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_LED_ANIMATION))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.setLedConfig(deviceId, LedConfig(sdkModeLedEnabled = true, ppiModeLedEnabled = false))
+
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals(LedConfig.LED_CONFIG_FILENAME, writeOperation.path)
+        Assert.assertArrayEquals(
+            byteArrayOf(LedConfig.LED_ANIMATION_ENABLE_BYTE, LedConfig.LED_ANIMATION_DISABLE_BYTE),
+            writePayloads.single()!!.readBytes()
+        )
+    }
+
+    @Test
+    fun `setLedConfig propagates write failure after payload is prepared`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_LED_ANIMATION))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("led config write failed")
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flow { throw transportError }
+
+        try {
+            api.setLedConfig(deviceId, LedConfig(sdkModeLedEnabled = false, ppiModeLedEnabled = true))
+            Assert.fail("Expected LED config write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals(LedConfig.LED_CONFIG_FILENAME, writeOperation.path)
+        Assert.assertArrayEquals(
+            byteArrayOf(LedConfig.LED_ANIMATION_DISABLE_BYTE, LedConfig.LED_ANIMATION_ENABLE_BYTE),
+            writePayloads.single()!!.readBytes()
+        )
+    }
+
+    @Test
+    fun `getLogConfig reads sd log config from fake transport`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val response = ByteArrayOutputStream().apply {
+            write(
+                PbSensorDataLog.newBuilder()
+                    .setOhrLogEnabled(true)
+                    .setPpiLogEnabled(false)
+                    .setMagnetometerLogFrequency(PbSensorDataLog.PbMagnetometerLogFrequency.MAG_LOG_10HZ)
+                    .build()
+                    .toByteArray()
+            )
+        }
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns response
+
+        val result = api.getLogConfig(deviceId)
+
+        Assert.assertTrue(result.ohrLogEnabled == true)
+        Assert.assertTrue(result.ppiLogEnabled == false)
+        Assert.assertEquals(PbSensorDataLog.PbMagnetometerLogFrequency.MAG_LOG_10HZ, result.magnetometerFrequency)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals(LogConfig.LOG_CONFIG_FILENAME, requestOperation.path)
+    }
+
+    @Test
+    fun `setLogConfig writes sd log config payload`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.setLogConfig(
+            deviceId,
+            LogConfig(
+                ohrLogEnabled = true,
+                ppiLogEnabled = false,
+                magnetometerFrequency = PbSensorDataLog.PbMagnetometerLogFrequency.MAG_LOG_10HZ
+            )
+        )
+
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals(LogConfig.LOG_CONFIG_FILENAME, writeOperation.path)
+        val writtenConfig = PbSensorDataLog.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertTrue(writtenConfig.ohrLogEnabled)
+        Assert.assertFalse(writtenConfig.ppiLogEnabled)
+        Assert.assertEquals(PbSensorDataLog.PbMagnetometerLogFrequency.MAG_LOG_10HZ, writtenConfig.magnetometerLogFrequency)
+    }
+
+    @Test
+    fun `setLogConfig propagates write failure after payload is prepared`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("sd log write failed")
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flow { throw transportError }
+
+        try {
+            api.setLogConfig(deviceId, LogConfig(ohrLogEnabled = false))
+            Assert.fail("Expected SD log write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals(LogConfig.LOG_CONFIG_FILENAME, writeOperation.path)
+        val writtenConfig = PbSensorDataLog.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertFalse(writtenConfig.ohrLogEnabled)
+    }
+
+    @Test
+    fun `getUserPhysicalConfiguration reads physical configuration from fake transport`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val config = PolarFirstTimeUseConfig(
+            gender = Gender.MALE,
+            birthDate = LocalDate.of(1990, 1, 2),
+            height = 180.5f,
+            weight = 75.5f,
+            maxHeartRate = 190,
+            vo2Max = 50,
+            restingHeartRate = 55,
+            trainingBackground = 40,
+            deviceTime = "2026-05-31T12:00:00Z",
+            typicalDay = TypicalDay.MOSTLY_STANDING,
+            sleepGoalMinutes = 480
+        )
+        val response = ByteArrayOutputStream().apply { write(config.toProto().toByteArray()) }
+        coEvery { client.request(capture(requestHeaders)) } returns response
+
+        val result = api.getUserPhysicalConfiguration(deviceId)
+
+        Assert.assertNotNull(result)
+        Assert.assertEquals(Gender.MALE, result!!.gender)
+        Assert.assertEquals(LocalDate.of(1990, 1, 2), result.birthDate)
+        Assert.assertEquals(180.5f, result.height)
+        Assert.assertEquals(75.5f, result.weight)
+        Assert.assertEquals(190, result.maxHeartRate)
+        Assert.assertEquals(50, result.vo2Max)
+        Assert.assertEquals(55, result.restingHeartRate)
+        Assert.assertEquals(40, result.trainingBackground)
+        Assert.assertEquals(TypicalDay.MOSTLY_STANDING, result.typicalDay)
+        Assert.assertEquals(480, result.sleepGoalMinutes)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals(PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME, requestOperation.path)
+    }
+
+    @Test
+    fun `getUserPhysicalConfiguration returns null when physical data file is missing`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        coEvery { client.request(capture(requestHeaders)) } throws BlePsFtpUtils.PftpResponseError("missing physical data", PbPFtpError.NO_SUCH_FILE_OR_DIRECTORY.number)
+
+        val result = api.getUserPhysicalConfiguration(deviceId)
+
+        Assert.assertNull(result)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals(PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME, requestOperation.path)
+    }
+
+    @Test
+    fun `doFirstTimeUse writes physical config and user id between sync notifications`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writeData = mutableListOf<ByteArray>()
+        val config = PolarFirstTimeUseConfig(
+            gender = Gender.FEMALE,
+            birthDate = LocalDate.of(1992, 3, 4),
+            height = 171.5f,
+            weight = 66.5f,
+            maxHeartRate = 188,
+            vo2Max = 47,
+            restingHeartRate = 53,
+            trainingBackground = 30,
+            deviceTime = "2026-05-31T12:34:56Z",
+            typicalDay = TypicalDay.MOSTLY_SITTING,
+            sleepGoalMinutes = 450
+        )
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } returns Unit
+        every { client.write(capture(writeHeaders), any()) } answers {
+            val bytes = ByteArrayOutputStream()
+            secondArg<ByteArrayInputStream>().copyTo(bytes)
+            writeData.add(bytes.toByteArray())
+            flowOf(0L)
+        }
+
+        api.doFirstTimeUse(deviceId, config)
+
+        Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpQuery.REQUEST_SYNCHRONIZATION_VALUE,
+                PftpRequest.PbPFtpQuery.SET_SYSTEM_TIME_VALUE,
+                PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE
+            ),
+            queryIds
+        )
+        Assert.assertEquals(
+            listOf(
+                PftpNotification.PbPFtpHostToDevNotification.INITIALIZE_SESSION_VALUE,
+                PftpNotification.PbPFtpHostToDevNotification.START_SYNC_VALUE,
+                PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE,
+                PftpNotification.PbPFtpHostToDevNotification.TERMINATE_SESSION_VALUE
+            ),
+            notificationIds
+        )
+        Assert.assertEquals(2, writeHeaders.size)
+        val writeOperations = writeHeaders.map { PftpRequest.PbPFtpOperation.parseFrom(it) }
+        Assert.assertEquals(listOf(PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME, UserIdentifierType.USER_IDENTIFIER_FILENAME), writeOperations.map { it.path })
+        Assert.assertTrue(writeOperations.all { it.command == PftpRequest.PbPFtpOperation.Command.PUT })
+        Assert.assertArrayEquals(config.toProto().toByteArray(), writeData[0])
+        Assert.assertTrue(PbUserIdentifier.parseFrom(writeData[1]).hasMasterIdentifier())
+        val stopSyncParams = PftpNotification.PbPFtpStopSyncParams.parseFrom(notificationParams[2])
+        Assert.assertTrue(stopSyncParams.completed)
+    }
+
+    @Test
+    fun `doFirstTimeUse terminates sync and propagates physical config write failure`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writeData = mutableListOf<ByteArray>()
+        val transportError = RuntimeException("FTU physical config write failed")
+        val config = PolarFirstTimeUseConfig(
+            gender = Gender.MALE,
+            birthDate = LocalDate.of(1991, 2, 3),
+            height = 181.0f,
+            weight = 76.0f,
+            maxHeartRate = 190,
+            vo2Max = 48,
+            restingHeartRate = 54,
+            trainingBackground = 40,
+            deviceTime = "2026-05-31T12:34:56Z",
+            typicalDay = TypicalDay.MOSTLY_STANDING,
+            sleepGoalMinutes = 480
+        )
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } returns Unit
+        every { client.write(capture(writeHeaders), any()) } answers {
+            val bytes = ByteArrayOutputStream()
+            secondArg<ByteArrayInputStream>().copyTo(bytes)
+            writeData.add(bytes.toByteArray())
+            flow { throw transportError }
+        }
+
+        try {
+            api.doFirstTimeUse(deviceId, config)
+            Assert.fail("Expected FTU write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+
+        Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpQuery.REQUEST_SYNCHRONIZATION_VALUE,
+                PftpRequest.PbPFtpQuery.SET_SYSTEM_TIME_VALUE,
+                PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE
+            ),
+            queryIds
+        )
+        Assert.assertEquals(
+            listOf(
+                PftpNotification.PbPFtpHostToDevNotification.INITIALIZE_SESSION_VALUE,
+                PftpNotification.PbPFtpHostToDevNotification.START_SYNC_VALUE,
+                PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE,
+                PftpNotification.PbPFtpHostToDevNotification.TERMINATE_SESSION_VALUE
+            ),
+            notificationIds
+        )
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals(PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME, writeOperation.path)
+        Assert.assertArrayEquals(config.toProto().toByteArray(), writeData.single())
+        val stopSyncParams = PftpNotification.PbPFtpStopSyncParams.parseFrom(notificationParams[2])
+        Assert.assertTrue(stopSyncParams.completed)
+    }
+
+    @Test
+    fun `putNotification writes rest notification payload`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.putNotification(deviceId, "{\"enabled\":true}", "/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording")
+
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording", writeOperation.path)
+        Assert.assertArrayEquals("{\"enabled\":true}".toByteArray(), writePayloads.single()!!.readBytes())
+    }
+
+    @Test
+    fun `putNotification propagates write failure after payload is prepared`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("REST notification write failed")
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flow { throw transportError }
+
+        try {
+            api.putNotification(deviceId, "{}", "/REST/TEST.API?cmd=post")
+            Assert.fail("Expected REST notification write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/REST/TEST.API?cmd=post", writeOperation.path)
+        Assert.assertArrayEquals("{}".toByteArray(), writePayloads.single()!!.readBytes())
+    }
+
+    @Test
+    fun `readFile reads low level file path from fake transport`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("read-low-level-file-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val response = ByteArrayOutputStream().apply { write(byteArrayOf(0x01, 0x02, 0x03)) }
+        coEvery { client.request(capture(requestHeaders)) } returns response
+
+        val result = api.readFile(deviceId, "/U/0/CUSTOM.BIN")
+
+        Assert.assertArrayEquals(byteArrayOf(0x01, 0x02, 0x03), result)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    @Test
+    fun `readFile preserves empty low level file payload as success`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("read-low-level-file-empty-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        coEvery { client.request(capture(requestHeaders)) } returns ByteArrayOutputStream()
+
+        val result = api.readFile(deviceId, "/U/0/EMPTY.BIN")
+
+        Assert.assertArrayEquals(byteArrayOf(), result)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/EMPTY.BIN", requestOperation.path)
+    }
+
+    @Test
+    fun `readFile propagates low level request failure`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("read-low-level-file-request-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val transportError = RuntimeException("low level read failed")
+        coEvery { client.request(capture(requestHeaders)) } throws transportError
+
+        try {
+            api.readFile(deviceId, "/U/0/CUSTOM.BIN")
+            Assert.fail("Expected low level read failure to propagate")
+        } catch (error: Exception) {
+            Assert.assertSame(transportError, error.cause)
+        }
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    @Test
+    fun `readFile maps low level pftp response error to enum name`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("read-low-level-file-response-error")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        coEvery { client.request(capture(requestHeaders)) } throws BlePsFtpUtils.PftpResponseError(
+            "low level read missing",
+            PbPFtpError.NO_SUCH_FILE_OR_DIRECTORY.number
+        )
+
+        try {
+            api.readFile(deviceId, "/U/0/CUSTOM.BIN")
+            Assert.fail("Expected low level read response error to propagate")
+        } catch (error: Exception) {
+            Assert.assertEquals("NO_SUCH_FILE_OR_DIRECTORY", error.message)
+        }
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    @Test
+    fun `writeFile writes low level file payload`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writeData = ByteArrayOutputStream()
+        every { client.write(capture(writeHeaders), any()) } answers {
+            secondArg<ByteArrayInputStream>().copyTo(writeData)
+            flowOf(0L)
+        }
+
+        api.writeFile(deviceId, "/U/0/CUSTOM.BIN", byteArrayOf(0x0A, 0x0B))
+
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/CUSTOM.BIN", writeOperation.path)
+        Assert.assertArrayEquals(byteArrayOf(0x0A, 0x0B), writeData.toByteArray())
+    }
+
+    @Test
+    fun `writeFile consumes low level write progress before success`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-progress-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writeData = ByteArrayOutputStream()
+        every { client.write(capture(writeHeaders), any()) } answers {
+            secondArg<ByteArrayInputStream>().copyTo(writeData)
+            flowOf(0L, 2L)
+        }
+
+        api.writeFile(deviceId, "/U/0/PROGRESS.BIN", byteArrayOf(0x10, 0x11))
+
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/PROGRESS.BIN", writeOperation.path)
+        Assert.assertArrayEquals(byteArrayOf(0x10, 0x11), writeData.toByteArray())
+    }
+
+    @Test
+    fun `writeFile propagates low level write failure after payload is prepared`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writeData = ByteArrayOutputStream()
+        val transportError = RuntimeException("low level write failed")
+        every { client.write(capture(writeHeaders), any()) } answers {
+            secondArg<ByteArrayInputStream>().copyTo(writeData)
+            flow { throw transportError }
+        }
+
+        try {
+            api.writeFile(deviceId, "/U/0/CUSTOM.BIN", byteArrayOf(0x0C, 0x0D))
+            Assert.fail("Expected low level write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/CUSTOM.BIN", writeOperation.path)
+        Assert.assertArrayEquals(byteArrayOf(0x0C, 0x0D), writeData.toByteArray())
+    }
+
+    @Test
+    fun `writeFile propagates low level pftp response error after payload is prepared`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-response-error")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writeData = ByteArrayOutputStream()
+        val responseError = BlePsFtpUtils.PftpResponseError(
+            "low level write missing",
+            PbPFtpError.NO_SUCH_FILE_OR_DIRECTORY.number
+        )
+        every { client.write(capture(writeHeaders), any()) } answers {
+            secondArg<ByteArrayInputStream>().copyTo(writeData)
+            flow { throw responseError }
+        }
+
+        try {
+            api.writeFile(deviceId, "/U/0/CUSTOM.BIN", byteArrayOf(0x0E, 0x0F))
+            Assert.fail("Expected low level write response error to propagate")
+        } catch (error: BlePsFtpUtils.PftpResponseError) {
+            Assert.assertSame(responseError, error)
+            Assert.assertEquals(PbPFtpError.NO_SUCH_FILE_OR_DIRECTORY.number, error.error)
+        }
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/CUSTOM.BIN", writeOperation.path)
+        Assert.assertArrayEquals(byteArrayOf(0x0E, 0x0F), writeData.toByteArray())
+    }
+
+    @Test
+    fun `deleteFileOrDirectory sends low level remove request`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("delete-low-level-file-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        coEvery { client.request(capture(requestHeaders)) } returns ByteArrayOutputStream()
+
+        api.deleteFileOrDirectory(deviceId, "/U/0/CUSTOM.BIN")
+
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE, requestOperation.command)
+        Assert.assertEquals("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    @Test
+    fun `deleteFileOrDirectory propagates low level request failure`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("delete-low-level-file-request-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val transportError = RuntimeException("low level delete failed")
+        coEvery { client.request(capture(requestHeaders)) } throws transportError
+
+        try {
+            api.deleteFileOrDirectory(deviceId, "/U/0/CUSTOM.BIN")
+            Assert.fail("Expected low level delete failure to propagate")
+        } catch (error: Exception) {
+            Assert.assertSame(transportError, error.cause ?: error)
+        }
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE, requestOperation.command)
+        Assert.assertEquals("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    @Test
+    fun `deleteFileOrDirectory maps low level pftp response error to enum name`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("delete-low-level-file-response-error")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        coEvery { client.request(capture(requestHeaders)) } throws BlePsFtpUtils.PftpResponseError(
+            "low level delete missing",
+            PbPFtpError.NO_SUCH_FILE_OR_DIRECTORY.number
+        )
+
+        try {
+            api.deleteFileOrDirectory(deviceId, "/U/0/CUSTOM.BIN")
+            Assert.fail("Expected low level delete response error to propagate")
+        } catch (error: Exception) {
+            Assert.assertEquals("NO_SUCH_FILE_OR_DIRECTORY", error.message)
+        }
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE, requestOperation.command)
+        Assert.assertEquals("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    @Test
+    fun `deleteDeviceDateFolders sends remove request for each date in range`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        coEvery { client.request(capture(requestHeaders)) } returns ByteArrayOutputStream()
+
+        api.deleteDeviceDateFolders(deviceId, LocalDate.of(2026, 5, 30), LocalDate.of(2026, 6, 1))
+
+        val operations = requestHeaders.map { PftpRequest.PbPFtpOperation.parseFrom(it) }
+        Assert.assertEquals(
+            listOf("/U/0/20260530", "/U/0/20260531", "/U/0/20260601"),
+            operations.map { it.path }
+        )
+        Assert.assertTrue(operations.all { it.command == PftpRequest.PbPFtpOperation.Command.REMOVE })
+    }
+
+    @Test
+    fun `deleteDeviceDateFolders ignores missing day directory response`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        coEvery { client.request(capture(requestHeaders)) } throws BlePsFtpUtils.PftpResponseError(
+            "PFTP error ${PbPFtpError.NO_SUCH_FILE_OR_DIRECTORY.number}",
+            PbPFtpError.NO_SUCH_FILE_OR_DIRECTORY.number
+        )
+
+        api.deleteDeviceDateFolders(deviceId, LocalDate.of(2026, 5, 31), LocalDate.of(2026, 5, 31))
+
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE, requestOperation.command)
+        Assert.assertEquals("/U/0/20260531", requestOperation.path)
+    }
+
+    @Test
+    fun `deleteTelemetryData removes telemetry bin files from fake transport`() = runTest {
+        assertStoredDataCleanupWorkflowVectorContains("telemetry-root-trc-bin-filter")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val rootDirectory = PftpResponse.PbPFtpDirectory.newBuilder()
+            .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("TRC10.BIN").setSize(4L))
+            .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("ABC10.BIN").setSize(4L))
+            .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("TRC10.TXT").setSize(4L))
+            .build()
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders)) } answers {
+            val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+            if (operation.command == PftpRequest.PbPFtpOperation.Command.GET) {
+                ByteArrayOutputStream().apply { write(rootDirectory.toByteArray()) }
+            } else {
+                ByteArrayOutputStream()
+            }
+        }
+
+        api.deleteTelemetryData(deviceId)
+
+        val operations = requestHeaders.map { PftpRequest.PbPFtpOperation.parseFrom(it) }
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpOperation.Command.GET, PftpRequest.PbPFtpOperation.Command.REMOVE), operations.map { it.command })
+        Assert.assertEquals(listOf("/", "/TRC10.BIN"), operations.map { it.path })
+    }
+
+    @Test
+    fun `deleteTelemetryData swallows list failure`() = runTest {
+        assertStoredDataCleanupWorkflowVectorContains("telemetry-list-failure-platform-policy")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val transportError = RuntimeException("telemetry list failed")
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders)) } throws transportError
+
+        api.deleteTelemetryData(deviceId)
+
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/", requestOperation.path)
+    }
+
+    @Test
+    fun `deleteStoredDeviceData removes sd log files from fake transport`() = runTest {
+        assertStoredDataCleanupWorkflowVectorContains("sdlogs-extension-filter")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val sdLogsDirectory = PftpResponse.PbPFtpDirectory.newBuilder()
+            .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("A.SLG").setSize(4L))
+            .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("B.TXT").setSize(5L))
+            .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("C.BPB").setSize(6L))
+            .build()
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders)) } answers {
+            val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+            if (operation.command == PftpRequest.PbPFtpOperation.Command.GET) {
+                ByteArrayOutputStream().apply { write(sdLogsDirectory.toByteArray()) }
+            } else {
+                ByteArrayOutputStream()
+            }
+        }
+
+        api.deleteStoredDeviceData(deviceId, PolarBleApi.PolarStoredDataType.SDLOGS, LocalDate.of(2026, 5, 31))
+
+        val operations = requestHeaders.map { PftpRequest.PbPFtpOperation.parseFrom(it) }
+        Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpOperation.Command.GET,
+                PftpRequest.PbPFtpOperation.Command.REMOVE,
+                PftpRequest.PbPFtpOperation.Command.REMOVE
+            ),
+            operations.map { it.command }
+        )
+        Assert.assertEquals(listOf("/SDLOGS/", "/SDLOGS/A.SLG", "/SDLOGS/B.TXT"), operations.map { it.path })
+    }
+
+    @Test
+    fun `deleteStoredDeviceData swallows sd log list failure`() = runTest {
+        assertStoredDataCleanupWorkflowVectorContains("sdlogs-list-failure-platform-policy")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val transportError = RuntimeException("sd log list failed")
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders)) } throws transportError
+
+        api.deleteStoredDeviceData(deviceId, PolarBleApi.PolarStoredDataType.SDLOGS, LocalDate.of(2026, 5, 31))
+
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/SDLOGS/", requestOperation.path)
+    }
+
+    @Test
+    fun `deleteStoredDeviceData removes activity files before cutoff and prunes empty parents`() = runTest {
+        assertStoredDataCleanupWorkflowVectorContains("activity-prune-empty-parents")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val getCountsByPath = mutableMapOf<String, Int>()
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders)) } answers {
+            val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+            val getCount = getCountsByPath.getOrDefault(operation.path, 0)
+            if (operation.command == PftpRequest.PbPFtpOperation.Command.GET) {
+                getCountsByPath[operation.path] = getCount + 1
+            }
+            val directory = when (operation.path) {
+                "/U/0/" -> PftpResponse.PbPFtpDirectory.newBuilder()
+                    .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("20260530/").setSize(0L))
+                    .build()
+                "/U/0/20260530/" -> {
+                    if (getCount == 0) {
+                        PftpResponse.PbPFtpDirectory.newBuilder()
+                            .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("ACT/").setSize(0L))
+                            .build()
+                    } else {
+                        PftpResponse.PbPFtpDirectory.newBuilder().build()
+                    }
+                }
+                "/U/0/20260530/ACT/" -> {
+                    if (getCount == 0) {
+                        PftpResponse.PbPFtpDirectory.newBuilder()
+                            .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("ACTIVITY.BPB").setSize(8L))
+                            .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("HIST.BPB").setSize(8L))
+                            .build()
+                    } else {
+                        PftpResponse.PbPFtpDirectory.newBuilder().build()
+                    }
+                }
+                else -> null
+            }
+            if (operation.command == PftpRequest.PbPFtpOperation.Command.GET && directory != null) {
+                ByteArrayOutputStream().apply { write(directory.toByteArray()) }
+            } else {
+                ByteArrayOutputStream()
+            }
+        }
+
+        api.deleteStoredDeviceData(deviceId, PolarBleApi.PolarStoredDataType.ACTIVITY, LocalDate.of(2026, 5, 31))
+
+        val operations = requestHeaders.map { PftpRequest.PbPFtpOperation.parseFrom(it) }
+        Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpOperation.Command.GET,
+                PftpRequest.PbPFtpOperation.Command.GET,
+                PftpRequest.PbPFtpOperation.Command.GET,
+                PftpRequest.PbPFtpOperation.Command.REMOVE,
+                PftpRequest.PbPFtpOperation.Command.GET,
+                PftpRequest.PbPFtpOperation.Command.REMOVE,
+                PftpRequest.PbPFtpOperation.Command.GET,
+                PftpRequest.PbPFtpOperation.Command.REMOVE
+            ),
+            operations.map { it.command }
+        )
+        Assert.assertEquals(
+            listOf(
+                "/U/0/",
+                "/U/0/20260530/",
+                "/U/0/20260530/ACT/",
+                "/U/0/20260530/ACT/ACTIVITY.BPB",
+                "/U/0/20260530/ACT/",
+                "/U/0/20260530/ACT",
+                "/U/0/20260530/",
+                "/U/0/20260530"
+            ),
+            operations.map { it.path }
+        )
+    }
+
+    @Test
+    fun `deleteStoredDeviceData removes automatic sample files by embedded sample date`() = runTest {
+        assertStoredDataCleanupWorkflowVectorContains("automatic-sample-embedded-day-filter")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders)) } answers {
+            val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+            val data = when (operation.path) {
+                "/U/0/AUTOS/" -> PftpResponse.PbPFtpDirectory.newBuilder()
+                    .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("20260530/").setSize(0L))
+                    .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("20260601/").setSize(0L))
+                    .build()
+                    .toByteArray()
+                "/U/0/AUTOS/20260530/" -> PftpResponse.PbPFtpDirectory.newBuilder()
+                    .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("AUTOS001.BPB").setSize(8L))
+                    .build()
+                    .toByteArray()
+                "/U/0/AUTOS/20260601/" -> PftpResponse.PbPFtpDirectory.newBuilder()
+                    .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("AUTOS002.BPB").setSize(8L))
+                    .build()
+                    .toByteArray()
+                "/U/0/AUTOS/20260530/AUTOS001.BPB" -> PbAutomaticSampleSessions.newBuilder()
+                    .setDay(PbDate.newBuilder().setYear(2026).setMonth(5).setDay(30).build())
+                    .build()
+                    .toByteArray()
+                "/U/0/AUTOS/20260601/AUTOS002.BPB" -> PbAutomaticSampleSessions.newBuilder()
+                    .setDay(PbDate.newBuilder().setYear(2026).setMonth(6).setDay(1).build())
+                    .build()
+                    .toByteArray()
+                else -> ByteArray(0)
+            }
+            ByteArrayOutputStream().apply {
+                if (operation.command == PftpRequest.PbPFtpOperation.Command.GET) {
+                    write(data)
+                }
+            }
+        }
+
+        api.deleteStoredDeviceData(deviceId, PolarBleApi.PolarStoredDataType.AUTO_SAMPLE, LocalDate.of(2026, 5, 31))
+
+        val operations = requestHeaders.map { PftpRequest.PbPFtpOperation.parseFrom(it) }
+        Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpOperation.Command.GET,
+                PftpRequest.PbPFtpOperation.Command.GET,
+                PftpRequest.PbPFtpOperation.Command.GET,
+                PftpRequest.PbPFtpOperation.Command.REMOVE,
+                PftpRequest.PbPFtpOperation.Command.GET,
+                PftpRequest.PbPFtpOperation.Command.GET
+            ),
+            operations.map { it.command }
+        )
+        Assert.assertEquals(
+            listOf(
+                "/U/0/AUTOS/",
+                "/U/0/AUTOS/20260530/",
+                "/U/0/AUTOS/20260530/AUTOS001.BPB",
+                "/U/0/AUTOS/20260530/AUTOS001.BPB",
+                "/U/0/AUTOS/20260601/",
+                "/U/0/AUTOS/20260601/AUTOS002.BPB"
+            ),
+            operations.map { it.path }
+        )
+    }
+
+    @Test
+    fun `getFileList lists low level directory without recursion`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val response = ByteArrayOutputStream().apply {
+            write(
+                PftpResponse.PbPFtpDirectory.newBuilder()
+                    .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("A.BIN").setSize(2L))
+                    .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("DIR/").setSize(0L))
+                    .build()
+                    .toByteArray()
+            )
+        }
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders)) } returns response
+
+        val result = api.getFileList(deviceId, "U/0", recurseDeep = false)
+
+        Assert.assertEquals(listOf("/U/0/A.BIN", "/U/0/DIR/"), result)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/", requestOperation.path)
+    }
+
+    @Test
+    fun `isFtuDone reads user id and returns true when master identifier is present`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val response = ByteArrayOutputStream().apply {
+            write(PbUserIdentifier.newBuilder().setMasterIdentifier(-1L).build().toByteArray())
+        }
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns response
+
+        val result = api.isFtuDone(deviceId)
+
+        Assert.assertTrue(result)
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/USERID.BPB", requestOperation.path)
+    }
+
+    @Test
+    fun `isFtuDone reads user id and returns false when master identifier is absent`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val response = ByteArrayOutputStream().apply {
+            write(PbUserIdentifier.newBuilder().build().toByteArray())
+        }
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns response
+
+        val result = api.isFtuDone(deviceId)
+
+        Assert.assertFalse(result)
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/USERID.BPB", requestOperation.path)
+    }
+
+    @Test
+    fun `isFtuDone propagates user id request failure`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val transportError = RuntimeException("user id read failed")
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } throws transportError
+
+        try {
+            api.isFtuDone(deviceId)
+            Assert.fail("Expected user id request failure to propagate")
+        } catch (error: Exception) {
+            Assert.assertSame(transportError, error.cause)
+        }
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/U/0/USERID.BPB", requestOperation.path)
+    }
+
+    @Test
+    fun `listRestApiServices requests service api and decodes service paths`() = runTest {
+        assertRestFacadeRuntimePolicyVectorContains("list-rest-api-services-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val response = ByteArrayOutputStream().apply {
+            write("""{"services":{"sleep":"/REST/SLEEP.API","training":"/REST/TRAINING.API"}}""".toByteArray())
+        }
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns response
+
+        val result = api.listRestApiServices(deviceId)
+
+        Assert.assertEquals(setOf("sleep", "training"), result.serviceNames.toSet())
+        Assert.assertEquals("/REST/SLEEP.API", result.pathsForServices["sleep"])
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/REST/SERVICE.API", requestOperation.path)
+    }
+
+    @Test
+    fun `getRestApiDescription requests path and decodes description`() = runTest {
+        assertRestFacadeRuntimePolicyVectorContains("get-rest-api-description-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val response = ByteArrayOutputStream().apply {
+            write("""{"events":["sleep"],"endpoints":["stop"],"cmd":{"post":"/REST/SLEEP.API?cmd=post"},"sleep":{"details":["state"],"triggers":["change"]}}""".toByteArray())
+        }
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns response
+
+        val result = api.getRestApiDescription(deviceId, "/REST/SLEEP.API")
+
+        Assert.assertEquals(listOf("sleep"), result.events)
+        Assert.assertEquals(listOf("/REST/SLEEP.API?cmd=post"), result.actionPaths)
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/REST/SLEEP.API", requestOperation.path)
+    }
+
+    @Test
+    fun `getRestApiDescription propagates description request failure`() = runTest {
+        assertRestFacadeRuntimePolicyVectorContains("get-rest-api-description-request-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val transportError = RuntimeException("service description read failed")
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } throws transportError
+
+        try {
+            api.getRestApiDescription(deviceId, "/REST/SLEEP.API")
+            Assert.fail("Expected REST service description request failure to propagate")
+        } catch (error: Exception) {
+            Assert.assertSame(transportError, error.cause)
+        }
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/REST/SLEEP.API", requestOperation.path)
+    }
+
+    @Test
+    fun `getRestApiDescription maps pftp response error to enum name`() = runTest {
+        assertRestFacadeRuntimePolicyVectorContains("get-rest-api-description-response-error")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } throws BlePsFtpUtils.PftpResponseError(
+            "REST service description failed",
+            PbPFtpError.NO_SUCH_FILE_OR_DIRECTORY.number
+        )
+
+        try {
+            api.getRestApiDescription(deviceId, "/REST/SLEEP.API")
+            Assert.fail("Expected REST service description response error to propagate")
+        } catch (error: Exception) {
+            Assert.assertEquals("NO_SUCH_FILE_OR_DIRECTORY", error.message)
+        }
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/REST/SLEEP.API", requestOperation.path)
+    }
+
+    @Test
+    fun `getRestApiDescription empty successful response is parse failure`() = runTest {
+        assertRestFacadeRuntimePolicyVectorContains("get-rest-api-description-empty-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns ByteArrayOutputStream()
+
+        try {
+            api.getRestApiDescription(deviceId, "/REST/SLEEP.API")
+            Assert.fail("Expected REST service description empty response to fail parsing")
+        } catch (error: Exception) {
+            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+        }
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/REST/SLEEP.API", requestOperation.path)
+    }
+
+    @Test
+    fun `getRestApiDescription malformed successful response is parse failure`() = runTest {
+        assertRestFacadeRuntimePolicyVectorContains("get-rest-api-description-malformed-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns ByteArrayOutputStream().apply {
+            write("{".toByteArray())
+        }
+
+        try {
+            api.getRestApiDescription(deviceId, "/REST/SLEEP.API")
+            Assert.fail("Expected REST service description malformed response to fail parsing")
+        } catch (error: Exception) {
+            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+        }
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/REST/SLEEP.API", requestOperation.path)
+    }
+
+    @Test
+    fun `listRestApiServices propagates service api request failure`() = runTest {
+        assertRestFacadeRuntimePolicyVectorContains("list-rest-api-services-request-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        val transportError = RuntimeException("service api read failed")
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } throws transportError
+
+        try {
+            api.listRestApiServices(deviceId)
+            Assert.fail("Expected REST service request failure to propagate")
+        } catch (error: Exception) {
+            Assert.assertSame(transportError, error.cause)
+        }
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/REST/SERVICE.API", requestOperation.path)
+    }
+
+    @Test
+    fun `listRestApiServices maps pftp response error to enum name`() = runTest {
+        assertRestFacadeRuntimePolicyVectorContains("list-rest-api-services-response-error")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } throws BlePsFtpUtils.PftpResponseError(
+            "REST service list failed",
+            PbPFtpError.NO_SUCH_FILE_OR_DIRECTORY.number
+        )
+
+        try {
+            api.listRestApiServices(deviceId)
+            Assert.fail("Expected REST service list response error to propagate")
+        } catch (error: Exception) {
+            Assert.assertEquals("NO_SUCH_FILE_OR_DIRECTORY", error.message)
+        }
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/REST/SERVICE.API", requestOperation.path)
+    }
+
+    @Test
+    fun `listRestApiServices empty successful response is parse failure`() = runTest {
+        assertRestFacadeRuntimePolicyVectorContains("list-rest-api-services-empty-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns ByteArrayOutputStream()
+
+        try {
+            api.listRestApiServices(deviceId)
+            Assert.fail("Expected REST service list empty response to fail parsing")
+        } catch (error: Exception) {
+            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+        }
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/REST/SERVICE.API", requestOperation.path)
+    }
+
+    @Test
+    fun `listRestApiServices malformed successful response is parse failure`() = runTest {
+        assertRestFacadeRuntimePolicyVectorContains("list-rest-api-services-malformed-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val requestHeaders = mutableListOf<ByteArray>()
+        mockPolarFileSystemV2()
+        coEvery { client.request(capture(requestHeaders), any()) } returns ByteArrayOutputStream().apply {
+            write("{".toByteArray())
+        }
+
+        try {
+            api.listRestApiServices(deviceId)
+            Assert.fail("Expected REST service list malformed response to fail parsing")
+        } catch (error: Exception) {
+            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+        }
+        Assert.assertEquals(1, requestHeaders.size)
+        val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
+        Assert.assertEquals("/REST/SERVICE.API", requestOperation.path)
+    }
+
+    @Test
+    fun `doFactoryReset sends reset notification`() = runTest {
+        assertCommandRuntimePolicyVectorContains("factory-reset")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } returns Unit
+
+        api.doFactoryReset(deviceId)
+
+        Assert.assertEquals(listOf(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal), notificationIds)
+        val params = PftpNotification.PbPFtpFactoryResetParams.parseFrom(notificationParams.single())
+        Assert.assertFalse(params.sleep)
+        Assert.assertTrue(params.doFactoryDefaults)
+        Assert.assertFalse(params.otaFwupdate)
+    }
+
+    @Test
+    fun `doFactoryReset with preserve pairing sends ota firmware update flag`() = runTest {
+        assertCommandRuntimePolicyVectorContains("factory-reset-preserve-pairing")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } returns Unit
+
+        @Suppress("DEPRECATION")
+        api.doFactoryReset(deviceId, preservePairingInformation = true)
+
+        Assert.assertEquals(listOf(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal), notificationIds)
+        val params = PftpNotification.PbPFtpFactoryResetParams.parseFrom(notificationParams.single())
+        Assert.assertFalse(params.sleep)
+        Assert.assertTrue(params.doFactoryDefaults)
+        Assert.assertTrue(params.otaFwupdate)
+    }
+
+    @Test
+    fun `doRestart sends reset notification without factory defaults`() = runTest {
+        assertCommandRuntimePolicyVectorContains("restart")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } returns Unit
+
+        api.doRestart(deviceId)
+
+        Assert.assertEquals(listOf(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal), notificationIds)
+        val params = PftpNotification.PbPFtpFactoryResetParams.parseFrom(notificationParams.single())
+        Assert.assertFalse(params.sleep)
+        Assert.assertFalse(params.doFactoryDefaults)
+        Assert.assertFalse(params.otaFwupdate)
+    }
+
+    @Test
+    fun `setWareHouseSleep sends reset notification with sleep and factory defaults`() = runTest {
+        assertCommandRuntimePolicyVectorContains("warehouse-sleep")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } returns Unit
+
+        api.setWareHouseSleep(deviceId)
+
+        Assert.assertEquals(listOf(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal), notificationIds)
+        val params = PftpNotification.PbPFtpFactoryResetParams.parseFrom(notificationParams.single())
+        Assert.assertTrue(params.sleep)
+        Assert.assertTrue(params.doFactoryDefaults)
+        Assert.assertFalse(params.otaFwupdate)
+    }
+
+    @Test
+    fun `turnDeviceOff sends reset notification with sleep only`() = runTest {
+        assertCommandRuntimePolicyVectorContains("turn-device-off")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } returns Unit
+
+        api.turnDeviceOff(deviceId)
+
+        Assert.assertEquals(listOf(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal), notificationIds)
+        val params = PftpNotification.PbPFtpFactoryResetParams.parseFrom(notificationParams.single())
+        Assert.assertTrue(params.sleep)
+        Assert.assertFalse(params.doFactoryDefaults)
+        Assert.assertFalse(params.otaFwupdate)
+    }
+
+    @Test
+    fun `doFactoryReset propagates notification failure`() = runTest {
+        assertCommandRuntimePolicyVectorContains("factory-reset-notification-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("reset notification failed")
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } throws transportError
+
+        try {
+            api.doFactoryReset(deviceId)
+            Assert.fail("Expected reset notification failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(listOf(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal), notificationIds)
+    }
+
+    @Test
+    fun `doFactoryReset with preserve pairing propagates notification failure`() = runTest {
+        assertCommandRuntimePolicyVectorContains("factory-reset-preserve-pairing-notification-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("preserve pairing reset notification failed")
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } throws transportError
+
+        try {
+            @Suppress("DEPRECATION")
+            api.doFactoryReset(deviceId, preservePairingInformation = true)
+            Assert.fail("Expected preserve pairing reset notification failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(listOf(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal), notificationIds)
+        val params = PftpNotification.PbPFtpFactoryResetParams.parseFrom(notificationParams.single())
+        Assert.assertTrue(params.otaFwupdate)
+    }
+
+    @Test
+    fun `doRestart propagates notification failure`() = runTest {
+        assertCommandRuntimePolicyVectorContains("restart-notification-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("restart notification failed")
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } throws transportError
+
+        try {
+            api.doRestart(deviceId)
+            Assert.fail("Expected restart notification failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(listOf(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal), notificationIds)
+        val params = PftpNotification.PbPFtpFactoryResetParams.parseFrom(notificationParams.single())
+        Assert.assertFalse(params.doFactoryDefaults)
+    }
+
+    @Test
+    fun `setWareHouseSleep propagates notification failure`() = runTest {
+        assertCommandRuntimePolicyVectorContains("warehouse-sleep-notification-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("warehouse sleep notification failed")
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } throws transportError
+
+        try {
+            api.setWareHouseSleep(deviceId)
+            Assert.fail("Expected warehouse sleep notification failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(listOf(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal), notificationIds)
+        val params = PftpNotification.PbPFtpFactoryResetParams.parseFrom(notificationParams.single())
+        Assert.assertTrue(params.sleep)
+        Assert.assertTrue(params.doFactoryDefaults)
+    }
+
+    @Test
+    fun `turnDeviceOff propagates notification failure`() = runTest {
+        assertCommandRuntimePolicyVectorContains("turn-device-off-notification-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("turn device off notification failed")
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } throws transportError
+
+        try {
+            api.turnDeviceOff(deviceId)
+            Assert.fail("Expected turn device off notification failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(listOf(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal), notificationIds)
+        val params = PftpNotification.PbPFtpFactoryResetParams.parseFrom(notificationParams.single())
+        Assert.assertTrue(params.sleep)
+        Assert.assertFalse(params.doFactoryDefaults)
+    }
+
+    @Test
+    fun `sendInitializationAndStartSyncNotifications requests sync then sends initialize and start sync`() = runTest {
+        assertCommandRuntimePolicyVectorContains("sync-start-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } returns Unit
+
+        val result = api.sendInitializationAndStartSyncNotifications(deviceId)
+
+        Assert.assertTrue(result)
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.REQUEST_SYNCHRONIZATION_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+        Assert.assertEquals(
+            listOf(
+                PftpNotification.PbPFtpHostToDevNotification.INITIALIZE_SESSION_VALUE,
+                PftpNotification.PbPFtpHostToDevNotification.START_SYNC_VALUE
+            ),
+            notificationIds
+        )
+        Assert.assertEquals(listOf(null, null), notificationParams)
+    }
+
+    @Test
+    fun `sendInitializationAndStartSyncNotifications returns false when sync request fails`() = runTest {
+        assertCommandRuntimePolicyVectorContains("sync-start-query-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val queryIds = mutableListOf<Int>()
+        val queryParams = mutableListOf<ByteArray?>()
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        val transportError = RuntimeException("sync request failed")
+        coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } throws transportError
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } returns Unit
+
+        val result = api.sendInitializationAndStartSyncNotifications(deviceId)
+
+        Assert.assertFalse(result)
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.REQUEST_SYNCHRONIZATION_VALUE), queryIds)
+        Assert.assertEquals(listOf(null), queryParams)
+        Assert.assertTrue(notificationIds.isEmpty())
+        Assert.assertTrue(notificationParams.isEmpty())
+    }
+
+    @Test
+    fun `sendTerminateAndStopSyncNotifications sends completed stop sync then terminate session`() = runTest {
+        assertCommandRuntimePolicyVectorContains("sync-stop-success")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } returns Unit
+
+        api.sendTerminateAndStopSyncNotifications(deviceId)
+
+        Assert.assertEquals(
+            listOf(
+                PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE,
+                PftpNotification.PbPFtpHostToDevNotification.TERMINATE_SESSION_VALUE
+            ),
+            notificationIds
+        )
+        val stopSyncParams = PftpNotification.PbPFtpStopSyncParams.parseFrom(notificationParams[0])
+        Assert.assertTrue(stopSyncParams.completed)
+        Assert.assertNull(notificationParams[1])
+    }
+
+    @Test
+    fun `sendTerminateAndStopSyncNotifications swallows notification failure`() = runTest {
+        assertCommandRuntimePolicyVectorContains("sync-stop-notification-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val notificationIds = mutableListOf<Int>()
+        val notificationParams = mutableListOf<ByteArray?>()
+        coEvery { client.sendNotification(capture(notificationIds), captureNullable(notificationParams)) } throws RuntimeException("stop sync failed")
+
+        api.sendTerminateAndStopSyncNotifications(deviceId)
+
+        Assert.assertEquals(listOf(PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE), notificationIds)
+        val stopSyncParams = PftpNotification.PbPFtpStopSyncParams.parseFrom(notificationParams.single())
+        Assert.assertTrue(stopSyncParams.completed)
+    }
+
+    @Test
+    fun `setMultiBLEConnectionMode sends configure command with enable value`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPfcConnection(deviceId)
+        val commands = mutableListOf<PfcMessage>()
+        val values = mutableListOf<Int>()
+        coEvery { client.sendControlPointCommand(capture(commands), capture(values)) } returns BlePfcClient.PfcResponse(byteArrayOf(0, PfcMessage.PFC_CONFIGURE_MULTI_CONNECTION_SETTING.numVal.toByte(), 1))
+
+        api.setMultiBLEConnectionMode(deviceId, enable = true)
+
+        Assert.assertEquals(listOf(PfcMessage.PFC_CONFIGURE_MULTI_CONNECTION_SETTING), commands)
+        Assert.assertEquals(listOf(1), values)
+    }
+
+    @Test
+    fun `setMultiBLEConnectionMode maps non success response to operation not supported`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPfcConnection(deviceId)
+        val commands = mutableListOf<PfcMessage>()
+        val values = mutableListOf<Int>()
+        coEvery { client.sendControlPointCommand(capture(commands), capture(values)) } returns BlePfcClient.PfcResponse(byteArrayOf(0, PfcMessage.PFC_CONFIGURE_MULTI_CONNECTION_SETTING.numVal.toByte(), 2))
+
+        try {
+            api.setMultiBLEConnectionMode(deviceId, enable = false)
+            Assert.fail("Expected non-success PFC response to map to operation not supported")
+        } catch (error: Exception) {
+            Assert.assertTrue(error is PolarOperationNotSupported)
+        }
+        Assert.assertEquals(listOf(PfcMessage.PFC_CONFIGURE_MULTI_CONNECTION_SETTING), commands)
+        Assert.assertEquals(listOf(0), values)
+    }
+
+    @Test
+    fun `getMultiBLEConnectionMode sends request command and maps enabled payload`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPfcConnection(deviceId)
+        val commands = mutableListOf<PfcMessage>()
+        val params = mutableListOf<ByteArray?>()
+        coEvery { client.sendControlPointCommand(capture(commands), captureNullable(params)) } returns BlePfcClient.PfcResponse(byteArrayOf(0, PfcMessage.PFC_REQUEST_MULTI_CONNECTION_SETTING.numVal.toByte(), 1, 1))
+
+        val result = api.getMultiBLEConnectionMode(deviceId)
+
+        Assert.assertTrue(result)
+        Assert.assertEquals(listOf(PfcMessage.PFC_REQUEST_MULTI_CONNECTION_SETTING), commands)
+        Assert.assertEquals(listOf(null), params)
+    }
+
+    @Test
+    fun `setOfflineRecordingTrigger maps public trigger and secret to PMD facade request`() = runTest {
+        assertOfflineTriggerRuntimePolicyVectorContains("set-trigger-success-with-secret")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPmdConnection(deviceId)
+        val capturedTriggers = mutableListOf<PmdOfflineTrigger>()
+        val capturedSecrets = mutableListOf<PmdSecret?>()
+        val trigger = PolarOfflineRecordingTrigger(
+            triggerMode = PolarOfflineRecordingTriggerMode.TRIGGER_SYSTEM_START,
+            triggerFeatures = mapOf(
+                PolarBleApi.PolarDeviceDataType.ACC to PolarSensorSetting(
+                    mapOf(
+                        PolarSensorSetting.SettingType.SAMPLE_RATE to 52,
+                        PolarSensorSetting.SettingType.RESOLUTION to 16
+                    )
+                ),
+                PolarBleApi.PolarDeviceDataType.HR to null
+            )
+        )
+        val secretBytes = ByteArray(16) { index -> index.toByte() }
+        val secret = PolarRecordingSecret(secretBytes)
+        coEvery { client.setOfflineRecordingTrigger(capture(capturedTriggers), captureNullable(capturedSecrets)) } just runs
+
+        api.setOfflineRecordingTrigger(deviceId, trigger, secret)
+
+        val pmdTrigger = capturedTriggers.single()
+        Assert.assertEquals(PmdOfflineRecTriggerMode.TRIGGER_SYSTEM_START, pmdTrigger.triggerMode)
+        val acc = pmdTrigger.triggers[PmdMeasurementType.ACC] ?: error("ACC trigger missing")
+        Assert.assertEquals(PmdOfflineRecTriggerStatus.TRIGGER_ENABLED, acc.first)
+        Assert.assertEquals(52, acc.second!!.selected[PmdSetting.PmdSettingType.SAMPLE_RATE])
+        Assert.assertEquals(16, acc.second!!.selected[PmdSetting.PmdSettingType.RESOLUTION])
+        val offlineHr = pmdTrigger.triggers[PmdMeasurementType.OFFLINE_HR] ?: error("HR trigger missing")
+        Assert.assertEquals(PmdOfflineRecTriggerStatus.TRIGGER_ENABLED, offlineHr.first)
+        Assert.assertNull(offlineHr.second)
+        Assert.assertEquals(2, pmdTrigger.triggers.size)
+        val pmdSecret = capturedSecrets.single()!!
+        Assert.assertEquals(PmdSecret.SecurityStrategy.AES128, pmdSecret.strategy)
+        Assert.assertArrayEquals(secretBytes, pmdSecret.key)
+    }
+
+    @Test
+    fun `setOfflineRecordingTrigger propagates PMD facade error with mapped payload prepared`() = runTest {
+        assertOfflineTriggerRuntimePolicyVectorContains("set-trigger-mode-error")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPmdConnection(deviceId)
+        val capturedTriggers = mutableListOf<PmdOfflineTrigger>()
+        val transportError = RuntimeException("offline trigger set mode failed")
+        val trigger = PolarOfflineRecordingTrigger(
+            triggerMode = PolarOfflineRecordingTriggerMode.TRIGGER_SYSTEM_START,
+            triggerFeatures = mapOf(PolarBleApi.PolarDeviceDataType.HR to null)
+        )
+        coEvery { client.setOfflineRecordingTrigger(capture(capturedTriggers), null) } throws transportError
+
+        try {
+            api.setOfflineRecordingTrigger(deviceId, trigger, null)
+            Assert.fail("Expected offline trigger set failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+
+        val pmdTrigger = capturedTriggers.single()
+        Assert.assertEquals(PmdOfflineRecTriggerMode.TRIGGER_SYSTEM_START, pmdTrigger.triggerMode)
+        Assert.assertTrue(pmdTrigger.triggers.containsKey(PmdMeasurementType.OFFLINE_HR))
+    }
+
+    @Test
+    fun `getOfflineRecordingTriggerSetup maps PMD status to public trigger and propagates errors`() = runTest {
+        assertOfflineTriggerRuntimePolicyVectorContains("get-trigger-success")
+        assertOfflineTriggerRuntimePolicyVectorContains("get-trigger-transport-error")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPmdConnection(deviceId)
+        coEvery { client.getOfflineRecordingTriggerStatus() } returns PmdOfflineTrigger(
+            triggerMode = PmdOfflineRecTriggerMode.TRIGGER_SYSTEM_START,
+            triggers = mapOf(
+                PmdMeasurementType.ACC to Pair(
+                    PmdOfflineRecTriggerStatus.TRIGGER_ENABLED,
+                    PmdSetting(byteArrayOf(0x00, 0x01, 0x34, 0x00))
+                ),
+                PmdMeasurementType.GYRO to Pair(PmdOfflineRecTriggerStatus.TRIGGER_DISABLED, null),
+                PmdMeasurementType.OFFLINE_HR to Pair(PmdOfflineRecTriggerStatus.TRIGGER_ENABLED, null)
+            )
+        )
+
+        val result = api.getOfflineRecordingTriggerSetup(deviceId)
+
+        Assert.assertEquals(PolarOfflineRecordingTriggerMode.TRIGGER_SYSTEM_START, result.triggerMode)
+        Assert.assertTrue(result.triggerFeatures.containsKey(PolarBleApi.PolarDeviceDataType.ACC))
+        Assert.assertEquals(setOf(52), result.triggerFeatures[PolarBleApi.PolarDeviceDataType.ACC]!!.settings[PolarSensorSetting.SettingType.SAMPLE_RATE])
+        Assert.assertTrue(result.triggerFeatures.containsKey(PolarBleApi.PolarDeviceDataType.HR))
+        Assert.assertFalse(result.triggerFeatures.containsKey(PolarBleApi.PolarDeviceDataType.GYRO))
+
+        val transportError = RuntimeException("offline trigger status failed")
+        coEvery { client.getOfflineRecordingTriggerStatus() } throws transportError
+        try {
+            api.getOfflineRecordingTriggerSetup(deviceId)
+            Assert.fail("Expected offline trigger status failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+    }
+
+    private fun mockPsFtpConnection(
+        deviceId: String,
+        polarDeviceType: String = "ignite3"
+    ): Pair<BlePsFtpClient, BleDeviceSession> {
         val client = mockk<BlePsFtpClient>()
         val session = mockk<BleDeviceSession>()
         val advContent = mockk<BleAdvertisementContent>()
 
         every { session.advertisementContent } returns advContent
         every { session.advertisementContent.polarDeviceId } returns deviceId
+        every { session.polarDeviceType } returns polarDeviceType
         every { session.sessionState } returns BleDeviceSession.DeviceSessionState.SESSION_OPEN
         every { session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) } returns client
         every { client.isServiceDiscovered } returns true
@@ -176,5 +2783,639 @@ class BDBleApiImplTest {
         every { PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, any()) } returns session
 
         return Pair(client, session)
+    }
+
+    private fun mockPmdConnection(deviceId: String): Pair<BlePMDClient, BleDeviceSession> {
+        val client = mockk<BlePMDClient>()
+        val session = mockk<BleDeviceSession>()
+        val advContent = mockk<BleAdvertisementContent>()
+
+        every { session.advertisementContent } returns advContent
+        every { session.advertisementContent.polarDeviceId } returns deviceId
+        every { session.polarDeviceType } returns "ignite3"
+        every { session.sessionState } returns BleDeviceSession.DeviceSessionState.SESSION_OPEN
+        every { session.fetchClient(BlePMDClient.PMD_SERVICE) } returns client
+        every { client.isServiceDiscovered } returns true
+        every { client.getNotificationAtomicInteger(any()) } returns AtomicInteger(0)
+
+        mockkObject(PolarServiceClientUtils)
+        every { PolarServiceClientUtils.sessionPmdClientReady(deviceId, any()) } returns session
+
+        return Pair(client, session)
+    }
+
+    private fun mockPfcConnection(deviceId: String): Pair<BlePfcClient, BleDeviceSession> {
+        val client = mockk<BlePfcClient>()
+        val session = mockk<BleDeviceSession>()
+        val advContent = mockk<BleAdvertisementContent>()
+
+        every { session.advertisementContent } returns advContent
+        every { session.advertisementContent.polarDeviceId } returns deviceId
+        every { session.polarDeviceType } returns "ignite3"
+        every { session.sessionState } returns BleDeviceSession.DeviceSessionState.SESSION_OPEN
+        every { session.fetchClient(PFC_SERVICE) } returns client
+        every { client.isServiceDiscovered } returns true
+        every { client.getNotificationAtomicInteger(any()) } returns AtomicInteger(0)
+
+        mockkObject(PolarServiceClientUtils)
+        every { PolarServiceClientUtils.sessionPsPfcClientReady(deviceId, any()) } returns session
+
+        return Pair(client, session)
+    }
+
+    private fun mockRecordingSupported() {
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { BlePolarDeviceCapabilitiesUtility.isRecordingSupported(any()) } returns true
+    }
+
+    private fun mockPolarFileSystemV2() {
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+    }
+
+    private fun assertCommandRuntimePolicyVectorContains(vectorTerm: String) {
+        val vector = JsonParser().parse(
+            findRepositoryRoot()
+                .resolve("testdata/golden-vectors/sdk/command-runtime/reset-sync-h10-command-policy.json")
+                .readText()
+        ).asJsonObject
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val operationIds = input.getAsJsonArray("operations").map { it.asJsonObject.get("id").asString }
+        val commonRuntimeCaseIds = expected.getAsJsonObject("commonRuntimePrototype").getAsJsonArray("cases").map { it.asJsonObject.get("id").asString }
+        Assert.assertEquals("reset-sync-h10-command-policy", vector.get("id").asString)
+        Assert.assertEquals("reset_sync_h10_command_policy", vector.get("case").asString)
+        Assert.assertEquals(COMMAND_RUNTIME_POLICY_OPERATION_IDS, operationIds)
+        Assert.assertEquals(COMMAND_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds)
+        Assert.assertEquals(vectorTerm, operationIds.firstOrNull { it == vectorTerm })
+        Assert.assertEquals("fake-command-runtime-policy", vector.getAsJsonObject("execution").get("kind").asString)
+        Assert.assertEquals("public-facade-command-capture", vector.getAsJsonObject("execution").get("transport").asString)
+        Assert.assertEquals(COMMAND_RUNTIME_POLICY_COMMON_DECISION, vector.get("commonDecision").asString)
+    }
+
+    @Test
+    fun `command runtime readiness manifest is pinned before runtime migration`() {
+        assertSinglePolicyReadinessManifest(
+            manifestPath = "sdk/command-runtime/reset-sync-h10-command-readiness.json",
+            id = "reset-sync-h10-command-readiness",
+            kind = "resetSyncH10CommandReadiness",
+            policyPath = "sdk/command-runtime/reset-sync-h10-command-policy.json",
+            families = listOf(
+                "h10-recording-start-query",
+                "h10-recording-start-query-failure",
+                "h10-recording-stop-query",
+                "h10-recording-stop-query-failure",
+                "h10-recording-status-query",
+                "h10-recording-status-query-failure",
+                "factory-reset-flags",
+                "factory-reset-notification-failure",
+                "preserve-pairing-reset-flags",
+                "preserve-pairing-reset-notification-failure",
+                "restart-reset-flags",
+                "restart-reset-notification-failure",
+                "warehouse-sleep-reset-flags",
+                "warehouse-sleep-reset-notification-failure",
+                "turn-device-off-reset-flags",
+                "turn-device-off-reset-notification-failure",
+                "sync-start-notification-sequence",
+                "sync-start-query-failure-platform-split",
+                "sync-stop-complete-terminate-sequence",
+                "sync-stop-notification-failure-platform-split",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ),
+            commonDecision = COMMAND_RUNTIME_READINESS_COMMON_DECISION,
+            androidConsumers = listOf("com.polar.sdk.impl.BDBleApiImplTest"),
+            iosConsumers = listOf("PolarBleApiImplTests"),
+            commonPrototypeConsumers = listOf("com.polar.sharedtest.CommandRuntimePolicyCommonTest")
+        )
+    }
+
+    private fun assertStoredDataCleanupWorkflowVectorContains(vectorTerm: String) {
+        val vector = JsonParser().parse(
+            findRepositoryRoot()
+                .resolve("testdata/golden-vectors/sdk/stored-data-cleanup/cleanup-workflow-policy.json")
+                .readText()
+        ).asJsonObject
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val scenarioIds = input.getAsJsonArray("scenarios").map { it.asJsonObject.get("id").asString }
+        val commonRuntimeCaseIds = expected.getAsJsonObject("commonRuntimePrototype").getAsJsonArray("cases").map { it.asJsonObject.get("id").asString }
+        Assert.assertEquals("stored-data-cleanup-workflow-policy", vector.get("id").asString)
+        Assert.assertEquals("cleanup_workflow_policy", vector.get("case").asString)
+        Assert.assertEquals(STORED_DATA_CLEANUP_POLICY_SCENARIO_IDS, scenarioIds)
+        Assert.assertEquals(STORED_DATA_CLEANUP_POLICY_SCENARIO_IDS, commonRuntimeCaseIds)
+        Assert.assertEquals(vectorTerm, scenarioIds.firstOrNull { it == vectorTerm })
+        Assert.assertEquals("fake-cleanup-runtime-policy", vector.getAsJsonObject("execution").get("kind").asString)
+        Assert.assertEquals("directory-list-and-remove-command-capture", vector.getAsJsonObject("execution").get("transport").asString)
+        Assert.assertEquals(STORED_DATA_CLEANUP_POLICY_COMMON_DECISION, vector.get("commonDecision").asString)
+    }
+
+    @Test
+    fun `stored data cleanup readiness manifest is pinned before cleanup migration`() {
+        assertSinglePolicyReadinessManifest(
+            manifestPath = "sdk/stored-data-cleanup/cleanup-workflow-readiness.json",
+            id = "stored-data-cleanup-workflow-readiness",
+            kind = "storedDataCleanupWorkflowReadiness",
+            policyPath = "sdk/stored-data-cleanup/cleanup-workflow-policy.json",
+            families = listOf(
+                "telemetry-trc-filter",
+                "sdlogs-extension-filter",
+                "activity-prune-empty-parents",
+                "automatic-sample-embedded-day-filter",
+                "list-failure-platform-split",
+                "empty-parent-path-platform-split",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ),
+            commonDecision = STORED_DATA_CLEANUP_READINESS_COMMON_DECISION,
+            androidConsumers = listOf("com.polar.sdk.impl.BDBleApiImplTest"),
+            iosConsumers = listOf("PolarBleApiImplTests"),
+            commonPrototypeConsumers = listOf("com.polar.sharedtest.StoredDataCleanupRuntimePolicyCommonTest")
+        )
+    }
+
+    private fun assertDiskTimeRuntimePolicyVectorContains(vectorTerm: String) {
+        val vector = JsonParser().parse(
+            findRepositoryRoot()
+                .resolve("testdata/golden-vectors/sdk/disk-time-runtime/disk-time-query-policy.json")
+                .readText()
+        ).asJsonObject
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val operationIds = input.getAsJsonArray("operations").map { it.asJsonObject.get("id").asString }
+        val commonRuntimeCaseIds = expected.getAsJsonObject("commonRuntimePrototype").getAsJsonArray("cases").map { it.asJsonObject.get("id").asString }
+        Assert.assertEquals("disk-time-query-policy", vector.get("id").asString)
+        Assert.assertEquals("disk_time_query_policy", vector.get("case").asString)
+        Assert.assertEquals(DISK_TIME_RUNTIME_POLICY_OPERATION_IDS, operationIds)
+        Assert.assertEquals(DISK_TIME_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds)
+        Assert.assertEquals(vectorTerm, operationIds.firstOrNull { it == vectorTerm })
+        Assert.assertEquals("fake-disk-time-query-runtime-policy", vector.getAsJsonObject("execution").get("kind").asString)
+        Assert.assertEquals("public-facade-query-capture", vector.getAsJsonObject("execution").get("transport").asString)
+        Assert.assertEquals(DISK_TIME_RUNTIME_POLICY_COMMON_DECISION, vector.get("commonDecision").asString)
+    }
+
+    @Test
+    fun `disk time readiness manifest is pinned before runtime migration`() {
+        assertSinglePolicyReadinessManifest(
+            manifestPath = "sdk/disk-time-runtime/disk-time-query-readiness.json",
+            id = "disk-time-query-readiness",
+            kind = "diskTimeQueryReadiness",
+            policyPath = "sdk/disk-time-runtime/disk-time-query-policy.json",
+            families = listOf(
+                "disk-space-query",
+                "local-time-query",
+                "local-time-with-zone-query",
+                "v2-system-and-local-time-sequence",
+                "h10-single-local-time-query",
+                "set-local-time-transport-error",
+                "local-time-transport-error",
+                "local-time-with-zone-transport-error",
+                "disk-space-transport-error",
+                "filesystem-capability-gate",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ),
+            commonDecision = DISK_TIME_RUNTIME_READINESS_COMMON_DECISION,
+            androidConsumers = listOf("com.polar.sdk.impl.BDBleApiImplTest"),
+            iosConsumers = listOf("PolarBleApiImplTests"),
+            commonPrototypeConsumers = listOf("com.polar.sharedtest.DiskTimeRuntimePolicyCommonTest")
+        )
+    }
+
+    private fun assertUserDeviceSettingsRuntimePolicyVectorContains(vectorTerm: String) {
+        val vector = JsonParser().parse(
+            findRepositoryRoot()
+                .resolve("testdata/golden-vectors/sdk/user-device-settings-runtime/settings-runtime-policy.json")
+                .readText()
+        ).asJsonObject
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val operationIds = input.getAsJsonArray("operations").map { it.asJsonObject.get("id").asString }
+        val commonRuntimeCaseIds = expected.getAsJsonObject("commonRuntimePrototype").getAsJsonArray("cases").map { it.asJsonObject.get("id").asString }
+        Assert.assertEquals("user-device-settings-runtime-policy", vector.get("id").asString)
+        Assert.assertEquals("user_device_settings_runtime_policy", vector.get("case").asString)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", input.get("settingsPath").asString)
+        Assert.assertEquals(USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS, operationIds)
+        Assert.assertEquals(USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds)
+        Assert.assertEquals(vectorTerm, operationIds.firstOrNull { it == vectorTerm })
+        Assert.assertEquals("fake-user-device-settings-runtime-policy", vector.getAsJsonObject("execution").get("kind").asString)
+        Assert.assertEquals("public-facade-psftp-read-write-capture", vector.getAsJsonObject("execution").get("transport").asString)
+        Assert.assertEquals(USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION, vector.get("commonDecision").asString)
+    }
+
+    @Test
+    fun `user device settings readiness manifest is pinned before runtime migration`() {
+        assertSinglePolicyReadinessManifest(
+            manifestPath = "sdk/user-device-settings-runtime/settings-runtime-readiness.json",
+            id = "user-device-settings-runtime-readiness",
+            kind = "userDeviceSettingsRuntimeReadiness",
+            policyPath = "sdk/user-device-settings-runtime/settings-runtime-policy.json",
+            families = listOf(
+                "settings-path-gate",
+                "settings-read-success",
+                "settings-read-failure-no-write",
+                "telemetry-read-then-write",
+                "telemetry-write-failure-after-payload",
+                "device-location-read-then-write",
+                "device-location-write-failure-after-payload",
+                "usb-connection-mode-read-then-write",
+                "usb-connection-mode-write-failure-after-payload",
+                "automatic-training-detection-read-then-write",
+                "automatic-training-detection-write-failure-after-payload",
+                "automatic-ohr-measurement-read-then-write",
+                "automatic-ohr-measurement-write-failure-after-payload",
+                "daylight-saving-payload-shape",
+                "protobuf-field-preservation-gate",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ),
+            commonDecision = USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION,
+            androidConsumers = listOf("com.polar.sdk.impl.BDBleApiImplTest"),
+            iosConsumers = listOf("PolarBleApiImplTests"),
+            commonPrototypeConsumers = listOf("com.polar.sharedtest.UserDeviceSettingsRuntimePolicyCommonTest")
+        )
+    }
+
+    private fun assertRestFacadeRuntimePolicyVectorContains(vectorTerm: String) {
+        val vector = JsonParser().parse(
+            findRepositoryRoot()
+                .resolve("testdata/golden-vectors/sdk/rest-service/rest-facade-runtime-policy.json")
+                .readText()
+        ).asJsonObject
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val operations = input.getAsJsonArray("operations").map { it.asJsonObject }
+        val operationIds = operations.map { it.get("id").asString }
+        val commonRuntimeCaseIds = expected.getAsJsonObject("commonRuntimePrototype").getAsJsonArray("cases").map { it.asJsonObject.get("id").asString }
+        Assert.assertEquals("rest-facade-runtime-policy", vector.get("id").asString)
+        Assert.assertEquals("rest_facade_runtime_policy", vector.get("case").asString)
+        Assert.assertEquals("restFacadeRuntimePolicy", input.get("kind").asString)
+        Assert.assertEquals(REST_FACADE_RUNTIME_POLICY_OPERATION_IDS, operationIds)
+        Assert.assertEquals(REST_FACADE_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds)
+        Assert.assertEquals(vectorTerm, operationIds.firstOrNull { it == vectorTerm })
+        Assert.assertEquals("GET", operations.first { it.get("id").asString == "list-rest-api-services-success" }.get("command").asString)
+        Assert.assertEquals("/REST/SERVICE.API", operations.first { it.get("id").asString == "list-rest-api-services-success" }.get("path").asString)
+        Assert.assertEquals("service-list-json", operations.first { it.get("id").asString == "list-rest-api-services-success" }.get("payloadShape").asString)
+        Assert.assertEquals("/REST/SLEEP.API", operations.first { it.get("id").asString == "get-rest-api-description-success" }.get("path").asString)
+        Assert.assertEquals("service-description-json", operations.first { it.get("id").asString == "get-rest-api-description-success" }.get("payloadShape").asString)
+        Assert.assertEquals("responseError", operations.first { it.get("id").asString == "list-rest-api-services-response-error" }.getAsJsonObject("transport").get("mode").asString)
+        Assert.assertEquals(103, operations.first { it.get("id").asString == "list-rest-api-services-response-error" }.getAsJsonObject("transport").get("status").asInt)
+        Assert.assertEquals("NO_SUCH_FILE_OR_DIRECTORY", operations.first { it.get("id").asString == "list-rest-api-services-response-error" }.getAsJsonObject("transport").get("message").asString)
+        Assert.assertEquals("pftp-response-error-name", operations.first { it.get("id").asString == "list-rest-api-services-response-error" }.getAsJsonObject("expectedPlatformTerminal").get("android").asString)
+        Assert.assertEquals("pftp-response-error-code", operations.first { it.get("id").asString == "list-rest-api-services-response-error" }.getAsJsonObject("expectedPlatformTerminal").get("ios").asString)
+        Assert.assertEquals("successEmpty", operations.first { it.get("id").asString == "list-rest-api-services-empty-success" }.getAsJsonObject("transport").get("mode").asString)
+        Assert.assertEquals("successMalformedJson", operations.first { it.get("id").asString == "get-rest-api-description-malformed-success" }.getAsJsonObject("transport").get("mode").asString)
+        Assert.assertEquals("fake-rest-facade-runtime-policy", vector.getAsJsonObject("execution").get("kind").asString)
+        Assert.assertEquals("public-facade-psftp-request-capture", vector.getAsJsonObject("execution").get("transport").asString)
+        Assert.assertEquals(REST_FACADE_RUNTIME_POLICY_COMMON_DECISION, vector.get("commonDecision").asString)
+    }
+
+    @Test
+    fun `rest facade readiness manifest is pinned before runtime migration`() {
+        assertSinglePolicyReadinessManifest(
+            manifestPath = "sdk/rest-service/rest-facade-runtime-readiness.json",
+            id = "rest-facade-runtime-readiness",
+            kind = "restFacadeRuntimeReadiness",
+            policyPath = "sdk/rest-service/rest-facade-runtime-policy.json",
+            families = listOf(
+                "service-list-request-path",
+                "service-list-json-success",
+                "service-list-path-field-mapping",
+                "service-description-request-path",
+                "service-description-json-success",
+                "service-description-action-field-mapping",
+                "service-description-event-detail-trigger-mapping",
+                "service-list-request-failure",
+                "service-description-request-failure",
+                "service-list-response-error-platform-mapping",
+                "service-description-response-error-platform-mapping",
+                "service-list-empty-success-parse-failure",
+                "service-description-empty-success-parse-failure",
+                "service-list-malformed-success-parse-failure",
+                "service-description-malformed-success-parse-failure",
+                "model-json-mapping-vector-reference-gate",
+                "empty-response-transport-policy-gate",
+                "response-error-transport-policy-gate",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ),
+            commonDecision = REST_FACADE_RUNTIME_READINESS_COMMON_DECISION,
+            androidConsumers = listOf("com.polar.sdk.impl.BDBleApiImplTest"),
+            iosConsumers = listOf("PolarBleApiImplTests"),
+            commonPrototypeConsumers = listOf("com.polar.sharedtest.RestFacadeRuntimePolicyCommonTest")
+        )
+    }
+
+    private fun assertFileFacadeRuntimePolicyVectorContains(vectorTerm: String) {
+        val vector = JsonParser().parse(
+            findRepositoryRoot()
+                .resolve("testdata/golden-vectors/sdk/file-utils/file-facade-runtime-policy.json")
+                .readText()
+        ).asJsonObject
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val operations = input.getAsJsonArray("operations").map { it.asJsonObject }
+        val operationIds = operations.map { it.get("id").asString }
+        val commonRuntimeCaseIds = expected.getAsJsonObject("commonRuntimePrototype").getAsJsonArray("cases").map { it.asJsonObject.get("id").asString }
+        Assert.assertEquals("file-facade-runtime-policy", vector.get("id").asString)
+        Assert.assertEquals("file_facade_runtime_policy", vector.get("case").asString)
+        Assert.assertEquals("fileFacadeRuntimePolicy", input.get("kind").asString)
+        Assert.assertEquals(FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS, operationIds)
+        Assert.assertEquals(FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds)
+        Assert.assertEquals(vectorTerm, operationIds.firstOrNull { it == vectorTerm })
+        val operationsById = operations.associateBy { it.get("id").asString }
+        Assert.assertEquals("GET", operationsById.getValue("read-low-level-file-success").get("command").asString)
+        Assert.assertEquals("/U/0/CUSTOM.BIN", operationsById.getValue("read-low-level-file-success").get("path").asString)
+        Assert.assertEquals("010203", operationsById.getValue("read-low-level-file-success").get("responseHex").asString)
+        Assert.assertEquals("/U/0/EMPTY.BIN", operationsById.getValue("read-low-level-file-empty-success").get("path").asString)
+        Assert.assertEquals("", operationsById.getValue("read-low-level-file-empty-success").get("responseHex").asString)
+        Assert.assertEquals("PUT", operationsById.getValue("write-low-level-file-success").get("command").asString)
+        Assert.assertEquals("0a0b", operationsById.getValue("write-low-level-file-success").get("payloadHex").asString)
+        Assert.assertEquals(listOf(0, 2), operationsById.getValue("write-low-level-file-progress-success").getAsJsonArray("progress").map { it.asInt })
+        Assert.assertEquals("writeStreamError", operationsById.getValue("write-low-level-file-stream-failure").getAsJsonObject("transport").get("mode").asString)
+        Assert.assertEquals("pftpResponseError", operationsById.getValue("write-low-level-file-response-error").getAsJsonObject("transport").get("mode").asString)
+        Assert.assertEquals(103, operationsById.getValue("write-low-level-file-response-error").getAsJsonObject("transport").get("status").asInt)
+        Assert.assertEquals("pftp-response-error-object", operationsById.getValue("write-low-level-file-response-error").getAsJsonObject("expectedPlatformTerminal").get("android").asString)
+        Assert.assertEquals("pftp-response-error-code", operationsById.getValue("write-low-level-file-response-error").getAsJsonObject("expectedPlatformTerminal").get("ios").asString)
+        Assert.assertEquals("REMOVE", operationsById.getValue("delete-low-level-file-success").get("command").asString)
+        Assert.assertEquals("transportError", operationsById.getValue("delete-low-level-file-request-failure").getAsJsonObject("transport").get("mode").asString)
+        Assert.assertEquals("pftpResponseError", operationsById.getValue("delete-low-level-file-response-error").getAsJsonObject("transport").get("mode").asString)
+        Assert.assertEquals("fake-file-facade-runtime-policy", vector.getAsJsonObject("execution").get("kind").asString)
+        Assert.assertEquals("public-facade-psftp-command-capture", vector.getAsJsonObject("execution").get("transport").asString)
+        Assert.assertEquals(FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION, vector.get("commonDecision").asString)
+    }
+
+    private fun assertOfflineTriggerRuntimePolicyVectorContains(vectorTerm: String) {
+        val vector = JsonParser().parse(
+            findRepositoryRoot()
+                .resolve("testdata/golden-vectors/sdk/offline-recording/trigger-runtime-policy.json")
+                .readText()
+        ).asJsonObject
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val scenarios = input.getAsJsonArray("scenarios").map { it.asJsonObject }
+        val scenarioIds = scenarios.map { it.get("id").asString }
+        val commonRuntimeCaseIds = expected.getAsJsonObject("commonRuntimePrototype").getAsJsonArray("cases").map { it.asJsonObject.get("id").asString }
+        val scenariosById = scenarios.associateBy { it.get("id").asString }
+        val cleanupEvidenceIds = listOf(
+            expected.getAsJsonObject("platformCleanupEvidence").getAsJsonObject("android").get("id").asString,
+            expected.getAsJsonObject("platformCleanupEvidence").getAsJsonObject("ios").get("id").asString
+        )
+        Assert.assertEquals("trigger-runtime-policy", vector.get("id").asString)
+        Assert.assertEquals("trigger_runtime_policy", vector.get("case").asString)
+        Assert.assertEquals("offlineTriggerRuntimePolicy", input.get("kind").asString)
+        Assert.assertEquals(OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS, scenarioIds)
+        Assert.assertEquals(OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS, commonRuntimeCaseIds)
+        Assert.assertTrue((scenarioIds + cleanupEvidenceIds).contains(vectorTerm))
+        Assert.assertEquals("TRIGGER_SYSTEM_START", input.getAsJsonObject("desiredTrigger").get("mode").asString)
+        Assert.assertEquals(true, input.getAsJsonObject("desiredTrigger").getAsJsonObject("secret").get("present").asBoolean)
+        Assert.assertEquals("controlPointError", scenariosById.getValue("set-trigger-mode-error").getAsJsonObject("transport").get("setMode").asString)
+        Assert.assertEquals("transportError", scenariosById.getValue("set-trigger-status-read-error").getAsJsonObject("transport").get("getStatus").asString)
+        Assert.assertEquals("controlPointError", scenariosById.getValue("set-trigger-setting-error").getAsJsonObject("transport").get("setSettings").asString)
+        Assert.assertEquals("transportError", scenariosById.getValue("get-trigger-transport-error").getAsJsonObject("transport").get("getStatus").asString)
+        Assert.assertEquals("android-stale-wrong-command-response-discard", expected.getAsJsonObject("platformCleanupEvidence").getAsJsonObject("android").get("id").asString)
+        Assert.assertEquals("ios-pre-command-response-queue-clear", expected.getAsJsonObject("platformCleanupEvidence").getAsJsonObject("ios").get("id").asString)
+        Assert.assertEquals(OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION, expected.get("commonDecision").asString)
+        Assert.assertEquals("shared-common-test", vector.getAsJsonObject("execution").get("status").asString)
+    }
+
+    @Test
+    fun `offline trigger runtime readiness manifest is pinned before runtime migration`() {
+        assertSinglePolicyReadinessManifest(
+            manifestPath = "sdk/offline-recording/trigger-runtime-readiness.json",
+            id = "trigger-runtime-readiness",
+            kind = "offlineTriggerRuntimeReadiness",
+            policyPath = "sdk/offline-recording/trigger-runtime-policy.json",
+            families = listOf(
+                "typed-set-mode",
+                "status-read",
+                "settings-write",
+                "optional-secret-attachment",
+                "get-transport-error",
+                "set-mode-control-point-error",
+                "status-read-transport-error",
+                "settings-control-point-error",
+                "enabled-feature-projection",
+                "excluded-feature-projection",
+                "platform-packet-split",
+                "facade-error-mapping-deferred",
+                "compile-verification-gate"
+            )
+        )
+    }
+
+    @Test
+    fun `file facade readiness manifest is pinned before runtime migration`() {
+        assertSinglePolicyReadinessManifest(
+            manifestPath = "sdk/file-utils/file-facade-runtime-readiness.json",
+            id = "file-facade-runtime-readiness",
+            kind = "fileFacadeRuntimeReadiness",
+            policyPath = "sdk/file-utils/file-facade-runtime-policy.json",
+            families = listOf(
+                "low-level-file-path-gate",
+                "read-file-get-success",
+                "read-file-empty-success",
+                "read-file-request-failure",
+                "read-file-response-error",
+                "write-file-put-success",
+                "write-file-payload-capture",
+                "write-file-progress-before-completion",
+                "write-file-stream-failure-after-payload",
+                "write-file-response-error-after-payload",
+                "delete-file-remove-success",
+                "delete-file-request-failure",
+                "delete-file-response-error",
+                "directory-list-shallow-vector-reference-gate",
+                "directory-list-recursive-vector-reference-gate",
+                "read-write-delete-model-vector-reference-gate",
+                "runtime-error-policy-reference-gate",
+                "malformed-directory-policy-gate",
+                "response-error-policy-gate",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ),
+            commonDecision = FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION,
+            androidConsumers = listOf("com.polar.sdk.impl.BDBleApiImplTest", "com.polar.sdk.api.model.utils.PolarFileUtilsTest"),
+            iosConsumers = listOf("PolarBleApiImplTests", "PolarFileUtilsTest"),
+            commonPrototypeConsumers = listOf("com.polar.sharedtest.FileFacadeRuntimePolicyCommonTest")
+        )
+    }
+
+    private fun assertSinglePolicyReadinessManifest(
+        manifestPath: String,
+        id: String,
+        kind: String,
+        policyPath: String,
+        families: List<String>,
+        commonDecision: String? = null,
+        androidConsumers: List<String>? = null,
+        iosConsumers: List<String>? = null,
+        commonPrototypeConsumers: List<String>? = null
+    ) {
+        val manifest = JsonParser().parse(
+            findRepositoryRoot()
+                .resolve("testdata/golden-vectors/$manifestPath")
+                .readText()
+        ).asJsonObject
+        val input = manifest.getAsJsonObject("input")
+        val expected = manifest.getAsJsonObject("expected")
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+        Assert.assertEquals(id, manifest.get("id").asString)
+        Assert.assertEquals(kind, input.get("kind").asString)
+        Assert.assertEquals(policyPath, input.get("policyVectorPath").asString)
+        Assert.assertEquals(families, requiredFamilies)
+        Assert.assertEquals(families, coveredFamilies)
+        val actualCommonDecision = expected.get("commonDecision").asString
+        if (commonDecision == null) {
+            Assert.assertTrue(actualCommonDecision.contains("compile-verified"))
+        } else {
+            Assert.assertEquals(commonDecision, actualCommonDecision)
+            val commonRuntimePrototype = expected.getAsJsonObject("commonRuntimePrototype")
+            Assert.assertEquals("executable shared commonTest runtime planning guard", commonRuntimePrototype.get("status").asString)
+            Assert.assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", commonRuntimePrototype.get("reason").asString)
+        }
+        val consumerTests = manifest.getAsJsonObject("consumerTests")
+        androidConsumers?.let { expectedConsumers ->
+            Assert.assertEquals(expectedConsumers, consumerTests.getAsJsonArray("android").map { it.asString })
+        }
+        iosConsumers?.let { expectedConsumers ->
+            Assert.assertEquals(expectedConsumers, consumerTests.getAsJsonArray("ios").map { it.asString })
+        }
+        commonPrototypeConsumers?.let { expectedConsumers ->
+            Assert.assertEquals(expectedConsumers, consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+        }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var current = File(userDirectory).absoluteFile
+        while (true) {
+            if (current.resolve("testdata/golden-vectors").isDirectory) {
+                return current
+            }
+            current = current.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
+    }
+
+    private fun testTimestamp(): PbSystemDateTime {
+        return PbSystemDateTime.newBuilder()
+            .setDate(PbDate.newBuilder().setYear(2026).setMonth(5).setDay(28))
+            .setTime(PbTime.newBuilder().setHour(12).setMinute(0).setSeconds(0).setMillis(0))
+            .setTrusted(true)
+            .build()
+    }
+
+    private companion object {
+        const val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+        const val STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup migration may proceed only after cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
+        const val DISK_TIME_RUNTIME_READINESS_COMMON_DECISION = "Disk/time facade runtime migration may proceed only after disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
+        const val COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
+        const val STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
+        const val DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
+        const val USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, read-failure no-write and write-failure-after-payload behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+        const val USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+        val COMMAND_RUNTIME_POLICY_OPERATION_IDS = listOf(
+            "h10-start-recording",
+            "h10-start-recording-query-failure",
+            "h10-stop-recording",
+            "h10-stop-recording-query-failure",
+            "h10-recording-status",
+            "h10-recording-status-query-failure",
+            "factory-reset",
+            "factory-reset-notification-failure",
+            "factory-reset-preserve-pairing",
+            "factory-reset-preserve-pairing-notification-failure",
+            "restart",
+            "restart-notification-failure",
+            "warehouse-sleep",
+            "warehouse-sleep-notification-failure",
+            "turn-device-off",
+            "turn-device-off-notification-failure",
+            "sync-start-success",
+            "sync-start-query-failure",
+            "sync-stop-success",
+            "sync-stop-notification-failure"
+        )
+        val DISK_TIME_RUNTIME_POLICY_OPERATION_IDS = listOf(
+            "get-disk-space",
+            "get-local-time",
+            "get-local-time-with-zone",
+            "set-local-time-v2",
+            "set-local-time-h10",
+            "set-local-time-failure",
+            "get-local-time-failure",
+            "get-local-time-with-zone-failure",
+            "get-disk-space-failure"
+        )
+        val STORED_DATA_CLEANUP_POLICY_SCENARIO_IDS = listOf(
+            "telemetry-root-trc-bin-filter",
+            "sdlogs-extension-filter",
+            "activity-prune-empty-parents",
+            "automatic-sample-embedded-day-filter",
+            "sdlogs-list-failure-platform-policy",
+            "telemetry-list-failure-platform-policy"
+        )
+        val USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS = listOf(
+            "get-user-device-settings",
+            "get-user-device-settings-read-failure",
+            "set-telemetry-enabled",
+            "set-telemetry-read-failure",
+            "set-telemetry-write-failure",
+            "set-user-device-location",
+            "set-user-device-location-write-failure",
+            "set-usb-connection-mode",
+            "set-usb-connection-mode-write-failure",
+            "set-automatic-training-detection",
+            "set-automatic-training-detection-write-failure",
+            "set-automatic-ohr-measurement",
+            "set-automatic-ohr-measurement-write-failure",
+            "set-daylight-saving-time"
+        )
+        const val REST_FACADE_RUNTIME_READINESS_COMMON_DECISION = "REST facade runtime migration may proceed only after rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified."
+        const val REST_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
+        val REST_FACADE_RUNTIME_POLICY_OPERATION_IDS = listOf(
+            "list-rest-api-services-success",
+            "get-rest-api-description-success",
+            "list-rest-api-services-request-failure",
+            "get-rest-api-description-request-failure",
+            "list-rest-api-services-response-error",
+            "get-rest-api-description-response-error",
+            "list-rest-api-services-empty-success",
+            "list-rest-api-services-malformed-success",
+            "get-rest-api-description-empty-success",
+            "get-rest-api-description-malformed-success"
+        )
+        const val FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION = "File facade runtime migration may proceed only after file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
+        const val FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
+        val FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS = listOf(
+            "read-low-level-file-success",
+            "read-low-level-file-empty-success",
+            "read-low-level-file-request-failure",
+            "read-low-level-file-response-error",
+            "write-low-level-file-success",
+            "write-low-level-file-progress-success",
+            "write-low-level-file-stream-failure",
+            "write-low-level-file-response-error",
+            "delete-low-level-file-success",
+            "delete-low-level-file-request-failure",
+            "delete-low-level-file-response-error"
+        )
+        const val OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
+        val OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS = listOf(
+            "set-trigger-success-with-secret",
+            "set-trigger-mode-error",
+            "set-trigger-status-read-error",
+            "set-trigger-setting-error",
+            "get-trigger-success",
+            "get-trigger-transport-error"
+        )
     }
 }

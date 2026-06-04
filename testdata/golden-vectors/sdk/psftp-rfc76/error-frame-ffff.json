@@ -1,0 +1,41 @@
+{
+  "id": "error-frame-ffff",
+  "area": "sdk.psftp-rfc76",
+  "case": "error_frame_ffff",
+  "source": "Android and iOS BlePsFtpUtils/BlePsFtpUtility characterization tests",
+  "input": {
+    "frameHex": "00feff"
+  },
+  "expected": {
+    "next": 0,
+    "status": 0,
+    "sequenceNumber": 0,
+    "payloadHex": null,
+    "error": {
+      "android": 254,
+      "ios": 65534
+    }
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "errorCodePolicy": "android-currently-masks-shifted-high-byte-while-ios-uses-little-endian-uint16"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtilsTest"
+    ],
+    "ios": [
+      "BlePsFtpUtilityTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpByteCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Error frame with FE FF bytes captures the current Android/iOS error-code difference."
+}

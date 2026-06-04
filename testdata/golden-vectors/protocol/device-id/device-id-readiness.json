@@ -1,0 +1,78 @@
+{
+  "id": "device-id-readiness",
+  "area": "device-id",
+  "case": "device_id_readiness",
+  "source": "Device ID and UUID vectors plus shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the device ID behavior families that must remain covered before checksum, validation, and UUID conversion delegate to shared KMP code.",
+  "input": {
+    "kind": "deviceIdReadiness",
+    "policyVectorPaths": [
+      "protocol/device-id/assemble-seven-digit-device-id.json",
+      "protocol/device-id/assemble-six-digit-device-id.json",
+      "protocol/device-id/assemble-zero-seven-digit-device-id.json",
+      "protocol/device-id/empty-device-id-platform-difference.json",
+      "protocol/device-id/identifier-bluetooth-address-android.json",
+      "protocol/device-id/identifier-invalid-format.json",
+      "protocol/device-id/identifier-uuid-string-ios.json",
+      "protocol/device-id/invalid-checksum-device-id.json",
+      "protocol/device-id/non-hex-device-id-platform-difference.json",
+      "protocol/device-id/polar-device-uuid-invalid-length.json",
+      "protocol/device-id/polar-device-uuid-valid.json",
+      "protocol/device-id/valid-lowercase-device-id.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "checksum-width-6-assembly",
+      "checksum-width-7-assembly",
+      "zero-device-id-assembly",
+      "valid-device-id-validation",
+      "invalid-checksum-validation",
+      "lowercase-device-id-validation",
+      "empty-input-platform-decision",
+      "non-hex-input-platform-decision",
+      "uuid-conversion",
+      "uuid-invalid-length-error",
+      "identifier-invalid-format-error",
+      "platform-specific-identifier-routing",
+      "platform-device-id-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "checksum-width-6-assembly",
+      "checksum-width-7-assembly",
+      "zero-device-id-assembly",
+      "valid-device-id-validation",
+      "invalid-checksum-validation",
+      "lowercase-device-id-validation",
+      "empty-input-platform-decision",
+      "non-hex-input-platform-decision",
+      "uuid-conversion",
+      "uuid-invalid-length-error",
+      "identifier-invalid-format-error",
+      "platform-specific-identifier-routing",
+      "platform-device-id-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Device ID migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS device ID tests continue to reference the same vectors, checksum width 6 and 7 assembly, zero-value assembly, validation, lowercase acceptance, UUID conversion, invalid UUID length errors, invalid identifier rejection, current empty and non-hex platform decisions, platform-specific identifier routing, and compile verification remain explicit before production checksum or UUID logic moves."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.DeviceIdGoldenVectorTest"
+    ],
+    "ios": [
+      "BlePolarDeviceIdUtilityTest",
+      "PolarDeviceUuidTest",
+      "PolarServiceClientUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest gates platform-neutral checksum, validation, UUID, and identifier-routing ownership decisions only; Android Bluetooth-address and iOS CoreBluetooth UUID routing remain platform-facade behavior until a separate shared identifier contract is defined."
+}

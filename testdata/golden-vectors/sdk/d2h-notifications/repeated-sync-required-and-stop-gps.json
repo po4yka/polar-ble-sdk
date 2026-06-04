@@ -1,0 +1,68 @@
+{
+  "id": "repeated-sync-required-and-stop-gps",
+  "area": "sdk-d2h-notifications",
+  "case": "repeated_notifications_preserve_order",
+  "source": "Android PolarD2HNotificationsUtilsTest and iOS PolarDeviceToHostNotificationsApiTests",
+  "input": {
+    "notifications": [
+      {
+        "notificationId": 7,
+        "parametersHex": "0a020802"
+      },
+      {
+        "notificationId": 7,
+        "parametersHex": "0a020802"
+      },
+      {
+        "notificationId": 12,
+        "parametersHex": ""
+      }
+    ]
+  },
+  "expected": {
+    "events": [
+      {
+        "notificationType": "SYNC_REQUIRED",
+        "parametersHex": "0a020802",
+        "parsedProto": "PbPFtpSyncRequiredParams",
+        "syncTriggers": [
+          {
+            "source": "TIMED"
+          }
+        ]
+      },
+      {
+        "notificationType": "SYNC_REQUIRED",
+        "parametersHex": "0a020802",
+        "parsedProto": "PbPFtpSyncRequiredParams",
+        "syncTriggers": [
+          {
+            "source": "TIMED"
+          }
+        ]
+      },
+      {
+        "notificationType": "STOP_GPS_MEASUREMENT",
+        "parametersHex": "",
+        "parsedProto": null
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Repeated D2H notifications are emitted independently and in source order.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceToHostNotificationsApiTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.D2hNotificationCommonPolicyTest"
+    ]
+  }
+}

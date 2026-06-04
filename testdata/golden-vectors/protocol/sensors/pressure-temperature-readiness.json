@@ -1,0 +1,69 @@
+{
+  "id": "pressure-temperature-readiness",
+  "area": "sensors.pressure-temperature",
+  "case": "pre_migration_readiness_manifest",
+  "source": "KMP migration readiness gate for pressure and temperature scalar parser behavior",
+  "input": {
+    "kind": "pressureTemperatureReadiness",
+    "policyVectorPaths": [
+      "protocol/sensors/pressure-compressed-type0-android-factor-half.json",
+      "protocol/sensors/pressure-raw-type0-negative-single-sample.json",
+      "protocol/sensors/pressure-raw-type0-single-sample.json",
+      "protocol/sensors/pressure-raw-type0-truncated-sample-android-error.json",
+      "protocol/sensors/pressure-raw-type1-unsupported.json",
+      "protocol/sensors/temperature-compressed-type0-flat-deltas-android-two-samples.json",
+      "protocol/sensors/temperature-compressed-type0-flat-deltas.json",
+      "protocol/sensors/temperature-raw-type0-ieee754-boundaries.json",
+      "protocol/sensors/temperature-raw-type0-negative-single-sample.json",
+      "protocol/sensors/temperature-raw-type0-single-sample.json",
+      "protocol/sensors/temperature-raw-type0-truncated-sample-android-error.json",
+      "protocol/sensors/temperature-raw-type1-unsupported.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "pressure-raw-type0-ieee754-parsing",
+      "temperature-raw-type0-ieee754-parsing",
+      "negative-and-boundary-float-values",
+      "raw-type0-timestamp-interpolation",
+      "unsupported-raw-frame-policy",
+      "unsupported-compressed-frame-policy",
+      "truncated-raw-sample-policy",
+      "compressed-pressure-one-channel-indexing-deferral",
+      "compressed-temperature-sample-count-deferral",
+      "platform-pressure-temperature-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "pressure-raw-type0-ieee754-parsing",
+      "temperature-raw-type0-ieee754-parsing",
+      "negative-and-boundary-float-values",
+      "raw-type0-timestamp-interpolation",
+      "unsupported-raw-frame-policy",
+      "unsupported-compressed-frame-policy",
+      "truncated-raw-sample-policy",
+      "compressed-pressure-one-channel-indexing-deferral",
+      "compressed-temperature-sample-count-deferral",
+      "platform-pressure-temperature-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PressureDataTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.TemperatureDataTest"
+    ],
+    "ios": [
+      "TemperatureDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PressureTemperatureParserCommonPolicyTest"
+    ]
+  }
+}

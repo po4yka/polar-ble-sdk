@@ -1,0 +1,58 @@
+{
+  "id": "spo2-readiness",
+  "area": "sdk.spo2-test",
+  "case": "spo2_readiness",
+  "source": "SPo2 mapping vectors and shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the SPo2 model behavior families that must remain covered before SPo2 conversion delegates to shared KMP code.",
+  "input": {
+    "kind": "spo2Readiness",
+    "policyVectorPaths": [
+      "sdk/spo2-test/full-passed-normal.json",
+      "sdk/spo2-test/ios-trigger-automatic.json",
+      "sdk/spo2-test/omitted-optionals.json",
+      "sdk/spo2-test/unknown-spo2-class-platform-difference.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "full-passed-normal-field-mapping",
+      "optional-protobuf-presence-preservation",
+      "empty-recording-device-normalization",
+      "nullable-trigger-type-policy",
+      "android-no-trigger-field-platform-reference",
+      "ios-trigger-field-platform-reference",
+      "unknown-spo2-class-boundary",
+      "platform-spo2-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "full-passed-normal-field-mapping",
+      "optional-protobuf-presence-preservation",
+      "empty-recording-device-normalization",
+      "nullable-trigger-type-policy",
+      "android-no-trigger-field-platform-reference",
+      "ios-trigger-field-platform-reference",
+      "unknown-spo2-class-boundary",
+      "platform-spo2-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTestUtilsTest"
+    ],
+    "ios": [
+      "PolarTestUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.Spo2CommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for SPo2 model behavior-family completeness only; Android and iOS platform adapters may preserve public triggerType and unknown-enum differences only after the shared policy is compile-verified."
+}

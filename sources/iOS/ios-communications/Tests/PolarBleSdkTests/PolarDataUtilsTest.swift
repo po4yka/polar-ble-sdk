@@ -268,6 +268,154 @@ final class PolarDataUtilsTest: XCTestCase {
         XCTAssertTrue(back.triggerFeatures.keys.contains(.ecg))
     }
 
+    func testOfflineRecordingTriggerGoldenVectorsMapPolarTriggerToPmdTrigger() throws {
+        let vector = try loadOfflineRecordingVector("trigger-mapping.json")
+        let vectorInput = try XCTUnwrap(vector["input"] as? [String: Any])
+        let testCase = try XCTUnwrap(vectorInput["polarToPmd"] as? [String: Any])
+        let input = try XCTUnwrap(testCase["input"] as? [String: Any])
+        let expected = try XCTUnwrap(testCase["expected"] as? [String: Any])
+        let polarTrigger = PolarOfflineRecordingTrigger(
+            triggerMode: try polarTriggerMode(try XCTUnwrap(input["triggerMode"] as? String)),
+            triggerFeatures: Dictionary(uniqueKeysWithValues: try XCTUnwrap(input["features"] as? [[String: Any]]).map { feature in
+                (try polarDeviceDataType(try XCTUnwrap(feature["type"] as? String)), try polarSensorSetting(feature["selectedSettings"] as? [String: Any]))
+            })
+        )
+
+        let pmdTrigger = try PolarDataUtils.mapToPmdOfflineTrigger(from: polarTrigger)
+        let expectedMode = try XCTUnwrap(expected["triggerMode"] as? [String: Any])
+
+        XCTAssertEqual(pmdTrigger.triggerMode, try pmdTriggerMode(try XCTUnwrap(expectedMode["ios"] as? String)))
+        let expectedTriggers = try XCTUnwrap(expected["triggers"] as? [[String: Any]])
+        for expectedTrigger in expectedTriggers {
+            let type = try pmdMeasurementType(try XCTUnwrap(try XCTUnwrap(expectedTrigger["type"] as? [String: Any])["ios"] as? String))
+            let actual = try XCTUnwrap(pmdTrigger.triggers[type], "\(type)")
+            XCTAssertEqual(actual.status, try pmdTriggerStatus(try XCTUnwrap(try XCTUnwrap(expectedTrigger["status"] as? [String: Any])["ios"] as? String)))
+            try assertSelectedSettings(actual.setting, expected: expectedTrigger["selectedSettings"] as? [String: Any])
+        }
+        XCTAssertEqual(pmdTrigger.triggers.count, expectedTriggers.count)
+    }
+
+    func testOfflineRecordingTriggerGoldenVectorsMapPmdTriggerToPolarTrigger() throws {
+        let vector = try loadOfflineRecordingVector("trigger-mapping.json")
+        let vectorInput = try XCTUnwrap(vector["input"] as? [String: Any])
+        let testCase = try XCTUnwrap(vectorInput["pmdToPolar"] as? [String: Any])
+        let input = try XCTUnwrap(testCase["input"] as? [String: Any])
+        let expected = try XCTUnwrap(testCase["expected"] as? [String: Any])
+        let inputMode = try XCTUnwrap(input["triggerMode"] as? [String: Any])
+        let pmdTrigger = PmdOfflineTrigger(
+            triggerMode: try pmdTriggerMode(try XCTUnwrap(inputMode["ios"] as? String)),
+            triggers: Dictionary(uniqueKeysWithValues: try XCTUnwrap(input["triggers"] as? [[String: Any]]).map { trigger in
+                let type = try pmdMeasurementType(try XCTUnwrap(try XCTUnwrap(trigger["type"] as? [String: Any])["ios"] as? String))
+                let status = try pmdTriggerStatus(try XCTUnwrap(try XCTUnwrap(trigger["status"] as? [String: Any])["ios"] as? String))
+                return (type, (status: status, setting: try pmdAvailableSetting(trigger["availableSettings"] as? [String: Any])))
+            })
+        )
+
+        let polarTrigger = try PolarDataUtils.mapToPolarOfflineTrigger(from: pmdTrigger)
+
+        XCTAssertEqual(polarTrigger.triggerMode, try polarTriggerMode(try XCTUnwrap(expected["triggerMode"] as? String)))
+        let expectedFeatures = try XCTUnwrap(expected["features"] as? [[String: Any]])
+        for expectedFeature in expectedFeatures {
+            let type = try polarDeviceDataType(try XCTUnwrap(expectedFeature["type"] as? String))
+            let actualSettings = polarTrigger.triggerFeatures[type]
+            XCTAssertTrue(polarTrigger.triggerFeatures.keys.contains(type), "\(type)")
+            try assertPolarSettings(actualSettings.flatMap { $0 }, expected: expectedFeature["settings"] as? [String: Any])
+        }
+        for excluded in try XCTUnwrap(expected["excludedFeatures"] as? [String]) {
+            XCTAssertFalse(polarTrigger.triggerFeatures.keys.contains(try polarDeviceDataType(excluded)))
+        }
+        XCTAssertEqual(polarTrigger.triggerFeatures.count, expectedFeatures.count)
+    }
+
+    func testOfflineRecordingTriggerGoldenVectorsFollowNeutralKmpVectorShape() throws {
+        try assertNeutralKmpVectorShape(try loadOfflineRecordingVector("trigger-mapping.json"), id: "trigger-mapping.json")
+    }
+
+    func testOfflineRecordingMetadataReadinessManifestIsPinnedBeforeMetadataMigration() throws {
+        let readiness = try loadOfflineRecordingVector("metadata-readiness.json")
+        let input = try XCTUnwrap(readiness["input"] as? [String: Any])
+        let expected = try XCTUnwrap(readiness["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(readiness["consumerTests"] as? [String: Any])
+        let platforms = try XCTUnwrap(readiness["platforms"] as? [String: Any])
+        let policyVectorPaths = try XCTUnwrap(input["policyVectorPaths"] as? [String])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+
+        XCTAssertEqual(readiness["id"] as? String, "offline-recording-metadata-readiness")
+        XCTAssertEqual(input["kind"] as? String, "offlineRecordingMetadataReadiness")
+        XCTAssertEqual(policyVectorPaths, offlineRecordingMetadataPolicyVectorPaths)
+        XCTAssertEqual(requiredFamilies, offlineRecordingMetadataReadinessFamilies)
+        XCTAssertEqual(coveredFamilies, offlineRecordingMetadataReadinessFamilies)
+        XCTAssertEqual(expected["commonDecision"] as? String, offlineRecordingMetadataReadinessCommonDecision)
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.androidcommunications.api.ble.model.offlinerecording.OfflineRecordingUtilityTest", "com.polar.sdk.impl.utils.PolarDataUtilsTest", "com.polar.sdk.api.model.utils.PolarOfflineRecordingUtilsTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["OfflineRecordingUtilsTest", "PolarDataUtilsTest", "PolarOfflineRecordingUtilsTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.OfflineRecordingMetadataCommonPolicyTest"])
+        XCTAssertEqual(platforms["android"] as? Bool, true)
+        XCTAssertEqual(platforms["ios"] as? Bool, true)
+        XCTAssertEqual(platforms["common"] as? Bool, true)
+    }
+
+    func testTriggerRuntimePolicyVectorIsPinnedBeforeRuntimeMigration() throws {
+        let vector = try loadOfflineRecordingVector("trigger-runtime-policy.json")
+        let input = try XCTUnwrap(vector["input"] as? [String: Any])
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
+        let prototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any])
+        let scenarios = try XCTUnwrap(input["scenarios"] as? [[String: Any]], "trigger-runtime-policy")
+        let cases = try XCTUnwrap(prototype["cases"] as? [[String: Any]], "trigger-runtime-policy")
+        let scenarioIds = try scenarios.map { try XCTUnwrap($0["id"] as? String) }
+        let caseIds = try cases.map { try XCTUnwrap($0["id"] as? String) }
+
+        XCTAssertEqual(vector["id"] as? String, "trigger-runtime-policy")
+        XCTAssertEqual(scenarioIds, triggerRuntimeScenarioIds)
+        XCTAssertEqual(caseIds, triggerRuntimeScenarioIds)
+        XCTAssertTrue(try XCTUnwrap(prototype["status"] as? String).contains("prototype"), "trigger-runtime-policy")
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "trigger-runtime-policy"), ["com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientTest", "com.polar.sdk.impl.BDBleApiImplTest", "com.polar.sdk.impl.utils.PolarDataUtilsTest", "com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "trigger-runtime-policy"), ["BlePmdClientTest", "PolarBleApiImplTests", "PolarDataUtilsTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "trigger-runtime-policy"), ["com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest", "com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"])
+    }
+
+    func testTriggerRuntimeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+        let vector = try loadOfflineRecordingVector("trigger-runtime-readiness.json")
+        let input = try XCTUnwrap(vector["input"] as? [String: Any])
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any])
+        let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+
+        XCTAssertEqual(vector["id"] as? String, "trigger-runtime-readiness")
+        XCTAssertEqual(input["kind"] as? String, "offlineTriggerRuntimeReadiness")
+        XCTAssertEqual(input["policyVectorPath"] as? String, "sdk/offline-recording/trigger-runtime-policy.json")
+        let expectedFamilies = [
+            "typed-set-mode",
+            "status-read",
+            "settings-write",
+            "optional-secret-attachment",
+            "get-transport-error",
+            "set-mode-control-point-error",
+            "status-read-transport-error",
+            "settings-control-point-error",
+            "enabled-feature-projection",
+            "excluded-feature-projection",
+            "platform-packet-split",
+            "facade-error-mapping-deferred",
+            "compile-verification-gate"
+        ]
+        XCTAssertEqual(requiredFamilies, expectedFamilies)
+        XCTAssertEqual(coveredFamilies, expectedFamilies)
+        XCTAssertEqual(expected["commonDecision"] as? String, "Offline trigger runtime migration may proceed only after trigger-runtime-policy.json and this readiness manifest are executable from shared commonTest, platform facade tests continue to reference the same policy vector, packet-framing differences are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified.")
+        let prototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any])
+        XCTAssertEqual(prototype["status"] as? String, "executable shared commonTest runtime planning guard")
+        XCTAssertEqual(prototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.")
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.impl.utils.PolarDataUtilsTest"], "trigger-runtime-readiness")
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarDataUtilsTest"], "trigger-runtime-readiness")
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"], "trigger-runtime-readiness")
+        XCTAssertEqual(platforms["android"] as? Bool, true)
+        XCTAssertEqual(platforms["ios"] as? Bool, true)
+        XCTAssertEqual(platforms["common"] as? Bool, true)
+    }
+
     // MARK: - PmdSetting.mapToPolarSettings
 
     func testMapToPolarSettings_sampleRateMapped() {
@@ -317,5 +465,191 @@ final class PolarDataUtilsTest: XCTestCase {
         let pmdSetting = PmdSetting([.security: UInt32(1)])
         let polar = pmdSetting.mapToPolarSettings()
         XCTAssertTrue(polar.settings.isEmpty)
+    }
+
+    private func assertSelectedSettings(_ actual: PmdSetting?, expected: [String: Any]?) throws {
+        guard let expected else {
+            XCTAssertNil(actual)
+            return
+        }
+        let actualSelected = actual?.selected ?? [:]
+        for (key, value) in expected {
+            XCTAssertEqual(actualSelected[try pmdSettingType(key)], UInt32(try number(value)))
+        }
+        XCTAssertEqual(actualSelected.count, expected.count)
+    }
+
+    private func assertPolarSettings(_ actual: PolarSensorSetting?, expected: [String: Any]?) throws {
+        guard let expected else {
+            XCTAssertNil(actual)
+            return
+        }
+        let actualSettings = actual?.settings ?? [:]
+        for (key, value) in expected {
+            let values = try array(value).map { UInt32(try number($0)) }
+            XCTAssertEqual(actualSettings[try polarSettingType(key)], Set(values))
+        }
+        XCTAssertEqual(actualSettings.count, expected.count)
+    }
+
+    private func polarSensorSetting(_ settings: [String: Any]?) throws -> PolarSensorSetting? {
+        guard let settings else { return nil }
+        var mapped: [PolarSensorSetting.SettingType: Set<UInt32>] = [:]
+        for (key, value) in settings {
+            mapped[try polarSettingType(key)] = Set([UInt32(try number(value))])
+        }
+        return PolarSensorSetting(mapped)
+    }
+
+    private func pmdAvailableSetting(_ settings: [String: Any]?) throws -> PmdSetting? {
+        guard let settings else { return nil }
+        var data = Data()
+        for (key, value) in settings {
+            let type = try pmdSettingType(key)
+            let values = try array(value).map { UInt32(try number($0)) }
+            data.append(type.rawValue)
+            data.append(UInt8(values.count))
+            for item in values {
+                for index in 0..<pmdSettingFieldSize(type) {
+                    data.append(UInt8((item >> UInt32(index * 8)) & 0xff))
+                }
+            }
+        }
+        return try PmdSetting(data)
+    }
+
+    private func polarTriggerMode(_ name: String) throws -> PolarOfflineRecordingTriggerMode {
+        switch name {
+        case "TRIGGER_DISABLED": return .triggerDisabled
+        case "TRIGGER_SYSTEM_START": return .triggerSystemStart
+        case "TRIGGER_EXERCISE_START": return .triggerExerciseStart
+        default: throw NSError(domain: "PolarDataUtilsTest", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unknown trigger mode \(name)"])
+        }
+    }
+
+    private func pmdTriggerMode(_ name: String) throws -> PmdOfflineRecTriggerMode {
+        switch name {
+        case "disabled": return .disabled
+        case "systemStart": return .systemStart
+        case "exerciseStart": return .exerciseStart
+        default: throw NSError(domain: "PolarDataUtilsTest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Unknown PMD trigger mode \(name)"])
+        }
+    }
+
+    private func pmdTriggerStatus(_ name: String) throws -> PmdOfflineRecTriggerStatus {
+        switch name {
+        case "enabled": return .enabled
+        case "disabled": return .disabled
+        default: throw NSError(domain: "PolarDataUtilsTest", code: 3, userInfo: [NSLocalizedDescriptionKey: "Unknown PMD trigger status \(name)"])
+        }
+    }
+
+    private func polarDeviceDataType(_ name: String) throws -> PolarDeviceDataType {
+        switch name {
+        case "ACC": return .acc
+        case "PPG": return .ppg
+        case "HR": return .hr
+        case "GYRO": return .gyro
+        default: throw NSError(domain: "PolarDataUtilsTest", code: 4, userInfo: [NSLocalizedDescriptionKey: "Unknown Polar data type \(name)"])
+        }
+    }
+
+    private func pmdMeasurementType(_ name: String) throws -> PmdMeasurementType {
+        switch name {
+        case "acc": return .acc
+        case "ppg": return .ppg
+        case "offline_hr": return .offline_hr
+        case "gyro": return .gyro
+        default: throw NSError(domain: "PolarDataUtilsTest", code: 5, userInfo: [NSLocalizedDescriptionKey: "Unknown PMD measurement type \(name)"])
+        }
+    }
+
+    private func polarSettingType(_ name: String) throws -> PolarSensorSetting.SettingType {
+        switch name {
+        case "SAMPLE_RATE": return .sampleRate
+        case "RESOLUTION": return .resolution
+        default: throw NSError(domain: "PolarDataUtilsTest", code: 6, userInfo: [NSLocalizedDescriptionKey: "Unknown Polar setting type \(name)"])
+        }
+    }
+
+    private func pmdSettingType(_ name: String) throws -> PmdSetting.PmdSettingType {
+        switch name {
+        case "SAMPLE_RATE": return .sampleRate
+        case "RESOLUTION": return .resolution
+        default: throw NSError(domain: "PolarDataUtilsTest", code: 7, userInfo: [NSLocalizedDescriptionKey: "Unknown PMD setting type \(name)"])
+        }
+    }
+
+    private func pmdSettingFieldSize(_ type: PmdSetting.PmdSettingType) -> Int {
+        switch type {
+        case .sampleRate, .resolution: return 2
+        default: return 0
+        }
+    }
+
+    private func loadOfflineRecordingVector(_ fileName: String) throws -> [String: Any] {
+        let file = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/sdk/offline-recording")
+            .appendingPathComponent(fileName)
+        let data = try Data(contentsOf: file)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+    }
+
+    private func assertNeutralKmpVectorShape(_ vector: [String: Any], id: String) throws {
+        XCTAssertNotNil(vector["area"], id)
+        XCTAssertNotNil(vector["case"], id)
+        XCTAssertNotNil(vector["source"], id)
+        XCTAssertNotNil(vector["input"], id)
+        XCTAssertNotNil(vector["expected"], id)
+        let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], id)
+        XCTAssertNotNil(platforms["android"], id)
+        XCTAssertNotNil(platforms["ios"], id)
+        XCTAssertNotNil(platforms["common"], id)
+    }
+
+
+    private func number(_ value: Any) throws -> Int {
+        return try XCTUnwrap(value as? NSNumber).intValue
+    }
+
+    private func array(_ value: Any) throws -> [Any] {
+        return try XCTUnwrap(value as? [Any])
+    }
+
+    private let offlineRecordingMetadataPolicyVectorPaths = [
+        "sdk/offline-recording/filename-mapping.json",
+        "sdk/offline-recording/pmdfiles-v2-grouping.json",
+        "sdk/offline-recording/trigger-mapping.json"
+    ]
+
+    private let offlineRecordingMetadataReadinessFamilies = [
+        "filename-to-measurement-type-mapping",
+        "split-file-index-stripping",
+        "invalid-filename-boundary",
+        "pmdfiles-grouping",
+        "zero-size-recording-filtering",
+        "invalid-entry-filtering",
+        "representative-path-platform-policy",
+        "trigger-model-projection",
+        "disabled-trigger-filtering",
+        "platform-offline-recording-vector-reference-gate",
+        "compile-verification-gate"
+    ]
+
+    private let offlineRecordingMetadataReadinessCommonDecision = "Offline recording metadata migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves."
+
+    private let triggerRuntimeScenarioIds = [
+        "set-trigger-success-with-secret",
+        "set-trigger-mode-error",
+        "set-trigger-status-read-error",
+        "set-trigger-setting-error",
+        "get-trigger-success",
+        "get-trigger-transport-error"
+    ]
+}
+
+private extension Dictionary where Key == String, Value == Any {
+    func mapKeys<T: Hashable>(_ transform: (String) throws -> T) rethrows -> [T: Any] {
+        return Dictionary<T, Any>(uniqueKeysWithValues: try map { (try transform($0.key), $0.value) })
     }
 }

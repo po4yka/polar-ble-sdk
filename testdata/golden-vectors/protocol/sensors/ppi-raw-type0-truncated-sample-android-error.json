@@ -1,0 +1,37 @@
+{
+  "id": "ppi-raw-type0-truncated-sample-android-error",
+  "area": "sensor-parser",
+  "case": "ppi_raw_type0_truncated_sample_android_error",
+  "source": "Android PpiDataTest; iOS raw parser uses out-of-range Data.subdata for this malformed payload",
+  "input": {
+    "dataFrameHex": "03660000000000000000c834127856",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "PPI",
+    "frameType": 0,
+    "compressed": false,
+    "timeStamp": 102,
+    "parseError": "malformedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android currently throws for a short raw type-0 PPI sample when the final flags byte is missing. iOS is excluded because the current parser can terminate on out-of-range Data.subdata instead of throwing a catchable parser error.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpiDataTest"
+    ],
+    "ios": [
+      "PpiDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpiParserCommonPolicyTest"
+    ]
+  }
+}

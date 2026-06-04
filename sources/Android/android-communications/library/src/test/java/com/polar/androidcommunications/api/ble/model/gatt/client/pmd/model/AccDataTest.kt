@@ -1,11 +1,16 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
 import com.polar.androidcommunications.testrules.BleLoggerTestRule
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
+import java.io.FileReader
 import kotlin.math.abs
 import kotlin.math.round
 
@@ -257,6 +262,182 @@ internal class AccDataTest {
 
         Assert.assertEquals(100uL, accData.accSamples[0].timeStamp)
         Assert.assertEquals(101uL, accData.accSamples[1].timeStamp)
+    }
+
+    @Test
+    fun accGoldenVectors_matchAndroidBehavior() {
+        val vectors = loadAccVectors()
+        Assert.assertTrue("Expected ACC golden vectors", vectors.isNotEmpty())
+
+        vectors.forEach { vector ->
+            val caseId = vector.get("id").asString
+            vector.getAsJsonObject("platforms")
+                ?.get("android")
+                ?.asBoolean
+                ?.let { supported ->
+                    if (!supported) return@forEach
+                }
+            val input = vector.getAsJsonObject("input")
+            val expected = vector.getAsJsonObject("expected")
+            val frame = PmdDataFrame(
+                data = input.get("dataFrameHex").asString.hexToByteArray(),
+                getPreviousTimeStamp = { _, _ -> input.get("previousTimeStamp").asLong.toULong() },
+                getFactor = { input.get("factor").asFloat },
+                getSampleRate = { input.get("sampleRate").asInt }
+            )
+
+            if (expected.has("parseError")) {
+                assertParseError(caseId, expected.get("parseError").asString, frame)
+                Assert.assertEquals(caseId, expected.get("timeStamp").asLong.toULong(), frame.timeStamp)
+                return@forEach
+            }
+
+            val accData = AccData.parseDataFromDataFrame(frame)
+
+            Assert.assertEquals(caseId, expected.get("timeStamp").asLong.toULong(), frame.timeStamp)
+            assertAccSamples(caseId, expected.getAsJsonArray("samples"), accData.accSamples)
+        }
+    }
+
+    private fun assertParseError(caseId: String, expectedError: String, frame: PmdDataFrame) {
+        when (expectedError) {
+            "unsupportedCompressedFrame" -> Assert.assertThrows(caseId, Exception::class.java) {
+                AccData.parseDataFromDataFrame(frame)
+            }
+            "malformedFrame" -> Assert.assertThrows(caseId, Exception::class.java) {
+                AccData.parseDataFromDataFrame(frame)
+            }
+            else -> Assert.fail("$caseId has unsupported parse error expectation $expectedError")
+        }
+    }
+
+    @Test
+    fun `acc golden vectors follow neutral KMP vector shape`() {
+        loadAccVectors().forEach { vector ->
+            val id = vector.get("id").asString
+            Assert.assertTrue(id, vector.has("area"))
+            Assert.assertTrue(id, vector.has("case"))
+            Assert.assertTrue(id, vector.has("source"))
+            Assert.assertTrue(id, vector.has("input"))
+            Assert.assertTrue(id, vector.has("expected"))
+            Assert.assertTrue(id, vector.has("platforms"))
+            val platforms = vector.getAsJsonObject("platforms")
+            Assert.assertTrue(id, platforms.has("android"))
+            Assert.assertTrue(id, platforms.has("ios"))
+            Assert.assertTrue(id, platforms.has("common"))
+        }
+    }
+
+    @Test
+    fun `ACC readiness manifest is pinned before parser migration`() {
+        val manifest = loadAccReadinessManifest()
+        val id = manifest.get("id").asString
+        val input = manifest.getAsJsonObject("input")
+        val expected = manifest.getAsJsonObject("expected")
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+        val policyVectorPaths = input.getAsJsonArray("policyVectorPaths").map { it.asString }
+        val consumerTests = manifest.getAsJsonObject("consumerTests")
+
+        Assert.assertEquals("acc-readiness", id)
+        Assert.assertEquals("accReadiness", input.get("kind").asString)
+        Assert.assertEquals(id, ACC_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths)
+        Assert.assertEquals(id, ACC_READINESS_FAMILIES, requiredFamilies)
+        Assert.assertEquals(id, ACC_READINESS_FAMILIES, coveredFamilies)
+        Assert.assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.AccDataTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("AccDataTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.AccParserCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    private fun assertAccSamples(
+        caseId: String,
+        expectedSamples: JsonArray,
+        actualSamples: List<AccData.AccSample>
+    ) {
+        Assert.assertEquals(caseId, expectedSamples.size(), actualSamples.size)
+        expectedSamples.forEachIndexed { index, expectedSample ->
+            val sample = expectedSample.asJsonObject
+            val actualSample = actualSamples[index]
+            Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+            Assert.assertEquals(caseId, sample.get("x").asInt, actualSample.x)
+            Assert.assertEquals(caseId, sample.get("y").asInt, actualSample.y)
+            Assert.assertEquals(caseId, sample.get("z").asInt, actualSample.z)
+        }
+    }
+
+    private fun loadAccVectors(): List<JsonObject> {
+        val vectorDirectory = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/protocol/sensors")
+        return vectorDirectory
+            .listFiles { file -> file.isFile && file.extension == "json" && file.name.startsWith("acc-") }
+            .orEmpty()
+            .sortedBy { it.name }
+            .map { file ->
+                FileReader(file).use { reader ->
+                    JsonParser().parse(reader).asJsonObject
+                }
+            }
+            .filter { vector -> vector.getAsJsonObject("input").get("kind")?.asString != "accReadiness" }
+    }
+
+    private fun loadAccReadinessManifest(): JsonObject {
+        val vectorFile = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/protocol/sensors/acc-readiness.json")
+        FileReader(vectorFile).use { reader ->
+            return JsonParser().parse(reader).asJsonObject
+        }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
+    }
+
+    private fun String.hexToByteArray(): ByteArray {
+        require(length % 2 == 0) { "Hex string must have an even length" }
+        return chunked(2)
+            .map { it.toInt(16).toByte() }
+            .toByteArray()
+    }
+
+    private companion object {
+        val ACC_READINESS_POLICY_VECTOR_PATHS = listOf(
+            "protocol/sensors/acc-compressed-type0-factor-half.json",
+            "protocol/sensors/acc-compressed-type0-truncated-delta-header-android-error.json",
+            "protocol/sensors/acc-compressed-type0-truncated-delta-header-ios-reference-only.json",
+            "protocol/sensors/acc-compressed-type0-truncated-delta-payload-android-error.json",
+            "protocol/sensors/acc-compressed-type0-truncated-delta-payload-ios-reference-only.json",
+            "protocol/sensors/acc-compressed-type1-two-samples.json",
+            "protocol/sensors/acc-compressed-type2-unsupported.json",
+            "protocol/sensors/acc-raw-type0-signed-boundaries.json",
+            "protocol/sensors/acc-raw-type0-truncated-sample-android-error.json",
+            "protocol/sensors/acc-raw-type1-signed-boundaries.json",
+            "protocol/sensors/acc-raw-type1-truncated-sample-android-error.json",
+            "protocol/sensors/acc-raw-type1-two-samples.json",
+            "protocol/sensors/acc-raw-type2-android-only.json",
+            "protocol/sensors/acc-raw-type2-truncated-sample-android-error.json"
+        )
+
+        val ACC_READINESS_FAMILIES = listOf(
+            "raw-type0-signed-axis-boundaries",
+            "raw-type1-signed-axis-parsing",
+            "raw-type1-timestamp-interpolation",
+            "compressed-type0-millig-factor-scaling",
+            "compressed-type1-reference-delta-decoding",
+            "unsupported-compressed-type-policy",
+            "raw-type2-android-ownership",
+            "truncated-raw-sample-policy",
+            "truncated-compressed-delta-header-policy",
+            "truncated-compressed-delta-payload-policy",
+            "platform-acc-vector-reference-gate",
+            "compile-verification-gate"
+        )
     }
 }
 

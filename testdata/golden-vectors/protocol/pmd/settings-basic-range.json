@@ -1,0 +1,49 @@
+{
+  "id": "pmd-settings-basic-range",
+  "area": "pmd-settings",
+  "case": "sample_rate_resolution_range_channels",
+  "source": "Android PmdSettingTest and iOS PmdSettingTest",
+  "input": {
+    "hex": "00013400010110000204f500f401e803d007040103"
+  },
+  "expected": {
+    "settings": {
+      "SAMPLE_RATE": [
+        52
+      ],
+      "RESOLUTION": [
+        16
+      ],
+      "RANGE": [
+        245,
+        500,
+        1000,
+        2000
+      ],
+      "CHANNELS": [
+        3
+      ]
+    },
+    "missingSettings": [
+      "RANGE_MILLIUNIT",
+      "FACTOR"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Baseline PMD settings payload with 2-byte and 1-byte fields.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSettingTest"
+    ],
+    "ios": [
+      "PmdSettingTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdSettingsCommonPolicyTest"
+    ]
+  }
+}

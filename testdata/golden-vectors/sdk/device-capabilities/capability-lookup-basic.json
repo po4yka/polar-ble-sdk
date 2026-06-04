@@ -1,0 +1,83 @@
+{
+  "id": "capability-lookup-basic",
+  "area": "sdk.device-capabilities",
+  "case": "file_system_and_recording_lookup",
+  "source": "Android BlePolarDeviceCapabilitiesUtilityTest and iOS PolarBleApiImplTests characterization before KMP capability parsing migration",
+  "input": {
+    "kind": "deviceCapabilityLookup",
+    "config": {
+      "version": "capability-vector-1",
+      "devices": {
+        "h10": {
+          "fileSystemType": "H10_FILE_SYSTEM",
+          "recordingSupported": true
+        },
+        "ignite3": {
+          "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+          "recordingSupported": false
+        },
+        "mystery": {
+          "fileSystemType": "SOMETHING_ELSE",
+          "recordingSupported": false
+        }
+      },
+      "defaults": {
+        "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+        "recordingSupported": false
+      }
+    },
+    "queries": [
+      "h10",
+      "H10",
+      "ignite3",
+      "mystery",
+      "unknown-device"
+    ]
+  },
+  "expected": {
+    "results": [
+      {
+        "deviceType": "h10",
+        "fileSystemType": "H10_FILE_SYSTEM",
+        "recordingSupported": true
+      },
+      {
+        "deviceType": "H10",
+        "fileSystemType": "H10_FILE_SYSTEM",
+        "recordingSupported": true
+      },
+      {
+        "deviceType": "ignite3",
+        "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+        "recordingSupported": false
+      },
+      {
+        "deviceType": "mystery",
+        "fileSystemType": "UNKNOWN_FILE_SYSTEM",
+        "recordingSupported": false
+      },
+      {
+        "deviceType": "unknown-device",
+        "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+        "recordingSupported": false
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtilityTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceCapabilitiesCommonPolicyTest"
+    ]
+  },
+  "notes": "This vector covers direct lookup behavior. Boolean capability fields and version-mismatch config merge behavior are covered by sibling vectors; resource override behavior remains a follow-up capability slice before production common loading."
+}

@@ -1,0 +1,30 @@
+{
+  "id": "invalid-checksum-device-id",
+  "area": "device-id",
+  "case": "eight_digit_checksum_mismatch",
+  "source": "Android BlePolarDeviceIdUtilityTests and iOS BlePolarDeviceIdUtilityTest",
+  "input": {
+    "deviceId": "12345678"
+  },
+  "expected": {
+    "valid": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.DeviceIdGoldenVectorTest"
+    ],
+    "ios": [
+      "BlePolarDeviceIdUtilityTest",
+      "PolarDeviceUuidTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Checksum for 1234567 is C, so a final nibble of 8 is invalid."
+}

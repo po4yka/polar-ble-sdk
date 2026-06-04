@@ -236,8 +236,15 @@ open class BlePolarDeviceCapabilitiesUtility {
     #if DEBUG
     public static func resetAndInitializeForTesting(
         deviceFileSystemTypes: [String: FileSystemType] = [:],
+        deviceRecordingSupported: [String: Bool] = [:],
+        deviceFirmwareUpdateSupported: [String: Bool] = [:],
+        deviceActivityDataSupported: [String: Bool] = [:],
+        deviceIsSensor: [String: Bool] = [:],
         defaultFileSystemType: FileSystemType = .unknownFileSystem,
-        defaultRecordingSupported: Bool = false
+        defaultRecordingSupported: Bool = false,
+        defaultFirmwareUpdateSupported: Bool = false,
+        defaultActivityDataSupported: Bool = false,
+        defaultIsSensor: Bool = false
     ) {
         lock.lock()
         defer { lock.unlock() }
@@ -249,29 +256,59 @@ open class BlePolarDeviceCapabilitiesUtility {
             switch type {
             case .h10FileSystem:      return "H10_FILE_SYSTEM"
             case .polarFileSystemV2:  return "POLAR_FILE_SYSTEM_V2"
-            case .unknownFileSystem:  return nil
+            case .unknownFileSystem:  return "UNKNOWN_FILE_SYSTEM"
             }
         }
 
         defaults = DeviceCapabilities(
             fileSystemType: fsString(defaultFileSystemType),
             recordingSupported: defaultRecordingSupported,
-            firmwareUpdateSupported: nil,
-            activityDataSupported: nil,
-            isDeviceSensor: nil
+            firmwareUpdateSupported: defaultFirmwareUpdateSupported,
+            activityDataSupported: defaultActivityDataSupported,
+            isDeviceSensor: defaultIsSensor
         )
 
         for (deviceType, fsType) in deviceFileSystemTypes {
-            let recordingSupported = (fsType == .h10FileSystem)
+            let key = deviceType.lowercased()
+            let recordingSupported = deviceRecordingSupported[key] ?? (fsType == .h10FileSystem)
             capabilities[deviceType.lowercased()] = DeviceCapabilities(
                 fileSystemType: fsString(fsType),
                 recordingSupported: recordingSupported,
-                firmwareUpdateSupported: nil,
-                activityDataSupported: nil,
-                isDeviceSensor: nil
+                firmwareUpdateSupported: deviceFirmwareUpdateSupported[key],
+                activityDataSupported: deviceActivityDataSupported[key],
+                isDeviceSensor: deviceIsSensor[key]
             )
         }
         initialized = true
+    }
+
+    public static func resetAndInitializeForTesting(
+        bundledConfigData: Data,
+        userConfigData: Data?
+    ) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        capabilities = [:]
+        defaults = nil
+        initialized = false
+
+        let decoder = JSONDecoder()
+        guard let bundledConfig = try? decoder.decode(DeviceCapabilitiesConfig.self, from: bundledConfigData) else {
+            return false
+        }
+
+        guard let userConfigData = userConfigData,
+              let userConfig = try? decoder.decode(DeviceCapabilitiesConfig.self, from: userConfigData) else {
+            applyConfig(bundledConfig)
+            return true
+        }
+
+        if userConfig.version != bundledConfig.version {
+            applyConfig(mergeConfigs(user: userConfig, bundled: bundledConfig))
+        } else {
+            applyConfig(userConfig)
+        }
+        return true
     }
     #endif
 }

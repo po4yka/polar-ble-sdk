@@ -1,16 +1,16 @@
 buildscript {
     ext.kotlin_version = '2.3.20'
-    ext.protobuf_version = '0.9.4'
+    ext.protobuf_version = '0.10.0'
 
     repositories {
         mavenCentral()
         google()
         maven {
-            url "https://plugins.gradle.org/m2/"
+            url = "https://plugins.gradle.org/m2/"
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.7.3'
+        classpath 'com.android.tools.build:gradle:9.2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "com.google.protobuf:protobuf-gradle-plugin:$protobuf_version"
         if (project.hasProperty("artifactoryUser") && project.hasProperty("artifactoryPassword")) {
@@ -26,6 +26,6 @@ allprojects {
     }
 }
 
-task clean(type: Delete) {
-    delete rootProject.buildDir
+tasks.register('clean', Delete) {
+    delete rootProject.layout.buildDirectory
 }

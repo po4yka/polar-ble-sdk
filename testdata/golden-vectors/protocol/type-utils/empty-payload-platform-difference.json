@@ -1,0 +1,46 @@
+{
+  "id": "empty-payload-platform-difference",
+  "area": "type-utils",
+  "case": "empty_payload_conversion",
+  "source": "Android TypeUtils and iOS TypeUtils characterization",
+  "input": {
+    "hex": ""
+  },
+  "expected": {
+    "commonDecision": "KMP should reject empty parser primitive payloads with a deterministic error."
+  },
+  "platformExpectations": {
+    "android": {
+      "unsignedIntError": "emptyPayload",
+      "unsignedLongError": "emptyPayload",
+      "signedIntError": "emptyPayload"
+    },
+    "ios": {
+      "unsignedIntError": "emptyPayloadPrecondition",
+      "unsignedLongError": "emptyPayloadPrecondition",
+      "signedIntError": "emptyPayloadPrecondition"
+    },
+    "commonDecision": {
+      "unsignedIntError": "emptyPayload",
+      "unsignedLongError": "emptyPayload",
+      "signedIntError": "emptyPayload"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "Android validates that integer conversion payloads contain at least one byte. Swift currently only asserts the upper bound for unsigned conversions and can trap later on empty signed conversion, so the shared implementation should define one explicit empty-payload error.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

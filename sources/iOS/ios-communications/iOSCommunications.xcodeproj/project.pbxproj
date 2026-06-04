@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AAC0DE000000000000000001 /* GoldenVectorTestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC0DE000000000000000003 /* GoldenVectorTestData.swift */; };
+		AAC0DE000000000000000002 /* GoldenVectorTestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC0DE000000000000000003 /* GoldenVectorTestData.swift */; };
+		AAC0DE000000000000000006 /* testdata in Resources */ = {isa = PBXBuildFile; fileRef = AAC0DE000000000000000008 /* testdata */; };
+		AAC0DE000000000000000007 /* testdata in Resources */ = {isa = PBXBuildFile; fileRef = AAC0DE000000000000000008 /* testdata */; };
+		AAD000000000000000000011 /* KvtxScriptUtilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD000000000000000000014 /* KvtxScriptUtilsTests.swift */; };
+		AAD000000000000000000012 /* PolarWatchFaceUtilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD000000000000000000015 /* PolarWatchFaceUtilsTests.swift */; };
+		AAD000000000000000000013 /* PmdActiveMeasurementTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD000000000000000000016 /* PmdActiveMeasurementTest.swift */; };
 		4A712A84B1269EF91AE519CD /* Pods_iOSCommunications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CE008EDB2D47139C7EDC82F7 /* Pods_iOSCommunications.framework */; };
 		5AE8E509A2405CC32D9F8150 /* Pods_PolarBleSdkWatchOs.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B644D558AA3ADFB834DE6F77 /* Pods_PolarBleSdkWatchOs.framework */; };
 		6C0C54FE1CFEB3C900FF23E9 /* TimeUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C0C54FD1CFEB3C900FF23E9 /* TimeUtility.swift */; };
@@ -275,6 +282,7 @@
 		A57D053029308AE6002824D9 /* TypeUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D052E29308AE6002824D9 /* TypeUtils.swift */; };
 		A57D053129308AE6002824D9 /* TypeUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D052E29308AE6002824D9 /* TypeUtils.swift */; };
 		A57D053329308BDF002824D9 /* TypeUtilsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D053229308BDF002824D9 /* TypeUtilsTest.swift */; };
+		AAC0DE000000000000000004 /* GoldenVectorTestDataTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC0DE000000000000000005 /* GoldenVectorTestDataTest.swift */; };
 		A57D053529309329002824D9 /* MagData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D053429309329002824D9 /* MagData.swift */; };
 		A57D05362930932A002824D9 /* MagData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D053429309329002824D9 /* MagData.swift */; };
 		A57D05372930932A002824D9 /* MagData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D053429309329002824D9 /* MagData.swift */; };
@@ -488,6 +496,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AAC0DE000000000000000003 /* GoldenVectorTestData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenVectorTestData.swift; sourceTree = "<group>"; };
+		AAC0DE000000000000000008 /* testdata */ = {isa = PBXFileReference; lastKnownFileType = folder; name = testdata; path = ../../../testdata; sourceTree = SOURCE_ROOT; };
 		0A42E8AC7500C5FF4803EA43 /* Pods-iOSCommunicationsTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iOSCommunicationsTests.debug.xcconfig"; path = "Target Support Files/Pods-iOSCommunicationsTests/Pods-iOSCommunicationsTests.debug.xcconfig"; sourceTree = "<group>"; };
 		14FF8010ECF6B75271DEEB23 /* Pods-iOSCommunications.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iOSCommunications.debug.xcconfig"; path = "Target Support Files/Pods-iOSCommunications/Pods-iOSCommunications.debug.xcconfig"; sourceTree = "<group>"; };
 		2D8CDDD54E14F2434771F290 /* Pods-PolarBleSdkWatchOs.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolarBleSdkWatchOs.debug.xcconfig"; path = "Target Support Files/Pods-PolarBleSdkWatchOs/Pods-PolarBleSdkWatchOs.debug.xcconfig"; sourceTree = "<group>"; };
@@ -632,6 +642,7 @@
 		A57D052C292F72A5002824D9 /* AccDataTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccDataTest.swift; sourceTree = "<group>"; };
 		A57D052E29308AE6002824D9 /* TypeUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeUtils.swift; sourceTree = "<group>"; };
 		A57D053229308BDF002824D9 /* TypeUtilsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeUtilsTest.swift; sourceTree = "<group>"; };
+		AAC0DE000000000000000005 /* GoldenVectorTestDataTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenVectorTestDataTest.swift; sourceTree = "<group>"; };
 		A57D053429309329002824D9 /* MagData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagData.swift; sourceTree = "<group>"; };
 		A57D0538293098C1002824D9 /* MagDataTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagDataTest.swift; sourceTree = "<group>"; };
 		A57D053A29309B71002824D9 /* PpiData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PpiData.swift; sourceTree = "<group>"; };
@@ -740,6 +751,9 @@
 		AABCBC5B2D08494A00364101 /* SkinTemperatureData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkinTemperatureData.swift; sourceTree = "<group>"; };
 		AAC310062F3342520025921B /* MockUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUtils.swift; sourceTree = "<group>"; };
 		AAC63EF52B908FC100CC8DFE /* TemperatureDataTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureDataTest.swift; sourceTree = "<group>"; };
+		AAD000000000000000000014 /* KvtxScriptUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KvtxScriptUtilsTests.swift; sourceTree = "<group>"; };
+		AAD000000000000000000015 /* PolarWatchFaceUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarWatchFaceUtilsTests.swift; sourceTree = "<group>"; };
+		AAD000000000000000000016 /* PmdActiveMeasurementTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PmdActiveMeasurementTest.swift; sourceTree = "<group>"; };
 		AACBC91F2BEB4392003A5D1B /* SDLogConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDLogConfig.swift; sourceTree = "<group>"; };
 		AACBC9242BEB4491003A5D1B /* sensor_data_log.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = sensor_data_log.pb.swift; sourceTree = "<group>"; };
 		AACE108296678C7284AE84D6 /* Pods-PolarBleSdkWatchOs.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolarBleSdkWatchOs.release.xcconfig"; path = "Target Support Files/Pods-PolarBleSdkWatchOs/Pods-PolarBleSdkWatchOs.release.xcconfig"; sourceTree = "<group>"; };
@@ -848,6 +862,7 @@
 				AA1C8ECB2D130179007EC386 /* SkinTemperatureDataTest.swift */,
 				A57D951329CD8F5100D771ED /* BlePmdClientTest.swift */,
 				A5A88C02299A6FA0007B9C28 /* PmdOfflineTriggerTest.swift */,
+				AAD000000000000000000016 /* PmdActiveMeasurementTest.swift */,
 				A58F0CAF2983EFE000B5615C /* OfflineHrDataTest.swift */,
 				A5CD1733297C229D00C62BC7 /* PmdSecretTest.swift */,
 				A5BE73642949E20D00CD55BB /* OfflineRecordingDataTest.swift */,
@@ -857,6 +872,7 @@
 				A57D053E29309FB4002824D9 /* PpiDataTest.swift */,
 				A57D0538293098C1002824D9 /* MagDataTest.swift */,
 				A57D053229308BDF002824D9 /* TypeUtilsTest.swift */,
+				AAC0DE000000000000000005 /* GoldenVectorTestDataTest.swift */,
 				A57D052C292F72A5002824D9 /* AccDataTest.swift */,
 				A57D0526292F360F002824D9 /* PmdTimeStampUtilsTest.swift */,
 				A57D0524292F316B002824D9 /* GyrDataTest.swift */,
@@ -1103,6 +1119,7 @@
 			isa = PBXGroup;
 			children = (
 				AA17F1BF2FA9F4C800FB8DBF /* PolarBleApiImplTests.swift */,
+				AAD000000000000000000014 /* KvtxScriptUtilsTests.swift */,
 				AA17F1C02FA9F4C800FB8DBF /* PolarDataUtilsTest.swift */,
 				AA17F1C12FA9F4C800FB8DBF /* PolarPlainDateTest.swift */,
 				AA17F1C22FA9F4C800FB8DBF /* PolarServiceClientUtilsTest.swift */,
@@ -1121,6 +1138,7 @@
 				AAEEB23C2D3E53A200D2B4A7 /* PolarSkinTemperatureUnitTest.swift */,
 				95EA2B992D3A2CCC00657DE5 /* PolarDeviceRestApiTests.swift */,
 				95E2C3B72F30DD3F0048908A /* PolarDeviceToHostNotificationsApiTests.swift */,
+				AAD000000000000000000015 /* PolarWatchFaceUtilsTests.swift */,
 				AA818E652C06F8F400D45B3C /* PolarSleepUtilsTest.swift */,
 				A5743686291A825F00E901A4 /* PolarTimeUtilsTests.swift */,
 				A5E416D22B7F7CD300314EEB /* PolarFirmwareUpdateUtilsTest.swift */,
@@ -1328,6 +1346,8 @@
 			isa = PBXGroup;
 			children = (
 				957DE2B92E82623C00699BB2 /* PolarBleSdkTests.xctestplan */,
+				AAC0DE000000000000000003 /* GoldenVectorTestData.swift */,
+				AAC0DE000000000000000008 /* testdata */,
 				A574368D291B81F500E901A4 /* PolarBleSdkTests */,
 				6C1079211D6D6EA000931948 /* iOSCommunicationsTests */,
 			);
@@ -1540,6 +1560,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				957DE2BA2E82623C00699BB2 /* PolarBleSdkTests.xctestplan in Resources */,
+				AAC0DE000000000000000006 /* testdata in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1568,6 +1589,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAC0DE000000000000000007 /* testdata in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1725,6 +1747,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAC0DE000000000000000001 /* GoldenVectorTestData.swift in Sources */,
 				841A37932C808B1D009194CC /* PolarFirmwareUpdateModels.swift in Sources */,
 				A57D053329308BDF002824D9 /* TypeUtilsTest.swift in Sources */,
 				A57D0525292F316B002824D9 /* GyrDataTest.swift in Sources */,
@@ -1740,6 +1763,7 @@
 				AA1C8ECC2D130187007EC386 /* SkinTemperatureDataTest.swift in Sources */,
 				841A378D2C808987009194CC /* pftp_request.pb.swift in Sources */,
 				A5A88C03299A6FA0007B9C28 /* PmdOfflineTriggerTest.swift in Sources */,
+				AAD000000000000000000013 /* PmdActiveMeasurementTest.swift in Sources */,
 				AA17F1B72FA9F4B200FB8DBF /* CBScannerTest.swift in Sources */,
 				AA17F1B82FA9F4B200FB8DBF /* AtomicIntegerTest.swift in Sources */,
 				AA17F1B92FA9F4B200FB8DBF /* AtomicBooleanTest.swift in Sources */,
@@ -1751,6 +1775,7 @@
 				AA17F1BE2FA9F4B200FB8DBF /* TimeUtilityTest.swift in Sources */,
 				A5488C4C264939A000B2DB5C /* BleHrClientTest.swift in Sources */,
 				A57D052D292F72A5002824D9 /* AccDataTest.swift in Sources */,
+				AAC0DE000000000000000004 /* GoldenVectorTestDataTest.swift in Sources */,
 				A5346A4B25F21877006752CA /* BlePsFtpUtilityTest.swift in Sources */,
 				A57D053F29309FB4002824D9 /* PpiDataTest.swift in Sources */,
 				A5346A4125F21866006752CA /* BlePsFtpClientTest.swift in Sources */,
@@ -2154,6 +2179,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAC0DE000000000000000002 /* GoldenVectorTestData.swift in Sources */,
 				842B36162DE49B5C0059C207 /* PolarTrainingSessionUtilsTest.swift in Sources */,
 				A5BC3EFC2BF34EA7008DD743 /* PolarActivityUtilsTest.swift in Sources */,
 				84FC57342F4F1AFD00676A9B /* PolarExerciseTypes.swift in Sources */,
@@ -2162,6 +2188,7 @@
 				84FC57212F4F049500676A9B /* PolarOfflineExerciseV2Tests.swift in Sources */,
 				A5E416D32B7F7CD300314EEB /* PolarFirmwareUpdateUtilsTest.swift in Sources */,
 				95E2C3B82F30DD3F0048908A /* PolarDeviceToHostNotificationsApiTests.swift in Sources */,
+				AAD000000000000000000011 /* KvtxScriptUtilsTests.swift in Sources */,
 				A57F8B182BE0E3AA00F8708F /* BleGattException.swift in Sources */,
 				AAC310072F33426E0025921B /* MockUtils.swift in Sources */,
 				847D2AF92F8F7AAD00F429E7 /* PolarTestUtilsTest.swift in Sources */,
@@ -2181,6 +2208,7 @@
 				843A2B882F0E570800F3B2EC /* communications_pftp_error.pb.swift in Sources */,
 				849051FA2F9F78940082195B /* FlatBufferBuilderTests.swift in Sources */,
 				84D71C9F2D09C19600CE8089 /* PolarNightlyRechargeUtilsTest.swift in Sources */,
+				AAD000000000000000000012 /* PolarWatchFaceUtilsTests.swift in Sources */,
 				A57F8B1C2BE0E67100F8708F /* communications_pftp_request.pb.swift in Sources */,
 				AA17F1A82FA9F22C00FB8DBF /* PolarCompressionUtilsTest.swift in Sources */,
 				AA17F1A92FA9F22C00FB8DBF /* PolarBleSdkTests.swift in Sources */,
@@ -2397,6 +2425,7 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_BITCODE = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				"HEADER_SEARCH_PATHS[arch=*]" = "$(inherited)";
@@ -2414,7 +2443,10 @@
 				MODULEMAP_PRIVATE_FILE = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.iOSCommunications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_INCLUDE_PATHS = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(SWIFT_MODULE_NAME)-Swift.h";
@@ -2437,6 +2469,7 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_BITCODE = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				"HEADER_SEARCH_PATHS[arch=*]" = "$(inherited)";
@@ -2454,7 +2487,10 @@
 				MODULEMAP_PRIVATE_FILE = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.iOSCommunications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_INCLUDE_PATHS = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(SWIFT_MODULE_NAME)-Swift.h";
@@ -2598,6 +2634,7 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_BITCODE = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				EXCLUDED_ARCHS = "";
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -2658,6 +2695,7 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_BITCODE = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -2719,8 +2757,9 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.PolarBleSdkTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
@@ -2761,8 +2800,9 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.PolarBleSdkTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_VERSION = 5.0;

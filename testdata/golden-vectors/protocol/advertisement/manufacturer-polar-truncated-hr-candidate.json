@@ -1,0 +1,29 @@
+{
+  "id": "manufacturer-polar-truncated-hr-candidate",
+  "area": "advertisement",
+  "case": "malformed_polar_truncated_hr_candidate",
+  "source": "Android BleAdvertisementContentTest and iOS BleAdvertisementContentTest",
+  "input": {
+    "manufacturerDataHex": "6b0000"
+  },
+  "expected": {
+    "hrPresent": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "A Polar manufacturer payload with only one HR-like content byte is too short to produce HR data."
+}

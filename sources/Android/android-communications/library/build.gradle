@@ -1,6 +1,5 @@
 plugins {
     id('com.android.library')
-    id('kotlin-android')
     id('com.google.protobuf')
     id("org.jetbrains.dokka") version "1.9.20"
     id("maven-publish")
@@ -9,21 +8,23 @@ plugins {
 import java.util.regex.Pattern
 
 def getVersion = { ->
-    def result = providers.exec {
-        commandLine 'git', 'describe', '--tags'
-    }
-    def stdout = result.standardOutput.asText.get().trim()
-    def pattern = Pattern.compile("^([0-9]*)(\\.)([0-9]*)(\\.)([0-9]*)")
-    def matcher = pattern.matcher(stdout)
-    if (matcher.matches()) {
+    def process = new ProcessBuilder('git', 'describe', '--tags', '--always')
+        .directory(rootProject.projectDir)
+        .redirectErrorStream(true)
+        .start()
+    def describedVersion = process.inputStream.text.trim()
+    def exitValue = process.waitFor()
+    def pattern = Pattern.compile("^([0-9]+)(\\.)([0-9]+)(\\.)([0-9]+)")
+    def matcher = pattern.matcher(describedVersion)
+    if (exitValue == 0 && matcher.find()) {
         String MAJOR = matcher.group(1)
         String MINOR = matcher.group(3)
         String PATCH = matcher.group(5)
         def VERSION = MAJOR + "." + MINOR + "." + PATCH
-        println VERSION
         return VERSION
     } else {
-        return stdout
+        def VERSION = "0.0.0"
+        return VERSION
     }
 }
 
@@ -40,9 +41,9 @@ android {
     namespace = 'com.polar.androidcommunications'
 
     defaultConfig {
-        compileSdk 35
-        minSdkVersion 26
-        targetSdkVersion 33
+        compileSdk = 35
+        minSdk = 26
+        targetSdk = 33
         versionCode 14
         versionName "14"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -76,22 +77,30 @@ android {
     }
 
     publishing {
-        singleVariant("androidCommunicationsRelease") {
+        singleVariant("sdkRelease") {
             withSourcesJar()
             withJavadocJar()
         }
     }
 
-    packagingOptions {
-        exclude "**/*.proto"
+    packaging {
+        resources {
+            excludes += "**/*.proto"
+        }
+    }
+
+    testOptions {
+        unitTests.all {
+            jvmArgs "-Xshare:off"
+        }
     }
 }
 
-afterEvaluate {
+components.matching { it.name == "sdkRelease" }.all { sdkReleaseComponent ->
     publishing {
         publications {
             aar(MavenPublication) {
-                from components.sdkRelease
+                from sdkReleaseComponent
                 groupId = 'com.github.polarofficial'
                 artifactId = 'polar-ble-sdk'
                 version = getVersion()
@@ -103,7 +112,7 @@ afterEvaluate {
 tasks.dokkaJavadoc.configure {
     outputDirectory.set(file("docs/"))
     dokkaSourceSets {
-        named("main") {
+        configureEach {
             perPackageOption {
                 matchingRegex.set(".*\\.androidcommunications.*")
                 suppress.set(true)
@@ -151,4 +160,3 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.7.0'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.2'
 }
-

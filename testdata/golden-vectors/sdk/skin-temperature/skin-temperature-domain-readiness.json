@@ -1,0 +1,59 @@
+{
+  "id": "skin-temperature-domain-readiness",
+  "area": "sdk.skin-temperature",
+  "case": "skin_temperature_domain_readiness",
+  "source": "Skin-temperature domain vectors and shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the skin-temperature domain behavior families that must remain covered before model conversion delegates to shared KMP code.",
+  "input": {
+    "kind": "skinTemperatureDomainReadiness",
+    "policyVectorPaths": [
+      "sdk/skin-temperature/core-proximal-empty-samples.json",
+      "sdk/skin-temperature/distal-skin-two-samples.json",
+      "sdk/skin-temperature/unknown-enums-platform-policy.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "source-device-id-ownership",
+      "empty-sample-list-preservation",
+      "sample-delta-preservation",
+      "sample-temperature-preservation",
+      "measurement-type-mapping",
+      "sensor-location-mapping",
+      "unknown-measurement-type-boundary",
+      "unknown-sensor-location-boundary",
+      "platform-skin-temperature-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "source-device-id-ownership",
+      "empty-sample-list-preservation",
+      "sample-delta-preservation",
+      "sample-temperature-preservation",
+      "measurement-type-mapping",
+      "sensor-location-mapping",
+      "unknown-measurement-type-boundary",
+      "unknown-sensor-location-boundary",
+      "platform-skin-temperature-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Skin-temperature domain migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS skin-temperature tests continue to reference the same vectors, sourceDeviceId ownership remains explicit, empty sample lists and sample values are preserved, measurement and sensor-location mappings are covered, unknown enum behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarSkinTemperatureUtilsTest"
+    ],
+    "ios": [
+      "PolarSkinTemperatureUnitTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SkinTemperatureDomainCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for skin-temperature domain behavior-family completeness only; Android deviceId exposure and iOS sourceDeviceId omission remain platform adapter decisions unless the shared public model deliberately standardizes them."
+}

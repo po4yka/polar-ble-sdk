@@ -1,0 +1,52 @@
+{
+  "id": "core-proximal-empty-samples",
+  "area": "sdk.skin-temperature",
+  "case": "core_proximal_empty_samples",
+  "source": "Android and iOS PolarSkinTemperatureUtils characterization tests",
+  "input": {
+    "proto": {
+      "sourceDeviceId": "",
+      "measurementType": 2,
+      "sensorLocation": 2,
+      "samples": []
+    }
+  },
+  "expected": {
+    "measurementType": "TM_CORE_TEMPERATURE",
+    "sensorLocation": "SL_PROXIMAL",
+    "samples": []
+  },
+  "platformExpectations": {
+    "android": {
+      "deviceId": "",
+      "sensorLocation": "SL_PROXIMAL",
+      "measurementType": "TM_CORE_TEMPERATURE",
+      "samples": []
+    },
+    "ios": {
+      "sensorLocation": "SL_PROXIMAL",
+      "measurementType": "TM_CORE_TEMPERATURE",
+      "samples": []
+    },
+    "commonDecision": {
+      "emptySamplesPolicy": "preserve-empty-list"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarSkinTemperatureUtilsTest"
+    ],
+    "ios": [
+      "PolarSkinTemperatureUnitTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SkinTemperatureDomainCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Core temperature measurement type and proximal location with no samples."
+}

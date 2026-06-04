@@ -1,0 +1,135 @@
+{
+  "id": "capability-config-merge",
+  "area": "sdk.device-capabilities",
+  "case": "version_mismatch_user_config_merge",
+  "source": "Android and iOS BlePolarDeviceCapabilitiesUtility version-mismatch merge characterization before KMP capability loading migration",
+  "input": {
+    "kind": "deviceCapabilityConfigMerge",
+    "bundledConfig": {
+      "version": "capability-bundled-2",
+      "devices": {
+        "h10": {
+          "fileSystemType": "H10_FILE_SYSTEM",
+          "recordingSupported": true,
+          "firmwareUpdateSupported": true,
+          "activityDataSupported": false,
+          "isDeviceSensor": true
+        },
+        "ignite3": {
+          "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+          "recordingSupported": false,
+          "firmwareUpdateSupported": true,
+          "activityDataSupported": true,
+          "isDeviceSensor": false
+        },
+        "newdevice": {
+          "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+          "recordingSupported": false,
+          "firmwareUpdateSupported": true,
+          "activityDataSupported": false,
+          "isDeviceSensor": false
+        }
+      },
+      "defaults": {
+        "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+        "recordingSupported": false,
+        "firmwareUpdateSupported": true,
+        "activityDataSupported": false,
+        "isDeviceSensor": false
+      }
+    },
+    "userConfig": {
+      "version": "capability-user-1",
+      "devices": {
+        "h10": {
+          "recordingSupported": false,
+          "activityDataSupported": true
+        },
+        "legacy": {
+          "fileSystemType": "H10_FILE_SYSTEM",
+          "recordingSupported": true,
+          "firmwareUpdateSupported": false,
+          "activityDataSupported": false,
+          "isDeviceSensor": true
+        }
+      },
+      "defaults": {
+        "fileSystemType": "H10_FILE_SYSTEM",
+        "recordingSupported": true,
+        "firmwareUpdateSupported": false,
+        "activityDataSupported": true,
+        "isDeviceSensor": true
+      }
+    },
+    "queries": [
+      "h10",
+      "ignite3",
+      "newdevice",
+      "legacy",
+      "unknown-device"
+    ]
+  },
+  "expected": {
+    "mergedVersion": "capability-bundled-2",
+    "mergePolicy": "user-device-fields-win-missing-user-fields-fall-back-to-bundled-user-only-devices-survive-bundled-defaults-win",
+    "results": [
+      {
+        "deviceType": "h10",
+        "fileSystemType": "H10_FILE_SYSTEM",
+        "recordingSupported": false,
+        "firmwareUpdateSupported": true,
+        "activityDataSupported": true,
+        "isDeviceSensor": true
+      },
+      {
+        "deviceType": "ignite3",
+        "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+        "recordingSupported": false,
+        "firmwareUpdateSupported": true,
+        "activityDataSupported": true,
+        "isDeviceSensor": false
+      },
+      {
+        "deviceType": "newdevice",
+        "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+        "recordingSupported": false,
+        "firmwareUpdateSupported": true,
+        "activityDataSupported": false,
+        "isDeviceSensor": false
+      },
+      {
+        "deviceType": "legacy",
+        "fileSystemType": "H10_FILE_SYSTEM",
+        "recordingSupported": true,
+        "firmwareUpdateSupported": false,
+        "activityDataSupported": false,
+        "isDeviceSensor": true
+      },
+      {
+        "deviceType": "unknown-device",
+        "fileSystemType": "POLAR_FILE_SYSTEM_V2",
+        "recordingSupported": false,
+        "firmwareUpdateSupported": true,
+        "activityDataSupported": false,
+        "isDeviceSensor": false
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtilityTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceCapabilitiesCommonPolicyTest"
+    ]
+  },
+  "notes": "This vector characterizes version-mismatch user-config migration only. App main-bundle or Android asset override behavior remains platform-owned unless common resource loading is deliberately introduced."
+}

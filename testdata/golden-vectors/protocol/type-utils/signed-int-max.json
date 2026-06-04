@@ -1,0 +1,31 @@
+{
+  "id": "signed-int-max",
+  "area": "type-utils",
+  "case": "signed_int_max",
+  "source": "Android TypeUtilsTest and iOS TypeUtilsTest",
+  "input": {
+    "hex": "ffffff7f"
+  },
+  "expected": {
+    "unsignedInt": 2147483647,
+    "unsignedLong": 2147483647,
+    "signedInt": 2147483647
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Int.MAX_VALUE encoded as little-endian bytes.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

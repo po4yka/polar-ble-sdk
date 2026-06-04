@@ -1,0 +1,30 @@
+{
+  "id": "unknown-id-filtered",
+  "area": "sdk-d2h-notifications",
+  "case": "unknown_notification_id_is_filtered",
+  "source": "Android PolarD2HNotificationsUtilsTest and iOS PolarDeviceToHostNotificationsApiTests",
+  "input": {
+    "notificationId": 999,
+    "parametersHex": ""
+  },
+  "expected": {
+    "emittedCount": 0
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Unknown D2H notification IDs are logged and filtered without terminating the stream.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceToHostNotificationsApiTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.D2hNotificationCommonPolicyTest"
+    ]
+  }
+}

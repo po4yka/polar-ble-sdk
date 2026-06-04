@@ -1,0 +1,49 @@
+{
+  "id": "retry-delay-policy",
+  "area": "sdk.fake-transport",
+  "case": "retry_delay_policy",
+  "source": "KMP fake-transport retry-delay planning and shared CommonFakeRetryScheduler prototype",
+  "description": "Pins retry delay scheduling on a virtual clock so common runtime retry tests can assert retry count and timing without wall-clock sleeps.",
+  "input": {
+    "kind": "retryDelayPolicy",
+    "delaysMillis": [
+      100,
+      200,
+      400
+    ],
+    "maxRetries": 3
+  },
+  "expected": {
+    "retryCount": 3,
+    "retryTimesMillis": [
+      100,
+      300,
+      700
+    ],
+    "finalTimeMillis": 700,
+    "commonDecision": "Shared runtime retry tests must schedule retry delays on a virtual clock, assert retry count and elapsed retry times, and avoid wall-clock sleeps before retry policy delegates to KMP."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.testutils.FakeTransportContractTest"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FakeTransportContractCommonTest"
+    ]
+  },
+  "execution": {
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest retry-delay scheduler contract",
+      "wallClockSafe": true
+    }
+  },
+  "platforms": {
+    "android": false,
+    "ios": false,
+    "common": true
+  },
+  "notes": "This vector covers only deterministic retry-delay scheduling. Operation-specific retryable errors, reconnect adapters, backoff selection, and public facade error mapping remain feature-specific migration gates."
+}

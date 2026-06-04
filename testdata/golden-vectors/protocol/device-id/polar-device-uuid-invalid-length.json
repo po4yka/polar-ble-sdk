@@ -1,0 +1,32 @@
+{
+  "id": "polar-device-uuid-invalid-length",
+  "area": "device-id",
+  "case": "uuid_rejects_invalid_length",
+  "source": "Android PolarDeviceUuidTest and iOS PolarDeviceUuidTest",
+  "input": {
+    "deviceId": "123456789"
+  },
+  "expected": {
+    "uuidError": "invalidDeviceIdLength",
+    "expectedLength": 8,
+    "actualLength": 9
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.DeviceIdGoldenVectorTest"
+    ],
+    "ios": [
+      "BlePolarDeviceIdUtilityTest",
+      "PolarDeviceUuidTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Android throws IllegalArgumentException; iOS throws PolarDeviceUuidError.invalidDeviceIdLength. KMP should preserve facade-specific error mapping."
+}

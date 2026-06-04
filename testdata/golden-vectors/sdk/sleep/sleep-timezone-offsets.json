@@ -1,0 +1,63 @@
+{
+  "id": "sleep-timezone-offsets",
+  "area": "sdk.sleep",
+  "case": "sleep_timezone_offsets",
+  "source": "Android and iOS PolarSleepUtils characterization tests",
+  "input": {
+    "kind": "sleepAnalysis",
+    "sleepStartTime": {
+      "year": 2024,
+      "month": 3,
+      "day": 31,
+      "hour": 23,
+      "minute": 30,
+      "second": 15,
+      "millis": 250,
+      "timeZoneOffsetMinutes": 330
+    },
+    "sleepEndTime": {
+      "year": 2024,
+      "month": 4,
+      "day": 1,
+      "hour": 6,
+      "minute": 15,
+      "second": 45,
+      "millis": 500,
+      "timeZoneOffsetMinutes": -210
+    }
+  },
+  "expected": {
+    "android": {
+      "sleepStartOffsetMinutes": 330,
+      "sleepEndOffsetMinutes": -210,
+      "sleepStartUtcInstant": "2024-03-31T18:00:15.250Z",
+      "sleepEndUtcInstant": "2024-04-01T09:45:45.500Z"
+    },
+    "ios": {
+      "sleepStartUtcInstant": "2024-03-31T18:00:15.250Z",
+      "sleepEndUtcInstant": "2024-04-01T09:45:45.500Z"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarSleepUtilsTest"
+    ],
+    "ios": [
+      "PolarSleepUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SleepNightlyRechargeCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "recommendedKmpPolicy": "Shared sleep timestamp mapping should preserve each protobuf timestamp's embedded timezone offset when the common model can represent an offset; platform Date/Instant models must at least preserve the equivalent UTC instant."
+    }
+  },
+  "notes": "Sleep start and end timestamps preserve embedded protobuf timezone offsets across positive and negative UTC offsets."
+}

@@ -142,5 +142,155 @@ final class KvtxScriptUtilsTests: XCTestCase {
     func test_u32Le_maxValue() {
         XCTAssertEqual(KvtxScriptUtils.u32Le(0xFFFF_FFFF), [0xFF, 0xFF, 0xFF, 0xFF])
     }
-}
 
+    func testKvtxGoldenVectorsMatchIOSBehavior() throws {
+        let vectors = try loadKvtxGoldenVectors()
+        XCTAssertFalse(vectors.isEmpty, "Expected KVTX golden vectors")
+
+        for vector in vectors {
+            let id = vector["id"] as? String ?? "unknown-vector"
+            if let platforms = vector["platforms"] as? [String: Any],
+               let supported = platforms["ios"] as? Bool,
+               !supported {
+                continue
+            }
+            let input = try XCTUnwrap(vector["input"] as? [String: Any], id)
+            let expected = try XCTUnwrap(vector["expected"] as? [String: Any], id)
+            let script: [UInt8]
+            if (input["operation"] as? String) == "buildWriteAndCommit" {
+                let key = try XCTUnwrap(input["key"] as? NSNumber, id).uint32Value
+                let data = try bytes(fromHex: try XCTUnwrap(input["dataHex"] as? String, id))
+                script = KvtxScriptUtils.buildWriteAndCommit(kvKey: key, data: data)
+            } else {
+                script = try bytes(fromHex: try XCTUnwrap(input["scriptHex"] as? String, id))
+            }
+
+            if let scriptHex = expected["scriptHex"] as? String {
+                XCTAssertEqual(script, try bytes(fromHex: scriptHex), id)
+            }
+            if let firstOpcode = expected["firstOpcode"] as? NSNumber {
+                XCTAssertEqual(script.first, UInt8(firstOpcode.intValue), id)
+            }
+            if let commitOpcode = expected["commitOpcode"] as? NSNumber {
+                XCTAssertEqual(script.last, UInt8(commitOpcode.intValue), id)
+            }
+
+            let extractKey = ((input["extractKey"] as? NSNumber) ?? (expected["extractKey"] as? NSNumber))
+            let extracted = KvtxScriptUtils.extractValueForKey(script: script, kvKey: try XCTUnwrap(extractKey, id).uint32Value)
+            if expected["extractedHex"] is NSNull {
+                XCTAssertNil(extracted, id)
+            } else {
+                XCTAssertEqual(extracted, try bytes(fromHex: try XCTUnwrap(expected["extractedHex"] as? String, id)), id)
+            }
+        }
+    }
+
+    func testKvtxGoldenVectorsFollowNeutralKmpVectorShape() throws {
+        for vector in try loadKvtxGoldenVectors() {
+            let id = vector["id"] as? String ?? "unknown-vector"
+
+            XCTAssertNotNil(vector["area"], id)
+            XCTAssertNotNil(vector["case"], id)
+            XCTAssertNotNil(vector["source"], id)
+            XCTAssertNotNil(vector["input"], id)
+            XCTAssertNotNil(vector["expected"], id)
+            let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], id)
+            XCTAssertNotNil(platforms["android"], id)
+            XCTAssertNotNil(platforms["ios"], id)
+            XCTAssertNotNil(platforms["common"], id)
+        }
+    }
+
+    private func loadKvtxGoldenVectors() throws -> [[String: Any]] {
+        let vectorDirectory = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/sdk/kvtx")
+        return try FileManager.default
+            .contentsOfDirectory(at: vectorDirectory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .map { file in
+                let data = try Data(contentsOf: file)
+                return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+            }
+            .filter { vector in
+                let input = vector["input"] as? [String: Any]
+                return input?["kind"] as? String != "kvtxReadiness"
+            }
+    }
+
+    func testKvtxReadinessManifestIsPinnedBeforeScriptMigration() throws {
+        let file = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/sdk/kvtx/kvtx-readiness.json")
+        let data = try Data(contentsOf: file)
+        let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+        XCTAssertEqual(vector["id"] as? String, "kvtx-readiness")
+        let input = try XCTUnwrap(vector["input"] as? [String: Any], "kvtx-readiness.json")
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any], "kvtx-readiness.json")
+        XCTAssertEqual(input["kind"] as? String, "kvtxReadiness")
+        let policyVectorPaths = try XCTUnwrap(input["policyVectorPaths"] as? [String], "kvtx-readiness.json")
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String], "kvtx-readiness.json")
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String], "kvtx-readiness.json")
+        XCTAssertEqual(policyVectorPaths, [
+            "sdk/kvtx/write-commit-basic.json",
+            "sdk/kvtx/write-commit-empty-data.json",
+            "sdk/kvtx/write-commit-uint32-max-key.json",
+            "sdk/kvtx/multiple-keys-select-second.json",
+            "sdk/kvtx/append-concatenates.json",
+            "sdk/kvtx/remove-clears-value.json",
+            "sdk/kvtx/write-ex-zero-index.json",
+            "sdk/kvtx/append-ex-zero-index.json",
+            "sdk/kvtx/remove-ex-zero-index.json",
+            "sdk/kvtx/write-ex-nonempty-index-ignored.json",
+            "sdk/kvtx/unknown-command-stops-with-current-value.json",
+            "sdk/kvtx/truncated-write-payload-android-error.json",
+            "sdk/kvtx/truncated-write-payload-ios-nil.json"
+        ])
+        let expectedFamilies = [
+            "write-and-commit-framing",
+            "empty-data-write-framing",
+            "unsigned-uint32-key-preservation",
+            "multiple-key-selection",
+            "append-concatenation",
+            "remove-clears-current-value",
+            "extended-write-zero-index",
+            "extended-append-zero-index",
+            "extended-remove-zero-index",
+            "extended-nonempty-index-ignore-policy",
+            "unknown-command-stop-policy",
+            "malformed-script-typed-error-policy",
+            "platform-truncated-payload-vector-reference-gate",
+            "platform-kvtx-vector-reference-gate",
+            "compile-verification-gate"
+        ]
+        XCTAssertEqual(requiredFamilies, expectedFamilies)
+        XCTAssertEqual(coveredFamilies, expectedFamilies)
+        XCTAssertEqual(expected["commonDecision"] as? String, "KVTX migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS KVTX tests continue to reference the same vectors, write-and-commit framing, empty data writes, unsigned 32-bit keys, multiple-key selection, append/remove behavior, EX zero-index behavior, non-empty EX index ignore policy, unknown-command stop policy, malformed-script typed error policy, truncated payload platform vectors, and the shared tests are compile-verified.")
+        let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any], "kvtx-readiness.json")
+        let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], "kvtx-readiness.json")
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "kvtx-readiness.json"), ["com.polar.sdk.impl.utils.KvtxScriptUtilsTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "kvtx-readiness.json"), ["KvtxScriptUtilsTests"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "kvtx-readiness.json"), ["com.polar.sharedtest.KvtxCommonPolicyTest"])
+        XCTAssertEqual(platforms["android"] as? Bool, true)
+        XCTAssertEqual(platforms["ios"] as? Bool, true)
+        XCTAssertEqual(platforms["common"] as? Bool, true)
+    }
+
+
+    private func bytes(fromHex hexString: String) throws -> [UInt8] {
+        guard hexString.count.isMultiple(of: 2) else {
+            throw NSError(domain: "KvtxScriptUtilsTests", code: 2, userInfo: [NSLocalizedDescriptionKey: "Hex string must have an even length"])
+        }
+        var bytes: [UInt8] = []
+        var index = hexString.startIndex
+        while index < hexString.endIndex {
+            let nextIndex = hexString.index(index, offsetBy: 2)
+            let byteString = String(hexString[index..<nextIndex])
+            guard let byte = UInt8(byteString, radix: 16) else {
+                throw NSError(domain: "KvtxScriptUtilsTests", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid hex byte \(byteString)"])
+            }
+            bytes.append(byte)
+            index = nextIndex
+        }
+        return bytes
+    }
+}

@@ -1,0 +1,248 @@
+{
+  "id": "payload-read-policy",
+  "area": "sdk.training-session",
+  "case": "payload_read_progress_malformed_and_unknown_sample_policy",
+  "source": "Android and iOS PolarTrainingSessionUtils payload-read characterization tests distilled into a shared pre-migration contract",
+  "input": {
+    "kind": "payloadReadPolicy",
+    "reference": {
+      "date": "2025-01-01",
+      "path": "/U/0/20250101/E/101200/TSESS.BPB",
+      "trainingDataTypes": [
+        "TRAINING_SESSION_SUMMARY"
+      ],
+      "fileSize": 759,
+      "exercises": [
+        {
+          "index": 0,
+          "androidPath": "/U/0/20250101/E/101200/00/BASE.BPB",
+          "iosPath": "/U/0/20250101/E/101200/00",
+          "exerciseDataTypes": [
+            "EXERCISE_SUMMARY",
+            "ROUTE",
+            "ROUTE_GZIP",
+            "ROUTE_ADVANCED_FORMAT",
+            "ROUTE_ADVANCED_FORMAT_GZIP",
+            "SAMPLES",
+            "SAMPLES_GZIP",
+            "SAMPLES_ADVANCED_FORMAT_GZIP"
+          ],
+          "fileSizes": {
+            "BASE.BPB": 120,
+            "ROUTE.BPB": 80,
+            "ROUTE.GZB": 81,
+            "ROUTE2.BPB": 82,
+            "ROUTE2.GZB": 83,
+            "SAMPLES.BPB": 70,
+            "SAMPLES.GZB": 71,
+            "SAMPLES2.GZB": 72
+          }
+        }
+      ]
+    },
+    "responses": {
+      "/U/0/20250101/E/101200/TSESS.BPB": {
+        "kind": "trainingSessionSummary",
+        "fileName": "TSESS.BPB",
+        "byteSize": 100,
+        "payload": {
+          "modelName": "Polar 360",
+          "durationSeconds": 3600,
+          "distanceMeters": 12,
+          "calories": 400
+        }
+      },
+      "/U/0/20250101/E/101200/00/BASE.BPB": {
+        "kind": "exerciseSummary",
+        "fileName": "BASE.BPB",
+        "byteSize": 120,
+        "payload": {
+          "sport": 3,
+          "durationSeconds": 3600,
+          "walkingDistanceMeters": 10000
+        }
+      },
+      "/U/0/20250101/E/101200/00/ROUTE.BPB": {
+        "kind": "route",
+        "fileName": "ROUTE.BPB",
+        "byteSize": 80,
+        "payload": {
+          "latitude": [
+            60
+          ],
+          "longitude": [
+            24
+          ],
+          "satelliteAmount": [
+            7
+          ]
+        }
+      },
+      "/U/0/20250101/E/101200/00/ROUTE.GZB": {
+        "kind": "routeGzip",
+        "fileName": "ROUTE.GZB",
+        "byteSize": 81,
+        "payload": {
+          "latitude": [
+            60
+          ],
+          "longitude": [
+            24
+          ],
+          "satelliteAmount": [
+            7
+          ]
+        }
+      },
+      "/U/0/20250101/E/101200/00/ROUTE2.BPB": {
+        "kind": "routeAdvanced",
+        "fileName": "ROUTE2.BPB",
+        "byteSize": 82,
+        "payload": {
+          "syncPointLatitude": [
+            61
+          ],
+          "syncPointLongitude": [
+            25
+          ],
+          "latitude": [
+            100
+          ],
+          "longitude": [
+            200
+          ]
+        }
+      },
+      "/U/0/20250101/E/101200/00/ROUTE2.GZB": {
+        "kind": "routeAdvancedGzip",
+        "fileName": "ROUTE2.GZB",
+        "byteSize": 83,
+        "malformed": true
+      },
+      "/U/0/20250101/E/101200/00/SAMPLES.BPB": {
+        "kind": "samples",
+        "fileName": "SAMPLES.BPB",
+        "byteSize": 70,
+        "payload": {
+          "heartRateSamples": [
+            120,
+            125,
+            130
+          ],
+          "speedSamples": [
+            2000,
+            2100
+          ],
+          "altitudeSamples": [
+            300
+          ]
+        }
+      },
+      "/U/0/20250101/E/101200/00/SAMPLES.GZB": {
+        "kind": "samplesGzip",
+        "fileName": "SAMPLES.GZB",
+        "byteSize": 71,
+        "malformed": true
+      },
+      "/U/0/20250101/E/101200/00/SAMPLES2.GZB": {
+        "kind": "samplesAdvancedGzip",
+        "fileName": "SAMPLES2.GZB",
+        "byteSize": 72,
+        "payload": {
+          "intervalledSampleLists": [
+            {
+              "sampleType": "HEART_RATE",
+              "recordingIntervalMs": 1000,
+              "heartRateSamples": [
+                131,
+                132,
+                133
+              ]
+            },
+            {
+              "sampleType": "UNKNOWN_VENDOR_EXTENSION",
+              "recordingIntervalMs": 1000,
+              "rawSamples": [
+                999
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "expected": {
+    "fetchOrder": [
+      "/U/0/20250101/E/101200/TSESS.BPB",
+      "/U/0/20250101/E/101200/00/BASE.BPB",
+      "/U/0/20250101/E/101200/00/ROUTE.BPB",
+      "/U/0/20250101/E/101200/00/ROUTE.GZB",
+      "/U/0/20250101/E/101200/00/ROUTE2.BPB",
+      "/U/0/20250101/E/101200/00/ROUTE2.GZB",
+      "/U/0/20250101/E/101200/00/SAMPLES.BPB",
+      "/U/0/20250101/E/101200/00/SAMPLES.GZB",
+      "/U/0/20250101/E/101200/00/SAMPLES2.GZB"
+    ],
+    "progress": {
+      "totalBytes": 759,
+      "completedBytes": 759,
+      "progressPercent": 100,
+      "currentFileName": "SAMPLES2.GZB"
+    },
+    "sessionSummary": {
+      "modelName": "Polar 360",
+      "durationSeconds": 3600,
+      "distanceMeters": 12,
+      "calories": 400
+    },
+    "exercises": [
+      {
+        "index": 0,
+        "exerciseSummaryPresent": true,
+        "routePresent": true,
+        "routeAdvancedPresent": true,
+        "samplesHeartRate": [
+          120,
+          125,
+          130
+        ],
+        "samplesAdvancedHeartRate": [
+          131,
+          132,
+          133
+        ],
+        "unknownAdvancedSampleListsIgnored": 1,
+        "malformedFilesIgnored": [
+          "ROUTE2.GZB",
+          "SAMPLES.GZB"
+        ]
+      }
+    ]
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"
+    ],
+    "ios": [
+      "PolarTrainingSessionUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TrainingSessionCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "progressPolicy": "compute-progress-from-reference-file-sizes-and-last-completed-file",
+      "malformedPayloadPolicy": "omit-only-the-malformed-component-and-continue-reading-remaining-files",
+      "unknownSampleListPolicy": "ignore-unknown-advanced-sample-lists-and-preserve-known-samples",
+      "byteLevelParserGate": "add-common-protobuf-and-gzip-parser-dependencies-before-byte-level-payload-migration",
+      "byteLevelPayloadStatus": "deferred-until-common-protobuf-and-gzip-parser-exist"
+    }
+  },
+  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, and unknown advanced sample-list handling. payload-parser-policy.json now pins the parser-family ownership cases; real byte-level protobuf/gzip decoding remains an explicit production gate because the current shared module has no common protobuf or gzip parser dependency."
+}
