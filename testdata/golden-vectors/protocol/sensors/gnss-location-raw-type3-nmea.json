@@ -1,0 +1,42 @@
+{
+  "id": "gnss-location-raw-type3-nmea",
+  "area": "sensor-parser",
+  "case": "gnss_location_raw_type3_nmea",
+  "source": "Android GnssLocationDataTest characterization",
+  "input": {
+    "dataFrameHex": "0a00943577000000000300001c001a0080475041414d2c412c412c302e31302c4e2c5750544e4d452a3332",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "LOCATION",
+    "frameType": 3,
+    "compressed": false,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "sampleKind": "nmea",
+        "timeStamp": 2000000000,
+        "measurementPeriod": 1835008,
+        "messageLength": 26,
+        "statusFlags": 128,
+        "nmeaMessage": "GPAAM,A,A,0.10,N,WPTNME*32"
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GnssLocationDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.GnssLocationOwnershipCommonPolicyTest"
+    ]
+  }
+}

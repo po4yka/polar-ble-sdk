@@ -1,0 +1,77 @@
+{
+  "id": "type-utils-readiness",
+  "area": "type-utils",
+  "case": "type_utils_readiness",
+  "source": "Type utility byte-conversion vectors and shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the byte conversion behavior families that must remain covered before parser primitives delegate to shared KMP code.",
+  "input": {
+    "kind": "typeUtilsReadiness",
+    "policyVectorPaths": [
+      "protocol/type-utils/empty-payload-platform-difference.json",
+      "protocol/type-utils/offset-signed-int-negative-boundary.json",
+      "protocol/type-utils/offset-unsigned-int-little-endian.json",
+      "protocol/type-utils/signed-int-24bit-negative-one.json",
+      "protocol/type-utils/signed-int-max.json",
+      "protocol/type-utils/signed-int-min-16bit.json",
+      "protocol/type-utils/signed-int-min-24bit.json",
+      "protocol/type-utils/signed-int-min-32bit.json",
+      "protocol/type-utils/signed-int-negative-one.json",
+      "protocol/type-utils/signed-int-too-long.json",
+      "protocol/type-utils/unsigned-byte-max.json",
+      "protocol/type-utils/unsigned-int-high-bit-16bit-platform-difference.json",
+      "protocol/type-utils/unsigned-int-high-bit-platform-difference.json",
+      "protocol/type-utils/unsigned-int-little-endian.json",
+      "protocol/type-utils/unsigned-int-too-long.json",
+      "protocol/type-utils/unsigned-long-max.json",
+      "protocol/type-utils/unsigned-long-too-long.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "unsigned-byte-conversion",
+      "little-endian-unsigned-int-conversion",
+      "little-endian-unsigned-long-conversion",
+      "signed-int-sign-extension",
+      "offset-and-size-selection",
+      "signed-minimum-boundaries",
+      "unsigned-high-bit-platform-decision",
+      "empty-payload-error-policy",
+      "payload-too-long-error-policy",
+      "uint64-max-decimal-preservation",
+      "platform-type-utils-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "unsigned-byte-conversion",
+      "little-endian-unsigned-int-conversion",
+      "little-endian-unsigned-long-conversion",
+      "signed-int-sign-extension",
+      "offset-and-size-selection",
+      "signed-minimum-boundaries",
+      "unsigned-high-bit-platform-decision",
+      "empty-payload-error-policy",
+      "payload-too-long-error-policy",
+      "uint64-max-decimal-preservation",
+      "platform-type-utils-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Type utility migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS type utility tests continue to reference the same vectors, unsigned byte/int/long conversion, signed sign extension, offset and size selection, signed-minimum boundaries, high-bit unsigned platform decisions, empty payload and payload-too-long typed errors, UInt64 max decimal preservation, and compile verification remain explicit before production parser primitives move."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest gates byte-conversion behavior-family completeness only; platform-specific channel, phone MTU, and host utility behavior remain separate migration decisions."
+}

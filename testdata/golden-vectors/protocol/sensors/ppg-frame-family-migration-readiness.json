@@ -1,0 +1,92 @@
+{
+  "id": "ppg-frame-family-migration-readiness",
+  "area": "protocol.sensors.ppg",
+  "case": "ppg_frame_family_migration_readiness",
+  "source": "PPG Android, iOS, and shared common parser characterization distilled into a pre-KMP readiness manifest",
+  "description": "Pins the complete PPG frame-family vector set that must remain executable before PPG parser production code moves to common KMP code.",
+  "input": {
+    "kind": "ppgFrameFamilyMigrationReadiness",
+    "requiredVectorPaths": [
+      "protocol/sensors/ppg-compressed-type10-full-status.json",
+      "protocol/sensors/ppg-compressed-type10-reference-status.json",
+      "protocol/sensors/ppg-compressed-type13-reference-status.json",
+      "protocol/sensors/ppg-compressed-type13-truncated-delta-header-android-error.json",
+      "protocol/sensors/ppg-compressed-type13-truncated-delta-header-ios-reference-only.json",
+      "protocol/sensors/ppg-compressed-type2-unsupported.json",
+      "protocol/sensors/ppg-compressed-type7-reference-status.json",
+      "protocol/sensors/ppg-compressed-type7-truncated-delta-payload-malformed.json",
+      "protocol/sensors/ppg-compressed-type8-reference-status.json",
+      "protocol/sensors/ppg-raw-type0-truncated-sample-malformed.json",
+      "protocol/sensors/ppg-raw-type0-two-samples.json",
+      "protocol/sensors/ppg-raw-type1-unsupported.json",
+      "protocol/sensors/ppg-raw-type14-integration-gain-platform-shape.json",
+      "protocol/sensors/ppg-raw-type4-integration-gain-platform-shape.json",
+      "protocol/sensors/ppg-raw-type4-truncated-integration-gain-malformed.json",
+      "protocol/sensors/ppg-raw-type5-operation-mode-max.json",
+      "protocol/sensors/ppg-raw-type5-truncated-operation-mode-malformed.json",
+      "protocol/sensors/ppg-raw-type6-sport-id.json",
+      "protocol/sensors/ppg-raw-type6-truncated-sport-id-malformed.json",
+      "protocol/sensors/ppg-raw-type9-integration-gain-platform-shape.json"
+    ],
+    "requiredFamilies": [
+      "raw-type0",
+      "raw-type4-integration-gain",
+      "raw-type5-operation-mode",
+      "raw-type6-sport-id",
+      "raw-type9-integration-gain",
+      "raw-type14-integration-gain",
+      "compressed-type7",
+      "compressed-type8",
+      "compressed-type10",
+      "compressed-type13",
+      "unsupported-raw",
+      "unsupported-compressed",
+      "malformed-raw",
+      "malformed-fixed",
+      "malformed-compressed",
+      "platform-split-type10-red-green",
+      "platform-split-type13-shape",
+      "platform-split-integration-gain-shape"
+    ]
+  },
+  "expected": {
+    "coveredFamilies": [
+      "raw-type0",
+      "raw-type4-integration-gain",
+      "raw-type5-operation-mode",
+      "raw-type6-sport-id",
+      "raw-type9-integration-gain",
+      "raw-type14-integration-gain",
+      "compressed-type7",
+      "compressed-type8",
+      "compressed-type10",
+      "compressed-type13",
+      "unsupported-raw",
+      "unsupported-compressed",
+      "malformed-raw",
+      "malformed-fixed",
+      "malformed-compressed",
+      "platform-split-type10-red-green",
+      "platform-split-type13-shape",
+      "platform-split-integration-gain-shape"
+    ],
+    "commonDecision": "PPG parser migration may proceed only after every required vector path in this manifest is executable from shared commonTest and compile-verified against the common parser prototype; this manifest does not replace parser execution or Gradle commonTest verification."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for fixture completeness only; parser behavior remains covered by the named frame vectors and must still be compile-verified before production PPG code moves to shared KMP."
+}

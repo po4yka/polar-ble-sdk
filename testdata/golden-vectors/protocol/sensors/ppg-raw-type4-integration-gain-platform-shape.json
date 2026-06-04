@@ -1,0 +1,188 @@
+{
+  "id": "ppg-raw-type4-integration-gain-platform-shape",
+  "area": "sensor-parser",
+  "case": "ppg_raw_type4_integration_and_gain_arrays_platform_shape",
+  "source": "Android PpgDataTest and iOS PpgDataTest",
+  "input": {
+    "dataFrameHex": "01009435770000000004027f060206040206030201ff0107ff000000000000000001f87f0000000000000102eff8",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "PPG",
+    "frameType": 4,
+    "compressed": false,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "timeStamp": 2000000000,
+        "numIntTs": [
+          2,
+          127,
+          6,
+          2,
+          6,
+          4,
+          2,
+          6,
+          3,
+          2,
+          1,
+          255
+        ],
+        "channel1GainTs": [
+          1,
+          7,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          7
+        ],
+        "channel2GainTs": [
+          7,
+          0,
+          0,
+          0,
+          0,
+          1,
+          7,
+          0,
+          0,
+          0,
+          2,
+          0
+        ]
+      }
+    ]
+  },
+  "platformExpectations": {
+    "android": {
+      "samples": [
+        {
+          "timeStamp": 2000000000,
+          "numIntTs": [
+            2,
+            127,
+            6,
+            2,
+            6,
+            4,
+            2,
+            6,
+            3,
+            2,
+            1,
+            255
+          ],
+          "channel1GainTs": [
+            1,
+            7,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            7
+          ],
+          "channel2GainTs": [
+            7,
+            0,
+            0,
+            0,
+            0,
+            1,
+            7,
+            0,
+            0,
+            0,
+            2,
+            0
+          ]
+        }
+      ]
+    },
+    "ios": {
+      "samples": [
+        {
+          "timeStamp": 2000000000,
+          "ppgDataSamples": [
+            2,
+            127,
+            6,
+            2,
+            6,
+            4,
+            2,
+            6,
+            3,
+            2,
+            1,
+            255
+          ]
+        },
+        {
+          "timeStamp": 2000000000,
+          "ppgDataSamples": [
+            1,
+            7,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            7
+          ]
+        },
+        {
+          "timeStamp": 2000000000,
+          "ppgDataSamples": [
+            7,
+            0,
+            0,
+            0,
+            0,
+            1,
+            7,
+            0,
+            0,
+            0,
+            2,
+            0
+          ]
+        }
+      ]
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ]
+  }
+}

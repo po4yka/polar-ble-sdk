@@ -1,0 +1,42 @@
+{
+  "id": "duplicate-completion-policy",
+  "area": "sdk-stream-runtime",
+  "case": "duplicate_completion_is_idempotent",
+  "source": "Android ChannelUtilsTests and iOS StreamContinuationListTest stream completion characterization",
+  "input": {
+    "kind": "genericStreamCompletionPolicy",
+    "target": "stream",
+    "completionSignals": [
+      "complete",
+      "complete"
+    ]
+  },
+  "expected": {
+    "completionEventCount": 1,
+    "activeObserverCount": 0,
+    "duplicateCompletionPolicy": "ignore-after-first-completion",
+    "commonDecision": "Complete or finish signals after the first terminal completion must be idempotent and must not re-register observers."
+  },
+  "execution": {
+    "kind": "fake-stream-runtime-policy",
+    "transport": "generic-stream-completion",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.ChannelUtilsTests"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.StreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Stream utilities can move to shared KMP code only after duplicate completion is preserved as a single terminal completion with no active observer leak on Android, iOS, and the shared fake-stream runtime."
+}

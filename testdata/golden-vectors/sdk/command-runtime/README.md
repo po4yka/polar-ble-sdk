@@ -1,0 +1,7 @@
+# SDK Command Runtime Golden Vectors
+
+This directory owns pre-KMP public facade command-planning vectors for deterministic PSFTP query and notification command families that are not pure model parsing. Fixtures here must be consumed by Android, iOS, and shared common prototype tests before facade command planning moves into common code.
+
+`reset-sync-h10-command-policy.json` pins H10 recording queries and query failures, reset notification flag payloads and notification failures, and sync notification sequencing and platform-split failures. `CommandRuntimePolicyCommonTest.kt` executes the shared planning shape with a fake command runtime, while `BDBleApiImplTest.kt` and `PolarBleApiImplTests.swift` keep the current platform behavior attached to the same vector. Sync failure handling is still a platform compatibility decision and must not be normalized during migration without an explicit API decision.
+
+`reset-sync-h10-command-readiness.json` names the pre-migration behavior-family gate for this runtime slice: H10 recording start/stop/status queries and query failures, reset flag payloads and notification failures, sync start/stop notification sequencing, sync failure platform splits, platform facade vector references, public facade error mapping, and the `compile-verification-gate` must remain covered before production command planning moves into shared KMP code.

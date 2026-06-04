@@ -1,0 +1,54 @@
+{
+  "id": "user-device-settings-model-readiness",
+  "area": "sdk.user-device-settings",
+  "case": "pre_migration_model_mapping_readiness_manifest",
+  "source": "KMP migration readiness gate for user device settings protobuf/model mapping",
+  "input": {
+    "kind": "userDeviceSettingsModelReadiness",
+    "policyVectorPaths": [
+      "sdk/user-device-settings/from-proto-full-settings.json",
+      "sdk/user-device-settings/from-proto-omitted-optional-settings.json",
+      "sdk/user-device-settings/to-proto-telemetry-platform-difference.json",
+      "sdk/user-device-settings/to-proto-writable-settings.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "protobuf-presence-preservation",
+      "nullable-omitted-optional-settings",
+      "writable-settings-serialization",
+      "encoder-owned-trusted-last-modified",
+      "explicit-telemetry-write-policy",
+      "platform-default-divergence",
+      "platform-user-device-settings-vector-references",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "compileVerifiedPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "protobuf-presence-preservation",
+      "nullable-omitted-optional-settings",
+      "writable-settings-serialization",
+      "encoder-owned-trusted-last-modified",
+      "explicit-telemetry-write-policy",
+      "platform-default-divergence",
+      "platform-user-device-settings-vector-references",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.PolarUserDeviceSettingsTest"
+    ],
+    "ios": [
+      "PolarUserDeviceSettingsUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.UserDeviceSettingsCommonPolicyTest"
+    ]
+  }
+}

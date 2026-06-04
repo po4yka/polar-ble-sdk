@@ -1,0 +1,34 @@
+{
+  "id": "write-commit-basic",
+  "area": "sdk-kvtx",
+  "case": "write_bytes_commit_basic",
+  "source": "Android KvtxScriptUtilsTest and iOS KvtxScriptUtilsTests",
+  "input": {
+    "operation": "buildWriteAndCommit",
+    "key": 305419896,
+    "dataHex": "010203"
+  },
+  "expected": {
+    "scriptHex": "00785634120300000001020305",
+    "extractKey": 305419896,
+    "extractedHex": "010203",
+    "firstOpcode": 0,
+    "commitOpcode": 5
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.KvtxScriptUtilsTest"
+    ],
+    "ios": [
+      "KvtxScriptUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.KvtxCommonPolicyTest"
+    ]
+  }
+}

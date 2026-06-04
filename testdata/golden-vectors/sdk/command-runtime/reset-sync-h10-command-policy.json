@@ -1,0 +1,384 @@
+{
+  "id": "reset-sync-h10-command-policy",
+  "area": "sdk-command-runtime",
+  "case": "reset_sync_h10_command_policy",
+  "source": "BDBleApiImplTest and PolarBleApiImplTests public facade command characterization",
+  "description": "Pins H10 recording PSFTP queries, reset notification flag payloads, and sync start/stop sequencing before these public facade command families can delegate to a shared KMP runtime.",
+  "input": {
+    "operations": [
+      {
+        "id": "h10-start-recording",
+        "kind": "query",
+        "query": "REQUEST_START_RECORDING",
+        "parameters": [
+          "sampleDataIdentifier=myExercise",
+          "sampleType=SAMPLE_TYPE_HEART_RATE",
+          "recordingIntervalSeconds=1"
+        ]
+      },
+      {
+        "id": "h10-start-recording-query-failure",
+        "kind": "queryFailure",
+        "query": "REQUEST_START_RECORDING",
+        "parameters": [
+          "sampleDataIdentifier=myExercise",
+          "sampleType=SAMPLE_TYPE_HEART_RATE",
+          "recordingIntervalSeconds=1"
+        ],
+        "error": "start-recording-query-failed"
+      },
+      {
+        "id": "h10-stop-recording",
+        "kind": "query",
+        "query": "REQUEST_STOP_RECORDING",
+        "parameters": []
+      },
+      {
+        "id": "h10-stop-recording-query-failure",
+        "kind": "queryFailure",
+        "query": "REQUEST_STOP_RECORDING",
+        "parameters": [],
+        "error": "stop-recording-query-failed"
+      },
+      {
+        "id": "h10-recording-status",
+        "kind": "query",
+        "query": "REQUEST_RECORDING_STATUS",
+        "parameters": []
+      },
+      {
+        "id": "h10-recording-status-query-failure",
+        "kind": "queryFailure",
+        "query": "REQUEST_RECORDING_STATUS",
+        "parameters": [],
+        "error": "recording-status-query-failed"
+      },
+      {
+        "id": "factory-reset",
+        "kind": "resetNotification",
+        "sleep": false,
+        "factoryDefaults": true,
+        "otaFirmwareUpdate": false
+      },
+      {
+        "id": "factory-reset-notification-failure",
+        "kind": "resetNotificationFailure",
+        "sleep": false,
+        "factoryDefaults": true,
+        "otaFirmwareUpdate": false
+      },
+      {
+        "id": "factory-reset-preserve-pairing",
+        "kind": "resetNotification",
+        "sleep": false,
+        "factoryDefaults": true,
+        "otaFirmwareUpdate": true
+      },
+      {
+        "id": "factory-reset-preserve-pairing-notification-failure",
+        "kind": "resetNotificationFailure",
+        "sleep": false,
+        "factoryDefaults": true,
+        "otaFirmwareUpdate": true
+      },
+      {
+        "id": "restart",
+        "kind": "resetNotification",
+        "sleep": false,
+        "factoryDefaults": false,
+        "otaFirmwareUpdate": false
+      },
+      {
+        "id": "restart-notification-failure",
+        "kind": "resetNotificationFailure",
+        "sleep": false,
+        "factoryDefaults": false,
+        "otaFirmwareUpdate": false
+      },
+      {
+        "id": "warehouse-sleep",
+        "kind": "resetNotification",
+        "sleep": true,
+        "factoryDefaults": true,
+        "otaFirmwareUpdate": false
+      },
+      {
+        "id": "warehouse-sleep-notification-failure",
+        "kind": "resetNotificationFailure",
+        "sleep": true,
+        "factoryDefaults": true,
+        "otaFirmwareUpdate": false
+      },
+      {
+        "id": "turn-device-off",
+        "kind": "resetNotification",
+        "sleep": true,
+        "factoryDefaults": false,
+        "otaFirmwareUpdate": false
+      },
+      {
+        "id": "turn-device-off-notification-failure",
+        "kind": "resetNotificationFailure",
+        "sleep": true,
+        "factoryDefaults": false,
+        "otaFirmwareUpdate": false
+      },
+      {
+        "id": "sync-start-success",
+        "kind": "syncStart",
+        "query": "REQUEST_SYNCHRONIZATION",
+        "notifications": [
+          "INITIALIZE_SESSION",
+          "START_SYNC"
+        ]
+      },
+      {
+        "id": "sync-start-query-failure",
+        "kind": "syncStartFailure",
+        "query": "REQUEST_SYNCHRONIZATION",
+        "notifications": []
+      },
+      {
+        "id": "sync-stop-success",
+        "kind": "syncStop",
+        "notifications": [
+          "STOP_SYNC:completed=true",
+          "TERMINATE_SESSION"
+        ]
+      },
+      {
+        "id": "sync-stop-notification-failure",
+        "kind": "syncStopFailure",
+        "notifications": [
+          "STOP_SYNC:completed=true"
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "commonRuntimePrototype": {
+      "cases": [
+        {
+          "id": "h10-start-recording",
+          "commands": [
+            "query:REQUEST_START_RECORDING",
+            "parameter:sampleDataIdentifier=myExercise",
+            "parameter:sampleType=SAMPLE_TYPE_HEART_RATE",
+            "parameter:recordingIntervalSeconds=1"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "h10-start-recording-query-failure",
+          "commands": [
+            "query:REQUEST_START_RECORDING",
+            "parameter:sampleDataIdentifier=myExercise",
+            "parameter:sampleType=SAMPLE_TYPE_HEART_RATE",
+            "parameter:recordingIntervalSeconds=1"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "h10-stop-recording",
+          "commands": [
+            "query:REQUEST_STOP_RECORDING",
+            "parameters:none"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "h10-stop-recording-query-failure",
+          "commands": [
+            "query:REQUEST_STOP_RECORDING",
+            "parameters:none"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "h10-recording-status",
+          "commands": [
+            "query:REQUEST_RECORDING_STATUS",
+            "parameters:none"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "h10-recording-status-query-failure",
+          "commands": [
+            "query:REQUEST_RECORDING_STATUS",
+            "parameters:none"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "factory-reset",
+          "commands": [
+            "notification:RESET",
+            "flag:sleep=false",
+            "flag:factoryDefaults=true",
+            "flag:otaFirmwareUpdate=false"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "factory-reset-notification-failure",
+          "commands": [
+            "notification:RESET",
+            "flag:sleep=false",
+            "flag:factoryDefaults=true",
+            "flag:otaFirmwareUpdate=false"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "factory-reset-preserve-pairing",
+          "commands": [
+            "notification:RESET",
+            "flag:sleep=false",
+            "flag:factoryDefaults=true",
+            "flag:otaFirmwareUpdate=true"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "factory-reset-preserve-pairing-notification-failure",
+          "commands": [
+            "notification:RESET",
+            "flag:sleep=false",
+            "flag:factoryDefaults=true",
+            "flag:otaFirmwareUpdate=true"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "restart",
+          "commands": [
+            "notification:RESET",
+            "flag:sleep=false",
+            "flag:factoryDefaults=false",
+            "flag:otaFirmwareUpdate=false"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "restart-notification-failure",
+          "commands": [
+            "notification:RESET",
+            "flag:sleep=false",
+            "flag:factoryDefaults=false",
+            "flag:otaFirmwareUpdate=false"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "warehouse-sleep",
+          "commands": [
+            "notification:RESET",
+            "flag:sleep=true",
+            "flag:factoryDefaults=true",
+            "flag:otaFirmwareUpdate=false"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "warehouse-sleep-notification-failure",
+          "commands": [
+            "notification:RESET",
+            "flag:sleep=true",
+            "flag:factoryDefaults=true",
+            "flag:otaFirmwareUpdate=false"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "turn-device-off",
+          "commands": [
+            "notification:RESET",
+            "flag:sleep=true",
+            "flag:factoryDefaults=false",
+            "flag:otaFirmwareUpdate=false"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "turn-device-off-notification-failure",
+          "commands": [
+            "notification:RESET",
+            "flag:sleep=true",
+            "flag:factoryDefaults=false",
+            "flag:otaFirmwareUpdate=false"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "sync-start-success",
+          "commands": [
+            "query:REQUEST_SYNCHRONIZATION",
+            "parameters:none",
+            "notification:INITIALIZE_SESSION",
+            "notification:START_SYNC"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "sync-start-query-failure",
+          "commands": [
+            "query:REQUEST_SYNCHRONIZATION",
+            "parameters:none"
+          ],
+          "terminal": "platform-split"
+        },
+        {
+          "id": "sync-stop-success",
+          "commands": [
+            "notification:STOP_SYNC:completed=true",
+            "notification:TERMINATE_SESSION"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "sync-stop-notification-failure",
+          "commands": [
+            "notification:STOP_SYNC:completed=true"
+          ],
+          "terminal": "platform-split"
+        }
+      ]
+    },
+    "commonDecision": "A shared command runtime may own query/notification planning only after H10 query failure propagation, reset notification failure propagation, platform-specific sync error handling, and sync failure semantics are explicitly preserved or intentionally reconciled."
+  },
+  "platformExpectations": {
+    "android": {
+      "syncStartQueryFailure": "returns false and sends no notifications",
+      "syncStopNotificationFailure": "swallows the notification error after STOP_SYNC is attempted"
+    },
+    "ios": {
+      "syncStartQueryFailure": "propagates the query error and sends no notifications",
+      "syncStopNotificationFailure": "propagates the notification error after STOP_SYNC is attempted"
+    },
+    "commonDecision": "Keep sync failure policy platform-specific until the public API migration has an approved compatibility decision."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.BDBleApiImplTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.CommandRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "execution": {
+    "kind": "fake-command-runtime-policy",
+    "transport": "public-facade-command-capture",
+    "wallClockSafe": true
+  },
+  "commonDecision": "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates.",
+  "notes": "Android and iOS agree on the command/query IDs, H10 query failure propagation, reset payload flags, and reset notification failure propagation. Sync start and stop error handling intentionally differs today, so the KMP migration must keep this vector as a decision gate rather than silently choosing one platform behavior."
+}

@@ -164,7 +164,7 @@ internal class PolarTimeUtils {
         dateComponents.month = Int(month)
         dateComponents.day = Int(day)
         
-        var userCalendar = Calendar(identifier: .gregorian)
+        let userCalendar = Calendar(identifier: .gregorian)
         guard let date = userCalendar.date(from: dateComponents) else {
             BleLogger.error("pbDateToDate failed, cannot create date from dateComponents")
             throw PolarErrors.dateTimeFormatFailed(description: "pbDateToDate failed, cannot create date from dateComponents")

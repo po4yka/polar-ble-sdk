@@ -1,0 +1,50 @@
+{
+  "id": "list-files-shallow-all",
+  "area": "sdk.file-utils",
+  "case": "list_files_shallow_all",
+  "source": "Android and iOS PolarFileUtils characterization tests",
+  "input": {
+    "rootPath": "U/0",
+    "recurseDeep": false,
+    "condition": "include-all",
+    "directories": {
+      "/U/0/": [
+        {
+          "name": "20260101/",
+          "size": 0
+        },
+        {
+          "name": "20260201/",
+          "size": 0
+        }
+      ]
+    }
+  },
+  "expected": {
+    "paths": [
+      "/U/0/20260101/",
+      "/U/0/20260201/"
+    ],
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFileUtilsTest"
+    ],
+    "ios": [
+      "PolarFileUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FileFacadeRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Shallow listing emits root entries only after normalizing the requested path."
+}

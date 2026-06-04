@@ -1,0 +1,30 @@
+{
+  "id": "append-ex-zero-index",
+  "area": "sdk-kvtx",
+  "case": "append_bytes_ex_zero_length_index_appends_value",
+  "source": "Android KvtxScriptUtilsTest and iOS KvtxScriptUtilsTests",
+  "input": {
+    "scriptHex": "002400000001000000aa07240000000002000000bbcc05",
+    "extractKey": 36
+  },
+  "expected": {
+    "extractedHex": "aabbcc"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "EX append commands with an empty index append to the current value for the target key.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.KvtxScriptUtilsTest"
+    ],
+    "ios": [
+      "KvtxScriptUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.KvtxCommonPolicyTest"
+    ]
+  }
+}

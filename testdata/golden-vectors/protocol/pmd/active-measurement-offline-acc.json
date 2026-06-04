@@ -1,0 +1,35 @@
+{
+  "id": "active-measurement-offline-acc",
+  "area": "pmd-control-point",
+  "case": "active_measurement_offline_acc",
+  "source": "Android PmdActiveMeasurementTest and iOS PmdActiveMeasurementTest",
+  "input": {
+    "responseByte": 130
+  },
+  "expected": {
+    "activeBits": 2,
+    "measurementBits": 2,
+    "measurementTypeName": "ACC",
+    "activeMeasurementAndroid": "OFFLINE_MEASUREMENT_ACTIVE",
+    "activeMeasurementIOS": "offline_measurement_active"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Upper bits 10 mean offline measurement active; lower bits identify ACC.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

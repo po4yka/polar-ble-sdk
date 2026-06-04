@@ -1,0 +1,300 @@
+{
+  "id": "user-device-settings-runtime-policy",
+  "area": "sdk-user-device-settings-runtime",
+  "case": "user_device_settings_runtime_policy",
+  "source": "BDBleApiImplTest and PolarBleApiImplTests user-device-settings facade characterization",
+  "description": "Pins user-device-settings PSFTP read/write orchestration before settings facade operations can delegate to a shared KMP runtime.",
+  "input": {
+    "settingsPath": "/U/0/S/UDEVSET.BPB",
+    "operations": [
+      {
+        "id": "get-user-device-settings",
+        "kind": "read",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "currentFields": [
+          "deviceLocation=WRIST_RIGHT",
+          "telemetryEnabled=true"
+        ]
+      },
+      {
+        "id": "get-user-device-settings-read-failure",
+        "kind": "readFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "error": "user-settings-read-failed"
+      },
+      {
+        "id": "set-telemetry-enabled",
+        "kind": "readThenWrite",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "telemetryEnabled=true",
+          "preserve:deviceLocation=WRIST_LEFT"
+        ]
+      },
+      {
+        "id": "set-telemetry-read-failure",
+        "kind": "readFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "error": "current-settings-read-failed"
+      },
+      {
+        "id": "set-telemetry-write-failure",
+        "kind": "readThenWriteFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "telemetryEnabled=true"
+        ],
+        "error": "settings-write-failed"
+      },
+      {
+        "id": "set-user-device-location",
+        "kind": "readThenWrite",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "deviceLocation=WRIST_RIGHT",
+          "preserve:telemetryEnabled=true"
+        ]
+      },
+      {
+        "id": "set-user-device-location-write-failure",
+        "kind": "readThenWriteFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "deviceLocation=WRIST_LEFT",
+          "preserve:telemetryEnabled=true"
+        ],
+        "error": "location-settings-write-failed"
+      },
+      {
+        "id": "set-usb-connection-mode",
+        "kind": "readThenWrite",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "usbConnectionMode=ON",
+          "preserve:deviceLocation=WRIST_LEFT",
+          "preserve:telemetryEnabled=true"
+        ]
+      },
+      {
+        "id": "set-usb-connection-mode-write-failure",
+        "kind": "readThenWriteFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "usbConnectionMode=OFF"
+        ],
+        "error": "usb-settings-write-failed"
+      },
+      {
+        "id": "set-automatic-training-detection",
+        "kind": "readThenWrite",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "automaticTrainingDetectionMode=ON",
+          "automaticTrainingDetectionSensitivity=77",
+          "minimumTrainingDurationSeconds=300",
+          "preserve:telemetryEnabled=true"
+        ]
+      },
+      {
+        "id": "set-automatic-training-detection-write-failure",
+        "kind": "readThenWriteFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "automaticTrainingDetectionMode=OFF",
+          "automaticTrainingDetectionSensitivity=11",
+          "minimumTrainingDurationSeconds=120"
+        ],
+        "error": "automatic-training-detection-write-failed"
+      },
+      {
+        "id": "set-automatic-ohr-measurement",
+        "kind": "readThenWrite",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "automaticOhrMeasurement=ALWAYS_ON",
+          "preserve:automaticTrainingDetectionSettings"
+        ]
+      },
+      {
+        "id": "set-automatic-ohr-measurement-write-failure",
+        "kind": "readThenWriteFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "automaticOhrMeasurement=OFF"
+        ],
+        "error": "automatic-ohr-write-failed"
+      },
+      {
+        "id": "set-daylight-saving-time",
+        "kind": "readThenWrite",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "daylightSaving.nextDaylightSavingTime=present",
+          "daylightSaving.offset=nonzero"
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "commonRuntimePrototype": {
+      "cases": [
+        {
+          "id": "get-user-device-settings",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "get-user-device-settings-read-failure",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "set-telemetry-enabled",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB",
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:telemetryEnabled=true",
+            "field:preserve:deviceLocation=WRIST_LEFT"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "set-telemetry-read-failure",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "set-telemetry-write-failure",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB",
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:telemetryEnabled=true"
+          ],
+          "terminal": "transport-error-after-payload"
+        },
+        {
+          "id": "set-user-device-location",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB",
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:deviceLocation=WRIST_RIGHT",
+            "field:preserve:telemetryEnabled=true"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "set-user-device-location-write-failure",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB",
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:deviceLocation=WRIST_LEFT",
+            "field:preserve:telemetryEnabled=true"
+          ],
+          "terminal": "transport-error-after-payload"
+        },
+        {
+          "id": "set-usb-connection-mode",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB",
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:usbConnectionMode=ON",
+            "field:preserve:deviceLocation=WRIST_LEFT",
+            "field:preserve:telemetryEnabled=true"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "set-usb-connection-mode-write-failure",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB",
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:usbConnectionMode=OFF"
+          ],
+          "terminal": "transport-error-after-payload"
+        },
+        {
+          "id": "set-automatic-training-detection",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB",
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:automaticTrainingDetectionMode=ON",
+            "field:automaticTrainingDetectionSensitivity=77",
+            "field:minimumTrainingDurationSeconds=300",
+            "field:preserve:telemetryEnabled=true"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "set-automatic-training-detection-write-failure",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB",
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:automaticTrainingDetectionMode=OFF",
+            "field:automaticTrainingDetectionSensitivity=11",
+            "field:minimumTrainingDurationSeconds=120"
+          ],
+          "terminal": "transport-error-after-payload"
+        },
+        {
+          "id": "set-automatic-ohr-measurement",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB",
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:automaticOhrMeasurement=ALWAYS_ON",
+            "field:preserve:automaticTrainingDetectionSettings"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "set-automatic-ohr-measurement-write-failure",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB",
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:automaticOhrMeasurement=OFF"
+          ],
+          "terminal": "transport-error-after-payload"
+        },
+        {
+          "id": "set-daylight-saving-time",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB",
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:daylightSaving.nextDaylightSavingTime=present",
+            "field:daylightSaving.offset=nonzero"
+          ],
+          "terminal": "success"
+        }
+      ]
+    },
+    "commonDecision": "A shared user-device-settings runtime may own deterministic read-then-write sequencing and payload field planning only after platform facades keep protobuf field preservation, read-failure no-write behavior, and write-failure-after-payload behavior pinned for telemetry, location, USB, automatic-training-detection, and automatic-OHR writes."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.BDBleApiImplTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.UserDeviceSettingsRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "execution": {
+    "kind": "fake-user-device-settings-runtime-policy",
+    "transport": "public-facade-psftp-read-write-capture",
+    "wallClockSafe": true
+  },
+  "commonDecision": "Promote user-device-settings runtime only after read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors.",
+  "notes": "Model/protobuf field mapping remains covered by sdk/user-device-settings vectors. This runtime vector owns PSFTP path usage, get/read failures, read-then-write command planning, writable settings payload fields, daylight-saving write shape, and transport-error terminals."
+}

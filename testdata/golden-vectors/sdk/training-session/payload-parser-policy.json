@@ -1,0 +1,227 @@
+{
+  "id": "payload-parser-policy",
+  "area": "sdk.training-session",
+  "case": "payload_parser_policy",
+  "source": "Android and iOS PolarTrainingSessionUtils byte-level protobuf/gzip characterization distilled into shared parser migration policy",
+  "description": "Pins the training-session protobuf and gzip-protobuf payload families that must become executable in common code before byte-level training payload parsers move to KMP.",
+  "input": {
+    "kind": "payloadParserPolicy",
+    "cases": [
+      {
+        "id": "training-session-summary-protobuf",
+        "fileName": "TSESS.BPB",
+        "parser": "PbTrainingSession",
+        "encoding": "protobuf",
+        "expectedFields": [
+          "start.year=2025",
+          "exerciseCount=2",
+          "modelName=Polar 360"
+        ]
+      },
+      {
+        "id": "exercise-summary-protobuf",
+        "fileName": "BASE.BPB",
+        "parser": "PbExerciseBase",
+        "encoding": "protobuf",
+        "expectedFields": [
+          "start.hour=12",
+          "walkingDistance=10000",
+          "sport=5"
+        ]
+      },
+      {
+        "id": "route-protobuf",
+        "fileName": "ROUTE.BPB",
+        "parser": "PbExerciseRouteSamples",
+        "encoding": "protobuf",
+        "expectedFields": [
+          "latitude=10",
+          "longitude=20",
+          "satelliteAmount=6"
+        ]
+      },
+      {
+        "id": "route-gzip-protobuf",
+        "fileName": "ROUTE.GZB",
+        "parser": "PbExerciseRouteSamples",
+        "encoding": "gzip-protobuf",
+        "expectedFields": [
+          "latitude=10",
+          "longitude=20",
+          "satelliteAmount=6"
+        ]
+      },
+      {
+        "id": "route-advanced-protobuf",
+        "fileName": "ROUTE2.BPB",
+        "parser": "PbExerciseRouteSamples2",
+        "encoding": "protobuf",
+        "expectedFields": [
+          "syncPoint.index=0",
+          "syncPoint.latitude=10",
+          "syncPoint.longitude=20"
+        ]
+      },
+      {
+        "id": "route-advanced-gzip-protobuf",
+        "fileName": "ROUTE2.GZB",
+        "parser": "PbExerciseRouteSamples2",
+        "encoding": "gzip-protobuf",
+        "expectedFields": [
+          "syncPoint.index=0",
+          "syncPoint.latitude=10",
+          "syncPoint.longitude=20"
+        ]
+      },
+      {
+        "id": "samples-protobuf",
+        "fileName": "SAMPLES.BPB",
+        "parser": "PbExerciseSamples",
+        "encoding": "protobuf",
+        "expectedFields": [
+          "recordingIntervalSeconds=1",
+          "heartRateSamples=120,125,130",
+          "speedSamples=2000,2100"
+        ]
+      },
+      {
+        "id": "samples-gzip-protobuf",
+        "fileName": "SAMPLES.GZB",
+        "parser": "PbExerciseSamples",
+        "encoding": "gzip-protobuf",
+        "expectedFields": [
+          "recordingIntervalSeconds=1",
+          "heartRateSamples=120,125,130",
+          "speedSamples=2000,2100"
+        ]
+      },
+      {
+        "id": "samples-advanced-gzip-protobuf",
+        "fileName": "SAMPLES2.GZB",
+        "parser": "PbExerciseSamples2",
+        "encoding": "gzip-protobuf",
+        "expectedFields": [
+          "sampleType=HEART_RATE",
+          "recordingIntervalMs=1000",
+          "heartRateSamples=131,132,133"
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "commonParserPrototype": {
+      "status": "executable shared parser-policy coverage; byte decoding remains gated on common protobuf and gzip dependencies",
+      "cases": [
+        {
+          "id": "training-session-summary-protobuf",
+          "parser": "PbTrainingSession",
+          "encoding": "protobuf",
+          "fields": [
+            "start.year=2025",
+            "exerciseCount=2",
+            "modelName=Polar 360"
+          ]
+        },
+        {
+          "id": "exercise-summary-protobuf",
+          "parser": "PbExerciseBase",
+          "encoding": "protobuf",
+          "fields": [
+            "start.hour=12",
+            "walkingDistance=10000",
+            "sport=5"
+          ]
+        },
+        {
+          "id": "route-protobuf",
+          "parser": "PbExerciseRouteSamples",
+          "encoding": "protobuf",
+          "fields": [
+            "latitude=10",
+            "longitude=20",
+            "satelliteAmount=6"
+          ]
+        },
+        {
+          "id": "route-gzip-protobuf",
+          "parser": "PbExerciseRouteSamples",
+          "encoding": "gzip-protobuf",
+          "fields": [
+            "latitude=10",
+            "longitude=20",
+            "satelliteAmount=6"
+          ]
+        },
+        {
+          "id": "route-advanced-protobuf",
+          "parser": "PbExerciseRouteSamples2",
+          "encoding": "protobuf",
+          "fields": [
+            "syncPoint.index=0",
+            "syncPoint.latitude=10",
+            "syncPoint.longitude=20"
+          ]
+        },
+        {
+          "id": "route-advanced-gzip-protobuf",
+          "parser": "PbExerciseRouteSamples2",
+          "encoding": "gzip-protobuf",
+          "fields": [
+            "syncPoint.index=0",
+            "syncPoint.latitude=10",
+            "syncPoint.longitude=20"
+          ]
+        },
+        {
+          "id": "samples-protobuf",
+          "parser": "PbExerciseSamples",
+          "encoding": "protobuf",
+          "fields": [
+            "recordingIntervalSeconds=1",
+            "heartRateSamples=120,125,130",
+            "speedSamples=2000,2100"
+          ]
+        },
+        {
+          "id": "samples-gzip-protobuf",
+          "parser": "PbExerciseSamples",
+          "encoding": "gzip-protobuf",
+          "fields": [
+            "recordingIntervalSeconds=1",
+            "heartRateSamples=120,125,130",
+            "speedSamples=2000,2100"
+          ]
+        },
+        {
+          "id": "samples-advanced-gzip-protobuf",
+          "parser": "PbExerciseSamples2",
+          "encoding": "gzip-protobuf",
+          "fields": [
+            "sampleType=HEART_RATE",
+            "recordingIntervalMs=1000",
+            "heartRateSamples=131,132,133"
+          ]
+        }
+      ]
+    },
+    "commonDecision": "Before moving byte-level training payload parsing to common code, add production common protobuf and gzip dependencies that can execute these parser cases against real bytes; until then this vector is the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"
+    ],
+    "ios": [
+      "PolarTrainingSessionUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TrainingSessionCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "commonDecision": "This vector converts the existing platform byte-level protobuf/gzip coverage into an executable shared parser-policy gate, without claiming common byte decoding is implemented.",
+  "notes": "The Android and iOS tests currently construct real protobuf and gzip payloads for these parser families. Shared KMP production parser migration still requires real common protobuf/gzip decoding and compile verification."
+}

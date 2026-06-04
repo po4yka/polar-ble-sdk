@@ -1,0 +1,36 @@
+{
+  "id": "ppg-compressed-type7-truncated-delta-payload-malformed",
+  "area": "sensor-parser",
+  "case": "ppg_compressed_type7_truncated_delta_payload_malformed",
+  "source": "Pre-migration shared PPG parser policy",
+  "input": {
+    "dataFrameHex": "016600000000000000870100000200000300000400000500000600000700000800000900000a00000b00000c00000d00000e00000f00001000000500000101",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PPG",
+    "frameType": 7,
+    "compressed": true,
+    "timeStamp": 102,
+    "parseError": "malformedFrame"
+  },
+  "consumerTests": {
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ],
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ]
+  },
+  "platforms": {
+    "android": false,
+    "ios": false,
+    "common": true
+  },
+  "notes": "Future shared PPG parsing should reject compressed type-7 frames whose delta header declares more delta bits than the payload contains."
+}

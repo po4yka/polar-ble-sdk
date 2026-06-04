@@ -1,0 +1,55 @@
+{
+  "id": "ppi-readiness",
+  "area": "sensors.ppi",
+  "case": "pre_migration_readiness_manifest",
+  "source": "KMP migration readiness gate for PPI parser behavior",
+  "input": {
+    "kind": "ppiReadiness",
+    "policyVectorPaths": [
+      "protocol/sensors/ppi-compressed-type0-unsupported.json",
+      "protocol/sensors/ppi-raw-type0-truncated-sample-android-error.json",
+      "protocol/sensors/ppi-raw-type0-two-samples.json",
+      "protocol/sensors/ppi-raw-type0-zero-timestamp-boundary.json",
+      "protocol/sensors/ppi-raw-type1-unsupported.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "raw-type0-hr-rr-error-status-parsing",
+      "raw-type0-zero-timestamp-policy",
+      "raw-type0-timestamp-backfill",
+      "unsupported-compressed-frame-policy",
+      "unsupported-raw-frame-policy",
+      "truncated-raw-sample-policy",
+      "platform-ppi-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "raw-type0-hr-rr-error-status-parsing",
+      "raw-type0-zero-timestamp-policy",
+      "raw-type0-timestamp-backfill",
+      "unsupported-compressed-frame-policy",
+      "unsupported-raw-frame-policy",
+      "truncated-raw-sample-policy",
+      "platform-ppi-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpiDataTest"
+    ],
+    "ios": [
+      "PpiDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpiParserCommonPolicyTest"
+    ]
+  }
+}

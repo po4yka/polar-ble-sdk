@@ -1,0 +1,71 @@
+{
+  "id": "version-comparison",
+  "area": "sdk.firmware-update",
+  "case": "version_comparison",
+  "source": "Android and iOS PolarFirmwareUpdateUtils characterization tests",
+  "input": {
+    "kind": "versionComparison",
+    "cases": [
+      {
+        "currentVersion": "1.0.0",
+        "availableVersion": "2.0.0",
+        "expectedHigher": true
+      },
+      {
+        "currentVersion": "2.0.0",
+        "availableVersion": "2.0.1",
+        "expectedHigher": true
+      },
+      {
+        "currentVersion": "2.0.0",
+        "availableVersion": "2.1.0",
+        "expectedHigher": true
+      },
+      {
+        "currentVersion": "2.0.0",
+        "availableVersion": "2.0.0",
+        "expectedHigher": false
+      },
+      {
+        "currentVersion": "2.1.0",
+        "availableVersion": "2.0.9",
+        "expectedHigher": false
+      },
+      {
+        "currentVersion": "2.0",
+        "availableVersion": "2.0.1",
+        "expectedHigher": true
+      },
+      {
+        "currentVersion": "2.0.1",
+        "availableVersion": "2.0",
+        "expectedHigher": false
+      }
+    ]
+  },
+  "expected": {
+    "policy": "dotted-integer-version-comparison"
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "versionPolicy": "compare-dot-separated-integer-components-with-longer-available-version-higher-only-after-equal-prefix"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Current dotted integer comparison behavior for available firmware versions.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"
+    ],
+    "ios": [
+      "PolarFirmwareUpdateUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FirmwareUpdateUtilityCommonPolicyTest"
+    ]
+  }
+}

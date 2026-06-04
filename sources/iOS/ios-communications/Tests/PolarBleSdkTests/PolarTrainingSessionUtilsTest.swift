@@ -97,7 +97,7 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         ]
 
         mockClient.requestReturnValueClosure = { header in
-            let op = try Protocol_PbPFtpOperation(serializedData: header)
+            let op = try Protocol_PbPFtpOperation(serializedBytes: header)
             let path = op.path
             let dir = Protocol_PbPFtpDirectory.with {
                 $0.entries = responses[path, default: []]
@@ -145,6 +145,133 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         XCTAssertEqual(session2.path, path2)
         XCTAssertEqual(session2.trainingDataTypes, [PolarTrainingSessionDataTypes.trainingSessionSummary])
         XCTAssertTrue(session2.exercises.isEmpty)
+    }
+
+    func testTrainingSessionReferenceDiscoveryGoldenVectorsMatchIOSBehavior() async throws {
+        let vectors = try loadTrainingSessionGoldenVectors()
+        XCTAssertFalse(vectors.isEmpty, "Expected training-session golden vectors")
+
+        for vector in vectors {
+            let caseId = try XCTUnwrap(vector["id"] as? String)
+            let input = try XCTUnwrap(vector["input"] as? [String: Any], caseId)
+            guard let directories = input["directories"] as? [String: [[String: Any]]] else {
+                continue
+            }
+            mockClient.requestReturnValueClosure = { header in
+                let op = try Protocol_PbPFtpOperation(serializedBytes: header)
+                return try self.buildDirectory(entries: directories[op.path, default: []]).serializedData()
+            }
+
+            let references = try await PolarTrainingSessionUtils.getTrainingSessionReferences(client: mockClient)
+
+            try assertTrainingSessionReferences(references, expected: try XCTUnwrap(vector["expected"] as? [String: Any], caseId), id: caseId)
+        }
+    }
+
+    func testTrainingSessionReadGoldenVectorsPreserveMissingExerciseFilePolicy() async throws {
+        let vector = try loadTrainingSessionGoldenVectors().first { ($0["id"] as? String) == "missing-exercise-file-platform-policy" }
+        let caseId = try XCTUnwrap(vector?["id"] as? String)
+        let input = try XCTUnwrap(vector?["input"] as? [String: Any], caseId)
+        let reference = try buildTrainingSessionReference(from: try XCTUnwrap(input["reference"] as? [String: Any], caseId))
+        let responses = try XCTUnwrap(input["responses"] as? [String: String], caseId)
+
+        mockClient.requestReturnValueClosure = { header in
+            let op = try Protocol_PbPFtpOperation(serializedBytes: header)
+            guard let responseType = responses[op.path] else {
+                throw NSError(domain: "TrainingSessionVector", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing file: \(op.path)"])
+            }
+            return try self.trainingSessionFixtureData(responseType)
+        }
+
+        do {
+            _ = try await PolarTrainingSessionUtils.readTrainingSession(client: mockClient, reference: reference)
+            XCTFail("Expected readTrainingSession to throw", file: #filePath, line: #line)
+        } catch {
+            XCTAssertFalse(error.localizedDescription.isEmpty, caseId)
+        }
+    }
+
+    func testTrainingSessionGoldenVectorsFollowNeutralKmpShape() throws {
+        let vectors = try loadTrainingSessionGoldenVectors()
+        XCTAssertFalse(vectors.isEmpty, "Expected training-session golden vectors")
+        for vector in vectors {
+            let id = try XCTUnwrap(vector["id"] as? String)
+            XCTAssertNotNil(vector["area"], id)
+            XCTAssertNotNil(vector["case"], id)
+            XCTAssertNotNil(vector["source"], id)
+            XCTAssertNotNil(vector["input"], id)
+            XCTAssertNotNil(vector["expected"], id)
+            let input = try XCTUnwrap(vector["input"] as? [String: Any], id)
+            XCTAssertNotNil(input["kind"], id)
+            let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], id)
+            XCTAssertEqual(platforms["android"] as? Bool, true, id)
+            XCTAssertEqual(platforms["ios"] as? Bool, true, id)
+            XCTAssertEqual(platforms["common"] as? Bool, true, id)
+        }
+    }
+
+    func testPayloadParserPolicyVectorIsPinnedBeforeByteLevelParserMigration() throws {
+        let vector = try XCTUnwrap(try loadTrainingSessionGoldenVectors().first { ($0["id"] as? String) == "payload-parser-policy" })
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
+        let input = try XCTUnwrap(vector["input"] as? [String: Any])
+        let cases = try XCTUnwrap(input["cases"] as? [[String: Any]])
+        let commonParserPrototype = try XCTUnwrap(expected["commonParserPrototype"] as? [String: Any], "payload-parser-policy")
+        let prototypeCases = try XCTUnwrap(commonParserPrototype["cases"] as? [[String: Any]], "payload-parser-policy")
+        let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any], "payload-parser-policy")
+
+        XCTAssertEqual(input["kind"] as? String, "payloadParserPolicy", "payload-parser-policy")
+        XCTAssertEqual(cases.compactMap { $0["id"] as? String }, TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS, "payload-parser-policy")
+        XCTAssertEqual(prototypeCases.compactMap { $0["id"] as? String }, TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS, "payload-parser-policy")
+        for (inputCase, prototypeCase) in zip(cases, prototypeCases) {
+            let id = try XCTUnwrap(inputCase["id"] as? String, "payload-parser-policy")
+            XCTAssertEqual(inputCase["parser"] as? String, prototypeCase["parser"] as? String, id)
+            XCTAssertEqual(inputCase["encoding"] as? String, prototypeCase["encoding"] as? String, id)
+            XCTAssertEqual(inputCase["expectedFields"] as? [String], prototypeCase["fields"] as? [String], id)
+        }
+        XCTAssertEqual(cases.filter { ($0["encoding"] as? String) == "gzip-protobuf" }.count, 4, "payload-parser-policy")
+        XCTAssertEqual(commonParserPrototype["status"] as? String, "executable shared parser-policy coverage; byte decoding remains gated on common protobuf and gzip dependencies", "payload-parser-policy")
+        XCTAssertEqual(expected["commonDecision"] as? String, TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION, "payload-parser-policy")
+        XCTAssertEqual(consumerTests["android"] as? [String], ["com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"], "payload-parser-policy")
+        XCTAssertEqual(consumerTests["ios"] as? [String], ["PolarTrainingSessionUtilsTest"], "payload-parser-policy")
+        XCTAssertEqual(consumerTests["commonPrototype"] as? [String], ["com.polar.sharedtest.TrainingSessionCommonPolicyTest"], "payload-parser-policy")
+    }
+
+    func testTrainingSessionReadinessManifestIsPinnedBeforeMigration() throws {
+        let readiness = try loadTrainingSessionReadinessManifest()
+        let input = try XCTUnwrap(readiness["input"] as? [String: Any])
+        let expected = try XCTUnwrap(readiness["expected"] as? [String: Any])
+        let policyVectorPaths = try XCTUnwrap(input["policyVectorPaths"] as? [String])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+        XCTAssertEqual(readiness["id"] as? String, "training-session-readiness")
+        XCTAssertEqual(input["kind"] as? String, "trainingSessionReadiness")
+        XCTAssertEqual(policyVectorPaths, [
+            "sdk/training-session/reference-discovery-two-sessions.json",
+            "sdk/training-session/missing-exercise-file-platform-policy.json",
+            "sdk/training-session/payload-read-policy.json",
+            "sdk/training-session/payload-parser-policy.json"
+        ])
+        let expectedFamilies = [
+            "reference-directory-traversal",
+            "training-summary-discovery",
+            "exercise-file-classification",
+            "unknown-file-ignoring",
+            "aggregate-file-size-policy",
+            "exercise-path-shape-policy",
+            "missing-exercise-file-platform-policy",
+            "payload-fetch-order",
+            "payload-progress-calculation",
+            "malformed-component-isolation",
+            "unknown-advanced-sample-list-ignoring",
+            "known-sample-preservation",
+            "payload-parser-family-ownership",
+            "byte-level-parser-dependency-gate",
+            "platform-training-session-vector-reference-gate",
+            "compile-verification-gate"
+        ]
+        XCTAssertEqual(requiredFamilies, expectedFamilies)
+        XCTAssertEqual(coveredFamilies, expectedFamilies)
+        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, byte-level parser dependency gates, and compile verification remain explicit before production discovery/read orchestration moves.")
     }
 
     func test_readTrainingSession_shouldReturnTrainingSessionDataWithExercises() async throws {
@@ -290,7 +417,7 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         let routeFiles = ["ROUTE.BPB", "ROUTE.GZB", "ROUTE2.BPB", "ROUTE2.GZB"]
 
         mockClient.requestReturnValueClosure = { headerData in
-            let op = try Protocol_PbPFtpOperation(serializedData: headerData)
+            let op = try Protocol_PbPFtpOperation(serializedBytes: headerData)
             let path = op.path
             switch path {
             case basePath:
@@ -391,4 +518,171 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             }
         }
     }
+
+    private func buildDirectory(entries: [[String: Any]]) throws -> Protocol_PbPFtpDirectory {
+        var directory = Protocol_PbPFtpDirectory()
+        directory.entries = entries.map { entry in
+            Protocol_PbPFtpEntry.with {
+                $0.name = try! XCTUnwrap(entry["name"] as? String)
+                $0.size = UInt64(try! number(entry, "size", id: $0.name))
+            }
+        }
+        return directory
+    }
+
+    private func assertTrainingSessionReferences(_ actual: [PolarTrainingSessionReference], expected: [String: Any], id: String) throws {
+        let expectedReferences = try XCTUnwrap(expected["references"] as? [[String: Any]], id)
+        XCTAssertEqual(actual.count, expectedReferences.count, "\(id) reference count")
+        for (index, expectedReference) in expectedReferences.enumerated() {
+            let actualReference = actual[index]
+            try assertDate(actualReference.date, expected: try XCTUnwrap(expectedReference["dateTime"] as? String, id), id: "\(id) reference \(index) date")
+            XCTAssertEqual(actualReference.path, try XCTUnwrap(expectedReference["path"] as? String, id), "\(id) reference \(index) path")
+            XCTAssertEqual(actualReference.fileSize, Int64(try number(expectedReference, "fileSize", id: id)), "\(id) reference \(index) fileSize")
+            XCTAssertEqual(actualReference.trainingDataTypes.map(\.rawValue), try XCTUnwrap(expectedReference["trainingDataTypes"] as? [String], id).map { androidTrainingTypeToIOSRawValue($0) }, "\(id) reference \(index) trainingDataTypes")
+            let expectedExercises = try XCTUnwrap(expectedReference["exercises"] as? [[String: Any]], id)
+            XCTAssertEqual(actualReference.exercises.count, expectedExercises.count, "\(id) reference \(index) exercises")
+            for (exerciseIndex, expectedExercise) in expectedExercises.enumerated() {
+                let actualExercise = actualReference.exercises[exerciseIndex]
+                XCTAssertEqual(actualExercise.index, try number(expectedExercise, "iosIndex", id: id), "\(id) exercise \(exerciseIndex) index")
+                XCTAssertEqual(actualExercise.path, try XCTUnwrap(expectedExercise["iosPath"] as? String, id), "\(id) exercise \(exerciseIndex) path")
+                XCTAssertEqual(actualExercise.exerciseDataTypes.map(\.rawValue), try XCTUnwrap(expectedExercise["exerciseDataTypes"] as? [String], id).map { androidExerciseTypeToIOSRawValue($0) }, "\(id) exercise \(exerciseIndex) dataTypes")
+            }
+        }
+    }
+
+    private func buildTrainingSessionReference(from fields: [String: Any]) throws -> PolarTrainingSessionReference {
+        let exercises = try XCTUnwrap(fields["exercises"] as? [[String: Any]]).map { exercise in
+            PolarExercise(
+                index: try! number(exercise, "index", id: "training-session exercise"),
+                path: try! XCTUnwrap(exercise["iosPath"] as? String),
+                exerciseDataTypes: (try! XCTUnwrap(exercise["exerciseDataTypes"] as? [String])).map { androidExerciseTypeToIOSType($0) }
+            )
+        }
+        return PolarTrainingSessionReference(
+            date: try dateValue(try XCTUnwrap(fields["date"] as? String)),
+            path: try XCTUnwrap(fields["path"] as? String),
+            trainingDataTypes: (try XCTUnwrap(fields["trainingDataTypes"] as? [String])).map { androidTrainingTypeToIOSType($0) },
+            exercises: exercises
+        )
+    }
+
+    private func trainingSessionFixtureData(_ responseType: String) throws -> Data {
+        switch responseType {
+        case "trainingSessionSummary":
+            return try Data_PbTrainingSession.with {
+                $0.start = fixtureLocalDateTime()
+                $0.exerciseCount = 1
+                $0.modelName = "Polar 360"
+            }.serializedData()
+        case "exerciseSummary":
+            return try Data_PbExerciseBase.with {
+                $0.start = fixtureLocalDateTime()
+                $0.duration = PbDuration.with { $0.seconds = 3600 }
+                $0.walkingDistance = 1000
+                $0.sport = PbSportIdentifier.with { $0.value = 3 }
+            }.serializedData()
+        default:
+            throw NSError(domain: "TrainingSessionVector", code: 2, userInfo: [NSLocalizedDescriptionKey: "Unknown fixture response type \(responseType)"])
+        }
+    }
+
+    private func fixtureLocalDateTime() -> PbLocalDateTime {
+        return PbLocalDateTime.with {
+            $0.date = PbDate.with { $0.year = 2025; $0.month = 1; $0.day = 1 }
+            $0.time = PbTime.with { $0.hour = 10; $0.minute = 12; $0.seconds = 0 }
+            $0.obsoleteTrusted = true
+        }
+    }
+
+    private func dateValue(_ value: String) throws -> Date {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        guard let date = formatter.date(from: value) else {
+            throw NSError(domain: "TrainingSessionVector", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid date \(value)"])
+        }
+        return date
+    }
+
+    private func assertDate(_ actual: Date, expected: String, id: String) throws {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        XCTAssertEqual(formatter.string(from: actual), expected, id)
+    }
+
+    private func androidTrainingTypeToIOSRawValue(_ type: String) -> String {
+        switch type {
+        case "TRAINING_SESSION_SUMMARY": return PolarTrainingSessionDataTypes.trainingSessionSummary.rawValue
+        default: return type
+        }
+    }
+
+    private func androidTrainingTypeToIOSType(_ type: String) -> PolarTrainingSessionDataTypes {
+        switch type {
+        case "TRAINING_SESSION_SUMMARY": return .trainingSessionSummary
+        default: return PolarTrainingSessionDataTypes(rawValue: type)!
+        }
+    }
+
+    private func androidExerciseTypeToIOSRawValue(_ type: String) -> String {
+        switch type {
+        case "EXERCISE_SUMMARY": return PolarExerciseDataTypes.exerciseSummary.rawValue
+        case "ROUTE": return PolarExerciseDataTypes.route.rawValue
+        case "ROUTE_GZIP": return PolarExerciseDataTypes.routeGzip.rawValue
+        case "ROUTE_ADVANCED_FORMAT": return PolarExerciseDataTypes.routeAdvancedFormat.rawValue
+        case "ROUTE_ADVANCED_FORMAT_GZIP": return PolarExerciseDataTypes.routeAdvancedFormatGzip.rawValue
+        case "SAMPLES": return PolarExerciseDataTypes.samples.rawValue
+        case "SAMPLES_GZIP": return PolarExerciseDataTypes.samplesGzip.rawValue
+        case "SAMPLES_ADVANCED_FORMAT_GZIP": return PolarExerciseDataTypes.samplesAdvancedFormatGzip.rawValue
+        default: return type
+        }
+    }
+
+    private func androidExerciseTypeToIOSType(_ type: String) -> PolarExerciseDataTypes {
+        return PolarExerciseDataTypes(rawValue: androidExerciseTypeToIOSRawValue(type))!
+    }
+
+    private func loadTrainingSessionGoldenVectors() throws -> [[String: Any]] {
+        let vectorDirectory = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/sdk/training-session")
+        return try FileManager.default
+            .contentsOfDirectory(at: vectorDirectory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .map { file in
+                let data = try Data(contentsOf: file)
+                return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+            }
+            .filter { vector in
+                let input = vector["input"] as? [String: Any]
+                return input?["kind"] as? String != "trainingSessionReadiness"
+            }
+    }
+
+    private func loadTrainingSessionReadinessManifest() throws -> [String: Any] {
+        let vectorFile = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/sdk/training-session/training-session-readiness.json")
+        let data = try Data(contentsOf: vectorFile)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], vectorFile.path)
+    }
+
+
+    private func number(_ object: [String: Any], _ key: String, id: String) throws -> Int {
+        return try XCTUnwrap(object[key] as? NSNumber, "\(id) \(key)").intValue
+    }
 }
+
+private let TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS = [
+    "training-session-summary-protobuf",
+    "exercise-summary-protobuf",
+    "route-protobuf",
+    "route-gzip-protobuf",
+    "route-advanced-protobuf",
+    "route-advanced-gzip-protobuf",
+    "samples-protobuf",
+    "samples-gzip-protobuf",
+    "samples-advanced-gzip-protobuf"
+]
+
+private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing to common code, add production common protobuf and gzip dependencies that can execute these parser cases against real bytes; until then this vector is the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."

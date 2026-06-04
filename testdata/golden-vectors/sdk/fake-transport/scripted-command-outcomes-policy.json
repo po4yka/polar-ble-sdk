@@ -1,0 +1,85 @@
+{
+  "id": "scripted-command-outcomes-policy",
+  "area": "sdk.fake-transport",
+  "case": "scripted_command_outcomes_policy",
+  "source": "KMP fake-transport command-capture planning and shared ScriptedCommonFakeTransport prototype",
+  "description": "Pins deterministic command ordering, payload capture, and scripted transport outcomes before request/write/stream command planning moves into shared runtime code.",
+  "input": {
+    "kind": "scriptedCommandOutcomesPolicy",
+    "outcomes": [
+      {
+        "type": "bytes",
+        "valueHex": "0102"
+      },
+      {
+        "type": "responseError",
+        "status": 103,
+        "message": "missing"
+      },
+      {
+        "type": "transportError",
+        "message": "link lost"
+      },
+      {
+        "type": "complete"
+      }
+    ],
+    "operations": [
+      {
+        "operation": "read",
+        "target": "/U/0/DEVICE.BPB"
+      },
+      {
+        "operation": "write",
+        "target": "/U/0/SETTINGS.BPB",
+        "payloadHex": "0a0b"
+      },
+      {
+        "operation": "subscribe",
+        "target": "d2h"
+      },
+      {
+        "operation": "unsubscribe",
+        "target": "d2h"
+      }
+    ]
+  },
+  "expected": {
+    "outcomes": [
+      "bytes:0102",
+      "response-error:103:missing",
+      "transport-error:link lost",
+      "complete"
+    ],
+    "commands": [
+      "READ:/U/0/DEVICE.BPB",
+      "WRITE:/U/0/SETTINGS.BPB:0a0b",
+      "SUBSCRIBE:d2h",
+      "UNSUBSCRIBE:d2h"
+    ],
+    "commonDecision": "Shared fake transport must capture request order, write payload bytes, stream subscription targets, and scripted success/error/complete outcomes deterministically before runtime command planning delegates to KMP."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.testutils.FakeTransportContractTest"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FakeTransportContractCommonTest"
+    ]
+  },
+  "execution": {
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest fake-transport contract",
+      "wallClockSafe": true
+    }
+  },
+  "platforms": {
+    "android": false,
+    "ios": false,
+    "common": true
+  },
+  "notes": "This vector covers the shared fake-transport command contract only. Public facade request success, response-error mapping, transport-error mapping, and stream error mapping remain feature-specific migration gates."
+}

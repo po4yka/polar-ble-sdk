@@ -1,0 +1,41 @@
+{
+  "id": "non-polar-local-name-platform-difference",
+  "area": "advertisement",
+  "case": "non_polar_complete_local_name",
+  "source": "Android BleAdvertisementContentTest and iOS BleAdvertisementContentTest",
+  "input": {
+    "localName": "ABC EDE aa123459"
+  },
+  "expected": {
+    "name": "ABC EDE aa123459",
+    "deviceType": ""
+  },
+  "platformExpectations": {
+    "android": {
+      "deviceId": ""
+    },
+    "ios": {
+      "deviceId": "AA123459"
+    },
+    "commonDecision": {
+      "status": "undecided"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "Current Android only sets deviceId for valid prefixed names; current iOS assembles the last token if it is hex even when the prefix is not Polar."
+}

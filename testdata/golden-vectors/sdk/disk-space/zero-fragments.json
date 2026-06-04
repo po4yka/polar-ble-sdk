@@ -1,0 +1,34 @@
+{
+  "id": "zero-fragments",
+  "area": "sdk.disk-space",
+  "case": "zero_fragments",
+  "source": "Android and iOS PolarDiskSpaceData characterization tests",
+  "input": {
+    "proto": {
+      "fragmentSize": 4096,
+      "totalFragments": 0,
+      "freeFragments": 0
+    }
+  },
+  "expected": {
+    "totalSpace": 0,
+    "freeSpace": 0
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.PolarDiskSpaceTest"
+    ],
+    "ios": [
+      "PolarDiskSpaceDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DiskSpaceCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Explicit zero fragment counts produce zero byte totals."
+}

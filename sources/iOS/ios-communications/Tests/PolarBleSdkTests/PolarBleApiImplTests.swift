@@ -3,8 +3,30 @@
 import XCTest
 import Combine
 import CoreBluetooth
+import Foundation
 
 @testable import PolarBleSdk
+
+private let REST_FACADE_RUNTIME_READINESS_COMMON_DECISION = "REST facade runtime migration may proceed only after rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified."
+private let FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION = "File facade runtime migration may proceed only after file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
+private let COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+private let STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup migration may proceed only after cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
+private let DISK_TIME_RUNTIME_READINESS_COMMON_DECISION = "Disk/time facade runtime migration may proceed only after disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
+private let COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
+private let STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
+private let DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
+private let USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, read-failure no-write and write-failure-after-payload behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+private let REST_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
+private let FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
+private let OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
+private let COMMAND_RUNTIME_POLICY_OPERATION_IDS = ["h10-start-recording", "h10-start-recording-query-failure", "h10-stop-recording", "h10-stop-recording-query-failure", "h10-recording-status", "h10-recording-status-query-failure", "factory-reset", "factory-reset-notification-failure", "factory-reset-preserve-pairing", "factory-reset-preserve-pairing-notification-failure", "restart", "restart-notification-failure", "warehouse-sleep", "warehouse-sleep-notification-failure", "turn-device-off", "turn-device-off-notification-failure", "sync-start-success", "sync-start-query-failure", "sync-stop-success", "sync-stop-notification-failure"]
+private let DISK_TIME_RUNTIME_POLICY_OPERATION_IDS = ["get-disk-space", "get-local-time", "get-local-time-with-zone", "set-local-time-v2", "set-local-time-h10", "set-local-time-failure", "get-local-time-failure", "get-local-time-with-zone-failure", "get-disk-space-failure"]
+private let STORED_DATA_CLEANUP_POLICY_SCENARIO_IDS = ["telemetry-root-trc-bin-filter", "sdlogs-extension-filter", "activity-prune-empty-parents", "automatic-sample-embedded-day-filter", "sdlogs-list-failure-platform-policy", "telemetry-list-failure-platform-policy"]
+private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS = ["get-user-device-settings", "get-user-device-settings-read-failure", "set-telemetry-enabled", "set-telemetry-read-failure", "set-telemetry-write-failure", "set-user-device-location", "set-user-device-location-write-failure", "set-usb-connection-mode", "set-usb-connection-mode-write-failure", "set-automatic-training-detection", "set-automatic-training-detection-write-failure", "set-automatic-ohr-measurement", "set-automatic-ohr-measurement-write-failure", "set-daylight-saving-time"]
+private let REST_FACADE_RUNTIME_POLICY_OPERATION_IDS = ["list-rest-api-services-success", "get-rest-api-description-success", "list-rest-api-services-request-failure", "get-rest-api-description-request-failure", "list-rest-api-services-response-error", "get-rest-api-description-response-error", "list-rest-api-services-empty-success", "list-rest-api-services-malformed-success", "get-rest-api-description-empty-success", "get-rest-api-description-malformed-success"]
+private let FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS = ["read-low-level-file-success", "read-low-level-file-empty-success", "read-low-level-file-request-failure", "read-low-level-file-response-error", "write-low-level-file-success", "write-low-level-file-progress-success", "write-low-level-file-stream-failure", "write-low-level-file-response-error", "delete-low-level-file-success", "delete-low-level-file-request-failure", "delete-low-level-file-response-error"]
+private let OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS = ["set-trigger-success-with-secret", "set-trigger-mode-error", "set-trigger-status-read-error", "set-trigger-setting-error", "get-trigger-success", "get-trigger-transport-error"]
 
 /// Unit tests for `PolarBleApiImpl`.
 final class PolarBleApiImplTests: XCTestCase {
@@ -47,6 +69,652 @@ final class PolarBleApiImplTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func assertSinglePolicyReadinessManifest(path: String, id: String, kind: String, policyPath: String, families: [String], commonDecision: String? = nil, androidConsumers: [String]? = nil, iosConsumers: [String]? = nil, commonPrototypeConsumers: [String]? = nil, file: StaticString = #filePath, line: UInt = #line) throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/\(path)")
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any], file: file, line: line)
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any], file: file, line: line)
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any], file: file, line: line)
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String], file: file, line: line)
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String], file: file, line: line)
+        XCTAssertEqual(id, manifest["id"] as? String, file: file, line: line)
+        XCTAssertEqual(kind, input["kind"] as? String, file: file, line: line)
+        XCTAssertEqual(policyPath, input["policyVectorPath"] as? String, file: file, line: line)
+        XCTAssertEqual(families, requiredFamilies, file: file, line: line)
+        XCTAssertEqual(families, coveredFamilies, file: file, line: line)
+        let actualCommonDecision = try XCTUnwrap(expected["commonDecision"] as? String, file: file, line: line)
+        if let commonDecision {
+            XCTAssertEqual(commonDecision, actualCommonDecision, file: file, line: line)
+            let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], file: file, line: line)
+            XCTAssertEqual(commonRuntimePrototype["status"] as? String, "executable shared commonTest runtime planning guard", file: file, line: line)
+            XCTAssertEqual(commonRuntimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", file: file, line: line)
+        } else {
+            XCTAssertTrue(actualCommonDecision.contains("compile-verified"), file: file, line: line)
+        }
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any], file: file, line: line)
+        if let androidConsumers {
+            XCTAssertEqual(androidConsumers, try XCTUnwrap(consumerTests["android"] as? [String], file: file, line: line), file: file, line: line)
+        }
+        if let iosConsumers {
+            XCTAssertEqual(iosConsumers, try XCTUnwrap(consumerTests["ios"] as? [String], file: file, line: line), file: file, line: line)
+        }
+        if let commonPrototypeConsumers {
+            XCTAssertEqual(commonPrototypeConsumers, try XCTUnwrap(consumerTests["commonPrototype"] as? [String], file: file, line: line), file: file, line: line)
+        }
+    }
+
+    private func assertCommandRuntimePolicyVectorContains(_ vectorTerm: String, file: StaticString = #filePath, line: UInt = #line) throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/command-runtime/reset-sync-h10-command-policy.json")
+        let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any], file: file, line: line)
+        let input = try XCTUnwrap(vector["input"] as? [String: Any], file: file, line: line)
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any], file: file, line: line)
+        let operations = try XCTUnwrap(input["operations"] as? [[String: Any]], file: file, line: line)
+        let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], file: file, line: line)
+        let commonRuntimeCases = try XCTUnwrap(commonRuntimePrototype["cases"] as? [[String: Any]], file: file, line: line)
+        let operationIds = try operations.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        let commonRuntimeCaseIds = try commonRuntimeCases.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        XCTAssertEqual(vector["id"] as? String, "reset-sync-h10-command-policy", file: file, line: line)
+        XCTAssertEqual(vector["case"] as? String, "reset_sync_h10_command_policy", file: file, line: line)
+        XCTAssertEqual(COMMAND_RUNTIME_POLICY_OPERATION_IDS, operationIds, file: file, line: line)
+        XCTAssertEqual(COMMAND_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds, file: file, line: line)
+        XCTAssertEqual(vectorTerm, operationIds.first { $0 == vectorTerm }, file: file, line: line)
+        let execution = try XCTUnwrap(vector["execution"] as? [String: Any], file: file, line: line)
+        XCTAssertEqual(execution["kind"] as? String, "fake-command-runtime-policy", file: file, line: line)
+        XCTAssertEqual(execution["transport"] as? String, "public-facade-command-capture", file: file, line: line)
+        XCTAssertEqual(vector["commonDecision"] as? String, COMMAND_RUNTIME_POLICY_COMMON_DECISION, file: file, line: line)
+    }
+
+    private func loadCapabilityLookupVectors() throws -> [[String: Any]] {
+        let vectorDirectory = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/device-capabilities")
+        return try FileManager.default
+            .contentsOfDirectory(at: vectorDirectory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" && $0.lastPathComponent != "capability-lookup-readiness.json" && $0.lastPathComponent != "capability-resource-override-ownership.json" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .map { file in
+                let data = try Data(contentsOf: file)
+                return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+            }
+    }
+
+    private func loadCapabilityLookupReadinessManifest() throws -> [String: Any] {
+        let vectorFile = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/device-capabilities/capability-lookup-readiness.json")
+        let data = try Data(contentsOf: vectorFile)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], vectorFile.path)
+    }
+
+    private func loadCapabilityResourceOverrideVector() throws -> [String: Any] {
+        let vectorFile = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/device-capabilities/capability-resource-override-ownership.json")
+        let data = try Data(contentsOf: vectorFile)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], vectorFile.path)
+    }
+
+    private func resetCapabilities(from config: [String: Any], id: String) throws {
+        let defaults = try XCTUnwrap(config["defaults"] as? [String: Any], id)
+        let devices = try XCTUnwrap(config["devices"] as? [String: Any], id)
+        var deviceFileSystemTypes: [String: BlePolarDeviceCapabilitiesUtility.FileSystemType] = [:]
+        var deviceRecordingSupported: [String: Bool] = [:]
+        var deviceFirmwareUpdateSupported: [String: Bool] = [:]
+        var deviceActivityDataSupported: [String: Bool] = [:]
+        var deviceIsSensor: [String: Bool] = [:]
+        for (deviceType, value) in devices {
+            let device = try XCTUnwrap(value as? [String: Any], "\(id) \(deviceType)")
+            deviceFileSystemTypes[deviceType] = fileSystemType(from: device["fileSystemType"] as? String)
+            deviceRecordingSupported[deviceType.lowercased()] = device["recordingSupported"] as? Bool
+            deviceFirmwareUpdateSupported[deviceType.lowercased()] = device["firmwareUpdateSupported"] as? Bool
+            deviceActivityDataSupported[deviceType.lowercased()] = device["activityDataSupported"] as? Bool
+            deviceIsSensor[deviceType.lowercased()] = device["isDeviceSensor"] as? Bool
+        }
+        BlePolarDeviceCapabilitiesUtility.resetAndInitializeForTesting(
+            deviceFileSystemTypes: deviceFileSystemTypes,
+            deviceRecordingSupported: deviceRecordingSupported,
+            deviceFirmwareUpdateSupported: deviceFirmwareUpdateSupported,
+            deviceActivityDataSupported: deviceActivityDataSupported,
+            deviceIsSensor: deviceIsSensor,
+            defaultFileSystemType: fileSystemType(from: defaults["fileSystemType"] as? String),
+            defaultRecordingSupported: (defaults["recordingSupported"] as? Bool) ?? false,
+            defaultFirmwareUpdateSupported: (defaults["firmwareUpdateSupported"] as? Bool) ?? false,
+            defaultActivityDataSupported: (defaults["activityDataSupported"] as? Bool) ?? false,
+            defaultIsSensor: (defaults["isDeviceSensor"] as? Bool) ?? false
+        )
+    }
+
+    private func resetCapabilitiesByMerging(bundledConfig: [String: Any], userConfig: [String: Any], id: String) throws {
+        let bundledData = try JSONSerialization.data(withJSONObject: bundledConfig)
+        let userData = try JSONSerialization.data(withJSONObject: userConfig)
+        XCTAssertTrue(
+            BlePolarDeviceCapabilitiesUtility.resetAndInitializeForTesting(
+                bundledConfigData: bundledData,
+                userConfigData: userData
+            ),
+            id
+        )
+    }
+
+    private func fileSystemType(from value: String?) -> BlePolarDeviceCapabilitiesUtility.FileSystemType {
+        switch value {
+        case "H10_FILE_SYSTEM": return .h10FileSystem
+        case "POLAR_FILE_SYSTEM_V2": return .polarFileSystemV2
+        default: return .unknownFileSystem
+        }
+    }
+
+    private func fileSystemTypeName(_ value: BlePolarDeviceCapabilitiesUtility.FileSystemType) -> String {
+        switch value {
+        case .h10FileSystem: return "H10_FILE_SYSTEM"
+        case .polarFileSystemV2: return "POLAR_FILE_SYSTEM_V2"
+        case .unknownFileSystem: return "UNKNOWN_FILE_SYSTEM"
+        }
+    }
+
+    func testCapabilityGoldenVectorsMatchIOSBehavior() throws {
+        for vector in try loadCapabilityLookupVectors() {
+            let id = try XCTUnwrap(vector["id"] as? String)
+            let input = try XCTUnwrap(vector["input"] as? [String: Any], id)
+            let expectedResults = try XCTUnwrap((try XCTUnwrap(vector["expected"] as? [String: Any], id))["results"] as? [[String: Any]], id)
+
+            switch input["kind"] as? String {
+            case "deviceCapabilityLookup":
+                let config = try XCTUnwrap(input["config"] as? [String: Any], id)
+                try resetCapabilities(from: config, id: id)
+            case "deviceCapabilityConfigMerge":
+                let bundledConfig = try XCTUnwrap(input["bundledConfig"] as? [String: Any], id)
+                let userConfig = try XCTUnwrap(input["userConfig"] as? [String: Any], id)
+                try resetCapabilitiesByMerging(bundledConfig: bundledConfig, userConfig: userConfig, id: id)
+                let expected = try XCTUnwrap(vector["expected"] as? [String: Any], id)
+                XCTAssertEqual("user-device-fields-win-missing-user-fields-fall-back-to-bundled-user-only-devices-survive-bundled-defaults-win", expected["mergePolicy"] as? String, id)
+            default:
+                XCTFail("Unexpected capability vector kind \(String(describing: input["kind"]))")
+            }
+
+            for expected in expectedResults {
+                let deviceType = try XCTUnwrap(expected["deviceType"] as? String, id)
+                XCTAssertEqual(expected["fileSystemType"] as? String, fileSystemTypeName(BlePolarDeviceCapabilitiesUtility.fileSystemType(deviceType)), "\(id) filesystem \(deviceType)")
+                XCTAssertEqual(expected["recordingSupported"] as? Bool, BlePolarDeviceCapabilitiesUtility.isRecordingSupported(deviceType), "\(id) recording \(deviceType)")
+                if let firmwareUpdateSupported = expected["firmwareUpdateSupported"] as? Bool {
+                    XCTAssertEqual(firmwareUpdateSupported, BlePolarDeviceCapabilitiesUtility.isFirmwareUpdateSupported(deviceType), "\(id) firmware \(deviceType)")
+                }
+                if let activityDataSupported = expected["activityDataSupported"] as? Bool {
+                    XCTAssertEqual(activityDataSupported, BlePolarDeviceCapabilitiesUtility.isActivityDataSupported(deviceType), "\(id) activity \(deviceType)")
+                }
+                if let isDeviceSensor = expected["isDeviceSensor"] as? Bool {
+                    XCTAssertEqual(isDeviceSensor, BlePolarDeviceCapabilitiesUtility.isDeviceSensor(deviceType), "\(id) sensor \(deviceType)")
+                }
+            }
+        }
+    }
+
+    func testCapabilityLookupReadinessManifestIsPinnedBeforeCapabilityMigration() throws {
+        let manifest = try loadCapabilityLookupReadinessManifest()
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any])
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any])
+        let families = [
+            "filesystem-type-mapping",
+            "unknown-filesystem-default",
+            "missing-device-defaults",
+            "case-insensitive-device-type",
+            "recording-support-defaults",
+            "firmware-update-defaults",
+            "activity-data-defaults",
+            "sensor-device-defaults",
+            "version-mismatch-user-config-merge",
+            "resource-override-platform-ownership",
+            "platform-capability-vector-references",
+            "compile-verification-gate"
+        ]
+
+        XCTAssertEqual("capability-lookup-readiness", manifest["id"] as? String)
+        XCTAssertEqual("deviceCapabilityLookupReadiness", input["kind"] as? String)
+        XCTAssertEqual(["sdk/device-capabilities/capability-boolean-flags.json", "sdk/device-capabilities/capability-config-merge.json", "sdk/device-capabilities/capability-lookup-basic.json", "sdk/device-capabilities/capability-lookup-default-h10.json", "sdk/device-capabilities/capability-resource-override-ownership.json"], input["policyVectorPaths"] as? [String])
+        XCTAssertEqual("coveredByPreMigrationCharacterization", expected["migrationReadiness"] as? String)
+        XCTAssertEqual(families, input["requiredBehaviorFamilies"] as? [String])
+        XCTAssertEqual(families, expected["coveredBehaviorFamilies"] as? [String])
+        XCTAssertEqual(["com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtilityTest"], consumerTests["android"] as? [String])
+        XCTAssertEqual(["PolarBleApiImplTests"], consumerTests["ios"] as? [String])
+        XCTAssertEqual(["com.polar.sharedtest.DeviceCapabilitiesCommonPolicyTest"], consumerTests["commonPrototype"] as? [String])
+        let resourceOwnership = try loadCapabilityResourceOverrideVector()
+        let resourceInput = try XCTUnwrap(resourceOwnership["input"] as? [String: Any])
+        let resourceExpected = try XCTUnwrap(resourceOwnership["expected"] as? [String: Any])
+        XCTAssertEqual("deviceCapabilityResourceOverrideOwnership", resourceInput["kind"] as? String)
+        XCTAssertEqual("platformOwnedResourceBoundary", resourceExpected["migrationReadiness"] as? String)
+        XCTAssertEqual("Shared KMP capability code may own parsing, lookup, defaults, boolean fields, and version-mismatch config merge, but must receive an already selected config and must not choose Android AssetManager, external Documents/PolarConfig files, iOS Bundle.main, SDK bundles, or sandbox files.", resourceExpected["commonDecision"] as? String)
+    }
+
+    func testCommandRuntimeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+        try assertSinglePolicyReadinessManifest(
+            path: "sdk/command-runtime/reset-sync-h10-command-readiness.json",
+            id: "reset-sync-h10-command-readiness",
+            kind: "resetSyncH10CommandReadiness",
+            policyPath: "sdk/command-runtime/reset-sync-h10-command-policy.json",
+            families: [
+                "h10-recording-start-query",
+                "h10-recording-start-query-failure",
+                "h10-recording-stop-query",
+                "h10-recording-stop-query-failure",
+                "h10-recording-status-query",
+                "h10-recording-status-query-failure",
+                "factory-reset-flags",
+                "factory-reset-notification-failure",
+                "preserve-pairing-reset-flags",
+                "preserve-pairing-reset-notification-failure",
+                "restart-reset-flags",
+                "restart-reset-notification-failure",
+                "warehouse-sleep-reset-flags",
+                "warehouse-sleep-reset-notification-failure",
+                "turn-device-off-reset-flags",
+                "turn-device-off-reset-notification-failure",
+                "sync-start-notification-sequence",
+                "sync-start-query-failure-platform-split",
+                "sync-stop-complete-terminate-sequence",
+                "sync-stop-notification-failure-platform-split",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ],
+            commonDecision: COMMAND_RUNTIME_READINESS_COMMON_DECISION,
+            androidConsumers: ["com.polar.sdk.impl.BDBleApiImplTest"],
+            iosConsumers: ["PolarBleApiImplTests"],
+            commonPrototypeConsumers: ["com.polar.sharedtest.CommandRuntimePolicyCommonTest"]
+        )
+    }
+
+    private func assertStoredDataCleanupWorkflowVectorContains(_ vectorTerm: String, file: StaticString = #filePath, line: UInt = #line) throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/stored-data-cleanup/cleanup-workflow-policy.json")
+        let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any], file: file, line: line)
+        let input = try XCTUnwrap(vector["input"] as? [String: Any], file: file, line: line)
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any], file: file, line: line)
+        let scenarios = try XCTUnwrap(input["scenarios"] as? [[String: Any]], file: file, line: line)
+        let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], file: file, line: line)
+        let commonRuntimeCases = try XCTUnwrap(commonRuntimePrototype["cases"] as? [[String: Any]], file: file, line: line)
+        let scenarioIds = try scenarios.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        let commonRuntimeCaseIds = try commonRuntimeCases.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        XCTAssertEqual(vector["id"] as? String, "stored-data-cleanup-workflow-policy", file: file, line: line)
+        XCTAssertEqual(vector["case"] as? String, "cleanup_workflow_policy", file: file, line: line)
+        XCTAssertEqual(STORED_DATA_CLEANUP_POLICY_SCENARIO_IDS, scenarioIds, file: file, line: line)
+        XCTAssertEqual(STORED_DATA_CLEANUP_POLICY_SCENARIO_IDS, commonRuntimeCaseIds, file: file, line: line)
+        XCTAssertEqual(vectorTerm, scenarioIds.first { $0 == vectorTerm }, file: file, line: line)
+        let execution = try XCTUnwrap(vector["execution"] as? [String: Any], file: file, line: line)
+        XCTAssertEqual(execution["kind"] as? String, "fake-cleanup-runtime-policy", file: file, line: line)
+        XCTAssertEqual(execution["transport"] as? String, "directory-list-and-remove-command-capture", file: file, line: line)
+        XCTAssertEqual(vector["commonDecision"] as? String, STORED_DATA_CLEANUP_POLICY_COMMON_DECISION, file: file, line: line)
+    }
+
+    func testStoredDataCleanupReadinessManifestIsPinnedBeforeCleanupMigration() throws {
+        try assertSinglePolicyReadinessManifest(
+            path: "sdk/stored-data-cleanup/cleanup-workflow-readiness.json",
+            id: "stored-data-cleanup-workflow-readiness",
+            kind: "storedDataCleanupWorkflowReadiness",
+            policyPath: "sdk/stored-data-cleanup/cleanup-workflow-policy.json",
+            families: [
+                "telemetry-trc-filter",
+                "sdlogs-extension-filter",
+                "activity-prune-empty-parents",
+                "automatic-sample-embedded-day-filter",
+                "list-failure-platform-split",
+                "empty-parent-path-platform-split",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ],
+            commonDecision: STORED_DATA_CLEANUP_READINESS_COMMON_DECISION,
+            androidConsumers: ["com.polar.sdk.impl.BDBleApiImplTest"],
+            iosConsumers: ["PolarBleApiImplTests"],
+            commonPrototypeConsumers: ["com.polar.sharedtest.StoredDataCleanupRuntimePolicyCommonTest"]
+        )
+    }
+
+    private func assertDiskTimeRuntimePolicyVectorContains(_ vectorTerm: String, file: StaticString = #filePath, line: UInt = #line) throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/disk-time-runtime/disk-time-query-policy.json")
+        let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any], file: file, line: line)
+        let input = try XCTUnwrap(vector["input"] as? [String: Any], file: file, line: line)
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any], file: file, line: line)
+        let operations = try XCTUnwrap(input["operations"] as? [[String: Any]], file: file, line: line)
+        let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], file: file, line: line)
+        let commonRuntimeCases = try XCTUnwrap(commonRuntimePrototype["cases"] as? [[String: Any]], file: file, line: line)
+        let operationIds = try operations.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        let commonRuntimeCaseIds = try commonRuntimeCases.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        XCTAssertEqual(vector["id"] as? String, "disk-time-query-policy", file: file, line: line)
+        XCTAssertEqual(vector["case"] as? String, "disk_time_query_policy", file: file, line: line)
+        XCTAssertEqual(DISK_TIME_RUNTIME_POLICY_OPERATION_IDS, operationIds, file: file, line: line)
+        XCTAssertEqual(DISK_TIME_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds, file: file, line: line)
+        XCTAssertEqual(vectorTerm, operationIds.first { $0 == vectorTerm }, file: file, line: line)
+        let execution = try XCTUnwrap(vector["execution"] as? [String: Any], file: file, line: line)
+        XCTAssertEqual(execution["kind"] as? String, "fake-disk-time-query-runtime-policy", file: file, line: line)
+        XCTAssertEqual(execution["transport"] as? String, "public-facade-query-capture", file: file, line: line)
+        XCTAssertEqual(vector["commonDecision"] as? String, DISK_TIME_RUNTIME_POLICY_COMMON_DECISION, file: file, line: line)
+    }
+
+    func testDiskTimeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+        try assertSinglePolicyReadinessManifest(
+            path: "sdk/disk-time-runtime/disk-time-query-readiness.json",
+            id: "disk-time-query-readiness",
+            kind: "diskTimeQueryReadiness",
+            policyPath: "sdk/disk-time-runtime/disk-time-query-policy.json",
+            families: [
+                "disk-space-query",
+                "local-time-query",
+                "local-time-with-zone-query",
+                "v2-system-and-local-time-sequence",
+                "h10-single-local-time-query",
+                "set-local-time-transport-error",
+                "local-time-transport-error",
+                "local-time-with-zone-transport-error",
+                "disk-space-transport-error",
+                "filesystem-capability-gate",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ],
+            commonDecision: DISK_TIME_RUNTIME_READINESS_COMMON_DECISION,
+            androidConsumers: ["com.polar.sdk.impl.BDBleApiImplTest"],
+            iosConsumers: ["PolarBleApiImplTests"],
+            commonPrototypeConsumers: ["com.polar.sharedtest.DiskTimeRuntimePolicyCommonTest"]
+        )
+    }
+
+    private func assertUserDeviceSettingsRuntimePolicyVectorContains(_ vectorTerm: String, file: StaticString = #filePath, line: UInt = #line) throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/user-device-settings-runtime/settings-runtime-policy.json")
+        let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any], file: file, line: line)
+        let input = try XCTUnwrap(vector["input"] as? [String: Any], file: file, line: line)
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any], file: file, line: line)
+        let operations = try XCTUnwrap(input["operations"] as? [[String: Any]], file: file, line: line)
+        let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], file: file, line: line)
+        let commonRuntimeCases = try XCTUnwrap(commonRuntimePrototype["cases"] as? [[String: Any]], file: file, line: line)
+        let operationIds = try operations.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        let commonRuntimeCaseIds = try commonRuntimeCases.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        XCTAssertEqual(vector["id"] as? String, "user-device-settings-runtime-policy", file: file, line: line)
+        XCTAssertEqual(vector["case"] as? String, "user_device_settings_runtime_policy", file: file, line: line)
+        XCTAssertEqual(input["settingsPath"] as? String, "/U/0/S/UDEVSET.BPB", file: file, line: line)
+        XCTAssertEqual(USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS, operationIds, file: file, line: line)
+        XCTAssertEqual(USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds, file: file, line: line)
+        XCTAssertEqual(vectorTerm, operationIds.first { $0 == vectorTerm }, file: file, line: line)
+        let execution = try XCTUnwrap(vector["execution"] as? [String: Any], file: file, line: line)
+        XCTAssertEqual(execution["kind"] as? String, "fake-user-device-settings-runtime-policy", file: file, line: line)
+        XCTAssertEqual(execution["transport"] as? String, "public-facade-psftp-read-write-capture", file: file, line: line)
+        XCTAssertEqual(vector["commonDecision"] as? String, USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION, file: file, line: line)
+    }
+
+    func testUserDeviceSettingsReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+        try assertSinglePolicyReadinessManifest(
+            path: "sdk/user-device-settings-runtime/settings-runtime-readiness.json",
+            id: "user-device-settings-runtime-readiness",
+            kind: "userDeviceSettingsRuntimeReadiness",
+            policyPath: "sdk/user-device-settings-runtime/settings-runtime-policy.json",
+            families: [
+                "settings-path-gate",
+                "settings-read-success",
+                "settings-read-failure-no-write",
+                "telemetry-read-then-write",
+                "telemetry-write-failure-after-payload",
+                "device-location-read-then-write",
+                "device-location-write-failure-after-payload",
+                "usb-connection-mode-read-then-write",
+                "usb-connection-mode-write-failure-after-payload",
+                "automatic-training-detection-read-then-write",
+                "automatic-training-detection-write-failure-after-payload",
+                "automatic-ohr-measurement-read-then-write",
+                "automatic-ohr-measurement-write-failure-after-payload",
+                "daylight-saving-payload-shape",
+                "protobuf-field-preservation-gate",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ],
+            commonDecision: USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION,
+            androidConsumers: ["com.polar.sdk.impl.BDBleApiImplTest"],
+            iosConsumers: ["PolarBleApiImplTests"],
+            commonPrototypeConsumers: ["com.polar.sharedtest.UserDeviceSettingsRuntimePolicyCommonTest"]
+        )
+    }
+
+    private func assertRestFacadeRuntimePolicyVectorContains(_ vectorTerm: String, file: StaticString = #filePath, line: UInt = #line) throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/rest-service/rest-facade-runtime-policy.json")
+        let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any], file: file, line: line)
+        let input = try XCTUnwrap(vector["input"] as? [String: Any], file: file, line: line)
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any], file: file, line: line)
+        let operations = try XCTUnwrap(input["operations"] as? [[String: Any]], file: file, line: line)
+        let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], file: file, line: line)
+        let commonRuntimeCases = try XCTUnwrap(commonRuntimePrototype["cases"] as? [[String: Any]], file: file, line: line)
+        let operationIds = try operations.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        let commonRuntimeCaseIds = try commonRuntimeCases.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        XCTAssertEqual(vector["id"] as? String, "rest-facade-runtime-policy", file: file, line: line)
+        XCTAssertEqual(vector["case"] as? String, "rest_facade_runtime_policy", file: file, line: line)
+        XCTAssertEqual(input["kind"] as? String, "restFacadeRuntimePolicy", file: file, line: line)
+        XCTAssertEqual(REST_FACADE_RUNTIME_POLICY_OPERATION_IDS, operationIds, file: file, line: line)
+        XCTAssertEqual(REST_FACADE_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds, file: file, line: line)
+        XCTAssertEqual(vectorTerm, operationIds.first { $0 == vectorTerm }, file: file, line: line)
+        let operationsById = Dictionary(uniqueKeysWithValues: operations.compactMap { operation -> (String, [String: Any])? in
+            guard let id = operation["id"] as? String else { return nil }
+            return (id, operation)
+        })
+        XCTAssertEqual(operationsById["list-rest-api-services-success"]?["command"] as? String, "GET", file: file, line: line)
+        XCTAssertEqual(operationsById["list-rest-api-services-success"]?["path"] as? String, "/REST/SERVICE.API", file: file, line: line)
+        XCTAssertEqual(operationsById["list-rest-api-services-success"]?["payloadShape"] as? String, "service-list-json", file: file, line: line)
+        XCTAssertEqual(operationsById["get-rest-api-description-success"]?["path"] as? String, "/REST/SLEEP.API", file: file, line: line)
+        XCTAssertEqual(operationsById["get-rest-api-description-success"]?["payloadShape"] as? String, "service-description-json", file: file, line: line)
+        let responseErrorTransport = try XCTUnwrap(operationsById["list-rest-api-services-response-error"]?["transport"] as? [String: Any], file: file, line: line)
+        XCTAssertEqual(responseErrorTransport["mode"] as? String, "responseError", file: file, line: line)
+        XCTAssertEqual(responseErrorTransport["status"] as? Int, 103, file: file, line: line)
+        XCTAssertEqual(responseErrorTransport["message"] as? String, "NO_SUCH_FILE_OR_DIRECTORY", file: file, line: line)
+        let responseErrorTerminals = try XCTUnwrap(operationsById["list-rest-api-services-response-error"]?["expectedPlatformTerminal"] as? [String: Any], file: file, line: line)
+        XCTAssertEqual(responseErrorTerminals["android"] as? String, "pftp-response-error-name", file: file, line: line)
+        XCTAssertEqual(responseErrorTerminals["ios"] as? String, "pftp-response-error-code", file: file, line: line)
+        XCTAssertEqual((operationsById["list-rest-api-services-empty-success"]?["transport"] as? [String: Any])?["mode"] as? String, "successEmpty", file: file, line: line)
+        XCTAssertEqual((operationsById["get-rest-api-description-malformed-success"]?["transport"] as? [String: Any])?["mode"] as? String, "successMalformedJson", file: file, line: line)
+        let execution = try XCTUnwrap(vector["execution"] as? [String: Any], file: file, line: line)
+        XCTAssertEqual(execution["kind"] as? String, "fake-rest-facade-runtime-policy", file: file, line: line)
+        XCTAssertEqual(execution["transport"] as? String, "public-facade-psftp-request-capture", file: file, line: line)
+        XCTAssertEqual(vector["commonDecision"] as? String, REST_FACADE_RUNTIME_POLICY_COMMON_DECISION, file: file, line: line)
+    }
+
+    func testRestFacadeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+        try assertSinglePolicyReadinessManifest(
+            path: "sdk/rest-service/rest-facade-runtime-readiness.json",
+            id: "rest-facade-runtime-readiness",
+            kind: "restFacadeRuntimeReadiness",
+            policyPath: "sdk/rest-service/rest-facade-runtime-policy.json",
+            families: [
+                "service-list-request-path",
+                "service-list-json-success",
+                "service-list-path-field-mapping",
+                "service-description-request-path",
+                "service-description-json-success",
+                "service-description-action-field-mapping",
+                "service-description-event-detail-trigger-mapping",
+                "service-list-request-failure",
+                "service-description-request-failure",
+                "service-list-response-error-platform-mapping",
+                "service-description-response-error-platform-mapping",
+                "service-list-empty-success-parse-failure",
+                "service-description-empty-success-parse-failure",
+                "service-list-malformed-success-parse-failure",
+                "service-description-malformed-success-parse-failure",
+                "model-json-mapping-vector-reference-gate",
+                "empty-response-transport-policy-gate",
+                "response-error-transport-policy-gate",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ],
+            commonDecision: REST_FACADE_RUNTIME_READINESS_COMMON_DECISION,
+            androidConsumers: ["com.polar.sdk.impl.BDBleApiImplTest"],
+            iosConsumers: ["PolarBleApiImplTests"],
+            commonPrototypeConsumers: ["com.polar.sharedtest.RestFacadeRuntimePolicyCommonTest"]
+        )
+    }
+
+    private func assertFileFacadeRuntimePolicyVectorContains(_ vectorTerm: String, file: StaticString = #filePath, line: UInt = #line) throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/file-utils/file-facade-runtime-policy.json")
+        let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any], file: file, line: line)
+        let input = try XCTUnwrap(vector["input"] as? [String: Any], file: file, line: line)
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any], file: file, line: line)
+        let operations = try XCTUnwrap(input["operations"] as? [[String: Any]], file: file, line: line)
+        let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], file: file, line: line)
+        let commonRuntimeCases = try XCTUnwrap(commonRuntimePrototype["cases"] as? [[String: Any]], file: file, line: line)
+        let operationIds = try operations.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        let commonRuntimeCaseIds = try commonRuntimeCases.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        XCTAssertEqual(vector["id"] as? String, "file-facade-runtime-policy", file: file, line: line)
+        XCTAssertEqual(vector["case"] as? String, "file_facade_runtime_policy", file: file, line: line)
+        XCTAssertEqual(input["kind"] as? String, "fileFacadeRuntimePolicy", file: file, line: line)
+        XCTAssertEqual(FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS, operationIds, file: file, line: line)
+        XCTAssertEqual(FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds, file: file, line: line)
+        XCTAssertEqual(vectorTerm, operationIds.first { $0 == vectorTerm }, file: file, line: line)
+        let operationsById = Dictionary(uniqueKeysWithValues: operations.compactMap { operation -> (String, [String: Any])? in
+            guard let id = operation["id"] as? String else { return nil }
+            return (id, operation)
+        })
+        XCTAssertEqual(operationsById["read-low-level-file-success"]?["command"] as? String, "GET", file: file, line: line)
+        XCTAssertEqual(operationsById["read-low-level-file-success"]?["path"] as? String, "/U/0/CUSTOM.BIN", file: file, line: line)
+        XCTAssertEqual(operationsById["read-low-level-file-success"]?["responseHex"] as? String, "010203", file: file, line: line)
+        XCTAssertEqual(operationsById["read-low-level-file-empty-success"]?["path"] as? String, "/U/0/EMPTY.BIN", file: file, line: line)
+        XCTAssertEqual(operationsById["read-low-level-file-empty-success"]?["responseHex"] as? String, "", file: file, line: line)
+        XCTAssertEqual(operationsById["write-low-level-file-success"]?["command"] as? String, "PUT", file: file, line: line)
+        XCTAssertEqual(operationsById["write-low-level-file-success"]?["payloadHex"] as? String, "0a0b", file: file, line: line)
+        let progress = try XCTUnwrap(operationsById["write-low-level-file-progress-success"]?["progress"] as? [NSNumber], file: file, line: line)
+        XCTAssertEqual(progress.map(\.intValue), [0, 2], file: file, line: line)
+        XCTAssertEqual((operationsById["write-low-level-file-stream-failure"]?["transport"] as? [String: Any])?["mode"] as? String, "writeStreamError", file: file, line: line)
+        let writeResponseErrorTransport = try XCTUnwrap(operationsById["write-low-level-file-response-error"]?["transport"] as? [String: Any], file: file, line: line)
+        XCTAssertEqual(writeResponseErrorTransport["mode"] as? String, "pftpResponseError", file: file, line: line)
+        XCTAssertEqual(writeResponseErrorTransport["status"] as? Int, 103, file: file, line: line)
+        let writeResponseErrorTerminals = try XCTUnwrap(operationsById["write-low-level-file-response-error"]?["expectedPlatformTerminal"] as? [String: Any], file: file, line: line)
+        XCTAssertEqual(writeResponseErrorTerminals["android"] as? String, "pftp-response-error-object", file: file, line: line)
+        XCTAssertEqual(writeResponseErrorTerminals["ios"] as? String, "pftp-response-error-code", file: file, line: line)
+        XCTAssertEqual(operationsById["delete-low-level-file-success"]?["command"] as? String, "REMOVE", file: file, line: line)
+        XCTAssertEqual((operationsById["delete-low-level-file-request-failure"]?["transport"] as? [String: Any])?["mode"] as? String, "transportError", file: file, line: line)
+        XCTAssertEqual((operationsById["delete-low-level-file-response-error"]?["transport"] as? [String: Any])?["mode"] as? String, "pftpResponseError", file: file, line: line)
+        let execution = try XCTUnwrap(vector["execution"] as? [String: Any], file: file, line: line)
+        XCTAssertEqual(execution["kind"] as? String, "fake-file-facade-runtime-policy", file: file, line: line)
+        XCTAssertEqual(execution["transport"] as? String, "public-facade-psftp-command-capture", file: file, line: line)
+        XCTAssertEqual(vector["commonDecision"] as? String, FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION, file: file, line: line)
+    }
+
+    private func assertOfflineTriggerRuntimePolicyVectorContains(_ vectorTerm: String, file: StaticString = #filePath, line: UInt = #line) throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/offline-recording/trigger-runtime-policy.json")
+        let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any], file: file, line: line)
+        let input = try XCTUnwrap(vector["input"] as? [String: Any], file: file, line: line)
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any], file: file, line: line)
+        let scenarios = try XCTUnwrap(input["scenarios"] as? [[String: Any]], file: file, line: line)
+        let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], file: file, line: line)
+        let commonRuntimeCases = try XCTUnwrap(commonRuntimePrototype["cases"] as? [[String: Any]], file: file, line: line)
+        let scenarioIds = try scenarios.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        let commonRuntimeCaseIds = try commonRuntimeCases.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        let cleanupEvidence = try XCTUnwrap(expected["platformCleanupEvidence"] as? [String: Any], file: file, line: line)
+        let cleanupEvidenceIds = [
+            (cleanupEvidence["android"] as? [String: Any])?["id"] as? String,
+            (cleanupEvidence["ios"] as? [String: Any])?["id"] as? String
+        ].compactMap { $0 }
+        XCTAssertEqual(vector["id"] as? String, "trigger-runtime-policy", file: file, line: line)
+        XCTAssertEqual(vector["case"] as? String, "trigger_runtime_policy", file: file, line: line)
+        XCTAssertEqual(input["kind"] as? String, "offlineTriggerRuntimePolicy", file: file, line: line)
+        XCTAssertEqual(OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS, scenarioIds, file: file, line: line)
+        XCTAssertEqual(OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS, commonRuntimeCaseIds, file: file, line: line)
+        XCTAssertTrue((scenarioIds + cleanupEvidenceIds).contains(vectorTerm), file: file, line: line)
+        let scenariosById = Dictionary(uniqueKeysWithValues: scenarios.compactMap { scenario -> (String, [String: Any])? in
+            guard let id = scenario["id"] as? String else { return nil }
+            return (id, scenario)
+        })
+        let desiredTrigger = try XCTUnwrap(input["desiredTrigger"] as? [String: Any], file: file, line: line)
+        let secret = try XCTUnwrap(desiredTrigger["secret"] as? [String: Any], file: file, line: line)
+        XCTAssertEqual(desiredTrigger["mode"] as? String, "TRIGGER_SYSTEM_START", file: file, line: line)
+        XCTAssertEqual(secret["present"] as? Bool, true, file: file, line: line)
+        XCTAssertEqual((scenariosById["set-trigger-mode-error"]?["transport"] as? [String: Any])?["setMode"] as? String, "controlPointError", file: file, line: line)
+        XCTAssertEqual((scenariosById["set-trigger-status-read-error"]?["transport"] as? [String: Any])?["getStatus"] as? String, "transportError", file: file, line: line)
+        XCTAssertEqual((scenariosById["set-trigger-setting-error"]?["transport"] as? [String: Any])?["setSettings"] as? String, "controlPointError", file: file, line: line)
+        XCTAssertEqual((scenariosById["get-trigger-transport-error"]?["transport"] as? [String: Any])?["getStatus"] as? String, "transportError", file: file, line: line)
+        XCTAssertEqual((cleanupEvidence["android"] as? [String: Any])?["id"] as? String, "android-stale-wrong-command-response-discard", file: file, line: line)
+        XCTAssertEqual((cleanupEvidence["ios"] as? [String: Any])?["id"] as? String, "ios-pre-command-response-queue-clear", file: file, line: line)
+        XCTAssertEqual(expected["commonDecision"] as? String, OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION, file: file, line: line)
+        XCTAssertEqual((vector["execution"] as? [String: Any])?["status"] as? String, "shared-common-test", file: file, line: line)
+    }
+
+    func testOfflineTriggerRuntimeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+        try assertSinglePolicyReadinessManifest(
+            path: "sdk/offline-recording/trigger-runtime-readiness.json",
+            id: "trigger-runtime-readiness",
+            kind: "offlineTriggerRuntimeReadiness",
+            policyPath: "sdk/offline-recording/trigger-runtime-policy.json",
+            families: [
+                "typed-set-mode",
+                "status-read",
+                "settings-write",
+                "optional-secret-attachment",
+                "get-transport-error",
+                "set-mode-control-point-error",
+                "status-read-transport-error",
+                "settings-control-point-error",
+                "enabled-feature-projection",
+                "excluded-feature-projection",
+                "platform-packet-split",
+                "facade-error-mapping-deferred",
+                "compile-verification-gate"
+            ]
+        )
+    }
+
+    func testFileFacadeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+        try assertSinglePolicyReadinessManifest(
+            path: "sdk/file-utils/file-facade-runtime-readiness.json",
+            id: "file-facade-runtime-readiness",
+            kind: "fileFacadeRuntimeReadiness",
+            policyPath: "sdk/file-utils/file-facade-runtime-policy.json",
+            families: [
+                "low-level-file-path-gate",
+                "read-file-get-success",
+                "read-file-empty-success",
+                "read-file-request-failure",
+                "read-file-response-error",
+                "write-file-put-success",
+                "write-file-payload-capture",
+                "write-file-progress-before-completion",
+                "write-file-stream-failure-after-payload",
+                "write-file-response-error-after-payload",
+                "delete-file-remove-success",
+                "delete-file-request-failure",
+                "delete-file-response-error",
+                "directory-list-shallow-vector-reference-gate",
+                "directory-list-recursive-vector-reference-gate",
+                "read-write-delete-model-vector-reference-gate",
+                "runtime-error-policy-reference-gate",
+                "malformed-directory-policy-gate",
+                "response-error-policy-gate",
+                "facade-error-mapping-gate",
+                "platform-facade-vector-reference-gate",
+                "compile-verification-gate"
+            ],
+            commonDecision: FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION,
+            androidConsumers: ["com.polar.sdk.impl.BDBleApiImplTest", "com.polar.sdk.api.model.utils.PolarFileUtilsTest"],
+            iosConsumers: ["PolarBleApiImplTests", "PolarFileUtilsTest"],
+            commonPrototypeConsumers: ["com.polar.sharedtest.FileFacadeRuntimePolicyCommonTest"]
+        )
+    }
+
+    private func makePmdApi(responseForPacket: @escaping (Data) -> Data) -> (api: PolarBleApiImplWithMockSession, gatt: MockPolarGattServiceTransmitter) {
+        let gatt = MockPolarGattServiceTransmitter()
+        let pmdClient = BlePmdClient(gattServiceTransmitter: gatt)
+        gatt.transmitMessageHandler = { _, serviceUuid, characteristicUuid, packet, _ in
+            guard serviceUuid == BlePmdClient.PMD_SERVICE && characteristicUuid == BlePmdClient.PMD_CP else { return }
+            pmdClient.processServiceData(BlePmdClient.PMD_CP, data: responseForPacket(packet), err: 0)
+        }
+        let session = MockBleDeviceSession(mockFtpClient: v2MockClient, mockPmdClient: pmdClient)
+        return (PolarBleApiImplWithMockSession(mockDeviceSession: session), gatt)
+    }
+
+    private func pmdResponse(opCode: UInt8, measurementType: UInt8 = 0, errorCode: UInt8 = 0, parameters: Data = Data()) -> Data {
+        if parameters.isEmpty {
+            return Data([0xF0, opCode, measurementType, errorCode])
+        }
+        return Data([0xF0, opCode, measurementType, errorCode, 0x00]) + parameters
+    }
+
+    private func offlineTriggerStatusData() -> Data {
+        return Data([
+            0x01,
+            0x01, PmdMeasurementType.acc.rawValue, 0x00,
+            0x01, PmdMeasurementType.gyro.rawValue, 0x00,
+            0x01, PmdMeasurementType.offline_hr.rawValue, 0x00
+        ])
+    }
+
 
     // MARK: - Combine-based helpers (for AnyPublisher-returning APIs)
 
@@ -138,9 +806,24 @@ final class PolarBleApiImplTests: XCTestCase {
         return results
     }
 
+    private func data(from stream: InputStream) throws -> Data {
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 1024)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            if count < 0 { throw stream.streamError ?? NSError(domain: "PolarBleApiImplTests", code: 1) }
+            if count == 0 { break }
+            data.append(buffer, count: count)
+        }
+        return data
+    }
+
     // MARK: - getLocalTime
 
     func test_getLocalTime_polarFileSystemV2_success() throws {
+        try assertDiskTimeRuntimePolicyVectorContains("get-local-time")
         var proto = Protocol_PbPFtpSetLocalTimeParams()
         proto.date.year = 2024; proto.date.month = 6; proto.date.day = 15
         proto.time.hour = 10; proto.time.minute = 30; proto.time.seconds = 0; proto.tzOffset = 120
@@ -157,9 +840,25 @@ final class PolarBleApiImplTests: XCTestCase {
         if case PolarErrors.operationNotSupported = error! { } else { XCTFail("Expected operationNotSupported") }
     }
 
+    func test_getLocalTime_queryError_propagatesError() throws {
+        try assertDiskTimeRuntimePolicyVectorContains("get-local-time-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7004, userInfo: [NSLocalizedDescriptionKey: "local time query failed"])
+        v2MockClient.queryReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await v2Api.getLocalTime(deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.queryCalls.count, 1)
+        XCTAssertEqual(v2MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.getLocalTime.rawValue)
+        XCTAssertNil(v2MockClient.queryCalls.first?.parameters)
+    }
+
     // MARK: - getLocalTimeWithZone
 
     func test_getLocalTimeWithZone_polarFileSystemV2_success() throws {
+        try assertDiskTimeRuntimePolicyVectorContains("get-local-time-with-zone")
         var proto = Protocol_PbPFtpSetLocalTimeParams()
         proto.date.year = 2025; proto.date.month = 1; proto.date.day = 1
         proto.time.hour = 12; proto.time.minute = 0; proto.time.seconds = 0; proto.tzOffset = 60
@@ -174,15 +873,46 @@ final class PolarBleApiImplTests: XCTestCase {
         if case PolarErrors.operationNotSupported = error! { } else { XCTFail("Expected operationNotSupported") }
     }
 
+    func test_getLocalTimeWithZone_queryError_propagatesError() throws {
+        try assertDiskTimeRuntimePolicyVectorContains("get-local-time-with-zone-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7005, userInfo: [NSLocalizedDescriptionKey: "local time with zone query failed"])
+        v2MockClient.queryReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await v2Api.getLocalTimeWithZone(deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.queryCalls.count, 1)
+        XCTAssertEqual(v2MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.getLocalTime.rawValue)
+        XCTAssertNil(v2MockClient.queryCalls.first?.parameters)
+    }
+
     // MARK: - setLocalTime
 
     func test_setLocalTime_h10FileSystem_sendsOneQuery() throws {
+        try assertDiskTimeRuntimePolicyVectorContains("set-local-time-h10")
         h10MockClient.queryReturnValue = .success(Data())
         try awaitVoidAsync { [self] in try await h10Api.setLocalTime(deviceId, time: Date(), zone: TimeZone(secondsFromGMT: 0)!) }
         XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.setLocalTime.rawValue)
     }
 
+    func test_setLocalTime_h10FileSystem_queryError_propagatesError() throws {
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7006, userInfo: [NSLocalizedDescriptionKey: "set local time failed"])
+        h10MockClient.queryReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await h10Api.setLocalTime(deviceId, time: Date(), zone: TimeZone(secondsFromGMT: 0)!) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(h10MockClient.queryCalls.count, 1)
+        XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.setLocalTime.rawValue)
+        XCTAssertNotNil(h10MockClient.queryCalls.first?.parameters)
+    }
+
     func test_setLocalTime_polarFileSystemV2_sendsTwoQueries() throws {
+        try assertDiskTimeRuntimePolicyVectorContains("set-local-time-v2")
         for _ in 0..<2 { v2MockClient.queryReturnValues.append(.success(Data())) }
         try awaitVoidAsync { [self] in try await v2Api.setLocalTime(deviceId, time: Date(), zone: TimeZone(secondsFromGMT: 3600)!) }
         XCTAssertEqual(v2MockClient.queryCalls.count, 2)
@@ -191,9 +921,431 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(ids.contains(Protocol_PbPFtpQuery.setSystemTime.rawValue))
     }
 
+    // MARK: - setTelemetryEnabled
+
+    func test_setTelemetryEnabled_readsCurrentSettingsAndWritesTelemetryUpdate() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-telemetry-enabled")
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristLeft
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.setTelemetryEnabled(deviceId, enabled: true) }
+
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, requestOperation.path)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertEqual(.deviceLocationWristLeft, writtenSettings.generalSettings.deviceLocation)
+        XCTAssertTrue(writtenSettings.hasTelemetrySettings)
+        XCTAssertTrue(writtenSettings.telemetrySettings.hasTelemetryEnabled)
+        XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    func test_setTelemetryEnabled_propagatesCurrentSettingsReadFailureWithoutWrite() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-telemetry-read-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7001, userInfo: [NSLocalizedDescriptionKey: "current settings read failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setTelemetryEnabled(deviceId, enabled: true) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertTrue(v2MockClient.writeCalls.isEmpty)
+    }
+
+    func test_setTelemetryEnabled_propagatesSettingsWriteFailureAfterPayloadIsPrepared() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-telemetry-write-failure")
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristLeft
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7002, userInfo: [NSLocalizedDescriptionKey: "settings write failed"])
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setTelemetryEnabled(deviceId, enabled: true) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    // MARK: - setUserDeviceLocation
+
+    func test_setUserDeviceLocation_readsCurrentSettingsAndWritesLocationUpdate() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-location")
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristLeft
+        var telemetrySettings = Data_PbUserDeviceTelemetrySettings()
+        telemetrySettings.telemetryEnabled = true
+        currentSettings.telemetrySettings = telemetrySettings
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.setUserDeviceLocation(deviceId, location: PbDeviceLocation.deviceLocationWristRight.rawValue) }
+
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, requestOperation.path)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertEqual(.deviceLocationWristRight, writtenSettings.generalSettings.deviceLocation)
+        XCTAssertTrue(writtenSettings.hasTelemetrySettings)
+        XCTAssertTrue(writtenSettings.telemetrySettings.hasTelemetryEnabled)
+        XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    func test_setUserDeviceLocation_propagatesWriteFailureAfterPayloadIsPrepared() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-location-write-failure")
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristRight
+        var telemetrySettings = Data_PbUserDeviceTelemetrySettings()
+        telemetrySettings.telemetryEnabled = true
+        currentSettings.telemetrySettings = telemetrySettings
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7026, userInfo: [NSLocalizedDescriptionKey: "location settings write failed"])
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setUserDeviceLocation(deviceId, location: PbDeviceLocation.deviceLocationWristLeft.rawValue) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertEqual(.deviceLocationWristLeft, writtenSettings.generalSettings.deviceLocation)
+        XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    // MARK: - setUsbConnectionMode
+
+    func test_setUsbConnectionMode_readsCurrentSettingsAndWritesUsbModeUpdate() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-usb-connection-mode")
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristLeft
+        var telemetrySettings = Data_PbUserDeviceTelemetrySettings()
+        telemetrySettings.telemetryEnabled = true
+        currentSettings.telemetrySettings = telemetrySettings
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.setUsbConnectionMode(deviceId, enabled: true) }
+
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, requestOperation.path)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertTrue(writtenSettings.hasUsbConnectionSettings)
+        XCTAssertEqual(.on, writtenSettings.usbConnectionSettings.mode)
+        XCTAssertEqual(.deviceLocationWristLeft, writtenSettings.generalSettings.deviceLocation)
+        XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    func test_setUsbConnectionMode_propagatesWriteFailureAfterPayloadIsPrepared() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-usb-connection-mode-write-failure")
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristLeft
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7015, userInfo: [NSLocalizedDescriptionKey: "USB settings write failed"])
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setUsbConnectionMode(deviceId, enabled: false) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertEqual(.off, writtenSettings.usbConnectionSettings.mode)
+    }
+
+    // MARK: - setAutomaticTrainingDetectionSettings
+
+    func test_setAutomaticTrainingDetectionSettings_readsCurrentSettingsAndWritesAutomaticMeasurementUpdate() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-training-detection")
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristLeft
+        var telemetrySettings = Data_PbUserDeviceTelemetrySettings()
+        telemetrySettings.telemetryEnabled = true
+        currentSettings.telemetrySettings = telemetrySettings
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.setAutomaticTrainingDetectionSettings(deviceId, mode: true, sensitivity: 77, minimumDuration: 300) }
+
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, requestOperation.path)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertTrue(writtenSettings.hasAutomaticMeasurementSettings)
+        let atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
+        XCTAssertEqual(.on, atdSettings.state)
+        XCTAssertEqual(77, atdSettings.sensitivity)
+        XCTAssertEqual(300, atdSettings.minimumTrainingDurationSeconds)
+        XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    func test_setAutomaticTrainingDetectionSettings_propagatesWriteFailureAfterPayloadIsPrepared() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-training-detection-write-failure")
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristLeft
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7016, userInfo: [NSLocalizedDescriptionKey: "automatic training detection write failed"])
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setAutomaticTrainingDetectionSettings(deviceId, mode: false, sensitivity: 11, minimumDuration: 120) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        let atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
+        XCTAssertEqual(.off, atdSettings.state)
+        XCTAssertEqual(11, atdSettings.sensitivity)
+        XCTAssertEqual(120, atdSettings.minimumTrainingDurationSeconds)
+    }
+
+    // MARK: - setAutomaticOHRMeasurementEnabled
+
+    func test_setAutomaticOHRMeasurementEnabled_readsCurrentSettingsAndWritesAlwaysOnState() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-ohr-measurement")
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristLeft
+        var currentAtdSettings = Data_PbAutomaticTrainingDetectionSettings()
+        currentAtdSettings.state = .on
+        currentAtdSettings.sensitivity = 44
+        currentAtdSettings.minimumTrainingDurationSeconds = 180
+        currentSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings = currentAtdSettings
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.setAutomaticOHRMeasurementEnabled(deviceId, enabled: true) }
+
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, requestOperation.path)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertEqual(.alwaysOn, writtenSettings.automaticMeasurementSettings.automaticOhrMeasurement.state)
+        XCTAssertEqual(currentAtdSettings, writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings)
+    }
+
+    func test_setAutomaticOHRMeasurementEnabled_propagatesWriteFailureAfterOffPayloadIsPrepared() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-ohr-measurement-write-failure")
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristLeft
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7021, userInfo: [NSLocalizedDescriptionKey: "automatic OHR write failed"])
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setAutomaticOHRMeasurementEnabled(deviceId, enabled: false) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertEqual(.off, writtenSettings.automaticMeasurementSettings.automaticOhrMeasurement.state)
+    }
+
+    // MARK: - getPolarUserDeviceSettings
+
+    func test_getPolarUserDeviceSettings_readsCurrentSettingsFromFakeTransport() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("get-user-device-settings")
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristRight
+        var telemetrySettings = Data_PbUserDeviceTelemetrySettings()
+        telemetrySettings.telemetryEnabled = true
+        currentSettings.telemetrySettings = telemetrySettings
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+
+        let result = try awaitSingleAsync { [self] in try await v2Api.getPolarUserDeviceSettings(identifier: deviceId) }
+
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, requestOperation.path)
+        XCTAssertEqual(.WRIST_RIGHT, result.deviceLocation)
+        XCTAssertEqual(true, result.telemetryEnabled)
+    }
+
+    func test_getPolarUserDeviceSettings_propagatesFakeTransportReadFailure() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("get-user-device-settings-read-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7003, userInfo: [NSLocalizedDescriptionKey: "user settings read failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await v2Api.getPolarUserDeviceSettings(identifier: deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, requestOperation.path)
+    }
+
+    func test_setDaylightSavingTime_readsCurrentSettingsAndWritesNextDstTransition() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-daylight-saving-time")
+        let originalTimeZone = getenv("TZ").map { String(cString: $0) }
+        setenv("TZ", "Europe/Helsinki", 1)
+        tzset()
+        NSTimeZone.resetSystemTimeZone()
+        defer {
+            if let originalTimeZone { setenv("TZ", originalTimeZone, 1) } else { unsetenv("TZ") }
+            tzset()
+            NSTimeZone.resetSystemTimeZone()
+        }
+        var currentSettings = Data_PbUserDeviceSettings()
+        currentSettings.generalSettings.deviceLocation = .deviceLocationWristLeft
+        currentSettings.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date(timeIntervalSince1970: 0))
+        v2MockClient.requestReturnValue = .success(try currentSettings.serializedData())
+
+        try awaitVoidAsync { [self] in try await v2Api.setDaylightSavingTime(deviceId) }
+
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, requestOperation.path)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertTrue(writtenSettings.hasDaylightSaving)
+        XCTAssertTrue(writtenSettings.daylightSaving.hasNextDaylightSavingTime)
+        XCTAssertTrue(writtenSettings.daylightSaving.hasOffset)
+        XCTAssertNotEqual(0, writtenSettings.daylightSaving.offset)
+    }
+
+    func test_getBatteryLevel_returnsCachedBatteryClientLevel() throws {
+        let gatt = MockPolarGattServiceTransmitter()
+        let batteryClient = BleBasClient(gattServiceTransmitter: gatt)
+        batteryClient.processServiceData(CBUUID(string: "2A19"), data: Data([87]), err: 0)
+        let session = MockBleDeviceSession(mockFtpClient: v2MockClient, mockBatteryClient: batteryClient)
+        let api = PolarBleApiImplWithMockSession(mockDeviceSession: session)
+
+        let result = try api.getBatteryLevel(identifier: deviceId)
+
+        XCTAssertEqual(87, result)
+    }
+
+    func test_getChargerState_returnsCachedBatteryClientChargeState() throws {
+        let gatt = MockPolarGattServiceTransmitter()
+        let batteryClient = BleBasClient(gattServiceTransmitter: gatt)
+        batteryClient.processServiceData(BleBasClient.BATTERY_STATUS_CHARACTERISTIC, data: Data([0x00, 0b10100011]), err: 0)
+        let session = MockBleDeviceSession(mockFtpClient: v2MockClient, mockBatteryClient: batteryClient)
+        let api = PolarBleApiImplWithMockSession(mockDeviceSession: session)
+
+        let result = try api.getChargerState(identifier: deviceId)
+
+        XCTAssertEqual(.charging, result)
+    }
+
+    func test_getRSSIValue_returnsSessionRSSI() throws {
+        v2MockSession.rssi = -57
+
+        let result = try v2Api.getRSSIValue(deviceId)
+
+        XCTAssertEqual(-57, result)
+    }
+
+    func test_checkIfDeviceDisconnectedDueRemovedPairing_returnsSessionPairingFlag() throws {
+        v2MockSession.error = NSError(domain: CBErrorDomain, code: CBError.Code.peerRemovedPairingInformation.rawValue)
+
+        let result = try v2Api.checkIfDeviceDisconnectedDueRemovedPairing(deviceId)
+
+        XCTAssertTrue(result)
+    }
+
     // MARK: - getDiskSpace
 
     func test_getDiskSpace_success() throws {
+        try assertDiskTimeRuntimePolicyVectorContains("get-disk-space")
         var proto = Protocol_PbPFtpDiskSpaceResult()
         proto.fragmentSize = 512; proto.totalFragments = 200; proto.freeFragments = 100
         v2MockClient.queryReturnValue = .success(try proto.serializedData())
@@ -205,6 +1357,1213 @@ final class PolarBleApiImplTests: XCTestCase {
     func test_getDiskSpace_queryError_propagatesError() {
         v2MockClient.queryReturnValue = .failure(NSError(domain: "test", code: 42))
         XCTAssertNotNil(awaitErrorAsync { [self] in try await v2Api.getDiskSpace(deviceId) })
+    }
+
+    // MARK: - setLedConfig
+
+    func test_setLedConfig_writesLedConfigPayload() throws {
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.setLedConfig(deviceId, ledConfig: LedConfig(sdkModeLedEnabled: true, ppiModeLedEnabled: false)) }
+
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(LedConfig.LED_CONFIG_FILENAME, writeOperation.path)
+        XCTAssertEqual(Data([LedConfig.LED_ANIMATION_ENABLE_BYTE, LedConfig.LED_ANIMATION_DISABLE_BYTE]), try data(from: v2MockClient.writeCalls[0].data))
+    }
+
+    func test_setLedConfig_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7010, userInfo: [NSLocalizedDescriptionKey: "led config write failed"])
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setLedConfig(deviceId, ledConfig: LedConfig(sdkModeLedEnabled: false, ppiModeLedEnabled: true)) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(LedConfig.LED_CONFIG_FILENAME, writeOperation.path)
+        XCTAssertEqual(Data([LedConfig.LED_ANIMATION_DISABLE_BYTE, LedConfig.LED_ANIMATION_ENABLE_BYTE]), try data(from: v2MockClient.writeCalls[0].data))
+    }
+
+    // MARK: - SD log configuration
+
+    func test_getSDLogConfiguration_readsConfigAndWrapsSessionNotifications() throws {
+        var proto = Data_PbSensorDataLog()
+        proto.ohrLogEnabled = true
+        proto.ppiLogEnabled = false
+        proto.magnetometerLogFrequency = .magLog10Hz
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let result = try awaitSingleAsync { [self] in try await v2Api.getSDLogConfiguration(deviceId) }
+
+        XCTAssertEqual(true, result.ohrLogEnabled)
+        XCTAssertEqual(false, result.ppiLogEnabled)
+        XCTAssertEqual(Data_PbSensorDataLog.PbMagnetometerLogFrequency.magLog10Hz.rawValue, result.magnetometerFrequency)
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 2)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        XCTAssertNil(v2MockClient.sendNotificationCalls[0].parameters)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, v2MockClient.sendNotificationCalls[1].notification)
+        XCTAssertNil(v2MockClient.sendNotificationCalls[1].parameters)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(SERVICE_DATALOG_CONFIG_FILEPATH, requestOperation.path)
+    }
+
+    func test_setSDLogConfiguration_writesConfigPayload() throws {
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+        let config = SDLogConfig(
+            ppiLogEnabled: false,
+            accelerationLogEnabled: nil,
+            caloriesLogEnabled: nil,
+            gpsLogEnabled: nil,
+            gpsNmeaLogEnabled: nil,
+            magnetometerLogEnabled: nil,
+            tapLogEnabled: nil,
+            barometerLogEnabled: nil,
+            gyroscopeLogEnabled: nil,
+            sleepLogEnabled: nil,
+            slopeLogEnabled: nil,
+            ambientLightLogEnabled: nil,
+            tlrLogEnabled: nil,
+            ondemandLogEnabled: nil,
+            capsenseLogEnabled: nil,
+            fusionLogEnabled: nil,
+            metLogEnabled: nil,
+            ohrLogEnabled: true,
+            verticalAccLogEnabled: nil,
+            amdLogEnabled: nil,
+            skinTemperatureLogEnabled: nil,
+            compassLogEnabled: nil,
+            speed3DLogEnabled: nil,
+            logTrigger: nil,
+            magnetometerFrequency: Data_PbSensorDataLog.PbMagnetometerLogFrequency.magLog10Hz.rawValue
+        )
+
+        try awaitVoidAsync { [self] in try await v2Api.setSDLogConfiguration(deviceId, logConfiguration: config) }
+
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(SERVICE_DATALOG_CONFIG_FILEPATH, writeOperation.path)
+        let writtenConfig = try Data_PbSensorDataLog(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertTrue(writtenConfig.ohrLogEnabled)
+        XCTAssertFalse(writtenConfig.ppiLogEnabled)
+        XCTAssertEqual(.magLog10Hz, writtenConfig.magnetometerLogFrequency)
+    }
+
+    func test_setSDLogConfiguration_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7022, userInfo: [NSLocalizedDescriptionKey: "sd log write failed"])
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+        let config = SDLogConfig(
+            ppiLogEnabled: nil,
+            accelerationLogEnabled: nil,
+            caloriesLogEnabled: nil,
+            gpsLogEnabled: nil,
+            gpsNmeaLogEnabled: nil,
+            magnetometerLogEnabled: nil,
+            tapLogEnabled: nil,
+            barometerLogEnabled: nil,
+            gyroscopeLogEnabled: nil,
+            sleepLogEnabled: nil,
+            slopeLogEnabled: nil,
+            ambientLightLogEnabled: nil,
+            tlrLogEnabled: nil,
+            ondemandLogEnabled: nil,
+            capsenseLogEnabled: nil,
+            fusionLogEnabled: nil,
+            metLogEnabled: nil,
+            ohrLogEnabled: false,
+            verticalAccLogEnabled: nil,
+            amdLogEnabled: nil,
+            skinTemperatureLogEnabled: nil,
+            compassLogEnabled: nil,
+            speed3DLogEnabled: nil,
+            logTrigger: nil,
+            magnetometerFrequency: nil
+        )
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setSDLogConfiguration(deviceId, logConfiguration: config) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(SERVICE_DATALOG_CONFIG_FILEPATH, writeOperation.path)
+        let writtenConfig = try Data_PbSensorDataLog(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertFalse(writtenConfig.ohrLogEnabled)
+    }
+
+    // MARK: - getUserPhysicalConfiguration
+
+    func test_getUserPhysicalConfiguration_readsPhysicalConfigurationFromFakeTransport() throws {
+        var components = DateComponents()
+        components.year = 1990
+        components.month = 1
+        components.day = 2
+        let birthDate = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: components))
+        let config = PolarFirstTimeUseConfig(
+            gender: .male,
+            birthDate: birthDate,
+            height: 180.5,
+            weight: 75.5,
+            maxHeartRate: 190,
+            vo2Max: 50,
+            restingHeartRate: 55,
+            trainingBackground: .frequent,
+            deviceTime: "2026-05-31T12:00:00Z",
+            typicalDay: .mostlyStanding,
+            sleepGoalMinutes: 480
+        )
+        v2MockClient.requestReturnValue = .success(try XCTUnwrap(config.toProto()).serializedData())
+
+        let result = try awaitSingleAsync { [self] in try await v2Api.getUserPhysicalConfiguration(deviceId) }
+
+        let physicalConfiguration = try XCTUnwrap(result)
+        XCTAssertEqual(.male, physicalConfiguration.gender)
+        let birthComponents = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: physicalConfiguration.birthDate)
+        XCTAssertEqual(1990, birthComponents.year)
+        XCTAssertEqual(1, birthComponents.month)
+        XCTAssertEqual(2, birthComponents.day)
+        XCTAssertEqual(180.5, physicalConfiguration.height)
+        XCTAssertEqual(75.5, physicalConfiguration.weight)
+        XCTAssertEqual(190, physicalConfiguration.maxHeartRate)
+        XCTAssertEqual(50, physicalConfiguration.vo2Max)
+        XCTAssertEqual(55, physicalConfiguration.restingHeartRate)
+        XCTAssertEqual(PolarFirstTimeUseConfig.TrainingBackground.frequent.rawValue, physicalConfiguration.trainingBackground)
+        XCTAssertEqual(.mostlyStanding, physicalConfiguration.typicalDay)
+        XCTAssertEqual(480, physicalConfiguration.sleepGoalMinutes)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH, requestOperation.path)
+    }
+
+    func test_getUserPhysicalConfiguration_returnsNilWhenPhysicalDataFileIsMissing() throws {
+        v2MockClient.requestReturnValueClosure = { _ in throw BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue) }
+
+        let result = try awaitSingleAsync { [self] in try await v2Api.getUserPhysicalConfiguration(deviceId) }
+
+        XCTAssertNil(result)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH, requestOperation.path)
+    }
+
+    func test_doFirstTimeUse_writesUserIdAndPhysicalConfigBetweenSyncNotifications() throws {
+        let birthDate = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: DateComponents(year: 1992, month: 3, day: 4)))
+        let config = PolarFirstTimeUseConfig(
+            gender: .female,
+            birthDate: birthDate,
+            height: 171.5,
+            weight: 66.5,
+            maxHeartRate: 188,
+            vo2Max: 47,
+            restingHeartRate: 53,
+            trainingBackground: .regular,
+            deviceTime: "2026-05-31T12:34:56Z",
+            typicalDay: .mostlySitting,
+            sleepGoalMinutes: 450
+        )
+        v2MockClient.queryReturnValue = .success(Data())
+
+        try awaitVoidAsync { [self] in try await v2Api.doFirstTimeUse(deviceId, ftuConfig: config) }
+
+        XCTAssertEqual([Protocol_PbPFtpQuery.requestSynchronization.rawValue, Protocol_PbPFtpQuery.setSystemTime.rawValue, Protocol_PbPFtpQuery.setLocalTime.rawValue], v2MockClient.queryCalls.map { $0.id })
+        XCTAssertEqual([Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, Protocol_PbPFtpHostToDevNotification.startSync.rawValue, Protocol_PbPFtpHostToDevNotification.stopSync.rawValue, Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue], v2MockClient.sendNotificationCalls.map { $0.notification })
+        XCTAssertEqual(v2MockClient.writeCalls.count, 2)
+        let writeOperations = try v2MockClient.writeCalls.map { try Protocol_PbPFtpOperation(serializedBytes: $0.header as Data) }
+        XCTAssertEqual([UserIdentifierType.USER_IDENTIFIER_FILENAME, PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH], writeOperations.map { $0.path })
+        XCTAssertEqual([.put, .put], writeOperations.map { $0.command })
+        XCTAssertTrue(try Data_PbUserIdentifier(serializedBytes: try data(from: v2MockClient.writeCalls[0].data)).hasMasterIdentifier)
+        XCTAssertEqual(try XCTUnwrap(config.toProto()).serializedData(), try data(from: v2MockClient.writeCalls[1].data))
+        let stopSyncParams = try Protocol_PbPFtpStopSyncParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[2].parameters) as Data)
+        XCTAssertTrue(stopSyncParams.completed)
+    }
+
+    func test_doFirstTimeUse_userIdWriteFailurePropagatesWithoutTerminateNotifications() throws {
+        let birthDate = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: DateComponents(year: 1991, month: 2, day: 3)))
+        let config = PolarFirstTimeUseConfig(
+            gender: .male,
+            birthDate: birthDate,
+            height: 181.0,
+            weight: 76.0,
+            maxHeartRate: 190,
+            vo2Max: 48,
+            restingHeartRate: 54,
+            trainingBackground: .frequent,
+            deviceTime: "2026-05-31T12:34:56Z",
+            typicalDay: .mostlyStanding,
+            sleepGoalMinutes: 480
+        )
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7023, userInfo: [NSLocalizedDescriptionKey: "FTU user id write failed"])
+        v2MockClient.queryReturnValue = .success(Data())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.doFirstTimeUse(deviceId, ftuConfig: config) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual([Protocol_PbPFtpQuery.requestSynchronization.rawValue, Protocol_PbPFtpQuery.setSystemTime.rawValue, Protocol_PbPFtpQuery.setLocalTime.rawValue], v2MockClient.queryCalls.map { $0.id })
+        XCTAssertEqual([Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, Protocol_PbPFtpHostToDevNotification.startSync.rawValue], v2MockClient.sendNotificationCalls.map { $0.notification })
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(UserIdentifierType.USER_IDENTIFIER_FILENAME, writeOperation.path)
+        XCTAssertTrue(try Data_PbUserIdentifier(serializedBytes: try data(from: v2MockClient.writeCalls[0].data)).hasMasterIdentifier)
+    }
+
+    // MARK: - putNotification
+
+    func test_putNotification_writesRestNotificationPayload() throws {
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.putNotification(identifier: deviceId, notification: "{\"enabled\":true}", path: "/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording") }
+
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual("/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording", writeOperation.path)
+        XCTAssertEqual(Data("{\"enabled\":true}".utf8), try data(from: v2MockClient.writeCalls[0].data))
+    }
+
+    func test_putNotification_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7012, userInfo: [NSLocalizedDescriptionKey: "REST notification write failed"])
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.putNotification(identifier: deviceId, notification: "{}", path: "/REST/TEST.API?cmd=post") }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual("/REST/TEST.API?cmd=post", writeOperation.path)
+        XCTAssertEqual(Data("{}".utf8), try data(from: v2MockClient.writeCalls[0].data))
+    }
+
+    // MARK: - Low-level file APIs
+
+    func test_readFile_readsLowLevelFilePathFromFakeTransport() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("read-low-level-file-success")
+        v2MockClient.requestReturnValue = .success(Data([0x01, 0x02, 0x03]))
+
+        let result = try awaitSingleAsync { [self] in try await v2Api.readFile(identifier: deviceId, filePath: "/U/0/CUSTOM.BIN") }
+
+        XCTAssertEqual(Data([0x01, 0x02, 0x03]), try XCTUnwrap(result))
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    func test_readFile_emptyLowLevelFilePayloadSucceeds() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("read-low-level-file-empty-success")
+        v2MockClient.requestReturnValue = .success(Data())
+
+        let result = try awaitSingleAsync { [self] in try await v2Api.readFile(identifier: deviceId, filePath: "/U/0/EMPTY.BIN") }
+
+        XCTAssertEqual(Data(), try XCTUnwrap(result))
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/U/0/EMPTY.BIN", requestOperation.path)
+    }
+
+    func test_readFile_requestError_propagatesError() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("read-low-level-file-request-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7017, userInfo: [NSLocalizedDescriptionKey: "low level read failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await v2Api.readFile(identifier: deviceId, filePath: "/U/0/CUSTOM.BIN") }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    func test_readFile_responseError_wrapsAsDeviceErrorWithPftpDetails() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("read-low-level-file-response-error")
+        v2MockClient.requestReturnValue = .failure(BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue))
+
+        let error = awaitErrorAsync { [self] in try await v2Api.readFile(identifier: deviceId, filePath: "/U/0/CUSTOM.BIN") }
+
+        guard case .deviceError(description: let description) = try XCTUnwrap(error as? PolarErrors) else {
+            return XCTFail("Expected PolarErrors.deviceError, got \(String(describing: error))")
+        }
+        XCTAssertTrue(description.contains("/U/0/CUSTOM.BIN"), description)
+        XCTAssertTrue(description.contains("responseError"), description)
+        XCTAssertTrue(description.contains(String(Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue)), description)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    func test_writeFile_writesLowLevelFilePayload() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-success")
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.writeFile(identifier: deviceId, filePath: "/U/0/CUSTOM.BIN", fileData: Data([0x0A, 0x0B])) }
+
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", writeOperation.path)
+        XCTAssertEqual(Data([0x0A, 0x0B]), try data(from: v2MockClient.writeCalls[0].data))
+    }
+
+    func test_writeFile_consumesLowLevelWriteProgressBeforeSuccess() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-progress-success")
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.yield(2)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.writeFile(identifier: deviceId, filePath: "/U/0/PROGRESS.BIN", fileData: Data([0x10, 0x11])) }
+
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual("/U/0/PROGRESS.BIN", writeOperation.path)
+        XCTAssertEqual(Data([0x10, 0x11]), try data(from: v2MockClient.writeCalls[0].data))
+    }
+
+    func test_writeFile_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7018, userInfo: [NSLocalizedDescriptionKey: "low level write failed"])
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.writeFile(identifier: deviceId, filePath: "/U/0/CUSTOM.BIN", fileData: Data([0x0C, 0x0D])) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", writeOperation.path)
+        XCTAssertEqual(Data([0x0C, 0x0D]), try data(from: v2MockClient.writeCalls[0].data))
+    }
+
+    func test_writeFile_responseError_preservesPftpErrorAfterPayloadIsPrepared() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-response-error")
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue))
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.writeFile(identifier: deviceId, filePath: "/U/0/CUSTOM.BIN", fileData: Data([0x0E, 0x0F])) }
+
+        guard case .responseError(errorCode: let errorCode) = try XCTUnwrap(error as? BlePsFtpException) else {
+            return XCTFail("Expected BlePsFtpException.responseError(noSuchFileOrDirectory), got \(String(describing: error))")
+        }
+        XCTAssertEqual(errorCode, Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", writeOperation.path)
+        XCTAssertEqual(Data([0x0E, 0x0F]), try data(from: v2MockClient.writeCalls[0].data))
+    }
+
+    func test_deleteFileOrDirectory_sendsLowLevelRemoveRequest() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("delete-low-level-file-success")
+        v2MockClient.requestReturnValue = .success(Data())
+
+        try awaitVoidAsync { [self] in try await v2Api.deleteFileOrDirectory(identifier: deviceId, filePath: "/U/0/CUSTOM.BIN") }
+
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.remove, requestOperation.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    func test_deleteFileOrDirectory_requestError_propagatesError() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("delete-low-level-file-request-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7024, userInfo: [NSLocalizedDescriptionKey: "low level delete failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+
+        var error: Error?
+        do {
+            try awaitVoidAsync { [self] in try await v2Api.deleteFileOrDirectory(identifier: deviceId, filePath: "/U/0/CUSTOM.BIN") }
+        } catch let caught {
+            error = caught
+        }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.remove, requestOperation.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    func test_deleteFileOrDirectory_propagatesLowLevelResponseError() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("delete-low-level-file-response-error")
+        v2MockClient.requestReturnValue = .failure(BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue))
+
+        let error = awaitErrorAsync { [self] in try await v2Api.deleteFileOrDirectory(identifier: deviceId, filePath: "/U/0/CUSTOM.BIN") }
+
+        guard case .responseError(errorCode: let errorCode) = try XCTUnwrap(error as? BlePsFtpException) else {
+            return XCTFail("Expected BlePsFtpException.responseError(noSuchFileOrDirectory), got \(String(describing: error))")
+        }
+        XCTAssertEqual(errorCode, Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.remove, requestOperation.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", requestOperation.path)
+    }
+
+    func test_deleteDeviceDateFolders_removesEmptyFoldersInDateRange() throws {
+        let calendar = Calendar.current
+        let fromDate = try localDateInput(year: 2026, month: 5, day: 30, calendar: calendar)
+        let toDate = try localDateInput(year: 2026, month: 5, day: 31, calendar: calendar)
+        v2MockClient.requestReturnValueClosure = makeRequestClosure([
+            "/U/0/": { try self.makeDirectoryProtoData(entries: [("20260530/", 0), ("20260531/", 0), ("20260601/", 0)]) },
+            "/U/0/20260530/": { try self.makeDirectoryProtoData(entries: []) },
+            "/U/0/20260531/": { try self.makeDirectoryProtoData(entries: []) }
+        ])
+
+        try awaitVoidAsync { [self] in try await v2Api.deleteDeviceDateFolders(deviceId, fromDate: fromDate, toDate: toDate) }
+
+        let operations = try v2MockClient.requestCalls.map { try Protocol_PbPFtpOperation(serializedBytes: $0) }
+        XCTAssertEqual([.get, .get, .remove, .get, .remove], operations.map { $0.command })
+        XCTAssertEqual(["/U/0/", "/U/0/20260530/", "/U/0/20260530/", "/U/0/20260531/", "/U/0/20260531/"], operations.map { $0.path })
+    }
+
+    private func localDateInput(year: Int, month: Int, day: Int, calendar: Calendar) throws -> Date {
+        let midnight = try XCTUnwrap(calendar.date(from: DateComponents(year: year, month: month, day: day)))
+        return try XCTUnwrap(calendar.date(byAdding: .second, value: -TimeZone.current.secondsFromGMT(for: Date()), to: midnight))
+    }
+
+    func test_deleteDeviceDateFolders_missingDatesPropagateInvalidDateError() {
+        let error = awaitErrorAsync { [self] in try await v2Api.deleteDeviceDateFolders(deviceId, fromDate: nil, toDate: nil) }
+
+        XCTAssertNotNil(error)
+        XCTAssertTrue(v2MockClient.requestCalls.isEmpty)
+    }
+
+    func test_deleteTelemetryData_removesTelemetryBinFilesFromFakeTransport() throws {
+        try assertStoredDataCleanupWorkflowVectorContains("telemetry-root-trc-bin-filter")
+        v2MockClient.requestReturnValueClosure = makeRequestClosure([
+            "/": { try self.makeDirectoryProtoData(entries: [("TRC10.BIN", 4), ("ABC10.BIN", 4), ("TRC10.TXT", 4)]) },
+            "/TRC10.BIN": { Data() }
+        ])
+
+        try awaitVoidAsync { [self] in try await v2Api.deleteTelemetryData(deviceId) }
+
+        let operations = try v2MockClient.requestCalls.map { try Protocol_PbPFtpOperation(serializedBytes: $0) }
+        XCTAssertEqual([.get, .remove], operations.map { $0.command })
+        XCTAssertEqual(["/", "/TRC10.BIN"], operations.map { $0.path })
+    }
+
+    func test_deleteTelemetryData_listFailurePropagatesError() throws {
+        try assertStoredDataCleanupWorkflowVectorContains("telemetry-list-failure-platform-policy")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7021, userInfo: [NSLocalizedDescriptionKey: "telemetry list failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await v2Api.deleteTelemetryData(deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+    }
+
+    func test_deleteStoredDeviceData_removesSDLogFilesFromFakeTransport() throws {
+        try assertStoredDataCleanupWorkflowVectorContains("sdlogs-extension-filter")
+        v2MockClient.requestReturnValueClosure = makeRequestClosure([
+            "/SDLOGS/": { try self.makeDirectoryProtoData(entries: [("A.SLG", 4), ("B.TXT", 5), ("C.BPB", 6)]) },
+            "/SDLOGS/A.SLG": { Data() },
+            "/SDLOGS/B.TXT": { Data() }
+        ])
+
+        try awaitVoidAsync { [self] in try await v2Api.deleteStoredDeviceData(deviceId, dataType: .SDLOGS, until: Date()) }
+
+        let operations = try v2MockClient.requestCalls.map { try Protocol_PbPFtpOperation(serializedBytes: $0) }
+        XCTAssertEqual([.get, .remove, .remove], operations.map { $0.command })
+        XCTAssertEqual(["/SDLOGS/", "/SDLOGS/A.SLG", "/SDLOGS/B.TXT"], operations.map { $0.path })
+    }
+
+    func test_deleteStoredDeviceData_sdLogListFailurePropagatesError() throws {
+        try assertStoredDataCleanupWorkflowVectorContains("sdlogs-list-failure-platform-policy")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7022, userInfo: [NSLocalizedDescriptionKey: "sd log list failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await v2Api.deleteStoredDeviceData(deviceId, dataType: .SDLOGS, until: Date()) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+    }
+
+    func test_deleteStoredDeviceData_removesActivityFilesBeforeCutoffAndPrunesEmptyParents() throws {
+        try assertStoredDataCleanupWorkflowVectorContains("activity-prune-empty-parents")
+        let until = try XCTUnwrap(Calendar.current.date(from: DateComponents(year: 2026, month: 5, day: 31)))
+        var getCountsByPath: [String: Int] = [:]
+        v2MockClient.requestReturnValueClosure = { headerData in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: headerData)
+            let getCount = getCountsByPath[operation.path, default: 0]
+            if operation.command == .get { getCountsByPath[operation.path] = getCount + 1 }
+            if operation.command == .remove { return Data() }
+            switch operation.path {
+            case "/U/0/":
+                return try self.makeDirectoryProtoData(entries: [("20260530/", 0)])
+            case "/U/0/20260530/":
+                if getCount == 0 { return try self.makeDirectoryProtoData(entries: [("ACT/", 0)]) }
+                return try self.makeDirectoryProtoData(entries: [])
+            case "/U/0/20260530/ACT/":
+                if getCount == 0 { return try self.makeDirectoryProtoData(entries: [("ACTIVITY.BPB", 8), ("HIST.BPB", 8)]) }
+                return try self.makeDirectoryProtoData(entries: [])
+            default:
+                throw NSError(domain: "test.unrouted", code: 0, userInfo: [NSLocalizedDescriptionKey: "Unrouted: \(operation.path)"])
+            }
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.deleteStoredDeviceData(deviceId, dataType: .ACTIVITY, until: until) }
+
+        let operations = try v2MockClient.requestCalls.map { try Protocol_PbPFtpOperation(serializedBytes: $0) }
+        XCTAssertEqual([.get, .get, .get, .remove, .get, .remove, .get, .remove], operations.map { $0.command })
+        XCTAssertEqual(["/U/0/", "/U/0/20260530/", "/U/0/20260530/ACT/", "/U/0/20260530/ACT/ACTIVITY.BPB", "/U/0/20260530/ACT/", "/U/0/20260530/ACT/", "/U/0/20260530/", "/U/0/20260530/"], operations.map { $0.path })
+    }
+
+    func test_deleteStoredDeviceData_removesAutomaticSampleFilesByEmbeddedSampleDate() throws {
+        try assertStoredDataCleanupWorkflowVectorContains("automatic-sample-embedded-day-filter")
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let until = try XCTUnwrap(utcCalendar.date(from: DateComponents(timeZone: TimeZone(secondsFromGMT: 0), year: 2026, month: 5, day: 31, hour: 12)))
+        v2MockClient.requestReturnValueClosure = { headerData in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: headerData)
+            if operation.command == .remove { return Data() }
+            switch operation.path {
+            case "/U/0/AUTOS/":
+                return try self.makeDirectoryProtoData(entries: [("20260530/", 0), ("20260601/", 0)])
+            case "/U/0/AUTOS/20260530/":
+                return try self.makeDirectoryProtoData(entries: [("AUTOS001.BPB", 8)])
+            case "/U/0/AUTOS/20260601/":
+                return try self.makeDirectoryProtoData(entries: [("AUTOS002.BPB", 8)])
+            case "/U/0/AUTOS/20260530/AUTOS001.BPB":
+                return try Data_PbAutomaticSampleSessions.with {
+                    $0.day = PbDate.with { $0.year = 2026; $0.month = 5; $0.day = 30 }
+                }.serializedData()
+            case "/U/0/AUTOS/20260601/AUTOS002.BPB":
+                return try Data_PbAutomaticSampleSessions.with {
+                    $0.day = PbDate.with { $0.year = 2026; $0.month = 6; $0.day = 1 }
+                }.serializedData()
+            default:
+                throw NSError(domain: "test.unrouted", code: 0, userInfo: [NSLocalizedDescriptionKey: "Unrouted: \(operation.path)"])
+            }
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.deleteStoredDeviceData(deviceId, dataType: .AUTO_SAMPLE, until: until) }
+
+        let operations = try v2MockClient.requestCalls.map { try Protocol_PbPFtpOperation(serializedBytes: $0) }
+        XCTAssertEqual([.get, .get, .get, .get, .remove, .get], operations.map { $0.command })
+        XCTAssertEqual(["/U/0/AUTOS/", "/U/0/AUTOS/20260530/", "/U/0/AUTOS/20260601/", "/U/0/AUTOS/20260530/AUTOS001.BPB", "/U/0/AUTOS/20260530/AUTOS001.BPB", "/U/0/AUTOS/20260601/AUTOS002.BPB"], operations.map { $0.path })
+    }
+
+    func test_getFileList_listsLowLevelDirectoryWithoutRecursion() throws {
+        let directory = Protocol_PbPFtpDirectory.with {
+            $0.entries = [
+                Protocol_PbPFtpEntry.with { $0.name = "A.BIN"; $0.size = 2 },
+                Protocol_PbPFtpEntry.with { $0.name = "DIR/"; $0.size = 0 }
+            ]
+        }
+        v2MockClient.requestReturnValue = .success(try directory.serializedData())
+
+        let result = try awaitSingleAsync { [self] in try await v2Api.getFileList(identifier: deviceId, directoryPath: "U/0", recurseDeep: false) }
+
+        XCTAssertEqual(["/U/0/A.BIN", "/U/0/DIR/"], result)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/U/0/", requestOperation.path)
+    }
+
+    // MARK: - isFtuDone
+
+    func test_isFtuDone_readsUserIdAndReturnsTrueWhenMasterIdentifierIsPresent() throws {
+        var userIdentifier = Data_PbUserIdentifier()
+        userIdentifier.masterIdentifier = UInt64.max
+        v2MockClient.requestReturnValue = .success(try userIdentifier.serializedData())
+
+        let result = try awaitSingleAsync { [self] in try await v2Api.isFtuDone(deviceId) }
+
+        XCTAssertTrue(result)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(UserIdentifierType.USER_IDENTIFIER_FILENAME, requestOperation.path)
+    }
+
+    func test_isFtuDone_readsUserIdAndReturnsFalseWhenMasterIdentifierIsAbsent() throws {
+        v2MockClient.requestReturnValue = .success(try Data_PbUserIdentifier().serializedData())
+
+        let result = try awaitSingleAsync { [self] in try await v2Api.isFtuDone(deviceId) }
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(UserIdentifierType.USER_IDENTIFIER_FILENAME, requestOperation.path)
+    }
+
+    func test_isFtuDone_requestError_propagatesError() throws {
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7013, userInfo: [NSLocalizedDescriptionKey: "user id read failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await v2Api.isFtuDone(deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(UserIdentifierType.USER_IDENTIFIER_FILENAME, requestOperation.path)
+    }
+
+    // MARK: - REST service requests
+
+    func test_listRestApiServices_requestsServiceApiAndDecodesServicePaths() throws {
+        try assertRestFacadeRuntimePolicyVectorContains("list-rest-api-services-success")
+        v2MockClient.requestReturnValue = .success(Data(#"{"services":{"sleep":"/REST/SLEEP.API","training":"/REST/TRAINING.API"}}"#.utf8))
+
+        let result = try awaitSingleAsync { [self] in try await v2Api.listRestApiServices(identifier: deviceId) }
+
+        XCTAssertEqual(Set(result.serviceNames), Set(["sleep", "training"]))
+        XCTAssertEqual(result.pathsForServices?["sleep"], "/REST/SLEEP.API")
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/REST/SERVICE.API", requestOperation.path)
+    }
+
+    func test_getRestApiDescription_requestsPathAndDecodesDescription() throws {
+        try assertRestFacadeRuntimePolicyVectorContains("get-rest-api-description-success")
+        v2MockClient.requestReturnValue = .success(Data(#"{"events":["sleep"],"endpoints":["stop"],"cmd":{"post":"/REST/SLEEP.API?cmd=post"},"sleep":{"details":["state"],"triggers":["change"]}}"#.utf8))
+
+        let result = try awaitSingleAsync { [self] in try await v2Api.getRestApiDescription(identifier: deviceId, path: "/REST/SLEEP.API") }
+
+        XCTAssertEqual(result.events, ["sleep"])
+        XCTAssertEqual(result.actionPaths, ["/REST/SLEEP.API?cmd=post"])
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/REST/SLEEP.API", requestOperation.path)
+    }
+
+    func test_getRestApiDescription_requestError_propagatesError() throws {
+        try assertRestFacadeRuntimePolicyVectorContains("get-rest-api-description-request-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7025, userInfo: [NSLocalizedDescriptionKey: "service description read failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await v2Api.getRestApiDescription(identifier: deviceId, path: "/REST/SLEEP.API") }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/REST/SLEEP.API", requestOperation.path)
+    }
+
+    func test_getRestApiDescription_responseError_preservesPftpErrorCode() throws {
+        try assertRestFacadeRuntimePolicyVectorContains("get-rest-api-description-response-error")
+        v2MockClient.requestReturnValue = .failure(BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue))
+
+        let error = awaitErrorAsync { [self] in try await v2Api.getRestApiDescription(identifier: deviceId, path: "/REST/SLEEP.API") }
+
+        guard case .responseError(errorCode: let errorCode) = try XCTUnwrap(error as? BlePsFtpException) else {
+            return XCTFail("Expected BlePsFtpException.responseError(noSuchFileOrDirectory), got \(String(describing: error))")
+        }
+        XCTAssertEqual(errorCode, Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/REST/SLEEP.API", requestOperation.path)
+    }
+
+    func test_getRestApiDescription_emptySuccessfulResponse_failsDecoding() throws {
+        try assertRestFacadeRuntimePolicyVectorContains("get-rest-api-description-empty-success")
+        v2MockClient.requestReturnValue = .success(Data())
+
+        let error = awaitErrorAsync { [self] in try await v2Api.getRestApiDescription(identifier: deviceId, path: "/REST/SLEEP.API") }
+
+        XCTAssertNotNil(error)
+        if case DecodingError.dataCorrupted = try XCTUnwrap(error) {
+            // expected
+        } else {
+            XCTFail("Expected DecodingError.dataCorrupted, got \(String(describing: error))")
+        }
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/REST/SLEEP.API", requestOperation.path)
+    }
+
+    func test_getRestApiDescription_malformedSuccessfulResponse_failsDecoding() throws {
+        try assertRestFacadeRuntimePolicyVectorContains("get-rest-api-description-malformed-success")
+        v2MockClient.requestReturnValue = .success(Data("{".utf8))
+
+        let error = awaitErrorAsync { [self] in try await v2Api.getRestApiDescription(identifier: deviceId, path: "/REST/SLEEP.API") }
+
+        XCTAssertNotNil(error)
+        if case DecodingError.dataCorrupted = try XCTUnwrap(error) {
+            // expected
+        } else {
+            XCTFail("Expected DecodingError.dataCorrupted, got \(String(describing: error))")
+        }
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/REST/SLEEP.API", requestOperation.path)
+    }
+
+    func test_listRestApiServices_requestError_propagatesError() throws {
+        try assertRestFacadeRuntimePolicyVectorContains("list-rest-api-services-request-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7014, userInfo: [NSLocalizedDescriptionKey: "service api read failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await v2Api.listRestApiServices(identifier: deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/REST/SERVICE.API", requestOperation.path)
+    }
+
+    func test_listRestApiServices_responseError_preservesPftpErrorCode() throws {
+        try assertRestFacadeRuntimePolicyVectorContains("list-rest-api-services-response-error")
+        v2MockClient.requestReturnValue = .failure(BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue))
+
+        let error = awaitErrorAsync { [self] in try await v2Api.listRestApiServices(identifier: deviceId) }
+
+        guard case .responseError(errorCode: let errorCode) = try XCTUnwrap(error as? BlePsFtpException) else {
+            return XCTFail("Expected BlePsFtpException.responseError(noSuchFileOrDirectory), got \(String(describing: error))")
+        }
+        XCTAssertEqual(errorCode, Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/REST/SERVICE.API", requestOperation.path)
+    }
+
+    func test_listRestApiServices_emptySuccessfulResponse_failsDecoding() throws {
+        try assertRestFacadeRuntimePolicyVectorContains("list-rest-api-services-empty-success")
+        v2MockClient.requestReturnValue = .success(Data())
+
+        let error = awaitErrorAsync { [self] in try await v2Api.listRestApiServices(identifier: deviceId) }
+
+        XCTAssertNotNil(error)
+        if case DecodingError.dataCorrupted = try XCTUnwrap(error) {
+            // expected
+        } else {
+            XCTFail("Expected DecodingError.dataCorrupted, got \(String(describing: error))")
+        }
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/REST/SERVICE.API", requestOperation.path)
+    }
+
+    func test_listRestApiServices_malformedSuccessfulResponse_failsDecoding() throws {
+        try assertRestFacadeRuntimePolicyVectorContains("list-rest-api-services-malformed-success")
+        v2MockClient.requestReturnValue = .success(Data("{".utf8))
+
+        let error = awaitErrorAsync { [self] in try await v2Api.listRestApiServices(identifier: deviceId) }
+
+        XCTAssertNotNil(error)
+        if case DecodingError.dataCorrupted = try XCTUnwrap(error) {
+            // expected
+        } else {
+            XCTFail("Expected DecodingError.dataCorrupted, got \(String(describing: error))")
+        }
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual("/REST/SERVICE.API", requestOperation.path)
+    }
+
+    // MARK: - reset notifications
+
+    func test_doFactoryReset_sendsResetNotification() throws {
+        try assertCommandRuntimePolicyVectorContains("factory-reset")
+        try awaitVoidAsync { [self] in try await v2Api.doFactoryReset(deviceId) }
+
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let params = try Protocol_PbPFtpFactoryResetParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertFalse(params.sleep)
+        XCTAssertTrue(params.doFactoryDefaults)
+        XCTAssertFalse(params.otaFwupdate)
+    }
+
+    func test_doFactoryResetWithPreservePairing_sendsOtaFirmwareUpdateFlag() throws {
+        try assertCommandRuntimePolicyVectorContains("factory-reset-preserve-pairing")
+        try awaitVoidAsync { [self] in try await v2Api.doFactoryReset(deviceId, preservePairingInformation: true) }
+
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let params = try Protocol_PbPFtpFactoryResetParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertFalse(params.sleep)
+        XCTAssertTrue(params.doFactoryDefaults)
+        XCTAssertTrue(params.otaFwupdate)
+    }
+
+    func test_doRestart_sendsResetNotificationWithoutFactoryDefaults() throws {
+        try assertCommandRuntimePolicyVectorContains("restart")
+        try awaitVoidAsync { [self] in try await v2Api.doRestart(deviceId) }
+
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let params = try Protocol_PbPFtpFactoryResetParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertFalse(params.sleep)
+        XCTAssertFalse(params.doFactoryDefaults)
+        XCTAssertFalse(params.otaFwupdate)
+    }
+
+    func test_setWarehouseSleep_sendsResetNotificationWithSleepAndFactoryDefaults() throws {
+        try assertCommandRuntimePolicyVectorContains("warehouse-sleep")
+        try awaitVoidAsync { [self] in try await v2Api.setWarehouseSleep(deviceId) }
+
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let params = try Protocol_PbPFtpFactoryResetParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertTrue(params.sleep)
+        XCTAssertTrue(params.doFactoryDefaults)
+        XCTAssertFalse(params.otaFwupdate)
+    }
+
+    func test_turnDeviceOff_sendsResetNotificationWithSleepOnly() throws {
+        try assertCommandRuntimePolicyVectorContains("turn-device-off")
+        try awaitVoidAsync { [self] in try await v2Api.turnDeviceOff(deviceId) }
+
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let params = try Protocol_PbPFtpFactoryResetParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertTrue(params.sleep)
+        XCTAssertFalse(params.doFactoryDefaults)
+        XCTAssertFalse(params.otaFwupdate)
+    }
+
+    func test_doFactoryReset_notificationError_propagatesError() throws {
+        try assertCommandRuntimePolicyVectorContains("factory-reset-notification-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7011, userInfo: [NSLocalizedDescriptionKey: "reset notification failed"])
+        v2MockClient.sendNotificationError = transportError
+
+        let error = awaitErrorAsync { [self] in try await v2Api.doFactoryReset(deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+    }
+
+    func test_doFactoryResetWithPreservePairing_notificationError_propagatesError() throws {
+        try assertCommandRuntimePolicyVectorContains("factory-reset-preserve-pairing-notification-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7021, userInfo: [NSLocalizedDescriptionKey: "preserve pairing reset notification failed"])
+        v2MockClient.sendNotificationError = transportError
+
+        let error = awaitErrorAsync { [self] in try await v2Api.doFactoryReset(deviceId, preservePairingInformation: true) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let params = try Protocol_PbPFtpFactoryResetParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertTrue(params.otaFwupdate)
+    }
+
+    func test_doRestart_notificationError_propagatesError() throws {
+        try assertCommandRuntimePolicyVectorContains("restart-notification-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7022, userInfo: [NSLocalizedDescriptionKey: "restart notification failed"])
+        v2MockClient.sendNotificationError = transportError
+
+        let error = awaitErrorAsync { [self] in try await v2Api.doRestart(deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let params = try Protocol_PbPFtpFactoryResetParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertFalse(params.doFactoryDefaults)
+    }
+
+    func test_setWarehouseSleep_notificationError_propagatesError() throws {
+        try assertCommandRuntimePolicyVectorContains("warehouse-sleep-notification-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7023, userInfo: [NSLocalizedDescriptionKey: "warehouse sleep notification failed"])
+        v2MockClient.sendNotificationError = transportError
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setWarehouseSleep(deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let params = try Protocol_PbPFtpFactoryResetParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertTrue(params.sleep)
+        XCTAssertTrue(params.doFactoryDefaults)
+    }
+
+    func test_turnDeviceOff_notificationError_propagatesError() throws {
+        try assertCommandRuntimePolicyVectorContains("turn-device-off-notification-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7024, userInfo: [NSLocalizedDescriptionKey: "turn device off notification failed"])
+        v2MockClient.sendNotificationError = transportError
+
+        let error = awaitErrorAsync { [self] in try await v2Api.turnDeviceOff(deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let params = try Protocol_PbPFtpFactoryResetParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertTrue(params.sleep)
+        XCTAssertFalse(params.doFactoryDefaults)
+    }
+
+    // MARK: - sync notifications
+
+    func test_sendInitializationAndStartSyncNotifications_requestsSyncThenSendsInitializeAndStartSync() throws {
+        try assertCommandRuntimePolicyVectorContains("sync-start-success")
+        v2MockClient.queryReturnValue = .success(Data())
+
+        try awaitVoidAsync { [self] in try await v2Api.sendInitializationAndStartSyncNotifications(identifier: deviceId) }
+
+        XCTAssertEqual(v2MockClient.queryCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpQuery.requestSynchronization.rawValue, v2MockClient.queryCalls[0].id)
+        XCTAssertNil(v2MockClient.queryCalls[0].parameters)
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 2)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        XCTAssertNil(v2MockClient.sendNotificationCalls[0].parameters)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.startSync.rawValue, v2MockClient.sendNotificationCalls[1].notification)
+        XCTAssertNil(v2MockClient.sendNotificationCalls[1].parameters)
+    }
+
+    func test_sendInitializationAndStartSyncNotifications_queryError_propagatesErrorWithoutNotifications() throws {
+        try assertCommandRuntimePolicyVectorContains("sync-start-query-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7019, userInfo: [NSLocalizedDescriptionKey: "sync request failed"])
+        v2MockClient.queryReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await v2Api.sendInitializationAndStartSyncNotifications(identifier: deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.queryCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpQuery.requestSynchronization.rawValue, v2MockClient.queryCalls[0].id)
+        XCTAssertTrue(v2MockClient.sendNotificationCalls.isEmpty)
+    }
+
+    func test_sendTerminateAndStopSyncNotifications_sendsCompletedStopSyncThenTerminateSession() throws {
+        try assertCommandRuntimePolicyVectorContains("sync-stop-success")
+        try awaitVoidAsync { [self] in try await v2Api.sendTerminateAndStopSyncNotifications(identifier: deviceId) }
+
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 2)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.stopSync.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let stopSyncParams = try Protocol_PbPFtpStopSyncParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertTrue(stopSyncParams.completed)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, v2MockClient.sendNotificationCalls[1].notification)
+        XCTAssertNil(v2MockClient.sendNotificationCalls[1].parameters)
+    }
+
+    func test_sendTerminateAndStopSyncNotifications_notificationError_propagatesError() throws {
+        try assertCommandRuntimePolicyVectorContains("sync-stop-notification-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7020, userInfo: [NSLocalizedDescriptionKey: "stop sync failed"])
+        v2MockClient.sendNotificationError = transportError
+
+        let error = awaitErrorAsync { [self] in try await v2Api.sendTerminateAndStopSyncNotifications(identifier: deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.stopSync.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let stopSyncParams = try? Protocol_PbPFtpStopSyncParams(serializedBytes: v2MockClient.sendNotificationCalls[0].parameters as? Data ?? Data())
+        XCTAssertTrue(stopSyncParams?.completed == true)
+    }
+
+    // MARK: - multi-BLE connection mode
+
+    func test_setMultiBLEConnectionMode_sendsConfigureCommandWithEnableValue() throws {
+        let gatt = MockPolarGattServiceTransmitter()
+        let pfcClient = BlePfcClient(gattServiceTransmitter: gatt)
+        pfcClient.notifyDescriptorWritten(BlePfcClient.PFC_CP, enabled: true, err: 0)
+        pfcClient.processServiceData(BlePfcClient.PFC_CP, data: Data([0xF0, UInt8(BlePfcClient.PfcMessage.pfcConfigureMultiConnection.rawValue), 0x01]), err: 0)
+        let session = MockBleDeviceSession(mockFtpClient: v2MockClient, mockPfcClient: pfcClient)
+        let api = PolarBleApiImplWithMockSession(mockDeviceSession: session)
+
+        try awaitVoidAsync { try await api.setMultiBLEConnectionMode(identifier: self.deviceId, enable: true) }
+
+        XCTAssertEqual(gatt.transmittedMessages.count, 1)
+        XCTAssertEqual(BlePfcClient.PFC_SERVICE, gatt.transmittedMessages[0].serviceUuid)
+        XCTAssertEqual(BlePfcClient.PFC_CP, gatt.transmittedMessages[0].characteristicUuid)
+        XCTAssertEqual(Data([UInt8(BlePfcClient.PfcMessage.pfcConfigureMultiConnection.rawValue), 0x01]), gatt.transmittedMessages[0].packet)
+        XCTAssertTrue(gatt.transmittedMessages[0].withResponse)
+    }
+
+    func test_setMultiBLEConnectionMode_nonSuccessResponseReturnsOperationNotSupported() {
+        let gatt = MockPolarGattServiceTransmitter()
+        let pfcClient = BlePfcClient(gattServiceTransmitter: gatt)
+        pfcClient.notifyDescriptorWritten(BlePfcClient.PFC_CP, enabled: true, err: 0)
+        pfcClient.processServiceData(BlePfcClient.PFC_CP, data: Data([0xF0, UInt8(BlePfcClient.PfcMessage.pfcConfigureMultiConnection.rawValue), 0x02]), err: 0)
+        let session = MockBleDeviceSession(mockFtpClient: v2MockClient, mockPfcClient: pfcClient)
+        let api = PolarBleApiImplWithMockSession(mockDeviceSession: session)
+
+        let error = awaitErrorAsync { try await api.setMultiBLEConnectionMode(identifier: self.deviceId, enable: false) }
+
+        XCTAssertNotNil(error)
+        if case PolarErrors.operationNotSupported = error! { } else { XCTFail("Expected operationNotSupported") }
+        XCTAssertEqual(Data([UInt8(BlePfcClient.PfcMessage.pfcConfigureMultiConnection.rawValue), 0x00]), gatt.transmittedMessages.first?.packet)
+    }
+
+    func test_getMultiBLEConnectionMode_sendsRequestCommandAndMapsEnabledPayload() throws {
+        let gatt = MockPolarGattServiceTransmitter()
+        let pfcClient = BlePfcClient(gattServiceTransmitter: gatt)
+        pfcClient.notifyDescriptorWritten(BlePfcClient.PFC_CP, enabled: true, err: 0)
+        pfcClient.processServiceData(BlePfcClient.PFC_CP, data: Data([0xF0, UInt8(BlePfcClient.PfcMessage.pfcRequestMultiConnectionSetting.rawValue), 0x01, 0x01]), err: 0)
+        let session = MockBleDeviceSession(mockFtpClient: v2MockClient, mockPfcClient: pfcClient)
+        let api = PolarBleApiImplWithMockSession(mockDeviceSession: session)
+
+        let result = try awaitSingleAsync { try await api.getMultiBLEConnectionMode(identifier: self.deviceId) }
+
+        XCTAssertTrue(result)
+        XCTAssertEqual(gatt.transmittedMessages.count, 1)
+        XCTAssertEqual(Data([UInt8(BlePfcClient.PfcMessage.pfcRequestMultiConnectionSetting.rawValue)]), gatt.transmittedMessages[0].packet)
+    }
+
+    // MARK: - offline trigger facade
+
+    func test_setOfflineRecordingTrigger_mapsPublicTriggerAndSecretToPmdControlPointSequence() throws {
+        try assertOfflineTriggerRuntimePolicyVectorContains("set-trigger-success-with-secret")
+        let (api, gatt) = makePmdApi { [self] packet in
+            switch packet.first {
+            case 0x08:
+                return pmdResponse(opCode: 0x08)
+            case 0x07:
+                return pmdResponse(opCode: 0x07, parameters: offlineTriggerStatusData())
+            case 0x09:
+                return pmdResponse(opCode: 0x09, measurementType: packet[2])
+            default:
+                return pmdResponse(opCode: packet.first ?? 0x00, errorCode: 0x01)
+            }
+        }
+        let trigger = PolarOfflineRecordingTrigger(
+            triggerMode: .triggerSystemStart,
+            triggerFeatures: [
+                .acc: try PolarSensorSetting([.sampleRate: 52, .resolution: 16]),
+                .hr: nil
+            ]
+        )
+        let secretBytes = Data((0..<16).map { UInt8($0) })
+        let secret = try PolarRecordingSecret(key: secretBytes)
+
+        try awaitVoidAsync { try await api.setOfflineRecordingTrigger(self.deviceId, trigger: trigger, secret: secret) }
+
+        let packets = gatt.transmittedMessages.map { $0.packet }
+        XCTAssertEqual(Data([0x08, 0x01]), packets.first)
+        XCTAssertEqual(Data([0x07]), packets.dropFirst().first)
+        let settingPackets = Array(packets.dropFirst(2))
+        XCTAssertEqual(3, settingPackets.count)
+        let accPacket = try XCTUnwrap(settingPackets.first { $0.starts(with: Data([0x09, 0x01, PmdMeasurementType.acc.rawValue])) })
+        let gyroPacket = try XCTUnwrap(settingPackets.first { $0 == Data([0x09, 0x00, PmdMeasurementType.gyro.rawValue]) })
+        let hrPacket = try XCTUnwrap(settingPackets.first { $0.starts(with: Data([0x09, 0x01, PmdMeasurementType.offline_hr.rawValue])) })
+        XCTAssertEqual(Data([0x09, 0x00, PmdMeasurementType.gyro.rawValue]), gyroPacket)
+        XCTAssertNotNil(accPacket.range(of: Data([0x00, 0x01, 0x34, 0x00])))
+        XCTAssertNotNil(accPacket.range(of: Data([0x01, 0x01, 0x10, 0x00])))
+        let secretSetting = Data([0x06, 0x01, 0x02]) + secretBytes
+        XCTAssertNotNil(accPacket.range(of: secretSetting))
+        XCTAssertNotNil(hrPacket.range(of: secretSetting))
+    }
+
+    func test_setOfflineRecordingTrigger_setModeErrorPropagatesAndStopsBeforeStatusRead() throws {
+        try assertOfflineTriggerRuntimePolicyVectorContains("set-trigger-mode-error")
+        let (api, gatt) = makePmdApi { [self] packet in
+            return pmdResponse(opCode: packet.first ?? 0x00, errorCode: packet.first == 0x08 ? 0x05 : 0x00)
+        }
+        let trigger = PolarOfflineRecordingTrigger(triggerMode: .triggerSystemStart, triggerFeatures: [.hr: nil])
+
+        let error = awaitErrorAsync { try await api.setOfflineRecordingTrigger(self.deviceId, trigger: trigger, secret: nil) }
+
+        XCTAssertNotNil(error)
+        guard case BlePmdError.controlPointRequestFailed(let errorCode, _) = error! else {
+            return XCTFail("Expected controlPointRequestFailed, got \(String(describing: error))")
+        }
+        XCTAssertEqual(0x05, errorCode)
+        XCTAssertEqual([Data([0x08, 0x01])], gatt.transmittedMessages.map { $0.packet })
+    }
+
+    func test_getOfflineRecordingTriggerSetup_mapsPmdStatusToPublicTriggerAndPropagatesErrors() throws {
+        try assertOfflineTriggerRuntimePolicyVectorContains("get-trigger-success")
+        try assertOfflineTriggerRuntimePolicyVectorContains("get-trigger-transport-error")
+        let statusData = Data([
+            0x01,
+            0x01, PmdMeasurementType.acc.rawValue, 0x04, 0x00, 0x01, 0x34, 0x00,
+            0x00, PmdMeasurementType.gyro.rawValue,
+            0x01, PmdMeasurementType.offline_hr.rawValue, 0x00
+        ])
+        let (successApi, successGatt) = makePmdApi { [self] packet in
+            pmdResponse(opCode: packet.first ?? 0x00, parameters: statusData)
+        }
+
+        let result = try awaitSingleAsync { try await successApi.getOfflineRecordingTriggerSetup(self.deviceId) }
+
+        XCTAssertEqual(.triggerSystemStart, result.triggerMode)
+        XCTAssertEqual(Set([UInt32(52)]), result.triggerFeatures[.acc]??.settings[.sampleRate])
+        XCTAssertTrue(result.triggerFeatures.keys.contains(.hr))
+        XCTAssertFalse(result.triggerFeatures.keys.contains(.gyro))
+        XCTAssertEqual([Data([0x07])], successGatt.transmittedMessages.map { $0.packet })
+
+        let (errorApi, errorGatt) = makePmdApi { [self] packet in
+            pmdResponse(opCode: packet.first ?? 0x00, errorCode: 0x03)
+        }
+        let error = awaitErrorAsync { try await errorApi.getOfflineRecordingTriggerSetup(self.deviceId) }
+
+        XCTAssertNotNil(error)
+        let errorDescription = String(describing: error!)
+        XCTAssertTrue(errorDescription.contains("gattAttributeError"), errorDescription)
+        XCTAssertTrue(errorDescription.contains("Not supported"), errorDescription)
+        XCTAssertEqual([Data([0x07])], errorGatt.transmittedMessages.map { $0.packet })
     }
 
     // MARK: - startRecording
@@ -222,9 +2581,30 @@ final class PolarBleApiImplTests: XCTestCase {
     }
 
     func test_startRecording_h10Device_sendsRequestStartRecordingQuery() throws {
+        try assertCommandRuntimePolicyVectorContains("h10-start-recording")
         h10MockClient.queryReturnValue = .success(Data())
         try awaitVoidAsync { [self] in try await h10Api.startRecording(deviceId, exerciseId: "myExercise", interval: .interval_1s, sampleType: .hr) }
         XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.requestStartRecording.rawValue)
+        let paramsData = try XCTUnwrap(h10MockClient.queryCalls.first?.parameters)
+        let params = try Protocol_PbPFtpRequestStartRecordingParams(serializedBytes: paramsData as Data)
+        XCTAssertEqual("myExercise", params.sampleDataIdentifier)
+        XCTAssertEqual(.sampleTypeHeartRate, params.sampleType)
+        XCTAssertEqual(1, params.recordingInterval.seconds)
+    }
+
+    func test_startRecording_h10Device_queryError_propagatesError() throws {
+        try assertCommandRuntimePolicyVectorContains("h10-start-recording-query-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7007, userInfo: [NSLocalizedDescriptionKey: "start recording failed"])
+        h10MockClient.queryReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await h10Api.startRecording(deviceId, exerciseId: "myExercise", interval: .interval_1s, sampleType: .hr) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(h10MockClient.queryCalls.count, 1)
+        XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.requestStartRecording.rawValue)
+        XCTAssertNotNil(h10MockClient.queryCalls.first?.parameters)
     }
 
     func test_startRecording_nonRecordingDevice_returnsOperationNotSupported() {
@@ -239,6 +2619,22 @@ final class PolarBleApiImplTests: XCTestCase {
         h10MockClient.queryReturnValue = .success(Data())
         try awaitVoidAsync { [self] in try await h10Api.stopRecording(deviceId) }
         XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.requestStopRecording.rawValue)
+        XCTAssertNil(h10MockClient.queryCalls.first?.parameters)
+    }
+
+    func test_stopRecording_h10Device_queryError_propagatesError() throws {
+        try assertCommandRuntimePolicyVectorContains("h10-stop-recording-query-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7008, userInfo: [NSLocalizedDescriptionKey: "stop recording failed"])
+        h10MockClient.queryReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await h10Api.stopRecording(deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(h10MockClient.queryCalls.count, 1)
+        XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.requestStopRecording.rawValue)
+        XCTAssertNil(h10MockClient.queryCalls.first?.parameters)
     }
 
     func test_stopRecording_nonRecordingDevice_returnsOperationNotSupported() {
@@ -256,6 +2652,22 @@ final class PolarBleApiImplTests: XCTestCase {
         let status = try awaitSingleAsync { [self] in try await h10Api.requestRecordingStatus(deviceId) }
         XCTAssertTrue(status.ongoing); XCTAssertEqual(status.entryId, "exercise123")
         XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.requestRecordingStatus.rawValue)
+        XCTAssertNil(h10MockClient.queryCalls.first?.parameters)
+    }
+
+    func test_requestRecordingStatus_h10Device_queryError_propagatesError() throws {
+        try assertCommandRuntimePolicyVectorContains("h10-recording-status-query-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7009, userInfo: [NSLocalizedDescriptionKey: "recording status failed"])
+        h10MockClient.queryReturnValue = .failure(transportError)
+
+        let error = awaitErrorAsync { [self] in try await h10Api.requestRecordingStatus(deviceId) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(h10MockClient.queryCalls.count, 1)
+        XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.requestRecordingStatus.rawValue)
+        XCTAssertNil(h10MockClient.queryCalls.first?.parameters)
     }
 
     func test_requestRecordingStatus_nonRecordingDevice_returnsOperationNotSupported() {

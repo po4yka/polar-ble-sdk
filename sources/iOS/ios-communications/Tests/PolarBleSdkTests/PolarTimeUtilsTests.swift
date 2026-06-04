@@ -380,8 +380,6 @@ class PolarTimeUtilsTests: XCTestCase {
         let nanoSeconds = milliSeconds * 1000 * 1000
         dateComponents.nanosecond = nanoSeconds
 
-        let date = Calendar(identifier: .gregorian).date(from: dateComponents)
-
         // Act
         do {
             let pbPFtpSetLocalTimeParams = Protocol_PbPFtpSetLocalTimeParams.with {
@@ -430,13 +428,14 @@ class PolarTimeUtilsTests: XCTestCase {
         let result = try PolarTimeUtils.pbLocalDateTimeToDate(pbLocalDateTime: pbLocalDateTime)
         
         // Assert
-        let calendar = Calendar.current
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: result)
         
         XCTAssertEqual(components.year, 2525)
         XCTAssertEqual(components.month, 1)
         XCTAssertEqual(components.day, 2)
-        XCTAssertEqual(components.hour, 5)
+        XCTAssertEqual(components.hour, 3)
         XCTAssertEqual(components.minute, 2)
         XCTAssertEqual(components.second, 5)
     }

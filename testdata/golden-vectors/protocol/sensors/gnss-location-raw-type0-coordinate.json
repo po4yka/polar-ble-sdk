@@ -1,0 +1,52 @@
+{
+  "id": "gnss-location-raw-type0-coordinate",
+  "area": "sensor-parser",
+  "case": "gnss_location_raw_type0_coordinate",
+  "source": "Android GnssLocationDataTest characterization",
+  "input": {
+    "dataFrameHex": "0a009435770000000000000000004ce2814200000000fb8fcb41e5070a01002c470cffffff0fe1fac942cdcccc3d48618b4200000200038dffff01ffff",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "LOCATION",
+    "frameType": 0,
+    "compressed": false,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "sampleKind": "coordinate",
+        "timeStamp": 2000000000,
+        "latitude": 2457954418688.0,
+        "longitude": 924841472.0,
+        "date": "2021-10-01T11:14:34.000",
+        "cumulativeDistance": 26843545.5,
+        "speed": 100.99,
+        "usedAccelerationSpeed": 0.1,
+        "coordinateSpeed": 69.69,
+        "accelerationSpeedFactor": 1.8367e-40,
+        "course": 360.99,
+        "gpsChipSpeed": 655.35,
+        "fix": true,
+        "speedFlag": -1,
+        "fusionState": 255
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android-only GNSS raw type 0 coordinate sample. iOS has no current direct GNSS parser implementation.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GnssLocationDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.GnssLocationOwnershipCommonPolicyTest"
+    ]
+  }
+}

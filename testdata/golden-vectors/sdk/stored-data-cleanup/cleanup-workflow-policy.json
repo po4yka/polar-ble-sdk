@@ -1,0 +1,188 @@
+{
+  "id": "stored-data-cleanup-workflow-policy",
+  "area": "sdk-stored-data-cleanup",
+  "case": "cleanup_workflow_policy",
+  "source": "BDBleApiImplTest and PolarBleApiImplTests stored-data cleanup characterization",
+  "description": "Pins deterministic stored-data cleanup filtering and command planning before cleanup workflows can delegate to a shared KMP runtime.",
+  "input": {
+    "scenarios": [
+      {
+        "id": "telemetry-root-trc-bin-filter",
+        "kind": "filterDirectoryEntries",
+        "rootPath": "/",
+        "includePrefixes": [
+          "TRC"
+        ],
+        "includeSuffixes": [
+          ".BIN"
+        ],
+        "entries": [
+          "TRC10.BIN",
+          "ABC10.BIN",
+          "TRC10.TXT"
+        ]
+      },
+      {
+        "id": "sdlogs-extension-filter",
+        "kind": "filterDirectoryEntries",
+        "rootPath": "/SDLOGS/",
+        "includeSuffixes": [
+          ".SLG",
+          ".TXT"
+        ],
+        "entries": [
+          "A.SLG",
+          "B.TXT",
+          "C.BPB"
+        ]
+      },
+      {
+        "id": "activity-prune-empty-parents",
+        "kind": "activityPrune",
+        "cutoffDate": "2026-05-31",
+        "dateFolders": [
+          {
+            "path": "/U/0/20260530/",
+            "beforeCutoff": true,
+            "children": [
+              "ACT/"
+            ],
+            "activityFiles": [
+              "ACTIVITY.BPB",
+              "HIST.BPB"
+            ],
+            "removeFiles": [
+              "ACTIVITY.BPB"
+            ],
+            "pruneEmptyParents": true
+          }
+        ]
+      },
+      {
+        "id": "automatic-sample-embedded-day-filter",
+        "kind": "automaticSamplePrune",
+        "cutoffDate": "2026-05-31",
+        "sampleFiles": [
+          {
+            "path": "/U/0/AUTOS/20260530/AUTOS001.BPB",
+            "embeddedDay": "2026-05-30"
+          },
+          {
+            "path": "/U/0/AUTOS/20260601/AUTOS002.BPB",
+            "embeddedDay": "2026-06-01"
+          }
+        ]
+      },
+      {
+        "id": "sdlogs-list-failure-platform-policy",
+        "kind": "listFailure",
+        "rootPath": "/SDLOGS/"
+      },
+      {
+        "id": "telemetry-list-failure-platform-policy",
+        "kind": "listFailure",
+        "rootPath": "/"
+      }
+    ]
+  },
+  "expected": {
+    "commonRuntimePrototype": {
+      "cases": [
+        {
+          "id": "telemetry-root-trc-bin-filter",
+          "commands": [
+            "GET:/",
+            "REMOVE:/TRC10.BIN"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "sdlogs-extension-filter",
+          "commands": [
+            "GET:/SDLOGS/",
+            "REMOVE:/SDLOGS/A.SLG",
+            "REMOVE:/SDLOGS/B.TXT"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "activity-prune-empty-parents",
+          "commands": [
+            "GET:/U/0/",
+            "GET:/U/0/20260530/",
+            "GET:/U/0/20260530/ACT/",
+            "REMOVE:/U/0/20260530/ACT/ACTIVITY.BPB",
+            "GET:/U/0/20260530/ACT/",
+            "REMOVE_EMPTY_DIRECTORY:/U/0/20260530/ACT",
+            "GET:/U/0/20260530/",
+            "REMOVE_EMPTY_DIRECTORY:/U/0/20260530"
+          ],
+          "terminal": "platform-path-split"
+        },
+        {
+          "id": "automatic-sample-embedded-day-filter",
+          "commands": [
+            "GET:/U/0/AUTOS/",
+            "GET:/U/0/AUTOS/20260530/",
+            "GET:/U/0/AUTOS/20260530/AUTOS001.BPB",
+            "REMOVE:/U/0/AUTOS/20260530/AUTOS001.BPB",
+            "GET:/U/0/AUTOS/20260601/",
+            "GET:/U/0/AUTOS/20260601/AUTOS002.BPB"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "sdlogs-list-failure-platform-policy",
+          "commands": [
+            "GET:/SDLOGS/"
+          ],
+          "terminal": "platform-split"
+        },
+        {
+          "id": "telemetry-list-failure-platform-policy",
+          "commands": [
+            "GET:/"
+          ],
+          "terminal": "platform-split"
+        }
+      ]
+    },
+    "commonDecision": "A shared cleanup runtime may own deterministic filtering and traversal, but facade adapters must preserve current list-failure and empty-directory path compatibility until an explicit API decision is made."
+  },
+  "platformExpectations": {
+    "android": {
+      "sdlogsListFailure": "swallows list failure after GET:/SDLOGS/",
+      "telemetryListFailure": "swallows list failure after GET:/",
+      "activityEmptyParentRemovePath": "removes empty parent directories without a trailing slash"
+    },
+    "ios": {
+      "sdlogsListFailure": "propagates list failure after GET:/SDLOGS/",
+      "telemetryListFailure": "propagates list failure after GET:/",
+      "activityEmptyParentRemovePath": "removes empty parent directories with a trailing slash"
+    },
+    "commonDecision": "Keep cleanup failure and empty-directory path policy platform-specific until public facade compatibility is resolved."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.BDBleApiImplTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.StoredDataCleanupRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "execution": {
+    "kind": "fake-cleanup-runtime-policy",
+    "transport": "directory-list-and-remove-command-capture",
+    "wallClockSafe": true
+  },
+  "commonDecision": "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly.",
+  "notes": "This vector is workflow-level planning coverage. Low-level GET/REMOVE command encoding remains covered by file utility vectors; this vector owns which cleanup paths are visited or removed and which current platform splits must stay explicit."
+}

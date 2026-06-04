@@ -1,0 +1,122 @@
+{
+  "id": "rest-request-transport-policy",
+  "area": "sdk.rest-service",
+  "case": "rest_request_transport_policy",
+  "source": "KMP migration fake-transport planning from Android and iOS REST request surfaces",
+  "input": {
+    "kind": "restRequestTransportPolicy",
+    "requests": [
+      {
+        "id": "service-list-request-error-payload",
+        "operation": "getAvailableRestApiServices",
+        "path": "/REST/SERVICES.BPB",
+        "transport": {
+          "mode": "pftpResponseError",
+          "status": 404,
+          "message": "REST services not available"
+        }
+      },
+      {
+        "id": "service-description-request-error-payload",
+        "operation": "getRestApiDescription",
+        "service": "training",
+        "path": "/REST/TRAINING.BPB",
+        "transport": {
+          "mode": "pftpResponseError",
+          "status": 500,
+          "message": "REST service description failed"
+        }
+      },
+      {
+        "id": "service-list-empty-transport-response",
+        "operation": "getAvailableRestApiServices",
+        "path": "/REST/SERVICES.BPB",
+        "transport": {
+          "mode": "success",
+          "payloadHex": ""
+        }
+      },
+      {
+        "id": "service-description-empty-transport-response",
+        "operation": "getRestApiDescription",
+        "service": "training",
+        "path": "/REST/TRAINING.BPB",
+        "transport": {
+          "mode": "success",
+          "payloadHex": ""
+        }
+      }
+    ]
+  },
+  "expected": {
+    "migrationRequirement": "Before moving REST request orchestration into common KMP code, implement a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads.",
+    "observations": [
+      "captured request path and operation",
+      "terminal platform error for PFTP response-error payloads",
+      "terminal platform error or empty-model policy for empty successful transport responses",
+      "facade-level error mapping after shared transport errors are mapped back to Android and iOS public API shapes"
+    ],
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest plus Android-hosted prototype",
+      "cases": [
+        {
+          "id": "service-list-request-error-payload",
+          "command": "GET",
+          "path": "/REST/SERVICES.BPB",
+          "outcome": "response-error",
+          "status": 404,
+          "message": "REST services not available"
+        },
+        {
+          "id": "service-description-request-error-payload",
+          "command": "GET",
+          "path": "/REST/TRAINING.BPB",
+          "outcome": "response-error",
+          "status": 500,
+          "message": "REST service description failed"
+        },
+        {
+          "id": "service-list-empty-transport-response",
+          "command": "GET",
+          "path": "/REST/SERVICES.BPB",
+          "outcome": "requires-empty-response-policy"
+        },
+        {
+          "id": "service-description-empty-transport-response",
+          "command": "GET",
+          "path": "/REST/TRAINING.BPB",
+          "outcome": "requires-empty-response-policy"
+        }
+      ]
+    },
+    "commonDecision": "Characterize current Android and iOS behavior first, then choose whether common code preserves platform-specific empty-response behavior or normalizes it to a typed empty-response parse failure."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest",
+      "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "PolarDeviceRestApiTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest",
+      "com.polar.sharedtest.RestRequestTransportPolicyCommonTest"
+    ]
+  },
+  "platformExpectations": {
+    "android": "planned facade-level fake-transport characterization for public error mapping",
+    "ios": "planned facade-level fake-transport characterization for public error mapping",
+    "common": "executable shared commonTest covers command capture, response errors, and empty-response policy before facade mapping moves"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "execution": {
+    "status": "shared-common-test",
+    "reason": "Shared commonTest now asserts command capture, response-error payloads, and empty successful transport responses through the common fake transport; platform facade tests still need public error mapping before production REST request orchestration delegates to shared code."
+  },
+  "notes": "This vector records REST request runtime scenarios now covered by executable shared commonTest command-capture and transport-outcome checks. Public Android and iOS facade error mapping plus the final empty successful response policy remain migration gates before production REST request orchestration delegates to shared code."
+}

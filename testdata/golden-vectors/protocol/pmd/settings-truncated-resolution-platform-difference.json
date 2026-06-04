@@ -1,0 +1,40 @@
+{
+  "id": "pmd-settings-truncated-resolution-platform-difference",
+  "area": "pmd-settings",
+  "case": "truncated_resolution_payload",
+  "source": "Android PmdSetting and iOS PmdSetting characterization",
+  "input": {
+    "hex": "01010e"
+  },
+  "expected": {
+    "commonDecision": "KMP should reject truncated PMD setting values with a deterministic parse error."
+  },
+  "platformExpectations": {
+    "android": {
+      "parseError": "indexOutOfBounds"
+    },
+    "ios": {
+      "parseError": "invalidPMDData"
+    },
+    "commonDecision": {
+      "parseError": "invalidPMDData"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "This vector documents that both platforms fail on the malformed payload today, but with platform-specific error surfaces. KMP should intentionally choose one deterministic parse error.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSettingTest"
+    ],
+    "ios": [
+      "PmdSettingTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdSettingsCommonPolicyTest"
+    ]
+  }
+}

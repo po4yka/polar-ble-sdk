@@ -1,0 +1,271 @@
+{
+  "id": "workflow-runtime-policy",
+  "area": "sdk.firmware-update",
+  "case": "workflow_runtime_policy",
+  "source": "Firmware update public workflow fake-transport planning vector",
+  "input": {
+    "kind": "firmwareWorkflowRuntimePolicy",
+    "scenarios": [
+      {
+        "id": "check-update-not-available",
+        "deviceInfo": {
+          "firmwareVersion": "1.2.0",
+          "modelName": "Model",
+          "hardwareCode": "00112233.01"
+        },
+        "serverResponse": {
+          "availableVersion": null,
+          "fileUrl": null
+        },
+        "expectedStatuses": [
+          "checkFwUpdateNotAvailable"
+        ]
+      },
+      {
+        "id": "check-update-available",
+        "deviceInfo": {
+          "firmwareVersion": "1.2.0",
+          "modelName": "Model",
+          "hardwareCode": "00112233.01"
+        },
+        "serverResponse": {
+          "availableVersion": "1.3.0",
+          "fileUrl": "https://firmware.example.invalid/fw-1.3.0.zip"
+        },
+        "expectedStatuses": [
+          "checkFwUpdateAvailable"
+        ]
+      },
+      {
+        "id": "download-failure",
+        "serverResponse": {
+          "availableVersion": "1.3.0",
+          "fileUrl": "https://firmware.example.invalid/fw-1.3.0.zip"
+        },
+        "packageDownload": "throws",
+        "expectedTerminalStatus": "fwUpdateFailed"
+      },
+      {
+        "id": "retryable-server-failure",
+        "serverResponse": {
+          "status": 503,
+          "retryable": true
+        },
+        "expectedStatuses": [
+          "fwUpdateFailed"
+        ],
+        "expectedTerminalError": "retryable-server-failure",
+        "downloadAttempted": false
+      },
+      {
+        "id": "empty-or-invalid-zip",
+        "serverResponse": {
+          "availableVersion": "1.3.0",
+          "fileUrl": "https://firmware.example.invalid/fw-1.3.0.zip"
+        },
+        "packageDownload": "bytes",
+        "zipExtraction": "empty-or-invalid",
+        "expectedTerminalStatus": "fwUpdateNotAvailable"
+      },
+      {
+        "id": "cancel-after-package-fetch-cleans-up-before-ble-write",
+        "serverResponse": {
+          "availableVersion": "1.3.0",
+          "fileUrl": "https://firmware.example.invalid/fw-1.3.0.zip"
+        },
+        "packageDownload": "bytes",
+        "zipExtraction": "valid",
+        "cancellationPoint": "afterPackageFetch",
+        "expectedStatuses": [
+          "fetchingFwUpdatePackage",
+          "fwUpdateCancelled"
+        ],
+        "expectedWrites": [],
+        "expectedCleanupCallbackCount": 1,
+        "expectedTerminalError": "cancelled"
+      },
+      {
+        "id": "write-package-success-with-system-update-last",
+        "firmwareFiles": [
+          {
+            "name": "BTUPDAT.BIN",
+            "payloadHex": "01020304"
+          },
+          {
+            "name": "SYSUPDAT.IMG",
+            "payloadHex": "05060708"
+          }
+        ],
+        "expectedWriteOrder": [
+          "/BTUPDAT.BIN",
+          "/SYSUPDAT.IMG"
+        ],
+        "expectedStatusOrder": [
+          "preparingDeviceForFwUpdate",
+          "fetchingFwUpdatePackage",
+          "writingFwUpdatePackage",
+          "finalizingFwUpdate",
+          "fwUpdateCompletedSuccessfully"
+        ]
+      },
+      {
+        "id": "system-update-reboot-response-is-success",
+        "firmwareFiles": [
+          {
+            "name": "SYSUPDAT.IMG",
+            "payloadHex": "05060708"
+          }
+        ],
+        "writeTerminalError": {
+          "pftpError": "rebooting"
+        },
+        "expectedTerminalStatus": "fwUpdateCompletedSuccessfully"
+      },
+      {
+        "id": "battery-too-low-response-is-terminal-failure",
+        "firmwareFiles": [
+          {
+            "name": "SYSUPDAT.IMG",
+            "payloadHex": "05060708"
+          }
+        ],
+        "writeTerminalError": {
+          "pftpError": "batteryTooLow"
+        },
+        "expectedTerminalError": "battery-too-low"
+      }
+    ]
+  },
+  "expected": {
+    "policy": "firmware-update-workflow-runtime-matrix",
+    "migrationRequirement": "Before moving firmware update orchestration into common KMP code, implement injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors.",
+    "commonWorkflowPrototype": {
+      "status": "executable shared commonTest plus Android-hosted prototype",
+      "cases": [
+        {
+          "id": "check-update-not-available",
+          "statuses": [
+            "checkFwUpdateNotAvailable"
+          ],
+          "writes": []
+        },
+        {
+          "id": "check-update-available",
+          "statuses": [
+            "checkFwUpdateAvailable"
+          ],
+          "writes": []
+        },
+        {
+          "id": "download-failure",
+          "statuses": [
+            "fetchingFwUpdatePackage",
+            "fwUpdateFailed"
+          ],
+          "writes": [],
+          "downloadAttempted": true
+        },
+        {
+          "id": "retryable-server-failure",
+          "statuses": [
+            "fwUpdateFailed"
+          ],
+          "writes": [],
+          "terminalError": "retryable-server-failure",
+          "downloadAttempted": false
+        },
+        {
+          "id": "empty-or-invalid-zip",
+          "statuses": [
+            "fetchingFwUpdatePackage",
+            "fwUpdateNotAvailable"
+          ],
+          "writes": [],
+          "downloadAttempted": true,
+          "zipExtractionAttempted": true
+        },
+        {
+          "id": "cancel-after-package-fetch-cleans-up-before-ble-write",
+          "statuses": [
+            "fetchingFwUpdatePackage",
+            "fwUpdateCancelled"
+          ],
+          "writes": [],
+          "terminalError": "cancelled",
+          "downloadAttempted": true,
+          "zipExtractionAttempted": true,
+          "cleanupCallbackCount": 1
+        },
+        {
+          "id": "write-package-success-with-system-update-last",
+          "statuses": [
+            "preparingDeviceForFwUpdate",
+            "fetchingFwUpdatePackage",
+            "writingFwUpdatePackage",
+            "finalizingFwUpdate",
+            "fwUpdateCompletedSuccessfully"
+          ],
+          "writes": [
+            "/BTUPDAT.BIN",
+            "/SYSUPDAT.IMG"
+          ]
+        },
+        {
+          "id": "system-update-reboot-response-is-success",
+          "statuses": [
+            "preparingDeviceForFwUpdate",
+            "fetchingFwUpdatePackage",
+            "writingFwUpdatePackage",
+            "finalizingFwUpdate",
+            "fwUpdateCompletedSuccessfully"
+          ],
+          "writes": [
+            "/SYSUPDAT.IMG"
+          ]
+        },
+        {
+          "id": "battery-too-low-response-is-terminal-failure",
+          "statuses": [
+            "preparingDeviceForFwUpdate",
+            "fetchingFwUpdatePackage",
+            "writingFwUpdatePackage",
+            "fwUpdateFailed"
+          ],
+          "writes": [
+            "/SYSUPDAT.IMG"
+          ],
+          "terminalError": "battery-too-low"
+        }
+      ]
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest",
+      "com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest"
+    ],
+    "ios": [
+      "PolarFirmwareUpdateUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest",
+      "com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"
+    ]
+  },
+  "execution": {
+    "android": "planned-fake-network-filesystem-ble-harness-required",
+    "ios": "planned-fake-network-filesystem-ble-harness-required",
+    "common": "shared-common-test"
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "workflowPolicy": "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, reboot success, and terminal device errors into typed common workflow states before KMP migration"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector is intentionally a runtime planning matrix, not a parser vector. The shared commonTest now executes the status, fake retryable server failure, fake download, fake filesystem/zip, fake BLE write-order, cancellation cleanup before BLE writes, reboot-success, and battery-too-low policies; platform facade tests still need production-adapter error mapping, progress, retry scheduling, and real artifact integration coverage before firmware update workflow orchestration moves to shared KMP code."
+}

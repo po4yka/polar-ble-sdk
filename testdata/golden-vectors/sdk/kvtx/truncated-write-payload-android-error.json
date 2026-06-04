@@ -1,0 +1,31 @@
+{
+  "id": "truncated-write-payload-android-error",
+  "area": "sdk-kvtx",
+  "case": "truncated_write_payload_android_error",
+  "source": "Android KvtxScriptUtilsTest; iOS currently returns nil for the same malformed script",
+  "input": {
+    "scriptHex": "002400000003000000aa",
+    "extractKey": 36
+  },
+  "expected": {
+    "commonDecision": "KMP common KVTX parsing should fail malformed WRITE_BYTES payloads with a typed malformed-script parse error. iOS nil-on-truncation compatibility should remain in an adapter only if required.",
+    "parseError": "malformedScript"
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android currently throws when WRITE_BYTES declares a three-byte payload but only one byte remains.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.KvtxScriptUtilsTest"
+    ],
+    "ios": [
+      "KvtxScriptUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.KvtxCommonPolicyTest"
+    ]
+  }
+}

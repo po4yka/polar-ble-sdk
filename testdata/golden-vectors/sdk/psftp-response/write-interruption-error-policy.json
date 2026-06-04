@@ -1,0 +1,57 @@
+{
+  "id": "write-interruption-error-policy",
+  "area": "sdk.psftp-response",
+  "case": "write_interruption_error_policy",
+  "source": "Android and iOS BlePsFtpClient write stream interruption characterization tests",
+  "input": {
+    "kind": "writeInterruptionErrorPolicy",
+    "command": "PUT",
+    "path": "/U/0/20260101/DSUM/DSUM.BPB",
+    "payloadHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f2021222324252627",
+    "interruptFrameHex": "006700"
+  },
+  "expected": {
+    "android": {
+      "outcome": "throwsPftpResponseError",
+      "errorCode": 103,
+      "messageContains": [
+        "Stream canceled",
+        "NO_SUCH_FILE_OR_DIRECTORY"
+      ]
+    },
+    "ios": {
+      "outcome": "throwsResponseError",
+      "errorCode": 103
+    },
+    "completion": "failure"
+  },
+  "execution": {
+    "kind": "fake-psftp-runtime-policy",
+    "transport": "scripted-rfc76-write-stream",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "errorPolicy": "both platforms surface the device interruption as PFTP error code 103, but Android currently exposes BlePsFtpUtils.PftpResponseError while iOS exposes BlePsFtpException.responseError; common runtime should model this as a typed write-interrupted response error"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Covers the PSFTP write stream device-interruption path where the peer sends an RFC76 error response while the host still has more write frames to send. Shared KMP runtime should model this as a typed write-interrupted response error and let platform facades adapt to existing public error types if compatibility requires it."
+}

@@ -1,0 +1,87 @@
+{
+  "id": "rfc76-frame-splitting",
+  "area": "sdk.psftp-message-stream",
+  "case": "rfc76_frame_splitting",
+  "source": "Android and iOS BlePsFtpUtils/BlePsFtpUtility characterization tests",
+  "input": {
+    "cases": [
+      {
+        "id": "empty-payload",
+        "payloadHex": "",
+        "mtu": 4,
+        "expectedFramesHex": [
+          "02"
+        ]
+      },
+      {
+        "id": "exactly-one-frame",
+        "payloadHex": "010203",
+        "mtu": 4,
+        "expectedFramesHex": [
+          "02010203"
+        ],
+        "iosExpectedFramesHex": [
+          "02"
+        ]
+      },
+      {
+        "id": "two-frames",
+        "payloadHex": "010203040506",
+        "mtu": 4,
+        "expectedFramesHex": [
+          "06010203",
+          "13040506"
+        ],
+        "iosExpectedFramesHex": [
+          "02"
+        ]
+      },
+      {
+        "id": "sequence-wraps-after-fifteen",
+        "payloadHex": "000102030405060708090a0b0c0d0e0f",
+        "mtu": 2,
+        "expectedFramesHex": [
+          "0600",
+          "1701",
+          "2702",
+          "3703",
+          "4704",
+          "5705",
+          "6706",
+          "7707",
+          "8708",
+          "9709",
+          "a70a",
+          "b70b",
+          "c70c",
+          "d70d",
+          "e70e",
+          "f30f"
+        ],
+        "iosExpectedFramesHex": [
+          "02"
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "policy": "split-rfc76-message-frames"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtilsTest"
+    ],
+    "ios": [
+      "BlePsFtpUtilityTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpByteCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "RFC76 frame splitting uses MTU minus one payload bytes, next bit, status bits, and a wrapping sequence counter. Android keeps reading a raw payload stream while bytes remain. The current iOS utility stops this direct raw-stream helper loop from the generated RFC76 status and therefore emits one LAST frame for the direct raw-stream cases; production iOS write paths use the header/data overload and still need dedicated shared-runtime migration coverage before behavior is unified."
+}

@@ -1,0 +1,54 @@
+{
+  "id": "notification-timeout-policy",
+  "area": "sdk.psftp-notifications",
+  "case": "notification_timeout_policy",
+  "source": "Android and iOS BlePsFtpClient notification timeout characterization tests",
+  "input": {
+    "kind": "waitNotificationTimeoutPolicy",
+    "cases": [
+      {
+        "id": "initial-silence",
+        "observerTimeoutMs": 250,
+        "packets": [],
+        "expected": {
+          "android": {
+            "outcome": "noEmission"
+          },
+          "ios": {
+            "outcome": "noEmission"
+          }
+        }
+      }
+    ]
+  },
+  "expected": {
+    "policy": "wait-notification-has-no-built-in-initial-silence-timeout",
+    "commonFakeClock": {
+      "advanceMs": 250,
+      "outcome": "consumerTimeout",
+      "activeObserverCountAfterTimeout": 0,
+      "cleanupCallbackCount": 1
+    },
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Current Android and iOS wait-notification streams do not emit or fail when no D2H notification packet arrives before the consumer-owned timeout. KMP runtime migration must preserve that initial-silence contract or introduce a deliberate public policy change with facade compatibility tests. Multi-frame continuation timeout is covered by notification-continuation-timeout-policy and still requires fake-clock or injectable-timeout execution."
+}

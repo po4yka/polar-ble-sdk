@@ -1,0 +1,94 @@
+{
+  "id": "ppg-compressed-type7-reference-status",
+  "area": "sensor-parser",
+  "case": "ppg_compressed_type7_reference_channels_and_status_bits",
+  "source": "Android PpgDataTest and iOS PpgDataTest",
+  "input": {
+    "dataFrameHex": "016600000000000000870100000200000300000400000500000600000700000800000900000a00000b00000c00000d00000e00000f0000100000050000",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PPG",
+    "frameType": 7,
+    "compressed": true,
+    "timeStamp": 102,
+    "samples": []
+  },
+  "platformExpectations": {
+    "android": {
+      "samples": [
+        {
+          "timeStamp": 102,
+          "ppgDataSamples": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16
+          ],
+          "statusBits": [
+            1,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    "ios": {
+      "samples": [
+        {
+          "timeStamp": 102,
+          "ppgDataSamples": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            5
+          ]
+        }
+      ]
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Compressed PPG type-7 currently exposes the status word separately on Android, while iOS includes it as the seventeenth ppgDataSamples value.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ]
+  }
+}

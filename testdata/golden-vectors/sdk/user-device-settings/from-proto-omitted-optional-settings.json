@@ -1,0 +1,68 @@
+{
+  "id": "from-proto-omitted-optional-settings",
+  "area": "sdk-user-device-settings",
+  "case": "from_proto_omitted_optional_settings",
+  "source": "Android PolarUserDeviceSettings.fromBytes and iOS PolarUserDeviceSettings.fromProto characterization",
+  "input": {
+    "proto": {
+      "minimal": true,
+      "deviceLocation": 5
+    }
+  },
+  "expected": {
+    "commonDecision": "KMP common parsing should preserve protobuf field presence: omitted automatic-training numeric fields and AUTOS state are nullable in the shared model. Android facade code may apply legacy defaults when exposing the current Android public API."
+  },
+  "platformExpectations": {
+    "android": {
+      "model": {
+        "deviceLocation": 5,
+        "usbConnectionMode": null,
+        "automaticTrainingDetectionMode": null,
+        "automaticTrainingDetectionSensitivity": 0,
+        "minimumTrainingDurationSeconds": 0,
+        "telemetryEnabled": null,
+        "autosFilesEnabled": true
+      }
+    },
+    "ios": {
+      "model": {
+        "deviceLocation": 5,
+        "usbConnectionMode": false,
+        "automaticTrainingDetectionMode": false,
+        "automaticTrainingDetectionSensitivity": null,
+        "minimumTrainingDurationSeconds": null,
+        "telemetryEnabled": null,
+        "autosFilesEnabled": null
+      }
+    },
+    "commonDecision": {
+      "model": {
+        "deviceLocation": 5,
+        "usbConnectionMode": null,
+        "automaticTrainingDetectionMode": null,
+        "automaticTrainingDetectionSensitivity": null,
+        "minimumTrainingDurationSeconds": null,
+        "telemetryEnabled": null,
+        "autosFilesEnabled": null,
+        "omittedOptionalPolicy": "preserve-protobuf-presence"
+      }
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "Android currently defaults omitted training numeric fields to 0 and omitted AUTOS state to true. iOS currently defaults omitted USB connection settings and automatic-training detection state to false while keeping omitted training numeric fields and AUTOS nil when the corresponding messages are absent. Shared KMP code should use nullable presence-preserving semantics and leave platform compatibility defaults in platform facades.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.PolarUserDeviceSettingsTest"
+    ],
+    "ios": [
+      "PolarUserDeviceSettingsUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.UserDeviceSettingsCommonPolicyTest"
+    ]
+  }
+}

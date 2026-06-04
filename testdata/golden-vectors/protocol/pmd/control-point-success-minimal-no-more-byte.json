@@ -1,0 +1,39 @@
+{
+  "id": "pmd-control-point-success-minimal-no-more-byte",
+  "area": "pmd-control-point",
+  "case": "minimal_success_without_more_byte",
+  "source": "Android PmdControlPointResponse and iOS PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f0010200"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "GET_MEASUREMENT_SETTINGS",
+    "opCodeValue": 1,
+    "measurementType": 2,
+    "measurementTypeName": "ACC",
+    "status": "SUCCESS",
+    "statusValue": 0,
+    "more": false,
+    "parametersHex": ""
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Both platforms accept the shortest non-crashing success response and default more=false with empty parameters.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

@@ -1,6 +1,9 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
@@ -11,6 +14,8 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.function.ThrowingRunnable
+import java.io.File
+import java.io.FileReader
 import kotlin.experimental.and
 
 class PpgDataTest {
@@ -928,5 +933,265 @@ class PpgDataTest {
         var throwingRunnable = ThrowingRunnable { PpgData.parseDataFromDataFrame(dataFrame) }
         val exception = assertThrows(java.lang.Exception::class.java, throwingRunnable)
         assertThat(exception.message, equalTo("Compressed FrameType: TYPE_14 is not supported by PPG data parser"))
+    }
+
+    @Test
+    fun ppgGoldenVectors_matchAndroidBehavior() {
+        val vectors = loadPpgVectors()
+        Assert.assertTrue("Expected PPG golden vectors", vectors.isNotEmpty())
+
+        vectors.forEach { vector ->
+            val caseId = vector.get("id").asString
+            if (vector.getAsJsonObject("platforms")?.get("android")?.asBoolean == false) {
+                return@forEach
+            }
+            val input = vector.getAsJsonObject("input")
+            val expected = vector.getAsJsonObject("expected")
+            val platformExpected = vector.getAsJsonObject("platformExpectations")?.getAsJsonObject("android")
+            val expectedSamples = platformExpected?.getAsJsonArray("samples") ?: expected.getAsJsonArray("samples")
+            val frame = PmdDataFrame(
+                data = input.get("dataFrameHex").asString.hexToByteArray(),
+                getPreviousTimeStamp = { _, _ -> input.get("previousTimeStamp").asLong.toULong() },
+                getFactor = { input.get("factor").asFloat },
+                getSampleRate = { input.get("sampleRate").asInt }
+            )
+
+            if (expected.has("parseError")) {
+                assertParseError(caseId, expected.get("parseError").asString, frame)
+                Assert.assertEquals(caseId, expected.get("timeStamp").asLong.toULong(), frame.timeStamp)
+                return@forEach
+            }
+
+            val ppgData = PpgData.parseDataFromDataFrame(frame)
+
+            Assert.assertEquals(caseId, expected.get("timeStamp").asLong.toULong(), frame.timeStamp)
+            assertPpgSamples(caseId, expectedSamples, ppgData.ppgSamples)
+        }
+    }
+
+    private fun assertParseError(caseId: String, expectedError: String, frame: PmdDataFrame) {
+        when (expectedError) {
+            "unsupportedFrame" -> Assert.assertThrows(caseId, Exception::class.java) {
+                PpgData.parseDataFromDataFrame(frame)
+            }
+            "malformedFrame" -> Assert.assertThrows(caseId, Exception::class.java) {
+                PpgData.parseDataFromDataFrame(frame)
+            }
+            else -> Assert.fail("$caseId has unsupported parse error expectation $expectedError")
+        }
+    }
+
+    @Test
+    fun `ppg golden vectors follow neutral KMP vector shape`() {
+        loadPpgVectors().forEach { vector ->
+            val id = vector.get("id").asString
+            Assert.assertTrue(id, vector.has("area"))
+            Assert.assertTrue(id, vector.has("case"))
+            Assert.assertTrue(id, vector.has("source"))
+            Assert.assertTrue(id, vector.has("input"))
+            Assert.assertTrue(id, vector.has("expected"))
+            Assert.assertTrue(id, vector.has("platforms"))
+            val platforms = vector.getAsJsonObject("platforms")
+            Assert.assertTrue(id, platforms.has("android"))
+            Assert.assertTrue(id, platforms.has("ios"))
+            Assert.assertTrue(id, platforms.has("common"))
+        }
+    }
+
+    @Test
+    fun ppgFrameFamilyReadinessManifestPinsAndroidMigrationGate() {
+        val vector = loadPpgReadinessManifest()
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val requiredVectorPaths = input.getAsJsonArray("requiredVectorPaths").map { it.asString }
+        val parsedVectorPaths = loadPpgVectors().map { vector ->
+            "protocol/sensors/${vector.get("id").asString}.json"
+        }
+        val requiredFamilies = input.getAsJsonArray("requiredFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredFamilies").map { it.asString }
+        Assert.assertEquals("ppg-frame-family-migration-readiness", vector.get("id").asString)
+        Assert.assertEquals("ppgFrameFamilyMigrationReadiness", input.get("kind").asString)
+        Assert.assertEquals(PPG_READINESS_VECTOR_PATHS, requiredVectorPaths)
+        Assert.assertEquals(parsedVectorPaths, requiredVectorPaths)
+        Assert.assertEquals(PPG_READINESS_FAMILIES, requiredFamilies)
+        Assert.assertEquals(PPG_READINESS_FAMILIES, coveredFamilies)
+        Assert.assertEquals(PPG_READINESS_COMMON_DECISION, expected.get("commonDecision").asString)
+        val consumerTests = vector.getAsJsonObject("consumerTests")
+        Assert.assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("PpgDataTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.PpgParserCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    private fun assertPpgSamples(
+        caseId: String,
+        expectedSamples: JsonArray,
+        actualSamples: List<PpgDataSample>
+    ) {
+        Assert.assertEquals(caseId, expectedSamples.size(), actualSamples.size)
+        expectedSamples.forEachIndexed { index, expectedSample ->
+            val sample = expectedSample.asJsonObject
+            when {
+                sample.has("ppg") -> {
+                    val actualSample = actualSamples[index] as PpgData.PpgDataFrameType0
+                    Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                    Assert.assertEquals(caseId, sample.getAsJsonArray("ppg").map { it.asInt }, actualSample.ppgDataSamples)
+                    Assert.assertEquals(caseId, sample.get("ambient").asInt, actualSample.ambientSample)
+                }
+                sample.has("operationMode") -> {
+                    val actualSample = actualSamples[index] as PpgData.PpgDataFrameType5
+                    Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                    Assert.assertEquals(caseId, sample.get("operationMode").asLong.toUInt(), actualSample.operationMode)
+                }
+                sample.has("sportId") -> {
+                    val actualSample = actualSamples[index] as PpgData.PpgDataSampleSportId
+                    Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                    Assert.assertEquals(caseId, sample.get("sportId").asLong.toULong(), actualSample.sportId)
+                }
+                sample.has("numIntTs") -> {
+                    when (val actualSample = actualSamples[index]) {
+                        is PpgData.PpgDataFrameType4 -> {
+                            Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                            Assert.assertEquals(caseId, sample.getAsJsonArray("numIntTs").map { it.asInt.toUInt() }, actualSample.numIntTs)
+                            Assert.assertEquals(caseId, sample.getAsJsonArray("channel1GainTs").map { it.asInt.toUInt() }, actualSample.channel1GainTs)
+                            Assert.assertEquals(caseId, sample.getAsJsonArray("channel2GainTs").map { it.asInt.toUInt() }, actualSample.channel2GainTs)
+                        }
+                        is PpgData.PpgDataFrameType9 -> {
+                            Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                            Assert.assertEquals(caseId, sample.getAsJsonArray("numIntTs").map { it.asInt.toUInt() }, actualSample.numIntTs)
+                            Assert.assertEquals(caseId, sample.getAsJsonArray("channel1GainTs").map { it.asInt.toUInt() }, actualSample.channel1GainTs)
+                            Assert.assertEquals(caseId, sample.getAsJsonArray("channel2GainTs").map { it.asInt.toUInt() }, actualSample.channel2GainTs)
+                        }
+                        else -> Assert.fail("$caseId expected PPG integration/gain sample, got $actualSample")
+                    }
+                }
+                sample.has("numIntTs1") -> {
+                    val actualSample = actualSamples[index] as PpgData.PpgDataFrameType14
+                    Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                    Assert.assertEquals(caseId, sample.getAsJsonArray("numIntTs1").map { it.asInt.toUInt() }, actualSample.numIntTs1)
+                    Assert.assertEquals(caseId, sample.getAsJsonArray("channel1GainTs1").map { it.asInt.toUInt() }, actualSample.channel1GainTs1)
+                    Assert.assertEquals(caseId, sample.getAsJsonArray("channel2GainTs1").map { it.asInt.toUInt() }, actualSample.channel2GainTs1)
+                }
+                sample.has("ppgChannel0") -> {
+                    val actualSample = actualSamples[index] as PpgData.PpgDataFrameType13
+                    Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                    Assert.assertEquals(caseId, sample.getAsJsonArray("ppgChannel0").map { it.asInt }, actualSample.ppgChannel0)
+                    Assert.assertEquals(caseId, sample.getAsJsonArray("ppgChannel1").map { it.asInt }, actualSample.ppgChannel1)
+                    Assert.assertEquals(caseId, sample.getAsJsonArray("statusBits").map { it.asInt }, actualSample.statusBits)
+                }
+                sample.has("ppgDataSamples") && sample.has("statusBits") -> {
+                    when (val actualSample = actualSamples[index]) {
+                        is PpgData.PpgDataFrameType7 -> {
+                            Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                            Assert.assertEquals(caseId, sample.getAsJsonArray("ppgDataSamples").map { it.asInt }, actualSample.ppgDataSamples)
+                            Assert.assertEquals(caseId, sample.getAsJsonArray("statusBits").map { it.asInt }, actualSample.statusBits)
+                        }
+                        is PpgData.PpgDataFrameType8 -> {
+                            Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                            Assert.assertEquals(caseId, sample.getAsJsonArray("ppgDataSamples").map { it.asInt }, actualSample.ppgDataSamples)
+                            Assert.assertEquals(caseId, sample.getAsJsonArray("statusBits").map { it.asInt }, actualSample.statusBits)
+                        }
+                        else -> Assert.fail("$caseId expected PPG compressed sample with status bits, got $actualSample")
+                    }
+                }
+                sample.has("greenSamples") -> {
+                    val actualSample = actualSamples[index] as PpgData.PpgDataFrameType10
+                    Assert.assertEquals(caseId, sample.get("timeStamp").asLong.toULong(), actualSample.timeStamp)
+                    Assert.assertEquals(caseId, sample.getAsJsonArray("greenSamples").map { it.asInt }, actualSample.greenSamples)
+                    Assert.assertEquals(caseId, sample.getAsJsonArray("redSamples").map { it.asInt }, actualSample.redSamples)
+                    Assert.assertEquals(caseId, sample.getAsJsonArray("irSamples").map { it.asInt }, actualSample.irSamples)
+                    Assert.assertEquals(caseId, sample.getAsJsonArray("statusBits").map { it.asInt }, actualSample.statusBits)
+                }
+                else -> Assert.fail("$caseId has unsupported PPG sample expectation $sample")
+            }
+        }
+    }
+
+    private fun loadPpgVectors(): List<JsonObject> {
+        val vectorDirectory = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/protocol/sensors")
+        return vectorDirectory
+            .listFiles { file -> file.isFile && file.extension == "json" && file.name.startsWith("ppg-") }
+            .orEmpty()
+            .sortedBy { it.name }
+            .map { file ->
+                FileReader(file).use { reader ->
+                    JsonParser().parse(reader).asJsonObject
+                }
+            }
+            .filter { vector -> vector.getAsJsonObject("input").has("dataFrameHex") }
+    }
+
+    private fun loadPpgReadinessManifest(): JsonObject {
+        val manifest = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/protocol/sensors/ppg-frame-family-migration-readiness.json")
+        FileReader(manifest).use { reader ->
+            return JsonParser().parse(reader).asJsonObject
+        }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
+    }
+
+    private fun String.hexToByteArray(): ByteArray {
+        require(length % 2 == 0) { "Hex string must have an even length" }
+        return chunked(2)
+            .map { it.toInt(16).toByte() }
+            .toByteArray()
+    }
+
+    private companion object {
+        val PPG_READINESS_VECTOR_PATHS = listOf(
+            "protocol/sensors/ppg-compressed-type10-full-status.json",
+            "protocol/sensors/ppg-compressed-type10-reference-status.json",
+            "protocol/sensors/ppg-compressed-type13-reference-status.json",
+            "protocol/sensors/ppg-compressed-type13-truncated-delta-header-android-error.json",
+            "protocol/sensors/ppg-compressed-type13-truncated-delta-header-ios-reference-only.json",
+            "protocol/sensors/ppg-compressed-type2-unsupported.json",
+            "protocol/sensors/ppg-compressed-type7-reference-status.json",
+            "protocol/sensors/ppg-compressed-type7-truncated-delta-payload-malformed.json",
+            "protocol/sensors/ppg-compressed-type8-reference-status.json",
+            "protocol/sensors/ppg-raw-type0-truncated-sample-malformed.json",
+            "protocol/sensors/ppg-raw-type0-two-samples.json",
+            "protocol/sensors/ppg-raw-type1-unsupported.json",
+            "protocol/sensors/ppg-raw-type14-integration-gain-platform-shape.json",
+            "protocol/sensors/ppg-raw-type4-integration-gain-platform-shape.json",
+            "protocol/sensors/ppg-raw-type4-truncated-integration-gain-malformed.json",
+            "protocol/sensors/ppg-raw-type5-operation-mode-max.json",
+            "protocol/sensors/ppg-raw-type5-truncated-operation-mode-malformed.json",
+            "protocol/sensors/ppg-raw-type6-sport-id.json",
+            "protocol/sensors/ppg-raw-type6-truncated-sport-id-malformed.json",
+            "protocol/sensors/ppg-raw-type9-integration-gain-platform-shape.json"
+        )
+
+        val PPG_READINESS_FAMILIES = listOf(
+            "raw-type0",
+            "raw-type4-integration-gain",
+            "raw-type5-operation-mode",
+            "raw-type6-sport-id",
+            "raw-type9-integration-gain",
+            "raw-type14-integration-gain",
+            "compressed-type7",
+            "compressed-type8",
+            "compressed-type10",
+            "compressed-type13",
+            "unsupported-raw",
+            "unsupported-compressed",
+            "malformed-raw",
+            "malformed-fixed",
+            "malformed-compressed",
+            "platform-split-type10-red-green",
+            "platform-split-type13-shape",
+            "platform-split-integration-gain-shape"
+        )
+
+        const val PPG_READINESS_COMMON_DECISION = "PPG parser migration may proceed only after every required vector path in this manifest is executable from shared commonTest and compile-verified against the common parser prototype; this manifest does not replace parser execution or Gradle commonTest verification."
     }
 }

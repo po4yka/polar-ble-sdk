@@ -1,0 +1,38 @@
+{
+  "id": "pmd-control-point-error-invalid-length-acc",
+  "area": "pmd-control-point",
+  "case": "error_invalid_length_request_measurement_start_acc",
+  "source": "Android PmdControlPointResponse and iOS PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f002020400"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "REQUEST_MEASUREMENT_START",
+    "opCodeValue": 2,
+    "measurementType": 2,
+    "measurementTypeName": "ACC",
+    "status": "ERROR_INVALID_LENGTH",
+    "statusValue": 4,
+    "more": false,
+    "parametersHex": ""
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

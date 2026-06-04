@@ -1,6 +1,9 @@
 package com.polar.sdk.api.model.utils
 
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.sdk.impl.utils.PolarFirmwareUpdateUtils
 import com.polar.sdk.impl.utils.PolarFirmwareUpdateUtils.FwFileComparator
 import fi.polar.remote.representation.protobuf.Device
@@ -15,6 +18,7 @@ import org.junit.Test
 import protocol.PftpRequest
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileReader
 
 
 class PolarFirmwareUpdateUtilsTest {
@@ -162,5 +166,259 @@ class PolarFirmwareUpdateUtilsTest {
         Assert.assertEquals(f3, files[2])
     }
 
+    @Test
+    fun `firmware device info golden vectors map proto to model`() = runTest {
+        loadFirmwareUpdateVectors()
+            .filter { it.inputKind() == "deviceInfo" }
+            .forEach { vector ->
+                val caseId = vector.get("id").asString
+                val protoFields = vector.getAsJsonObject("input").getAsJsonObject("proto")
+                val version = protoFields.getAsJsonObject("version")
+                val proto = Device.PbDeviceInfo.newBuilder()
+                    .setDeviceVersion(
+                        PbVersion.newBuilder()
+                            .setMajor(version.get("major").asInt)
+                            .setMinor(version.get("minor").asInt)
+                            .setPatch(version.get("patch").asInt)
+                    )
+                    .setModelName(protoFields.get("modelName").asString)
+                    .setHardwareCode(protoFields.get("hardwareCode").asString)
+                    .build()
+                val mockResponseContent = ByteArrayOutputStream().apply {
+                    proto.writeTo(this)
+                }
+                val client = mockk<BlePsFtpClient>()
+                coEvery { client.request(any()) } returns mockResponseContent
+
+                val firmwareInfo = PolarFirmwareUpdateUtils.readDeviceFirmwareInfo(client, "123456")
+                val expected = vector.getAsJsonObject("expected")
+
+                Assert.assertEquals(caseId, expected.get("deviceFwVersion").asString, firmwareInfo.deviceFwVersion)
+                Assert.assertEquals(caseId, expected.get("deviceModelName").asString, firmwareInfo.deviceModelName)
+                Assert.assertEquals(caseId, expected.get("deviceHardwareCode").asString, firmwareInfo.deviceHardwareCode)
+            }
+    }
+
+    @Test
+    fun `firmware version comparison golden vectors match current policy`() {
+        loadFirmwareUpdateVectors()
+            .filter { it.inputKind() == "versionComparison" }
+            .flatMap { it.getAsJsonObject("input").getAsJsonArray("cases").toJsonObjects() }
+            .forEach { testCase ->
+                Assert.assertEquals(
+                    "${testCase.get("currentVersion").asString} -> ${testCase.get("availableVersion").asString}",
+                    testCase.get("expectedHigher").asBoolean,
+                    PolarFirmwareUpdateUtils.isAvailableFirmwareVersionHigher(
+                        testCase.get("currentVersion").asString,
+                        testCase.get("availableVersion").asString
+                    )
+                )
+            }
+    }
+
+    @Test
+    fun `firmware version comparison golden vectors preserve invalid version policy`() {
+        loadFirmwareUpdateVectors()
+            .filter { it.inputKind() == "versionComparisonError" }
+            .flatMap { it.getAsJsonObject("input").getAsJsonArray("cases").toJsonObjects() }
+            .forEach { testCase ->
+                Assert.assertThrows(
+                    "${testCase.get("currentVersion").asString} -> ${testCase.get("availableVersion").asString}",
+                    NumberFormatException::class.java
+                ) {
+                    PolarFirmwareUpdateUtils.isAvailableFirmwareVersionHigher(
+                        testCase.get("currentVersion").asString,
+                        testCase.get("availableVersion").asString
+                    )
+                }
+            }
+    }
+
+    @Test
+    fun `firmware file ordering golden vectors keep system update last`() {
+        loadFirmwareUpdateVectors()
+            .filter { it.inputKind() == "fileOrdering" }
+            .flatMap { it.getAsJsonObject("input").getAsJsonArray("cases").toJsonObjects() }
+            .forEach { testCase ->
+                val files = testCase.getAsJsonArray("input")
+                    .map { File(it.asString) }
+                    .toMutableList()
+
+                files.sortWith(FwFileComparator())
+
+                Assert.assertEquals(
+                    testCase.getAsJsonArray("expected").map { it.asString },
+                    files.map { it.name }
+                )
+            }
+    }
+
+    @Test
+    fun `firmware golden vectors follow neutral KMP vector shape`() {
+        loadFirmwareUpdateVectors().forEach { vector ->
+            val id = vector.get("id").asString
+            Assert.assertTrue(id, vector.has("area"))
+            Assert.assertTrue(id, vector.has("case"))
+            Assert.assertTrue(id, vector.has("source"))
+            Assert.assertTrue(id, vector.has("input"))
+            Assert.assertTrue(id, vector.has("expected"))
+            Assert.assertTrue(id, vector.has("platforms"))
+            Assert.assertTrue(id, vector.getAsJsonObject("input").has("kind"))
+            val platforms = vector.getAsJsonObject("platforms")
+            Assert.assertTrue(id, platforms.get("android").asBoolean)
+            Assert.assertTrue(id, platforms.get("ios").asBoolean)
+            Assert.assertTrue(id, platforms.get("common").asBoolean)
+        }
+    }
+
+    @Test
+    fun `workflow runtime policy vector is pinned before workflow migration`() {
+        val vector = loadFirmwareUpdateVectors().first { it.get("id").asString == "workflow-runtime-policy" }
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val expectedCommonPrototype = expected.getAsJsonObject("commonWorkflowPrototype")
+        val consumerTests = vector.getAsJsonObject("consumerTests")
+        val scenarioIds = input.getAsJsonArray("scenarios").map { it.asJsonObject.get("id").asString }
+        val commonPrototypeCaseIds = expectedCommonPrototype.getAsJsonArray("cases").map { it.asJsonObject.get("id").asString }
+
+        Assert.assertEquals("firmwareWorkflowRuntimePolicy", input.get("kind").asString)
+        Assert.assertEquals(FIRMWARE_WORKFLOW_SCENARIOS, scenarioIds)
+        Assert.assertEquals("firmware-update-workflow-runtime-matrix", expected.get("policy").asString)
+        Assert.assertEquals(FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT, expected.get("migrationRequirement").asString)
+        Assert.assertEquals("executable shared commonTest plus Android-hosted prototype", expectedCommonPrototype.get("status").asString)
+        Assert.assertEquals(FIRMWARE_WORKFLOW_SCENARIOS, commonPrototypeCaseIds)
+        Assert.assertEquals("shared-common-test", vector.getAsJsonObject("execution").get("common").asString)
+        Assert.assertEquals(FIRMWARE_WORKFLOW_COMMON_DECISION, vector.getAsJsonObject("platformExpectations").getAsJsonObject("commonDecision").get("workflowPolicy").asString)
+        Assert.assertTrue("workflow-runtime-policy", vector.has("execution"))
+        Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest", "com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("PolarFirmwareUpdateUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest", "com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    @Test
+    fun `workflow runtime readiness manifest is pinned before workflow migration`() {
+        val vector = loadFirmwareUpdateVectors().first { it.get("id").asString == "workflow-runtime-readiness" }
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val consumerTests = vector.getAsJsonObject("consumerTests")
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+
+        Assert.assertEquals("firmwareWorkflowRuntimeReadiness", input.get("kind").asString)
+        Assert.assertEquals("sdk/firmware-update/workflow-runtime-policy.json", input.get("policyVectorPath").asString)
+        Assert.assertEquals(FIRMWARE_WORKFLOW_READINESS_FAMILIES, requiredFamilies)
+        Assert.assertEquals(FIRMWARE_WORKFLOW_READINESS_FAMILIES, coveredFamilies)
+        Assert.assertEquals(FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION, expected.get("commonDecision").asString)
+        Assert.assertEquals("executable shared commonTest runtime planning guard", expected.getAsJsonObject("commonRuntimePrototype").get("status").asString)
+        Assert.assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", expected.getAsJsonObject("commonRuntimePrototype").get("reason").asString)
+        Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("PolarFirmwareUpdateUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    @Test
+    fun `firmware utility readiness manifest is pinned before utility migration`() {
+        val vector = loadFirmwareUpdateVectors().first { it.get("id").asString == "firmware-utility-readiness" }
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val consumerTests = vector.getAsJsonObject("consumerTests")
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+        val policyVectorPaths = input.getAsJsonArray("policyVectorPaths").map { it.asString }
+
+        Assert.assertEquals("firmwareUtilityReadiness", input.get("kind").asString)
+        Assert.assertEquals("compileVerifiedPreMigrationCharacterization", expected.get("migrationReadiness").asString)
+        Assert.assertEquals(FIRMWARE_UTILITY_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths)
+        Assert.assertEquals(FIRMWARE_UTILITY_READINESS_FAMILIES, requiredFamilies)
+        Assert.assertEquals(FIRMWARE_UTILITY_READINESS_FAMILIES, coveredFamilies)
+        Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("PolarFirmwareUpdateUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.FirmwareUpdateUtilityCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
     private fun mockFile(name: String): File = File(name)
+
+    private fun JsonArray.toJsonObjects(): List<JsonObject> = map { it.asJsonObject }
+
+    private fun JsonObject.inputKind(): String = getAsJsonObject("input").get("kind").asString
+
+    private fun loadFirmwareUpdateVectors(): List<JsonObject> {
+        val vectorDirectory = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/sdk/firmware-update")
+        return vectorDirectory
+            .listFiles { file -> file.isFile && file.extension == "json" }
+            .orEmpty()
+            .sortedBy { it.name }
+            .map { file ->
+                FileReader(file).use { reader ->
+                    JsonParser().parse(reader).asJsonObject
+                }
+            }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
+    }
+
+    private companion object {
+        val FIRMWARE_UTILITY_READINESS_POLICY_VECTOR_PATHS = listOf(
+            "sdk/firmware-update/device-info-basic.json",
+            "sdk/firmware-update/device-info-zero-version.json",
+            "sdk/firmware-update/version-comparison.json",
+            "sdk/firmware-update/version-comparison-invalid.json",
+            "sdk/firmware-update/file-ordering.json"
+        )
+
+        val FIRMWARE_UTILITY_READINESS_FAMILIES = listOf(
+            "device-info-protobuf-mapping",
+            "zero-version-preservation",
+            "dotted-integer-version-comparison",
+            "invalid-version-typed-parse-failure",
+            "system-update-file-ordering-last",
+            "platform-firmware-utility-vector-references",
+            "compile-verification-gate"
+        )
+
+        val FIRMWARE_WORKFLOW_READINESS_FAMILIES = listOf(
+            "fake-network-availability",
+            "download-failure",
+            "fake-filesystem-zip-extraction",
+            "empty-or-invalid-package",
+            "ble-write-progress",
+            "system-update-written-last",
+            "reboot-response-success",
+            "terminal-device-error",
+            "cleanup-gate",
+            "cancellation-gate",
+            "cancellation-cleanup-after-package-fetch",
+            "retryable-server-failure-gate",
+            "facade-error-mapping-gate",
+            "compile-verification-gate"
+        )
+
+        val FIRMWARE_WORKFLOW_SCENARIOS = listOf(
+            "check-update-not-available",
+            "check-update-available",
+            "download-failure",
+            "retryable-server-failure",
+            "empty-or-invalid-zip",
+            "cancel-after-package-fetch-cleans-up-before-ble-write",
+            "write-package-success-with-system-update-last",
+            "system-update-reboot-response-is-success",
+            "battery-too-low-response-is-terminal-failure"
+        )
+
+        const val FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT = "Before moving firmware update orchestration into common KMP code, implement injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors."
+
+        const val FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, reboot success, and terminal device errors into typed common workflow states before KMP migration"
+
+        const val FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, progress, retryable fake-network server failure classification, terminal device errors, and cancellation cleanup before BLE writes are pinned, retry scheduling has explicit platform facade coverage, public facade error mapping is pinned, and the shared tests are compile-verified."
+    }
 }

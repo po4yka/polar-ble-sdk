@@ -1,0 +1,51 @@
+{
+  "id": "ecg-raw-type3-android-frame-samples",
+  "area": "sensor-parser",
+  "case": "ecg_raw_type3_android_frame_samples",
+  "source": "Android EcgDataTest",
+  "input": {
+    "dataFrameHex": "00009435770000000003001203111004000280f0111004ff",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "ECG",
+    "frameType": 3,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "kind": "ecgFrameType3Sample",
+        "timeStamp": 1000000050,
+        "data0": 201216,
+        "data1": 266257,
+        "status": 0
+      },
+      {
+        "kind": "ecgFrameType3Sample",
+        "timeStamp": 2000000000,
+        "data0": -1015806,
+        "data1": 266257,
+        "status": 255
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android supports raw ECG type 3 samples with two signed data fields plus an unsigned status byte. iOS currently supports raw type 0 only.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.EcgDataTest"
+    ],
+    "ios": [
+      "EcgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.EcgParserCommonPolicyTest"
+    ]
+  }
+}

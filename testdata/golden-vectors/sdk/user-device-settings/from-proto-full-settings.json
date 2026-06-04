@@ -1,0 +1,44 @@
+{
+  "id": "from-proto-full-settings",
+  "area": "sdk-user-device-settings",
+  "case": "from_proto_full_settings",
+  "source": "Android PolarUserDeviceSettings.fromBytes and iOS PolarUserDeviceSettings.fromProto characterization",
+  "input": {
+    "proto": {
+      "deviceLocation": 2,
+      "usbConnectionMode": "ON",
+      "automaticTrainingDetectionMode": "ON",
+      "automaticTrainingDetectionSensitivity": 75,
+      "minimumTrainingDurationSeconds": 300,
+      "telemetryEnabled": true,
+      "autosFilesEnabled": true
+    }
+  },
+  "expected": {
+    "model": {
+      "deviceLocation": 2,
+      "usbConnectionMode": true,
+      "automaticTrainingDetectionMode": true,
+      "automaticTrainingDetectionSensitivity": 75,
+      "minimumTrainingDurationSeconds": 300,
+      "telemetryEnabled": true,
+      "autosFilesEnabled": true
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.PolarUserDeviceSettingsTest"
+    ],
+    "ios": [
+      "PolarUserDeviceSettingsUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.UserDeviceSettingsCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "identifier-uuid-string-ios",
+  "area": "device-identifier-routing",
+  "case": "ios_fetch_session_by_corebluetooth_uuid_string",
+  "source": "iOS PolarServiceClientUtils fetchSession characterization",
+  "input": {
+    "identifier": "123E4567-E89B-12D3-A456-426614174000",
+    "matchingAddress": "123E4567-E89B-12D3-A456-426614174000",
+    "matchingDeviceId": "E123456F"
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "match": "address"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarServiceClientUtilsTest"
+    ],
+    "ios": [
+      "PolarServiceClientUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": false,
+    "ios": true,
+    "common": false
+  },
+  "notes": "iOS accepts CoreBluetooth UUID strings as session identifiers; Android does not accept this identifier shape."
+}

@@ -1,0 +1,150 @@
+{
+  "id": "ppi-deltas-statuses",
+  "area": "sdk.automatic-samples",
+  "case": "ppi_deltas_statuses",
+  "source": "Android and iOS PolarAutomaticSamplesUtils characterization tests",
+  "input": {
+    "kind": "ppi",
+    "proto": {
+      "day": {
+        "year": 2024,
+        "month": 11,
+        "day": 18
+      },
+      "sample": {
+        "recordingTime": {
+          "hour": 1,
+          "minute": 1,
+          "second": 1,
+          "millis": 1
+        },
+        "triggerType": 1,
+        "ppiDelta": [
+          2500,
+          -634,
+          20,
+          -100
+        ],
+        "ppiErrorEstimateDelta": [
+          700,
+          0,
+          600,
+          -50
+        ],
+        "status": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    }
+  },
+  "expected": {
+    "policy": "decompress-ppi-deltas-and-map-status-bits"
+  },
+  "platformExpectations": {
+    "android": {
+      "date": "2024-11-18",
+      "startTime": "01:01:01.001",
+      "triggerType": "TRIGGER_TYPE_AUTOMATIC",
+      "ppiValueList": [
+        2500,
+        1866,
+        1886,
+        1786
+      ],
+      "ppiErrorEstimateList": [
+        700,
+        700,
+        1300,
+        1250
+      ],
+      "statusList": [
+        {
+          "skinContact": "SKIN_CONTACT_DETECTED",
+          "movement": "NO_MOVING_DETECTED",
+          "intervalStatus": "INTERVAL_IS_ONLINE"
+        },
+        {
+          "skinContact": "NO_SKIN_CONTACT",
+          "movement": "MOVING_DETECTED",
+          "intervalStatus": "INTERVAL_IS_ONLINE"
+        },
+        {
+          "skinContact": "SKIN_CONTACT_DETECTED",
+          "movement": "MOVING_DETECTED",
+          "intervalStatus": "INTERVAL_IS_ONLINE"
+        },
+        {
+          "skinContact": "NO_SKIN_CONTACT",
+          "movement": "NO_MOVING_DETECTED",
+          "intervalStatus": "INTERVAL_DENOTES_OFFLINE_PERIOD"
+        }
+      ]
+    },
+    "ios": {
+      "date": {
+        "year": 2024,
+        "month": 11,
+        "day": 18
+      },
+      "startTime": "01:01:01.01",
+      "triggerType": "TRIGGER_TYPE_AUTOMATIC",
+      "ppiValueList": [
+        2500,
+        1866,
+        1886,
+        1786
+      ],
+      "ppiErrorEstimateList": [
+        700,
+        700,
+        1300,
+        1250
+      ],
+      "statusList": [
+        {
+          "skinContact": "SKIN_CONTACT_DETECTED",
+          "movement": "NO_MOVING_DETECTED",
+          "intervalStatus": "INTERVAL_IS_ONLINE"
+        },
+        {
+          "skinContact": "NO_SKIN_CONTACT",
+          "movement": "MOVING_DETECTED",
+          "intervalStatus": "INTERVAL_IS_ONLINE"
+        },
+        {
+          "skinContact": "SKIN_CONTACT_DETECTED",
+          "movement": "MOVING_DETECTED",
+          "intervalStatus": "INTERVAL_IS_ONLINE"
+        },
+        {
+          "skinContact": "NO_SKIN_CONTACT",
+          "movement": "NO_MOVING_DETECTED",
+          "intervalStatus": "INTERVAL_DENOTES_OFFLINE_PERIOD"
+        }
+      ]
+    },
+    "commonDecision": {
+      "timeFormattingPolicy": "choose-common-duration-or-time-components-instead-of-platform-string-format"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarAutomaticSamplesUtilsTest"
+    ],
+    "ios": [
+      "PolarAutomaticSamplesUnitTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.ActivitySummaryCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "PPI sample delta decompression, error-estimate delta decompression, trigger type, and status-bit mapping."
+}

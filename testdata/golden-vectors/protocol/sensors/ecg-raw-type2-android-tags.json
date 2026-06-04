@@ -1,0 +1,51 @@
+{
+  "id": "ecg-raw-type2-android-tags",
+  "area": "sensor-parser",
+  "case": "ecg_raw_type2_android_tags",
+  "source": "Android EcgDataTest",
+  "input": {
+    "dataFrameHex": "000094357700000000028080fcffff03",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "ECG",
+    "frameType": 2,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "kind": "ecgSample",
+        "timeStamp": 1000000050,
+        "microVolts": 32896,
+        "ecgDataTag": 7,
+        "paceDataTag": 7
+      },
+      {
+        "kind": "ecgSample",
+        "timeStamp": 2000000000,
+        "microVolts": 262143,
+        "ecgDataTag": 0,
+        "paceDataTag": 0
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android supports raw ECG type 2 with ECG and pace data tags. iOS currently supports raw type 0 only.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.EcgDataTest"
+    ],
+    "ios": [
+      "EcgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.EcgParserCommonPolicyTest"
+    ]
+  }
+}

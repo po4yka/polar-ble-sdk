@@ -1029,9 +1029,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         case .h10FileSystem:
             _ = try await client.query(Protocol_PbPFtpQuery.setLocalTime.rawValue, parameters: paramsSetLocalTime as NSData)
         case .polarFileSystemV2:
-            async let t1 = client.query(Protocol_PbPFtpQuery.setLocalTime.rawValue, parameters: paramsSetLocalTime as NSData)
-            async let t2 = client.query(Protocol_PbPFtpQuery.setSystemTime.rawValue, parameters: paramsSetSystemTime as NSData)
-            _ = try await (t1, t2)
+            _ = try await client.query(Protocol_PbPFtpQuery.setSystemTime.rawValue, parameters: paramsSetSystemTime as NSData)
+            _ = try await client.query(Protocol_PbPFtpQuery.setLocalTime.rawValue, parameters: paramsSetLocalTime as NSData)
         }
     }
     
@@ -2658,17 +2657,27 @@ extension PolarBleApiImpl: PolarBleApi  {
             case .UNDEFINED: break
             }
         }
-        // Delete empty parent directories
-        for path in deletedFiles {
-            let indices = path.findIndices(lookable: "/")
-            var indexCount = 1
-            var currentDir = String(path[...indices[indices.count - indexCount]])
-            while currentDir != "/U/0/" {
-                try await fileUtils.deleteDataDirectory(identifier: identifier, directoryPath: currentDir)
-                indexCount += 1
-                if indexCount > indices.count { break }
-                currentDir = String(path[...indices[indices.count - indexCount]])
+        if shouldPruneEmptyParents(for: dataType) {
+            for path in deletedFiles {
+                let indices = path.findIndices(lookable: "/")
+                var indexCount = 1
+                var currentDir = String(path[...indices[indices.count - indexCount]])
+                while currentDir != "/U/0/" {
+                    try await fileUtils.deleteDataDirectory(identifier: identifier, directoryPath: currentDir)
+                    indexCount += 1
+                    if indexCount > indices.count { break }
+                    currentDir = String(path[...indices[indices.count - indexCount]])
+                }
             }
+        }
+    }
+
+    private func shouldPruneEmptyParents(for dataType: PolarStoredDataType.StoredDataType) -> Bool {
+        switch dataType {
+        case .ACTIVITY, .DAILY_SUMMARY, .NIGHTLY_RECOVERY, .SLEEP, .SKIN_CONTACT_CHANGES, .SKINTEMP, .SLEEP_SCORE:
+            return true
+        case .AUTO_SAMPLE, .SDLOGS, .UNDEFINED:
+            return false
         }
     }
 
@@ -3126,7 +3135,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         case let .ppiOfflineRecordingData(existingData, startTime):
             let newSamples = existingData.samples + ppiData.samples.map {
                 (
-                    timestamp: $0.timeStamp,
+                    timeStamp: $0.timeStamp,
                     hr: $0.hr,
                     ppInMs: $0.ppInMs,
                     ppErrorEstimate: $0.ppErrorEstimate,
@@ -3511,7 +3520,6 @@ private extension OfflineHrData {
     func mapToPolarData() -> PolarHrData {
         var polarSamples: [(hr: UInt8, ppgQuality: UInt8, correctedHr: UInt8, rrsMs: [Int], rrAvailable: Bool, contactStatus: Bool, contactStatusSupported: Bool)] = []
         for sample in self.samples {
-            let data = [(hr: sample.hr, ppgQuality: sample.ppgQuality, correctedHr: sample.correctedHr, rrsMs: [], rrAvailable: false, contactStatus: false, contactStatusSupported: false)]
             polarSamples.append((hr: sample.hr, ppgQuality: sample.ppgQuality, correctedHr: sample.correctedHr, rrsMs: [], rrAvailable: false, contactStatus: false, contactStatusSupported: false))
         }
         return polarSamples
@@ -3622,15 +3630,12 @@ extension Date {
 private extension String {
     func findIndices(lookable: Character) -> [String.Index] {
         var indices: [String.Index] = []
-        var index = 0
-        for letter in self {
+        for index in self.indices {
+            let letter = self[index]
             if letter == lookable {
-                indices.append(String.Index(encodedOffset: index))
+                indices.append(index)
             }
-            index += 1
         }
         return indices
     }
 }
-
-

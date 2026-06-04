@@ -1,0 +1,85 @@
+{
+  "id": "reset-sync-h10-command-readiness",
+  "area": "sdk.command-runtime",
+  "case": "reset_sync_h10_command_readiness",
+  "source": "Command runtime backlog and reset-sync-h10-command-policy shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the public facade command behavior families that must remain covered before reset, sync, and H10 recording command planning delegates to shared KMP runtime code.",
+  "input": {
+    "kind": "resetSyncH10CommandReadiness",
+    "policyVectorPath": "sdk/command-runtime/reset-sync-h10-command-policy.json",
+    "requiredBehaviorFamilies": [
+      "h10-recording-start-query",
+      "h10-recording-start-query-failure",
+      "h10-recording-stop-query",
+      "h10-recording-stop-query-failure",
+      "h10-recording-status-query",
+      "h10-recording-status-query-failure",
+      "factory-reset-flags",
+      "factory-reset-notification-failure",
+      "preserve-pairing-reset-flags",
+      "preserve-pairing-reset-notification-failure",
+      "restart-reset-flags",
+      "restart-reset-notification-failure",
+      "warehouse-sleep-reset-flags",
+      "warehouse-sleep-reset-notification-failure",
+      "turn-device-off-reset-flags",
+      "turn-device-off-reset-notification-failure",
+      "sync-start-notification-sequence",
+      "sync-start-query-failure-platform-split",
+      "sync-stop-complete-terminate-sequence",
+      "sync-stop-notification-failure-platform-split",
+      "facade-error-mapping-gate",
+      "platform-facade-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "h10-recording-start-query",
+      "h10-recording-start-query-failure",
+      "h10-recording-stop-query",
+      "h10-recording-stop-query-failure",
+      "h10-recording-status-query",
+      "h10-recording-status-query-failure",
+      "factory-reset-flags",
+      "factory-reset-notification-failure",
+      "preserve-pairing-reset-flags",
+      "preserve-pairing-reset-notification-failure",
+      "restart-reset-flags",
+      "restart-reset-notification-failure",
+      "warehouse-sleep-reset-flags",
+      "warehouse-sleep-reset-notification-failure",
+      "turn-device-off-reset-flags",
+      "turn-device-off-reset-notification-failure",
+      "sync-start-notification-sequence",
+      "sync-start-query-failure-platform-split",
+      "sync-stop-complete-terminate-sequence",
+      "sync-stop-notification-failure-platform-split",
+      "facade-error-mapping-gate",
+      "platform-facade-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified.",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.BDBleApiImplTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.CommandRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for public facade command-planning behavior-family completeness only; H10 query failure semantics, reset-style notification failure semantics, sync failure semantics, public facade error mapping, platform adapter references, and compile verification remain required before production command runtime code moves to shared KMP."
+}

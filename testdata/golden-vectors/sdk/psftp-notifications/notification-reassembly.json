@@ -1,0 +1,59 @@
+{
+  "id": "notification-reassembly",
+  "area": "sdk.psftp-notifications",
+  "case": "notification_reassembly",
+  "source": "Android and iOS BlePsFtpClient notification characterization tests",
+  "input": {
+    "kind": "waitNotification",
+    "cases": [
+      {
+        "id": "single-frame",
+        "framesHex": [
+          "0201ff00"
+        ],
+        "expected": {
+          "id": 1,
+          "parametersHex": "ff00"
+        }
+      },
+      {
+        "id": "multi-frame",
+        "framesHex": [
+          "0601ff00",
+          "13effe"
+        ],
+        "expected": {
+          "id": 1,
+          "parametersHex": "ff00effe"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "policy": "reassemble-rfc76-d2h-notification-frames"
+  },
+  "execution": {
+    "kind": "fake-psftp-runtime-policy",
+    "transport": "scripted-rfc76-notification-stream",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "BlePsFtpClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
+      "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Covers PSFTP D2H notification payload reassembly above raw RFC76 frame-header decoding. Timeout notification-stream policies now have dedicated planning vectors and executable shared common runtime coverage; production PSFTP runtime migration still needs fake-clock integration before timeout orchestration moves to shared KMP code."
+}

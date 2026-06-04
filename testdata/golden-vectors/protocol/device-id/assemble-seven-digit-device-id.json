@@ -1,0 +1,31 @@
+{
+  "id": "assemble-seven-digit-device-id",
+  "area": "device-id",
+  "case": "assembly_from_seven_hex_digits",
+  "source": "Android BlePolarDeviceIdUtilityTests and iOS BlePolarDeviceIdUtilityTest",
+  "input": {
+    "deviceId": "1234567"
+  },
+  "expected": {
+    "assembled": "1234567C",
+    "validAfterAssembly": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.DeviceIdGoldenVectorTest"
+    ],
+    "ios": [
+      "BlePolarDeviceIdUtilityTest",
+      "PolarDeviceUuidTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Width 7 appends the checksum nibble directly."
+}

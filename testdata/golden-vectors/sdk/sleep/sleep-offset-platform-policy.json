@@ -1,0 +1,43 @@
+{
+  "id": "sleep-offset-platform-policy",
+  "area": "sdk.sleep",
+  "case": "sleep_offset_platform_policy",
+  "source": "Android and iOS PolarSleepUtils characterization tests",
+  "input": {
+    "kind": "sleepAnalysis",
+    "sleepStartOffsetSeconds": 30,
+    "sleepEndOffsetSeconds": 90
+  },
+  "expected": {
+    "android": {
+      "sleepStartOffsetSeconds": 30,
+      "sleepEndOffsetSeconds": 90
+    },
+    "ios": {
+      "sleepStartOffsetSeconds": 30,
+      "sleepEndOffsetSeconds": 30
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarSleepUtilsTest"
+    ],
+    "ios": [
+      "PolarSleepUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SleepNightlyRechargeCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "recommendedKmpPolicy": "Map sleepEndOffsetSeconds from the protobuf sleepEndOffsetSeconds field and treat the current iOS start-offset copy as a legacy bug to fix during shared-model migration."
+    }
+  },
+  "notes": "Sleep analysis protobuf start/end offset mapping with distinct values so migration cannot accidentally copy one field to both public model properties."
+}

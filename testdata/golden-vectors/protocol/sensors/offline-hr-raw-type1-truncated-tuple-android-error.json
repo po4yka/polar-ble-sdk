@@ -1,0 +1,36 @@
+{
+  "id": "offline-hr-raw-type1-truncated-tuple-android-error",
+  "area": "sensor-parser",
+  "case": "offline_hr_raw_type1_truncated_tuple_android_error",
+  "source": "Android OfflineHrDataTest; iOS raw parser indexes out of range for this malformed payload",
+  "input": {
+    "dataFrameHex": "0e6600000000000000015002",
+    "previousTimeStamp": 0,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "OFFLINE_HR",
+    "frameType": 1,
+    "compressed": false,
+    "parseError": "malformedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android currently throws when raw type-1 offline HR data ends before the correctedHr byte. iOS is excluded because the current parser can terminate on out-of-range Data indexing instead of throwing a catchable parser error.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.OfflineHrDataTest"
+    ],
+    "ios": [
+      "OfflineHrDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.OfflineHrParserCommonPolicyTest"
+    ]
+  }
+}

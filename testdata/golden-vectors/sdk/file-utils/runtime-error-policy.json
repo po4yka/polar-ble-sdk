@@ -1,0 +1,139 @@
+{
+  "id": "runtime-error-policy",
+  "area": "sdk.file-utils",
+  "case": "runtime_error_policy",
+  "source": "KMP migration fake-transport planning from Android and iOS file utility error tests",
+  "input": {
+    "kind": "fileRuntimeErrorPolicy",
+    "cases": [
+      {
+        "id": "directory-list-response-error-103",
+        "operation": "listFiles",
+        "path": "/U/0/",
+        "transport": {
+          "mode": "pftpResponseError",
+          "status": 103,
+          "message": "No such file or directory"
+        }
+      },
+      {
+        "id": "directory-list-malformed-payload",
+        "operation": "listFiles",
+        "path": "/U/0/",
+        "transport": {
+          "mode": "success",
+          "payloadHex": "ffff"
+        }
+      },
+      {
+        "id": "read-file-transport-error",
+        "operation": "readFile",
+        "path": "/U/0/S/PHYSDATA.BPB",
+        "transport": {
+          "mode": "transportError",
+          "error": "deviceNotConnected"
+        }
+      },
+      {
+        "id": "write-file-stream-error-after-header",
+        "operation": "writeFile",
+        "path": "/U/0/S/PREFS.BPB",
+        "payloadHex": "01020304",
+        "transport": {
+          "mode": "writeStreamError",
+          "error": "deviceNotConnected"
+        }
+      },
+      {
+        "id": "delete-file-response-error",
+        "operation": "removeSingleFile",
+        "path": "/U/0/S/PREFS.BPB",
+        "transport": {
+          "mode": "pftpResponseError",
+          "status": 500,
+          "message": "Delete failed"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "migrationRequirement": "Before moving file utility orchestration into common KMP code, implement fake PFTP request and write-stream tests that cover malformed directory payloads, request-level transport errors, response-error status mapping, and write-stream failures after the PUT header is prepared.",
+    "observations": [
+      "captured command and path for every attempted operation",
+      "captured PUT payload before write-stream failure mapping",
+      "directory-list malformed-payload terminal behavior",
+      "error-code 103 directory policy",
+      "public Android and iOS facade error shape after shared runtime mapping"
+    ],
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest plus Android-hosted prototype",
+      "cases": [
+        {
+          "id": "directory-list-response-error-103",
+          "command": "GET",
+          "path": "/U/0/",
+          "outcome": "directory-missing",
+          "status": 103
+        },
+        {
+          "id": "directory-list-malformed-payload",
+          "command": "GET",
+          "path": "/U/0/",
+          "outcome": "directory-parse-failure"
+        },
+        {
+          "id": "read-file-transport-error",
+          "command": "GET",
+          "path": "/U/0/S/PHYSDATA.BPB",
+          "outcome": "transport-error",
+          "error": "deviceNotConnected"
+        },
+        {
+          "id": "write-file-stream-error-after-header",
+          "command": "PUT",
+          "path": "/U/0/S/PREFS.BPB",
+          "capturedPayloadHex": "01020304",
+          "outcome": "write-stream-error",
+          "error": "deviceNotConnected"
+        },
+        {
+          "id": "delete-file-response-error",
+          "command": "REMOVE",
+          "path": "/U/0/S/PREFS.BPB",
+          "outcome": "response-error",
+          "status": 500,
+          "message": "Delete failed"
+        }
+      ]
+    },
+    "commonDecision": "Preserve documented platform-specific policies only where required for public compatibility; otherwise normalize shared runtime errors to typed request, parse, response, and write-stream failures."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFileUtilsTest",
+      "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"
+    ],
+    "ios": [
+      "PolarFileUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest",
+      "com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"
+    ]
+  },
+  "platformExpectations": {
+    "android": "planned facade-level fake-transport characterization for public error mapping",
+    "ios": "planned facade-level fake-transport characterization for public error mapping",
+    "common": "executable shared commonTest covers file command capture and typed runtime errors before facade mapping moves"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "execution": {
+    "status": "shared-common-test",
+    "reason": "Shared commonTest now asserts command capture, malformed directory payload handling, directory-missing status 103, request transport errors, response errors, and write-stream failures through the common fake transport; platform facade tests still need public error mapping before production file orchestration delegates to shared code."
+  },
+  "notes": "This vector complements executable file read/write/delete and directory-listing vectors with shared commonTest runtime checks. Public Android and iOS facade error mapping remains a migration gate before production file orchestration delegates to shared code."
+}

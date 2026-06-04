@@ -1,0 +1,32 @@
+{
+  "id": "custom-prefix-local-name",
+  "area": "advertisement",
+  "case": "custom_prefix_local_name",
+  "source": "Android BleAdvertisementContentTest and iOS BleAdvertisementContentTest",
+  "input": {
+    "deviceNamePrefix": "Custom",
+    "localName": "Custom Bio Sense ABC12345"
+  },
+  "expected": {
+    "name": "Custom Bio Sense ABC12345",
+    "deviceType": "Bio Sense",
+    "deviceId": "ABC12345"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"
+    ],
+    "ios": [
+      "BleAdvertisementContentTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AdvertisementCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Custom advertisement device-name prefixes should trim the configured prefix and keep the final hexadecimal token as the device ID."
+}

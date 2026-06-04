@@ -1,0 +1,187 @@
+{
+  "id": "disk-time-query-policy",
+  "area": "sdk-disk-time-runtime",
+  "case": "disk_time_query_policy",
+  "source": "BDBleApiImplTest and PolarBleApiImplTests disk/time facade characterization",
+  "description": "Pins disk-space and local-time PSFTP query planning before disk/time public facade orchestration can delegate to a shared KMP runtime.",
+  "input": {
+    "operations": [
+      {
+        "id": "get-disk-space",
+        "kind": "query",
+        "query": "GET_DISK_SPACE",
+        "parameters": []
+      },
+      {
+        "id": "get-local-time",
+        "kind": "query",
+        "query": "GET_LOCAL_TIME",
+        "parameters": []
+      },
+      {
+        "id": "get-local-time-with-zone",
+        "kind": "query",
+        "query": "GET_LOCAL_TIME",
+        "parameters": []
+      },
+      {
+        "id": "set-local-time-v2",
+        "kind": "setLocalTimeV2",
+        "localDateTime": "2024-03-15T12:00:00",
+        "timeZoneOffsetMinutes": 120,
+        "queries": [
+          "SET_SYSTEM_TIME",
+          "SET_LOCAL_TIME"
+        ],
+        "expectedFields": [
+          "systemTimeHour=10",
+          "localTimeHour=12",
+          "systemTimeTrusted=true"
+        ]
+      },
+      {
+        "id": "set-local-time-h10",
+        "kind": "setLocalTimeH10",
+        "localDateTime": "2024-03-15T12:00:00",
+        "timeZoneOffsetMinutes": 0,
+        "queries": [
+          "SET_LOCAL_TIME"
+        ],
+        "expectedFields": [
+          "localTimeHour=12"
+        ]
+      },
+      {
+        "id": "set-local-time-failure",
+        "kind": "queryFailure",
+        "query": "SET_LOCAL_TIME",
+        "parameters": [
+          "localTimeHour=12"
+        ]
+      },
+      {
+        "id": "get-local-time-failure",
+        "kind": "queryFailure",
+        "query": "GET_LOCAL_TIME",
+        "parameters": []
+      },
+      {
+        "id": "get-local-time-with-zone-failure",
+        "kind": "queryFailure",
+        "query": "GET_LOCAL_TIME",
+        "parameters": []
+      },
+      {
+        "id": "get-disk-space-failure",
+        "kind": "queryFailure",
+        "query": "GET_DISK_SPACE",
+        "parameters": []
+      }
+    ]
+  },
+  "expected": {
+    "commonRuntimePrototype": {
+      "cases": [
+        {
+          "id": "get-disk-space",
+          "commands": [
+            "query:GET_DISK_SPACE",
+            "parameters:none"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "get-local-time",
+          "commands": [
+            "query:GET_LOCAL_TIME",
+            "parameters:none"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "get-local-time-with-zone",
+          "commands": [
+            "query:GET_LOCAL_TIME",
+            "parameters:none"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "set-local-time-v2",
+          "commands": [
+            "query:SET_SYSTEM_TIME",
+            "field:systemTimeHour=10",
+            "field:systemTimeTrusted=true",
+            "query:SET_LOCAL_TIME",
+            "field:localTimeHour=12"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "set-local-time-h10",
+          "commands": [
+            "query:SET_LOCAL_TIME",
+            "field:localTimeHour=12"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "set-local-time-failure",
+          "commands": [
+            "query:SET_LOCAL_TIME",
+            "field:localTimeHour=12"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "get-local-time-failure",
+          "commands": [
+            "query:GET_LOCAL_TIME",
+            "parameters:none"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "get-local-time-with-zone-failure",
+          "commands": [
+            "query:GET_LOCAL_TIME",
+            "parameters:none"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "get-disk-space-failure",
+          "commands": [
+            "query:GET_DISK_SPACE",
+            "parameters:none"
+          ],
+          "terminal": "transport-error"
+        }
+      ]
+    },
+    "commonDecision": "A shared disk/time query runtime may own deterministic query sequencing and payload-field planning, while platform facades remain responsible for filesystem capability gates and public error mapping."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.BDBleApiImplTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DiskTimeRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "execution": {
+    "kind": "fake-disk-time-query-runtime-policy",
+    "transport": "public-facade-query-capture",
+    "wallClockSafe": true
+  },
+  "commonDecision": "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned.",
+  "notes": "Disk-space model conversion remains covered by sdk/disk-space vectors. This runtime vector owns query IDs, query parameters, V2 system/local time sequencing, H10 single local-time query behavior, local-time read failures, and transport-error propagation planning."
+}

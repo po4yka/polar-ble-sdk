@@ -1,0 +1,30 @@
+{
+  "id": "write-ex-nonempty-index-ignored",
+  "area": "sdk-kvtx",
+  "case": "write_bytes_ex_nonempty_index_does_not_set_base_value",
+  "source": "Android KvtxScriptUtilsTest and iOS KvtxScriptUtilsTests",
+  "input": {
+    "scriptHex": "002400000001000000aa062400000002010203000000bbccdd05",
+    "extractKey": 36
+  },
+  "expected": {
+    "extractedHex": "aa"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Current extraction only applies EX commands to the base key when idxLen is zero; non-empty indexed writes are skipped for base-key extraction.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.KvtxScriptUtilsTest"
+    ],
+    "ios": [
+      "KvtxScriptUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.KvtxCommonPolicyTest"
+    ]
+  }
+}

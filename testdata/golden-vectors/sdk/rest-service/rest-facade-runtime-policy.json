@@ -1,0 +1,260 @@
+{
+  "id": "rest-facade-runtime-policy",
+  "area": "sdk.rest-service",
+  "case": "rest_facade_runtime_policy",
+  "source": "BDBleApiImplTest and PolarBleApiImplTests REST public facade characterization",
+  "description": "Pins public REST service discovery and description PSFTP request planning before REST facade orchestration can delegate to a shared KMP runtime.",
+  "input": {
+    "kind": "restFacadeRuntimePolicy",
+    "operations": [
+      {
+        "id": "list-rest-api-services-success",
+        "operation": "listRestApiServices",
+        "command": "GET",
+        "path": "/REST/SERVICE.API",
+        "payloadShape": "service-list-json",
+        "expectedFields": [
+          "serviceName=sleep",
+          "serviceName=training",
+          "servicePath.sleep=/REST/SLEEP.API",
+          "servicePath.training=/REST/TRAINING.API"
+        ]
+      },
+      {
+        "id": "get-rest-api-description-success",
+        "operation": "getRestApiDescription",
+        "command": "GET",
+        "path": "/REST/SLEEP.API",
+        "payloadShape": "service-description-json",
+        "expectedFields": [
+          "event=sleep",
+          "endpoint=stop",
+          "action.post=/REST/SLEEP.API?cmd=post",
+          "detail.sleep=state",
+          "trigger.sleep=change"
+        ]
+      },
+      {
+        "id": "list-rest-api-services-request-failure",
+        "operation": "listRestApiServices",
+        "command": "GET",
+        "path": "/REST/SERVICE.API",
+        "transport": {
+          "mode": "transportError",
+          "error": "service-api-read-failed"
+        }
+      },
+      {
+        "id": "get-rest-api-description-request-failure",
+        "operation": "getRestApiDescription",
+        "command": "GET",
+        "path": "/REST/SLEEP.API",
+        "transport": {
+          "mode": "transportError",
+          "error": "service-description-read-failed"
+        }
+      },
+      {
+        "id": "list-rest-api-services-response-error",
+        "operation": "listRestApiServices",
+        "command": "GET",
+        "path": "/REST/SERVICE.API",
+        "transport": {
+          "mode": "responseError",
+          "status": 103,
+          "message": "NO_SUCH_FILE_OR_DIRECTORY"
+        },
+        "expectedPlatformTerminal": {
+          "android": "pftp-response-error-name",
+          "ios": "pftp-response-error-code"
+        }
+      },
+      {
+        "id": "get-rest-api-description-response-error",
+        "operation": "getRestApiDescription",
+        "command": "GET",
+        "path": "/REST/SLEEP.API",
+        "transport": {
+          "mode": "responseError",
+          "status": 103,
+          "message": "NO_SUCH_FILE_OR_DIRECTORY"
+        },
+        "expectedPlatformTerminal": {
+          "android": "pftp-response-error-name",
+          "ios": "pftp-response-error-code"
+        }
+      },
+      {
+        "id": "list-rest-api-services-empty-success",
+        "operation": "listRestApiServices",
+        "command": "GET",
+        "path": "/REST/SERVICE.API",
+        "transport": {
+          "mode": "successEmpty"
+        },
+        "expectedPlatformTerminal": {
+          "android": "json-parse-failure",
+          "ios": "json-decoder-failure"
+        }
+      },
+      {
+        "id": "list-rest-api-services-malformed-success",
+        "operation": "listRestApiServices",
+        "command": "GET",
+        "path": "/REST/SERVICE.API",
+        "transport": {
+          "mode": "successMalformedJson",
+          "payload": "{"
+        },
+        "expectedPlatformTerminal": {
+          "android": "json-parse-failure",
+          "ios": "json-decoder-failure"
+        }
+      },
+      {
+        "id": "get-rest-api-description-empty-success",
+        "operation": "getRestApiDescription",
+        "command": "GET",
+        "path": "/REST/SLEEP.API",
+        "transport": {
+          "mode": "successEmpty"
+        },
+        "expectedPlatformTerminal": {
+          "android": "json-parse-failure",
+          "ios": "json-decoder-failure"
+        }
+      },
+      {
+        "id": "get-rest-api-description-malformed-success",
+        "operation": "getRestApiDescription",
+        "command": "GET",
+        "path": "/REST/SLEEP.API",
+        "transport": {
+          "mode": "successMalformedJson",
+          "payload": "{"
+        },
+        "expectedPlatformTerminal": {
+          "android": "json-parse-failure",
+          "ios": "json-decoder-failure"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "commonRuntimePrototype": {
+      "cases": [
+        {
+          "id": "list-rest-api-services-success",
+          "commands": [
+            "GET:/REST/SERVICE.API",
+            "payload:service-list-json",
+            "field:serviceName=sleep",
+            "field:serviceName=training",
+            "field:servicePath.sleep=/REST/SLEEP.API",
+            "field:servicePath.training=/REST/TRAINING.API"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "get-rest-api-description-success",
+          "commands": [
+            "GET:/REST/SLEEP.API",
+            "payload:service-description-json",
+            "field:event=sleep",
+            "field:endpoint=stop",
+            "field:action.post=/REST/SLEEP.API?cmd=post",
+            "field:detail.sleep=state",
+            "field:trigger.sleep=change"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "list-rest-api-services-request-failure",
+          "commands": [
+            "GET:/REST/SERVICE.API"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "get-rest-api-description-request-failure",
+          "commands": [
+            "GET:/REST/SLEEP.API"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "list-rest-api-services-response-error",
+          "commands": [
+            "GET:/REST/SERVICE.API",
+            "response-error:103:NO_SUCH_FILE_OR_DIRECTORY"
+          ],
+          "terminal": "response-error"
+        },
+        {
+          "id": "get-rest-api-description-response-error",
+          "commands": [
+            "GET:/REST/SLEEP.API",
+            "response-error:103:NO_SUCH_FILE_OR_DIRECTORY"
+          ],
+          "terminal": "response-error"
+        },
+        {
+          "id": "list-rest-api-services-empty-success",
+          "commands": [
+            "GET:/REST/SERVICE.API",
+            "payload:empty-success"
+          ],
+          "terminal": "empty-response-parse-failure"
+        },
+        {
+          "id": "list-rest-api-services-malformed-success",
+          "commands": [
+            "GET:/REST/SERVICE.API",
+            "payload:malformed-json"
+          ],
+          "terminal": "malformed-response-parse-failure"
+        },
+        {
+          "id": "get-rest-api-description-empty-success",
+          "commands": [
+            "GET:/REST/SLEEP.API",
+            "payload:empty-success"
+          ],
+          "terminal": "empty-response-parse-failure"
+        },
+        {
+          "id": "get-rest-api-description-malformed-success",
+          "commands": [
+            "GET:/REST/SLEEP.API",
+            "payload:malformed-json"
+          ],
+          "terminal": "malformed-response-parse-failure"
+        }
+      ]
+    },
+    "commonDecision": "A shared REST facade runtime may own deterministic service-list and service-description request planning only after platform facades keep public parse behavior, empty-success and malformed-success parse/decode failures, request-failure error mapping, and response-error platform mapping pinned for both service discovery and service-description paths."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.BDBleApiImplTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.RestFacadeRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "execution": {
+    "kind": "fake-rest-facade-runtime-policy",
+    "transport": "public-facade-psftp-request-capture",
+    "wallClockSafe": true
+  },
+  "commonDecision": "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered.",
+  "notes": "This vector complements rest-request-transport-policy.json. The older policy owns low-level response-error and empty-success transport behavior; this facade vector owns the public API paths, decoded success fields, empty-success and malformed-success public parse/decode failures, request-failure propagation, and response-error platform mapping currently asserted by Android and iOS facade tests."
+}

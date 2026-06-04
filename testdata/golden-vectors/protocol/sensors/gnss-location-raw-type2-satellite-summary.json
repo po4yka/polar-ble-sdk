@@ -1,0 +1,88 @@
+{
+  "id": "gnss-location-raw-type2-satellite-summary",
+  "area": "sensor-parser",
+  "case": "gnss_location_raw_type2_satellite_summary",
+  "source": "Android GnssLocationDataTest characterization",
+  "input": {
+    "dataFrameHex": "0a00943577000000000200010203040506070809ffef800001020304000000010203040506070809ffef8000010203040000ff",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "LOCATION",
+    "frameType": 2,
+    "compressed": false,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "sampleKind": "satelliteSummary",
+        "timeStamp": 2000000000,
+        "seenBand1": {
+          "gpsNbrOfSat": 0,
+          "gpsMaxSnr": 1,
+          "glonassNbrOfSat": 2,
+          "glonassMaxSnr": 3,
+          "galileoNbrOfSat": 4,
+          "galileoMaxSnr": 5,
+          "beidouNbrOfSat": 6,
+          "beidouMaxSnr": 7,
+          "nbrOfSat": 8,
+          "snrTop5Avg": 9
+        },
+        "usedBand1": {
+          "gpsNbrOfSat": 255,
+          "gpsMaxSnr": 239,
+          "glonassNbrOfSat": 128,
+          "glonassMaxSnr": 0,
+          "galileoNbrOfSat": 1,
+          "galileoMaxSnr": 2,
+          "beidouNbrOfSat": 3,
+          "beidouMaxSnr": 4,
+          "nbrOfSat": 0,
+          "snrTop5Avg": 0
+        },
+        "seenBand2": {
+          "gpsNbrOfSat": 0,
+          "gpsMaxSnr": 1,
+          "glonassNbrOfSat": 2,
+          "glonassMaxSnr": 3,
+          "galileoNbrOfSat": 4,
+          "galileoMaxSnr": 5,
+          "beidouNbrOfSat": 6,
+          "beidouMaxSnr": 7,
+          "nbrOfSat": 8,
+          "snrTop5Avg": 9
+        },
+        "usedBand2": {
+          "gpsNbrOfSat": 255,
+          "gpsMaxSnr": 239,
+          "glonassNbrOfSat": 128,
+          "glonassMaxSnr": 0,
+          "galileoNbrOfSat": 1,
+          "galileoMaxSnr": 2,
+          "beidouNbrOfSat": 3,
+          "beidouMaxSnr": 4,
+          "nbrOfSat": 0,
+          "snrTop5Avg": 0
+        },
+        "maxSnr": 255
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android-only GNSS raw type 2 satellite summary sample. iOS has no current direct GNSS parser implementation.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GnssLocationDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.GnssLocationOwnershipCommonPolicyTest"
+    ]
+  }
+}

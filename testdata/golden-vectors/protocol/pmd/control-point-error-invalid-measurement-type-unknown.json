@@ -1,0 +1,39 @@
+{
+  "id": "pmd-control-point-error-invalid-measurement-type-unknown",
+  "area": "pmd-control-point",
+  "case": "error_invalid_measurement_type_unknown_measurement_byte",
+  "source": "Android PmdControlPointResponse and iOS PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f0023f0200"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "REQUEST_MEASUREMENT_START",
+    "opCodeValue": 2,
+    "measurementType": 63,
+    "measurementTypeName": "UNKNOWN",
+    "status": "ERROR_INVALID_MEASUREMENT_TYPE",
+    "statusValue": 2,
+    "more": false,
+    "parametersHex": ""
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "The response parser preserves the raw unknown measurement byte while surfacing the invalid-measurement status.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

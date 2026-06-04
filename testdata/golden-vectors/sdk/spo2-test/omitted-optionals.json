@@ -1,0 +1,69 @@
+{
+  "id": "omitted-optionals",
+  "area": "sdk.spo2-test",
+  "case": "omitted_optionals",
+  "source": "Android and iOS PolarTestUtils characterization tests",
+  "input": {
+    "date": "2026-04-08",
+    "timeDirName": "083906",
+    "proto": {
+      "timeZoneOffsetMinutes": 180,
+      "testStatus": 0
+    }
+  },
+  "expected": {
+    "policy": "preserve-spo2-optional-field-presence"
+  },
+  "platformExpectations": {
+    "android": {
+      "recordingDevice": "",
+      "testTime": "2026-04-08 08:39:06",
+      "timeZoneOffsetMinutes": 180,
+      "testStatus": "PASSED",
+      "bloodOxygenPercent": null,
+      "spo2Class": null,
+      "spo2ValueDeviationFromBaseline": null,
+      "spo2QualityAveragePercent": null,
+      "averageHeartRateBpm": null,
+      "heartRateVariabilityMs": null,
+      "spo2HrvDeviationFromBaseline": null,
+      "altitudeMeters": null
+    },
+    "ios": {
+      "recordingDevice": null,
+      "dateIsoUtc": "2026-04-08T05:39:06Z",
+      "timeZoneOffsetMinutes": 180,
+      "testStatus": "passed",
+      "bloodOxygenPercent": null,
+      "spo2Class": null,
+      "spo2ValueDeviationFromBaseline": null,
+      "spo2QualityAveragePercent": null,
+      "averageHeartRateBpm": null,
+      "heartRateVariabilityMs": null,
+      "spo2HrvDeviationFromBaseline": null,
+      "altitudeMeters": null,
+      "triggerType": null
+    },
+    "commonDecision": {
+      "optionalPolicy": "preserve-protobuf-presence",
+      "emptyRecordingDevicePolicy": "treat-empty-as-null-in-shared-model"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTestUtilsTest"
+    ],
+    "ios": [
+      "PolarTestUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.Spo2CommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Required/default fields only; optional scalar and enum fields remain absent."
+}

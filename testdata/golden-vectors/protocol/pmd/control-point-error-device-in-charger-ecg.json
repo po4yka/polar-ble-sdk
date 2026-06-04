@@ -1,0 +1,38 @@
+{
+  "id": "pmd-control-point-error-device-in-charger-ecg",
+  "area": "pmd-control-point",
+  "case": "error_device_in_charger_request_measurement_start_ecg",
+  "source": "Android PmdControlPointResponse and iOS PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f002000d00"
+  },
+  "expected": {
+    "responseCode": 240,
+    "opCode": "REQUEST_MEASUREMENT_START",
+    "opCodeValue": 2,
+    "measurementType": 0,
+    "measurementTypeName": "ECG",
+    "status": "ERROR_DEVICE_IN_CHARGER",
+    "statusValue": 13,
+    "more": false,
+    "parametersHex": ""
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "id": "to-proto-telemetry-platform-difference",
+  "area": "sdk-user-device-settings",
+  "case": "to_proto_telemetry_platform_difference",
+  "source": "Android PolarUserDeviceSettings.toProto and iOS PolarUserDeviceSettings.toProto characterization",
+  "input": {
+    "model": {
+      "deviceLocation": 2,
+      "telemetryEnabled": true
+    }
+  },
+  "expected": {
+    "commonDecision": "KMP common serialization should write telemetrySettings only when telemetryEnabled is explicitly present in the shared model. Android's deprecated whole-settings setter may strip telemetry in an adapter if legacy behavior must be preserved."
+  },
+  "platformExpectations": {
+    "android": {
+      "proto": {
+        "deviceLocation": 2,
+        "hasLastModified": true,
+        "lastModifiedTrusted": true,
+        "hasTelemetryEnabled": false
+      }
+    },
+    "ios": {
+      "proto": {
+        "deviceLocation": 2,
+        "hasLastModified": true,
+        "lastModifiedTrusted": true,
+        "hasTelemetryEnabled": true,
+        "telemetryEnabled": true
+      }
+    },
+    "commonDecision": {
+      "proto": {
+        "deviceLocation": 2,
+        "hasLastModified": true,
+        "lastModifiedTrusted": true,
+        "hasTelemetryEnabled": true,
+        "telemetryEnabled": true,
+        "telemetryWritePolicy": "write-explicit-telemetry"
+      }
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "Android model-to-proto currently ignores telemetryEnabled, while iOS writes telemetrySettings when telemetryEnabled is set.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.PolarUserDeviceSettingsTest"
+    ],
+    "ios": [
+      "PolarUserDeviceSettingsUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.UserDeviceSettingsCommonPolicyTest"
+    ]
+  }
+}

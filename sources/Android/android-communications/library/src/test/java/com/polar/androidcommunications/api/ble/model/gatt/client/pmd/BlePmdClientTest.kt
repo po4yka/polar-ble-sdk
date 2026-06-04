@@ -1,5 +1,6 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
+import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.exceptions.BleCharacteristicNotificationNotEnabled
 import com.polar.androidcommunications.api.ble.exceptions.BleControlPointCommandError
 import com.polar.androidcommunications.api.ble.exceptions.BleDisconnected
@@ -40,6 +41,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 
 internal class BlePmdClientTest {
 
@@ -777,6 +779,48 @@ internal class BlePmdClientTest {
         blePmdClient.descriptorWritten(BlePMDClient.PMD_DATA, true, BleGattBase.ATT_SUCCESS)
     }
 
+    private fun assertOfflineTriggerRuntimePolicyVectorContains(vectorTerm: String) {
+        val vector = JsonParser().parse(
+            findRepositoryRoot()
+                .resolve("testdata/golden-vectors/sdk/offline-recording/trigger-runtime-policy.json")
+                .readText()
+        ).asJsonObject
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val scenarios = input.getAsJsonArray("scenarios").map { it.asJsonObject }
+        val scenarioIds = scenarios.map { it.get("id").asString }
+        val commonRuntimeCaseIds = expected.getAsJsonObject("commonRuntimePrototype").getAsJsonArray("cases").map { it.asJsonObject.get("id").asString }
+        val scenariosById = scenarios.associateBy { it.get("id").asString }
+        val cleanupEvidenceIds = listOf(
+            expected.getAsJsonObject("platformCleanupEvidence").getAsJsonObject("android").get("id").asString,
+            expected.getAsJsonObject("platformCleanupEvidence").getAsJsonObject("ios").get("id").asString
+        )
+        Assert.assertEquals("trigger-runtime-policy", vector.get("id").asString)
+        Assert.assertEquals("trigger_runtime_policy", vector.get("case").asString)
+        Assert.assertEquals("offlineTriggerRuntimePolicy", input.get("kind").asString)
+        Assert.assertEquals(OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS, scenarioIds)
+        Assert.assertEquals(OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS, commonRuntimeCaseIds)
+        Assert.assertTrue((scenarioIds + cleanupEvidenceIds).contains(vectorTerm))
+        Assert.assertEquals("TRIGGER_SYSTEM_START", input.getAsJsonObject("desiredTrigger").get("mode").asString)
+        Assert.assertEquals(true, input.getAsJsonObject("desiredTrigger").getAsJsonObject("secret").get("present").asBoolean)
+        Assert.assertEquals("controlPointError", scenariosById.getValue("set-trigger-mode-error").getAsJsonObject("transport").get("setMode").asString)
+        Assert.assertEquals("transportError", scenariosById.getValue("set-trigger-status-read-error").getAsJsonObject("transport").get("getStatus").asString)
+        Assert.assertEquals("controlPointError", scenariosById.getValue("set-trigger-setting-error").getAsJsonObject("transport").get("setSettings").asString)
+        Assert.assertEquals("transportError", scenariosById.getValue("get-trigger-transport-error").getAsJsonObject("transport").get("getStatus").asString)
+        Assert.assertEquals("android-stale-wrong-command-response-discard", expected.getAsJsonObject("platformCleanupEvidence").getAsJsonObject("android").get("id").asString)
+        Assert.assertEquals("ios-pre-command-response-queue-clear", expected.getAsJsonObject("platformCleanupEvidence").getAsJsonObject("ios").get("id").asString)
+        Assert.assertEquals(OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION, expected.get("commonDecision").asString)
+        Assert.assertEquals("shared-common-test", vector.getAsJsonObject("execution").get("status").asString)
+    }
+
+    private fun findRepositoryRoot(): File {
+        var current = File(System.getProperty("user.dir") ?: ".").absoluteFile
+        while (!File(current, "testdata/golden-vectors").isDirectory) {
+            current = current.parentFile ?: break
+        }
+        return current
+    }
+
     /**
      * Builds a minimal success control-point response byte array for REQUEST_MEASUREMENT_START.
      *
@@ -815,6 +859,151 @@ internal class BlePmdClientTest {
             errorCode,
             0x00.toByte()
         )
+    }
+
+    private fun buildControlPointResponse(
+        command: PmdControlPointCommandClientToService,
+        measurementTypeByte: Byte = 0x00,
+        status: PmdControlPointResponse.PmdControlPointResponseCode = PmdControlPointResponse.PmdControlPointResponseCode.SUCCESS,
+        parameters: ByteArray = byteArrayOf()
+    ): ByteArray {
+        return byteArrayOf(
+            PmdControlPointResponse.CONTROL_POINT_RESPONSE_CODE,
+            command.code.toByte(),
+            measurementTypeByte,
+            status.numVal.toByte(),
+            0x00.toByte()
+        ) + parameters
+    }
+
+    @Test
+    fun `setOfflineRecordingTrigger sends Android length-prefixed setting and secret packets`() = runTest {
+        assertOfflineTriggerRuntimePolicyVectorContains("set-trigger-success-with-secret")
+        enableNotifications()
+        val capturedPackets = mutableListOf<ByteArray>()
+        every { mockGattTxInterface.transmitMessage(any(), BlePMDClient.PMD_CP, capture(capturedPackets), true) } just runs
+        val trigger = PmdOfflineTrigger(
+            triggerMode = PmdOfflineRecTriggerMode.TRIGGER_SYSTEM_START,
+            triggers = mapOf(
+                PmdMeasurementType.ACC to Pair(
+                    PmdOfflineRecTriggerStatus.TRIGGER_ENABLED,
+                    PmdSetting(
+                        mapOf(
+                            PmdSetting.PmdSettingType.SAMPLE_RATE to 52,
+                            PmdSetting.PmdSettingType.RESOLUTION to 16
+                        )
+                    )
+                ),
+                PmdMeasurementType.OFFLINE_HR to Pair(PmdOfflineRecTriggerStatus.TRIGGER_ENABLED, null)
+            )
+        )
+        val secretKey = ByteArray(16) { it.toByte() }
+        val secret = PmdSecret(PmdSecret.SecurityStrategy.AES128, secretKey)
+        val currentTriggerStatus = byteArrayOf(
+            0x01,
+            0x01, PmdMeasurementType.ACC.numVal.toByte(), 0x00,
+            0x01, PmdMeasurementType.GYRO.numVal.toByte(), 0x00,
+            0x01, PmdMeasurementType.OFFLINE_HR.numVal.toByte(), 0x00
+        )
+        var caughtError: Throwable? = null
+
+        val job = launch {
+            try {
+                blePmdClient.setOfflineRecordingTrigger(trigger, secret)
+            } catch (error: Throwable) {
+                caughtError = error
+            }
+        }
+        testScheduler.advanceUntilIdle()
+        blePmdClient.processServiceData(
+            BlePMDClient.PMD_CP,
+            buildControlPointResponse(PmdControlPointCommandClientToService.SET_OFFLINE_RECORDING_TRIGGER_MODE),
+            BleGattBase.ATT_SUCCESS,
+            true
+        )
+        testScheduler.advanceUntilIdle()
+        blePmdClient.processServiceData(
+            BlePMDClient.PMD_CP,
+            buildControlPointResponse(PmdControlPointCommandClientToService.GET_OFFLINE_RECORDING_TRIGGER_STATUS, parameters = currentTriggerStatus),
+            BleGattBase.ATT_SUCCESS,
+            true
+        )
+        testScheduler.advanceUntilIdle()
+        repeat(3) {
+            blePmdClient.processServiceData(
+                BlePMDClient.PMD_CP,
+                buildControlPointResponse(PmdControlPointCommandClientToService.SET_OFFLINE_RECORDING_TRIGGER_SETTINGS),
+                BleGattBase.ATT_SUCCESS,
+                true
+            )
+            testScheduler.advanceUntilIdle()
+        }
+        job.join()
+
+        assertTrue("Expected no error but got: $caughtError", caughtError == null)
+        Assert.assertArrayEquals(byteArrayOf(0x08, 0x01), capturedPackets[0])
+        Assert.assertArrayEquals(byteArrayOf(0x07), capturedPackets[1])
+        val settingPackets = capturedPackets.drop(2)
+        assertEquals(3, settingPackets.size)
+        val accPacket = settingPackets.first { it.take(3) == listOf(0x09.toByte(), 0x01.toByte(), PmdMeasurementType.ACC.numVal.toByte()) }
+        val gyroPacket = settingPackets.first { it.contentEquals(byteArrayOf(0x09, 0x00, PmdMeasurementType.GYRO.numVal.toByte())) }
+        val hrPacket = settingPackets.first { it.take(3) == listOf(0x09.toByte(), 0x01.toByte(), PmdMeasurementType.OFFLINE_HR.numVal.toByte()) }
+        Assert.assertArrayEquals(byteArrayOf(0x09, 0x00, PmdMeasurementType.GYRO.numVal.toByte()), gyroPacket)
+        val secretBytes = byteArrayOf(0x06, 0x01, PmdSecret.SecurityStrategy.AES128.numVal.toByte()) + secretKey
+        val accExpectedPayload = byteArrayOf(
+            0x09, 0x01, PmdMeasurementType.ACC.numVal.toByte(), 0x1B,
+            0x00, 0x01, 0x34, 0x00,
+            0x01, 0x01, 0x10, 0x00
+        ) + secretBytes
+        val hrExpectedPayload = byteArrayOf(
+            0x09, 0x01, PmdMeasurementType.OFFLINE_HR.numVal.toByte(), 0x13
+        ) + secretBytes
+        Assert.assertArrayEquals(accExpectedPayload, accPacket)
+        Assert.assertArrayEquals(hrExpectedPayload, hrPacket)
+    }
+
+    @Test
+    fun `getOfflineRecordingTriggerStatus ignores stale response for different command`() = runTest {
+        assertOfflineTriggerRuntimePolicyVectorContains("android-stale-wrong-command-response-discard")
+        enableNotifications()
+        val capturedPackets = mutableListOf<ByteArray>()
+        every { mockGattTxInterface.transmitMessage(any(), BlePMDClient.PMD_CP, capture(capturedPackets), true) } just runs
+        val currentTriggerStatus = byteArrayOf(
+            0x01,
+            0x01, PmdMeasurementType.ACC.numVal.toByte(), 0x00
+        )
+        var trigger: PmdOfflineTrigger? = null
+        var caughtError: Throwable? = null
+
+        blePmdClient.pmdCpResponseQueue.add(
+            Pair(
+                buildControlPointResponse(PmdControlPointCommandClientToService.GET_MEASUREMENT_STATUS),
+                BleGattBase.ATT_SUCCESS
+            )
+        )
+
+        val job = launch {
+            try {
+                trigger = blePmdClient.getOfflineRecordingTriggerStatus()
+            } catch (error: Throwable) {
+                caughtError = error
+            }
+        }
+        testScheduler.advanceUntilIdle()
+        blePmdClient.processServiceData(
+            BlePMDClient.PMD_CP,
+            buildControlPointResponse(PmdControlPointCommandClientToService.GET_OFFLINE_RECORDING_TRIGGER_STATUS, parameters = currentTriggerStatus),
+            BleGattBase.ATT_SUCCESS,
+            true
+        )
+        testScheduler.advanceUntilIdle()
+        job.join()
+
+        assertTrue("Expected stale wrong-command response to be ignored, got: $caughtError", caughtError == null)
+        Assert.assertArrayEquals(byteArrayOf(0x07), capturedPackets.single())
+        assertEquals(PmdOfflineRecTriggerMode.TRIGGER_SYSTEM_START, trigger?.triggerMode)
+        assertTrue(trigger?.triggers?.containsKey(PmdMeasurementType.ACC) == true)
+        assertEquals(0, blePmdClient.pmdCpResponseQueue.size)
     }
 
     @Test
@@ -1132,5 +1321,17 @@ internal class BlePmdClientTest {
         // packet[1] = ONLINE.asBitField() OR ECG.numVal = 0x00 OR 0x00 = 0x00
         val expectedFirstByte = (PmdRecordingType.ONLINE.asBitField() or PmdMeasurementType.ECG.numVal).toByte()
         assertEquals("Second byte should encode ONLINE recording type + ECG measurement", expectedFirstByte, capturedPacket.captured[1])
+    }
+
+    private companion object {
+        const val OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
+        val OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS = listOf(
+            "set-trigger-success-with-secret",
+            "set-trigger-mode-error",
+            "set-trigger-status-read-error",
+            "set-trigger-setting-error",
+            "get-trigger-success",
+            "get-trigger-transport-error"
+        )
     }
 }

@@ -1,0 +1,88 @@
+{
+  "id": "distal-skin-two-samples",
+  "area": "sdk.skin-temperature",
+  "case": "distal_skin_two_samples",
+  "source": "Android and iOS PolarSkinTemperatureUtils characterization tests",
+  "input": {
+    "proto": {
+      "sourceDeviceId": "AABBCCDD",
+      "measurementType": 1,
+      "sensorLocation": 1,
+      "samples": [
+        {
+          "recordingTimeDeltaMs": 0,
+          "temperature": 37.0
+        },
+        {
+          "recordingTimeDeltaMs": 1000,
+          "temperature": 37.6
+        }
+      ]
+    }
+  },
+  "expected": {
+    "measurementType": "TM_SKIN_TEMPERATURE",
+    "sensorLocation": "SL_DISTAL",
+    "samples": [
+      {
+        "recordingTimeDeltaMs": 0,
+        "temperature": 37.0
+      },
+      {
+        "recordingTimeDeltaMs": 1000,
+        "temperature": 37.6
+      }
+    ]
+  },
+  "platformExpectations": {
+    "android": {
+      "deviceId": "AABBCCDD",
+      "sensorLocation": "SL_DISTAL",
+      "measurementType": "TM_SKIN_TEMPERATURE",
+      "samples": [
+        {
+          "recordingTimeDeltaMs": 0,
+          "temperature": 37.0
+        },
+        {
+          "recordingTimeDeltaMs": 1000,
+          "temperature": 37.6
+        }
+      ]
+    },
+    "ios": {
+      "sensorLocation": "SL_DISTAL",
+      "measurementType": "TM_SKIN_TEMPERATURE",
+      "samples": [
+        {
+          "recordingTimeDeltaMs": 0,
+          "temperature": 37.0
+        },
+        {
+          "recordingTimeDeltaMs": 1000,
+          "temperature": 37.6
+        }
+      ]
+    },
+    "commonDecision": {
+      "sourceDeviceIdPolicy": "include-nullable-source-device-id-in-shared-model-or-adapt-it-at-platform-facade"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarSkinTemperatureUtilsTest"
+    ],
+    "ios": [
+      "PolarSkinTemperatureUnitTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SkinTemperatureDomainCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Skin temperature period with distal sensor location and two samples."
+}

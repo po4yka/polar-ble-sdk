@@ -1,0 +1,42 @@
+{
+  "id": "acc-raw-type2-android-only",
+  "area": "sensor-parser",
+  "case": "acc_raw_type2_android_only_signed_24bit_axis_boundaries",
+  "source": "Android AccDataTest; iOS parser does not currently support raw type 2",
+  "input": {
+    "dataFrameHex": "02660000000000000002000080ffff7f000000",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "ACC",
+    "frameType": 2,
+    "timeStamp": 102,
+    "samples": [
+      {
+        "timeStamp": 102,
+        "x": -8388608,
+        "y": 8388607,
+        "z": 0
+      }
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.AccDataTest"
+    ],
+    "ios": [
+      "AccDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AccParserCommonPolicyTest"
+    ]
+  }
+}

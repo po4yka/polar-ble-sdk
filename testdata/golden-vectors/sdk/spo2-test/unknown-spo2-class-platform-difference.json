@@ -1,0 +1,51 @@
+{
+  "id": "unknown-spo2-class-platform-difference",
+  "area": "sdk.spo2-test",
+  "case": "unknown_spo2_class_platform_difference",
+  "source": "Android and iOS PolarTestUtils characterization tests",
+  "input": {
+    "date": "2026-04-14",
+    "timeDirName": "063635",
+    "proto": {
+      "timeZoneOffsetMinutes": 180,
+      "testStatus": 0,
+      "bloodOxygenPercent": 95,
+      "spo2Class": 99
+    }
+  },
+  "expected": {
+    "policy": "document-spo2-unknown-enum-platform-difference"
+  },
+  "platformExpectations": {
+    "android": {
+      "error": "unknown-enum-number"
+    },
+    "ios": {
+      "dateIsoUtc": "2026-04-14T03:36:35Z",
+      "timeZoneOffsetMinutes": 180,
+      "testStatus": "passed",
+      "bloodOxygenPercent": 95,
+      "spo2Class": null
+    },
+    "commonDecision": {
+      "unknownEnumPolicy": "map-to-null-with-typed-warning-or-error-boundary-before-public-model"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTestUtilsTest"
+    ],
+    "ios": [
+      "PolarTestUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.Spo2CommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Current platform difference for an unrecognized SPo2 class enum value."
+}

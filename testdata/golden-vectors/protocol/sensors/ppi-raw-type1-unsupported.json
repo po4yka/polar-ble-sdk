@@ -1,0 +1,36 @@
+{
+  "id": "ppi-raw-type1-unsupported",
+  "area": "sensor-parser",
+  "case": "ppi_raw_type1_unsupported",
+  "source": "Android PpiDataTest and iOS PpiDataTest",
+  "input": {
+    "dataFrameHex": "03010000000000000001",
+    "previousTimeStamp": 0,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PPI",
+    "frameType": 1,
+    "compressed": false,
+    "timeStamp": 1,
+    "parseError": "unsupportedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "PPI currently supports only raw type 0. KMP should keep unsupported frame errors deterministic.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpiDataTest"
+    ],
+    "ios": [
+      "PpiDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpiParserCommonPolicyTest"
+    ]
+  }
+}

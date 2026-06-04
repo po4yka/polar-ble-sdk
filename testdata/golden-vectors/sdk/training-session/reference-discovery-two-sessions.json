@@ -1,0 +1,209 @@
+{
+  "id": "reference-discovery-two-sessions",
+  "area": "sdk.training-session",
+  "case": "reference_discovery_two_sessions",
+  "source": "Android and iOS PolarTrainingSessionUtils characterization tests",
+  "input": {
+    "kind": "referenceDiscovery",
+    "directories": {
+      "/U/0/": [
+        {
+          "name": "20250304/",
+          "size": 0
+        },
+        {
+          "name": "20250305/",
+          "size": 0
+        },
+        {
+          "name": "IGNORED.TXT",
+          "size": 99
+        }
+      ],
+      "/U/0/20250304/": [
+        {
+          "name": "E/",
+          "size": 0
+        }
+      ],
+      "/U/0/20250304/E/": [
+        {
+          "name": "101112/",
+          "size": 0
+        }
+      ],
+      "/U/0/20250304/E/101112/": [
+        {
+          "name": "TSESS.BPB",
+          "size": 100
+        },
+        {
+          "name": "00/",
+          "size": 0
+        },
+        {
+          "name": "01/",
+          "size": 0
+        },
+        {
+          "name": "NOTES.TXT",
+          "size": 777
+        }
+      ],
+      "/U/0/20250304/E/101112/00/": [
+        {
+          "name": "BASE.BPB",
+          "size": 10
+        },
+        {
+          "name": "ROUTE.BPB",
+          "size": 20
+        },
+        {
+          "name": "ROUTE.GZB",
+          "size": 30
+        },
+        {
+          "name": "ROUTE2.BPB",
+          "size": 40
+        },
+        {
+          "name": "ROUTE2.GZB",
+          "size": 50
+        },
+        {
+          "name": "SAMPLES.BPB",
+          "size": 60
+        },
+        {
+          "name": "SAMPLES.GZB",
+          "size": 70
+        },
+        {
+          "name": "SAMPLES2.GZB",
+          "size": 80
+        },
+        {
+          "name": "UNKNOWN.BPB",
+          "size": 90
+        }
+      ],
+      "/U/0/20250304/E/101112/01/": [
+        {
+          "name": "BASE.BPB",
+          "size": 11
+        },
+        {
+          "name": "SAMPLES.GZB",
+          "size": 71
+        }
+      ],
+      "/U/0/20250305/": [
+        {
+          "name": "E/",
+          "size": 0
+        }
+      ],
+      "/U/0/20250305/E/": [
+        {
+          "name": "080000/",
+          "size": 0
+        }
+      ],
+      "/U/0/20250305/E/080000/": [
+        {
+          "name": "TSESS.BPB",
+          "size": 120
+        }
+      ]
+    }
+  },
+  "expected": {
+    "references": [
+      {
+        "dateTime": "2025-03-04T10:11:12",
+        "date": "2025-03-04",
+        "path": "/U/0/20250304/E/101112/TSESS.BPB",
+        "trainingDataTypes": [
+          "TRAINING_SESSION_SUMMARY"
+        ],
+        "fileSize": 542,
+        "exercises": [
+          {
+            "index": 0,
+            "iosIndex": 0,
+            "androidPath": "/U/0/20250304/E/101112/00/BASE.BPB",
+            "iosPath": "/U/0/20250304/E/101112/00",
+            "exerciseDataTypes": [
+              "EXERCISE_SUMMARY",
+              "ROUTE",
+              "ROUTE_GZIP",
+              "ROUTE_ADVANCED_FORMAT",
+              "ROUTE_ADVANCED_FORMAT_GZIP",
+              "SAMPLES",
+              "SAMPLES_GZIP",
+              "SAMPLES_ADVANCED_FORMAT_GZIP"
+            ],
+            "fileSizes": {
+              "BASE.BPB": 10,
+              "ROUTE.BPB": 20,
+              "ROUTE.GZB": 30,
+              "ROUTE2.BPB": 40,
+              "ROUTE2.GZB": 50,
+              "SAMPLES.BPB": 60,
+              "SAMPLES.GZB": 70,
+              "SAMPLES2.GZB": 80
+            }
+          },
+          {
+            "index": 1,
+            "iosIndex": 0,
+            "androidPath": "/U/0/20250304/E/101112/01/BASE.BPB",
+            "iosPath": "/U/0/20250304/E/101112/01",
+            "exerciseDataTypes": [
+              "EXERCISE_SUMMARY",
+              "SAMPLES_GZIP"
+            ],
+            "fileSizes": {
+              "BASE.BPB": 11,
+              "SAMPLES.GZB": 71
+            }
+          }
+        ]
+      },
+      {
+        "dateTime": "2025-03-05T08:00:00",
+        "date": "2025-03-05",
+        "path": "/U/0/20250305/E/080000/TSESS.BPB",
+        "trainingDataTypes": [
+          "TRAINING_SESSION_SUMMARY"
+        ],
+        "fileSize": 120,
+        "exercises": []
+      }
+    ]
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"
+    ],
+    "ios": [
+      "PolarTrainingSessionUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TrainingSessionCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "unknownFilePolicy": "ignore-files-that-do-not-map-to-public-training-or-exercise-data-types",
+      "exercisePathPolicy": "android-currently-stores-first-file-path-while-ios-stores-exercise-directory-path"
+    }
+  },
+  "notes": "Training-session directory traversal finds summary sessions, classifies exercise files, ignores unrelated files, and aggregates file sizes."
+}

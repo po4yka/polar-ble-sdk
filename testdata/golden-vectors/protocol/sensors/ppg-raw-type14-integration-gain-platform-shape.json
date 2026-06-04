@@ -1,0 +1,79 @@
+{
+  "id": "ppg-raw-type14-integration-gain-platform-shape",
+  "area": "sensor-parser",
+  "case": "ppg_raw_type14_integration_and_gain_platform_shape",
+  "source": "Android PpgDataTest and iOS PpgDataTest",
+  "input": {
+    "dataFrameHex": "a500943577000000000e034892",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "PPG",
+    "frameType": 14,
+    "compressed": false,
+    "timeStamp": 2000000000,
+    "samples": [
+      {
+        "timeStamp": 2000000000,
+        "numIntTs1": [
+          3
+        ],
+        "channel1GainTs1": [
+          0
+        ],
+        "channel2GainTs1": [
+          2
+        ]
+      }
+    ]
+  },
+  "platformExpectations": {
+    "android": {
+      "samples": [
+        {
+          "timeStamp": 2000000000,
+          "numIntTs1": [
+            3
+          ],
+          "channel1GainTs1": [
+            0
+          ],
+          "channel2GainTs1": [
+            2
+          ]
+        }
+      ]
+    },
+    "ios": {
+      "samples": [
+        {
+          "timeStamp": 2000000000,
+          "ppgDataSamples": [
+            3,
+            0,
+            2
+          ]
+        }
+      ]
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ]
+  }
+}

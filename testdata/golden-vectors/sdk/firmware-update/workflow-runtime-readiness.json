@@ -1,0 +1,67 @@
+{
+  "id": "workflow-runtime-readiness",
+  "area": "sdk.firmware-update",
+  "case": "workflow_runtime_readiness",
+  "source": "Firmware workflow runtime backlog and workflow-runtime-policy shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the firmware workflow behavior families that must remain covered before firmware update orchestration delegates to shared KMP runtime code.",
+  "input": {
+    "kind": "firmwareWorkflowRuntimeReadiness",
+    "policyVectorPath": "sdk/firmware-update/workflow-runtime-policy.json",
+    "requiredBehaviorFamilies": [
+      "fake-network-availability",
+      "download-failure",
+      "fake-filesystem-zip-extraction",
+      "empty-or-invalid-package",
+      "ble-write-progress",
+      "system-update-written-last",
+      "reboot-response-success",
+      "terminal-device-error",
+      "cleanup-gate",
+      "cancellation-gate",
+      "cancellation-cleanup-after-package-fetch",
+      "retryable-server-failure-gate",
+      "facade-error-mapping-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "fake-network-availability",
+      "download-failure",
+      "fake-filesystem-zip-extraction",
+      "empty-or-invalid-package",
+      "ble-write-progress",
+      "system-update-written-last",
+      "reboot-response-success",
+      "terminal-device-error",
+      "cleanup-gate",
+      "cancellation-gate",
+      "cancellation-cleanup-after-package-fetch",
+      "retryable-server-failure-gate",
+      "facade-error-mapping-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, progress, retryable fake-network server failure classification, terminal device errors, and cancellation cleanup before BLE writes are pinned, retry scheduling has explicit platform facade coverage, public facade error mapping is pinned, and the shared tests are compile-verified.",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"
+    ],
+    "ios": [
+      "PolarFirmwareUpdateUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for firmware workflow behavior-family completeness only; real artifact integration, retry scheduling, public facade error mapping, and compile verification remain required before production firmware workflow code moves to shared KMP."
+}

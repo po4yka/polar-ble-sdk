@@ -1,0 +1,47 @@
+{
+  "id": "service-list-empty",
+  "area": "sdk.rest-service",
+  "case": "service_list_empty",
+  "source": "Android and iOS REST API characterization tests",
+  "input": {
+    "kind": "serviceList",
+    "json": {
+      "ignored_top_level": {
+        "value": true
+      }
+    }
+  },
+  "expected": {
+    "pathsForServices": {},
+    "serviceNames": [],
+    "servicePaths": [],
+    "ios": {
+      "pathsForServices": null,
+      "serviceNames": [],
+      "servicePaths": []
+    }
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "unknownTopLevelPolicy": "ignore-unknown-fields",
+      "missingServicesPolicy": "return-empty-collections"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Missing services object preserves current empty service discovery defaults for Android and common policy. iOS currently exposes nil pathsForServices while still returning empty service names and paths.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceRestApiServiceTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.RestServiceMappingCommonPolicyTest"
+    ]
+  }
+}

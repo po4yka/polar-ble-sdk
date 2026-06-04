@@ -1,0 +1,40 @@
+{
+  "id": "non-hex-device-id-platform-difference",
+  "area": "device-id",
+  "case": "non_hex_input_current_platform_difference",
+  "source": "Android BlePolarDeviceIdUtilityTests and iOS BlePolarDeviceIdUtilityTest",
+  "input": {
+    "deviceId": "ZZZZZZ"
+  },
+  "expected": {},
+  "platformExpectations": {
+    "android": {
+      "assembled": "",
+      "isValidThrows": "NumberFormatException"
+    },
+    "ios": {
+      "valid": false
+    },
+    "commonDecision": {
+      "status": "undecided"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.polar.DeviceIdGoldenVectorTest"
+    ],
+    "ios": [
+      "BlePolarDeviceIdUtilityTest",
+      "PolarDeviceUuidTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.DeviceIdCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "Assembly returns an empty string on Android for non-hex six-character input. Validation currently differs by platform."
+}

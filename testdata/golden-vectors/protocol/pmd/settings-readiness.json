@@ -1,0 +1,65 @@
+{
+  "id": "pmd-settings-readiness",
+  "area": "pmd.settings",
+  "case": "pmd_settings_readiness",
+  "source": "PMD settings vectors and shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the PMD settings behavior families that must remain covered before settings parsing and selected-setting serialization delegate to shared KMP code.",
+  "input": {
+    "kind": "pmdSettingsReadiness",
+    "policyVectorPaths": [
+      "protocol/pmd/settings-basic-range.json",
+      "protocol/pmd/settings-duplicate-sample-rate-factor.json",
+      "protocol/pmd/settings-range-milliunit-platform-difference.json",
+      "protocol/pmd/settings-security-value-platform-error.json",
+      "protocol/pmd/settings-selected-serialization-max-values.json",
+      "protocol/pmd/settings-truncated-resolution-platform-difference.json",
+      "protocol/pmd/settings-unknown-type-platform-difference.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "basic-settings-parsing",
+      "duplicate-setting-overwrite",
+      "factor-setting-parsing",
+      "selected-setting-serialization",
+      "selected-factor-skip-policy",
+      "range-milliunit-signedness-platform-decision",
+      "security-setting-platform-error-policy",
+      "truncated-value-platform-decision",
+      "unknown-setting-type-platform-decision",
+      "platform-pmd-settings-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "basic-settings-parsing",
+      "duplicate-setting-overwrite",
+      "factor-setting-parsing",
+      "selected-setting-serialization",
+      "selected-factor-skip-policy",
+      "range-milliunit-signedness-platform-decision",
+      "security-setting-platform-error-policy",
+      "truncated-value-platform-decision",
+      "unknown-setting-type-platform-decision",
+      "platform-pmd-settings-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "PMD settings migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD settings tests continue to reference the same vectors, baseline parsing, duplicate overwrite behavior, FACTOR parsing, selected-setting serialization, skipped FACTOR serialization, RANGE_MILLIUNIT signedness platform decisions, SECURITY setting parse policy, truncated-value policy, unknown-setting-type policy, and compile verification remain explicit before production PMD settings logic moves."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSettingTest"
+    ],
+    "ios": [
+      "PmdSettingTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdSettingsCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest gates PMD settings parser and selected-setting serialization behavior-family completeness only; PMD control-point responses, secret strategy handling, active measurements, and facade request orchestration remain separate migration gates."
+}

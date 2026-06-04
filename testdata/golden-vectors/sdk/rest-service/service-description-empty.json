@@ -1,0 +1,48 @@
+{
+  "id": "service-description-empty",
+  "area": "sdk.rest-service",
+  "case": "service_description_empty",
+  "source": "Android and iOS REST API characterization tests",
+  "input": {
+    "kind": "serviceDescription",
+    "json": {
+      "unknown": {
+        "ignored": true
+      }
+    }
+  },
+  "expected": {
+    "events": [],
+    "endpoints": [],
+    "actions": {},
+    "eventDetails": {
+      "missing": []
+    },
+    "eventTriggers": {
+      "missing": []
+    }
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "unknownTopLevelPolicy": "ignore-unknown-fields",
+      "missingCollectionsPolicy": "return-empty-collections"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Empty service description preserves current empty-list and empty-map defaults.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceRestApiServiceTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.RestServiceMappingCommonPolicyTest"
+    ]
+  }
+}

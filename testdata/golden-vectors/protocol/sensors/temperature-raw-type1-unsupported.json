@@ -1,0 +1,36 @@
+{
+  "id": "temperature-raw-type1-unsupported",
+  "area": "sensor-parser",
+  "case": "temperature_raw_type1_unsupported_frame",
+  "source": "Android TemperatureDataTest and iOS TemperatureDataTest",
+  "input": {
+    "dataFrameHex": "0c00943577000000000001",
+    "previousTimeStamp": 120,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "TEMPERATURE",
+    "frameType": 1,
+    "compressed": false,
+    "timeStamp": 2000000000,
+    "parseError": "unsupportedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PressureDataTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.TemperatureDataTest"
+    ],
+    "ios": [
+      "TemperatureDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PressureTemperatureParserCommonPolicyTest"
+    ]
+  }
+}

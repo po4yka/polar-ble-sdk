@@ -1,0 +1,34 @@
+{
+  "id": "malformed-response",
+  "area": "sdk.nightly-recharge",
+  "case": "malformed_response",
+  "source": "Android and iOS PolarNightlyRechargeUtils characterization tests",
+  "input": {
+    "responseHex": "ff"
+  },
+  "expected": {
+    "result": null
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "malformedPayloadPolicy": "return-null-for-current-platform-facades-before-choosing-a-shared-typed-error"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarNightlyRechargeUtilsTest"
+    ],
+    "ios": [
+      "PolarNightlyRechargeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SleepNightlyRechargeCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Malformed NR.BPB payload preserves current null-result behavior while still issuing the expected PFTP GET."
+}

@@ -1,0 +1,37 @@
+{
+  "id": "acc-compressed-type0-truncated-delta-payload-android-error",
+  "area": "sensor-parser",
+  "case": "acc_compressed_type0_truncated_delta_payload_android_error",
+  "source": "Android AccDataTest; iOS currently keeps the reference sample for the same malformed payload",
+  "input": {
+    "dataFrameHex": "02660000000000000080eaff08000d000301",
+    "previousTimeStamp": 100,
+    "factor": 0.5,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "ACC",
+    "frameType": 0,
+    "compressed": true,
+    "timeStamp": 102,
+    "parseError": "malformedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android currently throws when a compressed type-0 ACC delta block declares one 3-bit sample but omits the delta payload.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.AccDataTest"
+    ],
+    "ios": [
+      "AccDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AccParserCommonPolicyTest"
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "ppg-raw-type6-truncated-sport-id-malformed",
+  "area": "sensor-parser",
+  "case": "ppg_raw_type6_truncated_sport_id_malformed",
+  "source": "Pre-migration shared PPG parser policy",
+  "input": {
+    "dataFrameHex": "010094357700000000061b000000000000",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PPG",
+    "frameType": 6,
+    "compressed": false,
+    "timeStamp": 2000000000,
+    "parseError": "malformedFrame"
+  },
+  "consumerTests": {
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ],
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ]
+  },
+  "platforms": {
+    "android": false,
+    "ios": false,
+    "common": true
+  },
+  "notes": "Future shared PPG parsing should reject raw type-6 sport-ID payloads unless exactly eight bytes are present."
+}

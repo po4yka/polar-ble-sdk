@@ -1,0 +1,35 @@
+{
+  "id": "write-commit-uint32-max-key",
+  "area": "sdk-kvtx",
+  "case": "write_bytes_commit_uint32_max_key",
+  "source": "Android KvtxScriptUtilsTest and iOS KvtxScriptUtilsTests",
+  "input": {
+    "operation": "buildWriteAndCommit",
+    "key": 4294967295,
+    "dataHex": "fe"
+  },
+  "expected": {
+    "scriptHex": "00ffffffff01000000fe05",
+    "extractKey": 4294967295,
+    "extractedHex": "fe",
+    "firstOpcode": 0,
+    "commitOpcode": 5
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Pins unsigned 32-bit key handling across Android Int storage and iOS UInt32 storage.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.KvtxScriptUtilsTest"
+    ],
+    "ios": [
+      "KvtxScriptUtilsTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.KvtxCommonPolicyTest"
+    ]
+  }
+}

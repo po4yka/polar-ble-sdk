@@ -1,0 +1,36 @@
+{
+  "id": "pmd-control-point-short-response-op-type-android-error",
+  "area": "pmd-control-point",
+  "case": "short_response_opcode_type_android_error",
+  "source": "Android PmdControlPointResponse characterization",
+  "input": {
+    "hex": "f00102"
+  },
+  "expected": {
+    "commonDecision": "KMP should reject a control-point response missing status without unsafe indexing."
+  },
+  "platformExpectations": {
+    "android": {
+      "parseError": "indexOutOfBounds"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android currently throws while reading status; Swift Data indexing would trap.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientControlPointResponseTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdActiveMeasurementTest"
+    ],
+    "ios": [
+      "BlePmdClientTest",
+      "PmdActiveMeasurementTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PmdControlPointCommonPolicyTest"
+    ]
+  }
+}

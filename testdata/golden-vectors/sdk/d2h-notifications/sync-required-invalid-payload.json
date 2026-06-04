@@ -1,0 +1,31 @@
+{
+  "id": "sync-required-invalid-payload",
+  "area": "sdk-d2h-notifications",
+  "case": "sync_required_invalid_payload_keeps_raw_parameters",
+  "source": "Android PolarD2HNotificationsUtilsTest and iOS PolarDeviceToHostNotificationsApiTests",
+  "input": {
+    "notificationId": 7,
+    "parametersHex": "696e76616c69642070726f746f6275662064617461"
+  },
+  "expected": {
+    "notificationType": "SYNC_REQUIRED",
+    "parsedProto": null
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Invalid protobuf data must still emit the raw D2H notification with parsedParameters null.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceToHostNotificationsApiTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.D2hNotificationCommonPolicyTest"
+    ]
+  }
+}

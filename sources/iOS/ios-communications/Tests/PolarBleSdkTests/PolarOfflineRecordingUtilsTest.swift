@@ -217,6 +217,67 @@ final class PolarOfflineRecordingUtilsTest: XCTestCase {
         emitted.forEach { XCTAssertNotNil($0.date) }
     }
 
+    func testOfflineRecordingPmdFilesGoldenVectorsMatchIOSBehavior() throws {
+        let vector = try loadOfflineRecordingVector("pmdfiles-v2-grouping.json")
+        let input = try XCTUnwrap(vector["input"] as? [String: Any])
+        let pmdFilesTxt = try XCTUnwrap(input["pmdFilesTxt"] as? String)
+        let emitted = try PolarOfflineRecordingUtils.listOfflineRecordingsV2(fileData: try XCTUnwrap(pmdFilesTxt.data(using: .utf8)))
+
+        try assertOfflineRecordingEntries(emitted, expected: try XCTUnwrap(vector["expected"] as? [String: Any]), platformPathKey: "iosPath")
+    }
+
+    func testOfflineRecordingPmdFilesGoldenVectorsFollowNeutralKmpVectorShape() throws {
+        try assertNeutralKmpVectorShape(try loadOfflineRecordingVector("pmdfiles-v2-grouping.json"), id: "pmdfiles-v2-grouping.json")
+    }
+
+    func testOfflineRecordingMetadataReadinessManifestIsPinnedBeforeMigration() throws {
+        let readiness = try loadOfflineRecordingVector("metadata-readiness.json")
+        let input = try XCTUnwrap(readiness["input"] as? [String: Any])
+        let expected = try XCTUnwrap(readiness["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(readiness["consumerTests"] as? [String: Any])
+        let platforms = try XCTUnwrap(readiness["platforms"] as? [String: Any])
+        let policyVectorPaths = try XCTUnwrap(input["policyVectorPaths"] as? [String])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+        XCTAssertEqual(readiness["id"] as? String, "offline-recording-metadata-readiness")
+        XCTAssertEqual(input["kind"] as? String, "offlineRecordingMetadataReadiness")
+        XCTAssertEqual(policyVectorPaths, [
+            "sdk/offline-recording/filename-mapping.json",
+            "sdk/offline-recording/pmdfiles-v2-grouping.json",
+            "sdk/offline-recording/trigger-mapping.json"
+        ])
+        let expectedFamilies = [
+            "filename-to-measurement-type-mapping",
+            "split-file-index-stripping",
+            "invalid-filename-boundary",
+            "pmdfiles-grouping",
+            "zero-size-recording-filtering",
+            "invalid-entry-filtering",
+            "representative-path-platform-policy",
+            "trigger-model-projection",
+            "disabled-trigger-filtering",
+            "platform-offline-recording-vector-reference-gate",
+            "compile-verification-gate"
+        ]
+        XCTAssertEqual(requiredFamilies, expectedFamilies)
+        XCTAssertEqual(coveredFamilies, expectedFamilies)
+        XCTAssertEqual(expected["commonDecision"] as? String, "Offline recording metadata migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves.")
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), [
+            "com.polar.androidcommunications.api.ble.model.offlinerecording.OfflineRecordingUtilityTest",
+            "com.polar.sdk.impl.utils.PolarDataUtilsTest",
+            "com.polar.sdk.api.model.utils.PolarOfflineRecordingUtilsTest"
+        ])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), [
+            "OfflineRecordingUtilsTest",
+            "PolarDataUtilsTest",
+            "PolarOfflineRecordingUtilsTest"
+        ])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.OfflineRecordingMetadataCommonPolicyTest"])
+        XCTAssertEqual(platforms["android"] as? Bool, true)
+        XCTAssertEqual(platforms["ios"] as? Bool, true)
+        XCTAssertEqual(platforms["common"] as? Bool, true)
+    }
+
     // MARK: - Helpers
 
     private func collectStream<T>(_ stream: AsyncThrowingStream<T, Error>) async throws -> [T] {
@@ -224,4 +285,62 @@ final class PolarOfflineRecordingUtilsTest: XCTestCase {
         for try await value in stream { results.append(value) }
         return results
     }
+
+    private func assertOfflineRecordingEntries(_ actual: [PolarOfflineRecordingEntry], expected: [String: Any], platformPathKey: String) throws {
+        let expectedEntries = try XCTUnwrap(expected["entries"] as? [[String: Any]])
+        XCTAssertEqual(actual.count, expectedEntries.count, "entry count")
+        for expectedEntry in expectedEntries {
+            let expectedType = try polarDeviceDataType(named: try XCTUnwrap(expectedEntry["type"] as? String))
+            let actualEntry = try XCTUnwrap(actual.first { $0.type == expectedType }, "\(expectedType)")
+            XCTAssertEqual(actualEntry.path, try XCTUnwrap(expectedEntry[platformPathKey] as? String))
+            XCTAssertEqual(actualEntry.size, UInt(try number(expectedEntry, "size")))
+            try assertDate(actualEntry.date, expected: try XCTUnwrap(expectedEntry["dateTime"] as? String))
+        }
+    }
+
+    private func polarDeviceDataType(named name: String) throws -> PolarDeviceDataType {
+        switch name {
+        case "ACC": return .acc
+        case "GYRO": return .gyro
+        case "MAGNETOMETER": return .magnetometer
+        case "PPG": return .ppg
+        case "PPI": return .ppi
+        case "HR": return .hr
+        case "TEMPERATURE": return .temperature
+        case "SKIN_TEMPERATURE": return .skinTemperature
+        default: throw NSError(domain: "PolarOfflineRecordingUtilsTest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Unknown device data type \(name)"])
+        }
+    }
+
+    private func assertDate(_ actual: Date, expected: String) throws {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        XCTAssertEqual(formatter.string(from: actual), expected)
+    }
+
+    private func number(_ object: [String: Any], _ key: String) throws -> Int {
+        return try XCTUnwrap(object[key] as? NSNumber, key).intValue
+    }
+
+    private func assertNeutralKmpVectorShape(_ vector: [String: Any], id: String) throws {
+        XCTAssertNotNil(vector["area"], id)
+        XCTAssertNotNil(vector["case"], id)
+        XCTAssertNotNil(vector["source"], id)
+        XCTAssertNotNil(vector["input"], id)
+        XCTAssertNotNil(vector["expected"], id)
+        let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], id)
+        XCTAssertNotNil(platforms["android"], id)
+        XCTAssertNotNil(platforms["ios"], id)
+        XCTAssertNotNil(platforms["common"], id)
+    }
+
+    private func loadOfflineRecordingVector(_ fileName: String) throws -> [String: Any] {
+        let file = try GoldenVectorTestData.repositoryRoot()
+            .appendingPathComponent("testdata/golden-vectors/sdk/offline-recording")
+            .appendingPathComponent(fileName)
+        let data = try Data(contentsOf: file)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], file.path)
+    }
+
 }

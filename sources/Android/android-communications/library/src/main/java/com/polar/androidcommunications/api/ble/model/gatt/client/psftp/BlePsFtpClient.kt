@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -553,15 +554,14 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
     }
 
     private fun buildNotificationFlow(): Flow<PftpNotificationMessage> = channelFlow {
-        while (true) {
+        while (isActive) {
             var pendingMessage: PftpNotificationMessage? = null
             synchronized(pftpWaitNotificationMutex) {
+                var packet: Pair<ByteArray, Int>? = null
                 if (pftpD2HNotificationEnabled?.get() == ATT_SUCCESS) {
                     try {
-                        synchronized(notificationInputQueue) {
-                            if (notificationInputQueue.isEmpty()) {
-                                (notificationInputQueue as Object).wait()
-                            }
+                        while (packet == null && isActive) {
+                            packet = notificationInputQueue.poll(100, TimeUnit.MILLISECONDS)
                         }
                     } catch (ex: InterruptedException) {
                         e(TAG, "Wait notification interrupted")
@@ -571,8 +571,10 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                     throw BleCharacteristicNotificationNotEnabled("PS-FTP d2h notification not enabled")
                 }
                 try {
-                    var packet = notificationInputQueue.take()
-                    if (packet?.second == 0) {
+                    if (packet == null) {
+                        return@synchronized
+                    }
+                    if (packet.second == 0) {
                         var response = BlePsFtpUtils.processRfc76MessageFrameHeader(packet.first)
                         if (response.payload != null) {
                             if (response.next == 0) {

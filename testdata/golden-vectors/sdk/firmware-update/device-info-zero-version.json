@@ -1,0 +1,45 @@
+{
+  "id": "device-info-zero-version",
+  "area": "sdk.firmware-update",
+  "case": "device_info_zero_version",
+  "source": "Android and iOS PolarFirmwareUpdateUtils characterization tests",
+  "input": {
+    "kind": "deviceInfo",
+    "proto": {
+      "version": {
+        "major": 0,
+        "minor": 0,
+        "patch": 0
+      },
+      "modelName": "",
+      "hardwareCode": ""
+    }
+  },
+  "expected": {
+    "deviceFwVersion": "0.0.0",
+    "deviceModelName": "",
+    "deviceHardwareCode": ""
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "emptyStringPolicy": "preserve-empty-device-info-strings"
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Default zero firmware version remains explicit in the public mapping.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"
+    ],
+    "ios": [
+      "PolarFirmwareUpdateUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FirmwareUpdateUtilityCommonPolicyTest"
+    ]
+  }
+}

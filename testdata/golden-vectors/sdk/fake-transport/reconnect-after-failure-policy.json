@@ -1,0 +1,67 @@
+{
+  "id": "reconnect-after-failure-policy",
+  "area": "sdk.fake-transport",
+  "case": "reconnect_after_failure_policy",
+  "source": "KMP fake-transport reconnect-after-failure planning and shared ScriptedCommonFakeTransport prototype",
+  "description": "Pins deterministic reconnect behavior after a disconnected operation so common runtime tests can model reconnect-before-retry without Android Bluedroid or iOS CoreBluetooth callbacks.",
+  "input": {
+    "kind": "reconnectAfterFailurePolicy",
+    "startConnected": false,
+    "operations": [
+      {
+        "operation": "read",
+        "target": "/U/0/DEVICE.BPB"
+      },
+      {
+        "operation": "reconnect"
+      },
+      {
+        "operation": "read",
+        "target": "/U/0/DEVICE.BPB"
+      }
+    ],
+    "outcomesAfterReconnect": [
+      {
+        "type": "bytes",
+        "valueHex": "0506"
+      }
+    ]
+  },
+  "expected": {
+    "outcomes": [
+      "transport-error:disconnected",
+      "complete",
+      "bytes:0506"
+    ],
+    "commands": [
+      "READ:/U/0/DEVICE.BPB",
+      "RECONNECT:transport",
+      "READ:/U/0/DEVICE.BPB"
+    ],
+    "connectedAfterReconnect": true,
+    "commonDecision": "Shared fake transport must make reconnect-after-failure explicit, observable, and deterministic before retry or reconnect-aware runtime planning delegates to KMP."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.testutils.FakeTransportContractTest"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FakeTransportContractCommonTest"
+    ]
+  },
+  "execution": {
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest reconnect-after-failure contract",
+      "wallClockSafe": true
+    }
+  },
+  "platforms": {
+    "android": false,
+    "ios": false,
+    "common": true
+  },
+  "notes": "This vector covers only the deterministic fake-transport reconnect control. Platform adapter reconnect semantics, backoff policy, and public facade error mapping remain feature-specific migration gates."
+}

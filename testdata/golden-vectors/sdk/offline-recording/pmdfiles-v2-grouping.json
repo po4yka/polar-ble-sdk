@@ -1,0 +1,65 @@
+{
+  "id": "pmdfiles-v2-grouping",
+  "area": "sdk.offline-recording",
+  "case": "pmdfiles_v2_grouping",
+  "source": "Android and iOS offline recording characterization tests",
+  "input": {
+    "pmdFilesTxt": "500120 /U/0/20250730/R/101010/ACC0.REC\n500103 /U/0/20250730/R/101010/ACC1.REC\n0 /U/0/20250730/R/101010/ACC2.REC\n500000 /U/0/20250730/R/101010/HR0.REC\n500050 /U/0/20250730/R/101010/HR1.REC\n2048 /U/0/20250730/R/101010/TEMP0.REC\n1024 /U/0/20250730/R/101010/SKINTEMP0.REC\n300 /U/0/20250730/R/101010/UNKNOWN.REC\n600 /U/0/99999999/R/101010/PPG0.REC\n700 /U/0/20250730/R/999999/PPI0.REC\n"
+  },
+  "expected": {
+    "entries": [
+      {
+        "type": "ACC",
+        "androidPath": "/U/0/20250730/R/101010/ACC.REC",
+        "iosPath": "/U/0/20250730/R/101010/ACC0.REC",
+        "size": 1000223,
+        "dateTime": "2025-07-30T10:10:10"
+      },
+      {
+        "type": "HR",
+        "androidPath": "/U/0/20250730/R/101010/HR.REC",
+        "iosPath": "/U/0/20250730/R/101010/HR0.REC",
+        "size": 1000050,
+        "dateTime": "2025-07-30T10:10:10"
+      },
+      {
+        "type": "TEMPERATURE",
+        "androidPath": "/U/0/20250730/R/101010/TEMP.REC",
+        "iosPath": "/U/0/20250730/R/101010/TEMP0.REC",
+        "size": 2048,
+        "dateTime": "2025-07-30T10:10:10"
+      },
+      {
+        "type": "SKIN_TEMPERATURE",
+        "androidPath": "/U/0/20250730/R/101010/SKINTEMP.REC",
+        "iosPath": "/U/0/20250730/R/101010/SKINTEMP0.REC",
+        "size": 1024,
+        "dateTime": "2025-07-30T10:10:10"
+      }
+    ]
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "zeroSizePolicy": "ignore-zero-size-recording-parts",
+      "invalidEntryPolicy": "ignore-unknown-file-types-and-unparseable-date-or-time-paths",
+      "representativePathPolicy": "android-normalizes-split-index-to-base-rec-path-while-ios-keeps-first-split-file-path"
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarOfflineRecordingUtilsTest"
+    ],
+    "ios": [
+      "PolarOfflineRecordingUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.OfflineRecordingMetadataCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "PMDFILES.TXT listing groups split REC files, filters zero-size and invalid entries, and maps data types."
+}

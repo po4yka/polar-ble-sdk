@@ -1,0 +1,240 @@
+{
+  "id": "file-facade-runtime-policy",
+  "area": "sdk.file-utils",
+  "case": "file_facade_runtime_policy",
+  "source": "BDBleApiImplTest and PolarBleApiImplTests low-level file public facade characterization",
+  "description": "Pins low-level public file facade PSFTP command planning before file read/write/delete orchestration can delegate to a shared KMP runtime.",
+  "input": {
+    "kind": "fileFacadeRuntimePolicy",
+    "operations": [
+      {
+        "id": "read-low-level-file-success",
+        "operation": "readFile",
+        "command": "GET",
+        "path": "/U/0/CUSTOM.BIN",
+        "responseHex": "010203"
+      },
+      {
+        "id": "read-low-level-file-empty-success",
+        "operation": "readFile",
+        "command": "GET",
+        "path": "/U/0/EMPTY.BIN",
+        "responseHex": ""
+      },
+      {
+        "id": "read-low-level-file-request-failure",
+        "operation": "readFile",
+        "command": "GET",
+        "path": "/U/0/CUSTOM.BIN",
+        "transport": {
+          "mode": "transportError",
+          "error": "low-level-read-failed"
+        }
+      },
+      {
+        "id": "read-low-level-file-response-error",
+        "operation": "readFile",
+        "command": "GET",
+        "path": "/U/0/CUSTOM.BIN",
+        "transport": {
+          "mode": "pftpResponseError",
+          "status": 103,
+          "message": "missing"
+        },
+        "expectedPlatformTerminal": {
+          "android": "pftp-response-error-name",
+          "ios": "device-error-wrapper"
+        }
+      },
+      {
+        "id": "write-low-level-file-success",
+        "operation": "writeFile",
+        "command": "PUT",
+        "path": "/U/0/CUSTOM.BIN",
+        "payloadHex": "0a0b"
+      },
+      {
+        "id": "write-low-level-file-progress-success",
+        "operation": "writeFile",
+        "command": "PUT",
+        "path": "/U/0/PROGRESS.BIN",
+        "payloadHex": "1011",
+        "progress": [
+          0,
+          2
+        ]
+      },
+      {
+        "id": "write-low-level-file-stream-failure",
+        "operation": "writeFile",
+        "command": "PUT",
+        "path": "/U/0/CUSTOM.BIN",
+        "payloadHex": "0c0d",
+        "transport": {
+          "mode": "writeStreamError",
+          "error": "low-level-write-failed"
+        }
+      },
+      {
+        "id": "write-low-level-file-response-error",
+        "operation": "writeFile",
+        "command": "PUT",
+        "path": "/U/0/CUSTOM.BIN",
+        "payloadHex": "0e0f",
+        "transport": {
+          "mode": "pftpResponseError",
+          "status": 103,
+          "message": "missing"
+        },
+        "expectedPlatformTerminal": {
+          "android": "pftp-response-error-object",
+          "ios": "pftp-response-error-code"
+        }
+      },
+      {
+        "id": "delete-low-level-file-success",
+        "operation": "deleteFileOrDirectory",
+        "command": "REMOVE",
+        "path": "/U/0/CUSTOM.BIN"
+      },
+      {
+        "id": "delete-low-level-file-request-failure",
+        "operation": "deleteFileOrDirectory",
+        "command": "REMOVE",
+        "path": "/U/0/CUSTOM.BIN",
+        "transport": {
+          "mode": "transportError",
+          "error": "low-level-delete-failed"
+        }
+      },
+      {
+        "id": "delete-low-level-file-response-error",
+        "operation": "deleteFileOrDirectory",
+        "command": "REMOVE",
+        "path": "/U/0/CUSTOM.BIN",
+        "transport": {
+          "mode": "pftpResponseError",
+          "status": 103,
+          "message": "missing"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "commonRuntimePrototype": {
+      "cases": [
+        {
+          "id": "read-low-level-file-success",
+          "commands": [
+            "GET:/U/0/CUSTOM.BIN"
+          ],
+          "terminal": "success",
+          "resultHex": "010203"
+        },
+        {
+          "id": "read-low-level-file-empty-success",
+          "commands": [
+            "GET:/U/0/EMPTY.BIN"
+          ],
+          "terminal": "success",
+          "resultHex": ""
+        },
+        {
+          "id": "read-low-level-file-request-failure",
+          "commands": [
+            "GET:/U/0/CUSTOM.BIN"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "read-low-level-file-response-error",
+          "commands": [
+            "GET:/U/0/CUSTOM.BIN"
+          ],
+          "terminal": "response-error:103:missing"
+        },
+        {
+          "id": "write-low-level-file-success",
+          "commands": [
+            "PUT:/U/0/CUSTOM.BIN",
+            "payload:0a0b"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "write-low-level-file-progress-success",
+          "commands": [
+            "PUT:/U/0/PROGRESS.BIN",
+            "payload:1011",
+            "progress:0",
+            "progress:2"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "write-low-level-file-stream-failure",
+          "commands": [
+            "PUT:/U/0/CUSTOM.BIN",
+            "payload:0c0d"
+          ],
+          "terminal": "write-stream-error-after-payload"
+        },
+        {
+          "id": "write-low-level-file-response-error",
+          "commands": [
+            "PUT:/U/0/CUSTOM.BIN",
+            "payload:0e0f"
+          ],
+          "terminal": "response-error:103:missing"
+        },
+        {
+          "id": "delete-low-level-file-success",
+          "commands": [
+            "REMOVE:/U/0/CUSTOM.BIN"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "delete-low-level-file-request-failure",
+          "commands": [
+            "REMOVE:/U/0/CUSTOM.BIN"
+          ],
+          "terminal": "transport-error"
+        },
+        {
+          "id": "delete-low-level-file-response-error",
+          "commands": [
+            "REMOVE:/U/0/CUSTOM.BIN"
+          ],
+          "terminal": "response-error:103:missing"
+        }
+      ]
+    },
+    "commonDecision": "A shared file facade runtime may own deterministic GET/PUT/REMOVE planning, empty read payloads, write progress consumption, and payload capture only after platform facades keep public error mapping, read/write/delete request and response-error propagation, and directory-list traversal policies pinned."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.BDBleApiImplTest",
+      "com.polar.sdk.api.model.utils.PolarFileUtilsTest"
+    ],
+    "ios": [
+      "PolarBleApiImplTests",
+      "PolarFileUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.FileFacadeRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "execution": {
+    "kind": "fake-file-facade-runtime-policy",
+    "transport": "public-facade-psftp-command-capture",
+    "wallClockSafe": true
+  },
+  "commonDecision": "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned.",
+  "notes": "This vector complements file-read-write-delete-operations.json and runtime-error-policy.json. It owns the public facade command paths, payload capture, empty read payload success, delete request failure, write progress success, and read/write/delete response-error propagation for low-level read/write/delete calls; directory-list traversal remains covered by list-files-shallow-all.json and list-files-recursive-filtered.json."
+}

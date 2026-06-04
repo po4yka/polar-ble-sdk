@@ -1,0 +1,38 @@
+{
+  "id": "temperature-raw-type0-truncated-sample-android-error",
+  "area": "sensor-parser",
+  "case": "temperature_raw_type0_truncated_sample_android_error",
+  "source": "Android TemperatureDataTest; iOS raw parser uses out-of-range Data access for this malformed payload",
+  "input": {
+    "dataFrameHex": "0c660000000000000000f628c0",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
+    "measurementType": "TEMPERATURE",
+    "frameType": 0,
+    "compressed": false,
+    "timeStamp": 102,
+    "parseError": "malformedFrame"
+  },
+  "platforms": {
+    "android": true,
+    "ios": false,
+    "common": false
+  },
+  "notes": "Android currently throws when raw type-0 temperature content ends before the 4-byte IEEE-754 sample is complete. iOS is excluded because the current parser can terminate on out-of-range Data access instead of throwing a catchable parser error.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PressureDataTest",
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.TemperatureDataTest"
+    ],
+    "ios": [
+      "TemperatureDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PressureTemperatureParserCommonPolicyTest"
+    ]
+  }
+}

@@ -96,7 +96,7 @@ Add the following line to your Podfile:
 ```ruby
 target '<target>' do
     ...
-    pod 'iOSCommunications', :path => '<relative_path_to_cloned_repo>/ios-communications/'
+    pod 'iOSCommunications', :path => '<relative_path_to_cloned_repo>/sources/iOS/ios-communications/'
     ...
 end    
 ```
@@ -111,7 +111,7 @@ Then, run:
 Add the following line to your Podfile:
 
 ```ruby
-      pod 'PolarBleSdk', :path => '<relative_path_to_cloned_repo>/ios-communications/'
+      pod 'PolarBleSdk', :path => '<relative_path_to_cloned_repo>/sources/iOS/ios-communications/'
 ```
 
 Then, run:
@@ -124,4 +124,4 @@ Then, run:
 
 1. Open your app’s Xcode project or workspace.
 
-2. Select the Swift package’s folder (i.e. `/ios-communications/`) in Finder and drag it into the Project navigator. This action adds your dependency’s Swift package as a local package to your project.
+2. Select the Swift package’s folder (i.e. `/sources/iOS/ios-communications/`) in Finder and drag it into the Project navigator. This action adds your dependency’s Swift package as a local package to your project.

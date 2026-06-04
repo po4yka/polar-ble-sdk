@@ -1,0 +1,30 @@
+{
+  "id": "stop-gps-empty",
+  "area": "sdk-d2h-notifications",
+  "case": "stop_gps_measurement_without_parameters",
+  "source": "Android PolarD2HNotificationsUtilsTest and iOS PolarDeviceToHostNotificationsApiTests",
+  "input": {
+    "notificationId": 12,
+    "parametersHex": ""
+  },
+  "expected": {
+    "notificationType": "STOP_GPS_MEASUREMENT",
+    "parsedProto": null
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceToHostNotificationsApiTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.D2hNotificationCommonPolicyTest"
+    ]
+  }
+}

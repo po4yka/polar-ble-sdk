@@ -1,0 +1,69 @@
+{
+  "id": "partial-night-omitted-optionals",
+  "area": "sdk.sleep",
+  "case": "partial_night_omitted_optionals",
+  "source": "Android and iOS PolarSleepUtils characterization tests",
+  "input": {
+    "kind": "sleepAnalysis",
+    "sleepGoalMinutes": 360,
+    "sleepResultDate": {
+      "year": 2024,
+      "month": 5,
+      "day": 6
+    }
+  },
+  "expected": {
+    "common": {
+      "sleepGoalMinutes": 360,
+      "sleepWakePhaseCount": 0,
+      "snoozeTimeCount": 0,
+      "alarmTime": null,
+      "sleepStartOffsetSeconds": 0,
+      "sleepEndOffsetSeconds": 0,
+      "userSleepRating": null,
+      "sleepCycleCount": 0,
+      "sleepResultDate": "2024-05-06",
+      "sleepSkinTemperatureResult": null
+    },
+    "android": {
+      "deviceId": "",
+      "batteryRanOut": false,
+      "originalSleepRange": null
+    },
+    "ios": {
+      "deviceId": null,
+      "batteryRanOut": null,
+      "sleepSkinTemperatureResult": {
+        "sleepResultDate": null,
+        "sleepSkinTemperatureCelsius": 0.0,
+        "deviationFromBaseLine": 0.0
+      },
+      "originalSleepRange": {
+        "startTime": null,
+        "endTime": null
+      }
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarSleepUtilsTest"
+    ],
+    "ios": [
+      "PolarSleepUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.SleepNightlyRechargeCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "recommendedKmpPolicy": "Shared sleep mapping should preserve empty repeated fields as empty lists, absent optional scalar defaults as explicit zero only when that is the existing public contract, and should choose one cross-platform policy for absent recording device, battery flag, and original sleep range before migration."
+    }
+  },
+  "notes": "Partial sleep result with only required fields and result date present, omitting optional alarm, snooze, rating, device, battery, cycles, original range, offsets, and sleep skin-temperature date."
+}

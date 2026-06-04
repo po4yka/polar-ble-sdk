@@ -1,0 +1,148 @@
+{
+  "id": "ppg-compressed-type10-reference-status",
+  "area": "sensor-parser",
+  "case": "ppg_compressed_type10_reference_channels_and_status_bits",
+  "source": "Android PpgDataTest and iOS PpgDataTest",
+  "input": {
+    "dataFrameHex": "0166000000000000008a0100000200000300000400000500000600000700000800000900000a00000b00000c00000d00000e00000f0000100000110000120000130000140000050000",
+    "previousTimeStamp": 100,
+    "factor": 1.0,
+    "sampleRate": 0
+  },
+  "expected": {
+    "measurementType": "PPG",
+    "frameType": 10,
+    "compressed": true,
+    "timeStamp": 102,
+    "samples": []
+  },
+  "platformExpectations": {
+    "android": {
+      "samples": [
+        {
+          "timeStamp": 102,
+          "greenSamples": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "redSamples": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "irSamples": [
+            15,
+            16,
+            17,
+            18,
+            19,
+            20
+          ],
+          "statusBits": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    "ios": {
+      "samples": [
+        {
+          "timeStamp": 102,
+          "greenSamples": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "redSamples": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "irSamples": [
+            15,
+            16,
+            17,
+            18,
+            19,
+            20
+          ],
+          "statusBits": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            1
+          ]
+        }
+      ]
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Compressed PPG type-10 currently assigns the first two channel groups to different color names on Android and iOS; KMP should choose an explicit common color mapping before migration.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"
+    ],
+    "ios": [
+      "PpgDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PpgParserCommonPolicyTest"
+    ]
+  }
+}

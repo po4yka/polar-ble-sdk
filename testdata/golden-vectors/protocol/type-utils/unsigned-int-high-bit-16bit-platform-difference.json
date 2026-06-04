@@ -1,0 +1,46 @@
+{
+  "id": "unsigned-int-high-bit-16bit-platform-difference",
+  "area": "type-utils",
+  "case": "unsigned_int_16bit_high_bit_platform_difference",
+  "source": "Android TypeUtils and iOS TypeUtils unsigned mask characterization",
+  "input": {
+    "hex": "0080"
+  },
+  "expected": {
+    "commonDecision": "KMP should return the width-limited unsigned value and avoid Swift's current unsigned sign-extension mask behavior."
+  },
+  "platformExpectations": {
+    "android": {
+      "unsignedInt": 32768,
+      "unsignedLong": 32768,
+      "signedInt": -32768
+    },
+    "ios": {
+      "unsignedInt": "18446744073709518848",
+      "unsignedLong": 32768,
+      "signedInt": -32768
+    },
+    "commonDecision": {
+      "unsignedInt": 32768,
+      "unsignedLong": 32768,
+      "signedInt": -32768
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": false
+  },
+  "notes": "Swift TypeUtils.convertArrayToUnsignedInt sign-extends values whose selected-width high bit is set; Android returns the width-limited unsigned value.",
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.TypeUtilsTest"
+    ],
+    "ios": [
+      "TypeUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.TypeUtilsCommonPolicyTest"
+    ]
+  }
+}

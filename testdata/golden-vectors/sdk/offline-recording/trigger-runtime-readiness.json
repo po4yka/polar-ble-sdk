@@ -1,0 +1,65 @@
+{
+  "id": "trigger-runtime-readiness",
+  "area": "sdk.offline-recording",
+  "case": "trigger_runtime_readiness",
+  "source": "Offline trigger runtime backlog and trigger-runtime-policy shared common prototype distilled into a pre-KMP readiness manifest",
+  "description": "Pins the behavior families that must remain covered before offline trigger get/set orchestration delegates to shared KMP runtime code.",
+  "input": {
+    "kind": "offlineTriggerRuntimeReadiness",
+    "policyVectorPath": "sdk/offline-recording/trigger-runtime-policy.json",
+    "requiredBehaviorFamilies": [
+      "typed-set-mode",
+      "status-read",
+      "settings-write",
+      "optional-secret-attachment",
+      "get-transport-error",
+      "set-mode-control-point-error",
+      "status-read-transport-error",
+      "settings-control-point-error",
+      "enabled-feature-projection",
+      "excluded-feature-projection",
+      "platform-packet-split",
+      "facade-error-mapping-deferred",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "typed-set-mode",
+      "status-read",
+      "settings-write",
+      "optional-secret-attachment",
+      "get-transport-error",
+      "set-mode-control-point-error",
+      "status-read-transport-error",
+      "settings-control-point-error",
+      "enabled-feature-projection",
+      "excluded-feature-projection",
+      "platform-packet-split",
+      "facade-error-mapping-deferred",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Offline trigger runtime migration may proceed only after trigger-runtime-policy.json and this readiness manifest are executable from shared commonTest, platform facade tests continue to reference the same policy vector, packet-framing differences are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified.",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest runtime planning guard",
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.PolarDataUtilsTest"
+    ],
+    "ios": [
+      "PolarDataUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for runtime behavior-family completeness only; byte-level PMD adapter framing, cancellation, cleanup, public facade error mapping, and compile verification remain required before production offline trigger runtime code moves to shared KMP."
+}

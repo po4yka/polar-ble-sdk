@@ -1,0 +1,46 @@
+{
+  "id": "service-list-wrong-type-platform-policy",
+  "area": "sdk.rest-service",
+  "case": "service_list_wrong_type_platform_policy",
+  "source": "Android and iOS REST API characterization tests",
+  "input": {
+    "kind": "serviceList",
+    "json": {
+      "services": [
+        "/REST/TRAINING.API"
+      ]
+    }
+  },
+  "expected": {
+    "android": {
+      "pathsForServices": {},
+      "serviceNames": [],
+      "servicePaths": []
+    },
+    "ios": {
+      "decodeError": true
+    }
+  },
+  "platformExpectations": {
+    "commonDecision": {
+      "wrongTypePolicy": "Android currently treats a non-object services field as empty while iOS JSONDecoder throws a type mismatch; choose an explicit shared policy before moving service discovery decoding to KMP."
+    }
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Malformed service discovery payload where services is present but not an object, preserving current Android/iOS policy before KMP normalization.",
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"
+    ],
+    "ios": [
+      "PolarDeviceRestApiServiceTests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.RestServiceMappingCommonPolicyTest"
+    ]
+  }
+}

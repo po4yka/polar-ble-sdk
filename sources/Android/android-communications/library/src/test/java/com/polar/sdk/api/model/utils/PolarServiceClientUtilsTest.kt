@@ -1,5 +1,7 @@
 package com.polar.sdk.api.model.utils
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.BleDeviceListener
 import com.polar.androidcommunications.api.ble.model.BleDeviceSession
 import com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContent
@@ -18,6 +20,8 @@ import io.mockk.mockk
 import org.junit.Assert
 import org.junit.Assert.fail
 import org.junit.Test
+import java.io.File
+import java.io.FileReader
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -409,6 +413,55 @@ class PolarServiceClientUtilsTest {
     }
 
     @Test
+    fun identifierRoutingGoldenVectors_matchAndroidBehavior() {
+        val vectors = loadIdentifierRoutingVectors()
+        Assert.assertTrue("Expected identifier routing golden vectors", vectors.isNotEmpty())
+
+        vectors
+            .filter { it.getAsJsonObject("platforms").get("android").asBoolean }
+            .forEach { vector ->
+                val caseId = vector.get("id").asString
+                val input = vector.getAsJsonObject("input")
+                val expected = vector.getAsJsonObject("expected")
+                val listener = mockk<BleDeviceListener>()
+                val session = mockk<BleDeviceSession>()
+                val advContent = mockk<BleAdvertisementContent>()
+                every { listener.deviceSessions() } returns setOf(session)
+                every { session.address } returns input.get("matchingAddress").asString
+                every { session.advertisementContent } returns advContent
+                every { advContent.polarDeviceId } returns input.get("matchingDeviceId").asString
+
+                if (expected.has("error")) {
+                    Assert.assertThrows(caseId, PolarInvalidArgument::class.java) {
+                        PolarServiceClientUtils.fetchSession(input.get("identifier").asString, listener)
+                    }
+                    return@forEach
+                }
+
+                val result = PolarServiceClientUtils.fetchSession(input.get("identifier").asString, listener)
+                Assert.assertTrue(caseId, result === session)
+            }
+    }
+
+    @Test
+    fun `identifier routing golden vectors follow neutral KMP vector shape`() {
+        loadIdentifierRoutingVectors().forEach { vector ->
+            val id = vector.get("id")?.asString ?: "unknown-vector"
+
+            Assert.assertTrue(id, vector.has("area"))
+            Assert.assertTrue(id, vector.has("case"))
+            Assert.assertTrue(id, vector.has("source"))
+            Assert.assertTrue(id, vector.has("input"))
+            Assert.assertTrue(id, vector.has("expected"))
+            Assert.assertTrue(id, vector.has("platforms"))
+            val platforms = vector.getAsJsonObject("platforms")
+            Assert.assertTrue(id, platforms.has("android"))
+            Assert.assertTrue(id, platforms.has("ios"))
+            Assert.assertTrue(id, platforms.has("common"))
+        }
+    }
+
+    @Test
     fun testFetchSessionThrows() {
         // Arrange
         val deviceId = "Not-A-DeviceId"
@@ -475,6 +528,31 @@ class PolarServiceClientUtilsTest {
 
         // Assert
         Assert.assertEquals(expectedRssi, result)
+    }
+
+    private fun loadIdentifierRoutingVectors(): List<JsonObject> {
+        val vectorDirectory = findRepositoryRoot()
+            .resolve("testdata/golden-vectors/protocol/device-id")
+        return vectorDirectory
+            .listFiles { file -> file.isFile && file.extension == "json" && file.name.startsWith("identifier-") }
+            .orEmpty()
+            .sortedBy { it.name }
+            .map { file ->
+                FileReader(file).use { reader ->
+                    JsonParser().parse(reader).asJsonObject
+                }
+            }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
     }
 
     @Test

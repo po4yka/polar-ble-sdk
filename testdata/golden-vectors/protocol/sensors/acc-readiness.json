@@ -1,0 +1,72 @@
+{
+  "id": "acc-readiness",
+  "area": "sensors.acc",
+  "case": "pre_migration_readiness_manifest",
+  "source": "KMP migration readiness gate for ACC parser behavior",
+  "input": {
+    "kind": "accReadiness",
+    "policyVectorPaths": [
+      "protocol/sensors/acc-compressed-type0-factor-half.json",
+      "protocol/sensors/acc-compressed-type0-truncated-delta-header-android-error.json",
+      "protocol/sensors/acc-compressed-type0-truncated-delta-header-ios-reference-only.json",
+      "protocol/sensors/acc-compressed-type0-truncated-delta-payload-android-error.json",
+      "protocol/sensors/acc-compressed-type0-truncated-delta-payload-ios-reference-only.json",
+      "protocol/sensors/acc-compressed-type1-two-samples.json",
+      "protocol/sensors/acc-compressed-type2-unsupported.json",
+      "protocol/sensors/acc-raw-type0-signed-boundaries.json",
+      "protocol/sensors/acc-raw-type0-truncated-sample-android-error.json",
+      "protocol/sensors/acc-raw-type1-signed-boundaries.json",
+      "protocol/sensors/acc-raw-type1-truncated-sample-android-error.json",
+      "protocol/sensors/acc-raw-type1-two-samples.json",
+      "protocol/sensors/acc-raw-type2-android-only.json",
+      "protocol/sensors/acc-raw-type2-truncated-sample-android-error.json"
+    ],
+    "requiredBehaviorFamilies": [
+      "raw-type0-signed-axis-boundaries",
+      "raw-type1-signed-axis-parsing",
+      "raw-type1-timestamp-interpolation",
+      "compressed-type0-millig-factor-scaling",
+      "compressed-type1-reference-delta-decoding",
+      "unsupported-compressed-type-policy",
+      "raw-type2-android-ownership",
+      "truncated-raw-sample-policy",
+      "truncated-compressed-delta-header-policy",
+      "truncated-compressed-delta-payload-policy",
+      "platform-acc-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "raw-type0-signed-axis-boundaries",
+      "raw-type1-signed-axis-parsing",
+      "raw-type1-timestamp-interpolation",
+      "compressed-type0-millig-factor-scaling",
+      "compressed-type1-reference-delta-decoding",
+      "unsupported-compressed-type-policy",
+      "raw-type2-android-ownership",
+      "truncated-raw-sample-policy",
+      "truncated-compressed-delta-header-policy",
+      "truncated-compressed-delta-payload-policy",
+      "platform-acc-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.AccDataTest"
+    ],
+    "ios": [
+      "AccDataTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AccParserCommonPolicyTest"
+    ]
+  }
+}
