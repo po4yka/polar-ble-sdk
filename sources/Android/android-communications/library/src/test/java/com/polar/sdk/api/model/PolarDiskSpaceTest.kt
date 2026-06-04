@@ -41,7 +41,7 @@ class PolarDiskSpaceTest {
                     .setTotalFragments(protoFields.get("totalFragments").asLong)
                     .setFreeFragments(protoFields.get("freeFragments").asLong)
                     .build()
-                val expected = expectedForPlatform(vector, "android")
+                val expected = vector.getAsJsonObject("expected")
 
                 val result = PolarDiskSpaceData.fromProto(proto)
 
@@ -77,14 +77,6 @@ class PolarDiskSpaceTest {
             assertTrue(id, platforms.get("android").asBoolean)
             assertTrue(id, platforms.get("ios").asBoolean)
             assertTrue(id, platforms.get("common").asBoolean)
-        }
-    }
-
-    private fun expectedForPlatform(vector: JsonObject, platform: String): JsonObject {
-        return if (vector.has("platformExpectations")) {
-            vector.getAsJsonObject("platformExpectations").getAsJsonObject(platform)
-        } else {
-            vector.getAsJsonObject("expected")
         }
     }
 
