@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarDiskTimeOperation
+import com.polar.shared.runtime.PolarRuntimeOrchestration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -10,7 +12,7 @@ class DiskTimeRuntimePolicyCommonTest {
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
         val operations = input.objectArray("operations").map { operation ->
-            DiskTimeOperation(
+            PolarDiskTimeOperation(
                 id = operation.stringValue("id"),
                 kind = operation.stringValue("kind"),
                 query = operation.optionalStringValue("query"),
@@ -21,7 +23,6 @@ class DiskTimeRuntimePolicyCommonTest {
         }
         val expectedCaseList = expected.objectValue("commonRuntimePrototype").objectArray("cases")
         val expectedCases = expectedCaseList.associateBy { it.stringValue("id") }
-        val runtime = FakeDiskTimeQueryRuntime()
 
         assertEquals("disk-time-query-policy", vector.stringValue("id"))
         assertEquals("disk_time_query_policy", vector.stringValue("case"))
@@ -33,7 +34,7 @@ class DiskTimeRuntimePolicyCommonTest {
         assertDiskTimePolicyFields(input.objectArray("operations").associateBy { it.stringValue("id") })
 
         operations.forEach { operation ->
-            val outcome = runtime.run(operation)
+            val outcome = PolarRuntimeOrchestration.planDiskTime(operation)
             val expected = expectedCases.getValue(operation.id)
 
             assertEquals(expected.stringArrayValue("commands"), outcome.commands, operation.id)
@@ -111,63 +112,4 @@ class DiskTimeRuntimePolicyCommonTest {
         assertEquals(listOf("SET_LOCAL_TIME"), operationsById.getValue("set-local-time-h10").stringArrayValue("queries"))
         assertEquals(listOf("localTimeHour=12"), operationsById.getValue("set-local-time-h10").stringArrayValue("expectedFields"))
     }
-
-    private class FakeDiskTimeQueryRuntime {
-        fun run(operation: DiskTimeOperation): DiskTimeOutcome {
-            return when (operation.kind) {
-                "query" -> DiskTimeOutcome(operation.singleQueryCommands(), "success")
-                "queryFailure" -> DiskTimeOutcome(operation.singleQueryCommands(), "transport-error")
-                "setLocalTimeV2" -> DiskTimeOutcome(operation.setLocalTimeV2Commands(), "success")
-                "setLocalTimeH10" -> DiskTimeOutcome(operation.setLocalTimeH10Commands(), "success")
-                else -> error("Unsupported disk/time operation ${operation.kind}")
-            }
-        }
-
-        private fun DiskTimeOperation.singleQueryCommands(): List<String> {
-            val commands = mutableListOf("query:${requireNotNull(query)}")
-            if (parameters.isEmpty()) {
-                commands += "parameters:none"
-            } else {
-                commands += parameters.map { parameter -> "field:$parameter" }
-            }
-            return commands
-        }
-
-        private fun DiskTimeOperation.setLocalTimeV2Commands(): List<String> {
-            require(queries == listOf("SET_SYSTEM_TIME", "SET_LOCAL_TIME"))
-            val systemTimeHour = expectedFields.first { it.startsWith("systemTimeHour=") }
-            val systemTimeTrusted = expectedFields.first { it == "systemTimeTrusted=true" }
-            val localTimeHour = expectedFields.first { it.startsWith("localTimeHour=") }
-            return listOf(
-                "query:SET_SYSTEM_TIME",
-                "field:$systemTimeHour",
-                "field:$systemTimeTrusted",
-                "query:SET_LOCAL_TIME",
-                "field:$localTimeHour"
-            )
-        }
-
-        private fun DiskTimeOperation.setLocalTimeH10Commands(): List<String> {
-            require(queries == listOf("SET_LOCAL_TIME"))
-            val localTimeHour = expectedFields.first { it.startsWith("localTimeHour=") }
-            return listOf(
-                "query:SET_LOCAL_TIME",
-                "field:$localTimeHour"
-            )
-        }
-    }
-
-    private data class DiskTimeOperation(
-        val id: String,
-        val kind: String,
-        val query: String?,
-        val queries: List<String>,
-        val parameters: List<String>,
-        val expectedFields: List<String>
-    )
-
-    private data class DiskTimeOutcome(
-        val commands: List<String>,
-        val terminal: String
-    )
 }

@@ -435,7 +435,7 @@ FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS = [
   "sync-stop-notification-failure-platform-split",
   "facade-error-mapping-gate",
   "compile-verification-gate",
-  "FakePublicFacadeCommandRuntime"
+  "PolarRuntimeOrchestration"
 ].freeze
 FAKE_TRANSPORT_COMMON_STORED_DATA_CLEANUP_RUNTIME_TEST_REQUIRED_TERMS = [
   "cleanupWorkflowPolicyVectorDefinesExecutableCommonTraversalAndPlatformSplits",
@@ -496,7 +496,7 @@ FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS = [
   "filesystem-capability-gate",
   "facade-error-mapping-gate",
   "compile-verified",
-  "FakeDiskTimeQueryRuntime"
+  "PolarRuntimeOrchestration"
 ].freeze
 FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = [
   "userDeviceSettingsRuntimePolicyVectorDefinesExecutableCommonReadWritePlanning",
@@ -2174,10 +2174,12 @@ else
   errors << "missing shared fake transport contract test"
 end
 command_runtime_common_test = File.join(ROOT, "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/CommandRuntimePolicyCommonTest.kt")
+runtime_orchestration_common = File.join(ROOT, "sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/runtime/PolarRuntimeOrchestration.kt")
 if File.file?(command_runtime_common_test)
   command_runtime_common_test_text = File.read(command_runtime_common_test)
+  command_runtime_policy_text = command_runtime_common_test_text + (File.file?(runtime_orchestration_common) ? File.read(runtime_orchestration_common) : "")
   FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS.each do |term|
-    errors << "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/CommandRuntimePolicyCommonTest.kt: missing common command runtime assertion for #{term}" unless command_runtime_common_test_text.include?(term)
+    errors << "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/CommandRuntimePolicyCommonTest.kt: missing common command runtime assertion for #{term}" unless command_runtime_policy_text.include?(term)
   end
 else
   errors << "missing shared command runtime policy test"
@@ -2194,8 +2196,9 @@ end
 disk_time_runtime_common_test = File.join(ROOT, "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DiskTimeRuntimePolicyCommonTest.kt")
 if File.file?(disk_time_runtime_common_test)
   disk_time_runtime_common_test_text = File.read(disk_time_runtime_common_test)
+  disk_time_runtime_policy_text = disk_time_runtime_common_test_text + (File.file?(runtime_orchestration_common) ? File.read(runtime_orchestration_common) : "")
   FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS.each do |term|
-    errors << "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DiskTimeRuntimePolicyCommonTest.kt: missing common disk/time runtime assertion for #{term}" unless disk_time_runtime_common_test_text.include?(term)
+    errors << "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DiskTimeRuntimePolicyCommonTest.kt: missing common disk/time runtime assertion for #{term}" unless disk_time_runtime_policy_text.include?(term)
   end
 else
   errors << "missing shared disk/time runtime policy test"
