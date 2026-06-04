@@ -1,5 +1,8 @@
 package com.polar.sharedtest
 
+import com.polar.shared.pmd.PolarPmdParseError
+import com.polar.shared.pmd.PolarPmdSettingType
+import com.polar.shared.pmd.PolarPmdSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -13,7 +16,7 @@ class PmdSettingsCommonPolicyTest {
             val expected = vector.commonExpectedObject()
 
             expected.optionalStringValue("parseError")?.let { expectedError ->
-                assertEquals(expectedError, parseSettings(input.optionalStringValue("hex") ?: "").error, caseId)
+                assertEquals(expectedError, parseSettings(input.optionalStringValue("hex") ?: "").error?.vectorName, caseId)
             }
             expected.optionalStringValue("status")?.let { status ->
                 assertEquals("undecided", status, caseId)
@@ -58,6 +61,7 @@ class PmdSettingsCommonPolicyTest {
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSettingTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PmdSettingTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.PmdSettingsCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
+        assertEquals("invalidPMDData", PolarPmdParseError.InvalidPmdData.vectorName)
     }
 
     private fun String.commonExpectedObject(): String {
@@ -70,83 +74,27 @@ class PmdSettingsCommonPolicyTest {
     }
 
     private fun parseSettings(hex: String): SettingsParseResult {
-        val bytes = hexToBytes(hex)
-        val settings = linkedMapOf<String, List<Long>>()
-        var index = 0
-        while (index < bytes.size) {
-            val type = bytes[index].toInt() and 0xFF
-            val name = type.settingNameOrNull() ?: return SettingsParseResult(error = "invalidPMDData")
-            val valueSize = type.settingValueSizeOrNull() ?: return SettingsParseResult(error = "invalidPMDData")
-            index += 1
-            if (index >= bytes.size) return SettingsParseResult(error = "invalidPMDData")
-            val count = bytes[index].toInt() and 0xFF
-            index += 1
-            val values = mutableListOf<Long>()
-            repeat(count) {
-                if (index + valueSize > bytes.size) return SettingsParseResult(error = "invalidPMDData")
-                values += bytes.copyOfRange(index, index + valueSize).littleEndianSignedLong()
-                index += valueSize
-            }
-            settings[name] = values
-        }
-        return SettingsParseResult(settings = settings)
+        val result = PolarPmdSettings.parseSettings(hexToBytes(hex))
+        return SettingsParseResult(
+            settings = result.settings.mapKeys { it.key.name }.mapValues { it.value.map(Int::toLong) },
+            error = result.error
+        )
     }
 
     private fun serializeSelectedSettings(selected: String): String {
-        val chunks = mutableListOf<String>()
-        SELECTED_SETTING_ORDER.forEach { (name, type) ->
-            val value = selected.optionalScalarValue(name)?.toLongOrNull()
-            if (value != null && name != "FACTOR") {
-                chunks += type.toHexByte() + "01" + value.toLittleEndianHex(type.settingValueSizeOrNull()!!)
-            }
-        }
-        return chunks.joinToString(separator = "")
+        val selectedSettings = SELECTED_SETTING_ORDER.mapNotNull { name ->
+            val value = selected.optionalScalarValue(name)?.toIntOrNull()
+            val type = PolarPmdSettingType.valueOf(name)
+            if (value == null) null else type to value
+        }.toMap()
+        return PolarPmdSettings.serializeSelectedSettings(selectedSettings).toHex()
     }
 
-    private fun Int.settingNameOrNull(): String? {
-        return when (this) {
-            0 -> "SAMPLE_RATE"
-            1 -> "RESOLUTION"
-            2 -> "RANGE"
-            3 -> "RANGE_MILLIUNIT"
-            4 -> "CHANNELS"
-            5 -> "FACTOR"
-            6 -> null
-            else -> null
+    private fun ByteArray.toHex(): String {
+        return joinToString(separator = "") { byte ->
+            val value = byte.toInt() and 0xFF
+            "${(value / 16).toHexDigit()}${(value % 16).toHexDigit()}"
         }
-    }
-
-    private fun Int.settingValueSizeOrNull(): Int? {
-        return when (this) {
-            0 -> 2
-            1 -> 2
-            2 -> 2
-            3 -> 4
-            4 -> 1
-            5 -> 4
-            else -> null
-        }
-    }
-
-    private fun ByteArray.littleEndianSignedLong(): Long {
-        var value = 0L
-        forEachIndexed { index, byte ->
-            value = value or ((byte.toLong() and 0xFFL) shl (index * 8))
-        }
-        val bitWidth = size * 8
-        val signBit = 1L shl (bitWidth - 1)
-        return if ((value and signBit) != 0L) value - (1L shl bitWidth) else value
-    }
-
-    private fun Long.toLittleEndianHex(size: Int): String {
-        return (0 until size).joinToString(separator = "") { index ->
-            ((this shr (index * 8)) and 0xFF).toInt().toHexByte()
-        }
-    }
-
-    private fun Int.toHexByte(): String {
-        val value = this and 0xFF
-        return "${(value / 16).toHexDigit()}${(value % 16).toHexDigit()}"
     }
 
     private fun Int.toHexDigit(): Char {
@@ -212,7 +160,7 @@ class PmdSettingsCommonPolicyTest {
 
     private data class SettingsParseResult(
         val settings: Map<String, List<Long>> = emptyMap(),
-        val error: String? = null
+        val error: PolarPmdParseError? = null
     )
 
     private companion object {
@@ -239,13 +187,6 @@ class PmdSettingsCommonPolicyTest {
             "compile-verification-gate"
         )
         const val PMD_SETTINGS_READINESS_DECISION = "PMD settings migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD settings tests continue to reference the same vectors, baseline parsing, duplicate overwrite behavior, FACTOR parsing, selected-setting serialization, skipped FACTOR serialization, RANGE_MILLIUNIT signedness platform decisions, SECURITY setting parse policy, truncated-value policy, unknown-setting-type policy, and compile verification remain explicit before production PMD settings logic moves."
-        val SELECTED_SETTING_ORDER = listOf(
-            "SAMPLE_RATE" to 0,
-            "RESOLUTION" to 1,
-            "RANGE" to 2,
-            "RANGE_MILLIUNIT" to 3,
-            "CHANNELS" to 4,
-            "FACTOR" to 5
-        )
+        val SELECTED_SETTING_ORDER = listOf("SAMPLE_RATE", "RESOLUTION", "RANGE", "RANGE_MILLIUNIT", "CHANNELS", "FACTOR")
     }
 }
