@@ -33,6 +33,7 @@ import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
+import com.polar.shared.sdk.PolarWatchFaceComplicationName
 import com.polar.shared.time.PolarDurationFields
 import com.polar.shared.time.PolarTimeFields
 import com.polar.shared.time.PolarTimeUtils
@@ -243,6 +244,10 @@ object PolarIosSharedBridge {
 
     fun pmdSecretStrategyName(strategyByte: Int): String? {
         return PolarPmdSecret.strategyNameFromByte(strategyByte)
+    }
+
+    fun watchFaceComplicationName(id: Int): String? {
+        return PolarWatchFaceComplicationName.fromId(id)?.name
     }
 
     fun resolveDeviceCapabilities(

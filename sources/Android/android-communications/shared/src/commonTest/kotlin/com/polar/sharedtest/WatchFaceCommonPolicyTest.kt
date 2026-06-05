@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarWatchFaceComplicationName
+import com.polar.shared.sdk.PolarWatchFaceFields
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -21,7 +23,7 @@ class WatchFaceCommonPolicyTest {
             assertEquals(expectedFields.intValue("timeStyleId"), actual.timeStyleId, "$caseId timeStyleId")
             assertEquals(expectedFields.intValue("complicationLayoutId"), actual.complicationLayoutId, "$caseId complicationLayoutId")
             assertEquals(expectedFields.intValue("backgroundStyleId"), actual.backgroundStyleId, "$caseId backgroundStyleId")
-            assertEquals(expectedFields.intValue("accentColor"), actual.accentColor, "$caseId accentColor")
+            assertEquals(expectedFields.intValue("accentColor").toLong(), actual.accentColor, "$caseId accentColor")
             assertEquals(expectedFields.intValue("fontfaceId"), actual.fontfaceId, "$caseId fontfaceId")
             assertEquals(expectedFields.intArrayValue("complicationIds"), actual.complicationIds, "$caseId complicationIds")
 
@@ -64,20 +66,20 @@ class WatchFaceCommonPolicyTest {
         assertEquals(true, platforms.booleanValue("common"))
     }
 
-    private fun normalizeFields(fields: String): WatchFaceFields {
-        return WatchFaceFields(
+    private fun normalizeFields(fields: String): PolarWatchFaceFields {
+        return PolarWatchFaceFields.fromNullableFields(
             timeStyleId = fields.optionalIntValue("timeStyleId") ?: 0,
             complicationLayoutId = fields.optionalIntValue("complicationLayoutId") ?: 0,
             backgroundStyleId = fields.optionalIntValue("backgroundStyleId") ?: 0,
-            accentColor = fields.optionalIntValue("accentColor") ?: 0,
-            complicationIds = fields.optionalIntArrayValue("complicationIds") ?: emptyList(),
-            fontfaceId = fields.optionalIntValue("fontfaceId") ?: 0
+            accentColor = fields.optionalLongValue("accentColor"),
+            complicationIds = fields.optionalIntArrayValue("complicationIds"),
+            fontfaceId = fields.optionalIntValue("fontfaceId")
         )
     }
 
-    private fun parseMalformedOrDefault(hex: String): WatchFaceFields {
+    private fun parseMalformedOrDefault(hex: String): PolarWatchFaceFields {
         return if (hexToBytes(hex).size < MINIMUM_FLATBUFFER_HEADER_SIZE) {
-            WatchFaceFields()
+            PolarWatchFaceFields()
         } else {
             error("Only malformed default policy is covered in current shared common vectors")
         }
@@ -88,16 +90,7 @@ class WatchFaceCommonPolicyTest {
     }
 
     private fun Int.complicationNameOrNull(): String? {
-        return when (this) {
-            -1969696725 -> "SPO2"
-            -1532782012 -> "HEART_RATE"
-            932756435 -> "ACTIVITY"
-            1502678013 -> "DATE"
-            -2018451458 -> "BATTERY"
-            0 -> "EMPTY"
-            256763255 -> "WEATHER"
-            else -> null
-        }
+        return PolarWatchFaceComplicationName.fromId(this)?.name
     }
 
     private fun String.optionalObjectValue(field: String): String? {
@@ -110,6 +103,10 @@ class WatchFaceCommonPolicyTest {
 
     private fun String.optionalIntValue(field: String): Int? {
         return Regex("\"$field\"\\s*:\\s*(-?\\d+)").find(this)?.groupValues?.get(1)?.toInt()
+    }
+
+    private fun String.optionalLongValue(field: String): Long? {
+        return Regex("\"$field\"\\s*:\\s*(-?\\d+)").find(this)?.groupValues?.get(1)?.toLong()
     }
 
     private fun String.optionalIntArrayValue(field: String): List<Int>? {
@@ -148,15 +145,6 @@ class WatchFaceCommonPolicyTest {
         }
         error("Unbalanced $open$close block")
     }
-
-    private data class WatchFaceFields(
-        val timeStyleId: Int = 0,
-        val complicationLayoutId: Int = 0,
-        val backgroundStyleId: Int = 0,
-        val accentColor: Int = 0,
-        val complicationIds: List<Int> = emptyList(),
-        val fontfaceId: Int = 0
-    )
 
     private companion object {
         const val MINIMUM_FLATBUFFER_HEADER_SIZE = 4
