@@ -116,7 +116,7 @@ import UIKit
     }
 
     private static func facadeFileOperation(id: String, command: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        if let plannedOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
+        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
             return plannedOperation
         }
         switch command {
@@ -1098,14 +1098,14 @@ extension PolarBleApiImpl: PolarBleApi  {
         case .unknownFileSystem: break
         case .h10FileSystem:
             let localTimeHour = Calendar.current.component(.hour, from: time)
-            PolarDiskTimeRuntimePlanner.setLocalTimeH10(localTimeHour: localTimeHour)
-            let query = PolarDiskTimeRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: localTimeHour)?.first ?? Protocol_PbPFtpQuery.setLocalTime.rawValue
+            PolarRuntimePlanner.setLocalTimeH10(localTimeHour: localTimeHour)
+            let query = PolarRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: localTimeHour)?.first ?? Protocol_PbPFtpQuery.setLocalTime.rawValue
             _ = try await client.query(query, parameters: paramsSetLocalTime as NSData)
         case .polarFileSystemV2:
             let systemTimeHour = Calendar(identifier: .gregorian).component(.hour, from: time)
             let localTimeHour = Calendar.current.component(.hour, from: time)
-            PolarDiskTimeRuntimePlanner.setLocalTimeV2(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour)
-            let plannedQueries = PolarDiskTimeRuntimePlanner.setLocalTimeV2QueryValues(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour)
+            PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour)
+            let plannedQueries = PolarRuntimePlanner.setLocalTimeV2QueryValues(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour)
             let queries = plannedQueries?.count == 2 ? plannedQueries! : [
                 Protocol_PbPFtpQuery.setSystemTime.rawValue,
                 Protocol_PbPFtpQuery.setLocalTime.rawValue
@@ -1125,8 +1125,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         case .h10FileSystem, .unknownFileSystem:
             throw PolarErrors.operationNotSupported
         case .polarFileSystemV2:
-            PolarDiskTimeRuntimePlanner.query(id: "get-local-time", query: "GET_LOCAL_TIME")
-            let query = PolarDiskTimeRuntimePlanner.queryValue(id: "get-local-time", query: "GET_LOCAL_TIME") ?? Protocol_PbPFtpQuery.getLocalTime.rawValue
+            PolarRuntimePlanner.diskTimeQuery(id: "get-local-time", query: "GET_LOCAL_TIME")
+            let query = PolarRuntimePlanner.diskTimeQueryValue(id: "get-local-time", query: "GET_LOCAL_TIME") ?? Protocol_PbPFtpQuery.getLocalTime.rawValue
             let data = try await client.query(query, parameters: nil)
             let result = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: data as Data)
             return try PolarTimeUtils.dateFromPbPftpLocalDateTime(result)
@@ -1143,8 +1143,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         case .h10FileSystem, .unknownFileSystem:
             throw PolarErrors.operationNotSupported
         case .polarFileSystemV2:
-            PolarDiskTimeRuntimePlanner.query(id: "get-local-time-with-zone", query: "GET_LOCAL_TIME")
-            let query = PolarDiskTimeRuntimePlanner.queryValue(id: "get-local-time-with-zone", query: "GET_LOCAL_TIME") ?? Protocol_PbPFtpQuery.getLocalTime.rawValue
+            PolarRuntimePlanner.diskTimeQuery(id: "get-local-time-with-zone", query: "GET_LOCAL_TIME")
+            let query = PolarRuntimePlanner.diskTimeQueryValue(id: "get-local-time-with-zone", query: "GET_LOCAL_TIME") ?? Protocol_PbPFtpQuery.getLocalTime.rawValue
             let data = try await client.query(query, parameters: nil)
             let result = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: data as Data)
             let date = try PolarTimeUtils.dateFromPbPftpLocalDateTime(result)
@@ -1161,8 +1161,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
-        PolarDiskTimeRuntimePlanner.query(id: "get-disk-space", query: "GET_DISK_SPACE")
-        let query = PolarDiskTimeRuntimePlanner.queryValue(id: "get-disk-space", query: "GET_DISK_SPACE") ?? Protocol_PbPFtpQuery.getDiskSpace.rawValue
+        PolarRuntimePlanner.diskTimeQuery(id: "get-disk-space", query: "GET_DISK_SPACE")
+        let query = PolarRuntimePlanner.diskTimeQueryValue(id: "get-disk-space", query: "GET_DISK_SPACE") ?? Protocol_PbPFtpQuery.getDiskSpace.rawValue
         let data = try await client.query(query, parameters: nil)
         let proto = try Protocol_PbPFtpDiskSpaceResult(serializedBytes: data as Data)
         return PolarDiskSpaceData.fromProto(proto: proto)
@@ -1205,8 +1205,8 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
     private func plannedCommandQueryValue(id: String, query: String, parameters: [String] = []) -> Int? {
-        PolarCommandRuntimePlanner.query(id: id, query: query, parameters: parameters)
-        return PolarCommandRuntimePlanner.queryValue(id: id, query: query, parameters: parameters)
+        PolarRuntimePlanner.commandQuery(id: id, query: query, parameters: parameters)
+        return PolarRuntimePlanner.commandQueryValue(id: id, query: query, parameters: parameters)
     }
 
     
@@ -1797,7 +1797,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var pmdSecret: PmdSecret? = nil
         if let s = secret { pmdSecret = try PolarDataUtils.mapToPmdSecret(from: s) }
         let triggerTypes = trigger.triggerFeatures.keys.map { String(describing: $0) }
-        PolarStoredDataOfflineRuntimePlanner.offlineTriggerSet(currentTypes: triggerTypes, desiredTypes: triggerTypes, secretPresent: secret != nil)
+        PolarRuntimePlanner.offlineTriggerSet(currentTypes: triggerTypes, desiredTypes: triggerTypes, secretPresent: secret != nil)
         try await client.setOfflineRecordingTrigger(offlineRecordingTrigger: pmdOfflineTrigger, secret: pmdSecret)
     }
 
@@ -1806,7 +1806,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionPmdClientReady(identifier)
         guard let client = session.fetchGattClient(BlePmdClient.PMD_SERVICE) as? BlePmdClient else { throw PolarErrors.serviceNotFound }
         BleLogger.trace("Get offline recording trigger setup. Device: \(identifier)")
-        PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: ["acc", "gyro", "magnetometer", "ppg", "ppi", "hr"])
+        PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["acc", "gyro", "magnetometer", "ppg", "ppi", "hr"])
         let trigger = try await client.getOfflineRecordingTriggerStatus()
         return try PolarDataUtils.mapToPolarOfflineTrigger(from: trigger)
     }
@@ -2072,8 +2072,8 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
     private func plannedResetNotification(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) -> Int {
-        PolarCommandRuntimePlanner.reset(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
-        return PolarCommandRuntimePlanner.resetNotification(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate) ?? Protocol_PbPFtpHostToDevNotification.reset.rawValue
+        PolarRuntimePlanner.commandReset(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
+        return PolarRuntimePlanner.commandResetNotification(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate) ?? Protocol_PbPFtpHostToDevNotification.reset.rawValue
     }
 
 
@@ -2417,7 +2417,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             }
             .sorted { PolarFirmwareUpdateUtils.FwFileComparator.compare($0.key, $1.key) == .orderedAscending }
         let firmwareFilesByName = Dictionary(uniqueKeysWithValues: sorted)
-        return PolarFirmwareBackupRuntimePlanner.orderFirmwareFiles(sorted.map { $0.key }).compactMap { fileName in
+        return PolarRuntimePlanner.orderFirmwareFiles(sorted.map { $0.key }).compactMap { fileName in
             firmwareFilesByName[fileName].map { (fileName, $0) }
         }
     }
@@ -2426,12 +2426,12 @@ extension PolarBleApiImpl: PolarBleApi  {
         return AsyncThrowingStream { continuation in
             Task {
                 do {
-                    PolarFirmwareBackupRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"], firmwareFiles: firmwareFiles.map { $0.0 })
+                    PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"], firmwareFiles: firmwareFiles.map { $0.0 })
                     for firmwareFile in firmwareFiles {
                         var lastBytesWritten: Int = 0
                         let firmwareFilePath = "/\(firmwareFile.0)"
                         let firmwareFileBytes = firmwareFile.1
-                        _ = PolarFileRuntimePlanner.psFtpWriteProgress(payloadSize: firmwareFileBytes.count)
+                        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: firmwareFileBytes.count)
                         for try await bytesWritten in self.writeFirmwareToDeviceAsync(identifier: identifier, firmwareFilePath: firmwareFilePath, firmwareBytes: firmwareFileBytes) {
                             let bw = Int(bytesWritten)
                             let delta = bw - lastBytesWritten
@@ -2767,7 +2767,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             condition = { e in
                 e.contains("^(\\d{8})(/)") ||
                 e == "\(entryPattern)/" ||
-                (PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includeSuffixes: [".SLG", ".TXT"]) ?? (e.contains(".SLG") || e.contains(".TXT")))
+                (PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includeSuffixes: [".SLG", ".TXT"]) ?? (e.contains(".SLG") || e.contains(".TXT")))
             }
         case .ACTIVITY, .DAILY_SUMMARY, .NIGHTLY_RECOVERY, .SLEEP, .SKIN_CONTACT_CHANGES, .SKINTEMP, .SLEEP_SCORE:
             folderPath = "/U/0/"
@@ -2776,7 +2776,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             }
         case .UNDEFINED: return
         }
-        PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: folderPath)
+        PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: folderPath)
         var deletedFiles = [String]()
         for try await file in fileUtils.listFiles(identifier: identifier, folderPath: folderPath, condition: condition) {
             switch dataType {
@@ -2798,7 +2798,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         }
         if shouldPruneEmptyParents(for: dataType) {
             for path in deletedFiles {
-                if let sharedParents = PolarStoredDataOfflineRuntimePlanner.storedDataEmptyParentDirectories(filePath: path, trailingSlash: true) {
+                if let sharedParents = PolarRuntimePlanner.storedDataEmptyParentDirectories(filePath: path, trailingSlash: true) {
                     for currentDir in sharedParents {
                         try await fileUtils.deleteDataDirectory(identifier: identifier, directoryPath: currentDir)
                     }
@@ -2818,7 +2818,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
     private func shouldPruneEmptyParents(for dataType: PolarStoredDataType.StoredDataType) -> Bool {
-        if let sharedDecision = PolarStoredDataOfflineRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: dataType.rawValue) {
+        if let sharedDecision = PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: dataType.rawValue) {
             return sharedDecision
         }
 
@@ -2852,7 +2852,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             return false
         }
         for try await folder in fileUtils.listFiles(identifier: identifier, folderPath: path, condition: condition, recurseDeep: false) {
-            PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "emptyDayFolderRemoval", rootPath: folder)
+            PolarRuntimePlanner.storedDataCleanup(kind: "emptyDayFolderRemoval", rootPath: folder)
             try await fileUtils.deleteDataDirectory(identifier: identifier, directoryPath: folder)
         }
     }
@@ -2860,10 +2860,10 @@ extension PolarBleApiImpl: PolarBleApi  {
 
     func deleteTelemetryData(_ identifier: String) async throws {
         let condition: (_ p: String) -> Bool = { e in
-            PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includePrefixes: ["TRC"], includeSuffixes: [".BIN"]) ??
+            PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includePrefixes: ["TRC"], includeSuffixes: [".BIN"]) ??
             (e.contains("^([A-Za-z]{3}[0-9]{1,3})") && e.contains("TRC") && e.contains(".BIN"))
         }
-        PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/")
+        PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/")
         for try await file in fileUtils.listFiles(identifier: identifier, folderPath: "/", condition: condition) {
             _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: file)
             BleLogger.trace("Successfully deleted telemetry data \(file) from device \(identifier).")
@@ -3029,8 +3029,8 @@ extension PolarBleApiImpl: PolarBleApi  {
     func sendInitializationAndStartSyncNotifications(identifier: String) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
-        PolarCommandRuntimePlanner.syncStart(id: "sync-start-success")
-        let plannedNotifications = PolarCommandRuntimePlanner.syncStartNotifications(id: "sync-start-success") ?? [
+        PolarRuntimePlanner.commandSyncStart(id: "sync-start-success")
+        let plannedNotifications = PolarRuntimePlanner.commandSyncStartNotifications(id: "sync-start-success") ?? [
             Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue,
             Protocol_PbPFtpHostToDevNotification.startSync.rawValue
         ]
@@ -3046,8 +3046,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         var params = Protocol_PbPFtpStopSyncParams()
         params.completed = true
         let parameters = try params.serializedData() as NSData
-        PolarCommandRuntimePlanner.syncStop(id: "sync-stop-success")
-        let plannedNotifications = PolarCommandRuntimePlanner.syncStopNotifications(id: "sync-stop-success") ?? [
+        PolarRuntimePlanner.commandSyncStop(id: "sync-stop-success")
+        let plannedNotifications = PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success") ?? [
             Protocol_PbPFtpHostToDevNotification.stopSync.rawValue,
             Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
         ]
@@ -3177,7 +3177,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                     var builder = Protocol_PbPFtpOperation()
                     builder.command = writeOperation.command
                     builder.path = writeOperation.path
-                    PolarFileRuntimePlanner.psFtpWriteAck(payloadSize: firmwareBytes.count)
+                    PolarRuntimePlanner.psFtpWriteAck(payloadSize: firmwareBytes.count)
                     let proto = try builder.serializedData()
                     for try await bytesWritten in client.write(proto as NSData, data: InputStream(data: firmwareBytes)) {
                         BleLogger.trace("Writing firmware update file, bytes written: \(bytesWritten)/\(firmwareBytes.count)")
