@@ -56,6 +56,16 @@ public class PolarSleepData {
             }
             return status
         }
+
+        static func optionalFromProtoValue(value: Int) -> SleepRating? {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarIosSharedBridge.shared.sleepRatingName(value: Int32(value)),
+               let sharedRating = SleepRating(sharedName: sharedName) {
+                return sharedRating
+            }
+            #endif
+            return SleepRating(rawValue: value)
+        }
     }
 
     public struct PolarSleepAnalysisResult: Codable {

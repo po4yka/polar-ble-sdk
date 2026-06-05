@@ -122,6 +122,12 @@ class PolarSleepUtilsTests: XCTestCase {
         XCTAssertEqual(sleepData.sleepWakePhases.first?.state, mockSleepData.sleepWakePhases.first?.state)
     }
 
+    func testSleepRatingProtoMappingUsesSharedKnownValuesAndPreservesUnknownNilPolicy() {
+        XCTAssertEqual(.SLEPT_WELL, PolarSleepData.SleepRating.optionalFromProtoValue(value: PbSleepUserRating.pbSleptWell.rawValue))
+        XCTAssertEqual(.SLEPT_UNDEFINED, PolarSleepData.SleepRating.getByValue(value: 99))
+        XCTAssertNil(PolarSleepData.SleepRating.optionalFromProtoValue(value: 99))
+    }
+
     func testSleepOffsetGoldenVectorsPreserveIOSPolicy() async throws {
         let vector = try loadSleepGoldenVector(id: "sleep-offset-platform-policy")
         let input = try XCTUnwrap(vector["input"] as? [String: Any])

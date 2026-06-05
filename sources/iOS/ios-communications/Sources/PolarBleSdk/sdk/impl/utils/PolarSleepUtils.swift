@@ -40,7 +40,7 @@ internal class PolarSleepUtils {
                 alarmTime: proto.hasAlarmTime ? try PolarTimeUtils.pbLocalDateTimeToDate(pbLocalDateTime: proto.alarmTime) : nil,
                 sleepStartOffsetSeconds: proto.sleepStartOffsetSeconds,
                 sleepEndOffsetSeconds: proto.sleepStartOffsetSeconds,
-                userSleepRating: proto.hasUserSleepRating ? PolarSleepData.SleepRating(rawValue: proto.userSleepRating.rawValue) : nil,
+                userSleepRating: proto.hasUserSleepRating ? PolarSleepData.SleepRating.optionalFromProtoValue(value: proto.userSleepRating.rawValue) : nil,
                 deviceId: proto.hasRecordingDevice ? proto.recordingDevice.deviceID : nil,
                 batteryRanOut: proto.hasBatteryRanOut ? proto.batteryRanOut : nil,
                 sleepCycles: PolarSleepData.fromPbSleepCyclesList(pbSleepCyclesList: proto.sleepCycles),
