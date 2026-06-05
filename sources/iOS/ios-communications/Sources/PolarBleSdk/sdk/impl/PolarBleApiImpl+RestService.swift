@@ -195,8 +195,9 @@ extension PolarBleApiImpl: PolarRestServiceApi {
             throw PolarErrors.serviceNotFound
         }
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
+        operation.command = plannedOperation?.command ?? .get
+        operation.path = plannedOperation?.path ?? path
         PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
         let requestData = try operation.serializedData()
         let responseData = try await client.request(requestData)
@@ -217,9 +218,11 @@ extension PolarBleApiImpl: PolarRestServiceApi {
             throw PolarErrors.serviceNotFound
         }
         var operation = Protocol_PbPFtpOperation()
-        operation.command = command
-        operation.path = path
-        PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: data.map { String(format: "%02x", $0) }.joined())
+        let payloadHex = data.map { String(format: "%02x", $0) }.joined()
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
+        operation.command = plannedOperation?.command ?? command
+        operation.path = plannedOperation?.path ?? path
+        PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: data.count)
         PolarRuntimePlanner.psFtpWriteAck(payloadSize: data.count)
         let proto = try operation.serializedData()

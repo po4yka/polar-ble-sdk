@@ -1058,6 +1058,20 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun planRuntimeFileFacadeOperation(id: String, command: String, path: String, payloadHex: String): String {
+        return PolarRuntimeOrchestration.planFileFacade(
+            PolarFileFacadeOperation(
+                id = id,
+                command = command,
+                path = path,
+                payloadHex = payloadHex.takeIf { it.isNotEmpty() },
+                responseHex = null,
+                progress = emptyList(),
+                transportMode = null
+            )
+        ).fileOperationCommandsCsv()
+    }
+
     fun planRuntimeFileError(operation: String, path: String, errorName: String): String {
         return PolarRuntimeOrchestration.planFileRuntimeError(
             PolarFileRuntimeErrorOperation(
@@ -1237,6 +1251,16 @@ object PolarIosSharedBridge {
         return commands
             .filter { command -> command.startsWith("query:") }
             .joinToString(separator = ",") { command -> command.substringAfter("query:") }
+    }
+
+    private fun PolarRuntimePlan.fileOperationCommandsCsv(): String {
+        return commands
+            .filter { command ->
+                command.startsWith("GET:") ||
+                    command.startsWith("PUT:") ||
+                    command.startsWith("REMOVE:")
+            }
+            .joinToString(separator = ",")
     }
 
     private fun String.csvFields(): List<String> {

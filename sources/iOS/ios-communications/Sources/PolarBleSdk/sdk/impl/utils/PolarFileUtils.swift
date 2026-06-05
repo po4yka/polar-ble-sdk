@@ -94,8 +94,9 @@ class PolarFileUtils {
             throw PolarErrors.serviceNotFound
         }
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .remove
-        operation.path = filePath
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
+        operation.command = plannedOperation?.command ?? .remove
+        operation.path = plannedOperation?.path ?? filePath
         PolarRuntimePlanner.fileFacade(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
         let request = try operation.serializedData()
         do {
@@ -113,8 +114,9 @@ class PolarFileUtils {
         }
         for filePath in filePaths {
             var operation = Protocol_PbPFtpOperation()
-            operation.command = .remove
-            operation.path = filePath
+            let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
+            operation.command = plannedOperation?.command ?? .remove
+            operation.path = plannedOperation?.path ?? filePath
             PolarRuntimePlanner.fileFacade(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
             let request = try operation.serializedData()
             do {
@@ -137,8 +139,9 @@ class PolarFileUtils {
                 throw PolarErrors.serviceNotFound
             }
             var operation = Protocol_PbPFtpOperation()
-            operation.command = .get
-            operation.path = filePath
+            let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: filePath)
+            operation.command = plannedOperation?.command ?? .get
+            operation.path = plannedOperation?.path ?? filePath
             PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: filePath)
             let request = try operation.serializedData()
             return try await client.request(request)
@@ -150,8 +153,9 @@ class PolarFileUtils {
 
     private func fetchRecursive(_ path: String, client: BlePsFtpClient, condition: @escaping (_ p: String) -> Bool, recurseDeep: Bool) async throws -> [(name: String, size: UInt64)] {
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
+        operation.command = plannedOperation?.command ?? .get
+        operation.path = plannedOperation?.path ?? path
         PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
         let request = try operation.serializedData()
         do {
@@ -204,9 +208,11 @@ class PolarFileUtils {
             throw PolarErrors.serviceNotFound
         }
         var builder = Protocol_PbPFtpOperation()
-        builder.command = .put
-        builder.path = filePath
-        PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: fileData.map { String(format: "%02x", $0) }.joined())
+        let payloadHex = fileData.map { String(format: "%02x", $0) }.joined()
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: payloadHex)
+        builder.command = plannedOperation?.command ?? .put
+        builder.path = plannedOperation?.path ?? filePath
+        PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: payloadHex)
         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: fileData.count)
         PolarRuntimePlanner.psFtpWriteAck(payloadSize: fileData.count)
         let proto = try builder.serializedData()
