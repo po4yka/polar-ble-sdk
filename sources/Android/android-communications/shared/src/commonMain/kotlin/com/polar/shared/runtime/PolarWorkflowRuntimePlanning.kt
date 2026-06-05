@@ -126,6 +126,17 @@ object PolarWorkflowRuntimePlanning {
         return dataType !in setOf("AUTOS", "SDLOGS", "UNDEFINED")
     }
 
+    fun storedDataEmptyParentDirectories(filePath: String, rootPath: String = "/U/0", trailingSlash: Boolean = false): List<String> {
+        val normalizedRoot = rootPath.trimEnd('/')
+        val directories = mutableListOf<String>()
+        var currentDir = filePath.substringBeforeLast("/", missingDelimiterValue = "")
+        while (currentDir.isNotEmpty() && currentDir.trimEnd('/') != normalizedRoot) {
+            directories += if (trailingSlash) currentDir.withTrailingSlash() else currentDir.trimEnd('/')
+            currentDir = currentDir.trimEnd('/').substringBeforeLast("/", missingDelimiterValue = "")
+        }
+        return directories
+    }
+
     fun planOfflineTriggerRuntime(
         operation: String,
         currentDeviceTriggers: List<PolarOfflineTriggerDeviceTrigger>,

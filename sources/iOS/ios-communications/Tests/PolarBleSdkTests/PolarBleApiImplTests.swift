@@ -1989,6 +1989,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(true, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue))
         XCTAssertEqual(false, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.AUTO_SAMPLE.rawValue))
         XCTAssertEqual(false, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.SDLOGS.rawValue))
+        XCTAssertEqual(["/U/0/20260530/ACT/", "/U/0/20260530/"], PolarRuntimePlanner.storedDataEmptyParentDirectories(filePath: "/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash: true))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif

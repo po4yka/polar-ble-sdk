@@ -2619,13 +2619,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             if (PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents(dataType.type)) {
                 val dirs = mutableListOf<String>()
                 for (file in deletedFiles) {
-                    if (file != "") {
-                        var currentDir = file.substringBeforeLast("/")
-                        while (currentDir != "/U/0") {
-                            dirs.add(currentDir)
-                            currentDir = currentDir.substringBeforeLast("/")
-                        }
-                    }
+                    dirs += PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories(file, trailingSlash = false)
                 }
                 for (dir in dirs) {
                     val isEmpty = checkIfDirectoryIsEmpty(dir, client)

@@ -135,6 +135,15 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func storedDataEmptyParentDirectories(filePath: String, rootPath: String = "/U/0", trailingSlash: Bool = true) -> [String]? {
+        #if canImport(PolarBleSdkShared)
+        let csv = PolarIosSharedBridge.shared.storedDataEmptyParentDirectories(filePath: filePath, rootPath: rootPath, trailingSlash: trailingSlash)
+        return csv.isEmpty ? [] : csv.split(separator: ",").map(String.init)
+        #else
+        return nil
+        #endif
+    }
+
     @discardableResult
     static func offlineTriggerSet(currentTypes: [String], desiredTypes: [String], secretPresent: Bool) -> String {
         #if canImport(PolarBleSdkShared)

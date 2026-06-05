@@ -2689,6 +2689,12 @@ extension PolarBleApiImpl: PolarBleApi  {
         }
         if shouldPruneEmptyParents(for: dataType) {
             for path in deletedFiles {
+                if let sharedParents = PolarRuntimePlanner.storedDataEmptyParentDirectories(filePath: path, trailingSlash: true) {
+                    for currentDir in sharedParents {
+                        try await fileUtils.deleteDataDirectory(identifier: identifier, directoryPath: currentDir)
+                    }
+                    continue
+                }
                 let indices = path.findIndices(lookable: "/")
                 var indexCount = 1
                 var currentDir = String(path[...indices[indices.count - indexCount]])

@@ -1007,6 +1007,10 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents(dataType)
     }
 
+    fun storedDataEmptyParentDirectories(filePath: String, rootPath: String, trailingSlash: Boolean): String {
+        return PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories(filePath, rootPath, trailingSlash).joinToString(separator = ",")
+    }
+
     fun planRuntimeOfflineTrigger(operation: String, currentTypesCsv: String, desiredTypesCsv: String, secretPresent: Boolean): String {
         return PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
             operation = operation,

@@ -32,6 +32,7 @@ import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarRestFacadeOperation
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
 import com.polar.shared.sdk.PolarSdLogTriggerName
 import com.polar.sdk.api.PolarBleApi
@@ -2960,6 +2961,14 @@ class BDBleApiImplTest {
             androidConsumers = listOf("com.polar.sdk.impl.BDBleApiImplTest"),
             iosConsumers = listOf("PolarBleApiImplTests"),
             commonPrototypeConsumers = listOf("com.polar.sharedtest.StoredDataCleanupRuntimePolicyCommonTest")
+        )
+    }
+
+    @Test
+    fun `stored data cleanup parent pruning uses shared path split policy`() {
+        Assert.assertEquals(
+            listOf("/U/0/20260530/ACT", "/U/0/20260530"),
+            PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories("/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash = false)
         )
     }
 

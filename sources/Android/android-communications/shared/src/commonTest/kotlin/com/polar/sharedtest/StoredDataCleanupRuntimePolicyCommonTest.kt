@@ -100,6 +100,14 @@ class StoredDataCleanupRuntimePolicyCommonTest {
         assertEquals(false, PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents("AUTOS"))
         assertEquals(false, PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents("SDLOGS"))
         assertEquals(false, PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents("UNDEFINED"))
+        assertEquals(
+            listOf("/U/0/20260530/ACT", "/U/0/20260530"),
+            PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories("/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash = false)
+        )
+        assertEquals(
+            listOf("/U/0/20260530/ACT/", "/U/0/20260530/"),
+            PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories("/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash = true)
+        )
     }
 
     private val requiredCleanupScenarioIds = listOf(
