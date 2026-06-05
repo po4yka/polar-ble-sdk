@@ -1,6 +1,7 @@
 package com.polar.shared.ios
 
 import com.polar.shared.device.PolarDeviceId
+import com.polar.shared.ble.PolarTypeUtils
 import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
@@ -74,6 +75,14 @@ object PolarIosSharedBridge {
 
     fun isValidPlainDate(value: String): Boolean {
         return PolarTimeUtils.isValidPlainDate(value)
+    }
+
+    fun signedIntFromLittleEndianHex(hex: String): Int {
+        return PolarTypeUtils.requireSignedInt(hex.hexToBytes()).toInt()
+    }
+
+    fun unsignedLongFromLittleEndianHex(hex: String): String {
+        return PolarTypeUtils.requireUnsignedLong(hex.hexToBytes())
     }
 
     fun planRuntimeCommandQuery(id: String, query: String, parametersCsv: String): String {
@@ -321,5 +330,10 @@ object PolarIosSharedBridge {
 
     private fun String.csvValues(): List<String> {
         return split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    }
+
+    private fun String.hexToBytes(): ByteArray {
+        require(length % 2 == 0) { "Hex string must have an even length" }
+        return chunked(2).map { byte -> byte.toInt(16).toByte() }.toByteArray()
     }
 }

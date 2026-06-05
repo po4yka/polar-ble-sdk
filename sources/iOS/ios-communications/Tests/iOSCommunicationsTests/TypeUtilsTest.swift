@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import iOSCommunications
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 final class TypeUtilsTest: XCTestCase {
 
@@ -59,6 +62,17 @@ final class TypeUtilsTest: XCTestCase {
 
         // Assert
         XCTAssertEqual(expectedValue, result)
+    }
+
+    func testTypeUtilsDelegatesCompatibleConversionsToSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(-32768, PolarIosSharedBridge.shared.signedIntFromLittleEndianHex(hex: "0080"))
+        XCTAssertEqual("18446744073709551615", PolarIosSharedBridge.shared.unsignedLongFromLittleEndianHex(hex: "ffffffffffffffff"))
+        XCTAssertEqual(Int32(-32768), TypeUtils.convertArrayToSignedInt(Data([0x00, 0x80])))
+        XCTAssertEqual(UInt64.max, TypeUtils.convertArrayToUnsignedInt64(Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked for this test target")
+        #endif
     }
 
     func testTypeUtilsGoldenVectorsMatchIOSCommunicationsBehavior() throws {
