@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 class TypeUtils {
     
@@ -9,6 +12,11 @@ class TypeUtils {
     }
     
     static func convertArrayToSignedInt(_ data: Data) -> Int32 {
+        #if canImport(PolarBleSdkShared)
+        if !data.isEmpty && data.count <= 4 {
+            return PolarIosSharedBridge.shared.signedIntFromLittleEndianHex(hex: data.hexString())
+        }
+        #endif
         assert(data.count <= 4)
         var value: Int32 = 0
         memcpy(&value, (data as NSData).bytes, data.count)
@@ -39,9 +47,20 @@ class TypeUtils {
     }
 
     static func convertArrayToUnsignedInt64(_ data: Data) -> UInt64 {
+        #if canImport(PolarBleSdkShared)
+        if !data.isEmpty && data.count <= 8, let value = UInt64(PolarIosSharedBridge.shared.unsignedLongFromLittleEndianHex(hex: data.hexString())) {
+            return value
+        }
+        #endif
         assert(data.count <= 8)
         var value: UInt64 = 0
         value = data.reversed().reduce(0) { $0 << 8 + UInt64($1) }
         return value
+    }
+}
+
+private extension Data {
+    func hexString() -> String {
+        map { String(format: "%02x", $0) }.joined()
     }
 }
