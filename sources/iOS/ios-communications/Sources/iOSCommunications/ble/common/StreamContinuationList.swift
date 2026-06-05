@@ -156,22 +156,26 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
             guard let self else { return }
             do {
                 for try await value in self.makeUpstream() {
-                    self.lock.lock()
-                    let current = self.consumers
-                    self.lock.unlock()
+                    let current = self.lock.withLock { self.consumers }
                     if current.isEmpty { planRuntimeStreamPostCompletionEmission(target: "stream", value: "value") }
                     current.forEach { $0.cont.yield(value) }
                 }
-                self.lock.lock()
-                let current = self.consumers; self.consumers.removeAll(); self.upstreamTask = nil
-                self.lock.unlock()
+                let current = self.lock.withLock {
+                    let current = self.consumers
+                    self.consumers.removeAll()
+                    self.upstreamTask = nil
+                    return current
+                }
                 planRuntimeStreamDuplicateCompletion(target: "stream")
                 current.forEach { $0.cont.finish() }
             } catch {
                 guard !(error is CancellationError) else { return }
-                self.lock.lock()
-                let current = self.consumers; self.consumers.removeAll(); self.upstreamTask = nil
-                self.lock.unlock()
+                let current = self.lock.withLock {
+                    let current = self.consumers
+                    self.consumers.removeAll()
+                    self.upstreamTask = nil
+                    return current
+                }
                 planRuntimeStreamDisconnect(target: "stream", error: String(describing: type(of: error)))
                 current.forEach { $0.cont.finish(throwing: error) }
             }
