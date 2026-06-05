@@ -63,9 +63,27 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func backupFilePath(_ path: String) -> (directory: String, fileName: String) {
+        #if canImport(PolarBleSdkShared)
+        let parts = PolarIosSharedBridge.shared.backupFilePathParts(path: path).split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+        guard parts.count == 2 else {
+            return fallbackBackupFilePath(path)
+        }
+        return (parts[0], parts[1])
+        #else
+        return fallbackBackupFilePath(path)
+        #endif
+    }
+
     private static func backupRestoreOperation(_ plannedOperation: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
         let parts = plannedOperation.split(separator: ":", maxSplits: 2).map(String.init)
         guard parts.count == 3, parts[0] == "PUT" else { return nil }
         return (.put, parts[1])
+    }
+
+    private static func fallbackBackupFilePath(_ path: String) -> (directory: String, fileName: String) {
+        let fileName = (path as NSString).lastPathComponent
+        let directory = (path as NSString).deletingLastPathComponent + "/"
+        return (directory, fileName)
     }
 }

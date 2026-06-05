@@ -103,6 +103,14 @@ class BackupUtilityCommonPolicyTest {
         )
     }
 
+    @Test
+    fun backupFilePathPlanningSplitsDirectoryAndFileName() {
+        val filePath = PolarWorkflowRuntimePlanning.backupFilePath("/SYS/BT/BTDEV.BPB")
+
+        assertEquals("/SYS/BT/", filePath.directory)
+        assertEquals("BTDEV.BPB", filePath.fileName)
+    }
+
     private val requiredBackupWorkflowPolicyVectorPaths = listOf(
         "sdk/backup-utils/backup-expansion-and-restore-writes.json",
         "sdk/backup-utils/restore-failure-platform-policy.json"

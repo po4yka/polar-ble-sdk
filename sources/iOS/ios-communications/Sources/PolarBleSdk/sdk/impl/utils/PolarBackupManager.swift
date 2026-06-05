@@ -152,9 +152,8 @@ public class PolarBackupManager {
             } else {
                 do {
                     let data = try await loadFile(path: path)
-                    let file = (path as NSString).lastPathComponent
-                    let filePath = (path as NSString).deletingLastPathComponent + "/"
-                    result.append(BackupFileData(data: Data(data), directory: filePath, fileName: file))
+                    let filePath = PolarFirmwareBackupRuntimePlanner.backupFilePath(path)
+                    result.append(BackupFileData(data: Data(data), directory: filePath.directory, fileName: filePath.fileName))
                 } catch {
                     BleLogger.error("Error loading file: \(path), error: \(error)")
                 }

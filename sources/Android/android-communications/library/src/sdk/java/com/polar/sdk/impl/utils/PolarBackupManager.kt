@@ -187,8 +187,7 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
                 BleLogger.d(TAG, "Backup file: $path")
                 try {
                     val data = loadFile(path)
-                    val file = path.substringAfterLast(File.separator)
-                    val filePath = path.substringBefore(file)
+                    val (filePath, file) = PolarRuntimePlannerAdapter.backupFilePath(path)
                     listOf(BackupFileData(data, filePath, file))
                 } catch (it: Throwable) {
                     BleLogger.e(TAG, "Error loading file: $path, error: $it")

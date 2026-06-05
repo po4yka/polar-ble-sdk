@@ -199,6 +199,13 @@ class PolarBackupManagerTest: XCTestCase {
         )
     }
 
+    func testBackupFilePathPlanningUsesSharedPathSplit() throws {
+        let filePath = PolarFirmwareBackupRuntimePlanner.backupFilePath("/SYS/BT/BTDEV.BPB")
+
+        XCTAssertEqual("/SYS/BT/", filePath.directory)
+        XCTAssertEqual("BTDEV.BPB", filePath.fileName)
+    }
+
     func testBackupGoldenVectorsFollowNeutralKmpShape() throws {
         for id in ["backup-expansion-and-restore-writes", "restore-failure-platform-policy", "backup-workflow-readiness"] {
             let vector = try loadBackupVector(id: id)

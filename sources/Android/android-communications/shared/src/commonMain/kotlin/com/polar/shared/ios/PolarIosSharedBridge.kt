@@ -1244,6 +1244,11 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.backupRootPaths(entriesCsv.csvValues()).joinToString(",")
     }
 
+    fun backupFilePathParts(path: String): String {
+        val filePath = PolarWorkflowRuntimePlanning.backupFilePath(path)
+        return "${filePath.directory}\t${filePath.fileName}"
+    }
+
     fun planRuntimePsFtpWriteProgress(payloadSize: Int, platform: String): String {
         return PolarWorkflowRuntimePlanning.planPsFtpWriteProgress(payloadSize, platform).joinToString(",")
     }

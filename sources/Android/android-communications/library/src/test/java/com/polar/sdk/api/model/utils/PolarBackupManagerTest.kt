@@ -339,6 +339,14 @@ class PolarBackupManagerTest {
     }
 
     @Test
+    fun `backup file path splitting delegates to shared planner`() {
+        Assert.assertEquals(
+            "/SYS/BT/" to "BTDEV.BPB",
+            PolarRuntimePlannerAdapter.backupFilePath("/SYS/BT/BTDEV.BPB")
+        )
+    }
+
+    @Test
     fun `backup golden vectors follow neutral KMP vector shape`() {
         listOf("backup-expansion-and-restore-writes", "restore-failure-platform-policy", "backup-workflow-readiness").forEach { id ->
             val vector = loadBackupVector(id)

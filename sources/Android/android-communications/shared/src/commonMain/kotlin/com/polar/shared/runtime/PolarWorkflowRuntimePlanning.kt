@@ -74,6 +74,11 @@ data class PolarBackupFile(
     val dataHex: String
 )
 
+data class PolarBackupFilePath(
+    val directory: String,
+    val fileName: String
+)
+
 data class PolarBackupRestoreFile(
     val directory: String,
     val fileName: String,
@@ -200,6 +205,13 @@ object PolarWorkflowRuntimePlanning {
 
     fun readBackupFiles(paths: List<String>, filesByPath: Map<String, String>): List<PolarBackupFile> {
         return paths.map { path -> PolarBackupFile(path, filesByPath.getValue(path)) }
+    }
+
+    fun backupFilePath(path: String): PolarBackupFilePath {
+        return PolarBackupFilePath(
+            directory = path.substringBeforeLast('/', missingDelimiterValue = "") + "/",
+            fileName = path.substringAfterLast('/')
+        )
     }
 
     fun planBackupRestore(restoreFiles: List<PolarBackupRestoreFile>): PolarWorkflowPlan {
