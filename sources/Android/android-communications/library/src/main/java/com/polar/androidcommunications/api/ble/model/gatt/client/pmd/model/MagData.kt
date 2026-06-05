@@ -16,11 +16,7 @@ internal class MagData() {
 
         companion object {
             fun getById(id: Int): CalibrationStatus {
-                return try {
-                    values().first { it.id == id }
-                } catch (e: NoSuchElementException) {
-                    NOT_AVAILABLE
-                }
+                return PolarMagCalibrationStatus.fromId(id).toAndroidCalibrationStatus()
             }
         }
     }
@@ -62,7 +58,7 @@ internal class MagData() {
         }
 
         private fun PolarMagCalibrationStatus.toAndroidCalibrationStatus(): CalibrationStatus {
-            return CalibrationStatus.getById(id)
+            return CalibrationStatus.valueOf(name)
         }
 
         private fun dataCompressedFromType0(frame: PmdDataFrame): MagData {

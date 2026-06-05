@@ -13,6 +13,16 @@ import java.io.FileReader
 class MagDataTest {
 
     @Test
+    fun calibrationStatusLookupDelegatesKnownIdsToSharedModelAndPreservesNotAvailableFallback() {
+        Assert.assertEquals(MagData.CalibrationStatus.NOT_AVAILABLE, MagData.CalibrationStatus.getById(-1))
+        Assert.assertEquals(MagData.CalibrationStatus.UNKNOWN, MagData.CalibrationStatus.getById(0))
+        Assert.assertEquals(MagData.CalibrationStatus.POOR, MagData.CalibrationStatus.getById(1))
+        Assert.assertEquals(MagData.CalibrationStatus.OK, MagData.CalibrationStatus.getById(2))
+        Assert.assertEquals(MagData.CalibrationStatus.GOOD, MagData.CalibrationStatus.getById(3))
+        Assert.assertEquals(MagData.CalibrationStatus.NOT_AVAILABLE, MagData.CalibrationStatus.getById(99))
+    }
+
+    @Test
     fun `process magnetometer compressed data type 0`() {
         // Arrange
         // HEX: 06 00 94 35 77 00 00 00 00 01
