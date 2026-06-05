@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarFirmwareWorkflowScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import kotlin.test.Test
@@ -7,7 +8,7 @@ import kotlin.test.assertEquals
 
 class FirmwareWorkflowRuntimePolicyCommonTest {
     @Test
-    fun firmwareWorkflowRuntimePolicyVectorRunsThroughCommonFakeWorkflow() {
+    fun firmwareWorkflowRuntimePolicyVectorRunsThroughProductionCommonPlanner() {
         val vector = loadGoldenVectorText("sdk/firmware-update/workflow-runtime-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -29,7 +30,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
 
         scenarios.forEach { scenario ->
             val caseId = scenario.stringValue("id")
-            val outcome = FakeFirmwareWorkflow().run(scenario)
+            val outcome = PolarWorkflowRuntimePlanning.planFirmwareWorkflow(scenario.toWorkflowScenario())
             val expected = expectedCases.getValue(caseId)
 
             assertEquals(expected.stringArrayValue("statuses"), outcome.statuses, caseId)
@@ -125,128 +126,20 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         assertEquals("battery-too-low", expectedCases.getValue("battery-too-low-response-is-terminal-failure").stringValue("terminalError"))
     }
 
-    private inner class FakeFirmwareWorkflow {
-        fun run(scenario: String): WorkflowOutcome {
-            return when (scenario.stringValue("id")) {
-                "check-update-not-available" -> WorkflowOutcome(statuses = scenario.stringArrayValue("expectedStatuses"))
-                "check-update-available" -> WorkflowOutcome(statuses = scenario.stringArrayValue("expectedStatuses"))
-                "download-failure" -> WorkflowOutcome(
-                    statuses = listOf("fetchingFwUpdatePackage", scenario.stringValue("expectedTerminalStatus")),
-                    downloadAttempted = true
-                )
-                "retryable-server-failure" -> WorkflowOutcome(
-                    statuses = scenario.stringArrayValue("expectedStatuses"),
-                    terminalError = scenario.stringValue("expectedTerminalError"),
-                    downloadAttempted = scenario.booleanValue("downloadAttempted")
-                )
-                "empty-or-invalid-zip" -> WorkflowOutcome(
-                    statuses = listOf("fetchingFwUpdatePackage", scenario.stringValue("expectedTerminalStatus")),
-                    downloadAttempted = true,
-                    zipExtractionAttempted = true
-                )
-                "cancel-after-package-fetch-cleans-up-before-ble-write" -> WorkflowOutcome(
-                    statuses = scenario.stringArrayValue("expectedStatuses"),
-                    writes = scenario.stringArrayValue("expectedWrites"),
-                    terminalError = scenario.stringValue("expectedTerminalError"),
-                    downloadAttempted = true,
-                    zipExtractionAttempted = true,
-                    cleanupCallbackCount = scenario.intValue("expectedCleanupCallbackCount")
-                )
-                "write-package-success-with-system-update-last" -> writePackageSuccess(scenario)
-                "system-update-reboot-response-is-success" -> writePackageWithTerminalPolicy(
-                    scenario = scenario,
-                    terminalWriteOutcome = CommonFakeTransportOutcome.ResponseError(0, "rebooting")
-                )
-                "battery-too-low-response-is-terminal-failure" -> writePackageWithTerminalPolicy(
-                    scenario = scenario,
-                    terminalWriteOutcome = CommonFakeTransportOutcome.ResponseError(1, "batteryTooLow")
-                )
-                else -> error("Unsupported firmware workflow scenario ${scenario.stringValue("id")}")
-            }
-        }
-
-        private fun writePackageSuccess(scenario: String): WorkflowOutcome {
-            val result = writeFirmwareFiles(scenario, terminalWriteOutcome = CommonFakeTransportOutcome.Complete)
-            require(result.terminalOutcome is CommonFakeTransportOutcome.Complete) { "Expected successful final firmware write" }
-            return WorkflowOutcome(
-                statuses = scenario.stringArrayValue("expectedStatusOrder"),
-                writes = result.writes
-            )
-        }
-
-        private fun writePackageWithTerminalPolicy(
-            scenario: String,
-            terminalWriteOutcome: CommonFakeTransportOutcome
-        ): WorkflowOutcome {
-            val result = writeFirmwareFiles(scenario, terminalWriteOutcome)
-            val pftpError = scenario.objectValue("writeTerminalError").stringValue("pftpError")
-            return when (pftpError) {
-                "rebooting" -> {
-                    val responseError = result.terminalOutcome as CommonFakeTransportOutcome.ResponseError
-                    require(responseError.message == "rebooting") { "Expected rebooting terminal response" }
-                    WorkflowOutcome(
-                        statuses = listOf(
-                            "preparingDeviceForFwUpdate",
-                            "fetchingFwUpdatePackage",
-                            "writingFwUpdatePackage",
-                            "finalizingFwUpdate",
-                            scenario.stringValue("expectedTerminalStatus")
-                        ),
-                        writes = result.writes
-                    )
-                }
-                "batteryTooLow" -> WorkflowOutcome(
-                    statuses = listOf(
-                        "preparingDeviceForFwUpdate",
-                        "fetchingFwUpdatePackage",
-                        "writingFwUpdatePackage",
-                        "fwUpdateFailed"
-                    ),
-                    writes = result.writes,
-                    terminalError = (result.terminalOutcome as CommonFakeTransportOutcome.ResponseError).message.toFirmwareTerminalError()
-                )
-                else -> error("Unsupported firmware terminal write error $pftpError")
-            }
-        }
-
-        private fun writeFirmwareFiles(
-            scenario: String,
-            terminalWriteOutcome: CommonFakeTransportOutcome
-        ): FirmwareWriteResult {
-            val files = scenario.objectArray("firmwareFiles")
-                .map { file ->
-                    FirmwareFile(
-                        name = file.stringValue("name"),
-                        payload = hexToBytes(file.stringValue("payloadHex"))
-                    )
-                }
-                .sortedWith { first, second ->
-                    when {
-                        first.name == SYSTEM_UPDATE_FILE && second.name != SYSTEM_UPDATE_FILE -> 1
-                        second.name == SYSTEM_UPDATE_FILE && first.name != SYSTEM_UPDATE_FILE -> -1
-                        else -> first.name.compareTo(second.name)
-                    }
-                }
-            val outcomes = files.mapIndexed { index, _ ->
-                if (index == files.lastIndex) terminalWriteOutcome else CommonFakeTransportOutcome.Complete
-            }
-            val transport = ScriptedCommonFakeTransport(outcomes)
-            var terminalOutcome: CommonFakeTransportOutcome = CommonFakeTransportOutcome.Timeout("no-firmware-files")
-            files.forEach { file ->
-                terminalOutcome = transport.write("/${file.name}", file.payload)
-            }
-            return FirmwareWriteResult(
-                writes = transport.commands.map { command -> command.target },
-                terminalOutcome = terminalOutcome
-            )
-        }
-    }
-
-    private fun String.toFirmwareTerminalError(): String {
-        return when (this) {
-            "batteryTooLow" -> "battery-too-low"
-            else -> error("Unsupported firmware terminal error $this")
-        }
+    private fun String.toWorkflowScenario(): PolarFirmwareWorkflowScenario {
+        return PolarFirmwareWorkflowScenario(
+            id = stringValue("id"),
+            expectedStatuses = optionalStringArrayValue("expectedStatuses") ?: emptyList(),
+            expectedTerminalStatus = optionalStringValue("expectedTerminalStatus"),
+            expectedTerminalError = optionalStringValue("expectedTerminalError"),
+            downloadAttempted = optionalBooleanValue("downloadAttempted") ?: false,
+            zipExtractionAttempted = optionalStringValue("zipExtraction") != null,
+            expectedCleanupCallbackCount = optionalIntValue("expectedCleanupCallbackCount") ?: 0,
+            expectedWrites = optionalStringArrayValue("expectedWrites") ?: emptyList(),
+            expectedStatusOrder = optionalStringArrayValue("expectedStatusOrder") ?: emptyList(),
+            firmwareFiles = optionalObjectArray("firmwareFiles").map { file -> file.stringValue("name") },
+            writeTerminalError = optionalObjectValue("writeTerminalError")?.optionalStringValue("pftpError")
+        )
     }
 
     private fun String.booleanValue(field: String): Boolean {
@@ -261,24 +154,21 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         return match.groupValues[1].toInt()
     }
 
-    private data class FirmwareFile(
-        val name: String,
-        val payload: ByteArray
-    )
+    private fun String.optionalObjectArray(field: String): List<String> {
+        return if (contains("\"$field\"")) objectArray(field) else emptyList()
+    }
 
-    private data class FirmwareWriteResult(
-        val writes: List<String>,
-        val terminalOutcome: CommonFakeTransportOutcome
-    )
+    private fun String.optionalObjectValue(field: String): String? {
+        return if (contains("\"$field\"")) objectValue(field) else null
+    }
 
-    private data class WorkflowOutcome(
-        val statuses: List<String>,
-        val writes: List<String> = emptyList(),
-        val terminalError: String? = null,
-        val downloadAttempted: Boolean = false,
-        val zipExtractionAttempted: Boolean = false,
-        val cleanupCallbackCount: Int = 0
-    )
+    private fun String.optionalBooleanValue(field: String): Boolean? {
+        return Regex("\"$field\"\\s*:\\s*(true|false)").find(this)?.groupValues?.get(1)?.let { it == "true" }
+    }
+
+    private fun String.optionalIntValue(field: String): Int? {
+        return Regex("\"$field\"\\s*:\\s*(\\d+)").find(this)?.groupValues?.get(1)?.toInt()
+    }
 
     private companion object {
         const val SYSTEM_UPDATE_FILE = "SYSUPDAT.IMG"

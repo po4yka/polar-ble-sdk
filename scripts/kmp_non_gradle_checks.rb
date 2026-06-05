@@ -823,11 +823,11 @@ FAKE_TRANSPORT_COMMON_FIRMWARE_UTILITY_TEST_REQUIRED_TERMS = [
   "SYSUPDAT.IMG"
 ].freeze
 FAKE_TRANSPORT_COMMON_FIRMWARE_WORKFLOW_TEST_REQUIRED_TERMS = [
-  "firmwareWorkflowRuntimePolicyVectorRunsThroughCommonFakeWorkflow",
+  "firmwareWorkflowRuntimePolicyVectorRunsThroughProductionCommonPlanner",
   "firmwareWorkflowRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/firmware-update/workflow-runtime-policy.json",
   "sdk/firmware-update/workflow-runtime-readiness.json",
-  "ScriptedCommonFakeTransport",
+  "PolarWorkflowRuntimePlanning.planFirmwareWorkflow",
   "check-update-not-available",
   "check-update-available",
   "download-failure",

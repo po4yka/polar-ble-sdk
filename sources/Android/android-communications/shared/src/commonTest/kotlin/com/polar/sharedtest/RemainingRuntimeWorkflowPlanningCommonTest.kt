@@ -1,7 +1,6 @@
 package com.polar.sharedtest
 
 import com.polar.shared.runtime.PolarBackupRestoreFile
-import com.polar.shared.runtime.PolarFirmwareWorkflowScenario
 import com.polar.shared.runtime.PolarPsFtpNotificationPacket
 import com.polar.shared.runtime.PolarPsFtpWriteAckTimeout
 import com.polar.shared.runtime.PolarStoredDataCleanupDateFolder
@@ -47,37 +46,6 @@ class RemainingRuntimeWorkflowPlanningCommonTest {
 
             assertEquals(expected.stringArrayValue("commands"), outcome.commands, scenario.id)
             assertEquals(expected.stringValue("terminal"), outcome.terminal, scenario.id)
-        }
-    }
-
-    @Test
-    fun firmwareWorkflowVectorsRunThroughProductionCommonPlanner() {
-        val vector = loadGoldenVectorText("sdk/firmware-update/workflow-runtime-policy.json")
-        val expectedCases = vector.objectValue("expected").objectValue("commonWorkflowPrototype").objectArray("cases").associateBy { it.stringValue("id") }
-
-        vector.objectValue("input").objectArray("scenarios").forEach { scenarioJson ->
-            val scenario = PolarFirmwareWorkflowScenario(
-                id = scenarioJson.stringValue("id"),
-                expectedStatuses = scenarioJson.optionalStringArrayValue("expectedStatuses") ?: emptyList(),
-                expectedTerminalStatus = scenarioJson.optionalStringValue("expectedTerminalStatus"),
-                expectedTerminalError = scenarioJson.optionalStringValue("expectedTerminalError"),
-                downloadAttempted = scenarioJson.optionalBooleanValue("downloadAttempted") ?: false,
-                zipExtractionAttempted = scenarioJson.optionalStringValue("zipExtraction") != null,
-                expectedCleanupCallbackCount = scenarioJson.optionalIntValue("expectedCleanupCallbackCount") ?: 0,
-                expectedWrites = scenarioJson.optionalStringArrayValue("expectedWrites") ?: emptyList(),
-                expectedStatusOrder = scenarioJson.optionalStringArrayValue("expectedStatusOrder") ?: emptyList(),
-                firmwareFiles = scenarioJson.optionalObjectArray("firmwareFiles").map { it.stringValue("name") },
-                writeTerminalError = scenarioJson.optionalObjectValue("writeTerminalError")?.optionalStringValue("pftpError")
-            )
-            val expected = expectedCases.getValue(scenario.id)
-            val outcome = PolarWorkflowRuntimePlanning.planFirmwareWorkflow(scenario)
-
-            assertEquals(expected.stringArrayValue("statuses"), outcome.statuses, scenario.id)
-            assertEquals(expected.stringArrayValue("writes"), outcome.writes, scenario.id)
-            assertEquals(expected.optionalStringValue("terminalError"), outcome.terminalError, scenario.id)
-            expected.optionalBooleanValue("downloadAttempted")?.let { assertEquals(it, outcome.downloadAttempted, scenario.id) }
-            expected.optionalBooleanValue("zipExtractionAttempted")?.let { assertEquals(it, outcome.zipExtractionAttempted, scenario.id) }
-            expected.optionalIntValue("cleanupCallbackCount")?.let { assertEquals(it, outcome.cleanupCallbackCount, scenario.id) }
         }
     }
 
@@ -146,18 +114,6 @@ class RemainingRuntimeWorkflowPlanningCommonTest {
 
     private fun String.optionalObjectArray(field: String): List<String> {
         return if (contains("\"$field\"")) objectArray(field) else emptyList()
-    }
-
-    private fun String.optionalObjectValue(field: String): String? {
-        return if (contains("\"$field\"")) objectValue(field) else null
-    }
-
-    private fun String.optionalBooleanValue(field: String): Boolean? {
-        return Regex("\"$field\"\\s*:\\s*(true|false)").find(this)?.groupValues?.get(1)?.let { it == "true" }
-    }
-
-    private fun String.optionalIntValue(field: String): Int? {
-        return Regex("\"$field\"\\s*:\\s*(\\d+)").find(this)?.groupValues?.get(1)?.toInt()
     }
 
     private fun String.objectEntries(): Map<String, String> {
