@@ -32,6 +32,10 @@ internal class PolarTrainingSessionUtils {
         return trainingSessionFileOperation(id: "training-session-read-exercise-file", command: "GET", path: path)
     }
 
+    static func trainingSessionDirectoryReadOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return trainingSessionFileOperation(id: "training-session-read-directory", command: "GET", path: path)
+    }
+
     static func trainingSessionDeleteParentReadOperation(reference: PolarTrainingSessionReference) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         let components = reference.path.split(separator: "/")
         return trainingSessionFileOperation(id: "training-session-delete-read-parent", command: "GET", path: "/U/0/" + components[2] + "/E/")
@@ -282,14 +286,15 @@ internal class PolarTrainingSessionUtils {
         client: BlePsFtpClient,
         condition: @escaping (String) -> Bool
     ) async throws -> [(name: String, size: UInt64)] {
+        let directoryOperation = trainingSessionDirectoryReadOperation(path: path)
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
+        operation.command = directoryOperation.command
+        operation.path = directoryOperation.path
         let data = try await client.request(try operation.serializedBytes())
         let dir = try Protocol_PbPFtpDirectory(serializedBytes: data as Data)
         var results: [(name: String, size: UInt64)] = []
         for entry in dir.entries where condition(entry.name) {
-            let fullPath = path + entry.name
+            let fullPath = directoryOperation.path + entry.name
             if fullPath.hasSuffix("/") {
                 let children = try await fetchRecursive(fullPath, client: client, condition: condition)
                 results.append(contentsOf: children)

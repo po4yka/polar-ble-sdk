@@ -35,6 +35,10 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         XCTAssertEqual(exerciseOperation.command, .get)
         XCTAssertEqual(exerciseOperation.path, "/U/0/20260102/E/123456/00/BASE.BPB")
 
+        let directoryOperation = PolarTrainingSessionUtils.trainingSessionDirectoryReadOperation(path: "/U/0/20260102/E/123456/")
+        XCTAssertEqual(directoryOperation.command, .get)
+        XCTAssertEqual(directoryOperation.path, "/U/0/20260102/E/123456/")
+
         let parentOperation = PolarTrainingSessionUtils.trainingSessionDeleteParentReadOperation(reference: reference)
         XCTAssertEqual(parentOperation.command, .get)
         XCTAssertEqual(parentOperation.path, "/U/0/20260102/E/")
