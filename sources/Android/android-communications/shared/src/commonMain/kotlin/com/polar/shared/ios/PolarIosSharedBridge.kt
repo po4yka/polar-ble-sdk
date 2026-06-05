@@ -23,6 +23,7 @@ import com.polar.shared.sdk.PolarKvtxMalformedScriptException
 import com.polar.shared.sdk.PolarKvtxScriptCodec
 import com.polar.shared.sdk.PolarOfflineRecordingModels
 import com.polar.shared.sdk.PolarSdkModelMappers
+import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.time.PolarDurationFields
 import com.polar.shared.time.PolarTimeFields
@@ -163,6 +164,22 @@ object PolarIosSharedBridge {
 
     fun trainingSessionExerciseDataType(fileName: String): String? {
         return PolarTrainingSessionModels.exerciseDataTypeOrNull(fileName)
+    }
+
+    fun spo2TestStatus(value: Int): String? {
+        return PolarSpo2Models.testStatusName(value)
+    }
+
+    fun spo2Class(value: Int): String? {
+        return PolarSpo2Models.spo2ClassName(value)
+    }
+
+    fun spo2DeviationFromBaseline(value: Int): String? {
+        return PolarSpo2Models.deviationFromBaselineName(value)
+    }
+
+    fun spo2TriggerType(value: Int): String? {
+        return PolarSpo2Models.triggerTypeName(value)
     }
 
     fun planRuntimeCommandQuery(id: String, query: String, parametersCsv: String): String {

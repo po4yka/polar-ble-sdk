@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarSpo2Models
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -40,11 +41,11 @@ class Spo2CommonPolicyTest {
             }
 
             if (!caseId.contains("unknown-spo2-class")) {
-                assertEquals(proto.optionalIntValue("spo2Class")?.spo2ClassName(), common.spo2Class, "$caseId spo2Class")
+                assertEquals(proto.optionalIntValue("spo2Class")?.let(PolarSpo2Models::spo2ClassName), common.spo2Class, "$caseId spo2Class")
             }
-            assertEquals(proto.optionalIntValue("spo2ValueDeviationFromBaseline")?.valueDeviationName(), common.spo2ValueDeviationFromBaseline, "$caseId value deviation")
-            assertEquals(proto.optionalIntValue("spo2HrvDeviationFromBaseline")?.hrvDeviationName(), common.spo2HrvDeviationFromBaseline, "$caseId hrv deviation")
-            assertEquals(proto.optionalIntValue("triggerType")?.triggerTypeName(), common.triggerType, "$caseId trigger")
+            assertEquals(proto.optionalIntValue("spo2ValueDeviationFromBaseline")?.let(PolarSpo2Models::deviationFromBaselineName), common.spo2ValueDeviationFromBaseline, "$caseId value deviation")
+            assertEquals(proto.optionalIntValue("spo2HrvDeviationFromBaseline")?.let(PolarSpo2Models::deviationFromBaselineName), common.spo2HrvDeviationFromBaseline, "$caseId hrv deviation")
+            assertEquals(proto.optionalIntValue("triggerType")?.let(PolarSpo2Models::triggerTypeName), common.triggerType, "$caseId trigger")
             assertEquals(input.stringValue("date") + "T" + input.stringValue("timeDirName"), common.sourceDateTimeKey, "$caseId source key")
         }
     }
@@ -86,50 +87,19 @@ class Spo2CommonPolicyTest {
             timeZoneOffsetMinutes = proto.intValue("timeZoneOffsetMinutes"),
             testStatus = proto.intValue("testStatus").testStatusName(),
             bloodOxygenPercent = proto.optionalIntValue("bloodOxygenPercent"),
-            spo2Class = proto.optionalIntValue("spo2Class")?.spo2ClassName(),
-            spo2ValueDeviationFromBaseline = proto.optionalIntValue("spo2ValueDeviationFromBaseline")?.valueDeviationName(),
+            spo2Class = proto.optionalIntValue("spo2Class")?.let(PolarSpo2Models::spo2ClassName),
+            spo2ValueDeviationFromBaseline = proto.optionalIntValue("spo2ValueDeviationFromBaseline")?.let(PolarSpo2Models::deviationFromBaselineName),
             spo2QualityAveragePercent = proto.optionalFloatValue("spo2QualityAveragePercent"),
             averageHeartRateBpm = proto.optionalIntValue("averageHeartRateBpm"),
             heartRateVariabilityMs = proto.optionalFloatValue("heartRateVariabilityMs"),
-            spo2HrvDeviationFromBaseline = proto.optionalIntValue("spo2HrvDeviationFromBaseline")?.hrvDeviationName(),
+            spo2HrvDeviationFromBaseline = proto.optionalIntValue("spo2HrvDeviationFromBaseline")?.let(PolarSpo2Models::deviationFromBaselineName),
             altitudeMeters = proto.optionalFloatValue("altitudeMeters"),
-            triggerType = proto.optionalIntValue("triggerType")?.triggerTypeName()
+            triggerType = proto.optionalIntValue("triggerType")?.let(PolarSpo2Models::triggerTypeName)
         )
     }
 
     private fun Int.testStatusName(): String {
-        return when (this) {
-            0 -> "passed"
-            else -> "unknown"
-        }
-    }
-
-    private fun Int.spo2ClassName(): String? {
-        return when (this) {
-            3 -> "normal"
-            else -> null
-        }
-    }
-
-    private fun Int.valueDeviationName(): String {
-        return when (this) {
-            0 -> "noBaseline"
-            else -> "unknown"
-        }
-    }
-
-    private fun Int.hrvDeviationName(): String {
-        return when (this) {
-            2 -> "usual"
-            else -> "unknown"
-        }
-    }
-
-    private fun Int.triggerTypeName(): String {
-        return when (this) {
-            1 -> "automatic"
-            else -> "unknown"
-        }
+        return PolarSpo2Models.testStatusName(this) ?: "unknown"
     }
 
     private fun String.optionalObjectValue(field: String): String? {
