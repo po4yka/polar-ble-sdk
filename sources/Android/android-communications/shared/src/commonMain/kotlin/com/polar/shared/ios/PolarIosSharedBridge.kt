@@ -2,6 +2,9 @@ package com.polar.shared.ios
 
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.ble.PolarTypeUtils
+import com.polar.shared.device.PolarDeviceCapabilities
+import com.polar.shared.device.PolarDeviceCapabilitiesConfig
+import com.polar.shared.device.PolarDeviceCapabilityDefaults
 import com.polar.shared.pmd.PolarPmdControlPoint
 import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
@@ -185,6 +188,55 @@ object PolarIosSharedBridge {
 
     fun pmdActiveMeasurementIosState(responseByte: Int): String {
         return PolarPmdControlPoint.parseActiveMeasurement(responseByte).iosStateName
+    }
+
+    fun resolveDeviceCapabilities(
+        deviceType: String,
+        deviceTypesCsv: String,
+        fileSystemTypesCsv: String,
+        recordingSupportedCsv: String,
+        firmwareUpdateSupportedCsv: String,
+        activityDataSupportedCsv: String,
+        isDeviceSensorCsv: String,
+        defaultFileSystemType: String,
+        defaultRecordingSupported: Boolean,
+        defaultFirmwareUpdateSupported: Boolean,
+        defaultActivityDataSupported: Boolean,
+        defaultIsDeviceSensor: Boolean
+    ): String {
+        val deviceTypes = deviceTypesCsv.csvFields()
+        val fileSystemTypes = fileSystemTypesCsv.csvFields()
+        val recordingSupported = recordingSupportedCsv.csvFields()
+        val firmwareUpdateSupported = firmwareUpdateSupportedCsv.csvFields()
+        val activityDataSupported = activityDataSupportedCsv.csvFields()
+        val isDeviceSensor = isDeviceSensorCsv.csvFields()
+        val devices = deviceTypes.mapIndexed { index, type ->
+            type to PolarDeviceCapabilities(
+                fileSystemType = fileSystemTypes.optionalField(index),
+                recordingSupported = recordingSupported.optionalBooleanField(index),
+                firmwareUpdateSupported = firmwareUpdateSupported.optionalBooleanField(index),
+                activityDataSupported = activityDataSupported.optionalBooleanField(index),
+                isDeviceSensor = isDeviceSensor.optionalBooleanField(index)
+            )
+        }.toMap()
+        val resolved = PolarDeviceCapabilitiesConfig(
+            devices = devices,
+            defaults = PolarDeviceCapabilityDefaults(
+                fileSystemType = defaultFileSystemType,
+                recordingSupported = defaultRecordingSupported,
+                firmwareUpdateSupported = defaultFirmwareUpdateSupported,
+                activityDataSupported = defaultActivityDataSupported,
+                isDeviceSensor = defaultIsDeviceSensor
+            )
+        ).capability(deviceType)
+
+        return listOf(
+            resolved.fileSystemType.name,
+            resolved.recordingSupported.toString(),
+            resolved.firmwareUpdateSupported.toString(),
+            resolved.activityDataSupported.toString(),
+            resolved.isDeviceSensor.toString()
+        ).joinToString(",")
     }
 
     fun planRuntimeCommandQuery(id: String, query: String, parametersCsv: String): String {
@@ -432,6 +484,19 @@ object PolarIosSharedBridge {
 
     private fun String.csvValues(): List<String> {
         return split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    }
+
+    private fun String.csvFields(): List<String> {
+        if (isEmpty()) return emptyList()
+        return split(",").map { it.trim() }
+    }
+
+    private fun List<String>.optionalField(index: Int): String? {
+        return getOrNull(index)?.takeIf { it.isNotEmpty() }
+    }
+
+    private fun List<String>.optionalBooleanField(index: Int): Boolean? {
+        return optionalField(index)?.toBooleanStrictOrNull()
     }
 
     private fun String.hexToBytes(): ByteArray {

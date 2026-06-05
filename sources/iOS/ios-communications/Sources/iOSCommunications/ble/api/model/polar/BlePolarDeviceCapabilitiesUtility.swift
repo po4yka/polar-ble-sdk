@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 open class BlePolarDeviceCapabilitiesUtility {
     public enum FileSystemType {
@@ -29,6 +32,33 @@ open class BlePolarDeviceCapabilitiesUtility {
         let devices: [String: DeviceCapabilities]
         let defaults: DeviceCapabilities
     }
+
+    #if canImport(PolarBleSdkShared)
+    private struct SharedResolvedDeviceCapabilities {
+        let fileSystemType: FileSystemType
+        let recordingSupported: Bool
+        let firmwareUpdateSupported: Bool
+        let activityDataSupported: Bool
+        let isDeviceSensor: Bool
+
+        init?(_ encoded: String) {
+            let fields = encoded.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
+            guard fields.count == 5 else { return nil }
+            switch fields[0] {
+            case "H10_FILE_SYSTEM":
+                fileSystemType = .h10FileSystem
+            case "POLAR_FILE_SYSTEM_V2":
+                fileSystemType = .polarFileSystemV2
+            default:
+                fileSystemType = .unknownFileSystem
+            }
+            recordingSupported = fields[1] == "true"
+            firmwareUpdateSupported = fields[2] == "true"
+            activityDataSupported = fields[3] == "true"
+            isDeviceSensor = fields[4] == "true"
+        }
+    }
+    #endif
 
     // MARK: - Bundle access
 
@@ -177,6 +207,43 @@ open class BlePolarDeviceCapabilitiesUtility {
         return initialized
     }
 
+    #if canImport(PolarBleSdkShared)
+    private static func sharedResolvedCapabilities(_ deviceType: String) -> SharedResolvedDeviceCapabilities? {
+        guard ensureInitialized(), let defaults = defaults else { return nil }
+        let deviceTypes = capabilities.keys.sorted()
+
+        func fields(_ value: (DeviceCapabilities) -> String?) -> String {
+            return deviceTypes.map { deviceType in
+                guard let capability = capabilities[deviceType] else { return "" }
+                return value(capability) ?? ""
+            }.joined(separator: ",")
+        }
+
+        func boolFields(_ value: (DeviceCapabilities) -> Bool?) -> String {
+            return fields { capability in
+                value(capability).map { $0 ? "true" : "false" }
+            }
+        }
+
+        return SharedResolvedDeviceCapabilities(
+            PolarIosSharedBridge.shared.resolveDeviceCapabilities(
+                deviceType: deviceType,
+                deviceTypesCsv: deviceTypes.joined(separator: ","),
+                fileSystemTypesCsv: fields { $0.fileSystemType },
+                recordingSupportedCsv: boolFields { $0.recordingSupported },
+                firmwareUpdateSupportedCsv: boolFields { $0.firmwareUpdateSupported },
+                activityDataSupportedCsv: boolFields { $0.activityDataSupported },
+                isDeviceSensorCsv: boolFields { $0.isDeviceSensor },
+                defaultFileSystemType: defaults.fileSystemType ?? "",
+                defaultRecordingSupported: defaults.recordingSupported ?? false,
+                defaultFirmwareUpdateSupported: defaults.firmwareUpdateSupported ?? false,
+                defaultActivityDataSupported: defaults.activityDataSupported ?? false,
+                defaultIsDeviceSensor: defaults.isDeviceSensor ?? false
+            )
+        )
+    }
+    #endif
+
     // MARK: - Public API
 
     /// Get type of filesystem the device supports.
@@ -184,6 +251,11 @@ open class BlePolarDeviceCapabilitiesUtility {
     /// - Returns: filesystem type, or `.unknownFileSystem` if unavailable
     public static func fileSystemType(_ deviceType: String) -> FileSystemType {
         guard ensureInitialized() else { return .unknownFileSystem }
+        #if canImport(PolarBleSdkShared)
+        if let shared = sharedResolvedCapabilities(deviceType) {
+            return shared.fileSystemType
+        }
+        #endif
         let fsType = (capabilities[deviceType.lowercased()]?.fileSystemType ?? defaults?.fileSystemType)?.uppercased()
         switch fsType {
         case "H10_FILE_SYSTEM":    return .h10FileSystem
@@ -197,6 +269,11 @@ open class BlePolarDeviceCapabilitiesUtility {
     /// - Returns: true if recording is supported
     public static func isRecordingSupported(_ deviceType: String) -> Bool {
         guard ensureInitialized() else { return false }
+        #if canImport(PolarBleSdkShared)
+        if let shared = sharedResolvedCapabilities(deviceType) {
+            return shared.recordingSupported
+        }
+        #endif
         return capabilities[deviceType.lowercased()]?.recordingSupported ?? defaults?.recordingSupported ?? false
     }
 
@@ -205,6 +282,11 @@ open class BlePolarDeviceCapabilitiesUtility {
     /// - Returns: true if firmware update is supported
     public static func isFirmwareUpdateSupported(_ deviceType: String) -> Bool {
         guard ensureInitialized() else { return false }
+        #if canImport(PolarBleSdkShared)
+        if let shared = sharedResolvedCapabilities(deviceType) {
+            return shared.firmwareUpdateSupported
+        }
+        #endif
         return capabilities[deviceType.lowercased()]?.firmwareUpdateSupported ?? defaults?.firmwareUpdateSupported ?? false
     }
 
@@ -213,6 +295,11 @@ open class BlePolarDeviceCapabilitiesUtility {
     /// - Returns: true if activity data is supported
     public static func isActivityDataSupported(_ deviceType: String) -> Bool {
         guard ensureInitialized() else { return false }
+        #if canImport(PolarBleSdkShared)
+        if let shared = sharedResolvedCapabilities(deviceType) {
+            return shared.activityDataSupported
+        }
+        #endif
         return capabilities[deviceType.lowercased()]?.activityDataSupported ?? defaults?.activityDataSupported ?? false
     }
 
@@ -221,6 +308,11 @@ open class BlePolarDeviceCapabilitiesUtility {
     /// - Returns: true if device is a sensor
     public static func isDeviceSensor(_ deviceType: String) -> Bool {
         guard ensureInitialized() else { return false }
+        #if canImport(PolarBleSdkShared)
+        if let shared = sharedResolvedCapabilities(deviceType) {
+            return shared.isDeviceSensor
+        }
+        #endif
         return capabilities[deviceType.lowercased()]?.isDeviceSensor ?? defaults?.isDeviceSensor ?? false
     }
 
