@@ -2098,6 +2098,18 @@ final class PolarBleApiImplTests: XCTestCase {
         #endif
     }
 
+    func test_streamRuntimePlannerSurfacesSharedEdgeDecisionsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("gattDisconnected", PolarStreamRuntimePlanner.subscription(target: "stream", startConnected: false, checkConnection: true))
+        XCTAssertEqual("stream", PolarStreamRuntimePlanner.consumerCancellation(target: "stream"))
+        XCTAssertEqual("linkLost", PolarStreamRuntimePlanner.disconnect(target: "stream", error: "linkLost"))
+        XCTAssertEqual(1, PolarStreamRuntimePlanner.duplicateCompletion(target: "stream"))
+        XCTAssertEqual(0, PolarStreamRuntimePlanner.postCompletionEmission(target: "stream", value: "value"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func test_deleteTelemetryData_listFailurePropagatesError() throws {
         try assertStoredDataCleanupWorkflowVectorContains("telemetry-list-failure-platform-policy")
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7021, userInfo: [NSLocalizedDescriptionKey: "telemetry list failed"])

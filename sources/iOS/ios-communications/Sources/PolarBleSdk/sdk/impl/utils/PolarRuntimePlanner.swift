@@ -363,46 +363,26 @@ enum PolarRuntimePlanner {
 
     @discardableResult
     static func streamSubscription(target: String, startConnected: Bool, checkConnection: Bool) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeStreamSubscription(target: target, startConnected: startConnected, checkConnection: checkConnection)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarStreamRuntimePlanner.subscription(target: target, startConnected: startConnected, checkConnection: checkConnection)
     }
 
     @discardableResult
     static func streamConsumerCancellation(target: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeStreamConsumerCancellation(target: target)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarStreamRuntimePlanner.consumerCancellation(target: target)
     }
 
     @discardableResult
     static func streamDisconnect(target: String, error: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeStreamDisconnect(target: target, error: error)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarStreamRuntimePlanner.disconnect(target: target, error: error)
     }
 
     @discardableResult
     static func streamDuplicateCompletion(target: String) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.planRuntimeStreamDuplicateCompletion(target: target))
-        #else
-        return 0
-        #endif
+        return PolarStreamRuntimePlanner.duplicateCompletion(target: target)
     }
 
     @discardableResult
     static func streamPostCompletionEmission(target: String, value: String) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.planRuntimeStreamPostCompletionEmission(target: target, value: value))
-        #else
-        return 0
-        #endif
+        return PolarStreamRuntimePlanner.postCompletionEmission(target: target, value: value)
     }
 }
