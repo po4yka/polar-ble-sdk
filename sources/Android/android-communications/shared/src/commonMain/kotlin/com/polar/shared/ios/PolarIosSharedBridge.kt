@@ -116,6 +116,12 @@ object PolarIosSharedBridge {
         return runCatching { PolarOfflineRecordingModels.measurementTypeFromFileName(fileName).name }.getOrNull()
     }
 
+    fun offlineRecordingEntriesV2(fileListText: String): String {
+        return PolarOfflineRecordingModels.parsePmdFilesV2(fileListText).joinToString("\n") { entry ->
+            listOf(entry.type, entry.iosPath, entry.size.toString(), entry.dateTime).joinToString("|")
+        }
+    }
+
     fun skinTemperatureMeasurementType(value: Int): String? {
         return PolarSdkModelMappers.skinTemperature(
             sourceDeviceId = null,

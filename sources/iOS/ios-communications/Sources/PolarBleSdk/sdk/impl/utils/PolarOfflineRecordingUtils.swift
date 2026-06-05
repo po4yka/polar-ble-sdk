@@ -1,6 +1,9 @@
 //  Copyright © 2025 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 class PolarOfflineRecordingUtils {
 
@@ -69,6 +72,12 @@ class PolarOfflineRecordingUtils {
     }
 
     static func listOfflineRecordingsV2(fileData: Data) throws -> [PolarOfflineRecordingEntry] {
+        #if canImport(PolarBleSdkShared)
+        if let fileListText = String(data: fileData, encoding: .utf8),
+           let sharedEntries = try? offlineRecordingEntriesFromSharedV2(fileListText: fileListText) {
+            return sharedEntries
+        }
+        #endif
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd HHmmss"
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -113,4 +122,38 @@ class PolarOfflineRecordingUtils {
                 return PolarOfflineRecordingEntry(path: representativePath, size: grouped.reduce(0) { $0 + $1.size }, date: grouped.map(\.date).max() ?? first.date, type: first.type)
             }
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func offlineRecordingEntriesFromSharedV2(fileListText: String) throws -> [PolarOfflineRecordingEntry] {
+        let shared = PolarIosSharedBridge.shared.offlineRecordingEntriesV2(fileListText: fileListText)
+        guard !shared.isEmpty else { return [] }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return try shared.split(separator: "\n").map { row in
+            let fields = row.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+            guard fields.count == 4,
+                  let type = polarDeviceDataType(fromSharedName: fields[0]),
+                  let size = UInt(fields[2]),
+                  let date = formatter.date(from: fields[3]) else {
+                throw BleGattException.gattDataError(description: "Invalid shared offline recording entry: \(row)")
+            }
+            return PolarOfflineRecordingEntry(path: fields[1], size: size, date: date, type: type)
+        }
+    }
+
+    private static func polarDeviceDataType(fromSharedName name: String) -> PolarDeviceDataType? {
+        switch name {
+        case "ACC": return .acc
+        case "GYRO": return .gyro
+        case "MAGNETOMETER": return .magnetometer
+        case "PPG": return .ppg
+        case "PPI": return .ppi
+        case "HR": return .hr
+        case "TEMPERATURE": return .temperature
+        case "SKIN_TEMPERATURE": return .skinTemperature
+        default: return nil
+        }
+    }
+    #endif
 }
