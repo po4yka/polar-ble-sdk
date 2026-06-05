@@ -25,6 +25,7 @@ import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Test
+import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
 import protocol.PftpResponse.PbPFtpEntry
 import java.io.ByteArrayOutputStream
@@ -36,6 +37,18 @@ import java.time.LocalTime
 class PolarAutomaticSamplesUtilsTest {
 
     private val mockClient = mockk<BlePsFtpClient>()
+
+    @Test
+    fun `automatic sample read headers use shared file facade planning`() {
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/AUTOS/",
+            PolarAutomaticSamplesUtils.automaticSamplesDirectoryReadOperation()
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/AUTOS/AUTOS001.BPB",
+            PolarAutomaticSamplesUtils.automaticSamplesFileReadOperation("AUTOS001.BPB")
+        )
+    }
 
     @Test
     fun `read247HrSamples() should correctly filter samples by date and parse all trigger types`() = runTest {

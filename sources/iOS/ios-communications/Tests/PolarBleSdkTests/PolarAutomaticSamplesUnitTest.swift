@@ -14,6 +14,16 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
         mockClient = nil
     }
 
+    func testAutomaticSampleReadHeadersUseSharedFileFacadePlanning() {
+        let directoryOperation = PolarAutomaticSamplesUtils.automaticSamplesDirectoryReadOperation()
+        XCTAssertEqual(directoryOperation.command, .get)
+        XCTAssertEqual(directoryOperation.path, "/U/0/AUTOS/")
+
+        let fileOperation = PolarAutomaticSamplesUtils.automaticSamplesFileReadOperation(fileName: "AUTOS001.BPB")
+        XCTAssertEqual(fileOperation.command, .get)
+        XCTAssertEqual(fileOperation.path, "/U/0/AUTOS/AUTOS001.BPB")
+    }
+
     func testRead247HrSamples_SuccessfulResponse() async throws {
         // Arrange
         let calendar = Calendar(identifier: .gregorian)

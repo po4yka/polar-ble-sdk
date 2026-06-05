@@ -17,16 +17,30 @@ private const val AUTOMATIC_SAMPLES_PATTERN = "AUTOS\\d{3}\\.BPB"
 private const val TAG = "PolarAutomaticSamplesUtils"
 
 internal object PolarAutomaticSamplesUtils {
+    internal fun automaticSamplesDirectoryReadOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return automaticSamplesReadOperation("automatic-samples-read-directory", "$ARABICA_USER_ROOT_FOLDER$AUTOMATIC_SAMPLES_DIRECTORY")
+    }
+
+    internal fun automaticSamplesFileReadOperation(fileName: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val directoryPath = "$ARABICA_USER_ROOT_FOLDER$AUTOMATIC_SAMPLES_DIRECTORY"
+        return automaticSamplesReadOperation("automatic-samples-read-file", "$directoryPath$fileName")
+    }
+
+    private fun automaticSamplesReadOperation(id: String, path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val plan = PolarRuntimePlannerAdapter.planFileFacade(id, "GET", path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
 
     /**
      * Read 24/7 heart rate samples for given date range.
      */
     suspend fun read247HrSamples(client: BlePsFtpClient, fromDate: LocalDate, toDate: LocalDate): List<Polar247HrSamplesData> {
         BleLogger.d(TAG, "read247HrSamples: from $fromDate to $toDate")
-        val autoSamplesPath = "$ARABICA_USER_ROOT_FOLDER$AUTOMATIC_SAMPLES_DIRECTORY"
+        val autoSamplesOperation = automaticSamplesDirectoryReadOperation()
+        val autoSamplesPath = autoSamplesOperation.second
 
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
+            .setCommand(autoSamplesOperation.first)
             .setPath(autoSamplesPath)
 
         val response = client.request(builder.build().toByteArray())
@@ -39,9 +53,10 @@ internal object PolarAutomaticSamplesUtils {
         val hrSamplesDataList = mutableListOf<Polar247HrSamplesData>()
 
         for (fileName in filteredFiles) {
-            val filePath = "$autoSamplesPath$fileName"
+            val fileOperation = automaticSamplesFileReadOperation(fileName)
+            val filePath = fileOperation.second
             val fileBuilder = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
+                .setCommand(fileOperation.first)
                 .setPath(filePath)
             BleLogger.d(TAG, "Sending GET request for file: $filePath")
             val fileResponse = client.request(fileBuilder.build().toByteArray())
@@ -59,10 +74,11 @@ internal object PolarAutomaticSamplesUtils {
 
     suspend fun read247PPiSamples(client: BlePsFtpClient, fromDate: LocalDate, toDate: LocalDate): List<Polar247PPiSamplesData> {
         BleLogger.d(TAG, "read247PPiSamples: from $fromDate to $toDate")
-        val autoSamplesPath = "$ARABICA_USER_ROOT_FOLDER$AUTOMATIC_SAMPLES_DIRECTORY"
+        val autoSamplesOperation = automaticSamplesDirectoryReadOperation()
+        val autoSamplesPath = autoSamplesOperation.second
 
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
+            .setCommand(autoSamplesOperation.first)
             .setPath(autoSamplesPath)
 
         val response = client.request(builder.build().toByteArray())
@@ -75,9 +91,10 @@ internal object PolarAutomaticSamplesUtils {
         val ppiSamplesDataList = mutableListOf<Polar247PPiSamplesData>()
 
         for (fileName in filteredFiles) {
-            val filePath = "$autoSamplesPath$fileName"
+            val fileOperation = automaticSamplesFileReadOperation(fileName)
+            val filePath = fileOperation.second
             val fileBuilder = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
+                .setCommand(fileOperation.first)
                 .setPath(filePath)
             BleLogger.d(TAG, "Sending GET request for file: $filePath")
             val fileResponse = client.request(fileBuilder.build().toByteArray())
