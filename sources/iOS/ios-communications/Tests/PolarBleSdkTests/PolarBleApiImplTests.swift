@@ -2085,6 +2085,19 @@ final class PolarBleApiImplTests: XCTestCase {
         #endif
     }
 
+    func test_fileFacadeRuntimePlannerMapsSharedOperationCommandsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let putOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102")
+        XCTAssertEqual(.put, putOperation?.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", putOperation?.path)
+        XCTAssertEqual(.get, PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: "/U/0/CUSTOM.BIN")?.command)
+        XCTAssertEqual(.remove, PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "delete-low-level-file-success", command: "REMOVE", path: "/U/0/CUSTOM.BIN")?.command)
+        XCTAssertNil(PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "unsupported-file-operation", command: "UNSUPPORTED", path: "/U/0/CUSTOM.BIN"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func test_deleteTelemetryData_listFailurePropagatesError() throws {
         try assertStoredDataCleanupWorkflowVectorContains("telemetry-list-failure-platform-policy")
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7021, userInfo: [NSLocalizedDescriptionKey: "telemetry list failed"])
