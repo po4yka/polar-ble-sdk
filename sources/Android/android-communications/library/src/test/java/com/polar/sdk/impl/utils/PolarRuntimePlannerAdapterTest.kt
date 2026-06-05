@@ -92,6 +92,10 @@ class PolarRuntimePlannerAdapterTest {
 
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, operation?.first)
         Assert.assertEquals("/U/0/BACKUP.TXT", operation?.second)
+        Assert.assertEquals(
+            listOf("/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB", "/U/0/USERID.BPB"),
+            PolarRuntimePlannerAdapter.defaultBackupPaths()
+        )
     }
 
     @Test

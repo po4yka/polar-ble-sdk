@@ -2,7 +2,6 @@ package com.polar.sdk.impl.utils
 
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
-import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import java.io.ByteArrayInputStream
 import java.io.File
 import protocol.PftpRequest
@@ -57,7 +56,7 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
 
         BleLogger.d(TAG, "Entries retrieved: ${entries.size}")
 
-        val defaultBackupDirectories = PolarWorkflowRuntimePlanning.defaultBackupPaths()
+        val defaultBackupDirectories = PolarRuntimePlannerAdapter.defaultBackupPaths()
 
         val backupEntry = entries.find { it.first.endsWith("BACKUP.TXT") }
 

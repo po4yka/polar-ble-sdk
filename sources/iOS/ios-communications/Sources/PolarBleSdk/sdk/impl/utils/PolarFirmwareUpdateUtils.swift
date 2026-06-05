@@ -56,9 +56,7 @@ class PolarFirmwareUpdateUtils {
     }
 
     private static func planDeviceFirmwareInfoRead() {
-        #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeFileFacade(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH, payloadHex: "")
-        #endif
+        _ = PolarFileFacadeRuntimePlanner.fileFacade(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH)
     }
 
     static func isAvailableFirmwareVersionHigher(currentVersion: String, availableVersion: String) -> Bool {

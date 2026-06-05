@@ -294,6 +294,10 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun defaultBackupPaths(): List<String> {
+        return PolarWorkflowRuntimePlanning.defaultBackupPaths()
+    }
+
     fun planBackupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success"): Pair<PftpRequest.PbPFtpOperation.Command, String>? {
         val command = PolarWorkflowRuntimePlanning.planBackupRestore(
             listOf(
