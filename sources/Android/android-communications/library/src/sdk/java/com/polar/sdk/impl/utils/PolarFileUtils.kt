@@ -33,9 +33,10 @@ internal object PolarFileUtils {
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
 
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("delete-low-level-file-success", "REMOVE", filePath)
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = PftpRequest.PbPFtpOperation.Command.REMOVE
-        builder.path = filePath
+        builder.command = PolarRuntimePlannerAdapter.fileOperationCommand(plan)
+        builder.path = PolarRuntimePlannerAdapter.fileOperationPath(plan)
         return try {
             client.request(builder.build().toByteArray())
         } catch (error: Throwable) {
@@ -152,9 +153,10 @@ internal object PolarFileUtils {
         val session = sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("write-low-level-file-success", "PUT", path, data.toHexString())
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = PftpRequest.PbPFtpOperation.Command.PUT
-        builder.path = path
+        builder.command = PolarRuntimePlannerAdapter.fileOperationCommand(plan)
+        builder.path = PolarRuntimePlannerAdapter.fileOperationPath(plan)
         val dataInputStream = ByteArrayInputStream(data)
 
         try {
@@ -188,6 +190,10 @@ internal object PolarFileUtils {
         return Exception(throwable)
     }
 
+    private fun ByteArray.toHexString(): String {
+        return joinToString(separator = "") { "%02x".format(it.toInt() and 0xff) }
+    }
+
     /*
     * BLE Low Level methods. These are experimental methods. Usage is heavily discouraged,
     * use SDK APIs from PolarBleApi instead.
@@ -203,9 +209,10 @@ internal object PolarFileUtils {
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
 
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("read-low-level-file-success", "GET", filePath)
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = PftpRequest.PbPFtpOperation.Command.GET
-        builder.path = filePath
+        builder.command = PolarRuntimePlannerAdapter.fileOperationCommand(plan)
+        builder.path = PolarRuntimePlannerAdapter.fileOperationPath(plan)
         return try {
             val data = client.request(builder.build().toByteArray())
             BleLogger.d(tag, "readFile at path filePath $filePath")
@@ -265,9 +272,10 @@ internal object PolarFileUtils {
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
 
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("delete-low-level-file-success", "REMOVE", filePath)
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = PftpRequest.PbPFtpOperation.Command.REMOVE
-        builder.path = filePath
+        builder.command = PolarRuntimePlannerAdapter.fileOperationCommand(plan)
+        builder.path = PolarRuntimePlannerAdapter.fileOperationPath(plan)
         try {
             client.request(builder.build().toByteArray())
             BleLogger.d(tag, "All items successfully removed from filePath $filePath from device $identifier.")
