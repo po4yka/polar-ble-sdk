@@ -91,9 +91,10 @@ internal object PolarFileUtils {
     ): Flow<Pair<String, Long>> = flow {
         BleLogger.d(tag, "fetchRecursively: Starting fetch for path: $path")
 
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("list-low-level-directory-success", "GET", path)
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = PftpRequest.PbPFtpOperation.Command.GET
-        builder.path = path
+        builder.command = PolarRuntimePlannerAdapter.fileOperationCommand(plan)
+        builder.path = PolarRuntimePlannerAdapter.fileOperationPath(plan)
 
         try {
             val byteArrayOutputStream = client.request(builder.build().toByteArray())
