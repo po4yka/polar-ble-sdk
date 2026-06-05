@@ -33,7 +33,12 @@ public class PolarBackupManager {
 
     public func backupDevice() async throws -> [BackupFileData] {
         BleLogger.trace("backupDevice() called")
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = ARABICA_SYS_FOLDER }
+        let rootOperation = PolarRuntimePlanner.fileFacadeOperation(id: "backup-read-root-directory", command: "GET", path: ARABICA_SYS_FOLDER)
+        let operation = Protocol_PbPFtpOperation.with {
+            $0.command = rootOperation?.command ?? .get
+            $0.path = rootOperation?.path ?? ARABICA_SYS_FOLDER
+        }
+        PolarRuntimePlanner.fileFacade(id: "backup-read-root-directory", command: "GET", path: ARABICA_SYS_FOLDER)
         do {
             let content = try await client.request(try operation.serializedBytes())
             let parentDirEntries = try Protocol_PbPFtpDirectory(serializedBytes: content as Data)
@@ -131,8 +136,10 @@ public class PolarBackupManager {
 
     private func loadFile(path: String) async throws -> [UInt8] {
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "backup-read-file", command: "GET", path: path)
+        operation.command = plannedOperation?.command ?? .get
+        operation.path = plannedOperation?.path ?? path
+        PolarRuntimePlanner.fileFacade(id: "backup-read-file", command: "GET", path: path)
         let data = try await client.request(try operation.serializedBytes())
         return [UInt8](data)
     }
@@ -171,8 +178,10 @@ public class PolarBackupManager {
 
     private func fetchRecursively(path: String) async throws -> [DeviceFolderEntry] {
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "backup-read-directory", command: "GET", path: path)
+        operation.command = plannedOperation?.command ?? .get
+        operation.path = plannedOperation?.path ?? path
+        PolarRuntimePlanner.fileFacade(id: "backup-read-directory", command: "GET", path: path)
         let request = try operation.serializedData()
         var entries = [DeviceFolderEntry]()
         do {

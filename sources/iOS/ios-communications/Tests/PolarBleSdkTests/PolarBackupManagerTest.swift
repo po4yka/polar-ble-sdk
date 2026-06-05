@@ -47,6 +47,7 @@ class PolarBackupManagerTest: XCTestCase {
 
         mockClient.requestReturnValueClosure = { requestData in
             let request = try Protocol_PbPFtpOperation(serializedBytes: requestData, partial: false)
+            XCTAssertEqual(request.command, .get)
             if request.path.contains("/SYS/BACKUP.TXT") {
                 return mockBackupFileContent.data(using: .utf8)!
             } else if request.path.contains("/SYS/BT/") {
@@ -95,6 +96,7 @@ class PolarBackupManagerTest: XCTestCase {
 
         mockClient.requestReturnValueClosure = { requestData in
             let request = try Protocol_PbPFtpOperation(serializedBytes: requestData)
+            XCTAssertEqual(request.command, .get)
             if let entries = directories[request.path] {
                 return try self.directoryData(from: entries)
             }
