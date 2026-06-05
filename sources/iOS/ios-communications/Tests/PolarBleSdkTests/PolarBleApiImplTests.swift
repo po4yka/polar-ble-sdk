@@ -1637,7 +1637,10 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(50, proto.trainingBackground.value.rawValue)
         XCTAssertEqual(Data_PbUserTypicalDay.TypicalDay.mostlyMoving, proto.typicalDay.value)
         XCTAssertEqual(3, proto.typicalDay.value.rawValue)
-        XCTAssertEqual(.female, proto.toPolarPhysicalConfiguration().gender)
+        let physicalConfiguration = proto.toPolarPhysicalConfiguration()
+        XCTAssertEqual(.female, physicalConfiguration.gender)
+        XCTAssertEqual(PolarFirstTimeUseConfig.TrainingBackground.semiPro.rawValue, physicalConfiguration.trainingBackground)
+        XCTAssertEqual(.mostlyMoving, physicalConfiguration.typicalDay)
     }
 
     func test_getUserPhysicalConfiguration_returnsNilWhenPhysicalDataFileIsMissing() throws {

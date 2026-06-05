@@ -247,15 +247,7 @@ extension Data_PbUserPhysData {
             return ISO8601DateFormatter().string(from: Date())
         }()
 
-        let typicalDay: PolarPhysicalConfiguration.TypicalDay
-        switch self.typicalDay.value {
-        case .mostlySitting:
-            typicalDay = .mostlySitting
-        case .mostlyStanding:
-            typicalDay = .mostlyStanding
-        case .mostlyMoving:
-            typicalDay = .mostlyMoving
-        }
+        let typicalDay = PolarFirstTimeUseConfig.physicalTypicalDay(from: self.typicalDay.value)
 
         return PolarPhysicalConfiguration(
             gender: gender,
@@ -265,7 +257,7 @@ extension Data_PbUserPhysData {
             maxHeartRate: Int(self.maximumHeartrate.value),
             vo2Max: Int(self.vo2Max.value),
             restingHeartRate: Int(self.restingHeartrate.value),
-            trainingBackground: Int(self.trainingBackground.value.rawValue),
+            trainingBackground: PolarFirstTimeUseConfig.physicalTrainingBackgroundValue(from: self.trainingBackground.value),
             deviceTime: deviceTime,
             typicalDay: typicalDay,
             sleepGoalMinutes: Int(self.sleepGoal.sleepGoalMinutes)
@@ -290,6 +282,44 @@ private extension PolarFirstTimeUseConfig {
         case .female:
             return .female
         }
+    }
+
+    static func physicalTypicalDay(from value: Data_PbUserTypicalDay.TypicalDay) -> PolarPhysicalConfiguration.TypicalDay {
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarIosSharedBridge.shared.firstTimeUseTypicalDayName(value: Int32(value.rawValue)) {
+            switch sharedName {
+            case "MOSTLY_SITTING": return .mostlySitting
+            case "MOSTLY_STANDING": return .mostlyStanding
+            case "MOSTLY_MOVING": return .mostlyMoving
+            default: break
+            }
+        }
+        #endif
+        switch value {
+        case .mostlySitting:
+            return .mostlySitting
+        case .mostlyStanding:
+            return .mostlyStanding
+        case .mostlyMoving:
+            return .mostlyMoving
+        }
+    }
+
+    static func physicalTrainingBackgroundValue(from value: Data_PbUserTrainingBackground.TrainingBackground) -> Int {
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarIosSharedBridge.shared.firstTimeUseTrainingBackgroundName(value: Int32(value.rawValue)) {
+            switch sharedName {
+            case "OCCASIONAL": return PolarFirstTimeUseConfig.TrainingBackground.occasional.rawValue
+            case "REGULAR": return PolarFirstTimeUseConfig.TrainingBackground.regular.rawValue
+            case "FREQUENT": return PolarFirstTimeUseConfig.TrainingBackground.frequent.rawValue
+            case "HEAVY": return PolarFirstTimeUseConfig.TrainingBackground.heavy.rawValue
+            case "SEMI_PRO": return PolarFirstTimeUseConfig.TrainingBackground.semiPro.rawValue
+            case "PRO": return PolarFirstTimeUseConfig.TrainingBackground.pro.rawValue
+            default: break
+            }
+        }
+        #endif
+        return Int(value.rawValue)
     }
 }
 
