@@ -60,7 +60,6 @@ private fun parseD2HNotificationParameters(
     }
 
     val parsedProtoName = PolarD2hRuntimePlanning.parsedProtoName(notificationType.name, data.toHexString())
-        ?: localParsedProtoName(notificationType)
 
     return try {
         when (parsedProtoName) {
@@ -114,26 +113,6 @@ private fun parseD2HNotificationParameters(
     } catch (e: InvalidProtocolBufferException) {
         BleLogger.e(TAG, "Failed to parse parameters for $notificationType: ${e.message}")
         null
-    }
-}
-
-private fun localParsedProtoName(notificationType: PolarDeviceToHostNotification): String? {
-    return when (notificationType) {
-        PolarDeviceToHostNotification.SYNC_REQUIRED -> "PbPFtpSyncRequiredParams"
-        PolarDeviceToHostNotification.FILESYSTEM_MODIFIED -> "PbPFtpFilesystemModifiedParams"
-        PolarDeviceToHostNotification.INACTIVITY_ALERT -> "PbPFtpInactivityAlert"
-        PolarDeviceToHostNotification.TRAINING_SESSION_STATUS -> "PbPFtpTrainingSessionStatus"
-        PolarDeviceToHostNotification.AUTOSYNC_STATUS -> "PbPFtpAutoSyncStatusParams"
-        PolarDeviceToHostNotification.PNS_DH_NOTIFICATION_RESPONSE -> "PbPftpPnsDHNotificationResponse"
-        PolarDeviceToHostNotification.PNS_SETTINGS -> "PbPftpPnsState"
-        PolarDeviceToHostNotification.START_GPS_MEASUREMENT -> "PbPftpStartGPSMeasurement"
-        PolarDeviceToHostNotification.POLAR_SHELL_DH_DATA -> "PbPFtpPolarShellMessageParams"
-        PolarDeviceToHostNotification.MEDIA_CONTROL_REQUEST_DH -> "PbPftpDHMediaControlRequest"
-        PolarDeviceToHostNotification.MEDIA_CONTROL_COMMAND_DH -> "PbPftpDHMediaControlCommand"
-        PolarDeviceToHostNotification.MEDIA_CONTROL_ENABLED -> "PbPftpDHMediaControlEnabled"
-        PolarDeviceToHostNotification.REST_API_EVENT -> "PbPftpDHRestApiEvent"
-        PolarDeviceToHostNotification.EXERCISE_STATUS -> "PbPftpDHExerciseStatus"
-        else -> null
     }
 }
 
