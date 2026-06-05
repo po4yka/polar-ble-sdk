@@ -2098,6 +2098,41 @@ final class PolarBleApiImplTests: XCTestCase {
         #endif
     }
 
+    func test_commandRuntimePlannerMapsSharedQueriesAndNotificationsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarCommandRuntimePlanner.query(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.requestRecordingStatus.rawValue, PolarCommandRuntimePlanner.queryValue(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS"))
+        XCTAssertEqual("success", PolarCommandRuntimePlanner.reset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, PolarCommandRuntimePlanner.resetNotification(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
+        XCTAssertEqual([
+            Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue,
+            Protocol_PbPFtpHostToDevNotification.startSync.rawValue
+        ], PolarCommandRuntimePlanner.syncStartNotifications(id: "sync-start-success"))
+        XCTAssertEqual([
+            Protocol_PbPFtpHostToDevNotification.stopSync.rawValue,
+            Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
+        ], PolarCommandRuntimePlanner.syncStopNotifications(id: "sync-stop-success"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func test_diskTimeRuntimePlannerMapsSharedQueriesWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarDiskTimeRuntimePlanner.query(id: "get-disk-space", query: "GET_DISK_SPACE"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.getDiskSpace.rawValue, PolarDiskTimeRuntimePlanner.queryValue(id: "get-disk-space", query: "GET_DISK_SPACE"))
+        XCTAssertEqual("success", PolarDiskTimeRuntimePlanner.setLocalTimeV2(systemTimeHour: 12, localTimeHour: 14))
+        XCTAssertEqual([
+            Protocol_PbPFtpQuery.setSystemTime.rawValue,
+            Protocol_PbPFtpQuery.setLocalTime.rawValue
+        ], PolarDiskTimeRuntimePlanner.setLocalTimeV2QueryValues(systemTimeHour: 12, localTimeHour: 14))
+        XCTAssertEqual("success", PolarDiskTimeRuntimePlanner.setLocalTimeH10(localTimeHour: 14))
+        XCTAssertEqual([Protocol_PbPFtpQuery.setLocalTime.rawValue], PolarDiskTimeRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: 14))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func test_restFacadeRuntimePlannerMapsSharedGetOperationWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("success", PolarRestFacadeRuntimePlanner.get(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json"))

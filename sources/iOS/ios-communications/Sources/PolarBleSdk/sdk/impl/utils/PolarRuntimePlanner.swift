@@ -9,163 +9,65 @@ import PolarBleSdkShared
 enum PolarRuntimePlanner {
     @discardableResult
     static func commandQuery(id: String, query: String, parameters: [String] = []) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeCommandQuery(id: id, query: query, parametersCsv: parameters.joined(separator: ","))
-        #else
-        return "platform-owned"
-        #endif
+        return PolarCommandRuntimePlanner.query(id: id, query: query, parameters: parameters)
     }
 
     static func commandQueryValue(id: String, query: String, parameters: [String] = []) -> Int? {
-        #if canImport(PolarBleSdkShared)
-        return queryRawValues(PolarIosSharedBridge.shared.planRuntimeCommandQueryCommands(id: id, query: query, parametersCsv: parameters.joined(separator: ","))).first
-        #else
-        return nil
-        #endif
+        return PolarCommandRuntimePlanner.queryValue(id: id, query: query, parameters: parameters)
     }
 
     @discardableResult
     static func commandReset(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeCommandReset(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarCommandRuntimePlanner.reset(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
     }
 
     static func commandResetNotification(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) -> Int? {
-        #if canImport(PolarBleSdkShared)
-        return notificationRawValues(PolarIosSharedBridge.shared.planRuntimeCommandResetNotifications(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)).first
-        #else
-        return nil
-        #endif
+        return PolarCommandRuntimePlanner.resetNotification(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
     }
 
     @discardableResult
     static func commandSyncStart(id: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeCommandSyncStart(id: id)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarCommandRuntimePlanner.syncStart(id: id)
     }
 
     static func commandSyncStartNotifications(id: String) -> [Int]? {
-        #if canImport(PolarBleSdkShared)
-        return notificationRawValues(PolarIosSharedBridge.shared.planRuntimeCommandSyncStartNotifications(id: id))
-        #else
-        return nil
-        #endif
+        return PolarCommandRuntimePlanner.syncStartNotifications(id: id)
     }
 
     @discardableResult
     static func commandSyncStop(id: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeCommandSyncStop(id: id)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarCommandRuntimePlanner.syncStop(id: id)
     }
 
     static func commandSyncStopNotifications(id: String) -> [Int]? {
-        #if canImport(PolarBleSdkShared)
-        return notificationRawValues(PolarIosSharedBridge.shared.planRuntimeCommandSyncStopNotifications(id: id))
-        #else
-        return nil
-        #endif
+        return PolarCommandRuntimePlanner.syncStopNotifications(id: id)
     }
 
     @discardableResult
     static func diskTimeQuery(id: String, query: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeDiskTimeQuery(id: id, query: query)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarDiskTimeRuntimePlanner.query(id: id, query: query)
     }
 
     static func diskTimeQueryValue(id: String, query: String) -> Int? {
-        #if canImport(PolarBleSdkShared)
-        return queryRawValues(PolarIosSharedBridge.shared.planRuntimeDiskTimeQueryCommands(id: id, query: query)).first
-        #else
-        return nil
-        #endif
+        return PolarDiskTimeRuntimePlanner.queryValue(id: id, query: query)
     }
 
     @discardableResult
     static func setLocalTimeV2(systemTimeHour: Int, localTimeHour: Int) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeSetLocalTimeV2(systemTimeHour: Int32(systemTimeHour), localTimeHour: Int32(localTimeHour))
-        #else
-        return "platform-owned"
-        #endif
+        return PolarDiskTimeRuntimePlanner.setLocalTimeV2(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour)
     }
 
     static func setLocalTimeV2QueryValues(systemTimeHour: Int, localTimeHour: Int) -> [Int]? {
-        #if canImport(PolarBleSdkShared)
-        return queryRawValues(PolarIosSharedBridge.shared.planRuntimeSetLocalTimeV2Commands(systemTimeHour: Int32(systemTimeHour), localTimeHour: Int32(localTimeHour)))
-        #else
-        return nil
-        #endif
+        return PolarDiskTimeRuntimePlanner.setLocalTimeV2QueryValues(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour)
     }
 
     @discardableResult
     static func setLocalTimeH10(localTimeHour: Int) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeSetLocalTimeH10(localTimeHour: Int32(localTimeHour))
-        #else
-        return "platform-owned"
-        #endif
+        return PolarDiskTimeRuntimePlanner.setLocalTimeH10(localTimeHour: localTimeHour)
     }
 
     static func setLocalTimeH10QueryValues(localTimeHour: Int) -> [Int]? {
-        #if canImport(PolarBleSdkShared)
-        return queryRawValues(PolarIosSharedBridge.shared.planRuntimeSetLocalTimeH10Commands(localTimeHour: Int32(localTimeHour)))
-        #else
-        return nil
-        #endif
-    }
-
-    private static func notificationRawValues(_ csv: String) -> [Int] {
-        return csv.split(separator: ",").compactMap { plannedName in
-            switch plannedName.split(separator: ":").first.map(String.init) {
-            case "INITIALIZE_SESSION": return Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue
-            case "START_SYNC": return Protocol_PbPFtpHostToDevNotification.startSync.rawValue
-            case "STOP_SYNC": return Protocol_PbPFtpHostToDevNotification.stopSync.rawValue
-            case "TERMINATE_SESSION": return Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
-            case "RESET": return Protocol_PbPFtpHostToDevNotification.reset.rawValue
-            default: return nil
-            }
-        }
-    }
-
-    private static func queryRawValues(_ csv: String) -> [Int] {
-        return csv.split(separator: ",").compactMap { plannedName in
-            switch String(plannedName) {
-            case "GET_DISK_SPACE": return Protocol_PbPFtpQuery.getDiskSpace.rawValue
-            case "GET_LOCAL_TIME": return Protocol_PbPFtpQuery.getLocalTime.rawValue
-            case "REQUEST_START_RECORDING": return Protocol_PbPFtpQuery.requestStartRecording.rawValue
-            case "REQUEST_STOP_RECORDING": return Protocol_PbPFtpQuery.requestStopRecording.rawValue
-            case "REQUEST_RECORDING_STATUS": return Protocol_PbPFtpQuery.requestRecordingStatus.rawValue
-            case "REQUEST_SYNCHRONIZATION": return Protocol_PbPFtpQuery.requestSynchronization.rawValue
-            case "SET_LOCAL_TIME": return Protocol_PbPFtpQuery.setLocalTime.rawValue
-            case "SET_SYSTEM_TIME": return Protocol_PbPFtpQuery.setSystemTime.rawValue
-            default: return nil
-            }
-        }
-    }
-
-    private static func fileOperation(_ csv: String) -> [(command: Protocol_PbPFtpOperation.Command, path: String)] {
-        return csv.split(separator: ",").compactMap { plannedOperation in
-            let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
-            guard parts.count == 2 else { return nil }
-            switch parts[0] {
-            case "GET": return (.get, parts[1])
-            case "PUT": return (.put, parts[1])
-            case "REMOVE": return (.remove, parts[1])
-            default: return nil
-            }
-        }
+        return PolarDiskTimeRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: localTimeHour)
     }
 
     private static func backupRestoreOperation(_ plannedOperation: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
