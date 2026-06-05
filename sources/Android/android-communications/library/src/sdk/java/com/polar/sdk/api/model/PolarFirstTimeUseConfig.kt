@@ -2,6 +2,8 @@ package com.polar.sdk.api.model
 
 import com.polar.sdk.api.model.PolarFirstTimeUseConfig.Gender
 import com.polar.sdk.api.model.PolarFirstTimeUseConfig.TypicalDay
+import com.polar.shared.sdk.PolarFirstTimeUseTrainingBackgroundName
+import com.polar.shared.sdk.PolarFirstTimeUseTypicalDayName
 import java.time.LocalDate
 
 import fi.polar.remote.representation.protobuf.Types
@@ -115,7 +117,7 @@ data class PolarFirstTimeUseConfig(
         }.build()
 
         val trainingBackgroundBuilder = PhysData.PbUserTrainingBackground.newBuilder().apply {
-            setValue(PhysData.PbUserTrainingBackground.TrainingBackground.forNumber(trainingBackground))
+            setValue(PhysData.PbUserTrainingBackground.TrainingBackground.forNumber(PolarFirstTimeUseTrainingBackgroundName.fromValue(trainingBackground)?.value ?: trainingBackground))
             setLastModified(lastModified)
         }.build()
 
@@ -125,7 +127,7 @@ data class PolarFirstTimeUseConfig(
         }.build()
 
         val typicalDay = PhysData.PbUserTypicalDay.newBuilder()
-                .setValue(PbTypicalDay.forNumber(typicalDay.index))
+                .setValue(PbTypicalDay.forNumber(PolarFirstTimeUseTypicalDayName.fromValue(typicalDay.index)?.value ?: typicalDay.index))
                 .setLastModified(lastModified)
                 .build()
 
@@ -206,5 +208,4 @@ data class PolarPhysicalConfiguration(
     val typicalDay: TypicalDay,
     val sleepGoalMinutes: Int
 )
-
 
