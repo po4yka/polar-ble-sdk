@@ -39,6 +39,7 @@ import com.polar.shared.runtime.PolarOfflineTriggerDesiredFeature
 import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
 import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarRestFacadeOperation
+import com.polar.shared.runtime.PolarRuntimePlan
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarStreamRuntimePlanning
@@ -874,6 +875,21 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun planRuntimeCommandSyncStartNotifications(id: String): String {
+        return PolarRuntimeOrchestration.planCommand(
+            PolarFacadeCommandOperation(
+                id = id,
+                kind = "syncStart",
+                query = "REQUEST_SYNCHRONIZATION",
+                parameters = emptyList(),
+                notifications = listOf("INITIALIZE_SESSION", "START_SYNC"),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
+            )
+        ).notificationCommandsCsv()
+    }
+
     fun planRuntimeCommandSyncStop(id: String): String {
         return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(
@@ -887,6 +903,21 @@ object PolarIosSharedBridge {
                 otaFirmwareUpdate = null
             )
         ).terminal
+    }
+
+    fun planRuntimeCommandSyncStopNotifications(id: String): String {
+        return PolarRuntimeOrchestration.planCommand(
+            PolarFacadeCommandOperation(
+                id = id,
+                kind = "syncStop",
+                query = null,
+                parameters = emptyList(),
+                notifications = listOf("STOP_SYNC:completed=true", "TERMINATE_SESSION"),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
+            )
+        ).notificationCommandsCsv()
     }
 
     fun planRuntimeDiskTimeQuery(id: String, query: String): String {
@@ -1125,6 +1156,12 @@ object PolarIosSharedBridge {
 
     private fun String.csvValues(): List<String> {
         return split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    }
+
+    private fun PolarRuntimePlan.notificationCommandsCsv(): String {
+        return commands
+            .filter { command -> command.startsWith("notification:") }
+            .joinToString(separator = ",") { command -> command.substringAfter("notification:") }
     }
 
     private fun String.csvFields(): List<String> {

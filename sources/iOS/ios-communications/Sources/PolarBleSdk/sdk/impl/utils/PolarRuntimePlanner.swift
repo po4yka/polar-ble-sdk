@@ -34,12 +34,28 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func commandSyncStartNotifications(id: String) -> [Int]? {
+        #if canImport(PolarBleSdkShared)
+        return notificationRawValues(PolarIosSharedBridge.shared.planRuntimeCommandSyncStartNotifications(id: id))
+        #else
+        return nil
+        #endif
+    }
+
     @discardableResult
     static func commandSyncStop(id: String) -> String {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.planRuntimeCommandSyncStop(id: id)
         #else
         return "platform-owned"
+        #endif
+    }
+
+    static func commandSyncStopNotifications(id: String) -> [Int]? {
+        #if canImport(PolarBleSdkShared)
+        return notificationRawValues(PolarIosSharedBridge.shared.planRuntimeCommandSyncStopNotifications(id: id))
+        #else
+        return nil
         #endif
     }
 
@@ -68,6 +84,19 @@ enum PolarRuntimePlanner {
         #else
         return "platform-owned"
         #endif
+    }
+
+    private static func notificationRawValues(_ csv: String) -> [Int] {
+        return csv.split(separator: ",").compactMap { plannedName in
+            switch plannedName.split(separator: ":").first.map(String.init) {
+            case "INITIALIZE_SESSION": return Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue
+            case "START_SYNC": return Protocol_PbPFtpHostToDevNotification.startSync.rawValue
+            case "STOP_SYNC": return Protocol_PbPFtpHostToDevNotification.stopSync.rawValue
+            case "TERMINATE_SESSION": return Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
+            case "RESET": return Protocol_PbPFtpHostToDevNotification.reset.rawValue
+            default: return nil
+            }
+        }
     }
 
     @discardableResult

@@ -2908,9 +2908,13 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         PolarRuntimePlanner.commandSyncStart(id: "sync-start-success")
+        let plannedNotifications = PolarRuntimePlanner.commandSyncStartNotifications(id: "sync-start-success") ?? [
+            Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue,
+            Protocol_PbPFtpHostToDevNotification.startSync.rawValue
+        ]
         _ = try await client.query(Protocol_PbPFtpQuery.requestSynchronization.rawValue, parameters: nil)
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, parameters: nil)
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.startSync.rawValue, parameters: nil)
+        try await client.sendNotification(plannedNotifications[0], parameters: nil)
+        try await client.sendNotification(plannedNotifications[1], parameters: nil)
     }
 
 
@@ -2921,8 +2925,12 @@ extension PolarBleApiImpl: PolarBleApi  {
         params.completed = true
         let parameters = try params.serializedData() as NSData
         PolarRuntimePlanner.commandSyncStop(id: "sync-stop-success")
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.stopSync.rawValue, parameters: parameters)
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, parameters: nil)
+        let plannedNotifications = PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success") ?? [
+            Protocol_PbPFtpHostToDevNotification.stopSync.rawValue,
+            Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
+        ]
+        try await client.sendNotification(plannedNotifications[0], parameters: parameters)
+        try await client.sendNotification(plannedNotifications[1], parameters: nil)
     }
 
     

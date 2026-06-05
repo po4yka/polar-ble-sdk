@@ -2000,7 +2000,15 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("success", PolarRuntimePlanner.commandQuery(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS"))
         XCTAssertEqual("success", PolarRuntimePlanner.commandReset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
         XCTAssertEqual("success", PolarRuntimePlanner.commandSyncStart(id: "sync-start-success"))
+        XCTAssertEqual([
+            Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue,
+            Protocol_PbPFtpHostToDevNotification.startSync.rawValue
+        ], PolarRuntimePlanner.commandSyncStartNotifications(id: "sync-start-success"))
         XCTAssertEqual("success", PolarRuntimePlanner.commandSyncStop(id: "sync-stop-success"))
+        XCTAssertEqual([
+            Protocol_PbPFtpHostToDevNotification.stopSync.rawValue,
+            Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
+        ], PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success"))
         XCTAssertEqual("success", PolarRuntimePlanner.diskTimeQuery(id: "get-disk-space", query: "GET_DISK_SPACE"))
         XCTAssertEqual("success", PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: 12, localTimeHour: 14))
         XCTAssertEqual("success", PolarRuntimePlanner.setLocalTimeH10(localTimeHour: 14))
