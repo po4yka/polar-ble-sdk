@@ -18,6 +18,8 @@ import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarStreamRuntimePlanning
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
+import com.polar.shared.sdk.PolarKvtxMalformedScriptException
+import com.polar.shared.sdk.PolarKvtxScriptCodec
 import com.polar.shared.time.PolarDurationFields
 import com.polar.shared.time.PolarTimeFields
 import com.polar.shared.time.PolarTimeUtils
@@ -83,6 +85,22 @@ object PolarIosSharedBridge {
 
     fun unsignedLongFromLittleEndianHex(hex: String): String {
         return PolarTypeUtils.requireUnsignedLong(hex.hexToBytes())
+    }
+
+    fun buildKvtxWriteAndCommitHex(kvKey: Long, dataHex: String): String {
+        return PolarKvtxScriptCodec.buildWriteAndCommit(kvKey, dataHex.hexToBytes()).toHex()
+    }
+
+    fun extractKvtxValueForKeyHex(scriptHex: String, kvKey: Long): String? {
+        return try {
+            PolarKvtxScriptCodec.extractValueForKey(scriptHex.hexToBytes(), kvKey)?.toHex()
+        } catch (_: PolarKvtxMalformedScriptException) {
+            null
+        }
+    }
+
+    fun kvtxU32LeHex(value: Long): String {
+        return PolarKvtxScriptCodec.u32Le(value).toHex()
     }
 
     fun planRuntimeCommandQuery(id: String, query: String, parametersCsv: String): String {
@@ -335,5 +353,9 @@ object PolarIosSharedBridge {
     private fun String.hexToBytes(): ByteArray {
         require(length % 2 == 0) { "Hex string must have an even length" }
         return chunked(2).map { byte -> byte.toInt(16).toByte() }.toByteArray()
+    }
+
+    private fun ByteArray.toHex(): String {
+        return joinToString(separator = "") { byte -> (byte.toInt() and 0xFF).toString(16).padStart(2, '0') }
     }
 }

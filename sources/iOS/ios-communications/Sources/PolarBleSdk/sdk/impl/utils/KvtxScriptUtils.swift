@@ -1,6 +1,9 @@
 // Copyright 2026 Polar Electro Oy. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let TAG = "KvtxScriptUtils"
 
@@ -21,6 +24,9 @@ internal enum KvtxScriptUtils {
     ///
     /// Structure: WRITE_BYTES(key, data) + COMMIT
     static func buildWriteAndCommit(kvKey: UInt32, data: [UInt8]) -> [UInt8] {
+        #if canImport(PolarBleSdkShared)
+        return bytes(fromHex: PolarIosSharedBridge.shared.buildKvtxWriteAndCommitHex(kvKey: Int64(kvKey), dataHex: data.hexString()))
+        #else
         var script = [UInt8]()
         script.append(CMD_WRITE_BYTES)
         script.append(contentsOf: u32Le(kvKey))
@@ -28,12 +34,19 @@ internal enum KvtxScriptUtils {
         script.append(contentsOf: data)
         script.append(CMD_COMMIT)
         return script
+        #endif
     }
 
     /// Scan a full KVTXScript binary and extract the raw value bytes stored under `kvKey`.
     ///
     /// Returns `nil` if the key is not present (or was removed) in the script.
     static func extractValueForKey(script: [UInt8], kvKey: UInt32) -> [UInt8]? {
+        #if canImport(PolarBleSdkShared)
+        guard let valueHex = PolarIosSharedBridge.shared.extractKvtxValueForKeyHex(scriptHex: script.hexString(), kvKey: Int64(kvKey)) else {
+            return nil
+        }
+        return bytes(fromHex: valueHex)
+        #else
         var pos = 0
         var result: [UInt8]? = nil
 
@@ -100,17 +113,40 @@ internal enum KvtxScriptUtils {
             }
         }
         return result
+        #endif
     }
 
     // MARK: - Helpers
 
     static func u32Le(_ value: UInt32) -> [UInt8] {
+        #if canImport(PolarBleSdkShared)
+        return bytes(fromHex: PolarIosSharedBridge.shared.kvtxU32LeHex(value: Int64(value)))
+        #else
         return [
             UInt8(value & 0xFF),
             UInt8((value >> 8) & 0xFF),
             UInt8((value >> 16) & 0xFF),
             UInt8((value >> 24) & 0xFF)
         ]
+        #endif
     }
 }
 
+private extension Array where Element == UInt8 {
+    func hexString() -> String {
+        map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+private func bytes(fromHex hex: String) -> [UInt8] {
+    guard hex.count.isMultiple(of: 2) else { return [] }
+    var bytes: [UInt8] = []
+    var index = hex.startIndex
+    while index < hex.endIndex {
+        let next = hex.index(index, offsetBy: 2)
+        guard let byte = UInt8(hex[index..<next], radix: 16) else { return [] }
+        bytes.append(byte)
+        index = next
+    }
+    return bytes
+}
