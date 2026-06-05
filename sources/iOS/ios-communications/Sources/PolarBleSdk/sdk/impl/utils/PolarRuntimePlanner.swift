@@ -84,6 +84,14 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func diskTimeQueryValue(id: String, query: String) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return queryRawValues(PolarIosSharedBridge.shared.planRuntimeDiskTimeQueryCommands(id: id, query: query)).first
+        #else
+        return nil
+        #endif
+    }
+
     @discardableResult
     static func setLocalTimeV2(systemTimeHour: Int, localTimeHour: Int) -> String {
         #if canImport(PolarBleSdkShared)
@@ -93,12 +101,28 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func setLocalTimeV2QueryValues(systemTimeHour: Int, localTimeHour: Int) -> [Int]? {
+        #if canImport(PolarBleSdkShared)
+        return queryRawValues(PolarIosSharedBridge.shared.planRuntimeSetLocalTimeV2Commands(systemTimeHour: Int32(systemTimeHour), localTimeHour: Int32(localTimeHour)))
+        #else
+        return nil
+        #endif
+    }
+
     @discardableResult
     static func setLocalTimeH10(localTimeHour: Int) -> String {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.planRuntimeSetLocalTimeH10(localTimeHour: Int32(localTimeHour))
         #else
         return "platform-owned"
+        #endif
+    }
+
+    static func setLocalTimeH10QueryValues(localTimeHour: Int) -> [Int]? {
+        #if canImport(PolarBleSdkShared)
+        return queryRawValues(PolarIosSharedBridge.shared.planRuntimeSetLocalTimeH10Commands(localTimeHour: Int32(localTimeHour)))
+        #else
+        return nil
         #endif
     }
 

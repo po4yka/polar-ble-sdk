@@ -2012,8 +2012,14 @@ final class PolarBleApiImplTests: XCTestCase {
             Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
         ], PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success"))
         XCTAssertEqual("success", PolarRuntimePlanner.diskTimeQuery(id: "get-disk-space", query: "GET_DISK_SPACE"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.getDiskSpace.rawValue, PolarRuntimePlanner.diskTimeQueryValue(id: "get-disk-space", query: "GET_DISK_SPACE"))
         XCTAssertEqual("success", PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: 12, localTimeHour: 14))
+        XCTAssertEqual([
+            Protocol_PbPFtpQuery.setSystemTime.rawValue,
+            Protocol_PbPFtpQuery.setLocalTime.rawValue
+        ], PolarRuntimePlanner.setLocalTimeV2QueryValues(systemTimeHour: 12, localTimeHour: 14))
         XCTAssertEqual("success", PolarRuntimePlanner.setLocalTimeH10(localTimeHour: 14))
+        XCTAssertEqual([Protocol_PbPFtpQuery.setLocalTime.rawValue], PolarRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: 14))
         XCTAssertEqual("success", PolarRuntimePlanner.restFacadeGet(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json"))
         XCTAssertEqual("success", PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102"))
         XCTAssertEqual("transport-error", PolarRuntimePlanner.fileRuntimeError(operation: "readFile", path: "/U/0/CUSTOM.BIN", error: NSError(domain: "PolarBleApiImplTests", code: 1)))

@@ -1027,12 +1027,21 @@ extension PolarBleApiImpl: PolarBleApi  {
         switch BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) {
         case .unknownFileSystem: break
         case .h10FileSystem:
-            PolarRuntimePlanner.setLocalTimeH10(localTimeHour: Calendar.current.component(.hour, from: time))
-            _ = try await client.query(Protocol_PbPFtpQuery.setLocalTime.rawValue, parameters: paramsSetLocalTime as NSData)
+            let localTimeHour = Calendar.current.component(.hour, from: time)
+            PolarRuntimePlanner.setLocalTimeH10(localTimeHour: localTimeHour)
+            let query = PolarRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: localTimeHour)?.first ?? Protocol_PbPFtpQuery.setLocalTime.rawValue
+            _ = try await client.query(query, parameters: paramsSetLocalTime as NSData)
         case .polarFileSystemV2:
-            PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: Calendar(identifier: .gregorian).component(.hour, from: time), localTimeHour: Calendar.current.component(.hour, from: time))
-            _ = try await client.query(Protocol_PbPFtpQuery.setSystemTime.rawValue, parameters: paramsSetSystemTime as NSData)
-            _ = try await client.query(Protocol_PbPFtpQuery.setLocalTime.rawValue, parameters: paramsSetLocalTime as NSData)
+            let systemTimeHour = Calendar(identifier: .gregorian).component(.hour, from: time)
+            let localTimeHour = Calendar.current.component(.hour, from: time)
+            PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour)
+            let plannedQueries = PolarRuntimePlanner.setLocalTimeV2QueryValues(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour)
+            let queries = plannedQueries?.count == 2 ? plannedQueries! : [
+                Protocol_PbPFtpQuery.setSystemTime.rawValue,
+                Protocol_PbPFtpQuery.setLocalTime.rawValue
+            ]
+            _ = try await client.query(queries[0], parameters: paramsSetSystemTime as NSData)
+            _ = try await client.query(queries[1], parameters: paramsSetLocalTime as NSData)
         }
     }
     
@@ -1047,7 +1056,8 @@ extension PolarBleApiImpl: PolarBleApi  {
             throw PolarErrors.operationNotSupported
         case .polarFileSystemV2:
             PolarRuntimePlanner.diskTimeQuery(id: "get-local-time", query: "GET_LOCAL_TIME")
-            let data = try await client.query(Protocol_PbPFtpQuery.getLocalTime.rawValue, parameters: nil)
+            let query = PolarRuntimePlanner.diskTimeQueryValue(id: "get-local-time", query: "GET_LOCAL_TIME") ?? Protocol_PbPFtpQuery.getLocalTime.rawValue
+            let data = try await client.query(query, parameters: nil)
             let result = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: data as Data)
             return try PolarTimeUtils.dateFromPbPftpLocalDateTime(result)
         }
@@ -1064,7 +1074,8 @@ extension PolarBleApiImpl: PolarBleApi  {
             throw PolarErrors.operationNotSupported
         case .polarFileSystemV2:
             PolarRuntimePlanner.diskTimeQuery(id: "get-local-time-with-zone", query: "GET_LOCAL_TIME")
-            let data = try await client.query(Protocol_PbPFtpQuery.getLocalTime.rawValue, parameters: nil)
+            let query = PolarRuntimePlanner.diskTimeQueryValue(id: "get-local-time-with-zone", query: "GET_LOCAL_TIME") ?? Protocol_PbPFtpQuery.getLocalTime.rawValue
+            let data = try await client.query(query, parameters: nil)
             let result = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: data as Data)
             let date = try PolarTimeUtils.dateFromPbPftpLocalDateTime(result)
             let offsetMinutes = Int(result.tzOffset)
@@ -1081,7 +1092,8 @@ extension PolarBleApiImpl: PolarBleApi  {
             throw PolarErrors.serviceNotFound
         }
         PolarRuntimePlanner.diskTimeQuery(id: "get-disk-space", query: "GET_DISK_SPACE")
-        let data = try await client.query(Protocol_PbPFtpQuery.getDiskSpace.rawValue, parameters: nil)
+        let query = PolarRuntimePlanner.diskTimeQueryValue(id: "get-disk-space", query: "GET_DISK_SPACE") ?? Protocol_PbPFtpQuery.getDiskSpace.rawValue
+        let data = try await client.query(query, parameters: nil)
         let proto = try Protocol_PbPFtpDiskSpaceResult(serializedBytes: data as Data)
         return PolarDiskSpaceData.fromProto(proto: proto)
     }

@@ -963,6 +963,19 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun planRuntimeDiskTimeQueryCommands(id: String, query: String): String {
+        return PolarRuntimeOrchestration.planDiskTime(
+            PolarDiskTimeOperation(
+                id = id,
+                kind = "query",
+                query = query,
+                queries = emptyList(),
+                parameters = emptyList(),
+                expectedFields = emptyList()
+            )
+        ).queryCommandsCsv()
+    }
+
     fun planRuntimeSetLocalTimeV2(systemTimeHour: Int, localTimeHour: Int): String {
         return PolarRuntimeOrchestration.planDiskTime(
             PolarDiskTimeOperation(
@@ -976,6 +989,19 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun planRuntimeSetLocalTimeV2Commands(systemTimeHour: Int, localTimeHour: Int): String {
+        return PolarRuntimeOrchestration.planDiskTime(
+            PolarDiskTimeOperation(
+                id = "set-local-time-v2",
+                kind = "setLocalTimeV2",
+                query = null,
+                queries = listOf("SET_SYSTEM_TIME", "SET_LOCAL_TIME"),
+                parameters = emptyList(),
+                expectedFields = listOf("systemTimeHour=$systemTimeHour", "localTimeHour=$localTimeHour", "systemTimeTrusted=true")
+            )
+        ).queryCommandsCsv()
+    }
+
     fun planRuntimeSetLocalTimeH10(localTimeHour: Int): String {
         return PolarRuntimeOrchestration.planDiskTime(
             PolarDiskTimeOperation(
@@ -987,6 +1013,19 @@ object PolarIosSharedBridge {
                 expectedFields = listOf("localTimeHour=$localTimeHour")
             )
         ).terminal
+    }
+
+    fun planRuntimeSetLocalTimeH10Commands(localTimeHour: Int): String {
+        return PolarRuntimeOrchestration.planDiskTime(
+            PolarDiskTimeOperation(
+                id = "set-local-time-h10",
+                kind = "setLocalTimeH10",
+                query = null,
+                queries = listOf("SET_LOCAL_TIME"),
+                parameters = emptyList(),
+                expectedFields = listOf("localTimeHour=$localTimeHour")
+            )
+        ).queryCommandsCsv()
     }
 
     fun planRuntimeRestFacadeGet(id: String, path: String, payloadShape: String): String {
