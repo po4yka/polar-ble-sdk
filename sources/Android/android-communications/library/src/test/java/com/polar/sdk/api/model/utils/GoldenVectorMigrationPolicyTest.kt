@@ -4669,6 +4669,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "diskTimeQueryPolicyVectorDefinesExecutableCommonQueryPlanning",
+            "diskTimeQueryVectorRunsThroughCommonFakeTransportFacadeShape",
             "diskTimeQueryReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/disk-time-runtime/disk-time-query-policy.json",
             "sdk/disk-time-runtime/disk-time-query-readiness.json",
@@ -4689,6 +4690,8 @@ class GoldenVectorMigrationPolicyTest {
             "get-local-time-with-zone-failure",
             "get-disk-space-failure",
             "transport-error",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "disk-space-query",
             "local-time-query",
             "local-time-with-zone-query",

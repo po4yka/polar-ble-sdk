@@ -471,6 +471,7 @@ FAKE_TRANSPORT_COMMON_STORED_DATA_CLEANUP_RUNTIME_TEST_REQUIRED_TERMS = [
 ].freeze
 FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS = [
   "diskTimeQueryPolicyVectorDefinesExecutableCommonQueryPlanning",
+  "diskTimeQueryVectorRunsThroughCommonFakeTransportFacadeShape",
   "diskTimeQueryReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/disk-time-runtime/disk-time-query-policy.json",
   "sdk/disk-time-runtime/disk-time-query-readiness.json",
@@ -491,6 +492,8 @@ FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS = [
   "get-local-time-with-zone-failure",
   "get-disk-space-failure",
   "transport-error",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "disk-space-query",
   "local-time-query",
   "local-time-with-zone-query",
