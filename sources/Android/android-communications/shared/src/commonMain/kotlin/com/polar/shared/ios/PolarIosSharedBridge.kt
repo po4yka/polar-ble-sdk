@@ -20,6 +20,7 @@ import com.polar.shared.pmd.sensors.PolarPmdDataFrame
 import com.polar.shared.pmd.sensors.PolarPpiSample
 import com.polar.shared.pmd.sensors.PolarPressureSample
 import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.shared.pmd.sensors.PolarSkinTemperatureSample
 import com.polar.shared.pmd.sensors.PolarTemperatureSample
 import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
@@ -361,6 +362,24 @@ object PolarIosSharedBridge {
                 )
             ).filterIsInstance<PolarTemperatureSample>()
                 .joinToString(separator = "|") { sample -> "${sample.timeStamp},${sample.temperature}" }
+        }.getOrNull()
+    }
+
+    fun skinTemperatureRawType0Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
+        val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
+        if (bytes.size < 10) return null
+        val frameType = bytes[9].toInt() and 0xFF
+        if ((frameType and 0x80) != 0 || (frameType and 0x7F) != 0) return null
+        return runCatching {
+            PolarSensorDataParser.parseSkinTemperature(
+                PolarPmdDataFrame.fromByteArray(
+                    data = bytes,
+                    previousTimeStamp = previousTimeStamp,
+                    factor = factor,
+                    sampleRate = sampleRate
+                )
+            ).filterIsInstance<PolarSkinTemperatureSample>()
+                .joinToString(separator = "|") { sample -> "${sample.timeStamp},${sample.skinTemperature}" }
         }.getOrNull()
     }
 
