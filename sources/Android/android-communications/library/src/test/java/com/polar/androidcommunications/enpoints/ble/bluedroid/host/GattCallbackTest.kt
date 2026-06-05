@@ -288,12 +288,13 @@ class GattCallbackTest {
     }
 
     @Test
-    fun onServicesDiscovered_whenSessionUnknown_returnsEarly() {
+    fun onServicesDiscovered_whenSessionUnknown_closesGatt() {
         val connectionHandler = mockk<ConnectionHandler>(relaxed = true)
         val sessions = mockk<BDDeviceList>()
         val gatt = mockk<BluetoothGatt>()
 
         every { sessions.getSession(gatt) } returns null
+        every { gatt.close() } just runs
 
         val sut = GattCallback(connectionHandler, sessions)
 
@@ -301,6 +302,7 @@ class GattCallbackTest {
         sut.onServicesDiscovered(gatt, BluetoothGatt.GATT_SUCCESS)
 
         // Assert
+        verify(exactly = 1) { gatt.close() }
         verify(exactly = 0) { connectionHandler.servicesDiscovered(any()) }
         verify(exactly = 0) { connectionHandler.disconnectDevice(any()) }
     }
@@ -716,7 +718,7 @@ class GattCallbackTest {
     }
 
     @Test
-    fun onPhyUpdate_whenSessionUnknown_doesNotCallPhyUpdatedOrCloseGatt() {
+    fun onPhyUpdate_whenSessionUnknown_closesGatt() {
         // Arrange
         val connectionHandler = mockk<ConnectionHandler>(relaxed = true)
         val sessions = mockk<BDDeviceList>()
@@ -730,9 +732,9 @@ class GattCallbackTest {
         // Act
         sut.onPhyUpdate(gatt, BluetoothDevice.PHY_LE_1M, BluetoothDevice.PHY_LE_1M, BluetoothGatt.GATT_SUCCESS)
 
-        // Assert (implementation does nothing when session is null, no gatt.close() either)
+        // Assert
         verify(exactly = 0) { connectionHandler.phyUpdated(any()) }
-        verify(exactly = 0) { gatt.close() }
+        verify(exactly = 1) { gatt.close() }
     }
 
     @Test
@@ -786,7 +788,7 @@ class GattCallbackTest {
     }
 
     @Test
-    fun onPhyRead_whenSessionUnknown_doesNotCallPhyUpdatedOrCloseGatt() {
+    fun onPhyRead_whenSessionUnknown_closesGatt() {
         // Arrange
         val connectionHandler = mockk<ConnectionHandler>(relaxed = true)
         val sessions = mockk<BDDeviceList>()
@@ -800,9 +802,9 @@ class GattCallbackTest {
         // Act
         sut.onPhyRead(gatt, BluetoothDevice.PHY_LE_1M, BluetoothDevice.PHY_LE_1M, BluetoothGatt.GATT_SUCCESS)
 
-        // Assert (implementation does nothing when session is null, no gatt.close() either)
+        // Assert
         verify(exactly = 0) { connectionHandler.phyUpdated(any()) }
-        verify(exactly = 0) { gatt.close() }
+        verify(exactly = 1) { gatt.close() }
     }
 
     @Test
