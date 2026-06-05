@@ -105,6 +105,9 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
             expected.optionalBooleanValue("downloadAttempted")?.let { assertEquals(it, outcome.downloadAttempted, scenario.stringValue("id")) }
             expected.optionalBooleanValue("zipExtractionAttempted")?.let { assertEquals(it, outcome.zipExtractionAttempted, scenario.stringValue("id")) }
             expected.optionalIntValue("cleanupCallbackCount")?.let { assertEquals(it, outcome.cleanupCallbackCount, scenario.stringValue("id")) }
+            val expectedPayloads = scenario.firmwarePayloadsByPath()
+            assertEquals(expectedPayloads, fakeRuntime.bleWritePayloads, scenario.stringValue("id"))
+            assertEquals(expectedPayloads.flatMap { (path, payloadHex) -> listOf("$path:0", "$path:${payloadHex.length / 2}") }, fakeRuntime.bleWriteProgressEvents, scenario.stringValue("id"))
             if (scenario.stringValue("id") == "retryable-server-failure") {
                 assertEquals(listOf(1000L, 3000L), fakeRuntime.retryTimesMillis)
             }
@@ -172,6 +175,15 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         )
     }
 
+    private fun String.firmwarePayloadsByPath(): Map<String, String> {
+        return optionalObjectArray("firmwareFiles")
+            .map { file -> file.stringValue("name") to file.stringValue("payloadHex") }
+            .let { files ->
+                PolarWorkflowRuntimePlanning.orderFirmwareFiles(files.map { it.first })
+                    .associate { fileName -> "/$fileName" to files.first { it.first == fileName }.second }
+            }
+    }
+
     private fun String.booleanValue(field: String): Boolean {
         val match = Regex("\"$field\"\\s*:\\s*(true|false)").find(this)
         require(match != null) { "Missing boolean field $field in $this" }
@@ -210,6 +222,10 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
     ) {
         val retryTimesMillis: List<Long>
             get() = retryScheduler.retryTimesMillis
+        val bleWritePayloads: Map<String, String>
+            get() = bleWriter.payloadsByPath
+        val bleWriteProgressEvents: List<String>
+            get() = bleWriter.progressEvents
 
         fun run(scenario: PolarFirmwareWorkflowScenario): CommonFirmwareWorkflowFakeOutcome {
             val status = mutableListOf<String>()
@@ -259,7 +275,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
                 status.clear()
                 status += listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", scenario.expectedTerminalStatus)
             }
-            writes += bleWriter.write(PolarWorkflowRuntimePlanning.orderFirmwareFiles(scenario.firmwareFiles))
+            writes += bleWriter.write(zipStore.firmwareArtifacts(), PolarWorkflowRuntimePlanning.orderFirmwareFiles(scenario.firmwareFiles))
             terminalError = when (scenario.writeTerminalError) {
                 "batteryTooLow" -> "battery-too-low"
                 else -> scenario.expectedTerminalError
@@ -296,14 +312,35 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         fun extractInvalid(): Boolean {
             return scenario.optionalStringValue("zipExtraction") == "empty-or-invalid"
         }
+
+        fun firmwareArtifacts(): Map<String, String> {
+            return if (scenario.contains("\"firmwareFiles\"")) scenario.objectArray("firmwareFiles").associate { file ->
+                file.stringValue("name") to file.stringValue("payloadHex")
+            } else emptyMap()
+        }
     }
 
     private class CommonFirmwareFakeBleWriter(private val scenario: String) {
-        fun write(orderedFiles: List<String>): List<String> {
+        private val capturedPayloadsByPath = linkedMapOf<String, String>()
+        private val capturedProgressEvents = mutableListOf<String>()
+
+        val payloadsByPath: Map<String, String>
+            get() = capturedPayloadsByPath.toMap()
+        val progressEvents: List<String>
+            get() = capturedProgressEvents.toList()
+
+        fun write(artifactsByName: Map<String, String>, orderedFiles: List<String>): List<String> {
             return if (!scenario.contains("\"firmwareFiles\"")) {
                 emptyList()
             } else {
-                orderedFiles.map { fileName -> "/$fileName" }
+                orderedFiles.map { fileName ->
+                    val path = "/$fileName"
+                    val payloadHex = artifactsByName.getValue(fileName)
+                    capturedPayloadsByPath[path] = payloadHex
+                    capturedProgressEvents += "$path:0"
+                    capturedProgressEvents += "$path:${payloadHex.length / 2}"
+                    path
+                }
             }
         }
     }
