@@ -543,6 +543,18 @@ object PolarIosSharedBridge {
         return PolarPmdControlPoint.parseActiveMeasurement(responseByte).iosStateName
     }
 
+    fun pmdControlPointResponseFields(responseHex: String): String? {
+        val parsed = PolarPmdControlPoint.parseControlPointResponse(responseHex.hexToBytes()).response ?: return null
+        return listOf(
+            parsed.responseCode.toString(),
+            parsed.opCodeValue.toString(),
+            parsed.measurementType.toString(),
+            parsed.statusValue.toString(),
+            if (parsed.more) "1" else "0",
+            parsed.parametersHex
+        ).joinToString(separator = ",")
+    }
+
     fun pmdMeasurementTypeName(id: Int): String? {
         return PolarPmdMeasurementTypeName.fromMaskedId(id)?.name
     }

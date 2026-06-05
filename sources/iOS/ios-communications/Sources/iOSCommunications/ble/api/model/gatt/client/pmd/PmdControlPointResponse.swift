@@ -1,6 +1,9 @@
 //  Copyright © 2023 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 internal struct PmdControlPointResponse {
     static let CONTROL_POINT_RESPONSE_CODE: UInt8 = 0xF0
@@ -11,6 +14,17 @@ internal struct PmdControlPointResponse {
     public let more: Bool
     public let parameters = NSMutableData()
     public init(_ data: Data) {
+        #if canImport(PolarBleSdkShared)
+        if let shared = PmdControlPointResponse.sharedParsedResponse(data) {
+            response = shared.response
+            opCode = shared.opCode
+            type = shared.type
+            errorCode = shared.errorCode
+            more = shared.more
+            parameters.append(shared.parameters)
+            return
+        }
+        #endif
         response = data[0]
         opCode = data[1]
         type = PmdMeasurementType(rawValue: data[2]) ?? PmdMeasurementType.unknown_type
@@ -22,6 +36,24 @@ internal struct PmdControlPointResponse {
             more = false
         }
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedParsedResponse(_ data: Data) -> (response: UInt8, opCode: UInt8, type: PmdMeasurementType, errorCode: PmdResponseCode, more: Bool, parameters: Data)? {
+        guard let encoded = PolarIosSharedBridge.shared.pmdControlPointResponseFields(responseHex: data.controlPointHexString) else { return nil }
+        let fields = encoded.split(separator: ",", omittingEmptySubsequences: false)
+        guard fields.count == 6,
+              let response = UInt8(fields[0]),
+              let opCode = UInt8(fields[1]),
+              let typeValue = UInt8(fields[2]),
+              let statusValue = Int(fields[3]) else {
+            return nil
+        }
+        let more = fields[4] == "1"
+        let type = PmdMeasurementType(rawValue: typeValue) ?? PmdMeasurementType.unknown_type
+        let errorCode = PmdResponseCode(rawValue: statusValue) ?? PmdResponseCode.unknown_error
+        return (response, opCode, type, errorCode, more, Data(hexBytes: String(fields[5])))
+    }
+    #endif
 }
 
 public enum PmdResponseCode: Int {
@@ -63,3 +95,22 @@ public enum PmdResponseCode: Int {
         }
     }
 }
+
+#if canImport(PolarBleSdkShared)
+private extension Data {
+    init(hexBytes: String) {
+        var bytes = [UInt8]()
+        var index = hexBytes.startIndex
+        while index < hexBytes.endIndex {
+            let nextIndex = hexBytes.index(index, offsetBy: 2)
+            bytes.append(UInt8(hexBytes[index..<nextIndex], radix: 16)!)
+            index = nextIndex
+        }
+        self.init(bytes)
+    }
+
+    var controlPointHexString: String {
+        map { String(format: "%02x", $0) }.joined()
+    }
+}
+#endif
