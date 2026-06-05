@@ -29,6 +29,18 @@ private const val TAG = "PolarTestUtils"
 data class Spo2TestEntry(val date: LocalDate, val timeDirName: String, val protoBytes: ByteArray)
 
 internal object PolarTestUtils {
+    internal fun spo2TestDirectoryReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return spo2TestReadOperation("spo2-test-read-directory", "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$SPO2_TEST_DIRECTORY")
+    }
+
+    internal fun spo2TestFileReadOperation(directoryPath: String, subDirectoryName: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return spo2TestReadOperation("spo2-test-read-file", "$directoryPath$subDirectoryName$SPO2_TEST_PROTO")
+    }
+
+    private fun spo2TestReadOperation(id: String, path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val plan = PolarRuntimePlannerAdapter.planFileFacade(id, "GET", path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
 
     /**
      * Read and return all SPO2 test proto entries for a given date.
@@ -38,12 +50,13 @@ internal object PolarTestUtils {
      */
     suspend fun readSpo2TestProtoFromDayDirectory(client: BlePsFtpClient, date: LocalDate): List<Spo2TestEntry> {
         BleLogger.d(TAG, "readSpo2TestProtoFromDayDirectory: $date")
-        val spo2TestDirPath = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$SPO2_TEST_DIRECTORY"
+        val directoryOperation = spo2TestDirectoryReadOperation(date)
+        val spo2TestDirPath = directoryOperation.second
 
         return try {
             val response = client.request(
                 PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
+                    .setCommand(directoryOperation.first)
                     .setPath(spo2TestDirPath)
                     .build()
                     .toByteArray()
@@ -60,11 +73,12 @@ internal object PolarTestUtils {
             val results = mutableListOf<Spo2TestEntry>()
             for (subDir in timeSubDirs) {
                 val timeDirName = subDir.name.trimEnd('/')
-                val filePath = "$spo2TestDirPath${subDir.name}$SPO2_TEST_PROTO"
+                val fileOperation = spo2TestFileReadOperation(spo2TestDirPath, subDir.name)
+                val filePath = fileOperation.second
                 try {
                     val fileResponse = client.request(
                         PftpRequest.PbPFtpOperation.newBuilder()
-                            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
+                            .setCommand(fileOperation.first)
                             .setPath(filePath)
                             .build()
                             .toByteArray()

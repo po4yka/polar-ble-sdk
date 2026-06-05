@@ -17,21 +17,37 @@ private let dateFormat: DateFormatter = {
 private let TAG = "PolarTestUtils"
 
 internal class PolarTestUtils {
+    static func spo2TestDirectoryReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return spo2TestReadOperation(id: "spo2-test-read-directory", path: "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(SPO2_TEST_DIRECTORY)")
+    }
+
+    static func spo2TestFileReadOperation(directoryPath: String, subDirectoryName: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return spo2TestReadOperation(id: "spo2-test-read-file", path: "\(directoryPath)\(subDirectoryName)\(SPO2_TEST_PROTO)")
+    }
+
+    private static func spo2TestReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: "GET", path: path) {
+            return plannedOperation
+        }
+        return (.get, path)
+    }
 
     static func readSpo2TestFromDayDirectory(client: BlePsFtpClient, date: Date) -> AsyncThrowingStream<PolarSpo2TestData, Error> {
         return AsyncThrowingStream { continuation in
             Task {
                 BleLogger.trace(TAG, "readSpo2TestFromDayDirectory: \(date)")
-                let spo2TestDirPath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(SPO2_TEST_DIRECTORY)"
-                let listOperation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = spo2TestDirPath }
+                let plannedListOperation = spo2TestDirectoryReadOperation(date: date)
+                let spo2TestDirPath = plannedListOperation.path
+                let listOperation = Protocol_PbPFtpOperation.with { $0.command = plannedListOperation.command; $0.path = plannedListOperation.path }
                 do {
                     let response = try await client.request(try listOperation.serializedBytes())
                     let dir = try Protocol_PbPFtpDirectory(serializedBytes: Data(response))
                     let timeSubDirs = dir.entries.filter { $0.name.hasSuffix("/") }
                     for subDir in timeSubDirs {
                         let timeDirName = String(subDir.name.dropLast())
-                        let filePath = "\(spo2TestDirPath)\(subDir.name)\(SPO2_TEST_PROTO)"
-                        let fileOperation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = filePath }
+                        let plannedFileOperation = spo2TestFileReadOperation(directoryPath: spo2TestDirPath, subDirectoryName: subDir.name)
+                        let filePath = plannedFileOperation.path
+                        let fileOperation = Protocol_PbPFtpOperation.with { $0.command = plannedFileOperation.command; $0.path = plannedFileOperation.path }
                         do {
                             let fileResponse = try await client.request(try fileOperation.serializedBytes())
                             let proto = try Data_PbSpo2TestResult(serializedBytes: Data(fileResponse))

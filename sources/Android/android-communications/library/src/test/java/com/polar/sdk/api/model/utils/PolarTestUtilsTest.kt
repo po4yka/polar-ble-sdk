@@ -36,6 +36,20 @@ class PolarTestUtilsTest {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
     @Test
+    fun `spo2 test read headers use shared file facade planning`() {
+        val date = LocalDate.of(2026, 4, 13)
+
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260413/SPO2TEST/",
+            PolarTestUtils.spo2TestDirectoryReadOperation(date)
+        )
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260413/SPO2TEST/142507/SPO2TRES.BPB",
+            PolarTestUtils.spo2TestFileReadOperation("/U/0/20260413/SPO2TEST/", "142507/")
+        )
+    }
+
+    @Test
     fun `readSpo2TestProtoFromDayDirectory() returns one entry per time subdirectory`() = runTest {
         val client = mockk<BlePsFtpClient>()
         val date = LocalDate.of(2026, 4, 8)

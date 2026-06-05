@@ -111,6 +111,18 @@ class PolarTestUtilsTests: XCTestCase {
 
     // MARK: - Correct paths are requested
 
+    func testSpo2TestReadHeadersUseSharedFileFacadePlanning() throws {
+        let date = makeDate(year: 2026, month: 4, day: 13)
+
+        let directoryOperation = PolarTestUtils.spo2TestDirectoryReadOperation(date: date)
+        XCTAssertEqual(directoryOperation.command, .get)
+        XCTAssertEqual(directoryOperation.path, "/U/0/20260413/SPO2TEST/")
+
+        let fileOperation = PolarTestUtils.spo2TestFileReadOperation(directoryPath: "/U/0/20260413/SPO2TEST/", subDirectoryName: "142507/")
+        XCTAssertEqual(fileOperation.command, .get)
+        XCTAssertEqual(fileOperation.path, "/U/0/20260413/SPO2TEST/142507/SPO2TRES.BPB")
+    }
+
     func testReadSpo2TestFromDayDirectory_CorrectPathsRequested() async throws {
         // Arrange
         let date = makeDate(year: 2026, month: 4, day: 13)
