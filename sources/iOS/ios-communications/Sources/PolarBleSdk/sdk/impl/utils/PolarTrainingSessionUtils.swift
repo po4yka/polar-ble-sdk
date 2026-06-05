@@ -36,6 +36,12 @@ internal class PolarTrainingSessionUtils {
         let entries = try await fetchRecursive(ARABICA_USER_ROOT_FOLDER, client: client) { name in
             return name.range(of: #"^(\d{8}/|\d{6}/|.*\.BPB|.*\.GZB|E/|\d+/)$"#, options: .regularExpression) != nil
         }
+
+        #if canImport(PolarBleSdkShared)
+        if let sharedReferences = trainingSessionReferencesFromShared(entries: entries, fromDate: fromDate, toDate: toDate) {
+            return sharedReferences
+        }
+        #endif
         
         for (path, size) in entries {
             let fileName = (path as NSString).lastPathComponent
@@ -262,6 +268,67 @@ internal class PolarTrainingSessionUtils {
         }
         return results
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func trainingSessionReferencesFromShared(
+        entries: [(name: String, size: UInt64)],
+        fromDate: Date?,
+        toDate: Date?
+    ) -> [PolarTrainingSessionReference]? {
+        let encodedEntries = entries.map { "\($0.name)|\($0.size)" }.joined(separator: "\n")
+        let shared = PolarIosSharedBridge.shared.trainingSessionReferences(entriesText: encodedEntries)
+        guard !shared.isEmpty else { return [] }
+        var references: [PolarTrainingSessionReference] = []
+        let sharedDateFormatter = DateFormatter()
+        sharedDateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        sharedDateFormatter.locale = Locale(identifier: "en_US_POSIX")
+
+        for row in shared.split(separator: "\n") {
+            let fields = row.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+            guard let marker = fields.first else { return nil }
+            switch marker {
+            case "R":
+                guard fields.count == 6,
+                      let date = sharedDateFormatter.date(from: fields[2]),
+                      let fileSize = Int64(fields[4]) else {
+                    return nil
+                }
+                guard dateMatches(date: date, fromDate: fromDate, toDate: toDate) else {
+                    references.append(PolarTrainingSessionReference(date: date, path: fields[3], trainingDataTypes: [], exercises: [], fileSize: -1))
+                    continue
+                }
+                references.append(PolarTrainingSessionReference(
+                    date: date,
+                    path: fields[3],
+                    trainingDataTypes: fields[5].split(separator: ";").compactMap { PolarTrainingSessionDataTypes.fromSharedTypeName(String($0)) },
+                    exercises: [],
+                    fileSize: fileSize
+                ))
+            case "E":
+                guard fields.count == 4,
+                      let referenceIndex = Int(fields[1]),
+                      referenceIndex < references.count else {
+                    return nil
+                }
+                guard references[referenceIndex].fileSize >= 0 else { continue }
+                let exerciseDataTypes = fields[3].split(separator: ";").compactMap { PolarExerciseDataTypes.fromSharedTypeName(String($0)) }
+                references[referenceIndex].exercises.append(PolarExercise(index: 0, path: fields[2], exerciseDataTypes: exerciseDataTypes))
+            default:
+                return nil
+            }
+        }
+        return references.filter { $0.fileSize >= 0 }
+    }
+
+    private static func dateMatches(date: Date, fromDate: Date?, toDate: Date?) -> Bool {
+        let dateAtPath = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        let effectiveFrom = fromDate.map { Calendar.current.dateComponents([.year, .month, .day], from: $0) }
+        let effectiveTo = toDate.map { Calendar.current.dateComponents([.year, .month, .day], from: $0) }
+        let afterFrom = effectiveFrom.map { dateAtPath >= $0 } ?? true
+        let beforeTo = effectiveTo.map { dateAtPath <= $0 } ?? true
+        return afterFrom && beforeTo
+    }
+    #endif
 }
 
 private extension PolarTrainingSessionDataTypes {

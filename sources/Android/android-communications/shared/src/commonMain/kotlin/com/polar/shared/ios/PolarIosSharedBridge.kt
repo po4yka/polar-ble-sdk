@@ -28,6 +28,7 @@ import com.polar.shared.sdk.PolarKvtxScriptCodec
 import com.polar.shared.sdk.PolarOfflineRecordingModels
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSpo2Models
+import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.time.PolarDurationFields
 import com.polar.shared.time.PolarTimeFields
@@ -174,6 +175,33 @@ object PolarIosSharedBridge {
 
     fun trainingSessionExerciseDataType(fileName: String): String? {
         return PolarTrainingSessionModels.exerciseDataTypeOrNull(fileName)
+    }
+
+    fun trainingSessionReferences(entriesText: String): String {
+        val entries = entriesText.lines().mapNotNull { line ->
+            val path = line.substringBefore('|', missingDelimiterValue = "")
+            val size = line.substringAfter('|', missingDelimiterValue = "").toLongOrNull()
+            if (path.isEmpty() || size == null) null else PolarTrainingSessionFileEntry(path = path, size = size)
+        }
+        return PolarTrainingSessionModels.buildReferences(entries).flatMapIndexed { referenceIndex, reference ->
+            listOf(
+                listOf(
+                    "R",
+                    referenceIndex.toString(),
+                    reference.dateTime,
+                    reference.path,
+                    reference.fileSize.toString(),
+                    reference.trainingDataTypes.joinToString(";")
+                ).joinToString("|")
+            ) + reference.exercises.map { exercise ->
+                listOf(
+                    "E",
+                    referenceIndex.toString(),
+                    exercise.iosPath,
+                    exercise.exerciseDataTypes.joinToString(";")
+                ).joinToString("|")
+            }
+        }.joinToString("\n")
     }
 
     fun spo2TestStatus(value: Int): String? {
