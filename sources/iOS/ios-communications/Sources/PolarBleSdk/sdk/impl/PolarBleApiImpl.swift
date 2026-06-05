@@ -435,9 +435,10 @@ import UIKit
         }
         return Future<FeatureState, Never> { promise in
             Task {
+                let readOperation = Self.offlineExerciseDeviceInfoReadOperation()
                 var operation = Protocol_PbPFtpOperation()
-                operation.command = .get
-                operation.path = "/DEVICE.BPB"
+                operation.command = readOperation.command
+                operation.path = readOperation.path
                 do {
                     let request = try operation.serializedData()
                     let response = try await client.request(request)
