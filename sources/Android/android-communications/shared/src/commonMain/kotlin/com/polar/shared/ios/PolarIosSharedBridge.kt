@@ -987,6 +987,17 @@ object PolarIosSharedBridge {
         ).toHex()
     }
 
+    fun psFtpDecodedRfc76Frame(frameHex: String): String {
+        val frame = PolarWorkflowRuntimePlanning.decodeRfc76Frame(frameHex.hexToBytes())
+        return listOf(
+            frame.next.toString(),
+            frame.status.toString(),
+            frame.sequenceNumber.toString(),
+            frame.iosErrorCode?.toString().orEmpty(),
+            frame.payload?.toHex().orEmpty()
+        ).joinToString(separator = ",")
+    }
+
     fun d2hNotificationType(notificationId: Int): String {
         return PolarD2hRuntimePlanning.notificationTypeOrNull(notificationId) ?: ""
     }

@@ -311,6 +311,17 @@ public class BlePsFtpUtility {
         if (packet.isEmpty) {
             throw BlePsFtpUtility.RFC76FrameProcessError.frameIsEmpty
         }
+
+        #if canImport(PolarBleSdkShared)
+        if let sharedFrame = sharedDecodedRfc76Frame(packet) {
+            header.next = sharedFrame.next
+            header.status = sharedFrame.status
+            header.sequenceNumber = sharedFrame.sequenceNumber
+            header.error = sharedFrame.error
+            header.payload = sharedFrame.payload
+            return
+        }
+        #endif
         
         let ptr = (packet as NSData).bytes.bindMemory(to: UInt8.self, capacity: packet.count)
         header.next = (Int)(ptr[0] & 0x01)
@@ -369,5 +380,31 @@ private extension Data {
         }
         self = Data(bytes)
     }
+}
+
+private struct SharedRfc76Frame {
+    let next: Int
+    let status: Int
+    let sequenceNumber: Int
+    let error: Int?
+    let payload: Data
+}
+
+private func sharedDecodedRfc76Frame(_ packet: Data) -> SharedRfc76Frame? {
+    let fields = PolarIosSharedBridge.shared.psFtpDecodedRfc76Frame(frameHex: packet.hexString).split(separator: ",", omittingEmptySubsequences: false)
+    guard fields.count == 5,
+          let next = Int(fields[0]),
+          let status = Int(fields[1]),
+          let sequenceNumber = Int(fields[2]),
+          let payload = Data(hexBytes: String(fields[4])) else {
+        return nil
+    }
+    return SharedRfc76Frame(
+        next: next,
+        status: status,
+        sequenceNumber: sequenceNumber,
+        error: fields[3].isEmpty ? nil : Int(fields[3]),
+        payload: payload
+    )
 }
 #endif
