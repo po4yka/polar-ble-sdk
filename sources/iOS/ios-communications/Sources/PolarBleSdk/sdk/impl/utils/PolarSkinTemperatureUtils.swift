@@ -1,6 +1,9 @@
 //  Copyright © 2025 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
 private let SKIN_TEMPERATURE_DIRECTORY = "SKINTEMP/"
@@ -23,13 +26,37 @@ internal class PolarSkinTemperatureUtils {
             let skinTemp = try Data_TemperatureMeasurementPeriod(serializedBytes: Data(response))
             return PolarSkinTemperatureData.PolarSkinTemperatureResult(
                 date: date,
-                sensorLocation: PolarSkinTemperatureData.SkinTemperatureSensorLocation.getByValue(value: skinTemp.sensorLocation),
-                measurementType: PolarSkinTemperatureData.SkinTemperatureMeasurementType.getByValue(value: skinTemp.measurementType),
+                sensorLocation: sensorLocation(from: skinTemp.sensorLocation),
+                measurementType: measurementType(from: skinTemp.measurementType),
                 skinTemperatureList: PolarSkinTemperatureData.fromPbTemperatureMeasurementSamples(pbTemperatureMeasurementData: skinTemp.temperatureMeasurementSamples)
             )
         } catch {
             BleLogger.error("readSkinTemperatureData() failed for path: \(filePath), error: \(error)")
             return nil
         }
+    }
+
+    private static func measurementType(from value: TemperatureMeasurementType) -> PolarSkinTemperatureData.SkinTemperatureMeasurementType {
+        #if canImport(PolarBleSdkShared)
+        switch PolarIosSharedBridge.shared.skinTemperatureMeasurementType(value: Int32(value.rawValue)) {
+        case "TM_SKIN_TEMPERATURE": return .TM_SKIN_TEMPERATURE
+        case "TM_CORE_TEMPERATURE": return .TM_CORE_TEMPERATURE
+        default: return .TM_UNKNOWN
+        }
+        #else
+        return PolarSkinTemperatureData.SkinTemperatureMeasurementType.getByValue(value: value)
+        #endif
+    }
+
+    private static func sensorLocation(from value: SensorLocation) -> PolarSkinTemperatureData.SkinTemperatureSensorLocation {
+        #if canImport(PolarBleSdkShared)
+        switch PolarIosSharedBridge.shared.skinTemperatureSensorLocation(value: Int32(value.rawValue)) {
+        case "SL_DISTAL": return .SL_DISTAL
+        case "SL_PROXIMAL": return .SL_PROXIMAL
+        default: return .SL_UNKNOWN
+        }
+        #else
+        return PolarSkinTemperatureData.SkinTemperatureSensorLocation.getByValue(value: value)
+        #endif
     }
 }

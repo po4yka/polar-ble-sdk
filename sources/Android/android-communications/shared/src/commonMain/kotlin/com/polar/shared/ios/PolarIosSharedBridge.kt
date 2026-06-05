@@ -21,6 +21,7 @@ import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.sdk.PolarKvtxMalformedScriptException
 import com.polar.shared.sdk.PolarKvtxScriptCodec
 import com.polar.shared.sdk.PolarOfflineRecordingModels
+import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.time.PolarDurationFields
 import com.polar.shared.time.PolarTimeFields
 import com.polar.shared.time.PolarTimeUtils
@@ -106,6 +107,24 @@ object PolarIosSharedBridge {
 
     fun offlineRecordingMeasurementType(fileName: String): String? {
         return runCatching { PolarOfflineRecordingModels.measurementTypeFromFileName(fileName).name }.getOrNull()
+    }
+
+    fun skinTemperatureMeasurementType(value: Int): String? {
+        return PolarSdkModelMappers.skinTemperature(
+            sourceDeviceId = null,
+            measurementType = value,
+            sensorLocation = 0,
+            samples = emptyList()
+        ).measurementType?.name
+    }
+
+    fun skinTemperatureSensorLocation(value: Int): String? {
+        return PolarSdkModelMappers.skinTemperature(
+            sourceDeviceId = null,
+            measurementType = 0,
+            sensorLocation = value,
+            samples = emptyList()
+        ).sensorLocation?.name
     }
 
     fun planRuntimeCommandQuery(id: String, query: String, parametersCsv: String): String {

@@ -4,6 +4,9 @@
 
 import XCTest
 @testable import PolarBleSdk
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 class PolarSkinTemperatureUtilsTests: XCTestCase {
     
@@ -53,6 +56,29 @@ class PolarSkinTemperatureUtilsTests: XCTestCase {
 
         // Assert
         XCTAssertNil(result, "Expected nil when file is not found")
+    }
+
+    func testSkinTemperatureEnumMappingUsesSharedBridgeWhenLinked() async throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("TM_SKIN_TEMPERATURE", PolarIosSharedBridge.shared.skinTemperatureMeasurementType(value: Int32(TemperatureMeasurementType.tmSkinTemperature.rawValue)))
+        XCTAssertEqual("TM_CORE_TEMPERATURE", PolarIosSharedBridge.shared.skinTemperatureMeasurementType(value: Int32(TemperatureMeasurementType.tmCoreTemperature.rawValue)))
+        XCTAssertNil(PolarIosSharedBridge.shared.skinTemperatureMeasurementType(value: Int32(TemperatureMeasurementType.tmUnknown.rawValue)))
+        XCTAssertEqual("SL_DISTAL", PolarIosSharedBridge.shared.skinTemperatureSensorLocation(value: Int32(SensorLocation.slDistal.rawValue)))
+        XCTAssertEqual("SL_PROXIMAL", PolarIosSharedBridge.shared.skinTemperatureSensorLocation(value: Int32(SensorLocation.slProximal.rawValue)))
+        XCTAssertNil(PolarIosSharedBridge.shared.skinTemperatureSensorLocation(value: Int32(SensorLocation.slUnknown.rawValue)))
+
+        var proto = Data_TemperatureMeasurementPeriod()
+        proto.measurementType = .tmCoreTemperature
+        proto.sensorLocation = .slDistal
+        mockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let result = await PolarSkinTemperatureUtils.readSkinTemperatureData(client: mockClient, date: Date())
+
+        XCTAssertEqual(result?.measurementType, .TM_CORE_TEMPERATURE)
+        XCTAssertEqual(result?.sensorLocation, .SL_DISTAL)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testSkinTemperatureGoldenVectorsMapProtoToPublicModel() async throws {
