@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarKvtxMalformedScriptException
+import com.polar.shared.sdk.PolarKvtxScriptCodec
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -13,7 +15,7 @@ class KvtxCommonPolicyTest {
             val input = vector.objectValue("input")
             val expected = vector.objectValue("expected")
             val scriptHex = if (input.optionalStringValue("operation") == "buildWriteAndCommit") {
-                buildWriteAndCommit(input.longValue("key"), input.stringValue("dataHex"))
+                PolarKvtxScriptCodec.buildWriteAndCommit(input.longValue("key"), hexToBytes(input.stringValue("dataHex"))).toHex()
             } else {
                 input.stringValue("scriptHex")
             }
@@ -59,113 +61,11 @@ class KvtxCommonPolicyTest {
         assertEquals(listOf("com.polar.sharedtest.KvtxCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
-    private fun buildWriteAndCommit(key: Long, dataHex: String): String {
-        return "00${key.toLeU32Hex()}${(dataHex.length / 2).toLeI32Hex()}${dataHex}05"
-    }
-
     private fun extractValue(scriptHex: String, key: Long): ExtractResult {
-        val bytes = hexToBytes(scriptHex)
-        var index = 0
-        var current: ByteArray? = null
-        while (index < bytes.size) {
-            when (val opcode = bytes[index].toInt() and 0xFF) {
-                0 -> {
-                    val command = readKeyAndData(bytes, index + 1) ?: return ExtractResult(error = "malformedScript")
-                    if (command.key == key) current = command.data
-                    index = command.nextIndex
-                }
-                1 -> {
-                    val command = readKeyAndData(bytes, index + 1) ?: return ExtractResult(error = "malformedScript")
-                    if (command.key == key) current = (current ?: ByteArray(0)) + command.data
-                    index = command.nextIndex
-                }
-                2 -> {
-                    val commandKey = bytes.readLeU32OrNull(index + 1) ?: return ExtractResult(error = "malformedScript")
-                    if (commandKey == key) current = null
-                    index += 5
-                }
-                5 -> return ExtractResult(valueHex = current?.toHex())
-                6 -> {
-                    val command = readExtendedKeyAndData(bytes, index + 1) ?: return ExtractResult(error = "malformedScript")
-                    if (command.key == key && command.indexBytes.isEmpty()) current = command.data
-                    index = command.nextIndex
-                }
-                7 -> {
-                    val command = readExtendedKeyAndData(bytes, index + 1) ?: return ExtractResult(error = "malformedScript")
-                    if (command.key == key && command.indexBytes.isEmpty()) current = (current ?: ByteArray(0)) + command.data
-                    index = command.nextIndex
-                }
-                8 -> {
-                    val command = readExtendedKey(bytes, index + 1) ?: return ExtractResult(error = "malformedScript")
-                    if (command.key == key && command.indexBytes.isEmpty()) current = null
-                    index = command.nextIndex
-                }
-                else -> return ExtractResult(valueHex = current?.toHex(), stoppedAtOpcode = opcode)
-            }
-        }
-        return ExtractResult(valueHex = current?.toHex())
-    }
-
-    private fun readKeyAndData(bytes: ByteArray, start: Int): CommandData? {
-        val key = bytes.readLeU32OrNull(start) ?: return null
-        val length = bytes.readLeI32OrNull(start + 4) ?: return null
-        val dataStart = start + 8
-        val dataEnd = dataStart + length
-        if (length < 0 || dataEnd > bytes.size) return null
-        return CommandData(key = key, data = bytes.copyOfRange(dataStart, dataEnd), nextIndex = dataEnd)
-    }
-
-    private fun readExtendedKeyAndData(bytes: ByteArray, start: Int): ExtendedCommandData? {
-        val command = readExtendedKey(bytes, start) ?: return null
-        val length = bytes.readLeI32OrNull(command.nextIndex) ?: return null
-        val dataStart = command.nextIndex + 4
-        val dataEnd = dataStart + length
-        if (length < 0 || dataEnd > bytes.size) return null
-        return ExtendedCommandData(
-            key = command.key,
-            indexBytes = command.indexBytes,
-            data = bytes.copyOfRange(dataStart, dataEnd),
-            nextIndex = dataEnd
-        )
-    }
-
-    private fun readExtendedKey(bytes: ByteArray, start: Int): ExtendedCommandKey? {
-        val key = bytes.readLeU32OrNull(start) ?: return null
-        if (start + 5 > bytes.size) return null
-        val indexLength = bytes[start + 4].toInt() and 0xFF
-        val indexStart = start + 5
-        val indexEnd = indexStart + indexLength
-        if (indexLength < 0 || indexEnd > bytes.size) return null
-        return ExtendedCommandKey(
-            key = key,
-            indexBytes = bytes.copyOfRange(indexStart, indexEnd),
-            nextIndex = indexEnd
-        )
-    }
-
-    private fun ByteArray.readLeU32OrNull(offset: Int): Long? {
-        if (offset + 4 > size) return null
-        var value = 0L
-        for (index in 0 until 4) {
-            value = value or ((this[offset + index].toLong() and 0xFFL) shl (index * 8))
-        }
-        return value
-    }
-
-    private fun ByteArray.readLeI32OrNull(offset: Int): Int? {
-        if (offset + 4 > size) return null
-        return (this[offset].toInt() and 0xFF) or ((this[offset + 1].toInt() and 0xFF) shl 8) or ((this[offset + 2].toInt() and 0xFF) shl 16) or ((this[offset + 3].toInt() and 0xFF) shl 24)
-    }
-
-    private fun Long.toLeU32Hex(): String {
-        return (0 until 4).joinToString(separator = "") { index ->
-            ((this shr (index * 8)) and 0xFF).toInt().toHexByte()
-        }
-    }
-
-    private fun Int.toLeI32Hex(): String {
-        return (0 until 4).joinToString(separator = "") { index ->
-            ((this shr (index * 8)) and 0xFF).toHexByte()
+        return try {
+            ExtractResult(valueHex = PolarKvtxScriptCodec.extractValueForKey(hexToBytes(scriptHex), key)?.toHex())
+        } catch (_: PolarKvtxMalformedScriptException) {
+            ExtractResult(error = "malformedScript")
         }
     }
 
@@ -194,25 +94,6 @@ class KvtxCommonPolicyTest {
         val valueHex: String? = null,
         val error: String? = null,
         val stoppedAtOpcode: Int? = null
-    )
-
-    private data class CommandData(
-        val key: Long,
-        val data: ByteArray,
-        val nextIndex: Int
-    )
-
-    private data class ExtendedCommandKey(
-        val key: Long,
-        val indexBytes: ByteArray,
-        val nextIndex: Int
-    )
-
-    private data class ExtendedCommandData(
-        val key: Long,
-        val indexBytes: ByteArray,
-        val data: ByteArray,
-        val nextIndex: Int
     )
 
     private companion object {

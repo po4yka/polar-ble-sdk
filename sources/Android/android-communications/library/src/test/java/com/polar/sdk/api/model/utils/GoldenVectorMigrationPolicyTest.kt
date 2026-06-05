@@ -3475,7 +3475,7 @@ class GoldenVectorMigrationPolicyTest {
             "compile-verification-gate",
             "malformedScript",
             "typed malformed-script parse error",
-            "readExtendedKeyAndData"
+            "PolarKvtxScriptCodec"
         )
         val D2H_COMMON_POLICY_REQUIRED_TERMS = listOf(
             "d2hGoldenVectorsDefineExecutableCommonMappingFilteringAndOrderingPolicy",
