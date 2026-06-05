@@ -350,32 +350,15 @@ enum PolarRuntimePlanner {
     }
 
     static func d2hNotificationTypeName(notificationId: Int) -> String? {
-        #if canImport(PolarBleSdkShared)
-        let value = PolarIosSharedBridge.shared.d2hNotificationType(notificationId: Int32(notificationId))
-        return value.isEmpty ? nil : value
-        #else
-        return nil
-        #endif
+        return PolarD2hRuntimePlanner.notificationTypeName(notificationId: notificationId)
     }
 
     static func d2hParsedProtoName(notificationType: String, parametersHex: String) -> String? {
-        #if canImport(PolarBleSdkShared)
-        let value = PolarIosSharedBridge.shared.d2hParsedProtoName(notificationType: notificationType, parametersHex: parametersHex)
-        return value.isEmpty ? nil : value
-        #else
-        return nil
-        #endif
+        return PolarD2hRuntimePlanner.parsedProtoName(notificationType: notificationType, parametersHex: parametersHex)
     }
 
     static func d2hNotificationPlan(notificationId: Int, parametersHex: String) -> (notificationType: String, parsedProtoName: String?)? {
-        #if canImport(PolarBleSdkShared)
-        let value = PolarIosSharedBridge.shared.d2hNotificationPlan(notificationId: Int32(notificationId), parametersHex: parametersHex)
-        if value.isEmpty { return nil }
-        let fields = value.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
-        return (notificationType: fields[0], parsedProtoName: fields.count > 1 && !fields[1].isEmpty ? fields[1] : nil)
-        #else
-        return nil
-        #endif
+        return PolarD2hRuntimePlanner.notificationPlan(notificationId: notificationId, parametersHex: parametersHex)
     }
 
     @discardableResult

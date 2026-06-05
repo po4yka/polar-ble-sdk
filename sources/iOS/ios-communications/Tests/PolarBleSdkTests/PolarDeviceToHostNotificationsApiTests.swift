@@ -47,6 +47,23 @@ class PolarDeviceToHostNotificationsApiTests: XCTestCase {
         XCTAssertEqual(result?.notificationType, .stopGpsMeasurement)
         XCTAssertEqual(result?.parameters, Data())
     }
+
+    func testD2HRuntimePlannerMapsNotificationPlanWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        var syncRequiredNotificationParameter = Protocol_PbPFtpSyncRequiredParams()
+        var syncTrigger = Protocol_PbPFtpSyncTrigger()
+        syncTrigger.source = .timed
+        syncRequiredNotificationParameter.syncTriggers = [syncTrigger]
+        let parametersHex = try syncRequiredNotificationParameter.serializedData().map { String(format: "%02x", $0) }.joined()
+        let plan = PolarD2hRuntimePlanner.notificationPlan(notificationId: Protocol_PbPFtpDevToHostNotification.syncRequired.rawValue, parametersHex: parametersHex)
+        XCTAssertEqual("SYNC_REQUIRED", plan?.notificationType)
+        XCTAssertEqual("PbPFtpSyncRequiredParams", plan?.parsedProtoName)
+        XCTAssertEqual("STOP_GPS_MEASUREMENT", PolarD2hRuntimePlanner.notificationTypeName(notificationId: Protocol_PbPFtpDevToHostNotification.stopGpsMeasurement.rawValue))
+        XCTAssertNil(PolarD2hRuntimePlanner.notificationPlan(notificationId: 999, parametersHex: ""))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
     
     func testReceivesSyncRequiredNotification() async throws {
         // Arrange
