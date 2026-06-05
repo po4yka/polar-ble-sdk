@@ -18,6 +18,7 @@ import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarStreamRuntimePlanning
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
+import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import com.polar.shared.sdk.PolarKvtxMalformedScriptException
 import com.polar.shared.sdk.PolarKvtxScriptCodec
 import com.polar.shared.sdk.PolarOfflineRecordingModels
@@ -125,6 +126,18 @@ object PolarIosSharedBridge {
             sensorLocation = value,
             samples = emptyList()
         ).sensorLocation?.name
+    }
+
+    fun firmwareDeviceVersion(major: Int, minor: Int, patch: Int): String {
+        return PolarFirmwareUpdateModels.deviceVersionToString(major, minor, patch)
+    }
+
+    fun isFirmwareVersionHigher(currentVersion: String, availableVersion: String): Boolean {
+        return PolarFirmwareUpdateModels.isAvailableFirmwareVersionHigher(currentVersion, availableVersion)
+    }
+
+    fun firmwareFilePriority(fileName: String): Int {
+        return PolarFirmwareUpdateModels.firmwareFilePriority(fileName)
     }
 
     fun planRuntimeCommandQuery(id: String, query: String, parametersCsv: String): String {

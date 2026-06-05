@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import PolarBleSdk
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 class PolarFirmwareUpdateUtilsTest: XCTestCase {
 
@@ -135,6 +138,35 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
            XCTAssertEqual(files[1], f2, "Files should maintain initial order if already sorted")
            XCTAssertEqual(files[2], f3, "Files should maintain initial order if already sorted")
        }
+
+    func testFirmwareUtilityUsesSharedBridgeWhenLinked() async throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("1.2.0", PolarIosSharedBridge.shared.firmwareDeviceVersion(major: 1, minor: 2, patch: 0))
+        XCTAssertTrue(PolarIosSharedBridge.shared.isFirmwareVersionHigher(currentVersion: "1.0.0", availableVersion: "1.0.1"))
+        XCTAssertFalse(PolarIosSharedBridge.shared.isFirmwareVersionHigher(currentVersion: "2.0.0", availableVersion: "1.0.0"))
+        XCTAssertEqual(0, PolarIosSharedBridge.shared.firmwareFilePriority(fileName: "BTUPDAT.BIN"))
+        XCTAssertEqual(1, PolarIosSharedBridge.shared.firmwareFilePriority(fileName: "SYSUPDAT.IMG"))
+
+        let expectedDeviceId = "123456"
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00.112233"
+        }
+        mockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let firmwareInfo = await PolarFirmwareUpdateUtils.readDeviceFirmwareInfo(client: mockClient, deviceId: expectedDeviceId)
+
+        XCTAssertEqual(firmwareInfo?.deviceFwVersion, "1.2.0")
+        XCTAssertTrue(PolarFirmwareUpdateUtils.isAvailableFirmwareVersionHigher(currentVersion: "1.0.0", availableVersion: "1.0.1"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
 
     func testFirmwareDeviceInfoGoldenVectorsMapProtoToModel() async throws {
         for vector in try loadFirmwareUpdateGoldenVectors().filter({ inputKind($0) == "deviceInfo" }) {
