@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let MEASUREMENT_BIT_MASK: UInt8 = 0xC0
 
@@ -11,6 +14,20 @@ public enum PmdActiveMeasurement: UInt8 {
     case online_offline_measurement_active = 3
     
     static func fromStatusResponse(responseByte: UInt8) -> PmdActiveMeasurement {
+        #if canImport(PolarBleSdkShared)
+        switch PolarIosSharedBridge.shared.pmdActiveMeasurementIosState(responseByte: Int32(responseByte)) {
+        case "online_measurement_active":
+            return .online_measurement_active
+        case "offline_measurement_active":
+            return .offline_measurement_active
+        case "online_offline_measurement_active":
+            return .online_offline_measurement_active
+        case "no_measurement_active":
+            return .no_measurement_active
+        default:
+            return .no_measurement_active
+        }
+        #else
         let masked = responseByte & MEASUREMENT_BIT_MASK
         switch (masked >> 6) {
         case online_measurement_active.rawValue:
@@ -24,5 +41,6 @@ public enum PmdActiveMeasurement: UInt8 {
         default:
             return .no_measurement_active
         }
+        #endif
     }
 }

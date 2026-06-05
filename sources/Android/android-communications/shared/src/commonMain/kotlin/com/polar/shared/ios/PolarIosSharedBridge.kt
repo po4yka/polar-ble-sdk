@@ -2,6 +2,7 @@ package com.polar.shared.ios
 
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.ble.PolarTypeUtils
+import com.polar.shared.pmd.PolarPmdControlPoint
 import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
@@ -180,6 +181,10 @@ object PolarIosSharedBridge {
 
     fun spo2TriggerType(value: Int): String? {
         return PolarSpo2Models.triggerTypeName(value)
+    }
+
+    fun pmdActiveMeasurementIosState(responseByte: Int): String {
+        return PolarPmdControlPoint.parseActiveMeasurement(responseByte).iosStateName
     }
 
     fun planRuntimeCommandQuery(id: String, query: String, parametersCsv: String): String {
