@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public enum PmdMeasurementType: UInt8, CaseIterable, Sendable {
     case ecg = 0
@@ -28,6 +31,12 @@ public enum PmdMeasurementType: UInt8, CaseIterable, Sendable {
     }
     
     static func fromId(id: UInt8) -> PmdMeasurementType {
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarIosSharedBridge.shared.pmdMeasurementTypeName(id: Int32(id)),
+           let sharedType = PmdMeasurementType(sharedName: sharedName) {
+            return sharedType
+        }
+        #endif
         for type in PmdMeasurementType.allCases {
             if (type.rawValue == (id & PmdMeasurementType.MEASUREMENT_BIT_MASK)) {
                 return type
@@ -81,3 +90,40 @@ public enum PmdMeasurementType: UInt8, CaseIterable, Sendable {
         return measurementTypes
     }
 }
+
+#if canImport(PolarBleSdkShared)
+private extension PmdMeasurementType {
+    init?(sharedName: String) {
+        switch sharedName {
+        case "ECG":
+            self = .ecg
+        case "PPG":
+            self = .ppg
+        case "ACC":
+            self = .acc
+        case "PPI":
+            self = .ppi
+        case "GYRO":
+            self = .gyro
+        case "MAG":
+            self = .mgn
+        case "SKIN_TEMP":
+            self = .skinTemperature
+        case "SDK_MODE":
+            self = .sdkMode
+        case "LOCATION":
+            self = .location
+        case "PRESSURE":
+            self = .pressure
+        case "TEMPERATURE":
+            self = .temperature
+        case "OFFLINE_RECORDING":
+            self = .offline_recording
+        case "OFFLINE_HR":
+            self = .offline_hr
+        default:
+            return nil
+        }
+    }
+}
+#endif

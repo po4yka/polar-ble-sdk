@@ -7,6 +7,7 @@ import com.polar.shared.device.PolarDeviceCapabilities
 import com.polar.shared.device.PolarDeviceCapabilitiesConfig
 import com.polar.shared.device.PolarDeviceCapabilityDefaults
 import com.polar.shared.pmd.PolarPmdControlPoint
+import com.polar.shared.pmd.PolarPmdMeasurementTypeName
 import com.polar.shared.pmd.PolarPmdSecret
 import com.polar.shared.pmd.PolarPmdSettingType
 import com.polar.shared.pmd.PolarPmdSettings
@@ -254,6 +255,10 @@ object PolarIosSharedBridge {
 
     fun pmdActiveMeasurementIosState(responseByte: Int): String {
         return PolarPmdControlPoint.parseActiveMeasurement(responseByte).iosStateName
+    }
+
+    fun pmdMeasurementTypeName(id: Int): String? {
+        return PolarPmdMeasurementTypeName.fromMaskedId(id)?.name
     }
 
     fun pmdSelectedSettingsHex(selectedCsv: String): String {

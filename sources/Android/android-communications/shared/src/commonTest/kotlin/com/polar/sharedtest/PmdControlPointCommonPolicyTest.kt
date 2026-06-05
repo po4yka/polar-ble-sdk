@@ -1,12 +1,30 @@
 package com.polar.sharedtest
 
 import com.polar.shared.pmd.PolarPmdControlPoint
+import com.polar.shared.pmd.PolarPmdMeasurementTypeName
 import com.polar.shared.pmd.PolarPmdParseError
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class PmdControlPointCommonPolicyTest {
+    @Test
+    fun pmdMeasurementTypeLookupPreservesRawAndMaskedPolicies() {
+        assertEquals(PolarPmdMeasurementTypeName.ECG, PolarPmdMeasurementTypeName.fromRawValue(0))
+        assertEquals(PolarPmdMeasurementTypeName.ACC, PolarPmdMeasurementTypeName.fromRawValue(2))
+        assertEquals(PolarPmdMeasurementTypeName.GYRO, PolarPmdMeasurementTypeName.fromRawValue(5))
+        assertEquals(PolarPmdMeasurementTypeName.MAG, PolarPmdMeasurementTypeName.fromRawValue(6))
+        assertEquals(PolarPmdMeasurementTypeName.SKIN_TEMP, PolarPmdMeasurementTypeName.fromRawValue(7))
+        assertEquals(PolarPmdMeasurementTypeName.SDK_MODE, PolarPmdMeasurementTypeName.fromRawValue(9))
+        assertEquals(PolarPmdMeasurementTypeName.OFFLINE_RECORDING, PolarPmdMeasurementTypeName.fromRawValue(13))
+        assertEquals(PolarPmdMeasurementTypeName.OFFLINE_HR, PolarPmdMeasurementTypeName.fromRawValue(14))
+        assertNull(PolarPmdMeasurementTypeName.fromRawValue(0xC2))
+        assertEquals(PolarPmdMeasurementTypeName.ACC, PolarPmdMeasurementTypeName.fromMaskedId(0xC2))
+        assertNull(PolarPmdMeasurementTypeName.fromMaskedId(4))
+        assertNull(PolarPmdMeasurementTypeName.fromMaskedId(0xFF))
+    }
+
     @Test
     fun pmdControlPointGoldenVectorsDefineExecutableCommonResponsePolicy() {
         PMD_CONTROL_POINT_VECTORS.forEach { relativePath ->

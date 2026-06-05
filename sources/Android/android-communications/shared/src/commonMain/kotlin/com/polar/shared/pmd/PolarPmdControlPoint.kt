@@ -8,6 +8,34 @@ data class PolarPmdActiveMeasurement(
     val iosStateName: String
 )
 
+enum class PolarPmdMeasurementTypeName(val value: Int) {
+    ECG(0),
+    PPG(1),
+    ACC(2),
+    PPI(3),
+    GYRO(5),
+    MAG(6),
+    SKIN_TEMP(7),
+    SDK_MODE(9),
+    LOCATION(10),
+    PRESSURE(11),
+    TEMPERATURE(12),
+    OFFLINE_RECORDING(13),
+    OFFLINE_HR(14);
+
+    companion object {
+        private const val MEASUREMENT_BIT_MASK = 0x3F
+
+        fun fromRawValue(value: Int): PolarPmdMeasurementTypeName? {
+            return entries.firstOrNull { it.value == value }
+        }
+
+        fun fromMaskedId(value: Int): PolarPmdMeasurementTypeName? {
+            return fromRawValue(value and MEASUREMENT_BIT_MASK)
+        }
+    }
+}
+
 data class PolarPmdControlPointResponse(
     val responseCode: Int,
     val opCodeValue: Int,
@@ -119,22 +147,7 @@ private fun Int.opCodeName(): String {
 }
 
 private fun Int.measurementName(): String {
-    return when (this) {
-        0 -> "ECG"
-        1 -> "PPG"
-        2 -> "ACC"
-        3 -> "PPI"
-        5 -> "GYRO"
-        6 -> "MAG"
-        7 -> "SKIN_TEMP"
-        9 -> "SDK_MODE"
-        10 -> "LOCATION"
-        11 -> "PRESSURE"
-        12 -> "TEMPERATURE"
-        13 -> "OFFLINE_RECORDING"
-        14 -> "OFFLINE_HR"
-        else -> "UNKNOWN"
-    }
+    return PolarPmdMeasurementTypeName.fromRawValue(this)?.name ?: "UNKNOWN"
 }
 
 private fun Int.statusName(): String {
