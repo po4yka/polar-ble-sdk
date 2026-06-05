@@ -18,7 +18,7 @@ internal class GnssLocationData {
     /**
      * GPS Coordinates, Speed, and Distance Data
      */
-    data class GnssCoordinateSample internal constructor(
+    data class GnssCoordinateSample(
         val timeStamp: ULong,
         val latitude: Double,
         val longitude: Double,
@@ -43,7 +43,7 @@ internal class GnssLocationData {
     /**
      * GPS Satellite Dilution, and Altitude Data
      */
-    data class GnssSatelliteDilutionSample internal constructor(
+    data class GnssSatelliteDilutionSample(
         val timeStamp: ULong,
         // dilution distance in 0.01 precision
         val dilution: Float,
@@ -53,7 +53,7 @@ internal class GnssLocationData {
         val fix: Boolean,
     ) : GnssLocationDataSample()
 
-    data class GnssSatelliteSummary internal constructor(
+    data class GnssSatelliteSummary(
         val gpsNbrOfSat: UByte,
         val gpsMaxSnr: UByte,
         val glonassNbrOfSat: UByte,
@@ -69,7 +69,7 @@ internal class GnssLocationData {
     /**
      * GPS Satellite Summary Data
      */
-    data class GnssSatelliteSummarySample internal constructor(
+    data class GnssSatelliteSummarySample(
         val timeStamp: ULong,
         val seenGnssSatelliteSummaryBand1: GnssSatelliteSummary,
         val usedGnssSatelliteSummaryBand1: GnssSatelliteSummary,
@@ -81,7 +81,7 @@ internal class GnssLocationData {
     /**
      *  GPS NMEA Data
      */
-    data class GnssGpsNMEASample internal constructor(
+    data class GnssGpsNMEASample(
         val timeStamp: ULong,
         val measurementPeriod: UInt,
         val messageLength: UInt,
