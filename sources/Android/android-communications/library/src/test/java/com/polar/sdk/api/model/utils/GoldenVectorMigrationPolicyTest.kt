@@ -4332,11 +4332,11 @@ class GoldenVectorMigrationPolicyTest {
             "ScriptedCommonFakeTransport"
         )
         val FAKE_TRANSPORT_COMMON_OFFLINE_TRIGGER_RUNTIME_TEST_REQUIRED_TERMS = listOf(
-            "offlineTriggerRuntimePolicyVectorRunsThroughCommonFakeTransport",
+            "offlineTriggerRuntimePolicyVectorRunsThroughProductionCommonPlanner",
             "offlineTriggerRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/offline-recording/trigger-runtime-policy.json",
             "sdk/offline-recording/trigger-runtime-readiness.json",
-            "ScriptedCommonFakeTransport",
+            "PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime",
             "set-trigger-success-with-secret",
             "set-trigger-mode-error",
             "set-trigger-status-read-error",

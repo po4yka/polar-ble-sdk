@@ -2,9 +2,6 @@ package com.polar.sharedtest
 
 import com.polar.shared.runtime.PolarBackupRestoreFile
 import com.polar.shared.runtime.PolarFirmwareWorkflowScenario
-import com.polar.shared.runtime.PolarOfflineTriggerDesiredFeature
-import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
-import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarPsFtpNotificationPacket
 import com.polar.shared.runtime.PolarPsFtpWriteAckTimeout
 import com.polar.shared.runtime.PolarStoredDataCleanupDateFolder
@@ -50,49 +47,6 @@ class RemainingRuntimeWorkflowPlanningCommonTest {
 
             assertEquals(expected.stringArrayValue("commands"), outcome.commands, scenario.id)
             assertEquals(expected.stringValue("terminal"), outcome.terminal, scenario.id)
-        }
-    }
-
-    @Test
-    fun offlineTriggerVectorsRunThroughProductionCommonPlanner() {
-        val vector = loadGoldenVectorText("sdk/offline-recording/trigger-runtime-policy.json")
-        val input = vector.objectValue("input")
-        val expectedCases = vector.objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
-        val current = input.objectArray("currentDeviceTriggers").map { trigger ->
-            PolarOfflineTriggerDeviceTrigger(
-                type = trigger.stringValue("type"),
-                status = trigger.stringValue("status")
-            )
-        }
-        val desired = input.objectValue("desiredTrigger")
-        val desiredFeatures = desired.objectArray("features").map { feature ->
-            PolarOfflineTriggerDesiredFeature(
-                type = feature.stringValue("type"),
-                hasSelectedSettings = feature.contains("\"selectedSettings\"\\s*:\\s*\\{".toRegex())
-            )
-        }
-        val secretPresent = desired.objectValue("secret").booleanValue("present")
-
-        input.objectArray("scenarios").forEach { scenario ->
-            val transport = scenario.objectValue("transport")
-            val outcome = PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
-                operation = scenario.stringValue("operation"),
-                currentDeviceTriggers = current,
-                desiredMode = desired.stringValue("mode"),
-                desiredFeatures = desiredFeatures,
-                secretPresent = secretPresent,
-                transport = PolarOfflineTriggerTransport(
-                    setMode = transport.optionalStringValue("setMode") ?: "success",
-                    getStatus = transport.optionalStringValue("getStatus") ?: "success",
-                    setSettings = transport.optionalStringValue("setSettings") ?: "success"
-                )
-            )
-            val expected = expectedCases.getValue(scenario.stringValue("id"))
-
-            assertEquals(expected.stringArrayValue("operations"), outcome.commands, scenario.stringValue("id"))
-            assertEquals(expected.stringValue("terminal"), outcome.terminal, scenario.stringValue("id"))
-            expected.optionalStringArrayValue("enabledFeatures")?.let { assertEquals(it, outcome.enabledFeatures, scenario.stringValue("id")) }
-            expected.optionalStringArrayValue("excludedFeatures")?.let { assertEquals(it, outcome.excludedFeatures, scenario.stringValue("id")) }
         }
     }
 
