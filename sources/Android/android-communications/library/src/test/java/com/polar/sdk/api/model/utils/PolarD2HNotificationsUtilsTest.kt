@@ -218,6 +218,16 @@ class PolarD2HNotificationsUtilsTest {
     }
 
     @Test
+    fun `public notification type lookup delegates known ids to shared model and preserves unknown null policy`() {
+        assertEquals(PolarDeviceToHostNotification.FILESYSTEM_MODIFIED, PolarDeviceToHostNotification.fromValue(0))
+        assertEquals(PolarDeviceToHostNotification.SYNC_REQUIRED, PolarDeviceToHostNotification.fromValue(PbPFtpDevToHostNotification.SYNC_REQUIRED.number))
+        assertEquals(PolarDeviceToHostNotification.STOP_GPS_MEASUREMENT, PolarDeviceToHostNotification.fromValue(PbPFtpDevToHostNotification.STOP_GPS_MEASUREMENT.number))
+        assertEquals(PolarDeviceToHostNotification.EXERCISE_STATUS, PolarDeviceToHostNotification.fromValue(19))
+        assertNull(PolarDeviceToHostNotification.fromValue(6))
+        assertNull(PolarDeviceToHostNotification.fromValue(999))
+    }
+
+    @Test
     fun `test filters unknown notification types`() = runTest {
         assertD2HStreamRuntimePolicyVectorContains("unknown-notification-between-known-values-is-filtered")
         // Arrange
