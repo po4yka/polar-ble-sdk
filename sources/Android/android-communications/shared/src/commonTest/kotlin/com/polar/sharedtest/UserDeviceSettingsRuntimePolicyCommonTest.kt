@@ -45,6 +45,21 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
     }
 
     @Test
+    fun userDeviceSettingsRuntimePlannerSupportsDirectWriteFacadePlanning() {
+        val outcome = PolarRuntimeOrchestration.planUserDeviceSettings(
+            PolarUserDeviceSettingsOperation(
+                id = "set-user-device-settings",
+                kind = "write",
+                path = "/U/0/S/UDEVSET.BPB",
+                payloadFields = listOf("protobufPayload=platform-built")
+            )
+        )
+
+        assertEquals(listOf("write:/U/0/S/UDEVSET.BPB", "field:protobufPayload=platform-built"), outcome.commands)
+        assertEquals("success", outcome.terminal)
+    }
+
+    @Test
     fun userDeviceSettingsRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/user-device-settings-runtime/settings-runtime-readiness.json")
         val input = manifest.objectValue("input")

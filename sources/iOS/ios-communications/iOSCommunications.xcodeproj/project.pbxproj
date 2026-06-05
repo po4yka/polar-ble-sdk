@@ -424,6 +424,7 @@
 		AA9903D52F30D1C800FD4744 /* PolarBleLowLevelApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903D42F30D15300FD4744 /* PolarBleLowLevelApi.swift */; };
 		AA9903D62F30D1C800FD4744 /* PolarBleLowLevelApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903D42F30D15300FD4744 /* PolarBleLowLevelApi.swift */; };
 		AA9903D82F30D40C00FD4744 /* PolarFileUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903D72F30D40800FD4744 /* PolarFileUtils.swift */; };
+		AA9903DE2F5B2F0100FD4744 /* PolarRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903DD2F5B2F0100FD4744 /* PolarRuntimePlanner.swift */; };
 		AA9903DA2F30D41800FD4744 /* PolarServiceClientUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903D92F30D41400FD4744 /* PolarServiceClientUtils.swift */; };
 		AA9903DC2F31E92200FD4744 /* PolarFileUtilsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903DB2F31E91900FD4744 /* PolarFileUtilsTest.swift */; };
 		AA99887766554433221100AB /* StreamContinuationList.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA99887766554433221100AA /* StreamContinuationList.swift */; };
@@ -613,6 +614,7 @@
 		A55E08AD2A273C770059E6C7 /* BleHtsClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = BleHtsClient.swift; path = ble/api/model/gatt/client/BleHtsClient.swift; sourceTree = "<group>"; };
 		A55E08B62A29FA560059E6C7 /* BleHtsClientTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleHtsClientTest.swift; sourceTree = "<group>"; };
 		A5743682291A7DB400E901A4 /* PolarTimeUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarTimeUtils.swift; sourceTree = "<group>"; };
+		AA9903DD2F5B2F0100FD4744 /* PolarRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarRuntimePlanner.swift; sourceTree = "<group>"; };
 		A5743686291A825F00E901A4 /* PolarTimeUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarTimeUtilsTests.swift; sourceTree = "<group>"; };
 		A574368C291B81F500E901A4 /* PolarBleSdkTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PolarBleSdkTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A577288D27CE860600855884 /* PolarBleApiImpl.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PolarBleApiImpl.swift; sourceTree = "<group>"; };
@@ -1094,6 +1096,7 @@
 				847D2AFC2F8F7B0700F429E7 /* PolarTestUtils.swift */,
 				AA9903D92F30D41400FD4744 /* PolarServiceClientUtils.swift */,
 				AA9903D72F30D40800FD4744 /* PolarFileUtils.swift */,
+				AA9903DD2F5B2F0100FD4744 /* PolarRuntimePlanner.swift */,
 				AA1234560000000000000001 /* AsyncCombineHelpers.swift */,
 				AA1234560000000000000003 /* BlePsFtpClientCombineBridge.swift */,
 				AA1925482E8A5C030089B841 /* PolarOfflineRecordingUtils.swift */,
@@ -2139,6 +2142,7 @@
 				A57D0513292258D5002824D9 /* PmdMeasurementType.swift in Sources */,
 				6C770B93206B77F300F3D51D /* BleDisClient.swift in Sources */,
 				AA9903D82F30D40C00FD4744 /* PolarFileUtils.swift in Sources */,
+				AA9903DE2F5B2F0100FD4744 /* PolarRuntimePlanner.swift in Sources */,
 				6C770B94206B77F300F3D51D /* BleHrClient.swift in Sources */,
 				A55E08B42A29EB0C0059E6C7 /* BleHtsClient.swift in Sources */,
 				A5DE095C295C10E300BC2E0B /* PmdActiveMeasurement.swift in Sources */,

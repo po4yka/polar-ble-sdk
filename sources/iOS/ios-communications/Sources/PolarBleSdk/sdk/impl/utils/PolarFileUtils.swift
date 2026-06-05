@@ -96,8 +96,14 @@ class PolarFileUtils {
         var operation = Protocol_PbPFtpOperation()
         operation.command = .remove
         operation.path = filePath
+        PolarRuntimePlanner.fileFacade(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
         let request = try operation.serializedData()
-        return try await client.request(request)
+        do {
+            return try await client.request(request)
+        } catch {
+            PolarRuntimePlanner.fileRuntimeError(operation: "removeSingleFile", path: filePath, error: error)
+            throw error
+        }
     }
 
     func removeMultipleFiles(identifier: String, filePaths: [String]) async throws {
@@ -109,10 +115,12 @@ class PolarFileUtils {
             var operation = Protocol_PbPFtpOperation()
             operation.command = .remove
             operation.path = filePath
+            PolarRuntimePlanner.fileFacade(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
             let request = try operation.serializedData()
             do {
                 _ = try await client.request(request)
             } catch {
+                PolarRuntimePlanner.fileRuntimeError(operation: "removeSingleFile", path: filePath, error: error)
                 if case let BlePsFtpException.responseError(code) = error, code == 103 {
                     BleLogger.trace("File not found: \(filePath). Treating as already deleted.")
                     continue
@@ -131,9 +139,11 @@ class PolarFileUtils {
             var operation = Protocol_PbPFtpOperation()
             operation.command = .get
             operation.path = filePath
+            PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: filePath)
             let request = try operation.serializedData()
             return try await client.request(request)
         } catch {
+            PolarRuntimePlanner.fileRuntimeError(operation: "readFile", path: filePath, error: error)
             throw PolarErrors.deviceError(description: "Failed to list files from \(filePath) path. Error \(error)")
         }
     }
@@ -142,6 +152,7 @@ class PolarFileUtils {
         var operation = Protocol_PbPFtpOperation()
         operation.command = .get
         operation.path = path
+        PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
         let request = try operation.serializedData()
         do {
             let data = try await client.request(request)
@@ -160,6 +171,7 @@ class PolarFileUtils {
             }
             return results
         } catch {
+            PolarRuntimePlanner.fileRuntimeError(operation: "listFiles", path: path, error: error)
             throw handleError(error)
         }
     }
@@ -194,9 +206,15 @@ class PolarFileUtils {
         var builder = Protocol_PbPFtpOperation()
         builder.command = .put
         builder.path = filePath
+        PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: fileData.map { String(format: "%02x", $0) }.joined())
         let proto = try builder.serializedData()
         let inputStream = InputStream(data: fileData)
-        for try await _ in client.write(proto as NSData, data: inputStream) {}
+        do {
+            for try await _ in client.write(proto as NSData, data: inputStream) {}
+        } catch {
+            PolarRuntimePlanner.fileRuntimeError(operation: "writeFile", path: filePath, error: error)
+            throw error
+        }
     }
 
     func readFile(identifier: String, filePath: String) async throws -> Data {
