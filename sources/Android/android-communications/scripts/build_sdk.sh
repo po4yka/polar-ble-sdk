@@ -19,9 +19,16 @@ cd $REPOSITORIES_PATH
 
 # clean up
 rm -f $REPOSITORIES_PATH/SdkBuild/polar-ble-sdk.aar
+rm -f $REPOSITORIES_PATH/SdkBuild/polar-ble-sdk-shared.aar
 $REPOSITORIES_PATH/gradlew clean
 
 # build
-$REPOSITORIES_PATH/gradlew assembleSdkRelease
+$REPOSITORIES_PATH/gradlew assembleSdkRelease :shared:bundleAndroidMainAar
 mkdir -p $REPOSITORIES_PATH/SdkBuild
 cp $REPOSITORIES_PATH/library/build/outputs/aar/library-sdk-release.aar $REPOSITORIES_PATH/SdkBuild/polar-ble-sdk.aar
+SHARED_AAR=$(find $REPOSITORIES_PATH/shared/build -name '*.aar' -type f | head -n 1)
+if [ -z "$SHARED_AAR" ]; then
+    echo "ERROR: Shared Android AAR was not produced" >&2
+    exit 1
+fi
+cp "$SHARED_AAR" $REPOSITORIES_PATH/SdkBuild/polar-ble-sdk-shared.aar

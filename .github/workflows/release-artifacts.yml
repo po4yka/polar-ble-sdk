@@ -39,14 +39,14 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build Android release AAR
-        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
-        run: ./gradlew assembleSdkRelease :shared:bundleAndroidMainAar --no-daemon --warning-mode all
+      - name: Verify Android example consumes release AARs
+        run: scripts/verify_android_example_aar_consumption.sh
 
       - name: Stage Android artifacts
         run: |
           mkdir -p /tmp/polar-release-artifacts/android
           cp sources/Android/android-communications/library/build/outputs/aar/library-sdk-release.aar /tmp/polar-release-artifacts/android/polar-ble-sdk.aar
+          cp examples/example-android/polar-sensor-data-collector/polarBleSdk/polar-ble-sdk-shared.aar /tmp/polar-release-artifacts/android/polar-ble-sdk-shared.aar
           find sources/Android/android-communications/shared/build -name '*.aar' -print -exec cp {} /tmp/polar-release-artifacts/android/ \;
 
       - name: Upload Android artifacts

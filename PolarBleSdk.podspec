@@ -17,7 +17,11 @@ Pod::Spec.new do |s|
     s.preserve_paths = 'sources/iOS/ios-communications/scripts/build_kmp_ios_framework.sh'
     s.pod_target_xcconfig = {
         'ENABLE_USER_SCRIPT_SANDBOXING' => 'NO',
-        'FRAMEWORK_SEARCH_PATHS' => '$(inherited) $(PODS_TARGET_SRCROOT)/sources/iOS/ios-communications/Generated/PolarBleSdkShared/$(PLATFORM_NAME)',
+        'FRAMEWORK_SEARCH_PATHS' => '$(inherited) $(PODS_TARGET_SRCROOT)/sources/iOS/ios-communications/Generated/PolarBleSdkShared/$(PLATFORM_NAME) $(PODS_CONFIGURATION_BUILD_DIR)/PolarBleSdkShared',
+        'OTHER_LDFLAGS' => '$(inherited) -framework PolarBleSdkShared'
+    }
+    s.user_target_xcconfig = {
+        'FRAMEWORK_SEARCH_PATHS' => '$(inherited) $(PODS_CONFIGURATION_BUILD_DIR)/PolarBleSdkShared',
         'OTHER_LDFLAGS' => '$(inherited) -framework PolarBleSdkShared'
     }
     s.script_phase = {

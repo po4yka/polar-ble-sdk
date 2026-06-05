@@ -125,3 +125,5 @@ Then, run:
 1. Open your app’s Xcode project or workspace.
 
 2. Select the Swift package’s folder (i.e. `/sources/iOS/ios-communications/`) in Finder and drag it into the Project navigator. This action adds your dependency’s Swift package as a local package to your project.
+
+Swift Package Manager and watchOS builds do not link `PolarBleSdkShared.framework` during the current KMP compatibility phase. They continue to use the Swift fallback implementation guarded by `#if canImport(PolarBleSdkShared)`. Use CocoaPods or the Xcode workspace path when you need the generated shared KMP framework in this phase.

@@ -215,12 +215,11 @@ if (project.hasProperty("artifactoryUser") && project.hasProperty("artifactoryPa
 }
 
 dependencies {
-    // Default: resolve Polar BLE SDK from JitPack (requires internet access).
-    // To use the local AAR bundled with this ZIP, set localSdk=true in gradle.properties.
-    if (localSdk.toBoolean()) {
+    // Release ZIP/AAR consumption: polar-ble-sdk.aar is required and polar-ble-sdk-shared.aar is present once shared KMP runtime slices are adopted.
     implementation files('../polarBleSdk/polar-ble-sdk.aar')
-    } else {
-    implementation files('../polarBleSdk/polar-ble-sdk.aar')
+    def localSharedSdkAar = file('../polarBleSdk/polar-ble-sdk-shared.aar')
+    if (localSharedSdkAar.exists()) {
+        implementation files(localSharedSdkAar)
     }
 
     if (leakCanary.toBoolean()) {
