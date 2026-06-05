@@ -274,6 +274,14 @@ object PolarIosSharedBridge {
         return PolarPmdSecret.strategyNameFromByte(strategyByte)
     }
 
+    fun pmdSettingTypeName(code: Int): String? {
+        return PolarPmdSettingType.fromCode(code)?.name
+    }
+
+    fun pmdSettingTypeCode(name: String): Int? {
+        return runCatching { PolarPmdSettingType.valueOf(name).code }.getOrNull()
+    }
+
     fun watchFaceComplicationName(id: Int): String? {
         return PolarWatchFaceComplicationName.fromId(id)?.name
     }
