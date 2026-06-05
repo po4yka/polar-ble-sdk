@@ -7,7 +7,7 @@ import com.polar.shared.time.PolarTimeUtils
 
 object PolarIosSharedBridge {
     fun isValidDeviceId(deviceId: String): Boolean {
-        return PolarDeviceId.isValid(deviceId)
+        return PolarDeviceId.isValidOrFalse(deviceId)
     }
 
     fun assembleFullDeviceId(deviceId: String): String {
