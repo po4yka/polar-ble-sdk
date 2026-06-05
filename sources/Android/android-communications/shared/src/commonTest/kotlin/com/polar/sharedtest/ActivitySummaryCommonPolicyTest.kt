@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarAutomaticHrTriggerName
+import com.polar.shared.sdk.PolarPpiStatusNames
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -70,6 +72,11 @@ class ActivitySummaryCommonPolicyTest {
         assertEquals(ppiExpectation.intArrayValue("ppiValueList"), cumulativeValues(ppiSample.intArrayValue("ppiDelta")), ppi.stringValue("id"))
         assertEquals(ppiExpectation.intArrayValue("ppiErrorEstimateList"), cumulativeValues(ppiSample.intArrayValue("ppiErrorEstimateDelta")), ppi.stringValue("id"))
         val decodedStatuses = ppiSample.intArrayValue("status").map { decodePpiStatus(it) }
+        assertEquals(
+            listOf("SKIN_CONTACT_DETECTED", "NO_SKIN_CONTACT", "MOVING_DETECTED", "NO_MOVING_DETECTED", "INTERVAL_DENOTES_OFFLINE_PERIOD", "INTERVAL_IS_ONLINE"),
+            PPI_STATUS_POLICY_TERMS,
+            ppi.stringValue("id")
+        )
         val expectedStatuses = ppiExpectation.objectArray("statusList").map { status ->
             PpiStatus(
                 skinContact = status.stringValue("skinContact"),
@@ -152,13 +159,7 @@ class ActivitySummaryCommonPolicyTest {
     }
 
     private fun hrTriggerName(value: Int): String {
-        return when (value) {
-            1 -> "TRIGGER_TYPE_HIGH_ACTIVITY"
-            2 -> "TRIGGER_TYPE_LOW_ACTIVITY"
-            3 -> "TRIGGER_TYPE_TIMED"
-            4 -> "TRIGGER_TYPE_MANUAL"
-            else -> "TRIGGER_TYPE_UNKNOWN"
-        }
+        return PolarAutomaticHrTriggerName.fromValue(value)?.name ?: "TRIGGER_TYPE_UNKNOWN"
     }
 
     private fun cumulativeValues(deltas: List<Int>): List<Int> {
@@ -170,11 +171,8 @@ class ActivitySummaryCommonPolicyTest {
     }
 
     private fun decodePpiStatus(value: Int): PpiStatus {
-        return PpiStatus(
-            skinContact = if ((value and 1) != 0) "SKIN_CONTACT_DETECTED" else "NO_SKIN_CONTACT",
-            movement = if ((value and 2) != 0) "MOVING_DETECTED" else "NO_MOVING_DETECTED",
-            intervalStatus = if ((value and 4) != 0) "INTERVAL_DENOTES_OFFLINE_PERIOD" else "INTERVAL_IS_ONLINE"
-        )
+        val status = PolarPpiStatusNames.fromStatusByte(value) ?: error("Unexpected PPI status $value")
+        return PpiStatus(status.skinContact, status.movement, status.intervalStatus)
     }
 
     private fun dsumPath(requestDate: String): String {
@@ -283,5 +281,6 @@ class ActivitySummaryCommonPolicyTest {
             "compile-verification-gate"
         )
         const val ACTIVITY_SUMMARY_READINESS_COMMON_DECISION = "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, and compile verification remain explicit before production model mapping moves."
+        val PPI_STATUS_POLICY_TERMS = listOf("SKIN_CONTACT_DETECTED", "NO_SKIN_CONTACT", "MOVING_DETECTED", "NO_MOVING_DETECTED", "INTERVAL_DENOTES_OFFLINE_PERIOD", "INTERVAL_IS_ONLINE")
     }
 }

@@ -29,6 +29,9 @@ import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import com.polar.shared.sdk.PolarKvtxMalformedScriptException
 import com.polar.shared.sdk.PolarKvtxScriptCodec
 import com.polar.shared.sdk.PolarOfflineRecordingModels
+import com.polar.shared.sdk.PolarAutomaticHrTriggerName
+import com.polar.shared.sdk.PolarPpiSampleTriggerName
+import com.polar.shared.sdk.PolarPpiStatusNames
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepRatingName
 import com.polar.shared.sdk.PolarSleepWakeStateName
@@ -258,6 +261,20 @@ object PolarIosSharedBridge {
 
     fun sleepRatingName(value: Int): String? {
         return PolarSleepRatingName.fromValue(value)?.name
+    }
+
+    fun automaticHrTriggerName(value: Int): String? {
+        return PolarAutomaticHrTriggerName.fromValue(value)?.name
+    }
+
+    fun ppiSampleTriggerName(value: Int): String? {
+        return PolarPpiSampleTriggerName.fromValue(value)?.name
+    }
+
+    fun ppiStatusNames(statusByte: Int): String? {
+        return PolarPpiStatusNames.fromStatusByte(statusByte)?.let { status ->
+            "${status.skinContact},${status.movement},${status.intervalStatus}"
+        }
     }
 
     fun resolveDeviceCapabilities(

@@ -1,6 +1,11 @@
 package com.polar.sdk.api.model.activity
 
 import com.polar.sdk.impl.utils.PolarTimeUtils
+import com.polar.shared.sdk.PolarPpiIntervalStatusName
+import com.polar.shared.sdk.PolarPpiMovementName
+import com.polar.shared.sdk.PolarPpiSampleTriggerName
+import com.polar.shared.sdk.PolarPpiSkinContactName
+import com.polar.shared.sdk.PolarPpiStatusNames
 import fi.polar.remote.representation.protobuf.AutomaticSamples
 import fi.polar.remote.representation.protobuf.AutomaticSamples.PbPpIntervalAutoSamples.PbPpIntervalRecordingTriggerType
 import java.time.LocalTime
@@ -82,6 +87,9 @@ enum class PPiSampleTriggerType(val value: Int) {
 
     companion object {
         infix fun from(value: PbPpIntervalRecordingTriggerType): PPiSampleTriggerType{
+            PolarPpiSampleTriggerName.fromValue(value.number)?.let { sharedName ->
+                return entries.first { trigger -> trigger.name == sharedName.name }
+            }
             return when(value) {
                 PbPpIntervalRecordingTriggerType.PPI_TRIGGER_TYPE_MANUAL -> TRIGGER_TYPE_MANUAL
                 PbPpIntervalRecordingTriggerType.PPI_TRIGGER_TYPE_AUTOMATIC -> TRIGGER_TYPE_AUTOMATIC
@@ -95,6 +103,13 @@ data class PPiSampleStatus(val skinContact: SkinContact, val movement: Movement,
 
     companion object {
         fun from(value: Int): PPiSampleStatus? {
+            PolarPpiStatusNames.fromStatusByte(value)?.let { shared ->
+                return PPiSampleStatus(
+                    skinContact = SkinContact.valueOf(shared.skinContact),
+                    movement = Movement.valueOf(shared.movement),
+                    intervalStatus = IntervalStatus.valueOf(shared.intervalStatus)
+                )
+            }
             val binary = Integer.toBinaryString((1 shl 3) or `value`).substring(1)
             // Start reading the binary from LSB (from the right side end of the string)
             return SkinContact.from(Integer.valueOf(binary[2].toString()))?.let {
@@ -118,7 +133,9 @@ enum class SkinContact(val value: Int) {
 
     companion object {
         infix fun from(value: Int): SkinContact? =
-            SkinContact.values().firstOrNull { it.value == value }
+            PolarPpiSkinContactName.fromValue(value)?.let { sharedName ->
+                entries.firstOrNull { status -> status.name == sharedName.name }
+            } ?: entries.firstOrNull { it.value == value }
     }
 }
 
@@ -128,7 +145,9 @@ enum class Movement(val value: Int) {
 
     companion object {
         infix fun from(value: Int): Movement? =
-            Movement.values().firstOrNull { it.value == value }
+            PolarPpiMovementName.fromValue(value)?.let { sharedName ->
+                entries.firstOrNull { status -> status.name == sharedName.name }
+            } ?: entries.firstOrNull { it.value == value }
     }
 }
 
@@ -138,7 +157,8 @@ enum class IntervalStatus(val value: Int) {
 
     companion object {
         infix fun from(value: Int): IntervalStatus? =
-            IntervalStatus.values().firstOrNull { it.value == value }
+            PolarPpiIntervalStatusName.fromValue(value)?.let { sharedName ->
+                entries.firstOrNull { status -> status.name == sharedName.name }
+            } ?: entries.firstOrNull { it.value == value }
     }
 }
-
