@@ -8,6 +8,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpU
 import com.polar.sdk.api.PolarD2HNotificationData
 import com.polar.sdk.api.PolarDeviceToHostNotification
 import com.polar.sdk.impl.utils.observeDeviceToHostNotifications
+import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
@@ -463,6 +464,11 @@ class PolarD2HNotificationsUtilsTest {
                 }
                 if (!expectedEvent.has("parametersHex") && !input.has("notifications")) {
                     assertArrayEquals(caseId, input.get("parametersHex").asString.hexToByteArray(), result.parameters)
+                }
+                val parametersHex = expectedEvent.get("parametersHex")?.asString ?: input.get("parametersHex")?.asString ?: ""
+                val sharedProtoName = PolarD2hRuntimePlanning.parsedProtoName(expectedEvent.get("notificationType").asString, parametersHex)
+                if (sharedProtoName != null) {
+                    assertEquals(caseId, expectedEvent.get("parsedProto").asString, sharedProtoName)
                 }
                 assertParsedParameters(caseId, expectedEvent, result.parsedParameters)
             }
