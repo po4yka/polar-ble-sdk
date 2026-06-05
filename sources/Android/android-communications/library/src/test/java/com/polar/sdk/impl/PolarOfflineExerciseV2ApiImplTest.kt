@@ -405,6 +405,24 @@ class PolarOfflineExerciseV2ApiImplTest {
     }
 
     @Test
+    fun `offline exercise file headers use shared file facade planning`() {
+        val path = "/U/0/20260225/E/123456/SAMPLES.BPB"
+
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to path,
+            PolarOfflineExerciseV2ApiImpl.offlineExerciseFetchOperation(path)
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.REMOVE to path,
+            PolarOfflineExerciseV2ApiImpl.offlineExerciseRemoveOperation(path)
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/DEVICE.BPB",
+            PolarOfflineExerciseV2ApiImpl.offlineExerciseDeviceInfoReadOperation()
+        )
+    }
+
+    @Test
     fun `test StartResult enum values`() {
         // Arrange
         // Act

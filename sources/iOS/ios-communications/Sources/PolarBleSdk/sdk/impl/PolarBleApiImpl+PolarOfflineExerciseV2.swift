@@ -4,6 +4,31 @@ import SwiftProtobuf
 extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
 
     private static let samplesFile = "SAMPLES.BPB"
+    private static let deviceInfoPath = "/DEVICE.BPB"
+
+    static func offlineExerciseFetchOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return offlineExerciseFileOperation(id: "offline-exercise-fetch", command: "GET", path: path)
+    }
+
+    static func offlineExerciseRemoveOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return offlineExerciseFileOperation(id: "offline-exercise-remove", command: "REMOVE", path: path)
+    }
+
+    static func offlineExerciseDeviceInfoReadOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return offlineExerciseFileOperation(id: "offline-exercise-read-device-info", command: "GET", path: deviceInfoPath)
+    }
+
+    private static func offlineExerciseFileOperation(id: String, command: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
+            return plannedOperation
+        }
+        switch command {
+        case "REMOVE":
+            return (.remove, path)
+        default:
+            return (.get, path)
+        }
+    }
 
     private func handleError(_ error: Error) -> Error {
         let nsError = error as NSError
@@ -96,9 +121,10 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
             guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                 throw PolarErrors.serviceNotFound
             }
+            let fetchOperation = Self.offlineExerciseFetchOperation(path: entry.path)
             var operation = Protocol_PbPFtpOperation()
-            operation.command = .get
-            operation.path = entry.path
+            operation.command = fetchOperation.command
+            operation.path = fetchOperation.path
             let response = try await client.request(try operation.serializedBytes())
             let samples = try Data_PbExerciseSamples(serializedBytes: Data(response))
             if samples.hasRrSamples {
@@ -117,9 +143,10 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
             guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                 throw PolarErrors.serviceNotFound
             }
+            let removeOperation = Self.offlineExerciseRemoveOperation(path: entry.path)
             var operation = Protocol_PbPFtpOperation()
-            operation.command = .remove
-            operation.path = entry.path
+            operation.command = removeOperation.command
+            operation.path = removeOperation.path
             _ = try await client.request(try operation.serializedBytes())
         } catch {
             throw handleError(error)
@@ -144,9 +171,10 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
     }
 
     private func checkDmExerciseSupport(_ client: BlePsFtpClient) async throws -> Bool {
+        let deviceInfoOperation = Self.offlineExerciseDeviceInfoReadOperation()
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = "/DEVICE.BPB"
+        operation.command = deviceInfoOperation.command
+        operation.path = deviceInfoOperation.path
         do {
             let response = try await client.request(try operation.serializedBytes())
             let deviceInfo = try Data_PbDeviceInfo(serializedBytes: Data(response))

@@ -280,6 +280,22 @@ final class PolarOfflineExerciseV2Tests: XCTestCase {
         XCTAssertEqual(data.length, 0)
     }
 
+    func testOfflineExerciseFileHeadersUseSharedFileFacadePlanning() {
+        let path = "/U/0/20260225/E/123456/SAMPLES.BPB"
+
+        let fetchOperation = PolarBleApiImpl.offlineExerciseFetchOperation(path: path)
+        XCTAssertEqual(fetchOperation.command, .get)
+        XCTAssertEqual(fetchOperation.path, path)
+
+        let removeOperation = PolarBleApiImpl.offlineExerciseRemoveOperation(path: path)
+        XCTAssertEqual(removeOperation.command, .remove)
+        XCTAssertEqual(removeOperation.path, path)
+
+        let deviceInfoOperation = PolarBleApiImpl.offlineExerciseDeviceInfoReadOperation()
+        XCTAssertEqual(deviceInfoOperation.command, .get)
+        XCTAssertEqual(deviceInfoOperation.path, "/DEVICE.BPB")
+    }
+
     func test_exerciseEntry_path_structure() throws {
         // Arrange
         let entryPath = "/U/0/20260225/SAMPLES.BPB"
