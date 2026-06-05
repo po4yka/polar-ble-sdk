@@ -2,6 +2,9 @@
 
 import Foundation
 import zlib
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
 
@@ -36,7 +39,7 @@ internal class PolarTrainingSessionUtils {
         
         for (path, size) in entries {
             let fileName = (path as NSString).lastPathComponent
-            if let dataType = PolarTrainingSessionDataTypes(rawValue: fileName) {
+            if let dataType = PolarTrainingSessionDataTypes.fromSharedOrRaw(fileName: fileName) {
                 let regex = try! NSRegularExpression(pattern: "/U/0/(\\d{8})/E/(\\d{6})/TSESS.BPB$")
                 if let match = regex.firstMatch(in: path, range: NSRange(path.startIndex..., in: path)) {
                     let dateStr = String(path[Range(match.range(at: 1), in: path)!])
@@ -63,7 +66,7 @@ internal class PolarTrainingSessionUtils {
                         }
                     }
                 }
-            } else if let exerciseDataType = PolarExerciseDataTypes(rawValue: fileName) {
+            } else if let exerciseDataType = PolarExerciseDataTypes.fromSharedOrRaw(fileName: fileName) {
                 let regex = try! NSRegularExpression(pattern: "/U/0/(\\d{8})/E/(\\d{6})/(\\d{2})/\(exerciseDataType.rawValue)$")
                 if let match = regex.firstMatch(in: path, range: NSRange(path.startIndex..., in: path)) {
                     let dateStr = String(path[Range(match.range(at: 1), in: path)!])
@@ -258,5 +261,48 @@ internal class PolarTrainingSessionUtils {
             }
         }
         return results
+    }
+}
+
+private extension PolarTrainingSessionDataTypes {
+    static func fromSharedOrRaw(fileName: String) -> PolarTrainingSessionDataTypes? {
+        #if canImport(PolarBleSdkShared)
+        if let sharedType = PolarIosSharedBridge.shared.trainingSessionDataType(fileName: fileName) {
+            return fromSharedTypeName(sharedType)
+        }
+        #endif
+        return PolarTrainingSessionDataTypes(rawValue: fileName)
+    }
+
+    static func fromSharedTypeName(_ value: String) -> PolarTrainingSessionDataTypes? {
+        switch value {
+        case "TRAINING_SESSION_SUMMARY": return .trainingSessionSummary
+        default: return nil
+        }
+    }
+}
+
+private extension PolarExerciseDataTypes {
+    static func fromSharedOrRaw(fileName: String) -> PolarExerciseDataTypes? {
+        #if canImport(PolarBleSdkShared)
+        if let sharedType = PolarIosSharedBridge.shared.trainingSessionExerciseDataType(fileName: fileName) {
+            return fromSharedTypeName(sharedType)
+        }
+        #endif
+        return PolarExerciseDataTypes(rawValue: fileName)
+    }
+
+    static func fromSharedTypeName(_ value: String) -> PolarExerciseDataTypes? {
+        switch value {
+        case "EXERCISE_SUMMARY": return .exerciseSummary
+        case "ROUTE": return .route
+        case "ROUTE_GZIP": return .routeGzip
+        case "ROUTE_ADVANCED_FORMAT": return .routeAdvancedFormat
+        case "ROUTE_ADVANCED_FORMAT_GZIP": return .routeAdvancedFormatGzip
+        case "SAMPLES": return .samples
+        case "SAMPLES_GZIP": return .samplesGzip
+        case "SAMPLES_ADVANCED_FORMAT_GZIP": return .samplesAdvancedFormatGzip
+        default: return nil
+        }
     }
 }

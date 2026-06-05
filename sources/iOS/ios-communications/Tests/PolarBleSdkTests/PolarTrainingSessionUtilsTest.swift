@@ -18,6 +18,33 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         cancellables.removeAll()
     }
 
+    func testTrainingSessionFileClassificationUsesSharedBridgeWhenLinked() async throws {
+        let date = "20250101"
+        let time = "123000"
+        let responses: [String: [Protocol_PbPFtpEntry]] = [
+            "/U/0/": [.with { $0.name = "\(date)/"; $0.size = 0 }],
+            "/U/0/\(date)/": [.with { $0.name = "E/"; $0.size = 0 }],
+            "/U/0/\(date)/E/": [.with { $0.name = "\(time)/"; $0.size = 0 }],
+            "/U/0/\(date)/E/\(time)/": [
+                .with { $0.name = "TSESS.BPB"; $0.size = 1024 },
+                .with { $0.name = "00/"; $0.size = 0 }
+            ],
+            "/U/0/\(date)/E/\(time)/00/": [
+                .with { $0.name = "BASE.BPB"; $0.size = 2048 },
+                .with { $0.name = "SAMPLES2.GZB"; $0.size = 4096 }
+            ]
+        ]
+        mockClient.requestReturnValueClosure = { header in
+            let op = try Protocol_PbPFtpOperation(serializedBytes: header)
+            return try Protocol_PbPFtpDirectory.with { $0.entries = responses[op.path, default: []] }.serializedData()
+        }
+
+        let references = try await PolarTrainingSessionUtils.getTrainingSessionReferences(client: mockClient)
+
+        XCTAssertEqual(references.first?.trainingDataTypes, [.trainingSessionSummary])
+        XCTAssertEqual(references.first?.exercises.first?.exerciseDataTypes, [.exerciseSummary, .samplesAdvancedFormatGzip])
+    }
+
     // MARK: - Helpers
 
     private func awaitFirst<T>(_ publisher: AnyPublisher<T, Error>, timeout: TimeInterval = 5) throws -> T? {
