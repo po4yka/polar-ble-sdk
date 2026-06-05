@@ -9,8 +9,10 @@ import com.polar.sdk.api.model.trainingsession.PolarExerciseDataTypes
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSession
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionDataTypes
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionReference
+import com.polar.shared.sdk.PolarTrainingExerciseReference as SharedPolarTrainingExerciseReference
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
+import com.polar.shared.sdk.PolarTrainingSessionReference as SharedPolarTrainingSessionReference
 import fi.polar.remote.representation.protobuf.ExerciseSamples
 import fi.polar.remote.representation.protobuf.ExerciseSamples2
 import fi.polar.remote.representation.protobuf.Training
@@ -38,6 +40,10 @@ internal object PolarTrainingSessionUtils {
 
     internal fun trainingSessionExerciseFileReadOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
         return trainingSessionFileOperation("training-session-read-exercise-file", "GET", path)
+    }
+
+    internal fun trainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference): List<String> {
+        return PolarTrainingSessionModels.payloadFetchOrder(reference.toSharedReference())
     }
 
     internal fun trainingSessionDeleteParentReadOperation(reference: PolarTrainingSessionReference): Pair<PftpRequest.PbPFtpOperation.Command, String> {
@@ -154,20 +160,29 @@ internal object PolarTrainingSessionUtils {
         val sessionSummary = TrainingSession.PbTrainingSession.parseFrom(response.toByteArray())
         BleLogger.d(TAG, "Session summary received, processing ${reference.exercises.size} exercises")
 
-        val exercises = reference.exercises.map { fetchExerciseData(client, it) }
+        val payloadFetchOrder = trainingSessionPayloadFetchOrder(reference)
+        val exercises = reference.exercises.map { fetchExerciseData(client, it, payloadFetchOrder) }
         BleLogger.d(TAG, "All exercises combined: ${exercises.size}")
         return PolarTrainingSession(reference, sessionSummary, exercises)
     }
 
     private suspend fun fetchExerciseData(
         client: BlePsFtpClient,
-        exercise: PolarExercise
+        exercise: PolarExercise,
+        payloadFetchOrder: List<String>
     ): PolarExercise {
         BleLogger.d(TAG, "Fetching exercise ${exercise.index} data, path: ${exercise.path}")
         val basePath = exercise.path.substringBeforeLast("/")
+        val dataTypesByFileName = exercise.exerciseDataTypes.associateBy { dataType -> dataType.deviceFileName }
+        val plannedFilePaths = payloadFetchOrder
+            .filter { path -> path.startsWith("$basePath/") }
+            .filter { path -> dataTypesByFileName.containsKey(path.substringAfterLast("/")) }
+        val fallbackFilePaths = exercise.exerciseDataTypes
+            .map { dataType -> "$basePath/${dataType.deviceFileName}" }
+            .filterNot { path -> plannedFilePaths.contains(path) }
 
-        val results = exercise.exerciseDataTypes.map { dataType ->
-            val filePath = "$basePath/${dataType.deviceFileName}"
+        val results = (plannedFilePaths + fallbackFilePaths).map { filePath ->
+            val dataType = dataTypesByFileName.getValue(filePath.substringAfterLast("/"))
             BleLogger.d(TAG, "  Fetching file: $filePath")
             val readOperation = trainingSessionExerciseFileReadOperation(filePath)
             val operation = PftpRequest.PbPFtpOperation.newBuilder()
@@ -269,5 +284,24 @@ internal object PolarTrainingSessionUtils {
             BleLogger.e(TAG, "Failed to delete: ${throwable.message}")
             throw throwable
         }
+    }
+
+    private fun PolarTrainingSessionReference.toSharedReference(): SharedPolarTrainingSessionReference {
+        return SharedPolarTrainingSessionReference(
+            dateTime = date.toString(),
+            date = date.toString(),
+            path = path,
+            trainingDataTypes = trainingDataTypes.map { dataType -> dataType.name },
+            exercises = exercises.map { exercise ->
+                SharedPolarTrainingExerciseReference(
+                    index = exercise.index,
+                    androidPath = exercise.path,
+                    iosPath = exercise.path.substringBeforeLast("/"),
+                    exerciseDataTypes = exercise.exerciseDataTypes.map { dataType -> dataType.name },
+                    fileSizes = exercise.fileSizes
+                )
+            },
+            fileSize = fileSize
+        )
     }
 }

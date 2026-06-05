@@ -75,6 +75,45 @@ class PolarTrainingSessionUtilsTest {
     }
 
     @Test
+    fun `training session payload fetch order uses shared planner`() {
+        val reference = PolarTrainingSessionReference(
+            date = LocalDate.of(2026, 1, 2),
+            path = "/U/0/20260102/E/123456/TSESS.BPB",
+            trainingDataTypes = listOf(PolarTrainingSessionDataTypes.TRAINING_SESSION_SUMMARY),
+            exercises = listOf(
+                PolarExercise(
+                    index = 0,
+                    path = "/U/0/20260102/E/123456/00/BASE.BPB",
+                    exerciseDataTypes = listOf(
+                        PolarExerciseDataTypes.EXERCISE_SUMMARY,
+                        PolarExerciseDataTypes.ROUTE,
+                        PolarExerciseDataTypes.ROUTE_GZIP,
+                        PolarExerciseDataTypes.SAMPLES_ADVANCED_FORMAT_GZIP
+                    ),
+                    fileSizes = mapOf(
+                        "BASE.BPB" to 10L,
+                        "ROUTE.BPB" to 20L,
+                        "ROUTE.GZB" to 30L,
+                        "SAMPLES2.GZB" to 40L
+                    )
+                )
+            ),
+            fileSize = 100L
+        )
+
+        assertEquals(
+            listOf(
+                "/U/0/20260102/E/123456/TSESS.BPB",
+                "/U/0/20260102/E/123456/00/BASE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.GZB",
+                "/U/0/20260102/E/123456/00/SAMPLES2.GZB"
+            ),
+            PolarTrainingSessionUtils.trainingSessionPayloadFetchOrder(reference)
+        )
+    }
+
+    @Test
     fun `getTrainingSessionReferences() should return all training session references`() = runTest {
         // Arrange
         val client = mockk<BlePsFtpClient>()
