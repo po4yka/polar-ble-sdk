@@ -2033,6 +2033,8 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["acc"]))
         XCTAssertEqual("success", PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "completed"], firmwareFiles: ["BTUPDAT.BIN", "SYSUPDAT.IMG"]))
         XCTAssertEqual("success", PolarRuntimePlanner.backupRestore(path: "/U/0/BACKUP.TXT", payloadHex: "0102"))
+        XCTAssertEqual(.put, PolarRuntimePlanner.backupRestoreOperation(path: "/U/0/BACKUP.TXT", payloadHex: "0102")?.command)
+        XCTAssertEqual("/U/0/BACKUP.TXT", PolarRuntimePlanner.backupRestoreOperation(path: "/U/0/BACKUP.TXT", payloadHex: "0102")?.path)
         XCTAssertEqual("success", PolarRuntimePlanner.psFtpWriteAck(payloadSize: 2))
         XCTAssertEqual("gattDisconnected", PolarRuntimePlanner.streamSubscription(target: "stream", startConnected: false, checkConnection: true))
         XCTAssertEqual("stream", PolarRuntimePlanner.streamConsumerCancellation(target: "stream"))

@@ -168,6 +168,12 @@ enum PolarRuntimePlanner {
         }
     }
 
+    private static func backupRestoreOperation(_ plannedOperation: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
+        let parts = plannedOperation.split(separator: ":", maxSplits: 2).map(String.init)
+        guard parts.count == 3, parts[0] == "PUT" else { return nil }
+        return (.put, parts[1])
+    }
+
     @discardableResult
     static func restFacadeGet(id: String, path: String, payloadShape: String) -> String {
         #if canImport(PolarBleSdkShared)
@@ -291,6 +297,14 @@ enum PolarRuntimePlanner {
         return PolarIosSharedBridge.shared.planRuntimeBackupRestore(path: path, payloadHex: payloadHex, writeResult: writeResult)
         #else
         return "platform-owned"
+        #endif
+    }
+
+    static func backupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success") -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
+        #if canImport(PolarBleSdkShared)
+        return backupRestoreOperation(PolarIosSharedBridge.shared.planRuntimeBackupRestoreOperation(path: path, payloadHex: payloadHex, writeResult: writeResult))
+        #else
+        return nil
         #endif
     }
 

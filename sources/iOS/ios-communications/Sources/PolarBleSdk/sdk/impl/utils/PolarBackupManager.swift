@@ -100,9 +100,12 @@ public class PolarBackupManager {
             BleLogger.trace("Restoring: \(backupFileData.fileName)")
             do {
                 var operation = Protocol_PbPFtpOperation()
-                operation.command = .put
-                operation.path = backupFileData.directory + backupFileData.fileName
-                PolarRuntimePlanner.backupRestore(path: operation.path, payloadHex: backupFileData.data.map { String(format: "%02x", $0) }.joined())
+                let restorePath = backupFileData.directory + backupFileData.fileName
+                let payloadHex = backupFileData.data.map { String(format: "%02x", $0) }.joined()
+                let plannedOperation = PolarRuntimePlanner.backupRestoreOperation(path: restorePath, payloadHex: payloadHex)
+                operation.command = plannedOperation?.command ?? .put
+                operation.path = plannedOperation?.path ?? restorePath
+                PolarRuntimePlanner.backupRestore(path: restorePath, payloadHex: payloadHex)
                 let header = try operation.serializedData() as NSData
                 let dataStream = InputStream(data: backupFileData.data)
                 for try await bytes in client.write(header, data: dataStream) {

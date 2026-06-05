@@ -1165,6 +1165,19 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun planRuntimeBackupRestoreOperation(path: String, payloadHex: String, writeResult: String): String {
+        return PolarWorkflowRuntimePlanning.planBackupRestore(
+            listOf(
+                PolarBackupRestoreFile(
+                    directory = path.substringBeforeLast('/', missingDelimiterValue = "") + "/",
+                    fileName = path.substringAfterLast('/'),
+                    dataHex = payloadHex,
+                    writeResult = writeResult
+                )
+            )
+        ).commands.firstOrNull { command -> command.startsWith("PUT:") }.orEmpty()
+    }
+
     fun defaultBackupPathsCsv(): String {
         return PolarWorkflowRuntimePlanning.defaultBackupPaths().joinToString(",")
     }
