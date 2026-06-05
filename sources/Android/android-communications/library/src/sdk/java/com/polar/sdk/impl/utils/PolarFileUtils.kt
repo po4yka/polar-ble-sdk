@@ -39,6 +39,7 @@ internal object PolarFileUtils {
         return try {
             client.request(builder.build().toByteArray())
         } catch (error: Throwable) {
+            PolarRuntimePlannerAdapter.planFileRuntimeError("removeSingleFile", filePath, error)
             BleLogger.d(tag, "An error occurred while trying to remove $filePath, error: $error")
             throw handleError(error)
         }
@@ -163,6 +164,7 @@ internal object PolarFileUtils {
                 }
             BleLogger.d(tag, "pFtpWriteOperation client write completed for $path")
         } catch (error: Throwable) {
+            PolarRuntimePlannerAdapter.planFileRuntimeError("writeFile", path, error)
             BleLogger.e(tag, "pFtpWriteOperation() client write $path error: $error")
             throw error
         }
@@ -207,6 +209,7 @@ internal object PolarFileUtils {
             BleLogger.d(tag, "readFile at path filePath $filePath")
             data.toByteArray()
         } catch (throwable: Throwable) {
+            PolarRuntimePlannerAdapter.planFileRuntimeError("readFile", filePath, throwable)
             throw handleError(throwable)
         }
     }
@@ -267,6 +270,7 @@ internal object PolarFileUtils {
             client.request(builder.build().toByteArray())
             BleLogger.d(tag, "All items successfully removed from filePath $filePath from device $identifier.")
         } catch (error: Throwable) {
+            PolarRuntimePlannerAdapter.planFileRuntimeError("removeSingleFile", filePath, error)
             BleLogger.d(tag, "Error while trying to remove item from filePath $filePath from device $identifier, error: $error.")
             throw handleError(error)
         }

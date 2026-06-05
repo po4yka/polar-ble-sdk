@@ -84,6 +84,7 @@ import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarSecretToPmdSecret
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarSettingsToPmdSettings
 import com.polar.sdk.impl.utils.PolarFirmwareUpdateUtils
 import com.polar.sdk.impl.utils.PolarOfflineRecordingUtils
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.receiveRestApiEvents
 import com.polar.sdk.impl.utils.observeDeviceToHostNotifications
 import fi.polar.remote.representation.protobuf.AutomaticSamples.PbAutomaticSampleSessions
@@ -460,6 +461,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         BleLogger.d(TAG, "set local time to $localTime device $identifier")
         val pbLocalTime = javaLocalDateTimeToPbPftpSetLocalTime(localTime)
+        when (getFileSystemType(session.polarDeviceType)) {
+            FileSystemType.POLAR_FILE_SYSTEM_V2 -> PolarRuntimePlannerAdapter.planSetLocalTimeV2(localTime.hour, localTime.hour)
+            FileSystemType.H10_FILE_SYSTEM -> PolarRuntimePlannerAdapter.planSetLocalTimeH10(localTime.hour)
+            else -> Unit
+        }
         try {
             setSystemTime(client, localTime)
         } catch (ignored: Throwable) {
@@ -489,6 +495,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
 
         BleLogger.d(TAG, "get local time from device $identifier")
+        PolarRuntimePlannerAdapter.planDiskTimeQuery("get-local-time", "GET_LOCAL_TIME")
         return try {
             val result = client.query(PftpRequest.PbPFtpQuery.GET_LOCAL_TIME_VALUE, null)
             val dateTime = PftpRequest.PbPFtpSetLocalTimeParams.parseFrom(result.toByteArray())
@@ -508,6 +515,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
 
         BleLogger.d(TAG, "get local time with zone from device $identifier")
+        PolarRuntimePlannerAdapter.planDiskTimeQuery("get-local-time-with-zone", "GET_LOCAL_TIME")
         return try {
             val result = client.query(PftpRequest.PbPFtpQuery.GET_LOCAL_TIME_VALUE, null)
             val dateTime = PftpRequest.PbPFtpSetLocalTimeParams.parseFrom(result.toByteArray())
@@ -756,6 +764,15 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             .setSampleType(pbSampleType)
             .setRecordingInterval(duration)
             .build()
+        PolarRuntimePlannerAdapter.planCommandQuery(
+            id = "h10-start-recording",
+            query = "REQUEST_START_RECORDING",
+            parameters = listOf(
+                "sampleDataIdentifier=$exerciseId",
+                "sampleType=${pbSampleType.name}",
+                "recordingIntervalSeconds=$recordingInterval"
+            )
+        )
         try {
             client.query(
                 PftpRequest.PbPFtpQuery.REQUEST_START_RECORDING_VALUE,
@@ -771,6 +788,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         if (!isRecordingSupported(session.polarDeviceType)) throw PolarOperationNotSupported()
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
+        PolarRuntimePlannerAdapter.planCommandQuery("h10-stop-recording", "REQUEST_STOP_RECORDING")
         try {
             client.query(PftpRequest.PbPFtpQuery.REQUEST_STOP_RECORDING_VALUE, null)
         } catch (throwable: Throwable) {
@@ -783,6 +801,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         if (!isRecordingSupported(session.polarDeviceType)) throw PolarOperationNotSupported()
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
+        PolarRuntimePlannerAdapter.planCommandQuery("h10-recording-status", "REQUEST_RECORDING_STATUS")
         return try {
             val byteArrayOutputStream = client.query(PftpRequest.PbPFtpQuery.REQUEST_RECORDING_STATUS_VALUE, null)
             val result = PbRequestRecordingStatusResult.parseFrom(byteArrayOutputStream.toByteArray())
@@ -1516,6 +1535,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
+        PolarRuntimePlannerAdapter.planDiskTimeQuery("get-disk-space", "GET_DISK_SPACE")
         return try {
             val result = client.query(PftpRequest.PbPFtpQuery.GET_DISK_SPACE_VALUE, null)
             val proto = PftpResponse.PbPFtpDiskSpaceResult.parseFrom(result.toByteArray())
@@ -1543,12 +1563,14 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     override suspend fun listRestApiServices(identifier: String): PolarDeviceRestApiServices {
+        PolarRuntimePlannerAdapter.planRestFacadeGet("list-rest-api-services-success", "/REST/SERVICE.API", "service-list-json")
         val byteArray = getFile(identifier = identifier, path = "/REST/SERVICE.API")
         val map: Map<String, Any> = Gson().fromJson(byteArray.toString(Charsets.UTF_8), object: TypeToken<Map<String,Any>>() {}.type)
         return PolarDeviceRestApiServices(map)
     }
 
     override suspend fun getRestApiDescription(identifier: String, path: String): PolarDeviceRestApiServiceDescription {
+        PolarRuntimePlannerAdapter.planRestFacadeGet("get-rest-api-description-success", path, "service-description-json")
         val map = getJSONMapFromPath(identifier = identifier, path = path)
         return PolarDeviceRestApiServiceDescription(map)
     }
@@ -1574,6 +1596,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
         return when (getFileSystemType(session.polarDeviceType)) {
             FileSystemType.POLAR_FILE_SYSTEM_V2 -> {
+                PolarRuntimePlannerAdapter.planFileFacade("read-low-level-file-success", "GET", path)
                 val builder = PftpRequest.PbPFtpOperation.newBuilder()
                 builder.command = PftpRequest.PbPFtpOperation.Command.GET
                 builder.path = path
@@ -1623,6 +1646,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val params = PftpNotification.PbPFtpFactoryResetParams.newBuilder()
         params.sleep = false
         params.otaFwupdate = preservePairingInformation
+        PolarRuntimePlannerAdapter.planCommandReset("factory-reset-preserve-pairing", sleep = false, factoryDefaults = true, otaFirmwareUpdate = preservePairingInformation)
         BleLogger.d(TAG, "send factory reset notification to device $identifier")
         client.sendNotification(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal, params.build().toByteArray())
     }
@@ -1633,6 +1657,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
         val params = PftpNotification.PbPFtpFactoryResetParams.newBuilder()
         params.sleep = false
+        PolarRuntimePlannerAdapter.planCommandReset("factory-reset", sleep = false, factoryDefaults = true, otaFirmwareUpdate = false)
         BleLogger.d(TAG, "send factory reset notification to device $identifier")
         client.sendNotification(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal, params.build().toByteArray())
     }
@@ -1644,6 +1669,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val params = PftpNotification.PbPFtpFactoryResetParams.newBuilder()
         params.sleep = false
         params.doFactoryDefaults = false
+        PolarRuntimePlannerAdapter.planCommandReset("restart", sleep = false, factoryDefaults = false, otaFirmwareUpdate = false)
         BleLogger.d(TAG, "send restart notification to device $identifier")
         client.sendNotification(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal, params.build().toByteArray())
     }
@@ -1822,14 +1848,17 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     override suspend fun readFile(identifier: String, filePath: String): ByteArray? {
+        PolarRuntimePlannerAdapter.planFileFacade("read-low-level-file-success", "GET", filePath)
         return PolarFileUtils.readFile(identifier, filePath, listener, TAG)
     }
 
     override suspend fun writeFile(identifier: String, filePath: String, fileData: ByteArray) {
+        PolarRuntimePlannerAdapter.planFileFacade("write-low-level-file-success", "PUT", filePath, fileData.joinToString("") { "%02x".format(it.toInt() and 0xff) })
         PolarFileUtils.writeFile(identifier, filePath, listener, fileData, TAG)
     }
 
     override suspend fun deleteFileOrDirectory(identifier: String, filePath: String) {
+        PolarRuntimePlannerAdapter.planFileFacade("delete-low-level-file-success", "REMOVE", filePath)
         PolarFileUtils.removeFileOrDirectory(identifier, filePath, listener, TAG)
     }
 
@@ -1877,6 +1906,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val params = PftpNotification.PbPFtpFactoryResetParams.newBuilder()
         params.sleep = true
         params.doFactoryDefaults = true
+        PolarRuntimePlannerAdapter.planCommandReset("warehouse-sleep", sleep = true, factoryDefaults = true, otaFirmwareUpdate = false)
         BleLogger.d(TAG, "send factory reset notification to device $identifier and set warehouse sleep setting to true")
         client.sendNotification(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal, params.build().toByteArray())
     }
@@ -1888,6 +1918,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val params = PftpNotification.PbPFtpFactoryResetParams.newBuilder()
         params.sleep = true
         params.doFactoryDefaults = false
+        PolarRuntimePlannerAdapter.planCommandReset("turn-device-off", sleep = true, factoryDefaults = false, otaFirmwareUpdate = false)
         BleLogger.d(TAG, "turn off device device $identifier by setting sleep setting to true and disconnecting from device.")
         client.sendNotification(PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal, params.build().toByteArray())
     }
@@ -2681,6 +2712,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         }
         automaticMeasurementBuilder.setAutomaticOhrMeasurement(autosBuilder.build())
         builder.setAutomaticMeasurementSettings(automaticMeasurementBuilder)
+        PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
+            "set-automatic-ohr-measurement",
+            userDeviceSettingsPathFor(session.polarDeviceType),
+            listOf("automaticOhrMeasurement=${autosBuilder.state.name}")
+        )
         setUserDeviceSettingsProto(identifier, builder.build())
         BleLogger.d(TAG, "AUTOS files enabled = $enabled written for $identifier")
     }
@@ -2814,6 +2850,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
             val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
                 ?: return false
+            PolarRuntimePlannerAdapter.planCommandSyncStart("sync-start-success")
             client.query(PftpRequest.PbPFtpQuery.REQUEST_SYNCHRONIZATION_VALUE, null)
             client.sendNotification(
                 PftpNotification.PbPFtpHostToDevNotification.INITIALIZE_SESSION_VALUE,
@@ -2836,6 +2873,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
             val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
                 ?: return
+            PolarRuntimePlannerAdapter.planCommandSyncStop("sync-stop-success")
             client.sendNotification(
                 PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE,
                 PftpNotification.PbPFtpStopSyncParams.newBuilder().setCompleted(true).build().toByteArray()
@@ -2850,11 +2888,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     private suspend fun getUserDeviceSettingsProto(client: BlePsFtpClient, polarDeviceType: String): PbUserDeviceSettings {
-        val path = when (getFileSystemType(polarDeviceType)) {
-            FileSystemType.POLAR_FILE_SYSTEM_V2 -> PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME
-            FileSystemType.H10_FILE_SYSTEM -> PolarUserDeviceSettings.SENSOR_SETTINGS_FILENAME
-            else -> throw PolarOperationNotSupported()
-        }
+        val path = userDeviceSettingsPathFor(polarDeviceType)
+        PolarRuntimePlannerAdapter.planUserDeviceSettingsRead(path)
         val builder = PftpRequest.PbPFtpOperation.newBuilder().apply {
             command = PftpRequest.PbPFtpOperation.Command.GET
             this.path = path
@@ -2868,6 +2903,14 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         }
     }
 
+    private fun userDeviceSettingsPathFor(polarDeviceType: String): String {
+        return when (getFileSystemType(polarDeviceType)) {
+            FileSystemType.POLAR_FILE_SYSTEM_V2 -> PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME
+            FileSystemType.H10_FILE_SYSTEM -> PolarUserDeviceSettings.SENSOR_SETTINGS_FILENAME
+            else -> throw PolarOperationNotSupported()
+        }
+    }
+
     private suspend fun setUserDeviceSettingsProto(identifier: String, deviceUserSetting: PbUserDeviceSettings) {
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
@@ -2876,6 +2919,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             FileSystemType.H10_FILE_SYSTEM -> PolarUserDeviceSettings.SENSOR_SETTINGS_FILENAME
             else -> PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME
         }
+        PolarRuntimePlannerAdapter.planUserDeviceSettingsWrite(settingsPath, listOf("protobufPayload=platform-built"))
         val deviceSettingsBuilder = PftpRequest.PbPFtpOperation.newBuilder().apply {
             command = PftpRequest.PbPFtpOperation.Command.PUT
             path = settingsPath
@@ -3024,6 +3068,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             .setDeviceLocation(fi.polar.remote.representation.protobuf.Types.PbDeviceLocation.forNumber(location))
             .build()
         val updated = currentProto.toBuilder().setGeneralSettings(generalSettings).build()
+        PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
+            "set-user-device-location",
+            userDeviceSettingsPathFor(session.polarDeviceType),
+            listOf("deviceLocation=${generalSettings.deviceLocation.name}")
+        )
         setUserDeviceSettingsProto(identifier, updated)
         BleLogger.d(TAG, "Device location set to $location for $identifier")
     }
@@ -3039,6 +3088,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 else UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.OFF
             ).build()
         val updated = currentProto.toBuilder().setUsbConnectionSettings(usbSettings).build()
+        PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
+            "set-usb-connection-mode",
+            userDeviceSettingsPathFor(session.polarDeviceType),
+            listOf("usbConnectionMode=${usbSettings.mode.name}")
+        )
         setUserDeviceSettingsProto(identifier, updated)
         BleLogger.d(TAG, "USB connection mode set to $enabled for $identifier")
     }
@@ -3071,6 +3125,15 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val updated = currentProto.toBuilder()
             .setAutomaticMeasurementSettings(autoMeasBuilder.build())
             .build()
+        PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
+            "set-automatic-training-detection",
+            userDeviceSettingsPathFor(session.polarDeviceType),
+            listOf(
+                "automaticTrainingDetectionMode=${atdSettings.state.name}",
+                "automaticTrainingDetectionSensitivity=$automaticTrainingDetectionSensitivity",
+                "minimumTrainingDurationSeconds=$minimumTrainingDurationSeconds"
+            )
+        )
         setUserDeviceSettingsProto(identifier, updated)
         BleLogger.d(TAG, "Automatic training detection set to mode=$automaticTrainingDetectionMode sensitivity=$automaticTrainingDetectionSensitivity for $identifier")
     }
@@ -3094,6 +3157,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             .setTelemetryEnabled(enabled)
             .build()
         val updated = currentProto.toBuilder().setTelemetrySettings(telemetrySettings).build()
+        PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
+            "set-telemetry-enabled",
+            userDeviceSettingsPathFor(session.polarDeviceType),
+            listOf("telemetryEnabled=$enabled")
+        )
         setUserDeviceSettingsProto(deviceId, updated)
         BleLogger.d(TAG, "Telemetry enabled=$enabled for $deviceId")
     }

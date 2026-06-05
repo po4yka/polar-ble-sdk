@@ -177,6 +177,7 @@ object PolarRuntimeOrchestration {
         return when (operation.kind) {
             "read" -> PolarRuntimePlan(operation.userDeviceSettingsReadCommands(), "success")
             "readFailure" -> PolarRuntimePlan(operation.userDeviceSettingsReadCommands(), "transport-error")
+            "write" -> PolarRuntimePlan(operation.userDeviceSettingsWriteCommands(), "success")
             "readThenWrite" -> PolarRuntimePlan(operation.userDeviceSettingsReadWriteCommands(), "success")
             "readThenWriteFailure" -> PolarRuntimePlan(operation.userDeviceSettingsReadWriteCommands(), "transport-error-after-payload")
             else -> error("Unsupported user-device-settings operation ${operation.kind}")
@@ -245,6 +246,10 @@ object PolarRuntimeOrchestration {
 
     private fun PolarUserDeviceSettingsOperation.userDeviceSettingsReadCommands(): List<String> {
         return listOf("read:$path")
+    }
+
+    private fun PolarUserDeviceSettingsOperation.userDeviceSettingsWriteCommands(): List<String> {
+        return listOf("write:$path") + payloadFields.map { field -> "field:$field" }
     }
 
     private fun PolarUserDeviceSettingsOperation.userDeviceSettingsReadWriteCommands(): List<String> {

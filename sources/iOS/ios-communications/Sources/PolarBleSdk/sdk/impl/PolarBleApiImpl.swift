@@ -1027,8 +1027,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         switch BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) {
         case .unknownFileSystem: break
         case .h10FileSystem:
+            PolarRuntimePlanner.setLocalTimeH10(localTimeHour: Calendar.current.component(.hour, from: time))
             _ = try await client.query(Protocol_PbPFtpQuery.setLocalTime.rawValue, parameters: paramsSetLocalTime as NSData)
         case .polarFileSystemV2:
+            PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: Calendar(identifier: .gregorian).component(.hour, from: time), localTimeHour: Calendar.current.component(.hour, from: time))
             _ = try await client.query(Protocol_PbPFtpQuery.setSystemTime.rawValue, parameters: paramsSetSystemTime as NSData)
             _ = try await client.query(Protocol_PbPFtpQuery.setLocalTime.rawValue, parameters: paramsSetLocalTime as NSData)
         }
@@ -1044,6 +1046,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         case .h10FileSystem, .unknownFileSystem:
             throw PolarErrors.operationNotSupported
         case .polarFileSystemV2:
+            PolarRuntimePlanner.diskTimeQuery(id: "get-local-time", query: "GET_LOCAL_TIME")
             let data = try await client.query(Protocol_PbPFtpQuery.getLocalTime.rawValue, parameters: nil)
             let result = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: data as Data)
             return try PolarTimeUtils.dateFromPbPftpLocalDateTime(result)
@@ -1060,6 +1063,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         case .h10FileSystem, .unknownFileSystem:
             throw PolarErrors.operationNotSupported
         case .polarFileSystemV2:
+            PolarRuntimePlanner.diskTimeQuery(id: "get-local-time-with-zone", query: "GET_LOCAL_TIME")
             let data = try await client.query(Protocol_PbPFtpQuery.getLocalTime.rawValue, parameters: nil)
             let result = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: data as Data)
             let date = try PolarTimeUtils.dateFromPbPftpLocalDateTime(result)
@@ -1076,6 +1080,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
+        PolarRuntimePlanner.diskTimeQuery(id: "get-disk-space", query: "GET_DISK_SPACE")
         let data = try await client.query(Protocol_PbPFtpQuery.getDiskSpace.rawValue, parameters: nil)
         let proto = try Protocol_PbPFtpDiskSpaceResult(serializedBytes: data as Data)
         return PolarDiskSpaceData.fromProto(proto: proto)
@@ -1093,6 +1098,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         params.sampleDataIdentifier = exerciseId
         params.sampleType = sampleType == .hr ? PbSampleType.sampleTypeHeartRate : PbSampleType.sampleTypeRrInterval
         let queryParams = try params.serializedData()
+        PolarRuntimePlanner.commandQuery(id: "h10-start-recording", query: "REQUEST_START_RECORDING", parameters: ["sampleDataIdentifier=\(exerciseId)", "sampleType=\(params.sampleType)", "recordingIntervalSeconds=\(interval.rawValue)"])
         _ = try await client.query(Protocol_PbPFtpQuery.requestStartRecording.rawValue, parameters: queryParams as NSData)
     }
 
@@ -1101,6 +1107,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         guard BlePolarDeviceCapabilitiesUtility.isRecordingSupported(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
+        PolarRuntimePlanner.commandQuery(id: "h10-stop-recording", query: "REQUEST_STOP_RECORDING")
         _ = try await client.query(Protocol_PbPFtpQuery.requestStopRecording.rawValue, parameters: nil)
     }
 
@@ -1109,6 +1116,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         guard BlePolarDeviceCapabilitiesUtility.isRecordingSupported(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
+        PolarRuntimePlanner.commandQuery(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS")
         let data = try await client.query(Protocol_PbPFtpQuery.requestRecordingStatus.rawValue, parameters: nil)
         let result = try Protocol_PbRequestRecordingStatusResult(serializedBytes: data as Data)
         return (ongoing: result.recordingOn, entryId: result.hasSampleDataIdentifier ? result.sampleDataIdentifier : "")
@@ -1915,6 +1923,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = false
         builder.otaFwupdate = preservePairingInformation
+        PolarRuntimePlanner.commandReset(id: "factory-reset-preserve-pairing", sleep: false, factoryDefaults: true, otaFirmwareUpdate: preservePairingInformation)
         BleLogger.trace("Send do factory reset to device: \(identifier)")
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
     }
@@ -1925,6 +1934,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = false
+        PolarRuntimePlanner.commandReset(id: "factory-reset", sleep: false, factoryDefaults: true, otaFirmwareUpdate: false)
         BleLogger.trace("Send do factory reset to device: \(identifier)")
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
     }
@@ -1937,6 +1947,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         builder.sleep = false
         builder.doFactoryDefaults = false
         builder.otaFwupdate = preservePairingInformation
+        PolarRuntimePlanner.commandReset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: preservePairingInformation)
         BleLogger.trace("Send do restart to device: \(identifier)")
         do {
             try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
@@ -1952,6 +1963,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = false
         builder.doFactoryDefaults = false
+        PolarRuntimePlanner.commandReset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false)
         BleLogger.trace("Send do restart to device: \(identifier)")
         do {
             try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
@@ -2549,6 +2561,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = enableWarehouseSleep ?? false
         builder.otaFwupdate = true
+        PolarRuntimePlanner.commandReset(id: "factory-reset-preserve-pairing", sleep: enableWarehouseSleep ?? false, factoryDefaults: true, otaFirmwareUpdate: true)
         BleLogger.trace("Setting warehouse sleep, device: \(identifier).")
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
     }
@@ -2560,6 +2573,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = true
         builder.doFactoryDefaults = true
+        PolarRuntimePlanner.commandReset(id: "warehouse-sleep", sleep: true, factoryDefaults: true, otaFirmwareUpdate: false)
         BleLogger.trace("Setting warehouse sleep to true, device: \(identifier).")
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
     }
@@ -2571,6 +2585,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = true
         builder.doFactoryDefaults = false
+        PolarRuntimePlanner.commandReset(id: "turn-device-off", sleep: true, factoryDefaults: false, otaFirmwareUpdate: false)
         BleLogger.trace("Turn off device \(identifier).")
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
     }
@@ -2603,6 +2618,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var operation = Protocol_PbPFtpOperation()
         operation.command = .put
         operation.path = settingsPath
+        PolarRuntimePlanner.userDeviceSettings(id: "set-user-device-settings", kind: "write", path: settingsPath, payloadFields: ["protobufPayload=platform-built"])
         let proto = try operation.serializedData()
         BleLogger.trace("Polar user device settings set. Device: \(identifier) Path: \(settingsPath)")
         let inputStream = InputStream(data: userDeviceSettingsData)
@@ -2614,6 +2630,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let settingsPath = BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) == .polarFileSystemV2 ? DEVICE_SETTINGS_FILE_PATH : SENSOR_SETTINGS_FILE_PATH
+        PolarRuntimePlanner.userDeviceSettings(id: "get-user-device-settings", kind: "read", path: settingsPath)
         return try await PolarUserDeviceSettingsUtils.getUserDeviceSettings(client: client, deviceSettingsPath: settingsPath)
     }
 
@@ -2785,6 +2802,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var currentSettings = try await getUserDeviceSettingsProto(client: client)
         guard let deviceLocation = PbDeviceLocation(rawValue: location) else { throw PolarErrors.invalidArgument(description: "Invalid device location: \(location)") }
         currentSettings.generalSettings.deviceLocation = deviceLocation
+        PolarRuntimePlanner.userDeviceSettings(id: "set-user-device-location", kind: "readThenWrite", path: getDeviceSettingsPath(session), payloadFields: ["deviceLocation=\(deviceLocation)"])
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: currentSettings)
     }
 
@@ -2797,6 +2815,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var usbSettings = Data_PbUsbConnectionSettings()
         usbSettings.mode = enabled ? .on : .off
         currentSettings.usbConnectionSettings = usbSettings
+        PolarRuntimePlanner.userDeviceSettings(id: "set-usb-connection-mode", kind: "readThenWrite", path: settingsPath, payloadFields: ["usbConnectionMode=\(usbSettings.mode)"])
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: currentSettings, settingsPath: settingsPath)
     }
 
@@ -2810,6 +2829,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         atdSettings.sensitivity = UInt32(sensitivity)
         atdSettings.minimumTrainingDurationSeconds = UInt32(minimumDuration)
         currentSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings = atdSettings
+        PolarRuntimePlanner.userDeviceSettings(id: "set-automatic-training-detection", kind: "readThenWrite", path: getDeviceSettingsPath(session), payloadFields: ["automaticTrainingDetectionMode=\(atdSettings.state)", "automaticTrainingDetectionSensitivity=\(sensitivity)", "minimumTrainingDurationSeconds=\(minimumDuration)"])
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: currentSettings)
     }
 
@@ -2822,6 +2842,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let nextDSTOffset = TimeZone.current.daylightSavingTimeOffset(for: nextDSTTransition.addingTimeInterval(24*60*60)) - TimeZone.current.daylightSavingTimeOffset(for: nextDSTTransition.addingTimeInterval(-(24*60*60)))
         currentSettings.daylightSaving.nextDaylightSavingTime = PolarTimeUtils.dateToPbSystemDateTime(date: nextDSTTransition)
         currentSettings.daylightSaving.offset = Int32(nextDSTOffset)
+        PolarRuntimePlanner.userDeviceSettings(id: "set-daylight-saving-time", kind: "readThenWrite", path: getDeviceSettingsPath(session), payloadFields: ["daylightSaving.nextDaylightSavingTime=present", "daylightSaving.offset=nonzero"])
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: currentSettings)
     }
 
@@ -2831,6 +2852,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         var currentProto = try await getUserDeviceSettingsProto(client: client)
         currentProto.telemetrySettings.telemetryEnabled = enabled
+        PolarRuntimePlanner.userDeviceSettings(id: "set-telemetry-enabled", kind: "readThenWrite", path: getDeviceSettingsPath(session), payloadFields: ["telemetryEnabled=\(enabled)"])
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: currentProto)
         BleLogger.trace("Telemetry enabled=\(enabled) written for \(identifier)")
     }
@@ -2857,6 +2879,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func sendInitializationAndStartSyncNotifications(identifier: String) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
+        PolarRuntimePlanner.commandSyncStart(id: "sync-start-success")
         _ = try await client.query(Protocol_PbPFtpQuery.requestSynchronization.rawValue, parameters: nil)
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, parameters: nil)
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.startSync.rawValue, parameters: nil)
@@ -2869,6 +2892,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var params = Protocol_PbPFtpStopSyncParams()
         params.completed = true
         let parameters = try params.serializedData() as NSData
+        PolarRuntimePlanner.commandSyncStop(id: "sync-stop-success")
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.stopSync.rawValue, parameters: parameters)
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, parameters: nil)
     }
@@ -2933,6 +2957,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             autosSettings.clearIntelligentTimedSettings()
         }
         updated.automaticMeasurementSettings.automaticOhrMeasurement = autosSettings
+        PolarRuntimePlanner.userDeviceSettings(id: "set-automatic-ohr-measurement", kind: "readThenWrite", path: getDeviceSettingsPath(session), payloadFields: ["automaticOhrMeasurement=\(autosSettings.state)"])
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: updated)
         BleLogger.trace("AUTOS files enabled=\(enabled) written for \(identifier)")
     }

@@ -133,10 +133,12 @@ public protocol PolarRestServiceApi {
 extension PolarBleApiImpl: PolarRestServiceApi {
 
     func listRestApiServices(identifier: String) async throws -> PolarDeviceRestApiServices {
+        PolarRuntimePlanner.restFacadeGet(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")
         return try await getJSONDecodableFromPath(identifier: identifier, path: "/REST/SERVICE.API")
     }
 
     func getRestApiDescription(identifier: String, path: String) async throws -> PolarDeviceRestApiServiceDescription {
+        PolarRuntimePlanner.restFacadeGet(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
         return try await getJSONDecodableFromPath(identifier: identifier, path: path)
     }
 
@@ -153,6 +155,7 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         var operation = Protocol_PbPFtpOperation()
         operation.command = .get
         operation.path = path
+        PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
         let requestData = try operation.serializedData()
         let responseData = try await client.request(requestData)
         return responseData as Data
@@ -174,10 +177,16 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         var operation = Protocol_PbPFtpOperation()
         operation.command = command
         operation.path = path
+        PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: data.map { String(format: "%02x", $0) }.joined())
         let proto = try operation.serializedData()
         let inputStream = InputStream(data: data)
         // Consume the write stream to completion (ignore progress values)
-        for try await _ in client.write(proto as NSData, data: inputStream) {}
+        do {
+            for try await _ in client.write(proto as NSData, data: inputStream) {}
+        } catch {
+            PolarRuntimePlanner.fileRuntimeError(operation: "writeFile", path: path, error: error)
+            throw error
+        }
     }
 
     func receiveRestApiEvents<T: Decodable>(identifier: String) -> AsyncThrowingStream<[T], Error> {
