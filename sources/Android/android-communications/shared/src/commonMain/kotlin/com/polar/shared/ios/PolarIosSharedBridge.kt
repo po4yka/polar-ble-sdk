@@ -42,6 +42,7 @@ import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarTrainingReadinessName
+import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
 import com.polar.shared.time.PolarDurationFields
 import com.polar.shared.time.PolarTimeFields
@@ -289,6 +290,22 @@ object PolarIosSharedBridge {
 
     fun trainingReadinessName(value: Int): String? {
         return PolarTrainingReadinessName.fromValue(value)?.name
+    }
+
+    fun userDeviceSettingsDeviceLocationName(value: Int): String? {
+        return PolarUserDeviceSettingsModels.deviceLocationName(value)
+    }
+
+    fun userDeviceSettingsDeviceLocationValue(name: String): Int? {
+        return PolarUserDeviceSettingsModels.deviceLocationValue(name)
+    }
+
+    fun userDeviceSettingsUsbModeName(value: Int): String? {
+        return PolarUserDeviceSettingsModels.usbConnectionModeName(value)
+    }
+
+    fun userDeviceSettingsAutomaticTrainingDetectionModeName(value: Int): String? {
+        return PolarUserDeviceSettingsModels.automaticTrainingDetectionModeName(value)
     }
 
     fun ppiSampleTriggerName(value: Int): String? {

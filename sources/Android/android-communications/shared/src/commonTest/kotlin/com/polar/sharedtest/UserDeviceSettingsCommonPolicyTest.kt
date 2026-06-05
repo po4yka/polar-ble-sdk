@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -96,6 +97,9 @@ class UserDeviceSettingsCommonPolicyTest {
 
     private fun assertModel(expected: String, actual: UserDeviceSettings, caseId: String) {
         assertEquals(expected.optionalIntValue("deviceLocation"), actual.deviceLocation, "$caseId deviceLocation")
+        expected.optionalIntValue("deviceLocation")?.let { deviceLocation ->
+            assertEquals(deviceLocation, PolarUserDeviceSettingsModels.deviceLocationName(deviceLocation)?.let(PolarUserDeviceSettingsModels::deviceLocationValue), "$caseId shared deviceLocation")
+        }
         assertEquals(expected.optionalBooleanOrNull("usbConnectionMode"), actual.usbConnectionMode, "$caseId usbConnectionMode")
         assertEquals(expected.optionalBooleanOrNull("automaticTrainingDetectionMode"), actual.automaticTrainingDetectionMode, "$caseId automaticTrainingDetectionMode")
         assertEquals(expected.optionalIntOrNull("automaticTrainingDetectionSensitivity"), actual.automaticTrainingDetectionSensitivity, "$caseId sensitivity")
@@ -108,8 +112,14 @@ class UserDeviceSettingsCommonPolicyTest {
         assertEquals(expected.optionalIntValue("deviceLocation"), actual.deviceLocation, "$caseId deviceLocation")
         assertEquals(expected.booleanValue("hasLastModified"), actual.hasLastModified, "$caseId hasLastModified")
         assertEquals(expected.booleanValue("lastModifiedTrusted"), actual.lastModifiedTrusted, "$caseId trusted")
-        expected.optionalStringValue("usbConnectionMode")?.let { assertEquals(it, actual.usbConnectionMode, "$caseId usb") }
-        expected.optionalStringValue("automaticTrainingDetectionMode")?.let { assertEquals(it, actual.automaticTrainingDetectionMode, "$caseId autos mode") }
+        expected.optionalStringValue("usbConnectionMode")?.let {
+            assertEquals(it, actual.usbConnectionMode, "$caseId usb")
+            assertEquals(it, PolarUserDeviceSettingsModels.usbConnectionModeName(it.userDeviceSettingsUsbValue()), "$caseId shared usb")
+        }
+        expected.optionalStringValue("automaticTrainingDetectionMode")?.let {
+            assertEquals(it, actual.automaticTrainingDetectionMode, "$caseId autos mode")
+            assertEquals(it, PolarUserDeviceSettingsModels.automaticTrainingDetectionModeName(it.userDeviceSettingsAutomaticTrainingDetectionValue()), "$caseId shared autos mode")
+        }
         expected.optionalIntValue("automaticTrainingDetectionSensitivity")?.let { assertEquals(it, actual.automaticTrainingDetectionSensitivity, "$caseId sensitivity") }
         expected.optionalIntValue("minimumTrainingDurationSeconds")?.let { assertEquals(it, actual.minimumTrainingDurationSeconds, "$caseId duration") }
         assertEquals(expected.optionalBooleanValue("hasTelemetryEnabled") ?: false, actual.hasTelemetryEnabled, "$caseId hasTelemetry")
@@ -119,6 +129,22 @@ class UserDeviceSettingsCommonPolicyTest {
 
     private fun Boolean.toOnOff(): String {
         return if (this) "ON" else "OFF"
+    }
+
+    private fun String.userDeviceSettingsUsbValue(): Int {
+        return when (this) {
+            "OFF" -> 1
+            "ON" -> 2
+            else -> error("Unexpected USB mode $this")
+        }
+    }
+
+    private fun String.userDeviceSettingsAutomaticTrainingDetectionValue(): Int {
+        return when (this) {
+            "OFF" -> 0
+            "ON" -> 1
+            else -> error("Unexpected automatic training detection mode $this")
+        }
     }
 
     private fun String.optionalObjectValue(field: String): String? {

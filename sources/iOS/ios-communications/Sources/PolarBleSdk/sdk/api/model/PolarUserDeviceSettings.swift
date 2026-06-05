@@ -3,6 +3,9 @@
 //
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class PolarUserDeviceSettings {
 
@@ -28,6 +31,12 @@ public class PolarUserDeviceSettings {
         case BIKE_MOUNT
 
         public func toInt() -> Int {
+            #if canImport(PolarBleSdkShared)
+            if let sharedValue = PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationValue(name: rawValue) {
+                return Int(truncating: sharedValue)
+            }
+            #endif
+
             let allValues: NSArray = DeviceLocation.allCases as NSArray
             let result: Int = allValues.index(of: self)
             return result
@@ -48,6 +57,12 @@ public class PolarUserDeviceSettings {
         }
 
         static func fromProto(proto: Data_PbUsbConnectionSettings.PbUsbConnectionMode) -> UsbConnectionMode? {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarIosSharedBridge.shared.userDeviceSettingsUsbModeName(value: Int32(proto.rawValue)) {
+                return UsbConnectionMode(rawValue: sharedName)
+            }
+            #endif
+
             switch proto {
             case Data_PbUsbConnectionSettings.PbUsbConnectionMode.on:
                 return .ON
@@ -73,6 +88,13 @@ public class PolarUserDeviceSettings {
         }
 
         static func fromProto(proto: Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState) -> AutomaticTrainingDetectionMode {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarIosSharedBridge.shared.userDeviceSettingsAutomaticTrainingDetectionModeName(value: Int32(proto.rawValue)),
+               let sharedMode = AutomaticTrainingDetectionMode(rawValue: sharedName) {
+                return sharedMode
+            }
+            #endif
+
             switch proto {
             case Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.on:
                 return .ON
@@ -149,7 +171,16 @@ public class PolarUserDeviceSettings {
 
     static func fromProto(pbUserDeviceSettings: Data_PbUserDeviceSettings) -> PolarUserDeviceSettingsResult {
         var result = PolarUserDeviceSettingsResult()
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationName(value: Int32(pbUserDeviceSettings.generalSettings.deviceLocation.rawValue)),
+           let sharedLocation = PolarUserDeviceSettings.DeviceLocation(rawValue: sharedName) {
+            result.deviceLocation = sharedLocation
+        } else {
+            result.deviceLocation = PolarUserDeviceSettings.DeviceLocation.allCases[pbUserDeviceSettings.generalSettings.deviceLocation.rawValue]
+        }
+        #else
         result.deviceLocation = PolarUserDeviceSettings.DeviceLocation.allCases[pbUserDeviceSettings.generalSettings.deviceLocation.rawValue]
+        #endif
         
         if pbUserDeviceSettings.hasUsbConnectionSettings {
             result.usbConnectionMode = UsbConnectionMode.fromProto(proto: pbUserDeviceSettings.usbConnectionSettings.mode)

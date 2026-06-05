@@ -8,6 +8,7 @@ import fi.polar.remote.representation.protobuf.UserDeviceSettings
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbAutomaticMeasurementSettings
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceGeneralSettings
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceSettings
+import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import java.time.ZonedDateTime
 import java.time.ZoneId
 
@@ -38,7 +39,9 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
     }
 
     companion object {
-        infix fun from(value: Int): DeviceLocation? = DeviceLocation.entries.firstOrNull {it.value == value}
+        infix fun from(value: Int): DeviceLocation? {
+            return PolarUserDeviceSettingsModels.deviceLocationName(value)?.let(DeviceLocation::valueOf)
+        }
         const val DEVICE_SETTINGS_FILENAME = "/U/0/S/UDEVSET.BPB"
         const val SENSOR_SETTINGS_FILENAME = "/UDEVSET.BPB"
     }
