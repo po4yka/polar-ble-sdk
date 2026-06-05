@@ -1,8 +1,10 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarD2hRuntimePlanning
+import com.polar.shared.runtime.PolarD2hStreamNotification
+import com.polar.shared.runtime.PolarD2hStreamScenario
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
 
 class D2hStreamRuntimePolicyCommonTest {
     @Test
@@ -93,66 +95,33 @@ class D2hStreamRuntimePolicyCommonTest {
     private val d2hStreamRuntimeReadinessCommonDecision = "D2H stream runtime migration may proceed only after stream-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, mapped values emitted before late upstream errors are preserved, consumer cancellation cancels upstream work and suppresses later notifications, unknown notifications are filtered without stopping later known values, failed subscribe paths register no observers, public facade error mapping remains pinned, and the shared tests are compile-verified."
 
     private fun runScenario(target: String, scenario: String): D2hStreamOutcome {
-        val transport = ScriptedCommonFakeTransport(listOf(scenario.subscribeTransportOutcome(), CommonFakeTransportOutcome.Complete))
-        val subscription = transport.openStream(target)
-        val subscribeOutcome = subscription.subscribeOutcome
-        if (subscribeOutcome is CommonFakeTransportOutcome.TransportError) {
-            subscription.cancel()
-            return D2hStreamOutcome(subscribeError = subscribeOutcome.message, activeObserverCount = transport.activeObserverCount, cancelledStreams = transport.cancelledStreams)
-        }
-
-        val events = mutableListOf<String>()
-        val ignoredAfterCancel = mutableListOf<String>()
-        val cancelAfter = scenario.optionalIntValue("cancelAfterEmitted")
-        scenario.objectArray("notifications").forEach { notification ->
-            val mapped = notification.intValue("notificationId").notificationTypeOrNull() ?: return@forEach
-            if (cancelAfter != null && events.size >= cancelAfter) {
-                ignoredAfterCancel += mapped
-            } else {
-                events += mapped
-            }
-            if (cancelAfter != null && events.size == cancelAfter && !subscription.upstreamCancelled) {
-                subscription.cancel()
-            }
-        }
-
         val terminal = scenario.optionalObjectValue("terminal")
-        val terminalError = if (terminal != null && !subscription.upstreamCancelled) {
-            assertIs<CommonFakeTransportOutcome.TransportError>(terminal.toTerminalOutcome()).message
-        } else {
-            null
-        }
-        return D2hStreamOutcome(
-            events = events,
-            terminalError = terminalError,
-            activeObserverCount = transport.activeObserverCount,
-            cancelledStreams = transport.cancelledStreams,
-            upstreamCancelled = subscription.upstreamCancelled,
-            ignoredAfterCancel = ignoredAfterCancel
+        val outcome = PolarD2hRuntimePlanning.runStreamScenario(
+            PolarD2hStreamScenario(
+                id = scenario.stringValue("id"),
+                target = target,
+                subscribeOutcome = scenario.stringValue("subscribeOutcome"),
+                message = scenario.optionalStringValue("message"),
+                notifications = scenario.objectArray("notifications").map { notification ->
+                    PolarD2hStreamNotification(
+                        notificationId = notification.intValue("notificationId"),
+                        parametersHex = notification.optionalStringValue("parametersHex") ?: ""
+                    )
+                },
+                cancelAfterEmitted = scenario.optionalIntValue("cancelAfterEmitted"),
+                terminalMode = terminal?.stringValue("mode"),
+                terminalMessage = terminal?.stringValue("message")
+            )
         )
-    }
-
-    private fun String.subscribeTransportOutcome(): CommonFakeTransportOutcome {
-        return when (stringValue("subscribeOutcome")) {
-            "success" -> CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01))
-            "transportError" -> CommonFakeTransportOutcome.TransportError(stringValue("message"))
-            else -> error("Unsupported subscribe outcome ${stringValue("subscribeOutcome")}")
-        }
-    }
-
-    private fun String.toTerminalOutcome(): CommonFakeTransportOutcome {
-        return when (stringValue("mode")) {
-            "transportError" -> CommonFakeTransportOutcome.TransportError(stringValue("message"))
-            else -> error("Unsupported terminal mode ${stringValue("mode")}")
-        }
-    }
-
-    private fun Int.notificationTypeOrNull(): String? {
-        return when (this) {
-            7 -> "SYNC_REQUIRED"
-            12 -> "STOP_GPS_MEASUREMENT"
-            else -> null
-        }
+        return D2hStreamOutcome(
+            events = outcome.events,
+            terminalError = outcome.terminalError,
+            subscribeError = outcome.subscribeError,
+            activeObserverCount = outcome.activeObserverCount,
+            cancelledStreams = outcome.cancelledStreams,
+            upstreamCancelled = outcome.upstreamCancelled,
+            ignoredAfterCancel = outcome.ignoredAfterCancel
+        )
     }
 
     private fun String.optionalObjectValue(field: String): String? {

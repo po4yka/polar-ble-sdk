@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarD2hEvent
+import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -8,6 +10,9 @@ import kotlin.test.assertTrue
 class D2hNotificationCommonPolicyTest {
     @Test
     fun d2hGoldenVectorsDefineExecutableCommonMappingFilteringAndOrderingPolicy() {
+        assertEquals("STOP_GPS_MEASUREMENT", PolarD2hRuntimePlanning.notificationTypeOrNull(12))
+        assertEquals("PbPFtpSyncRequiredParams", PolarD2hRuntimePlanning.parsedProtoName("SYNC_REQUIRED", "0a020802"))
+
         D2H_VECTORS.forEach { relativePath ->
             val vector = loadGoldenVectorText(relativePath)
             val caseId = vector.stringValue("id")
@@ -16,7 +21,7 @@ class D2hNotificationCommonPolicyTest {
 
             if (input.optionalObjectArray("notifications") != null) {
                 val events = input.objectArray("notifications").flatMap { notification ->
-                    mapNotification(notification.intValue("notificationId"), notification.stringValue("parametersHex"))
+                    PolarD2hRuntimePlanning.mapNotification(notification.intValue("notificationId"), notification.stringValue("parametersHex"))
                 }
                 val expectedEvents = expected.objectArray("events")
                 assertEquals(expectedEvents.size, events.size, "$caseId event count")
@@ -26,7 +31,7 @@ class D2hNotificationCommonPolicyTest {
                 return@forEach
             }
 
-            val events = mapNotification(input.intValue("notificationId"), input.stringValue("parametersHex"))
+            val events = PolarD2hRuntimePlanning.mapNotification(input.intValue("notificationId"), input.stringValue("parametersHex"))
             expected.optionalIntValue("emittedCount")?.let { count ->
                 assertEquals(count, events.size, caseId)
                 return@forEach
@@ -56,7 +61,7 @@ class D2hNotificationCommonPolicyTest {
         assertEquals(listOf("com.polar.sharedtest.D2hNotificationCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
-    private fun assertEventEquals(expected: String, actual: D2hEvent, label: String) {
+    private fun assertEventEquals(expected: String, actual: PolarD2hEvent, label: String) {
         assertEquals(expected.stringValue("notificationType"), actual.notificationType, "$label type")
         assertEquals(expected.optionalStringValue("parsedProto"), actual.parsedProto, "$label proto")
         expected.optionalStringValue("parametersHex")?.let { expectedHex ->
@@ -72,48 +77,6 @@ class D2hNotificationCommonPolicyTest {
         expected.optionalFloatValue("longitude")?.let { longitude -> assertFloatEquals(longitude, actual.longitude ?: error("$label longitude missing"), "$label longitude") }
         expected.optionalObjectArray("syncTriggers")?.let { triggers ->
             assertEquals(triggers.map { trigger -> trigger.stringValue("source") }, actual.syncTriggers, "$label triggers")
-        }
-    }
-
-    private fun mapNotification(notificationId: Int, parametersHex: String): List<D2hEvent> {
-        val type = notificationId.notificationTypeOrNull() ?: return emptyList()
-        val event = D2hEvent(
-            notificationType = type,
-            parametersHex = parametersHex,
-            parsedProto = parsedProtoName(type, parametersHex)
-        )
-        return listOf(decodeKnownParameters(event))
-    }
-
-    private fun Int.notificationTypeOrNull(): String? {
-        return when (this) {
-            0 -> "FILESYSTEM_MODIFIED"
-            7 -> "SYNC_REQUIRED"
-            8 -> "AUTOSYNC_STATUS"
-            11 -> "START_GPS_MEASUREMENT"
-            12 -> "STOP_GPS_MEASUREMENT"
-            else -> null
-        }
-    }
-
-    private fun parsedProtoName(type: String, parametersHex: String): String? {
-        if (parametersHex.isEmpty()) return null
-        return when (type) {
-            "FILESYSTEM_MODIFIED" -> "PbPFtpFilesystemModifiedParams"
-            "SYNC_REQUIRED" -> if (parametersHex == "0a020802") "PbPFtpSyncRequiredParams" else null
-            "AUTOSYNC_STATUS" -> "PbPFtpAutoSyncStatusParams"
-            "START_GPS_MEASUREMENT" -> "PbPftpStartGPSMeasurement"
-            else -> null
-        }
-    }
-
-    private fun decodeKnownParameters(event: D2hEvent): D2hEvent {
-        return when (event.notificationType) {
-            "FILESYSTEM_MODIFIED" -> event.copy(action = "CREATED", path = "/U/0/")
-            "SYNC_REQUIRED" -> if (event.parsedProto != null) event.copy(syncTriggers = listOf("TIMED")) else event
-            "AUTOSYNC_STATUS" -> event.copy(succeeded = true, description = "Sync completed successfully")
-            "START_GPS_MEASUREMENT" -> event.copy(minimumInterval = 1000, accuracy = 2, latitude = 60.1695f, longitude = 24.9354f)
-            else -> event
         }
     }
 
@@ -178,21 +141,6 @@ class D2hNotificationCommonPolicyTest {
         }
         error("Unbalanced $open$close block")
     }
-
-    private data class D2hEvent(
-        val notificationType: String,
-        val parametersHex: String,
-        val parsedProto: String?,
-        val action: String? = null,
-        val path: String? = null,
-        val syncTriggers: List<String> = emptyList(),
-        val succeeded: Boolean? = null,
-        val description: String? = null,
-        val minimumInterval: Int? = null,
-        val accuracy: Int? = null,
-        val latitude: Float? = null,
-        val longitude: Float? = null
-    )
 
     private companion object {
         val D2H_VECTORS = listOf(

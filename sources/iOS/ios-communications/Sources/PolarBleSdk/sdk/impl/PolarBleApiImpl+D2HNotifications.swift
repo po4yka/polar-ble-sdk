@@ -11,11 +11,16 @@ extension PolarBleApiImpl: PolarDeviceToHostNotificationsApi {
                         return
                     }
                     for try await notification in client.waitNotification() {
-                        guard let mappedNotification = PolarDeviceToHostNotification(rawValue: Int(notification.id)) else {
+                        guard PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Int(notification.id)) != nil else {
                             BleLogger.trace("Unknown notification type: \(notification.id)")
                             continue
                         }
+                        guard let mappedNotification = PolarDeviceToHostNotification(rawValue: Int(notification.id)) else {
+                            continuation.finish(throwing: PolarErrors.invalidArgument(description: "Shared D2H notification id \(notification.id) is not represented by the iOS public enum"))
+                            return
+                        }
                         let parameters = Data(notification.parameters)
+                        _ = PolarRuntimePlanner.d2hParsedProtoName(notificationType: String(describing: mappedNotification), parametersHex: parameters.map { String(format: "%02x", $0) }.joined())
                         let parsedParameters = BlePsFtpClient.parseD2HNotificationParameters(mappedNotification, data: parameters)
                         let data = PolarD2HNotificationData(
                             notificationType: mappedNotification,

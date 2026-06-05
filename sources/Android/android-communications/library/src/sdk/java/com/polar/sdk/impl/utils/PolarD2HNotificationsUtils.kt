@@ -4,6 +4,7 @@ package com.polar.sdk.impl.utils
 import com.google.protobuf.InvalidProtocolBufferException
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
+import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import com.polar.sdk.api.PolarD2HNotificationData
 import com.polar.sdk.api.PolarDeviceToHostNotification
 import kotlinx.coroutines.flow.Flow
@@ -23,10 +24,12 @@ private const val TAG = "PolarD2HNotificationsUtils"
 fun BlePsFtpClient.observeDeviceToHostNotifications(identifier: String): Flow<PolarD2HNotificationData> {
     return waitForNotification()
         .transform { notification ->
-            val notificationType = PolarDeviceToHostNotification.fromValue(notification.id)
-            if (notificationType == null) {
+            val sharedNotificationType = PolarD2hRuntimePlanning.notificationTypeOrNull(notification.id)
+            if (sharedNotificationType == null) {
                 BleLogger.w(TAG, "Unknown notification type: ${notification.id}")
             } else {
+                val notificationType = PolarDeviceToHostNotification.fromValue(notification.id)
+                    ?: error("Shared D2H notification type $sharedNotificationType is not represented by the Android public enum")
                 val parameters = notification.byteArrayOutputStream.toByteArray()
                 val parsedParameters = parseD2HNotificationParameters(notificationType, parameters)
                 emit(PolarD2HNotificationData(notificationType, parameters, parsedParameters))

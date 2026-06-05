@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarStreamRuntimePlanning
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -10,7 +11,7 @@ class StreamRuntimePolicyCommonTest {
         val vector = loadGoldenVectorText("sdk/stream-runtime/ordered-emissions-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
-        val runtime = CommonFakeStreamCompletionRuntime()
+        val runtime = PolarStreamRuntimePlanning.newState()
 
         runtime.subscribe(input.stringValue("target"))
         input.stringArrayValue("emissions").forEach { value ->
@@ -37,7 +38,7 @@ class StreamRuntimePolicyCommonTest {
         val vector = loadGoldenVectorText("sdk/stream-runtime/duplicate-completion-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
-        val runtime = CommonFakeStreamCompletionRuntime()
+        val runtime = PolarStreamRuntimePlanning.newState()
 
         runtime.subscribe(input.stringValue("target"))
         input.stringArrayValue("completionSignals").forEach { signal ->
@@ -60,7 +61,7 @@ class StreamRuntimePolicyCommonTest {
         val vector = loadGoldenVectorText("sdk/stream-runtime/late-emission-after-completion-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
-        val runtime = CommonFakeStreamCompletionRuntime()
+        val runtime = PolarStreamRuntimePlanning.newState()
 
         runtime.subscribe(input.stringValue("target"))
         input.stringArrayValue("completionSignals").forEach { signal ->
@@ -87,7 +88,7 @@ class StreamRuntimePolicyCommonTest {
         val vector = loadGoldenVectorText("sdk/stream-runtime/consumer-cancellation-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
-        val runtime = CommonFakeStreamCompletionRuntime()
+        val runtime = PolarStreamRuntimePlanning.newState()
 
         input.stringArrayValue("actions").forEach { action ->
             when (action) {
@@ -111,7 +112,7 @@ class StreamRuntimePolicyCommonTest {
         val vector = loadGoldenVectorText("sdk/stream-runtime/disconnect-after-subscription-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
-        val runtime = CommonFakeStreamCompletionRuntime()
+        val runtime = PolarStreamRuntimePlanning.newState()
 
         input.stringArrayValue("actions").forEach { action ->
             when (action) {
@@ -136,7 +137,7 @@ class StreamRuntimePolicyCommonTest {
         val vector = loadGoldenVectorText("sdk/stream-runtime/terminal-error-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
-        val runtime = CommonFakeStreamCompletionRuntime()
+        val runtime = PolarStreamRuntimePlanning.newState()
 
         input.stringArrayValue("actions").forEach { action ->
             when (action) {
@@ -160,7 +161,7 @@ class StreamRuntimePolicyCommonTest {
         val vector = loadGoldenVectorText("sdk/stream-runtime/initial-disconnected-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
-        val runtime = CommonFakeStreamCompletionRuntime()
+        val runtime = PolarStreamRuntimePlanning.newState()
 
         runtime.subscribeWithConnectionGuard(
             target = input.stringValue("target"),
@@ -181,7 +182,7 @@ class StreamRuntimePolicyCommonTest {
         val vector = loadGoldenVectorText("sdk/stream-runtime/unchecked-subscription-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
-        val runtime = CommonFakeStreamCompletionRuntime()
+        val runtime = PolarStreamRuntimePlanning.newState()
 
         runtime.subscribeWithConnectionGuard(
             target = input.stringValue("target"),
@@ -257,86 +258,4 @@ class StreamRuntimePolicyCommonTest {
 
     private val streamRuntimeReadinessCommonDecision = "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified."
 
-    private class CommonFakeStreamCompletionRuntime {
-        var completionEventCount = 0
-            private set
-        var activeObserverCount = 1
-            private set
-        val emittedValues = mutableListOf<String>()
-        val cancelledStreams = mutableListOf<String>()
-        var cleanupCallbackCount = 0
-            private set
-        var errorEventCount = 0
-            private set
-        var upstreamCancelled = false
-            private set
-        var upstreamStarted = true
-            private set
-        var terminalError: String? = null
-            private set
-        var connectionChecked = false
-            private set
-        private var completed = false
-
-        fun subscribe(target: String) {
-            completed = false
-            activeObserverCount = 1
-            upstreamCancelled = false
-            upstreamStarted = true
-            terminalError = null
-            errorEventCount = 0
-            connectionChecked = false
-            cancelledStreams.remove(target)
-        }
-
-        fun subscribeWithConnectionGuard(target: String, startConnected: Boolean, checkConnection: Boolean) {
-            connectionChecked = checkConnection
-            if (checkConnection && !startConnected) {
-                activeObserverCount = 0
-                upstreamStarted = false
-                terminalError = "gattDisconnected"
-                cancelledStreams.remove(target)
-                return
-            }
-            subscribe(target)
-        }
-
-        fun complete() {
-            if (completed) return
-            completed = true
-            completionEventCount += 1
-            activeObserverCount = 0
-        }
-
-        fun fail(error: String) {
-            if (completed) return
-            completed = true
-            terminalError = error
-            errorEventCount += 1
-            activeObserverCount = 0
-        }
-
-        fun emit(value: String) {
-            if (completed) return
-            emittedValues += value
-        }
-
-        fun cancelConsumer(target: String) {
-            if (activeObserverCount == 0) return
-            activeObserverCount = 0
-            upstreamCancelled = true
-            cleanupCallbackCount += 1
-            cancelledStreams += target
-        }
-
-        fun disconnect(error: String) {
-            if (completed) return
-            completed = true
-            terminalError = error
-            errorEventCount += 1
-            activeObserverCount = 0
-            upstreamCancelled = true
-            cleanupCallbackCount += 1
-        }
-    }
 }

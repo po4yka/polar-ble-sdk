@@ -124,4 +124,52 @@ enum PolarRuntimePlanner {
         _ = PolarIosSharedBridge.shared.planRuntimePsFtpWriteAck(payloadSize: Int32(payloadSize), writeAck: writeAck)
         #endif
     }
+
+    static func d2hNotificationTypeName(notificationId: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        let value = PolarIosSharedBridge.shared.d2hNotificationType(notificationId: Int32(notificationId))
+        return value.isEmpty ? nil : value
+        #else
+        return nil
+        #endif
+    }
+
+    static func d2hParsedProtoName(notificationType: String, parametersHex: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        let value = PolarIosSharedBridge.shared.d2hParsedProtoName(notificationType: notificationType, parametersHex: parametersHex)
+        return value.isEmpty ? nil : value
+        #else
+        return nil
+        #endif
+    }
+
+    static func streamSubscription(target: String, startConnected: Bool, checkConnection: Bool) {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimeStreamSubscription(target: target, startConnected: startConnected, checkConnection: checkConnection)
+        #endif
+    }
+
+    static func streamConsumerCancellation(target: String) {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimeStreamConsumerCancellation(target: target)
+        #endif
+    }
+
+    static func streamDisconnect(target: String, error: String) {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimeStreamDisconnect(target: target, error: error)
+        #endif
+    }
+
+    static func streamDuplicateCompletion(target: String) {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimeStreamDuplicateCompletion(target: target)
+        #endif
+    }
+
+    static func streamPostCompletionEmission(target: String, value: String) {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimeStreamPostCompletionEmission(target: target, value: value)
+        #endif
+    }
 }
