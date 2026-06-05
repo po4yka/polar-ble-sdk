@@ -38,6 +38,11 @@ public struct PmdSetting: @unchecked Sendable {
     }
     
     static func parsePmdSettingsData(_ data: Data) throws -> [PmdSettingType : Set<UInt32>] {
+        #if canImport(PolarBleSdkShared)
+        if let shared = sharedParsedSettings(data) {
+            return shared
+        }
+        #endif
         var offset = 0
         var settings = [PmdSettingType : Set<UInt32>]()
         while (offset+2) < data.count {
@@ -85,6 +90,26 @@ public struct PmdSetting: @unchecked Sendable {
     }
 
     #if canImport(PolarBleSdkShared)
+    private static func sharedParsedSettings(_ data: Data) -> [PmdSettingType : Set<UInt32>]? {
+        guard let encoded = PolarIosSharedBridge.shared.pmdParsedSettingsCsv(settingsHex: data.pmdHexString) else { return nil }
+        var settings = [PmdSettingType : Set<UInt32>]()
+        for group in encoded.split(separator: ";", omittingEmptySubsequences: false) where !group.isEmpty {
+            let fields = group.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            guard fields.count == 2,
+                  let code = UInt8(fields[0]),
+                  let type = PmdSettingType(rawValue: code) else {
+                return nil
+            }
+            let values = fields[1].split(separator: ",", omittingEmptySubsequences: false).reduce(into: Set<UInt32>()) { result, value in
+                if let parsed = UInt32(value) {
+                    result.insert(parsed)
+                }
+            }
+            settings[type] = values
+        }
+        return settings
+    }
+
     private func sharedSelectedSettingsSerialization() -> Data? {
         let supportedTypes: Set<PmdSettingType> = [.sampleRate, .resolution, .range, .rangeMilliUnit, .channels, .factor]
         guard Set(selected.keys).isSubset(of: supportedTypes) else { return nil }
@@ -111,6 +136,10 @@ private extension Data {
             index = next
         }
         self.init(bytes)
+    }
+
+    var pmdHexString: String {
+        map { String(format: "%02x", $0) }.joined()
     }
 }
 #endif

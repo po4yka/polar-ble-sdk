@@ -565,6 +565,21 @@ object PolarIosSharedBridge {
         return PolarPmdSettings.serializeSelectedSettings(selected).toHex()
     }
 
+    fun pmdParsedSettingsCsv(settingsHex: String): String? {
+        val parsed = PolarPmdSettings.parseSettings(settingsHex.hexToBytes())
+        if (parsed.error != null) return null
+        return parsed.settings.entries.joinToString(separator = ";") { (type, values) ->
+            val mask = when (type.valueSize) {
+                1 -> 0xFFL
+                2 -> 0xFFFFL
+                4 -> 0xFFFF_FFFFL
+                else -> 0xFFFF_FFFFL
+            }
+            val encodedValues = values.joinToString(separator = ",") { value -> ((value.toLong()) and mask).toString() }
+            "${type.code}=$encodedValues"
+        }
+    }
+
     fun pmdSecretSettingsHex(strategy: String, keyHex: String): String? {
         return runCatching { PolarPmdSecret.from(strategy, keyHex.hexToBytes()).serializeHex() }.getOrNull()
     }
