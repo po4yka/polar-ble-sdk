@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class AccData {
     var timeStamp: UInt64 = 0
@@ -53,6 +56,11 @@ public class AccData {
     }
     
     private static func dataFromRawType0(frame: PmdDataFrame) throws -> AccData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedData(frame: frame) {
+            return sharedData
+        }
+        #endif
         var offset = 0
         let step = TYPE_0_SAMPLE_SIZE_IN_BYTES
         let samplesSize = Int(Double(frame.dataContent.count) / Double(step * TYPE_0_CHANNELS_IN_SAMPLE))
@@ -74,6 +82,11 @@ public class AccData {
     }
     
     private static func dataFromRawType1(frame: PmdDataFrame) throws -> AccData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedData(frame: frame) {
+            return sharedData
+        }
+        #endif
         var offset = 0
         let step = TYPE_1_SAMPLE_SIZE_IN_BYTES
         let samplesSize = Int(Double(frame.dataContent.count) / Double(step * TYPE_1_CHANNELS_IN_SAMPLE))
@@ -95,6 +108,11 @@ public class AccData {
     }
     
     private static func dataFromCompressedType0(frame: PmdDataFrame) throws -> AccData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedData(frame: frame) {
+            return sharedData
+        }
+        #endif
         //Note, special Wolfi type. See SAGRFC85.3
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: 3, resolution: 16)
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
@@ -112,6 +130,11 @@ public class AccData {
     }
     
     private static func dataFromCompressedType1(frame: PmdDataFrame) throws -> AccData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedData(frame: frame) {
+            return sharedData
+        }
+        #endif
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_1_CHANNELS_IN_SAMPLE, resolution: TYPE_1_SAMPLE_SIZE_IN_BITS)
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
         
@@ -133,4 +156,48 @@ public class AccData {
         }
         return AccData(timeStamp: frame.timeStamp, samples: accSamples)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedData(frame: PmdDataFrame) -> AccData? {
+        guard frame.frameType == .type_0 || frame.frameType == .type_1,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PolarIosSharedBridge.shared.accSamples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> AccSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 4,
+                  let timeStamp = UInt64(fields[0]),
+                  let x = Int32(fields[1]),
+                  let y = Int32(fields[2]),
+                  let z = Int32(fields[3]) else {
+                return nil
+            }
+            return AccSample(timeStamp: timeStamp, x: x, y: y, z: z)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return AccData(timeStamp: frame.timeStamp, samples: samples)
+    }
+
+    private static func sharedDataFrameHex(frame: PmdDataFrame) -> String {
+        var data = Data([frame.measurementType.rawValue])
+        var littleEndianTimestamp = frame.timeStamp.littleEndian
+        withUnsafeBytes(of: &littleEndianTimestamp) { data.append(contentsOf: $0) }
+        let frameTypeByte = frame.frameType.rawValue | (frame.isCompressedFrame ? 0x80 : 0)
+        data.append(frameTypeByte)
+        data.append(frame.dataContent)
+        return data.map { String(format: "%02x", $0) }.joined()
+    }
+    #endif
 }
