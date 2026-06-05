@@ -29,8 +29,8 @@ extension PolarBleApiImpl: PolarDeviceToHostNotificationsApi {
                             planningNotificationType = rawMappedNotification.sharedNotificationType
                         }
                         let parameters = Data(notification.parameters)
-                        _ = PolarRuntimePlanner.d2hParsedProtoName(notificationType: planningNotificationType, parametersHex: parameters.map { String(format: "%02x", $0) }.joined())
-                        let parsedParameters = BlePsFtpClient.parseD2HNotificationParameters(mappedNotification, data: parameters)
+                        let sharedParsedProtoName = PolarRuntimePlanner.d2hParsedProtoName(notificationType: planningNotificationType, parametersHex: parameters.map { String(format: "%02x", $0) }.joined())
+                        let parsedParameters = BlePsFtpClient.parseD2HNotificationParameters(mappedNotification, data: parameters, sharedParsedProtoName: sharedParsedProtoName)
                         let data = PolarD2HNotificationData(
                             notificationType: mappedNotification,
                             parameters: parameters,
@@ -104,9 +104,12 @@ private extension PolarDeviceToHostNotification {
 }
 
 extension BlePsFtpClient {
-    static func parseD2HNotificationParameters(_ notification: PolarDeviceToHostNotification, data: Data) -> Any? {
+    static func parseD2HNotificationParameters(_ notification: PolarDeviceToHostNotification, data: Data, sharedParsedProtoName: String? = nil) -> Any? {
         if data.isEmpty { return nil }
         do {
+            if let sharedParsedProtoName {
+                return try parseD2HNotificationParameters(sharedParsedProtoName: sharedParsedProtoName, data: data)
+            }
             switch notification {
             case .syncRequired:       return try Protocol_PbPFtpSyncRequiredParams(serializedBytes: data, extensions: nil)
             case .filesystemModified: return try Protocol_PbPFtpFilesystemModifiedParams(serializedBytes: data, extensions: nil)
@@ -128,6 +131,28 @@ extension BlePsFtpClient {
             }
         } catch {
             BleLogger.error("Failed to parse D2H notification parameters for \(notification): \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    private static func parseD2HNotificationParameters(sharedParsedProtoName: String, data: Data) throws -> Any? {
+        switch sharedParsedProtoName {
+        case "PbPFtpSyncRequiredParams": return try Protocol_PbPFtpSyncRequiredParams(serializedBytes: data, extensions: nil)
+        case "PbPFtpFilesystemModifiedParams": return try Protocol_PbPFtpFilesystemModifiedParams(serializedBytes: data, extensions: nil)
+        case "PbPFtpInactivityAlert": return try Protocol_PbPFtpInactivityAlert(serializedBytes: data, extensions: nil)
+        case "PbPFtpTrainingSessionStatus": return try Protocol_PbPFtpTrainingSessionStatus(serializedBytes: data, extensions: nil)
+        case "PbPFtpAutoSyncStatusParams": return try Protocol_PbPFtpAutoSyncStatusParams(serializedBytes: data, extensions: nil)
+        case "PbPftpPnsDHNotificationResponse": return try Protocol_PbPftpPnsDHNotificationResponse(serializedBytes: data, extensions: nil)
+        case "PbPftpPnsState": return try Protocol_PbPftpPnsState(serializedBytes: data, extensions: nil)
+        case "PbPftpStartGPSMeasurement": return try Protocol_PbPftpStartGPSMeasurement(serializedBytes: data, extensions: nil)
+        case "PbPFtpPolarShellMessageParams": return try Protocol_PbPFtpPolarShellMessageParams(serializedBytes: data, extensions: nil)
+        case "PbPftpDHMediaControlRequest": return try Protocol_PbPftpDHMediaControlRequest(serializedBytes: data, extensions: nil)
+        case "PbPftpDHMediaControlCommand": return try Protocol_PbPftpDHMediaControlCommand(serializedBytes: data, extensions: nil)
+        case "PbPftpDHMediaControlEnabled": return try Protocol_PbPftpDHMediaControlEnabled(serializedBytes: data, extensions: nil)
+        case "PbPftpDHRestApiEvent": return try Protocol_PbPftpDHRestApiEvent(serializedBytes: data, extensions: nil)
+        case "PbPftpDHExerciseStatus": return try Protocol_PbPftpDHExerciseStatus(serializedBytes: data, extensions: nil)
+        default:
+            BleLogger.trace("No shared D2H parameter parser implemented for: \(sharedParsedProtoName)")
             return nil
         }
     }

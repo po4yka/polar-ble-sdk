@@ -80,6 +80,22 @@ class PolarDeviceToHostNotificationsApiTests: XCTestCase {
         XCTAssertEqual(results[1].notificationType, PolarDeviceToHostNotification.keepBackgroundAlive)
         XCTAssertEqual(results[1].parameters.count, 0)
     }
+
+    func testD2HParameterParserUsesSharedProtoNameWhenLinked() throws {
+        var syncRequiredNotificationParameter = Protocol_PbPFtpSyncRequiredParams()
+        var syncTrigger = Protocol_PbPFtpSyncTrigger()
+        syncTrigger.source = .timed
+        syncRequiredNotificationParameter.syncTriggers = [syncTrigger]
+        let serializedData = try syncRequiredNotificationParameter.serializedData()
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("PbPFtpSyncRequiredParams", PolarRuntimePlanner.d2hParsedProtoName(notificationType: "SYNC_REQUIRED", parametersHex: serializedData.map { String(format: "%02x", $0) }.joined()))
+        #endif
+
+        let parsed = BlePsFtpClient.parseD2HNotificationParameters(.stopGpsMeasurement, data: serializedData, sharedParsedProtoName: "PbPFtpSyncRequiredParams")
+
+        let parsedParams = try XCTUnwrap(parsed as? Protocol_PbPFtpSyncRequiredParams)
+        XCTAssertEqual(parsedParams, syncRequiredNotificationParameter)
+    }
     
     func testReceivesFilesystemModifiedNotification() async throws {
         // Arrange
