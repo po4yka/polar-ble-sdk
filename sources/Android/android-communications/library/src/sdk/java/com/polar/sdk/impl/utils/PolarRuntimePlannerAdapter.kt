@@ -253,6 +253,22 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun planBackupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success"): Pair<PftpRequest.PbPFtpOperation.Command, String>? {
+        val command = PolarWorkflowRuntimePlanning.planBackupRestore(
+            listOf(
+                PolarBackupRestoreFile(
+                    directory = path.substringBeforeLast('/', missingDelimiterValue = "") + "/",
+                    fileName = path.substringAfterLast('/'),
+                    dataHex = payloadHex,
+                    writeResult = writeResult
+                )
+            )
+        ).commands.firstOrNull { it.startsWith("PUT:") } ?: return null
+        val parts = command.split(":", limit = 3)
+        if (parts.size != 3 || parts[0] != "PUT") return null
+        return PftpRequest.PbPFtpOperation.Command.PUT to parts[1]
+    }
+
     fun planPsFtpWriteProgress(payloadSize: Int, platform: String): List<Int> {
         return PolarWorkflowRuntimePlanning.planPsFtpWriteProgress(payloadSize, platform)
     }

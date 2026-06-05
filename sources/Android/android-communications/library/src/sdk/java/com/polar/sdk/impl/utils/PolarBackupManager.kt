@@ -111,10 +111,11 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
         }
         for (backupFileData in backupFiles) {
             val restorePath = backupFileData.directory + backupFileData.fileName
+            val plannedOperation = PolarRuntimePlannerAdapter.planBackupRestoreOperation(restorePath, backupFileData.data.toHexString())
             PolarRuntimePlannerAdapter.planBackupRestore(restorePath, backupFileData.data.toHexString())
             val header = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(PftpRequest.PbPFtpOperation.Command.PUT)
-                .setPath(restorePath)
+                .setCommand(plannedOperation?.first ?: PftpRequest.PbPFtpOperation.Command.PUT)
+                .setPath(plannedOperation?.second ?: restorePath)
                 .build().toByteArray()
             val dataStream = ByteArrayInputStream(backupFileData.data)
             BleLogger.d(TAG, "Sending PftpRequest: ${header.toString(Charsets.UTF_8)}")

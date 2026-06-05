@@ -74,4 +74,12 @@ class PolarRuntimePlannerAdapterTest {
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE, PolarRuntimePlannerAdapter.fileOperationCommand(remove))
         Assert.assertEquals("/U/0/CUSTOM.BIN", PolarRuntimePlannerAdapter.fileOperationPath(remove))
     }
+
+    @Test
+    fun `shared backup restore plans select Android protobuf PUT operation and path`() {
+        val operation = PolarRuntimePlannerAdapter.planBackupRestoreOperation("/U/0/BACKUP.TXT", "0102")
+
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, operation?.first)
+        Assert.assertEquals("/U/0/BACKUP.TXT", operation?.second)
+    }
 }
