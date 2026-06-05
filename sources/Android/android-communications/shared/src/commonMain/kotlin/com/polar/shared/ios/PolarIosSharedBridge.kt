@@ -6,6 +6,8 @@ import com.polar.shared.device.PolarDeviceCapabilities
 import com.polar.shared.device.PolarDeviceCapabilitiesConfig
 import com.polar.shared.device.PolarDeviceCapabilityDefaults
 import com.polar.shared.pmd.PolarPmdControlPoint
+import com.polar.shared.pmd.PolarPmdSettingType
+import com.polar.shared.pmd.PolarPmdSettings
 import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
@@ -222,6 +224,16 @@ object PolarIosSharedBridge {
 
     fun pmdActiveMeasurementIosState(responseByte: Int): String {
         return PolarPmdControlPoint.parseActiveMeasurement(responseByte).iosStateName
+    }
+
+    fun pmdSelectedSettingsHex(selectedCsv: String): String {
+        val selected = selectedCsv.csvValues().mapNotNull { field ->
+            val code = field.substringBefore('=', missingDelimiterValue = "").toIntOrNull()
+            val value = field.substringAfter('=', missingDelimiterValue = "").toLongOrNull()
+            val type = code?.let { PolarPmdSettingType.fromCode(it) }
+            if (type == null || value == null || value !in 0L..0xFFFF_FFFFL) null else type to value.toInt()
+        }.toMap()
+        return PolarPmdSettings.serializeSelectedSettings(selected).toHex()
     }
 
     fun resolveDeviceCapabilities(

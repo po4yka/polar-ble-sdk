@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public struct PmdSetting: @unchecked Sendable {
     public enum PmdSettingType: UInt8, CaseIterable {
@@ -64,6 +67,11 @@ public struct PmdSetting: @unchecked Sendable {
     }
     
     public func serialize() -> Data {
+        #if canImport(PolarBleSdkShared)
+        if let shared = sharedSelectedSettingsSerialization() {
+            return shared
+        }
+        #endif
         return selected.reduce(into: NSMutableData()) { (result, entry) in
             if entry.key != .factor {
                 result.append([UInt8(entry.key.rawValue)], length: 1)
@@ -75,4 +83,34 @@ public struct PmdSetting: @unchecked Sendable {
             }
         } as Data
     }
+
+    #if canImport(PolarBleSdkShared)
+    private func sharedSelectedSettingsSerialization() -> Data? {
+        let supportedTypes: Set<PmdSettingType> = [.sampleRate, .resolution, .range, .rangeMilliUnit, .channels, .factor]
+        guard Set(selected.keys).isSubset(of: supportedTypes) else { return nil }
+        let selectedCsv = selected
+            .map { "\($0.key.rawValue)=\($0.value)" }
+            .sorted()
+            .joined(separator: ",")
+        return Data(hexBytes: PolarIosSharedBridge.shared.pmdSelectedSettingsHex(selectedCsv: selectedCsv))
+    }
+    #endif
 }
+
+#if canImport(PolarBleSdkShared)
+private extension Data {
+    init?(hexBytes: String) {
+        guard hexBytes.count % 2 == 0 else { return nil }
+        var bytes: [UInt8] = []
+        bytes.reserveCapacity(hexBytes.count / 2)
+        var index = hexBytes.startIndex
+        while index < hexBytes.endIndex {
+            let next = hexBytes.index(index, offsetBy: 2)
+            guard let byte = UInt8(hexBytes[index..<next], radix: 16) else { return nil }
+            bytes.append(byte)
+            index = next
+        }
+        self.init(bytes)
+    }
+}
+#endif
