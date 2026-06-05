@@ -1,9 +1,5 @@
 import Foundation
 
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
-
 /// A thread-safe container that manages multiple AsyncThrowingStream continuations.
 final class StreamContinuationList<T>: @unchecked Sendable {
     private let lock = NSLock()
@@ -184,33 +180,22 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
 }
 
 private func planRuntimeStreamSubscription(target: String, startConnected: Bool, checkConnection: Bool) -> String? {
-    #if canImport(PolarBleSdkShared)
-    return PolarIosSharedBridge.shared.planRuntimeStreamSubscription(target: target, startConnected: startConnected, checkConnection: checkConnection)
-    #else
-    return nil
-    #endif
+    let planned = PolarRuntimePlanner.streamSubscription(target: target, startConnected: startConnected, checkConnection: checkConnection)
+    return planned == "platform-owned" ? nil : planned
 }
 
 private func planRuntimeStreamConsumerCancellation(target: String) {
-    #if canImport(PolarBleSdkShared)
-    _ = PolarIosSharedBridge.shared.planRuntimeStreamConsumerCancellation(target: target)
-    #endif
+    _ = PolarRuntimePlanner.streamConsumerCancellation(target: target)
 }
 
 private func planRuntimeStreamDisconnect(target: String, error: String) {
-    #if canImport(PolarBleSdkShared)
-    _ = PolarIosSharedBridge.shared.planRuntimeStreamDisconnect(target: target, error: error)
-    #endif
+    _ = PolarRuntimePlanner.streamDisconnect(target: target, error: error)
 }
 
 private func planRuntimeStreamDuplicateCompletion(target: String) {
-    #if canImport(PolarBleSdkShared)
-    _ = PolarIosSharedBridge.shared.planRuntimeStreamDuplicateCompletion(target: target)
-    #endif
+    _ = PolarRuntimePlanner.streamDuplicateCompletion(target: target)
 }
 
 private func planRuntimeStreamPostCompletionEmission(target: String, value: String) {
-    #if canImport(PolarBleSdkShared)
-    _ = PolarIosSharedBridge.shared.planRuntimeStreamPostCompletionEmission(target: target, value: value)
-    #endif
+    _ = PolarRuntimePlanner.streamPostCompletionEmission(target: target, value: value)
 }
