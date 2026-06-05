@@ -1024,9 +1024,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     private fun buildPftpGetRequest(path: String): ByteArray {
+        val readOperation = offlineRecordingFileReadOperation(path)
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = PftpRequest.PbPFtpOperation.Command.GET
-        builder.path = path
+        builder.command = readOperation.first
+        builder.path = readOperation.second
         return builder.build().toByteArray()
     }
 
@@ -1242,10 +1243,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         entry: PolarOfflineRecordingEntry
     ): Pair<Int, Int> {
         return try {
-            val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            builder.command = PftpRequest.PbPFtpOperation.Command.GET
             val directoryPath = entry.path.substring(0, entry.path.lastIndexOf("/") + 1)
-            builder.path = directoryPath
+            val readOperation = offlineRecordingDirectoryReadOperation(directoryPath)
+            val builder = PftpRequest.PbPFtpOperation.newBuilder()
+            builder.command = readOperation.first
+            builder.path = readOperation.second
 
             val byteArrayOutputStream = client.request(builder.build().toByteArray())
             val directory = PbPFtpDirectory.parseFrom(byteArrayOutputStream.toByteArray())
@@ -1326,9 +1328,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val fsType = getFileSystemType(session.polarDeviceType)
         if (fsType != FileSystemType.POLAR_FILE_SYSTEM_V2) throw PolarOperationNotSupported()
 
+        val readOperation = offlineRecordingFileReadOperation(entry.path)
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = PftpRequest.PbPFtpOperation.Command.GET
-        builder.path = entry.path
+        builder.command = readOperation.first
+        builder.path = readOperation.second
 
         BleLogger.d(TAG, "Split offline record get. Device: $identifier Path: ${entry.path} Secret used: ${secret != null}")
         return try {
@@ -1420,21 +1423,24 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 } else {
                     entry.path.dropLastWhile { it != '/' }
                 }
+                val removeOperation = offlineRecordingRemoveOperation(parentDir)
                 val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                builder.command = PftpRequest.PbPFtpOperation.Command.REMOVE
-                builder.path = parentDir
+                builder.command = removeOperation.first
+                builder.path = removeOperation.second
                 client.request(builder.build().toByteArray())
             } else if (count == 0 || entry.path.contains(Regex("""(\D+)(\d+)\.REC"""))) {
+                val removeOperation = offlineRecordingRemoveOperation(entry.path)
                 val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                builder.command = PftpRequest.PbPFtpOperation.Command.REMOVE
-                builder.path = entry.path
+                builder.command = removeOperation.first
+                builder.path = removeOperation.second
                 client.request(builder.build().toByteArray())
             } else {
                 for (subRecordingIndex in 0 until count) {
                     val recordingPath = entry.path.replace(Regex("(\\d*.REC)$"), "$subRecordingIndex.REC")
+                    val removeOperation = offlineRecordingRemoveOperation(recordingPath)
                     val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                    builder.command = PftpRequest.PbPFtpOperation.Command.REMOVE
-                    builder.path = recordingPath
+                    builder.command = removeOperation.first
+                    builder.path = removeOperation.second
                     client.request(builder.build().toByteArray())
                 }
             }
@@ -1450,9 +1456,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 try {
                     val isEmpty = checkIfDirectoryIsEmpty(dir, client)
                     if (isEmpty) {
+                        val removeOperation = offlineRecordingRemoveOperation(dir)
                         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                        builder.command = PftpRequest.PbPFtpOperation.Command.REMOVE
-                        builder.path = dir
+                        builder.command = removeOperation.first
+                        builder.path = removeOperation.second
                         client.request(builder.build().toByteArray())
                     }
                 } catch (throwable: Throwable) {
@@ -1469,9 +1476,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         if (!path.endsWith("/")) {
             path = path.plus("/")
         }
+        val readOperation = offlineRecordingDirectoryReadOperation(path)
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = PftpRequest.PbPFtpOperation.Command.GET
-        builder.path = path
+        builder.command = readOperation.first
+        builder.path = readOperation.second
 
         return try {
             val byteArrayOutputStream = client.request(builder.build().toByteArray())
@@ -3732,6 +3740,18 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         internal fun ledConfigWriteOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
             return facadeFileOperation("led-config-write", "PUT", LedConfig.LED_CONFIG_FILENAME)
+        }
+
+        internal fun offlineRecordingFileReadOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("offline-recording-read-file", "GET", path)
+        }
+
+        internal fun offlineRecordingDirectoryReadOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("offline-recording-read-directory", "GET", path)
+        }
+
+        internal fun offlineRecordingRemoveOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("offline-recording-remove", "REMOVE", path)
         }
 
         internal fun h10ExerciseFetchOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {

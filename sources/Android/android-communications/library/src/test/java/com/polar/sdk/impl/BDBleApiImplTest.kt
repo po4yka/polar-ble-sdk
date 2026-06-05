@@ -1151,6 +1151,20 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `offline recording headers use shared file facade planning`() {
+        val fileOperation = BDBleApiImpl.offlineRecordingFileReadOperation("/U/0/20240615/R/103000/ACC.REC")
+        val directoryOperation = BDBleApiImpl.offlineRecordingDirectoryReadOperation("/U/0/20240615/R/103000/")
+        val removeOperation = BDBleApiImpl.offlineRecordingRemoveOperation("/U/0/20240615/R/103000/ACC.REC")
+
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, fileOperation.first)
+        Assert.assertEquals("/U/0/20240615/R/103000/ACC.REC", fileOperation.second)
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, directoryOperation.first)
+        Assert.assertEquals("/U/0/20240615/R/103000/", directoryOperation.second)
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE, removeOperation.first)
+        Assert.assertEquals("/U/0/20240615/R/103000/ACC.REC", removeOperation.second)
+    }
+
+    @Test
     fun `setLedConfig propagates write failure after payload is prepared`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_LED_ANIMATION))
