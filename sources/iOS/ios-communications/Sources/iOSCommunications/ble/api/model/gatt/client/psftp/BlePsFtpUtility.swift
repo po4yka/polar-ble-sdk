@@ -1,6 +1,10 @@
 
 import Foundation
 
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
+
 // ps-ftp errors
 public enum BlePsFtpException: Error {
     ///  Undefined error, after a single undefined error might still be recoverable to next operation
@@ -124,6 +128,12 @@ public class BlePsFtpUtility {
         _ header: Data?,
         type: MessageType ,
         id: Int) ->  InputStream  {
+        #if canImport(PolarBleSdkShared)
+        if type != .request || header != nil,
+           let sharedData = Data(hexBytes: PolarIosSharedBridge.shared.psFtpCompleteMessageStreamHex(type: type.sharedName, headerHex: (header ?? Data()).hexString, dataHex: "", idValue: Int32(id))) {
+            return InputStream(data: sharedData)
+        }
+        #endif
         switch type {
         case .request:
             guard let header = header else {
@@ -325,3 +335,39 @@ public class BlePsFtpUtility {
 }
 
 public extension BlePsFtpException { var localizedDescription: String { return "The operation couldn't be completed. (PolarBleSdk.BleGattException.\(self)" } }
+
+#if canImport(PolarBleSdkShared)
+private extension BlePsFtpUtility.MessageType {
+    var sharedName: String {
+        switch self {
+        case .request:
+            return "request"
+        case .query:
+            return "query"
+        case .notification:
+            return "notification"
+        }
+    }
+}
+
+private extension Data {
+    var hexString: String {
+        map { String(format: "%02x", $0) }.joined()
+    }
+
+    init?(hexBytes: String) {
+        guard hexBytes.count % 2 == 0 else { return nil }
+        var bytes = [UInt8]()
+        var index = hexBytes.startIndex
+        while index < hexBytes.endIndex {
+            let nextIndex = hexBytes.index(index, offsetBy: 2)
+            guard let byte = UInt8(hexBytes[index..<nextIndex], radix: 16) else {
+                return nil
+            }
+            bytes.append(byte)
+            index = nextIndex
+        }
+        self = Data(bytes)
+    }
+}
+#endif

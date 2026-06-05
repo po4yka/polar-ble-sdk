@@ -978,6 +978,15 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.planPsFtpWrite(ByteArray(maxOf(payloadSize, 1)) { 0 }, writeAck = writeAck).terminal
     }
 
+    fun psFtpCompleteMessageStreamHex(type: String, headerHex: String, dataHex: String, idValue: Int): String {
+        return PolarWorkflowRuntimePlanning.encodeCompleteMessageStream(
+            type = type,
+            header = headerHex.hexToBytes(),
+            idValue = idValue,
+            data = dataHex.hexToBytes()
+        ).toHex()
+    }
+
     fun d2hNotificationType(notificationId: Int): String {
         return PolarD2hRuntimePlanning.notificationTypeOrNull(notificationId) ?: ""
     }
