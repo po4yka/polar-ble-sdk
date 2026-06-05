@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
+import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -68,6 +70,14 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarFirmwareUpdateUtilsTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
+    }
+
+    @Test
+    fun firmwareWorkflowOrderingUsesSharedUtilityPolicy() {
+        val files = listOf("TCHUPDAT.BIN", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN")
+
+        assertEquals(PolarFirmwareUpdateModels.orderFirmwareFiles(files), PolarWorkflowRuntimePlanning.orderFirmwareFiles(files))
+        assertEquals(listOf("TCHUPDAT.BIN", "APPUPDAT.BIN", "BTUPDAT.BIN", "SYSUPDAT.IMG"), PolarWorkflowRuntimePlanning.orderFirmwareFiles(files))
     }
 
     private fun assertFirmwareWorkflowPolicyVectorShape(policy: String) {

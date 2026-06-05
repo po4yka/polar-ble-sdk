@@ -1,5 +1,7 @@
 package com.polar.shared.runtime
 
+import com.polar.shared.sdk.PolarFirmwareUpdateModels
+
 data class PolarStoredDataCleanupDateFolder(
     val path: String,
     val beforeCutoff: Boolean,
@@ -104,8 +106,6 @@ class PolarPsFtpTransportWriteFailure(message: String) : IllegalStateException(m
 class PolarPsFtpWriteAckTimeout(val point: String) : IllegalStateException("PSFTP write acknowledgement timeout at $point")
 
 object PolarWorkflowRuntimePlanning {
-    private const val SYSTEM_UPDATE_FILE = "SYSUPDAT.IMG"
-
     fun planStoredDataCleanup(scenario: PolarStoredDataCleanupScenario): PolarWorkflowPlan {
         return when (scenario.kind) {
             "filterDirectoryEntries" -> PolarWorkflowPlan(commands = cleanupFilterDirectoryEntries(scenario))
@@ -148,13 +148,7 @@ object PolarWorkflowRuntimePlanning {
     }
 
     fun orderFirmwareFiles(fileNames: List<String>): List<String> {
-        return fileNames.sortedWith { first, second ->
-            when {
-                first == SYSTEM_UPDATE_FILE && second != SYSTEM_UPDATE_FILE -> 1
-                second == SYSTEM_UPDATE_FILE && first != SYSTEM_UPDATE_FILE -> -1
-                else -> first.compareTo(second)
-            }
-        }
+        return PolarFirmwareUpdateModels.orderFirmwareFiles(fileNames)
     }
 
     fun expandBackupEntries(backupText: String, availablePaths: List<String>): List<String> {

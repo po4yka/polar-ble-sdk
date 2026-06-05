@@ -2309,8 +2309,10 @@ extension PolarBleApiImpl: PolarBleApi  {
                 return true
             }
             .sorted { PolarFirmwareUpdateUtils.FwFileComparator.compare($0.key, $1.key) == .orderedAscending }
-        _ = PolarRuntimePlanner.orderFirmwareFiles(sorted.map { $0.key })
-        return Array(sorted)
+        let firmwareFilesByName = Dictionary(uniqueKeysWithValues: sorted)
+        return PolarRuntimePlanner.orderFirmwareFiles(sorted.map { $0.key }).compactMap { fileName in
+            firmwareFilesByName[fileName].map { (fileName, $0) }
+        }
     }
 
     private func writeFirmwareFilesToDeviceAsync(_ identifier: String, firmwareFiles: [(String, Data)], minPercentageIncrement: Int = 0) -> AsyncThrowingStream<FirmwareUpdateStatus, Error> {
