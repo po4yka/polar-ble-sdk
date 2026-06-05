@@ -4,6 +4,7 @@ import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class CommandRuntimePolicyCommonTest {
     @Test
@@ -83,6 +84,35 @@ class CommandRuntimePolicyCommonTest {
         assertEquals(true, platforms.booleanValue("common"))
     }
 
+    @Test
+    fun resetSyncH10CommandVectorRunsThroughCommonFakeTransportFacadeShape() {
+        val vector = loadGoldenVectorText("sdk/command-runtime/reset-sync-h10-command-policy.json")
+        val input = vector.objectValue("input")
+        val expectedCases = vector.objectValue("expected").objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
+
+        input.objectArray("operations").forEach { operationJson ->
+            val operation = PolarFacadeCommandOperation(
+                id = operationJson.stringValue("id"),
+                kind = operationJson.stringValue("kind"),
+                query = operationJson.optionalStringValue("query"),
+                parameters = operationJson.optionalStringArrayValue("parameters") ?: emptyList(),
+                notifications = operationJson.optionalStringArrayValue("notifications") ?: emptyList(),
+                sleep = operationJson.optionalBooleanValue("sleep"),
+                factoryDefaults = operationJson.optionalBooleanValue("factoryDefaults"),
+                otaFirmwareUpdate = operationJson.optionalBooleanValue("otaFirmwareUpdate")
+            )
+            val planned = PolarRuntimeOrchestration.planCommand(operation)
+            val expected = expectedCases.getValue(operation.id)
+            val transportCommands = commandTransportCommands(expected.stringArrayValue("commands"))
+            val transport = ScriptedCommonFakeTransport(outcomesForCommandTransport(transportCommands, expected.stringValue("terminal")))
+            val terminal = executePlannedCommand(transportCommands, expected.stringValue("terminal"), transport)
+
+            assertEquals(expected.stringArrayValue("commands"), planned.commands, operation.id)
+            assertEquals(expected.stringValue("terminal"), terminal, operation.id)
+            assertEquals(transportCommands, transport.commands, operation.id)
+        }
+    }
+
     private val requiredCommandRuntimeOperationIds = listOf(
         "h10-start-recording",
         "h10-start-recording-query-failure",
@@ -140,6 +170,71 @@ class CommandRuntimePolicyCommonTest {
     private val COMMAND_POLICY_COMMON_DECISION = "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
 
     private val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+
+    private fun outcomesForCommandTransport(commands: List<CommonFakeTransportCommand>, terminal: String): List<CommonFakeTransportOutcome> {
+        if (terminal == "transport-error" || terminal == "platform-split") {
+            return if (commands.size == 1) {
+                listOf(CommonFakeTransportOutcome.TransportError("command-failed"))
+            } else {
+                commands.dropLast(1).map { CommonFakeTransportOutcome.Complete } + CommonFakeTransportOutcome.TransportError("command-failed")
+            }
+        }
+        return commands.map { CommonFakeTransportOutcome.Complete }
+    }
+
+    private fun executePlannedCommand(
+        commands: List<CommonFakeTransportCommand>,
+        expectedTerminal: String,
+        transport: ScriptedCommonFakeTransport
+    ): String {
+        commands.forEach { command ->
+            val payload = command.payloadHex?.let(::hexToBytes) ?: byteArrayOf()
+            val outcome = transport.write(command.target, payload)
+            if (outcome is CommonFakeTransportOutcome.TransportError) {
+                return expectedTerminal
+            }
+            assertIs<CommonFakeTransportOutcome.Complete>(outcome, command.target)
+        }
+        return expectedTerminal
+    }
+
+    private fun commandTransportCommands(commands: List<String>): List<CommonFakeTransportCommand> {
+        val transportCommands = mutableListOf<CommonFakeTransportCommand>()
+        var index = 0
+        while (index < commands.size) {
+            val command = commands[index]
+            when {
+                command.startsWith("query:") -> {
+                    val payloadFields = mutableListOf<String>()
+                    index += 1
+                    while (index < commands.size && (commands[index].startsWith("parameter:") || commands[index] == "parameters:none")) {
+                        payloadFields += commands[index]
+                        index += 1
+                    }
+                    transportCommands += CommonFakeTransportCommand(
+                        operation = CommonFakeTransportOperation.WRITE,
+                        target = command,
+                        payloadHex = payloadFields.joinToString(separator = "|").encodeToByteArray().toHexString()
+                    )
+                }
+                command.startsWith("notification:") -> {
+                    val payloadFields = mutableListOf<String>()
+                    index += 1
+                    while (index < commands.size && commands[index].startsWith("flag:")) {
+                        payloadFields += commands[index]
+                        index += 1
+                    }
+                    transportCommands += CommonFakeTransportCommand(
+                        operation = CommonFakeTransportOperation.WRITE,
+                        target = command,
+                        payloadHex = payloadFields.joinToString(separator = "|").encodeToByteArray().toHexString()
+                    )
+                }
+                else -> index += 1
+            }
+        }
+        return transportCommands
+    }
 
     private fun assertCommandRuntimePolicyFields(operationsById: Map<String, String>) {
         assertEquals("REQUEST_START_RECORDING", operationsById.getValue("h10-start-recording").stringValue("query"))

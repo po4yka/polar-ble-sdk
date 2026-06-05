@@ -4580,6 +4580,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "resetSyncH10CommandPolicyVectorDefinesExecutableCommonCommandPlanning",
+            "resetSyncH10CommandVectorRunsThroughCommonFakeTransportFacadeShape",
             "resetSyncH10CommandReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/command-runtime/reset-sync-h10-command-policy.json",
             "sdk/command-runtime/reset-sync-h10-command-readiness.json",
@@ -4613,6 +4614,8 @@ class GoldenVectorMigrationPolicyTest {
             "sync-stop-success",
             "sync-stop-notification-failure",
             "platform-split",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "syncStartQueryFailure",
             "syncStopNotificationFailure",
             "h10-recording-start-query",

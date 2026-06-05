@@ -382,6 +382,7 @@ FAKE_TRANSPORT_COMMON_TEST_REQUIRED_TERMS = [
 ].freeze
 FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS = [
   "resetSyncH10CommandPolicyVectorDefinesExecutableCommonCommandPlanning",
+  "resetSyncH10CommandVectorRunsThroughCommonFakeTransportFacadeShape",
   "resetSyncH10CommandReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/command-runtime/reset-sync-h10-command-policy.json",
   "sdk/command-runtime/reset-sync-h10-command-readiness.json",
@@ -415,6 +416,8 @@ FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS = [
   "sync-stop-success",
   "sync-stop-notification-failure",
   "platform-split",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "syncStartQueryFailure",
   "syncStopNotificationFailure",
   "h10-recording-start-query",
