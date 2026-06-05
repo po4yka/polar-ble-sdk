@@ -539,7 +539,8 @@ FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = [
   "protobuf-field-preservation-gate",
   "facade-error-mapping-gate",
   "compile-verification-gate",
-  "FakeUserDeviceSettingsRuntime"
+  "PolarRuntimeOrchestration",
+  "planUserDeviceSettings"
 ].freeze
 FAKE_TRANSPORT_COMMON_REST_RUNTIME_TEST_REQUIRED_TERMS = [
   "restRequestTransportPolicyVectorRunsThroughCommonFakeTransport",
@@ -646,7 +647,8 @@ FAKE_TRANSPORT_COMMON_FILE_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
   "response-error-policy-gate",
   "facade-error-mapping-gate",
   "compile-verification-gate",
-  "FakeFileFacadeRuntime"
+  "PolarRuntimeOrchestration",
+  "planFileFacade"
 ].freeze
 FAKE_TRANSPORT_COMMON_REST_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
   "restFacadeRuntimePolicyVectorDefinesExecutableCommonRequestPlanning",
@@ -707,7 +709,8 @@ FAKE_TRANSPORT_COMMON_REST_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
   "response-error-transport-policy-gate",
   "facade-error-mapping-gate",
   "compile-verification-gate",
-  "FakeRestFacadeRuntime"
+  "PolarRuntimeOrchestration",
+  "planRestFacade"
 ].freeze
 FAKE_TRANSPORT_COMMON_REST_SERVICE_MAPPING_TEST_REQUIRED_TERMS = [
   "restServiceListGoldenVectorsDefineExecutableCommonMappingPolicy",
@@ -2206,8 +2209,9 @@ end
 user_device_settings_runtime_common_test = File.join(ROOT, "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/UserDeviceSettingsRuntimePolicyCommonTest.kt")
 if File.file?(user_device_settings_runtime_common_test)
   user_device_settings_runtime_common_test_text = File.read(user_device_settings_runtime_common_test)
+  user_device_settings_runtime_policy_text = user_device_settings_runtime_common_test_text + (File.file?(runtime_orchestration_common) ? File.read(runtime_orchestration_common) : "")
   FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS.each do |term|
-    errors << "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/UserDeviceSettingsRuntimePolicyCommonTest.kt: missing common user-device-settings runtime assertion for #{term}" unless user_device_settings_runtime_common_test_text.include?(term)
+    errors << "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/UserDeviceSettingsRuntimePolicyCommonTest.kt: missing common user-device-settings runtime assertion for #{term}" unless user_device_settings_runtime_policy_text.include?(term)
   end
 else
   errors << "missing shared user-device-settings runtime policy test"
@@ -2233,8 +2237,9 @@ end
 file_facade_runtime_common_test = File.join(ROOT, "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/FileFacadeRuntimePolicyCommonTest.kt")
 if File.file?(file_facade_runtime_common_test)
   file_facade_runtime_common_test_text = File.read(file_facade_runtime_common_test)
+  file_facade_runtime_policy_text = file_facade_runtime_common_test_text + (File.file?(runtime_orchestration_common) ? File.read(runtime_orchestration_common) : "")
   FAKE_TRANSPORT_COMMON_FILE_FACADE_RUNTIME_TEST_REQUIRED_TERMS.each do |term|
-    errors << "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/FileFacadeRuntimePolicyCommonTest.kt: missing common file facade runtime assertion for #{term}" unless file_facade_runtime_common_test_text.include?(term)
+    errors << "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/FileFacadeRuntimePolicyCommonTest.kt: missing common file facade runtime assertion for #{term}" unless file_facade_runtime_policy_text.include?(term)
   end
 else
   errors << "missing shared file facade runtime policy test"
@@ -2242,8 +2247,9 @@ end
 rest_facade_runtime_common_test = File.join(ROOT, "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/RestFacadeRuntimePolicyCommonTest.kt")
 if File.file?(rest_facade_runtime_common_test)
   rest_facade_runtime_common_test_text = File.read(rest_facade_runtime_common_test)
+  rest_facade_runtime_policy_text = rest_facade_runtime_common_test_text + (File.file?(runtime_orchestration_common) ? File.read(runtime_orchestration_common) : "")
   FAKE_TRANSPORT_COMMON_REST_FACADE_RUNTIME_TEST_REQUIRED_TERMS.each do |term|
-    errors << "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/RestFacadeRuntimePolicyCommonTest.kt: missing common REST facade runtime assertion for #{term}" unless rest_facade_runtime_common_test_text.include?(term)
+    errors << "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/RestFacadeRuntimePolicyCommonTest.kt: missing common REST facade runtime assertion for #{term}" unless rest_facade_runtime_policy_text.include?(term)
   end
 else
   errors << "missing shared REST facade runtime policy test"

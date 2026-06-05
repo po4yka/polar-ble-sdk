@@ -1,5 +1,8 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
+import com.polar.shared.runtime.PolarFileRuntimeErrorPlan
+import com.polar.shared.runtime.PolarRuntimeOrchestration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -67,16 +70,20 @@ class FileRuntimeErrorPolicyCommonTest {
         val expectedPrototype = vector.objectValue("commonRuntimePrototype")
         val consumerTests = vector.objectValue("consumerTests")
         val cases = input.objectArray("cases").map { testCase ->
-            FileRuntimeCase(
+            val transport = testCase.objectValue("transport")
+            PolarFileRuntimeErrorOperation(
                 id = testCase.stringValue("id"),
                 operation = testCase.stringValue("operation"),
                 path = testCase.stringValue("path"),
-                payload = testCase.optionalStringValue("payloadHex")?.let(::hexToBytes),
-                transport = testCase.objectValue("transport").toTransportOutcome()
+                payloadHex = testCase.optionalStringValue("payloadHex"),
+                transportMode = transport.stringValue("mode"),
+                status = transport.optionalIntValue("status"),
+                message = transport.optionalStringValue("message"),
+                error = transport.optionalStringValue("error"),
+                responsePayloadHex = transport.optionalStringValue("payloadHex")
             )
         }
         val expectedCases = expectedPrototype.objectArray("cases").associateBy { it.stringValue("id") }
-        val transport = ScriptedCommonFakeTransport(cases.map { it.transport })
 
         assertEquals("fileRuntimeErrorPolicy", input.stringValue("kind"))
         assertEquals(requiredFileRuntimeErrorCaseIds, cases.map { it.id })
@@ -91,20 +98,13 @@ class FileRuntimeErrorPolicyCommonTest {
         assertEquals(listOf("com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
 
         cases.forEach { testCase ->
-            val outcome = when (testCase.operation) {
-                "listFiles" -> transport.read(testCase.path).toFileRuntimeOutcome(forDirectoryList = true)
-                "readFile" -> transport.read(testCase.path).toFileRuntimeOutcome()
-                "writeFile" -> transport.write(testCase.path, testCase.payload ?: ByteArray(0)).toFileRuntimeOutcome(writeStream = true)
-                "removeSingleFile" -> transport.remove(testCase.path).toFileRuntimeOutcome()
-                else -> error("Unsupported file runtime operation ${testCase.operation}")
-            }
+            val outcome = PolarRuntimeOrchestration.planFileRuntimeError(testCase)
             val expected = expectedCases.getValue(testCase.id)
-            val command = transport.commands.last()
 
-            assertEquals(expected.stringValue("command"), command.operation.toPftpCommand(), testCase.id)
-            assertEquals(expected.stringValue("path"), command.target, testCase.id)
+            assertEquals(expected.stringValue("command"), outcome.command, testCase.id)
+            assertEquals(expected.stringValue("path"), outcome.path, testCase.id)
             expected.optionalStringValue("capturedPayloadHex")?.let { expectedPayload ->
-                assertEquals(expectedPayload, command.payloadHex, testCase.id)
+                assertEquals(expectedPayload, outcome.capturedPayloadHex, testCase.id)
             }
             assertOutcome(testCase.id, expected, outcome)
         }
@@ -208,52 +208,11 @@ class FileRuntimeErrorPolicyCommonTest {
 
     private val fileRuntimeErrorReadinessCommonDecision = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping, and the shared tests are compile-verified."
 
-    private fun CommonFakeTransportOutcome.toFileRuntimeOutcome(
-        forDirectoryList: Boolean = false,
-        writeStream: Boolean = false
-    ): FileRuntimeOutcome {
-        return when (this) {
-            is CommonFakeTransportOutcome.ResponseError -> {
-                if (forDirectoryList && status == 103) {
-                    FileRuntimeOutcome.DirectoryMissing(status)
-                } else {
-                    FileRuntimeOutcome.ResponseError(status, message)
-                }
-            }
-            is CommonFakeTransportOutcome.TransportError -> {
-                if (writeStream) FileRuntimeOutcome.WriteStreamError(message) else FileRuntimeOutcome.TransportError(message)
-            }
-            is CommonFakeTransportOutcome.Bytes -> {
-                if (forDirectoryList) FileRuntimeOutcome.DirectoryParseFailure else FileRuntimeOutcome.EmptySuccessPolicyRequired
-            }
-            is CommonFakeTransportOutcome.Timeout -> FileRuntimeOutcome.TransportError(label)
-            CommonFakeTransportOutcome.Complete -> FileRuntimeOutcome.EmptySuccessPolicyRequired
-        }
-    }
-
-    private fun assertOutcome(caseId: String, expected: String, outcome: FileRuntimeOutcome) {
-        assertEquals(expected.stringValue("outcome"), outcome.name, caseId)
-        when (outcome) {
-            is FileRuntimeOutcome.ResponseError -> {
-                assertEquals(expected.intValue("status"), outcome.status, caseId)
-                assertEquals(expected.stringValue("message"), outcome.message, caseId)
-            }
-            is FileRuntimeOutcome.TransportError -> assertEquals(expected.stringValue("error"), outcome.error, caseId)
-            is FileRuntimeOutcome.WriteStreamError -> assertEquals(expected.stringValue("error"), outcome.error, caseId)
-            is FileRuntimeOutcome.DirectoryMissing -> assertEquals(expected.intValue("status"), outcome.status, caseId)
-            FileRuntimeOutcome.DirectoryParseFailure,
-            FileRuntimeOutcome.EmptySuccessPolicyRequired -> Unit
-        }
-    }
-
-    private fun String.toTransportOutcome(): CommonFakeTransportOutcome {
-        return when (stringValue("mode")) {
-            "pftpResponseError" -> CommonFakeTransportOutcome.ResponseError(intValue("status"), stringValue("message"))
-            "transportError" -> CommonFakeTransportOutcome.TransportError(stringValue("error"))
-            "writeStreamError" -> CommonFakeTransportOutcome.TransportError(stringValue("error"))
-            "success" -> CommonFakeTransportOutcome.Bytes(hexToBytes(stringValue("payloadHex")))
-            else -> error("Unsupported transport mode ${stringValue("mode")}")
-        }
+    private fun assertOutcome(caseId: String, expected: String, outcome: PolarFileRuntimeErrorPlan) {
+        assertEquals(expected.stringValue("outcome"), outcome.outcome, caseId)
+        outcome.status?.let { status -> assertEquals(expected.intValue("status"), status, caseId) }
+        outcome.message?.let { message -> assertEquals(expected.stringValue("message"), message, caseId) }
+        outcome.error?.let { error -> assertEquals(expected.stringValue("error"), error, caseId) }
     }
 
     private fun CommonFakeTransportOperation.toPftpCommand(): String {
@@ -375,20 +334,9 @@ class FileRuntimeErrorPolicyCommonTest {
             get() = name.endsWith("/")
     }
 
-    private data class FileRuntimeCase(
-        val id: String,
-        val operation: String,
-        val path: String,
-        val payload: ByteArray?,
-        val transport: CommonFakeTransportOutcome
-    )
-
-    private sealed class FileRuntimeOutcome(val name: String) {
-        data class ResponseError(val status: Int, val message: String) : FileRuntimeOutcome("response-error")
-        data class TransportError(val error: String) : FileRuntimeOutcome("transport-error")
-        data class WriteStreamError(val error: String) : FileRuntimeOutcome("write-stream-error")
-        data class DirectoryMissing(val status: Int) : FileRuntimeOutcome("directory-missing")
-        object DirectoryParseFailure : FileRuntimeOutcome("directory-parse-failure")
-        object EmptySuccessPolicyRequired : FileRuntimeOutcome("requires-empty-response-policy")
+    private fun String.optionalIntValue(field: String): Int? {
+        val valueStart = "\"$field\"".toRegex().find(this)?.range?.last?.plus(1) ?: return null
+        val match = Regex("-?\\d+").find(this, valueStart) ?: return null
+        return match.value.toInt()
     }
 }

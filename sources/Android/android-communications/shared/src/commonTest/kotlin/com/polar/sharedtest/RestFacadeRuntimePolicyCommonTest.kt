@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarRestFacadeOperation
+import com.polar.shared.runtime.PolarRuntimeOrchestration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -11,7 +13,7 @@ class RestFacadeRuntimePolicyCommonTest {
         val expected = vector.objectValue("expected")
         val expectedPrototype = expected.objectValue("commonRuntimePrototype")
         val operations = input.objectArray("operations").map { operation ->
-            RestFacadeOperation(
+            PolarRestFacadeOperation(
                 id = operation.stringValue("id"),
                 command = operation.stringValue("command"),
                 path = operation.stringValue("path"),
@@ -24,7 +26,6 @@ class RestFacadeRuntimePolicyCommonTest {
             )
         }
         val expectedCases = expectedPrototype.objectArray("cases").associateBy { it.stringValue("id") }
-        val runtime = FakeRestFacadeRuntime()
 
         assertEquals("restFacadeRuntimePolicy", input.stringValue("kind"))
         assertEquals(requiredRestFacadeRuntimeOperationIds, operations.map { it.id })
@@ -37,7 +38,7 @@ class RestFacadeRuntimePolicyCommonTest {
         assertRestFacadeOperationFields(operations.associateBy { it.id })
 
         operations.forEach { operation ->
-            val outcome = runtime.run(operation)
+            val outcome = PolarRuntimeOrchestration.planRestFacade(operation)
             val expected = expectedCases.getValue(operation.id)
 
             assertEquals(expected.stringArrayValue("commands"), outcome.commands, operation.id)
@@ -86,7 +87,7 @@ class RestFacadeRuntimePolicyCommonTest {
         assertEquals("fake-rest-facade-runtime-policy", policy.objectValue("execution").stringValue("kind"))
         assertEquals("public-facade-psftp-request-capture", policy.objectValue("execution").stringValue("transport"))
         assertRestFacadeOperationFields(policyOperations.mapValues { (_, operation) ->
-            RestFacadeOperation(
+            PolarRestFacadeOperation(
                 id = operation.stringValue("id"),
                 command = operation.stringValue("command"),
                 path = operation.stringValue("path"),
@@ -101,7 +102,7 @@ class RestFacadeRuntimePolicyCommonTest {
         assertRestFacadeCommonRuntimeCases(policyCases)
     }
 
-    private fun assertRestFacadeOperationFields(operationsById: Map<String, RestFacadeOperation>) {
+    private fun assertRestFacadeOperationFields(operationsById: Map<String, PolarRestFacadeOperation>) {
         assertEquals("/REST/SERVICE.API", operationsById.getValue("list-rest-api-services-success").path)
         assertEquals("service-list-json", operationsById.getValue("list-rest-api-services-success").payloadShape)
         assertEquals(listOf("serviceName=sleep", "serviceName=training", "servicePath.sleep=/REST/SLEEP.API", "servicePath.training=/REST/TRAINING.API"), operationsById.getValue("list-rest-api-services-success").expectedFields)
@@ -218,54 +219,6 @@ class RestFacadeRuntimePolicyCommonTest {
     private val restFacadeRuntimeTopLevelDecision = "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
 
     private val restFacadeRuntimeReadinessCommonDecision = "REST facade runtime migration may proceed only after rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified."
-
-    private class FakeRestFacadeRuntime {
-        fun run(operation: RestFacadeOperation): RestFacadeOutcome {
-            val commands = mutableListOf("${operation.command}:${operation.path}")
-            operation.payloadShape?.let { payloadShape -> commands += "payload:$payloadShape" }
-            commands += operation.expectedFields.map { field -> "field:$field" }
-            val terminal = when (operation.transportMode) {
-                "transportError" -> "transport-error"
-                "responseError" -> {
-                    require(operation.responseErrorStatus == 103)
-                    require(operation.responseErrorMessage == "NO_SUCH_FILE_OR_DIRECTORY")
-                    require(operation.expectedPlatformTerminal == "pftp-response-error-name")
-                    commands += "response-error:${operation.responseErrorStatus}:${operation.responseErrorMessage}"
-                    "response-error"
-                }
-                "successEmpty" -> {
-                    commands += "payload:empty-success"
-                    require(operation.expectedPlatformTerminal == "json-parse-failure")
-                    "empty-response-parse-failure"
-                }
-                "successMalformedJson" -> {
-                    commands += "payload:malformed-json"
-                    require(operation.expectedPlatformTerminal == "json-parse-failure")
-                    "malformed-response-parse-failure"
-                }
-                null -> "success"
-                else -> error("Unsupported REST facade transport mode ${operation.transportMode}")
-            }
-            return RestFacadeOutcome(commands, terminal)
-        }
-    }
-
-    private data class RestFacadeOperation(
-        val id: String,
-        val command: String,
-        val path: String,
-        val payloadShape: String?,
-        val expectedFields: List<String>,
-        val transportMode: String?,
-        val responseErrorStatus: Int?,
-        val responseErrorMessage: String?,
-        val expectedPlatformTerminal: String?
-    )
-
-    private data class RestFacadeOutcome(
-        val commands: List<String>,
-        val terminal: String
-    )
 
     private fun String.optionalIntValue(field: String): Int? {
         val valueStart = "\"$field\"".toRegex().find(this)?.range?.last?.plus(1) ?: return null

@@ -1726,7 +1726,7 @@ class GoldenVectorMigrationPolicyTest {
         if (!commonRestFacadeRuntimeTest.isFile) {
             weakContract += commonRestFacadeRuntimeTest.relativeTo(root).path
         } else {
-            val commonRestFacadeRuntimeTestText = commonRestFacadeRuntimeTest.readText()
+            val commonRestFacadeRuntimeTestText = commonRestFacadeRuntimeTest.readText() + (if (runtimeOrchestrationCommon.isFile) runtimeOrchestrationCommon.readText() else "")
             FAKE_TRANSPORT_COMMON_REST_FACADE_RUNTIME_TEST_REQUIRED_TERMS
                 .filterNot { term -> commonRestFacadeRuntimeTestText.contains(term) }
                 .mapTo(weakContract) { term -> "${commonRestFacadeRuntimeTest.relativeTo(root).path}: missing common REST facade runtime assertion for $term" }
@@ -1758,7 +1758,7 @@ class GoldenVectorMigrationPolicyTest {
         if (!commonFileFacadeRuntimeTest.isFile) {
             weakContract += commonFileFacadeRuntimeTest.relativeTo(root).path
         } else {
-            val commonFileFacadeRuntimeTestText = commonFileFacadeRuntimeTest.readText()
+            val commonFileFacadeRuntimeTestText = commonFileFacadeRuntimeTest.readText() + (if (runtimeOrchestrationCommon.isFile) runtimeOrchestrationCommon.readText() else "")
             FAKE_TRANSPORT_COMMON_FILE_FACADE_RUNTIME_TEST_REQUIRED_TERMS
                 .filterNot { term -> commonFileFacadeRuntimeTestText.contains(term) }
                 .mapTo(weakContract) { term -> "${commonFileFacadeRuntimeTest.relativeTo(root).path}: missing common file facade runtime assertion for $term" }
@@ -1846,7 +1846,7 @@ class GoldenVectorMigrationPolicyTest {
         if (!commonUserDeviceSettingsRuntimeTest.isFile) {
             weakContract += commonUserDeviceSettingsRuntimeTest.relativeTo(root).path
         } else {
-            val commonUserDeviceSettingsRuntimeTestText = commonUserDeviceSettingsRuntimeTest.readText()
+            val commonUserDeviceSettingsRuntimeTestText = commonUserDeviceSettingsRuntimeTest.readText() + (if (runtimeOrchestrationCommon.isFile) runtimeOrchestrationCommon.readText() else "")
             FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS
                 .filterNot { term -> commonUserDeviceSettingsRuntimeTestText.contains(term) }
                 .mapTo(weakContract) { term -> "${commonUserDeviceSettingsRuntimeTest.relativeTo(root).path}: missing common user-device-settings runtime assertion for $term" }
@@ -4197,7 +4197,8 @@ class GoldenVectorMigrationPolicyTest {
             "response-error-transport-policy-gate",
             "facade-error-mapping-gate",
             "compile-verification-gate",
-            "FakeRestFacadeRuntime"
+            "PolarRuntimeOrchestration",
+            "planRestFacade"
         )
         val FAKE_TRANSPORT_COMMON_REST_SERVICE_MAPPING_TEST_REQUIRED_TERMS = listOf(
             "restServiceListGoldenVectorsDefineExecutableCommonMappingPolicy",
@@ -4327,7 +4328,8 @@ class GoldenVectorMigrationPolicyTest {
             "response-error-policy-gate",
             "facade-error-mapping-gate",
             "compile-verification-gate",
-            "FakeFileFacadeRuntime"
+            "PolarRuntimeOrchestration",
+            "planFileFacade"
         )
         val FAKE_TRANSPORT_COMMON_BACKUP_UTILITY_TEST_REQUIRED_TERMS = listOf(
             "backupExpansionAndRestoreWritesGoldenVectorDefinesExecutableCommonPolicy",
@@ -4747,7 +4749,8 @@ class GoldenVectorMigrationPolicyTest {
             "protobuf-field-preservation-gate",
             "facade-error-mapping-gate",
             "compile-verification-gate",
-            "FakeUserDeviceSettingsRuntime"
+            "PolarRuntimeOrchestration",
+            "planUserDeviceSettings"
         )
         val COMMON_TEST_PORTABILITY_FORBIDDEN = Regex("digitToInt|toBooleanStrict|uppercase\\(|lowercase\\(|replaceFirstChar|ifEmpty|UL|UInt|UByte|ULong|java\\.|android\\.|com\\.google")
         val COMMON_MAIN_PLATFORM_FORBIDDEN = Regex("android\\.|java\\.|javax\\.|CoreBluetooth|UIKit|Foundation|CryptoKit|SwiftUI|platform\\.Core|com\\.google|Bluetooth|BluetoothGatt|Context\\b|GlobalScope|Dispatchers\\.Main")

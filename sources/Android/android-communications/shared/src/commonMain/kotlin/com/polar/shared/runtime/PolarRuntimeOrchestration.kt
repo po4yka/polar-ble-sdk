@@ -2,7 +2,8 @@ package com.polar.shared.runtime
 
 data class PolarRuntimePlan(
     val commands: List<String>,
-    val terminal: String
+    val terminal: String,
+    val resultHex: String? = null
 )
 
 data class PolarFacadeCommandOperation(
@@ -23,6 +24,57 @@ data class PolarDiskTimeOperation(
     val queries: List<String>,
     val parameters: List<String>,
     val expectedFields: List<String>
+)
+
+data class PolarRestFacadeOperation(
+    val id: String,
+    val command: String,
+    val path: String,
+    val payloadShape: String?,
+    val expectedFields: List<String>,
+    val transportMode: String?,
+    val responseErrorStatus: Int?,
+    val responseErrorMessage: String?,
+    val expectedPlatformTerminal: String?
+)
+
+data class PolarFileFacadeOperation(
+    val id: String,
+    val command: String,
+    val path: String,
+    val payloadHex: String?,
+    val responseHex: String?,
+    val progress: List<Int>,
+    val transportMode: String?
+)
+
+data class PolarFileRuntimeErrorOperation(
+    val id: String,
+    val operation: String,
+    val path: String,
+    val payloadHex: String?,
+    val transportMode: String,
+    val status: Int?,
+    val message: String?,
+    val error: String?,
+    val responsePayloadHex: String?
+)
+
+data class PolarFileRuntimeErrorPlan(
+    val command: String,
+    val path: String,
+    val outcome: String,
+    val status: Int? = null,
+    val message: String? = null,
+    val error: String? = null,
+    val capturedPayloadHex: String? = null
+)
+
+data class PolarUserDeviceSettingsOperation(
+    val id: String,
+    val kind: String,
+    val path: String,
+    val payloadFields: List<String>
 )
 
 object PolarRuntimeOrchestration {
@@ -47,6 +99,87 @@ object PolarRuntimeOrchestration {
             "setLocalTimeV2" -> PolarRuntimePlan(operation.setLocalTimeV2Commands(), "success")
             "setLocalTimeH10" -> PolarRuntimePlan(operation.setLocalTimeH10Commands(), "success")
             else -> error("Unsupported disk/time operation ${operation.kind}")
+        }
+    }
+
+    fun planRestFacade(operation: PolarRestFacadeOperation): PolarRuntimePlan {
+        val commands = mutableListOf("${operation.command}:${operation.path}")
+        operation.payloadShape?.let { payloadShape -> commands += "payload:$payloadShape" }
+        commands += operation.expectedFields.map { field -> "field:$field" }
+        val terminal = when (operation.transportMode) {
+            "transportError" -> "transport-error"
+            "responseError" -> {
+                require(operation.responseErrorStatus == 103)
+                require(operation.responseErrorMessage == "NO_SUCH_FILE_OR_DIRECTORY")
+                require(operation.expectedPlatformTerminal == "pftp-response-error-name")
+                commands += "response-error:${operation.responseErrorStatus}:${operation.responseErrorMessage}"
+                "response-error"
+            }
+            "successEmpty" -> {
+                commands += "payload:empty-success"
+                require(operation.expectedPlatformTerminal == "json-parse-failure")
+                "empty-response-parse-failure"
+            }
+            "successMalformedJson" -> {
+                commands += "payload:malformed-json"
+                require(operation.expectedPlatformTerminal == "json-parse-failure")
+                "malformed-response-parse-failure"
+            }
+            null -> "success"
+            else -> error("Unsupported REST facade transport mode ${operation.transportMode}")
+        }
+        return PolarRuntimePlan(commands, terminal)
+    }
+
+    fun planFileFacade(operation: PolarFileFacadeOperation): PolarRuntimePlan {
+        val commands = mutableListOf("${operation.command}:${operation.path}")
+        operation.payloadHex?.let { payloadHex -> commands += "payload:$payloadHex" }
+        operation.progress.forEach { progress -> commands += "progress:$progress" }
+        val terminal = when (operation.transportMode) {
+            "transportError" -> "transport-error"
+            "pftpResponseError" -> "response-error:103:missing"
+            "writeStreamError" -> "write-stream-error-after-payload"
+            null -> "success"
+            else -> error("Unsupported file facade transport mode ${operation.transportMode}")
+        }
+        return PolarRuntimePlan(commands, terminal, operation.responseHex)
+    }
+
+    fun planFileRuntimeError(operation: PolarFileRuntimeErrorOperation): PolarFileRuntimeErrorPlan {
+        val command = when (operation.operation) {
+            "listFiles", "readFile" -> "GET"
+            "writeFile" -> "PUT"
+            "removeSingleFile" -> "REMOVE"
+            else -> error("Unsupported file runtime operation ${operation.operation}")
+        }
+        return when (operation.transportMode) {
+            "pftpResponseError" -> {
+                if (operation.operation == "listFiles" && operation.status == 103) {
+                    PolarFileRuntimeErrorPlan(command, operation.path, "directory-missing", status = operation.status)
+                } else {
+                    PolarFileRuntimeErrorPlan(command, operation.path, "response-error", status = requireNotNull(operation.status), message = requireNotNull(operation.message))
+                }
+            }
+            "transportError" -> PolarFileRuntimeErrorPlan(command, operation.path, "transport-error", error = requireNotNull(operation.error))
+            "writeStreamError" -> PolarFileRuntimeErrorPlan(command, operation.path, "write-stream-error", error = requireNotNull(operation.error), capturedPayloadHex = operation.payloadHex)
+            "success" -> {
+                if (operation.operation == "listFiles") {
+                    PolarFileRuntimeErrorPlan(command, operation.path, "directory-parse-failure")
+                } else {
+                    PolarFileRuntimeErrorPlan(command, operation.path, "requires-empty-response-policy")
+                }
+            }
+            else -> error("Unsupported file runtime transport mode ${operation.transportMode}")
+        }
+    }
+
+    fun planUserDeviceSettings(operation: PolarUserDeviceSettingsOperation): PolarRuntimePlan {
+        return when (operation.kind) {
+            "read" -> PolarRuntimePlan(operation.userDeviceSettingsReadCommands(), "success")
+            "readFailure" -> PolarRuntimePlan(operation.userDeviceSettingsReadCommands(), "transport-error")
+            "readThenWrite" -> PolarRuntimePlan(operation.userDeviceSettingsReadWriteCommands(), "success")
+            "readThenWriteFailure" -> PolarRuntimePlan(operation.userDeviceSettingsReadWriteCommands(), "transport-error-after-payload")
+            else -> error("Unsupported user-device-settings operation ${operation.kind}")
         }
     }
 
@@ -108,5 +241,13 @@ object PolarRuntimeOrchestration {
             "query:SET_LOCAL_TIME",
             "field:$localTimeHour"
         )
+    }
+
+    private fun PolarUserDeviceSettingsOperation.userDeviceSettingsReadCommands(): List<String> {
+        return listOf("read:$path")
+    }
+
+    private fun PolarUserDeviceSettingsOperation.userDeviceSettingsReadWriteCommands(): List<String> {
+        return listOf("read:$path", "write:$path") + payloadFields.map { field -> "field:$field" }
     }
 }
