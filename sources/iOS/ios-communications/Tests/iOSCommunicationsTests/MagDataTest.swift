@@ -85,6 +85,42 @@ final class MagDataTest: XCTestCase {
         XCTAssertEqual(timeStamp, magData.timeStamp)
         XCTAssertEqual(timeStamp, magData.samples[1].timeStamp)
     }
+
+    func testMagCompressedParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "0600943577000000008137ff51fd6cf600000301f802"
+        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.magCompressedSamples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let magData = try MagData.parseDataFromDataFrame(frame: dataFrame)
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt64, Float, Float, Float, MagData.CalibrationStatus) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt64(fields[0])),
+                try XCTUnwrap(Float(fields[1])),
+                try XCTUnwrap(Float(fields[2])),
+                try XCTUnwrap(Float(fields[3])),
+                MagData.CalibrationStatus(vectorName: String(fields[4]))
+            )
+        }
+
+        XCTAssertEqual(sharedSamples.count, magData.samples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            XCTAssertEqual(sharedSample.0, magData.samples[index].timeStamp)
+            XCTAssertEqual(sharedSample.1, magData.samples[index].x, accuracy: 0.00001)
+            XCTAssertEqual(sharedSample.2, magData.samples[index].y, accuracy: 0.00001)
+            XCTAssertEqual(sharedSample.3, magData.samples[index].z, accuracy: 0.00001)
+            XCTAssertEqual(sharedSample.4, magData.samples[index].calibrationStatus)
+        }
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
     
     func testProcessMagnetometerCompressedDataType1() throws {
         // Arrange

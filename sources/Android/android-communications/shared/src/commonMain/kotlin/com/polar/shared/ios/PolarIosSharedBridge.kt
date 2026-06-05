@@ -15,6 +15,7 @@ import com.polar.shared.pmd.PolarPmdSettings
 import com.polar.shared.pmd.sensors.PolarEcgType0Sample
 import com.polar.shared.pmd.sensors.PolarGyrSample
 import com.polar.shared.pmd.sensors.PolarMagCalibrationStatus
+import com.polar.shared.pmd.sensors.PolarMagSample
 import com.polar.shared.pmd.sensors.PolarPmdDataFrame
 import com.polar.shared.pmd.sensors.PolarSensorDataParser
 import com.polar.shared.runtime.PolarDiskTimeOperation
@@ -284,6 +285,25 @@ object PolarIosSharedBridge {
                 )
             ).filterIsInstance<PolarGyrSample>()
                 .joinToString(separator = "|") { sample -> "${sample.timeStamp},${sample.x},${sample.y},${sample.z}" }
+        }.getOrNull()
+    }
+
+    fun magCompressedSamples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
+        val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
+        if (bytes.size < 10) return null
+        val frameType = bytes[9].toInt() and 0xFF
+        val frameTypeId = frameType and 0x7F
+        if ((frameType and 0x80) == 0 || frameTypeId !in setOf(0, 1)) return null
+        return runCatching {
+            PolarSensorDataParser.parseMag(
+                PolarPmdDataFrame.fromByteArray(
+                    data = bytes,
+                    previousTimeStamp = previousTimeStamp,
+                    factor = factor,
+                    sampleRate = sampleRate
+                )
+            ).filterIsInstance<PolarMagSample>()
+                .joinToString(separator = "|") { sample -> "${sample.timeStamp},${sample.x},${sample.y},${sample.z},${sample.calibrationStatus.name}" }
         }.getOrNull()
     }
 
