@@ -48,6 +48,24 @@ class PolarActivityUtilsTest {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
     @Test
+    fun `activity read headers use shared file facade planning`() {
+        val date = LocalDate.of(2026, 1, 2)
+
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/ACT/",
+            PolarActivityUtils.activityDirectoryReadOperation(date)
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/ACT/ASAMPL0.BPB",
+            PolarActivityUtils.activitySampleFileReadOperation("/U/0/20260102/ACT/ASAMPL0.BPB")
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/DSUM/DSUM.BPB",
+            PolarActivityUtils.dailySummaryReadOperation(date)
+        )
+    }
+
+    @Test
     fun `readStepsFromDayDirectory() should return sum of step samples`() = runTest {
         // Arrange
         val client = mockk<BlePsFtpClient>()

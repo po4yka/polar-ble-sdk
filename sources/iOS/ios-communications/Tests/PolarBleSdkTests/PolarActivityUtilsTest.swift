@@ -16,6 +16,22 @@ class PolarActivityUtilsTests: XCTestCase {
         mockClient = nil
     }
 
+    func testActivityReadHeadersUseSharedFileFacadePlanning() throws {
+        let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
+
+        let activityDirectoryOperation = PolarActivityUtils.activityDirectoryReadOperation(date: date)
+        XCTAssertEqual(activityDirectoryOperation.command, .get)
+        XCTAssertEqual(activityDirectoryOperation.path, "/U/0/20260102/ACT/")
+
+        let activitySampleOperation = PolarActivityUtils.activitySampleFileReadOperation(path: "/U/0/20260102/ACT/ASAMPL0.BPB")
+        XCTAssertEqual(activitySampleOperation.command, .get)
+        XCTAssertEqual(activitySampleOperation.path, "/U/0/20260102/ACT/ASAMPL0.BPB")
+
+        let dailySummaryOperation = PolarActivityUtils.dailySummaryReadOperation(date: date)
+        XCTAssertEqual(dailySummaryOperation.command, .get)
+        XCTAssertEqual(dailySummaryOperation.path, "/U/0/20260102/DSUM/DSUM.BPB")
+    }
+
     func testReadStepsFromDayDirectory_SuccessfulResponse() async throws {
         // Arrange
         let mockRecordingDirectoryContent = try Protocol_PbPFtpDirectory.with {
