@@ -1,9 +1,15 @@
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 open class BlePolarDeviceIdUtility {
     
     public static func isValidDeviceId(_ deviceId: String) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.isValidDeviceId(deviceId: deviceId)
+        #else
         switch deviceId.lengthOfBytes(using: String.Encoding.ascii) {
         case 8:
             if let deviceIdInt = UInt32(deviceId, radix: 16) {
@@ -13,6 +19,7 @@ open class BlePolarDeviceIdUtility {
         default:
             return self.checkSumForDeviceId(UInt32(strtouq(deviceId, nil, 16)), width: 8) != 0
         }
+        #endif
     }
     
     public static func checkSumForDeviceId(_ deviceId: UInt32, width: Int) -> UInt8 {
@@ -41,6 +48,18 @@ open class BlePolarDeviceIdUtility {
     }
     
     public static func assemblyFullPolarDeviceId(_ deviceId: UInt32, width: Int) -> String {
+        #if canImport(PolarBleSdkShared)
+        switch width {
+            case 6:
+                return PolarIosSharedBridge.shared.assembleFullDeviceId(deviceId: String(format: "%06X", deviceId))
+            case 7:
+                return PolarIosSharedBridge.shared.assembleFullDeviceId(deviceId: String(format: "%07X", deviceId))
+            case 8:
+                return PolarIosSharedBridge.shared.assembleFullDeviceId(deviceId: String(format: "%08X", deviceId))
+            default:
+                return ""
+        }
+        #else
         switch width {
             case 6:
                 let checksum = checkSumForDeviceId(deviceId,width: width)
@@ -55,6 +74,7 @@ open class BlePolarDeviceIdUtility {
             default:
                 return ""
         }
+        #endif
     }
     
     public static func polarDeviceIdToInt(_ deviceId: String) -> UInt32 {

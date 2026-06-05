@@ -9,8 +9,12 @@ object PolarDeviceId {
         return if (deviceId.length == REQUIRED_DEVICE_ID_LENGTH) {
             checksum(numeric, width = REQUIRED_DEVICE_ID_LENGTH).toLong() == (numeric and 0x0F)
         } else {
-            checksum(numeric, width = deviceId.length) != 0
+            checksum(numeric, width = REQUIRED_DEVICE_ID_LENGTH) != 0
         }
+    }
+
+    fun isValidOrFalse(deviceId: String): Boolean {
+        return runCatching { isValid(deviceId) }.getOrDefault(false)
     }
 
     fun assembleFull(deviceId: String): String {

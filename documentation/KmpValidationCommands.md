@@ -40,6 +40,13 @@ ruby scripts/ios_xcode_validation_probe.rb
 
 The current expected result is `ios_xcode_validation_probe OK: project discovery is available and no known local XCTest infrastructure blockers were detected`. This command proves project discovery and classifies local XCTest infrastructure blockers; it does not replace the full XCTest execution gate.
 
+When iOS production code consumes shared KMP, the Xcode and CocoaPods paths build a generated `PolarBleSdkShared.framework` through `sources/iOS/ios-communications/scripts/build_kmp_ios_framework.sh` before Swift compilation. The generated framework is copied under ignored `sources/iOS/ios-communications/Generated/PolarBleSdkShared/$(PLATFORM_NAME)`. Validate the shared artifact shape first with:
+
+```bash
+cd sources/Android/android-communications
+ANDROID_HOME=/Users/po4yka/Library/Android/sdk ./gradlew :shared:linkDebugFrameworkIosX64 :shared:compileKotlinIosX64 --no-daemon
+```
+
 After the probe passes, run the current simulator XCTest gate:
 
 ```bash

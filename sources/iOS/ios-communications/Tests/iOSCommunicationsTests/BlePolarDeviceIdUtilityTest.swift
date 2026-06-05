@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import iOSCommunications
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 /// Tests for `BlePolarDeviceIdUtility`.
 ///
@@ -23,6 +26,14 @@ import XCTest
 ///
 /// checkSumForDeviceId(other width) → 0
 final class BlePolarDeviceIdUtilityTest: XCTestCase {
+    func testProductionDeviceIdUtilityCanUseSharedKmpBridgeWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("1234567C", PolarIosSharedBridge.shared.assembleFullDeviceId(deviceId: "1234567"))
+        XCTAssertTrue(PolarIosSharedBridge.shared.isValidDeviceId(deviceId: "1234567C"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
 
     // MARK: - checkSumForDeviceId – width 8
 

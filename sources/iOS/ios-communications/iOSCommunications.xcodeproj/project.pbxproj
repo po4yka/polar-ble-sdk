@@ -1426,6 +1426,7 @@
 			buildConfigurationList = 6C34DE901CAA3F240083EB1F /* Build configuration list for PBXNativeTarget "iOSCommunications" */;
 			buildPhases = (
 				5EF404CA7427B07543022D0B /* [CP] Check Pods Manifest.lock */,
+				AACF00000000000000000001 /* Build PolarBleSdkShared KMP Framework */,
 				6C34DE831CAA3F240083EB1F /* Sources */,
 				6C34DE841CAA3F240083EB1F /* Frameworks */,
 				6C34DE851CAA3F240083EB1F /* Headers */,
@@ -1465,6 +1466,7 @@
 			buildConfigurationList = 6C770B73206B779A00F3D51D /* Build configuration list for PBXNativeTarget "PolarBleSdk" */;
 			buildPhases = (
 				5A911DB4AFFBFDFF37E1F635 /* [CP] Check Pods Manifest.lock */,
+				AACF00000000000000000002 /* Build PolarBleSdkShared KMP Framework */,
 				6C770B67206B779900F3D51D /* Sources */,
 				6C770B68206B779900F3D51D /* Frameworks */,
 				6C770B69206B779900F3D51D /* Headers */,
@@ -1738,6 +1740,46 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		AACF00000000000000000001 /* Build PolarBleSdkShared KMP Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/build_kmp_ios_framework.sh",
+			);
+			name = "Build PolarBleSdkShared KMP Framework";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/build_kmp_ios_framework.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		AACF00000000000000000002 /* Build PolarBleSdkShared KMP Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/build_kmp_ios_framework.sh",
+			);
+			name = "Build PolarBleSdkShared KMP Framework";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/build_kmp_ios_framework.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -2247,14 +2289,17 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				DEVELOPMENT_TEAM = 48T8QNDCP9;
-				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)",
+				);
 				INFOPLIST_FILE = Tests/iOSCommunicationsTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.polar.iOSCommunicationsTests;
+					PRODUCT_BUNDLE_IDENTIFIER = com.polar.iOSCommunicationsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -2266,14 +2311,17 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				DEVELOPMENT_TEAM = 48T8QNDCP9;
-				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)",
+				);
 				INFOPLIST_FILE = Tests/iOSCommunicationsTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.polar.iOSCommunicationsTests;
+					PRODUCT_BUNDLE_IDENTIFIER = com.polar.iOSCommunicationsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -2425,8 +2473,11 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_BITCODE = NO;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)",
+				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				"HEADER_SEARCH_PATHS[arch=*]" = "$(inherited)";
 				INFOPLIST_FILE = "$(SRCROOT)/Sources/iOSCommunications/Info.plist";
@@ -2441,6 +2492,11 @@
 				MARKETING_VERSION = 14.1.9;
 				MODULEMAP_FILE = "";
 				MODULEMAP_PRIVATE_FILE = "";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					PolarBleSdkShared,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.iOSCommunications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -2469,8 +2525,11 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_BITCODE = NO;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)",
+				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				"HEADER_SEARCH_PATHS[arch=*]" = "$(inherited)";
 				INFOPLIST_FILE = "$(SRCROOT)/Sources/iOSCommunications/Info.plist";
@@ -2485,6 +2544,11 @@
 				MARKETING_VERSION = 14.1.9;
 				MODULEMAP_FILE = "";
 				MODULEMAP_PRIVATE_FILE = "";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					PolarBleSdkShared,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.iOSCommunications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -2634,9 +2698,12 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_BITCODE = NO;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				EXCLUDED_ARCHS = "";
-				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)",
+				);
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -2653,6 +2720,11 @@
 				MACH_O_TYPE = mh_dylib;
 				MARKETING_VERSION = 3.3.0;
 				"OTHER_CFLAGS[arch=*]" = "-fembed-bitcode";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					PolarBleSdkShared,
+				);
 				OTHER_SWIFT_FLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.PolarBleSdk;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -2695,8 +2767,11 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_BITCODE = NO;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)",
+				);
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -2712,6 +2787,11 @@
 				MACH_O_TYPE = mh_dylib;
 				MARKETING_VERSION = 3.3.0;
 				"OTHER_CFLAGS[arch=*]" = "-fembed-bitcode";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					PolarBleSdkShared,
+				);
 				OTHER_SWIFT_FLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.PolarBleSdk;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -2746,6 +2826,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 48T8QNDCP9;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)",
+				);
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -2757,7 +2841,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.PolarBleSdkTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
+					SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -2789,6 +2873,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 48T8QNDCP9;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)",
+				);
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -2800,7 +2888,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.PolarBleSdkTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
+					SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;

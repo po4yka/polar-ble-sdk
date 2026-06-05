@@ -3,8 +3,18 @@
 import Foundation
 import XCTest
 @testable import PolarBleSdk
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 class PolarDeviceUuidTest: XCTestCase {
+    func testProductionUuidUtilityCanUseSharedKmpBridgeWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("0e030000-0084-0000-0000-000089643A20", PolarIosSharedBridge.shared.uuidFromDeviceId(deviceId: "89643A20"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
 
     func testFromDeviceIdShouldGeneratePolarDeviceUuidString() throws {
         // Arrange

@@ -1,6 +1,9 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 struct PolarDeviceUuid {
     private static let polarUuidPrefix = "0e030000-0084-0000-0000-0000"
@@ -14,6 +17,10 @@ struct PolarDeviceUuid {
         guard deviceId.count == requiredDeviceIdLength else {
             throw PolarDeviceUuidError.invalidDeviceIdLength(expected: requiredDeviceIdLength, actual: deviceId.count)
         }
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.uuidFromDeviceId(deviceId: deviceId)
+        #else
         return polarUuidPrefix + deviceId
+        #endif
     }
 }
