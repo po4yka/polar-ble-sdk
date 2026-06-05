@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import XCTest
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 @testable import iOSCommunications
 
 final class PpgDataTest: XCTestCase {
@@ -66,6 +69,39 @@ final class PpgDataTest: XCTestCase {
         
         XCTAssertEqual(timeStamp, result.timeStamp)
         XCTAssertEqual(timeStamp, result.samples.last?.timeStamp)
+    }
+
+    func testPpgRawType0ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "01009435770000000000010203040506ffff7f000000ffffff0fefef0000800fefef"
+        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 55))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 55 })
+        let ppgData = try PpgData.parseDataFromDataFrame(frame: dataFrame)
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt64, [Int32], Int32) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt64(fields[0])),
+                fields[1].split(separator: ";").compactMap { Int32($0) },
+                try XCTUnwrap(Int32(fields[2]))
+            )
+        }
+
+        XCTAssertEqual(sharedSamples.count, ppgData.samples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            let sample = try XCTUnwrap(ppgData.samples[index] as? PpgData.PpgDataFrameType0)
+            XCTAssertEqual(sharedSample.0, sample.timeStamp)
+            XCTAssertEqual(sharedSample.1, sample.ppgDataSamples)
+            XCTAssertEqual(sharedSample.2, sample.ambientSample)
+        }
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
     
     func testRawPpgFrameType4() throws {
