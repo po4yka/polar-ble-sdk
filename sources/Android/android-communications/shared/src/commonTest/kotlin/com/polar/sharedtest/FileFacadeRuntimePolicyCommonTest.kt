@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarFileFacadeOperation
+import com.polar.shared.runtime.PolarRuntimeOrchestration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -11,7 +13,7 @@ class FileFacadeRuntimePolicyCommonTest {
         val expected = vector.objectValue("expected")
         val consumerTests = vector.objectValue("consumerTests")
         val operations = vector.objectValue("input").objectArray("operations").map { operation ->
-            FileFacadeOperation(
+            PolarFileFacadeOperation(
                 id = operation.stringValue("id"),
                 command = operation.stringValue("command"),
                 path = operation.stringValue("path"),
@@ -23,7 +25,6 @@ class FileFacadeRuntimePolicyCommonTest {
         }
         val expectedCaseList = expected.objectValue("commonRuntimePrototype").objectArray("cases")
         val expectedCases = expectedCaseList.associateBy { it.stringValue("id") }
-        val runtime = FakeFileFacadeRuntime()
 
         assertEquals("file-facade-runtime-policy", vector.stringValue("id"))
         assertEquals("fileFacadeRuntimePolicy", input.stringValue("kind"))
@@ -33,6 +34,8 @@ class FileFacadeRuntimePolicyCommonTest {
         assertEquals(requiredFileFacadeRuntimeResponseHexById, operations.mapNotNull { operation -> operation.responseHex?.let { operation.id to it } }.toMap())
         assertEquals(requiredFileFacadeRuntimePayloadHexById, operations.mapNotNull { operation -> operation.payloadHex?.let { operation.id to it } }.toMap())
         assertEquals(requiredFileFacadeRuntimeProgressById, operations.filter { it.progress.isNotEmpty() }.associate { it.id to it.progress.map { progress -> "progress:$progress" } })
+        assertEquals("response-error:103:missing", expectedCases.getValue("read-low-level-file-response-error").stringValue("terminal"))
+        assertEquals("write-stream-error-after-payload", expectedCases.getValue("write-low-level-file-stream-failure").stringValue("terminal"))
         assertEquals(requiredFileFacadeRuntimePlatformTerminals, input.objectArray("operations").filter { it.optionalObjectValue("expectedPlatformTerminal") != null }.associate { operation ->
             operation.stringValue("id") to operation.objectValue("expectedPlatformTerminal").let { platformTerminal ->
                 platformTerminal.stringValue("android") to platformTerminal.stringValue("ios")
@@ -48,7 +51,7 @@ class FileFacadeRuntimePolicyCommonTest {
         assertEquals(listOf("com.polar.sharedtest.FileFacadeRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
 
         operations.forEach { operation ->
-            val outcome = runtime.run(operation)
+            val outcome = PolarRuntimeOrchestration.planFileFacade(operation)
             val expected = expectedCases.getValue(operation.id)
 
             assertEquals(expected.stringArrayValue("commands"), outcome.commands, operation.id)
@@ -176,35 +179,4 @@ class FileFacadeRuntimePolicyCommonTest {
 
     private val fileFacadeRuntimeNotes = "This vector complements file-read-write-delete-operations.json and runtime-error-policy.json. It owns the public facade command paths, payload capture, empty read payload success, delete request failure, write progress success, and read/write/delete response-error propagation for low-level read/write/delete calls; directory-list traversal remains covered by list-files-shallow-all.json and list-files-recursive-filtered.json."
 
-    private class FakeFileFacadeRuntime {
-        fun run(operation: FileFacadeOperation): FileFacadeOutcome {
-            val commands = mutableListOf("${operation.command}:${operation.path}")
-            operation.payloadHex?.let { payloadHex -> commands += "payload:$payloadHex" }
-            operation.progress.forEach { progress -> commands += "progress:$progress" }
-            val terminal = when (operation.transportMode) {
-                "transportError" -> "transport-error"
-                "pftpResponseError" -> "response-error:103:missing"
-                "writeStreamError" -> "write-stream-error-after-payload"
-                null -> "success"
-                else -> error("Unsupported file facade transport mode ${operation.transportMode}")
-            }
-            return FileFacadeOutcome(commands, terminal, operation.responseHex)
-        }
-    }
-
-    private data class FileFacadeOperation(
-        val id: String,
-        val command: String,
-        val path: String,
-        val payloadHex: String?,
-        val responseHex: String?,
-        val progress: List<Int>,
-        val transportMode: String?
-    )
-
-    private data class FileFacadeOutcome(
-        val commands: List<String>,
-        val terminal: String,
-        val resultHex: String?
-    )
 }

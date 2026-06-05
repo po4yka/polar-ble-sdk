@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarRuntimeOrchestration
+import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -11,7 +13,7 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         val expected = vector.objectValue("expected")
         val operationList = input.objectArray("operations")
         val operations = operationList.map { operation ->
-            UserDeviceSettingsOperation(
+            PolarUserDeviceSettingsOperation(
                 id = operation.stringValue("id"),
                 kind = operation.stringValue("kind"),
                 path = operation.stringValue("path"),
@@ -20,7 +22,6 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         }
         val expectedCaseList = expected.objectValue("commonRuntimePrototype").objectArray("cases")
         val expectedCases = expectedCaseList.associateBy { it.stringValue("id") }
-        val runtime = FakeUserDeviceSettingsRuntime()
 
         assertEquals("user-device-settings-runtime-policy", vector.stringValue("id"))
         assertEquals("user_device_settings_runtime_policy", vector.stringValue("case"))
@@ -32,9 +33,10 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         assertEquals(userDeviceSettingsRuntimePolicyCommonDecision, vector.stringValue("commonDecision"))
         assertUserDeviceSettingsPolicyFields(operationList.associateBy { it.stringValue("id") })
         assertReadFailureNoWriteBehavior(expectedCases)
+        assertEquals("transport-error-after-payload", expectedCases.getValue("set-telemetry-write-failure").stringValue("terminal"))
 
         operations.forEach { operation ->
-            val outcome = runtime.run(operation)
+            val outcome = PolarRuntimeOrchestration.planUserDeviceSettings(operation)
             val expected = expectedCases.getValue(operation.id)
 
             assertEquals(expected.stringArrayValue("commands"), outcome.commands, operation.id)
@@ -138,35 +140,4 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("set-telemetry-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
     }
 
-    private class FakeUserDeviceSettingsRuntime {
-        fun run(operation: UserDeviceSettingsOperation): UserDeviceSettingsOutcome {
-            return when (operation.kind) {
-                "read" -> UserDeviceSettingsOutcome(operation.readCommands(), "success")
-                "readFailure" -> UserDeviceSettingsOutcome(operation.readCommands(), "transport-error")
-                "readThenWrite" -> UserDeviceSettingsOutcome(operation.readWriteCommands(), "success")
-                "readThenWriteFailure" -> UserDeviceSettingsOutcome(operation.readWriteCommands(), "transport-error-after-payload")
-                else -> error("Unsupported user-device-settings operation ${operation.kind}")
-            }
-        }
-
-        private fun UserDeviceSettingsOperation.readCommands(): List<String> {
-            return listOf("read:$path")
-        }
-
-        private fun UserDeviceSettingsOperation.readWriteCommands(): List<String> {
-            return listOf("read:$path", "write:$path") + payloadFields.map { field -> "field:$field" }
-        }
-    }
-
-    private data class UserDeviceSettingsOperation(
-        val id: String,
-        val kind: String,
-        val path: String,
-        val payloadFields: List<String>
-    )
-
-    private data class UserDeviceSettingsOutcome(
-        val commands: List<String>,
-        val terminal: String
-    )
 }
