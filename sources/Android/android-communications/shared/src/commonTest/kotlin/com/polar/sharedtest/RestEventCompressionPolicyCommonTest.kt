@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarRestServiceModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -89,7 +90,10 @@ class RestEventCompressionPolicyCommonTest {
 
     private fun decodeRestEventPayloads(testCase: String): List<String> {
         return if (testCase.booleanValue("uncompressed")) {
-            testCase.stringArrayValue("payloads")
+            PolarRestServiceModels.restEventPayloads(
+                uncompressed = true,
+                payloads = testCase.stringArrayValue("payloads").map { payload -> payload.encodeToByteArray() }
+            ).map { payload -> payload.decodeToString() }
         } else {
             error("Shared REST event compression codec is intentionally not selected before KMP migration")
         }

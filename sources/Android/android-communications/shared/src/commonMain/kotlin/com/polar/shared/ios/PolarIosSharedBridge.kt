@@ -586,6 +586,13 @@ object PolarIosSharedBridge {
         return PolarRestServiceModels.eventTriggers(mapOf("details" to detailsCsv.csvFields(), "triggers" to triggersCsv.csvFields())).joinToString("|")
     }
 
+    fun restUncompressedEventPayloadsHex(payloadsHex: String): String {
+        return PolarRestServiceModels.restEventPayloads(
+            uncompressed = true,
+            payloads = payloadsHex.csvFields().map { payload -> payload.hexToBytes() }
+        ).joinToString(separator = "|") { payload -> payload.toHex() }
+    }
+
     fun pmdActiveMeasurementIosState(responseByte: Int): String {
         return PolarPmdControlPoint.parseActiveMeasurement(responseByte).iosStateName
     }
