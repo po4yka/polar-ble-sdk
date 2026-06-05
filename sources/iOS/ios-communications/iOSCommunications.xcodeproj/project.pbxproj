@@ -440,6 +440,10 @@
 		AA9903F82F5B95EF00FD4744 /* PolarFirmwareBackupRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903F62F5B95EF00FD4744 /* PolarFirmwareBackupRuntimePlanner.swift */; };
 		AA9903FA2F5B9C6500FD4744 /* PolarStoredDataOfflineRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903F92F5B9C6500FD4744 /* PolarStoredDataOfflineRuntimePlanner.swift */; };
 		AA9903FB2F5B9C6500FD4744 /* PolarStoredDataOfflineRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903F92F5B9C6500FD4744 /* PolarStoredDataOfflineRuntimePlanner.swift */; };
+		AA9904012F5BA1E800FD4744 /* PolarCommandRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903EC2F5B7A3B00FD4744 /* PolarCommandRuntimePlanner.swift */; };
+		AA9904022F5BA1E800FD4744 /* PolarDiskTimeRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903EE2F5B7A3B00FD4744 /* PolarDiskTimeRuntimePlanner.swift */; };
+		AA9904032F5BA1E800FD4744 /* PolarRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903DD2F5B2F0100FD4744 /* PolarRuntimePlanner.swift */; };
+		AA9904042F5BA1E800FD4744 /* pftp_notification.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289027CE860600855884 /* pftp_notification.pb.swift */; };
 		AA9903E12F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903E02F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift */; };
 		AA9903E22F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903E02F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift */; };
 		AA9903DE2F5B2F0100FD4744 /* PolarRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903DD2F5B2F0100FD4744 /* PolarRuntimePlanner.swift */; };
@@ -1909,10 +1913,14 @@
 				AA9903E42F5B61B500FD4744 /* PolarD2hRuntimePlanner.swift in Sources */,
 				AA9903E72F5B6A7E00FD4744 /* PolarStreamRuntimePlanner.swift in Sources */,
 				AA9903EA2F5B713A00FD4744 /* PolarRestFacadeRuntimePlanner.swift in Sources */,
+				AA9904012F5BA1E800FD4744 /* PolarCommandRuntimePlanner.swift in Sources */,
+				AA9904022F5BA1E800FD4744 /* PolarDiskTimeRuntimePlanner.swift in Sources */,
 				AA9903F12F5B83C800FD4744 /* PolarUserDeviceSettingsRuntimePlanner.swift in Sources */,
 				AA9903F42F5B8D1000FD4744 /* PolarFileRuntimePlanner.swift in Sources */,
 				AA9903F72F5B95EF00FD4744 /* PolarFirmwareBackupRuntimePlanner.swift in Sources */,
 				AA9903FA2F5B9C6500FD4744 /* PolarStoredDataOfflineRuntimePlanner.swift in Sources */,
+				AA9904032F5BA1E800FD4744 /* PolarRuntimePlanner.swift in Sources */,
+				AA9904042F5BA1E800FD4744 /* pftp_notification.pb.swift in Sources */,
 				6C0C54FE1CFEB3C900FF23E9 /* TimeUtility.swift in Sources */,
 				6C5A44971CB291500006220D /* BleGattClientBase.swift in Sources */,
 				6C5A44981CB291500006220D /* BleGattClientFactory.swift in Sources */,
