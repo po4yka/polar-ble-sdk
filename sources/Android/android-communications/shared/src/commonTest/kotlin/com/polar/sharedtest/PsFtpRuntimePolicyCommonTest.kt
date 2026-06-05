@@ -2,9 +2,11 @@ package com.polar.sharedtest
 
 import com.polar.shared.runtime.PolarPsFtpContinuationTimeout
 import com.polar.shared.runtime.PolarPsFtpNotificationPacket
+import com.polar.shared.runtime.PolarPsFtpNotification
 import com.polar.shared.runtime.PolarPsFtpResponseError
 import com.polar.shared.runtime.PolarPsFtpTransportWriteFailure
 import com.polar.shared.runtime.PolarPsFtpWriteAckTimeout
+import com.polar.shared.runtime.PolarWorkflowPlan
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -117,6 +119,34 @@ class PsFtpRuntimePolicyCommonTest {
     }
 
     @Test
+    fun commonFakePsFtpHarnessPinsInitialSilenceTimeoutCleanupWithoutLeakedOperation() {
+        val vector = loadGoldenVectorText("sdk/psftp-notifications/notification-timeout-policy.json")
+        val case = vector.objectValue("input").objectArray("cases").single()
+        val expected = vector.objectValue("expected").objectValue("commonFakeClock")
+        val harness = CommonFakePsFtpRuntimeHarness()
+
+        val terminal = harness.waitForNotificationWithConsumerTimeout(
+            timeoutMs = case.intValue("observerTimeoutMs"),
+            packets = case.objectArray("packets").map { packet ->
+                PolarPsFtpNotificationPacket(
+                    frame = hexToBytes(packet.stringValue("frameHex")),
+                    transportStatus = packet.intValue("status")
+                )
+            }
+        )
+
+        assertEquals("consumerTimeout", expected.stringValue("outcome"))
+        assertEquals("timeout", terminal)
+        assertEquals(true, harness.descriptorEnabled)
+        assertTrue(harness.independentD2hChannelPackets.isEmpty())
+        assertTrue(harness.independentMtuChannelWrites.isEmpty())
+        assertEquals(expected.intValue("activeObserverCountAfterTimeout"), harness.activeObserverCount)
+        assertEquals(expected.intValue("cleanupCallbackCount"), harness.cleanupCallbackCount)
+        assertEquals(0, harness.pendingOperationCount)
+        assertEquals(listOf("scanner-pause", "scanner-resume"), harness.operationScopeCleanupEvents)
+    }
+
+    @Test
     fun commonFakeNotificationRuntimePinsRfc76ErrorAndTransportStatusPlatformSplit() {
         val vector = loadGoldenVectorText("sdk/psftp-notifications/notification-error-policy.json")
         assertEquals("notification-error-policy", vector.stringValue("id"))
@@ -171,6 +201,35 @@ class PsFtpRuntimePolicyCommonTest {
             }
             assertEquals(testCase.stringValue("id"), thrown.caseId)
         }
+    }
+
+    @Test
+    fun commonFakePsFtpHarnessPinsContinuationTimeoutCleanupWithoutLeakedOperation() {
+        val vector = loadGoldenVectorText("sdk/psftp-notifications/notification-continuation-timeout-policy.json")
+        val testCase = vector.objectValue("input").objectArray("cases").single()
+        val harness = CommonFakePsFtpRuntimeHarness()
+
+        val thrown = assertFailsWith<PolarPsFtpContinuationTimeout> {
+            harness.waitForNotificationContinuation(
+                caseId = testCase.stringValue("id"),
+                protocolTimeoutMs = 250,
+                packets = testCase.objectArray("packets").map { packet ->
+                    PolarPsFtpNotificationPacket(
+                        frame = hexToBytes(packet.stringValue("frameHex")),
+                        transportStatus = packet.intValue("status")
+                    )
+                }
+            )
+        }
+
+        assertEquals(testCase.stringValue("id"), thrown.caseId)
+        assertEquals(testCase.objectArray("packets").map { packet -> packet.stringValue("frameHex") }, harness.independentD2hChannelPackets.map { packet -> packet.frame.toHex() })
+        assertTrue(harness.independentMtuChannelWrites.isEmpty())
+        assertEquals(true, harness.descriptorEnabled)
+        assertEquals(0, harness.activeObserverCount)
+        assertEquals(1, harness.cleanupCallbackCount)
+        assertEquals(0, harness.pendingOperationCount)
+        assertEquals(listOf("scanner-pause", "scanner-resume"), harness.operationScopeCleanupEvents)
     }
 
     @Test
@@ -260,6 +319,34 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("planned-fake-clock-or-injectable-timeout-required", vector.objectValue("execution").stringValue("ios"))
         assertEquals("shared-common-test", vector.objectValue("execution").stringValue("common"))
         assertPsFtpRuntimeConsumerAndPlatformShape(vector)
+    }
+
+    @Test
+    fun commonFakePsFtpHarnessPinsWriteAckTimeoutCleanupWithoutLeakedOperation() {
+        val vector = loadGoldenVectorText("sdk/psftp-response/write-ack-timeout-policy.json")
+        val input = vector.objectValue("input")
+        val failure = input.objectValue("failure")
+        val payload = hexToBytes(input.stringValue("payloadHex"))
+        val harness = CommonFakePsFtpRuntimeHarness()
+
+        val thrown = assertFailsWith<PolarPsFtpWriteAckTimeout> {
+            harness.writeMtuAndWaitForAck(
+                payload = payload,
+                transportTransmit = failure.stringValue("transportTransmit"),
+                writeAck = failure.stringValue("writeAck"),
+                ackTimeoutMs = 250
+            )
+        }
+
+        assertEquals(failure.stringValue("point"), thrown.point)
+        assertEquals(listOf(input.stringValue("payloadHex")), harness.independentMtuChannelWrites)
+        assertTrue(harness.independentD2hChannelPackets.isEmpty())
+        assertEquals(0, harness.writeAckCount)
+        assertEquals(true, harness.descriptorEnabled)
+        assertEquals(0, harness.activeObserverCount)
+        assertEquals(1, harness.cleanupCallbackCount)
+        assertEquals(0, harness.pendingOperationCount)
+        assertEquals(listOf("scanner-pause", "scanner-resume"), harness.operationScopeCleanupEvents)
     }
 
     @Test
@@ -427,5 +514,119 @@ class PsFtpRuntimePolicyCommonTest {
         val NOTIFICATION_ERROR_CASE_IDS = listOf("rfc76-error-first-frame", "transport-error-first-packet")
         val NOTIFICATION_CONTINUATION_TIMEOUT_CASE_IDS = listOf("missing-last-frame-after-more")
         const val PSFTP_RUNTIME_READINESS_COMMON_DECISION = "PSFTP runtime migration may proceed only after every policy vector listed in this readiness manifest is executable from shared commonTest, Android and iOS PSFTP client tests continue to reference the same vectors, request response reassembly, response-error mapping, notification reassembly and ordering, initial-silence policy, consumer timeout cleanup, notification error platform split, continuation timeout, write progress split, write interruption, transport failure, write acknowledgement timeout, fake-clock timeout gates, and the shared tests are compile-verified."
+    }
+}
+
+private class CommonFakePsFtpRuntimeHarness {
+    private val clock = CommonFakeVirtualClock()
+    private var observerOpen = false
+
+    val independentMtuChannelWrites = mutableListOf<String>()
+    val independentD2hChannelPackets = mutableListOf<PolarPsFtpNotificationPacket>()
+    val operationScopeCleanupEvents = mutableListOf<String>()
+    var descriptorEnabled: Boolean = false
+        private set
+    var writeAckCount: Int = 0
+        private set
+    var pendingOperationCount: Int = 0
+        private set
+    var cleanupCallbackCount: Int = 0
+        private set
+
+    val activeObserverCount: Int
+        get() = if (observerOpen) 1 else 0
+
+    fun waitForNotificationWithConsumerTimeout(timeoutMs: Int, packets: List<PolarPsFtpNotificationPacket>): String {
+        startOperation()
+        openD2hObserver()
+        return try {
+            independentD2hChannelPackets += packets
+            if (packets.isEmpty()) {
+                clock.advanceBy(timeoutMs.toLong())
+                "timeout"
+            } else {
+                PolarWorkflowRuntimePlanning.reassembleNotifications(packets)
+                "success"
+            }
+        } finally {
+            closeD2hObserver()
+            finishOperation()
+        }
+    }
+
+    fun waitForNotificationContinuation(caseId: String, protocolTimeoutMs: Int, packets: List<PolarPsFtpNotificationPacket>): List<PolarPsFtpNotification> {
+        startOperation()
+        openD2hObserver()
+        return try {
+            independentD2hChannelPackets += packets
+            PolarWorkflowRuntimePlanning.reassembleNotifications(packets)
+        } catch (error: PolarPsFtpContinuationTimeout) {
+            clock.advanceBy(protocolTimeoutMs.toLong())
+            throw PolarPsFtpContinuationTimeout(caseId)
+        } finally {
+            closeD2hObserver()
+            finishOperation()
+        }
+    }
+
+    fun writeMtuAndWaitForAck(payload: ByteArray, transportTransmit: String, writeAck: String, ackTimeoutMs: Int): PolarWorkflowPlan {
+        startOperation()
+        enableD2hDescriptor()
+        independentMtuChannelWrites += payload.toPsFtpHarnessHex()
+        return try {
+            val plan = PolarWorkflowRuntimePlanning.planPsFtpWrite(
+                payload = payload,
+                transportTransmit = transportTransmit,
+                writeAck = writeAck
+            )
+            writeAckCount += 1
+            plan
+        } catch (error: PolarPsFtpWriteAckTimeout) {
+            clock.advanceBy(ackTimeoutMs.toLong())
+            throw error
+        } finally {
+            finishOperation()
+        }
+    }
+
+    private fun startOperation() {
+        pendingOperationCount += 1
+        operationScopeCleanupEvents += "scanner-pause"
+    }
+
+    private fun finishOperation() {
+        pendingOperationCount -= 1
+        cleanupCallbackCount += 1
+        operationScopeCleanupEvents += "scanner-resume"
+    }
+
+    private fun openD2hObserver() {
+        enableD2hDescriptor()
+        observerOpen = true
+    }
+
+    private fun closeD2hObserver() {
+        observerOpen = false
+    }
+
+    private fun enableD2hDescriptor() {
+        descriptorEnabled = true
+    }
+}
+
+private fun ByteArray.toPsFtpHarnessHex(): String {
+    return joinToString(separator = "") { byte ->
+        val value = byte.toInt() and 0xFF
+        val high = value / 16
+        val low = value % 16
+        "${high.toPsFtpHarnessHexDigit()}${low.toPsFtpHarnessHexDigit()}"
+    }
+}
+
+private fun Int.toPsFtpHarnessHexDigit(): Char {
+    return if (this < 10) {
+        '0' + this
+    } else {
+        'a' + (this - 10)
     }
 }
