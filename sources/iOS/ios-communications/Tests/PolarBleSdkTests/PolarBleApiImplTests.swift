@@ -2166,6 +2166,19 @@ final class PolarBleApiImplTests: XCTestCase {
         #endif
     }
 
+    func test_firmwareBackupRuntimePlannerMapsSharedWorkflowAndOperationsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(["TCHUPDAT.BIN", "APPUPDAT.BIN", "BTUPDAT.BIN", "SYSUPDAT.IMG"], PolarFirmwareBackupRuntimePlanner.orderFirmwareFiles(["TCHUPDAT.BIN", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN"]))
+        XCTAssertEqual("success", PolarFirmwareBackupRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "completed"], firmwareFiles: ["BTUPDAT.BIN", "SYSUPDAT.IMG"]))
+        XCTAssertEqual("success", PolarFirmwareBackupRuntimePlanner.backupRestore(path: "/U/0/BACKUP.TXT", payloadHex: "0102"))
+        let operation = PolarFirmwareBackupRuntimePlanner.backupRestoreOperation(path: "/U/0/BACKUP.TXT", payloadHex: "0102")
+        XCTAssertEqual(.put, operation?.command)
+        XCTAssertEqual("/U/0/BACKUP.TXT", operation?.path)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func test_streamRuntimePlannerSurfacesSharedEdgeDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("gattDisconnected", PolarStreamRuntimePlanner.subscription(target: "stream", startConnected: false, checkConnection: true))

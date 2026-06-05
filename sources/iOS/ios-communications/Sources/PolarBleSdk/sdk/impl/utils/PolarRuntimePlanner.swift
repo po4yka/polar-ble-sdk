@@ -70,12 +70,6 @@ enum PolarRuntimePlanner {
         return PolarDiskTimeRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: localTimeHour)
     }
 
-    private static func backupRestoreOperation(_ plannedOperation: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
-        let parts = plannedOperation.split(separator: ":", maxSplits: 2).map(String.init)
-        guard parts.count == 3, parts[0] == "PUT" else { return nil }
-        return (.put, parts[1])
-    }
-
     @discardableResult
     static func restFacadeGet(id: String, path: String, payloadShape: String) -> String {
         return PolarRestFacadeRuntimePlanner.get(id: id, path: path, payloadShape: payloadShape)
@@ -170,36 +164,20 @@ enum PolarRuntimePlanner {
 
     @discardableResult
     static func firmwareWorkflow(id: String, statuses: [String] = [], firmwareFiles: [String] = []) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeFirmwareWorkflow(id: id, statusesCsv: statuses.joined(separator: ","), firmwareFilesCsv: firmwareFiles.joined(separator: ","))
-        #else
-        return "platform-owned"
-        #endif
+        return PolarFirmwareBackupRuntimePlanner.firmwareWorkflow(id: id, statuses: statuses, firmwareFiles: firmwareFiles)
     }
 
     static func orderFirmwareFiles(_ fileNames: [String]) -> [String] {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeOrderFirmwareFiles(fileNamesCsv: fileNames.joined(separator: ",")).split(separator: ",").map(String.init)
-        #else
-        return fileNames
-        #endif
+        return PolarFirmwareBackupRuntimePlanner.orderFirmwareFiles(fileNames)
     }
 
     @discardableResult
     static func backupRestore(path: String, payloadHex: String, writeResult: String = "success") -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeBackupRestore(path: path, payloadHex: payloadHex, writeResult: writeResult)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarFirmwareBackupRuntimePlanner.backupRestore(path: path, payloadHex: payloadHex, writeResult: writeResult)
     }
 
     static func backupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success") -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
-        #if canImport(PolarBleSdkShared)
-        return backupRestoreOperation(PolarIosSharedBridge.shared.planRuntimeBackupRestoreOperation(path: path, payloadHex: payloadHex, writeResult: writeResult))
-        #else
-        return nil
-        #endif
+        return PolarFirmwareBackupRuntimePlanner.backupRestoreOperation(path: path, payloadHex: payloadHex, writeResult: writeResult)
     }
 
     static func psFtpWriteProgress(payloadSize: Int, platform: String = "ios") -> [Int] {

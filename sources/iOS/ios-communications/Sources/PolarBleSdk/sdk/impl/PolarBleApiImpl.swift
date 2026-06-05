@@ -2417,7 +2417,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             }
             .sorted { PolarFirmwareUpdateUtils.FwFileComparator.compare($0.key, $1.key) == .orderedAscending }
         let firmwareFilesByName = Dictionary(uniqueKeysWithValues: sorted)
-        return PolarRuntimePlanner.orderFirmwareFiles(sorted.map { $0.key }).compactMap { fileName in
+        return PolarFirmwareBackupRuntimePlanner.orderFirmwareFiles(sorted.map { $0.key }).compactMap { fileName in
             firmwareFilesByName[fileName].map { (fileName, $0) }
         }
     }
@@ -2426,7 +2426,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         return AsyncThrowingStream { continuation in
             Task {
                 do {
-                    PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"], firmwareFiles: firmwareFiles.map { $0.0 })
+                    PolarFirmwareBackupRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"], firmwareFiles: firmwareFiles.map { $0.0 })
                     for firmwareFile in firmwareFiles {
                         var lastBytesWritten: Int = 0
                         let firmwareFilePath = "/\(firmwareFile.0)"
