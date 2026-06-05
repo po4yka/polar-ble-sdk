@@ -5,6 +5,7 @@ import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
 import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
 import com.polar.shared.runtime.PolarRestFacadeOperation
+import com.polar.shared.runtime.PolarRuntimePlan
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import com.polar.shared.runtime.PolarBackupRestoreFile
@@ -14,10 +15,12 @@ import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
 import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
+import protocol.PftpNotification
+import protocol.PftpRequest
 
 internal object PolarRuntimePlannerAdapter {
-    fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()) {
-        PolarRuntimeOrchestration.planCommand(
+    fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {
+        return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(
                 id = id,
                 kind = "query",
@@ -31,8 +34,8 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
-    fun planCommandReset(id: String, sleep: Boolean, factoryDefaults: Boolean, otaFirmwareUpdate: Boolean) {
-        PolarRuntimeOrchestration.planCommand(
+    fun planCommandReset(id: String, sleep: Boolean, factoryDefaults: Boolean, otaFirmwareUpdate: Boolean): PolarRuntimePlan {
+        return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(
                 id = id,
                 kind = "resetNotification",
@@ -46,8 +49,8 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
-    fun planCommandSyncStart(id: String) {
-        PolarRuntimeOrchestration.planCommand(
+    fun planCommandSyncStart(id: String): PolarRuntimePlan {
+        return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(
                 id = id,
                 kind = "syncStart",
@@ -61,8 +64,8 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
-    fun planCommandSyncStop(id: String) {
-        PolarRuntimeOrchestration.planCommand(
+    fun planCommandSyncStop(id: String): PolarRuntimePlan {
+        return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(
                 id = id,
                 kind = "syncStop",
@@ -76,8 +79,8 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
-    fun planDiskTimeQuery(id: String, query: String) {
-        PolarRuntimeOrchestration.planDiskTime(
+    fun planDiskTimeQuery(id: String, query: String): PolarRuntimePlan {
+        return PolarRuntimeOrchestration.planDiskTime(
             PolarDiskTimeOperation(
                 id = id,
                 kind = "query",
@@ -89,8 +92,8 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
-    fun planSetLocalTimeV2(systemTimeHour: Int, localTimeHour: Int) {
-        PolarRuntimeOrchestration.planDiskTime(
+    fun planSetLocalTimeV2(systemTimeHour: Int, localTimeHour: Int): PolarRuntimePlan {
+        return PolarRuntimeOrchestration.planDiskTime(
             PolarDiskTimeOperation(
                 id = "set-local-time-v2",
                 kind = "setLocalTimeV2",
@@ -102,8 +105,8 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
-    fun planSetLocalTimeH10(localTimeHour: Int) {
-        PolarRuntimeOrchestration.planDiskTime(
+    fun planSetLocalTimeH10(localTimeHour: Int): PolarRuntimePlan {
+        return PolarRuntimeOrchestration.planDiskTime(
             PolarDiskTimeOperation(
                 id = "set-local-time-h10",
                 kind = "setLocalTimeH10",
@@ -115,8 +118,8 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
-    fun planRestFacadeGet(id: String, path: String, payloadShape: String? = null) {
-        PolarRuntimeOrchestration.planRestFacade(
+    fun planRestFacadeGet(id: String, path: String, payloadShape: String? = null): PolarRuntimePlan {
+        return PolarRuntimeOrchestration.planRestFacade(
             PolarRestFacadeOperation(
                 id = id,
                 command = "GET",
@@ -131,8 +134,8 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
-    fun planFileFacade(id: String, command: String, path: String, payloadHex: String? = null, responseHex: String? = null) {
-        PolarRuntimeOrchestration.planFileFacade(
+    fun planFileFacade(id: String, command: String, path: String, payloadHex: String? = null, responseHex: String? = null): PolarRuntimePlan {
+        return PolarRuntimeOrchestration.planFileFacade(
             PolarFileFacadeOperation(
                 id = id,
                 command = command,
@@ -256,5 +259,70 @@ internal object PolarRuntimePlannerAdapter {
 
     fun planPsFtpWriteAck(payloadSize: Int, writeAck: String = "success") {
         PolarWorkflowRuntimePlanning.planPsFtpWrite(ByteArray(maxOf(payloadSize, 1)) { 0 }, writeAck = writeAck)
+    }
+
+    fun queryValue(plan: PolarRuntimePlan): Int {
+        return queryValue(queryName(plan))
+    }
+
+    fun queryValue(queryName: String): Int {
+        return when (queryName) {
+            "GET_DISK_SPACE" -> PftpRequest.PbPFtpQuery.GET_DISK_SPACE_VALUE
+            "GET_LOCAL_TIME" -> PftpRequest.PbPFtpQuery.GET_LOCAL_TIME_VALUE
+            "REQUEST_START_RECORDING" -> PftpRequest.PbPFtpQuery.REQUEST_START_RECORDING_VALUE
+            "REQUEST_STOP_RECORDING" -> PftpRequest.PbPFtpQuery.REQUEST_STOP_RECORDING_VALUE
+            "REQUEST_RECORDING_STATUS" -> PftpRequest.PbPFtpQuery.REQUEST_RECORDING_STATUS_VALUE
+            "REQUEST_SYNCHRONIZATION" -> PftpRequest.PbPFtpQuery.REQUEST_SYNCHRONIZATION_VALUE
+            "SET_LOCAL_TIME" -> PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE
+            "SET_SYSTEM_TIME" -> PftpRequest.PbPFtpQuery.SET_SYSTEM_TIME_VALUE
+            else -> error("Unsupported shared runtime query command $queryName")
+        }
+    }
+
+    fun notificationValue(notificationName: String): Int {
+        val normalized = notificationName.substringBefore(':')
+        return when (normalized) {
+            "RESET" -> PftpNotification.PbPFtpHostToDevNotification.RESET_VALUE
+            "INITIALIZE_SESSION" -> PftpNotification.PbPFtpHostToDevNotification.INITIALIZE_SESSION_VALUE
+            "START_SYNC" -> PftpNotification.PbPFtpHostToDevNotification.START_SYNC_VALUE
+            "STOP_SYNC" -> PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE
+            "TERMINATE_SESSION" -> PftpNotification.PbPFtpHostToDevNotification.TERMINATE_SESSION_VALUE
+            else -> error("Unsupported shared runtime notification command $notificationName")
+        }
+    }
+
+    fun queryName(plan: PolarRuntimePlan): String {
+        return plan.commands.first { command -> command.startsWith("query:") }.substringAfter("query:")
+    }
+
+    fun notificationNames(plan: PolarRuntimePlan): List<String> {
+        return plan.commands
+            .filter { command -> command.startsWith("notification:") }
+            .map { command -> command.substringAfter("notification:") }
+    }
+
+    fun fileOperationCommand(plan: PolarRuntimePlan): PftpRequest.PbPFtpOperation.Command {
+        return when (fileOperationCommandName(plan)) {
+            "GET" -> PftpRequest.PbPFtpOperation.Command.GET
+            "PUT" -> PftpRequest.PbPFtpOperation.Command.PUT
+            "REMOVE" -> PftpRequest.PbPFtpOperation.Command.REMOVE
+            else -> error("Unsupported shared runtime file operation command ${fileOperationCommandName(plan)}")
+        }
+    }
+
+    fun fileOperationPath(plan: PolarRuntimePlan): String {
+        return fileOperationToken(plan).substringAfter(':')
+    }
+
+    private fun fileOperationCommandName(plan: PolarRuntimePlan): String {
+        return fileOperationToken(plan).substringBefore(':')
+    }
+
+    private fun fileOperationToken(plan: PolarRuntimePlan): String {
+        return plan.commands.first { command ->
+            command.startsWith("GET:") ||
+                command.startsWith("PUT:") ||
+                command.startsWith("REMOVE:")
+        }
     }
 }
