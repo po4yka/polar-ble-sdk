@@ -190,7 +190,7 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("fake-psftp-runtime-policy", vector.objectValue("execution").stringValue("kind"))
         assertEquals("scripted-rfc76-write-stream", vector.objectValue("execution").stringValue("transport"))
         assertEquals(true, vector.objectValue("execution").booleanValue("wallClockSafe"))
-        assertPsFtpRuntimeConsumerAndPlatformShape(vector, includesAndroidPrototype = true)
+        assertPsFtpRuntimeConsumerAndPlatformShape(vector)
     }
 
     @Test
@@ -216,7 +216,7 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("fake-psftp-runtime-policy", vector.objectValue("execution").stringValue("kind"))
         assertEquals("scripted-rfc76-write-stream", vector.objectValue("execution").stringValue("transport"))
         assertEquals(true, vector.objectValue("execution").booleanValue("wallClockSafe"))
-        assertPsFtpRuntimeConsumerAndPlatformShape(vector, includesAndroidPrototype = true)
+        assertPsFtpRuntimeConsumerAndPlatformShape(vector)
     }
 
     @Test
@@ -233,7 +233,7 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("success", expected.stringValue("completion"))
         assertEquals("android-currently-emits-negative-header-overhead-progress-before-payload-count-while-ios-emits-initial-zero-header-progress-and-final-payload-count", decision)
         assertCommonRuntimePrototype(expected)
-        assertPsFtpRuntimeConsumerAndPlatformShape(vector, includesAndroidPrototype = true)
+        assertPsFtpRuntimeConsumerAndPlatformShape(vector)
         assertEquals("Covers the PSFTP write stream success path with a device success response. Android currently emits an initial negative progress value while RFC60 header bytes are being consumed, then the payload byte count. iOS emits an initial zero progress value, an intermediate header/payload stream position, and the same final payload byte count. Shared KMP runtime should choose one progress policy before moving write orchestration to common code.", vector.stringValue("notes"))
     }
 
@@ -259,7 +259,7 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("planned-fake-clock-or-injectable-timeout-required", vector.objectValue("execution").stringValue("android"))
         assertEquals("planned-fake-clock-or-injectable-timeout-required", vector.objectValue("execution").stringValue("ios"))
         assertEquals("shared-common-test", vector.objectValue("execution").stringValue("common"))
-        assertPsFtpRuntimeConsumerAndPlatformShape(vector, includesAndroidPrototype = true)
+        assertPsFtpRuntimeConsumerAndPlatformShape(vector)
     }
 
     @Test
@@ -385,18 +385,10 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", prototype.stringValue("reason"))
     }
 
-    private fun assertPsFtpRuntimeConsumerAndPlatformShape(vector: String, includesAndroidPrototype: Boolean = false) {
+    private fun assertPsFtpRuntimeConsumerAndPlatformShape(vector: String) {
         val consumerTests = vector.objectValue("consumerTests")
-        val expectedAndroidConsumers = if (includesAndroidPrototype) {
-            listOf("com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest", "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest")
-        } else {
-            listOf("com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest")
-        }
-        val expectedCommonConsumers = if (includesAndroidPrototype) {
-            listOf("com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest", "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest")
-        } else {
-            listOf("com.polar.sharedtest.PsFtpRuntimePolicyCommonTest")
-        }
+        val expectedAndroidConsumers = listOf("com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest")
+        val expectedCommonConsumers = listOf("com.polar.sharedtest.PsFtpRuntimePolicyCommonTest")
         assertEquals(expectedAndroidConsumers, consumerTests.stringArrayValue("android"), vector.stringValue("id"))
         assertEquals(listOf("BlePsFtpClientTest"), consumerTests.stringArrayValue("ios"), vector.stringValue("id"))
         assertEquals(expectedCommonConsumers, consumerTests.stringArrayValue("commonPrototype"), vector.stringValue("id"))

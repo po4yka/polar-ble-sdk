@@ -28,14 +28,12 @@
   },
   "consumerTests": {
     "android": [
-      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest",
-      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest"
     ],
     "ios": [
       "BlePsFtpClientTest"
     ],
     "commonPrototype": [
-      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
       "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
     ]
   },

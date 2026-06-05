@@ -2,7 +2,7 @@
   "id": "notification-ordering",
   "area": "sdk.psftp-notifications",
   "case": "notification_ordering",
-  "source": "PSFTP notification ordering fake-transport planning vector with iOS BlePsFtpClient characterization coverage",
+  "source": "PSFTP notification ordering shared runtime planning vector with Android and iOS BlePsFtpClient characterization coverage",
   "input": {
     "kind": "waitNotificationOrdering",
     "cases": [
@@ -38,18 +38,17 @@
   },
   "consumerTests": {
     "android": [
-      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest"
     ],
     "ios": [
       "BlePsFtpClientTest"
     ],
     "commonPrototype": [
-      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
       "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
     ]
   },
   "execution": {
-    "android": "planned-fake-transport-runtime-harness-required",
+    "android": "android-blepsftpclient-characterization-consumer",
     "ios": "ios-blepsftpclient-characterization-consumer",
     "common": "shared-common-test"
   },
@@ -58,5 +57,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Covers PSFTP wait-notification stream ordering for multiple complete D2H notifications. This is lower-level PSFTP transport-stream behavior; public D2H notification filtering and unknown-ID behavior are covered separately by sdk.d2h-notifications vectors. Android executable coverage should use the future fake-transport notification runtime harness rather than repeated direct waitForNotification collectors, which currently depend on platform coroutine cancellation timing."
+  "notes": "Covers PSFTP wait-notification stream ordering for multiple complete D2H notifications. This is lower-level PSFTP transport-stream behavior; public D2H notification filtering and unknown-ID behavior are covered separately by sdk.d2h-notifications vectors. Android and iOS platform client tests keep the vector referenced while executable deterministic ordering is owned by shared common runtime planning."
 }
