@@ -2489,15 +2489,18 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             statuses = listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"),
             firmwareFiles = firmwareFiles.map { it.first }
         )
+        val plannedWriteOperations = PolarRuntimePlannerAdapter.planFirmwareWriteOperations(firmwareFiles.map { it.first })
+            .associateBy { operation -> operation.second }
         for (firmwareFile in firmwareFiles) {
             var lastBytesWritten = 0L
             PolarRuntimePlannerAdapter.planPsFtpWriteProgress(firmwareFile.second.size, "android")
             BleLogger.d(TAG, "Prepare firmware update for ${firmwareFile.first}")
             client.query(PftpRequest.PbPFtpQuery.PREPARE_FIRMWARE_UPDATE_VALUE, null)
             BleLogger.d(TAG, "Start ${firmwareFile.first} write")
+            val plannedWriteOperation = plannedWriteOperations.getValue("/${firmwareFile.first}")
             val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            builder.command = PftpRequest.PbPFtpOperation.Command.PUT
-            builder.path = "/${firmwareFile.first}"
+            builder.command = plannedWriteOperation.first
+            builder.path = plannedWriteOperation.second
             try {
                 var lastEmitTime = 0L
                 client.write(builder.build().toByteArray(), ByteArrayInputStream(firmwareFile.second))

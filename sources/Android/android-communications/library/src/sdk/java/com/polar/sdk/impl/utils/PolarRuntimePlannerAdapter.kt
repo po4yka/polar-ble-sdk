@@ -255,6 +255,16 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun planFirmwareWriteOperations(firmwareFiles: List<String>): List<Pair<PftpRequest.PbPFtpOperation.Command, String>> {
+        return PolarWorkflowRuntimePlanning.planFirmwareWorkflow(
+            PolarFirmwareWorkflowScenario(
+                id = "write-package-success-with-system-update-last",
+                expectedStatusOrder = listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"),
+                firmwareFiles = firmwareFiles
+            )
+        ).writes.map { path -> PftpRequest.PbPFtpOperation.Command.PUT to path }
+    }
+
     fun orderFirmwareFiles(fileNames: List<String>): List<String> {
         return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNames)
     }

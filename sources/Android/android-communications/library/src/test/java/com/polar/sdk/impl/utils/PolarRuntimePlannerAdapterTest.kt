@@ -95,6 +95,19 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared firmware workflow plans select Android protobuf PUT operations and ordered paths`() {
+        val operations = PolarRuntimePlannerAdapter.planFirmwareWriteOperations(listOf("SYSUPDAT.IMG", "BTUPDAT.BIN"))
+
+        Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpOperation.Command.PUT to "/BTUPDAT.BIN",
+                PftpRequest.PbPFtpOperation.Command.PUT to "/SYSUPDAT.IMG"
+            ),
+            operations
+        )
+    }
+
+    @Test
     fun `shared user device settings plans select Android protobuf read and write operations`() {
         val read = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("get-user-device-settings", "read", "/U/0/S/UDEVSET.BPB")
         val write = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("set-user-device-settings", "write", "/U/0/S/UDEVSET.BPB", listOf("protobufPayload=platform-built"))
