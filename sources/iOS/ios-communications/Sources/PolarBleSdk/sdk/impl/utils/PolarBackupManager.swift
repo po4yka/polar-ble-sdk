@@ -86,11 +86,7 @@ public class PolarBackupManager {
     }
 
     private func addDefaultBackupDirectories(to directories: inout [String]) {
-        #if canImport(PolarBleSdkShared)
-        let defaults = PolarIosSharedBridge.shared.defaultBackupPathsCsv().split(separator: ",").map(String.init)
-        #else
-        let defaults = ["/U/*/S/PHYSDATA.BPB", "/U/*/S/UDEVSET.BPB", "/U/*/S/PREFS.BPB", "/U/*/USERID.BPB"]
-        #endif
+        let defaults = PolarFirmwareBackupRuntimePlanner.defaultBackupPaths()
         for dir in defaults {
             if !directories.contains(where: { $0.normalizedBackupUserRootPath == dir }) {
                 directories.append(dir)

@@ -41,6 +41,14 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func defaultBackupPaths() -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.defaultBackupPathsCsv().split(separator: ",").map(String.init)
+        #else
+        return ["/U/*/S/PHYSDATA.BPB", "/U/*/S/UDEVSET.BPB", "/U/*/S/PREFS.BPB", "/U/*/USERID.BPB"]
+        #endif
+    }
+
     private static func backupRestoreOperation(_ plannedOperation: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
         let parts = plannedOperation.split(separator: ":", maxSplits: 2).map(String.init)
         guard parts.count == 3, parts[0] == "PUT" else { return nil }
