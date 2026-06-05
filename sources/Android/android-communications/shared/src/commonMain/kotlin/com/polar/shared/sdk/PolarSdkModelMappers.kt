@@ -19,12 +19,32 @@ data class PolarSkinTemperatureSampleModel(
 
 enum class PolarSkinTemperatureMeasurementType {
     TM_SKIN_TEMPERATURE,
-    TM_CORE_TEMPERATURE
+    TM_CORE_TEMPERATURE;
+
+    companion object {
+        fun fromValue(value: Int): PolarSkinTemperatureMeasurementType? {
+            return when (value) {
+                1 -> TM_SKIN_TEMPERATURE
+                2 -> TM_CORE_TEMPERATURE
+                else -> null
+            }
+        }
+    }
 }
 
 enum class PolarSkinTemperatureSensorLocation {
     SL_DISTAL,
-    SL_PROXIMAL
+    SL_PROXIMAL;
+
+    companion object {
+        fun fromValue(value: Int): PolarSkinTemperatureSensorLocation? {
+            return when (value) {
+                1 -> SL_DISTAL
+                2 -> SL_PROXIMAL
+                else -> null
+            }
+        }
+    }
 }
 
 object PolarSdkModelMappers {
@@ -46,16 +66,8 @@ object PolarSdkModelMappers {
     ): PolarSkinTemperatureModel {
         return PolarSkinTemperatureModel(
             sourceDeviceId = sourceDeviceId,
-            measurementType = when (measurementType) {
-                1 -> PolarSkinTemperatureMeasurementType.TM_SKIN_TEMPERATURE
-                2 -> PolarSkinTemperatureMeasurementType.TM_CORE_TEMPERATURE
-                else -> null
-            },
-            sensorLocation = when (sensorLocation) {
-                1 -> PolarSkinTemperatureSensorLocation.SL_DISTAL
-                2 -> PolarSkinTemperatureSensorLocation.SL_PROXIMAL
-                else -> null
-            },
+            measurementType = PolarSkinTemperatureMeasurementType.fromValue(measurementType),
+            sensorLocation = PolarSkinTemperatureSensorLocation.fromValue(sensorLocation),
             samples = samples
         )
     }

@@ -20,7 +20,7 @@ enum class SkinTemperatureMeasurementType(val value: Int) {
 
     companion object {
         infix fun from(value: Int): SkinTemperatureMeasurementType? =
-            SkinTemperatureMeasurementType.values().firstOrNull { it.value == value }
+            PolarSkinTemperatureMeasurementType.fromValue(value)?.toAndroidMeasurementType()
     }
 }
 
@@ -35,7 +35,7 @@ enum class SkinTemperatureSensorLocation(val value: Int) {
 
     companion object {
         infix fun from(value: Int): SkinTemperatureSensorLocation? =
-            SkinTemperatureSensorLocation.values().firstOrNull { it.value == value }
+            PolarSkinTemperatureSensorLocation.fromValue(value)?.toAndroidSensorLocation()
     }
 }
 

@@ -92,6 +92,19 @@ class PolarSkinTemperatureUtilsTest {
     }
 
     @Test
+    fun `skin temperature public enum lookup delegates known values to shared model and preserves unknown null policy`() {
+        assertEquals(SkinTemperatureMeasurementType.TM_SKIN_TEMPERATURE, SkinTemperatureMeasurementType.from(Types.TemperatureMeasurementType.TM_SKIN_TEMPERATURE.number))
+        assertEquals(SkinTemperatureMeasurementType.TM_CORE_TEMPERATURE, SkinTemperatureMeasurementType.from(Types.TemperatureMeasurementType.TM_CORE_TEMPERATURE.number))
+        assertNull(SkinTemperatureMeasurementType.from(Types.TemperatureMeasurementType.TM_UNKNOWN.number))
+        assertNull(SkinTemperatureMeasurementType.from(99))
+
+        assertEquals(SkinTemperatureSensorLocation.SL_DISTAL, SkinTemperatureSensorLocation.from(Types.SensorLocation.SL_DISTAL.number))
+        assertEquals(SkinTemperatureSensorLocation.SL_PROXIMAL, SkinTemperatureSensorLocation.from(Types.SensorLocation.SL_PROXIMAL.number))
+        assertNull(SkinTemperatureSensorLocation.from(Types.SensorLocation.SL_UNKNOWN.number))
+        assertNull(SkinTemperatureSensorLocation.from(99))
+    }
+
+    @Test
     fun `skin temperature golden vectors map proto to public model`() = runTest {
         loadSkinTemperatureVectors().forEach { vector ->
             val caseId = vector.get("id").asString

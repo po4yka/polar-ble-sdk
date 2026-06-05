@@ -1,7 +1,9 @@
 package com.polar.sharedtest
 
 import com.polar.shared.sdk.PolarSdkModelMappers
+import com.polar.shared.sdk.PolarSkinTemperatureMeasurementType
 import com.polar.shared.sdk.PolarSkinTemperatureSampleModel
+import com.polar.shared.sdk.PolarSkinTemperatureSensorLocation
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,6 +11,19 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SkinTemperatureDomainCommonPolicyTest {
+    @Test
+    fun skinTemperatureDomainEnumLookupsPreserveKnownValuesAndUnknownNullPolicy() {
+        assertEquals(PolarSkinTemperatureMeasurementType.TM_SKIN_TEMPERATURE, PolarSkinTemperatureMeasurementType.fromValue(1))
+        assertEquals(PolarSkinTemperatureMeasurementType.TM_CORE_TEMPERATURE, PolarSkinTemperatureMeasurementType.fromValue(2))
+        assertNull(PolarSkinTemperatureMeasurementType.fromValue(0))
+        assertNull(PolarSkinTemperatureMeasurementType.fromValue(99))
+
+        assertEquals(PolarSkinTemperatureSensorLocation.SL_DISTAL, PolarSkinTemperatureSensorLocation.fromValue(1))
+        assertEquals(PolarSkinTemperatureSensorLocation.SL_PROXIMAL, PolarSkinTemperatureSensorLocation.fromValue(2))
+        assertNull(PolarSkinTemperatureSensorLocation.fromValue(0))
+        assertNull(PolarSkinTemperatureSensorLocation.fromValue(99))
+    }
+
     @Test
     fun skinTemperatureDomainGoldenVectorsDefineExecutableCommonSourceDeviceAndUnknownEnumPolicy() {
         SKIN_TEMPERATURE_DOMAIN_VECTORS.forEach { relativePath ->
