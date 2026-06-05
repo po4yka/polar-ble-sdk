@@ -4636,6 +4636,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_STORED_DATA_CLEANUP_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "cleanupWorkflowPolicyVectorDefinesExecutableCommonTraversalAndPlatformSplits",
+            "cleanupWorkflowVectorRunsThroughCommonFakeTransportFacadeShape",
             "cleanupWorkflowReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/stored-data-cleanup/cleanup-workflow-policy.json",
             "sdk/stored-data-cleanup/cleanup-workflow-readiness.json",
@@ -4652,6 +4653,8 @@ class GoldenVectorMigrationPolicyTest {
             "AUTOS001.BPB",
             "platform-path-split",
             "platform-split",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "sdlogsListFailure",
             "activityEmptyParentRemovePath",
             "telemetry-trc-filter",

@@ -6,6 +6,7 @@ import com.polar.shared.runtime.PolarStoredDataCleanupSampleFile
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class StoredDataCleanupRuntimePolicyCommonTest {
@@ -91,6 +92,35 @@ class StoredDataCleanupRuntimePolicyCommonTest {
     }
 
     @Test
+    fun cleanupWorkflowVectorRunsThroughCommonFakeTransportFacadeShape() {
+        val vector = loadGoldenVectorText("sdk/stored-data-cleanup/cleanup-workflow-policy.json")
+        val input = vector.objectValue("input")
+        val expectedCases = vector.objectValue("expected").objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
+
+        input.objectArray("scenarios").forEach { scenarioJson ->
+            val scenario = CleanupScenario(
+                id = scenarioJson.stringValue("id"),
+                kind = scenarioJson.stringValue("kind"),
+                rootPath = scenarioJson.optionalStringValue("rootPath"),
+                includePrefixes = scenarioJson.optionalStringArrayValue("includePrefixes") ?: emptyList(),
+                includeSuffixes = scenarioJson.optionalStringArrayValue("includeSuffixes") ?: emptyList(),
+                entries = scenarioJson.optionalStringArrayValue("entries") ?: emptyList(),
+                cutoffDate = scenarioJson.optionalStringValue("cutoffDate"),
+                dateFolders = scenarioJson.optionalObjectArray("dateFolders"),
+                sampleFiles = scenarioJson.optionalObjectArray("sampleFiles")
+            )
+            val planned = PolarWorkflowRuntimePlanning.planStoredDataCleanup(scenario.toSharedScenario())
+            val expected = expectedCases.getValue(scenario.id)
+            val transport = ScriptedCommonFakeTransport(outcomesForCleanupCommands(expected.stringArrayValue("commands"), expected.stringValue("terminal")))
+            val terminal = executePlannedCleanup(planned.commands, expected.stringValue("terminal"), transport)
+
+            assertEquals(expected.stringArrayValue("commands"), planned.commands, scenario.id)
+            assertEquals(expected.stringValue("terminal"), terminal, scenario.id)
+            assertEquals(expectedCleanupTransportCommands(expected.stringArrayValue("commands")), transport.commands, scenario.id)
+        }
+    }
+
+    @Test
     fun cleanupFilterHelpersExposeProductionSharedPolicy() {
         assertEquals(true, PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter("TRC10.BIN", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
         assertEquals(false, PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter("ABC10.BIN", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
@@ -143,6 +173,55 @@ class StoredDataCleanupRuntimePolicyCommonTest {
     private val STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
 
     private val STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup migration may proceed only after cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
+
+    private fun outcomesForCleanupCommands(commands: List<String>, terminal: String): List<CommonFakeTransportOutcome> {
+        if (terminal == "platform-split") {
+            return listOf(CommonFakeTransportOutcome.TransportError("cleanup-list-failed"))
+        }
+        return commands.map { command ->
+            when {
+                command.startsWith("GET:") -> CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01))
+                command.startsWith("REMOVE:") || command.startsWith("REMOVE_EMPTY_DIRECTORY:") -> CommonFakeTransportOutcome.Complete
+                else -> error("Unsupported cleanup command $command")
+            }
+        }
+    }
+
+    private fun executePlannedCleanup(
+        commands: List<String>,
+        expectedTerminal: String,
+        transport: ScriptedCommonFakeTransport
+    ): String {
+        commands.forEach { command ->
+            when {
+                command.startsWith("GET:") -> {
+                    val outcome = transport.read(command.removePrefix("GET:"))
+                    if (outcome is CommonFakeTransportOutcome.TransportError) {
+                        return expectedTerminal
+                    }
+                    assertIs<CommonFakeTransportOutcome.Bytes>(outcome, command)
+                }
+                command.startsWith("REMOVE:") -> {
+                    assertIs<CommonFakeTransportOutcome.Complete>(transport.remove(command.removePrefix("REMOVE:")), command)
+                }
+                command.startsWith("REMOVE_EMPTY_DIRECTORY:") -> {
+                    assertIs<CommonFakeTransportOutcome.Complete>(transport.remove(command.removePrefix("REMOVE_EMPTY_DIRECTORY:")), command)
+                }
+            }
+        }
+        return expectedTerminal
+    }
+
+    private fun expectedCleanupTransportCommands(commands: List<String>): List<CommonFakeTransportCommand> {
+        return commands.mapNotNull { command ->
+            when {
+                command.startsWith("GET:") -> CommonFakeTransportCommand(CommonFakeTransportOperation.READ, command.removePrefix("GET:"))
+                command.startsWith("REMOVE:") -> CommonFakeTransportCommand(CommonFakeTransportOperation.REMOVE, command.removePrefix("REMOVE:"))
+                command.startsWith("REMOVE_EMPTY_DIRECTORY:") -> CommonFakeTransportCommand(CommonFakeTransportOperation.REMOVE, command.removePrefix("REMOVE_EMPTY_DIRECTORY:"))
+                else -> null
+            }
+        }
+    }
 
     private fun assertCleanupPolicyFields(scenariosById: Map<String, String>) {
         val telemetry = scenariosById.getValue("telemetry-root-trc-bin-filter")
