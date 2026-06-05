@@ -474,6 +474,11 @@ public class PpgData {
     }
     
     private static func dataFromCompressedType8(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedCompressedType8Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_8_CHANNELS_IN_SAMPLE, resolution: TYPE_8_SAMPLE_SIZE_IN_BITS)
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
         var ppgSamplesFrameType8 = [PpgSample]()
@@ -494,6 +499,44 @@ public class PpgData {
 
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamplesFrameType8)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedCompressedType8Data(frame: PmdDataFrame) -> PpgData? {
+        guard frame.isCompressedFrame,
+              frame.frameType == .type_8,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PolarIosSharedBridge.shared.ppgCompressedType8Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 3,
+                  let timeStamp = UInt64(fields[0]) else {
+                return nil
+            }
+            let ppgDataSamples = fields[1].split(separator: ";").compactMap { Int32($0) }
+            let statusBits = fields[2].split(separator: ";").compactMap { Int8($0) }
+            guard ppgDataSamples.count == 24,
+                  !statusBits.isEmpty else {
+                return nil
+            }
+            return PpgDataFrameType8(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: ppgDataSamples, statusBits: statusBits)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
     
     private static func dataFromCompressedType10(frame: PmdDataFrame) throws -> PpgData {
         
