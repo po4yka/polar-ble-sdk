@@ -3166,8 +3166,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
         val localTime = LocalDateTime.now()
         BleLogger.d(TAG, "setDaylightSavingTime: setting local time $localTime for $identifier")
+        val plan = PolarRuntimePlannerAdapter.planSetLocalTimeH10(localTime.hour)
         val pbLocalTime = javaLocalDateTimeToPbPftpSetLocalTime(localTime)
-        client.query(PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE, pbLocalTime.toByteArray())
+        client.query(PolarRuntimePlannerAdapter.queryValue(plan), pbLocalTime.toByteArray())
     }
 
     override suspend fun setTelemetryEnabled(deviceId: String, enabled: Boolean) {
