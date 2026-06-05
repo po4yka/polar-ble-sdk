@@ -1,6 +1,5 @@
 package com.polar.sharedtest
 
-import com.polar.shared.runtime.PolarBackupRestoreFile
 import com.polar.shared.runtime.PolarPsFtpNotificationPacket
 import com.polar.shared.runtime.PolarPsFtpWriteAckTimeout
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
@@ -9,29 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class RemainingRuntimeWorkflowPlanningCommonTest {
-    @Test
-    fun backupWorkflowVectorsRunThroughProductionCommonPlanner() {
-        val vector = loadGoldenVectorText("sdk/backup-utils/backup-expansion-and-restore-writes.json")
-        val input = vector.objectValue("input")
-        val expected = vector.objectValue("expected")
-        val files = input.objectValue("files").objectEntries()
-        val backupText = hexToBytes(files.getValue("/SYS/BACKUP.TXT")).decodeAscii()
-        val expanded = PolarWorkflowRuntimePlanning.expandBackupEntries(backupText, files.keys.toList())
-        val backupFiles = PolarWorkflowRuntimePlanning.readBackupFiles(expanded + PolarWorkflowRuntimePlanning.defaultBackupPaths(), files)
-
-        assertEquals(expected.objectArray("backupFiles").map { it.stringValue("path") }, backupFiles.map { it.path })
-        assertEquals(expected.objectArray("backupFiles").map { it.stringValue("dataHex") }, backupFiles.map { it.dataHex })
-
-        val restorePlan = PolarWorkflowRuntimePlanning.planBackupRestore(input.objectArray("restoreFiles").map { restore ->
-            PolarBackupRestoreFile(
-                directory = restore.stringValue("directory"),
-                fileName = restore.stringValue("fileName"),
-                dataHex = restore.stringValue("dataHex")
-            )
-        })
-        assertEquals(expected.objectArray("restoreWrites").map { it.stringValue("path") }, restorePlan.writes)
-    }
-
     @Test
     fun psFtpByteCodecAndRuntimeVectorsRunThroughProductionCommonPlanner() {
         val frameVector = loadGoldenVectorText("sdk/psftp-rfc76/final-last-frame.json")
@@ -70,16 +46,6 @@ class RemainingRuntimeWorkflowPlanningCommonTest {
             PolarPsFtpNotificationPacket(hexToBytes(hex), 0)
         })
         assertEquals(notificationCase.objectValue("expected").intValue("id"), notifications.single().id)
-    }
-
-    private fun String.objectEntries(): Map<String, String> {
-        return Regex("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"").findAll(this).associate { match ->
-            match.groupValues[1] to match.groupValues[2]
-        }
-    }
-
-    private fun ByteArray.decodeAscii(): String {
-        return joinToString(separator = "") { byte -> (byte.toInt() and 0xff).toChar().toString() }
     }
 
     private fun ByteArray.toHex(): String {

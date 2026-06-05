@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarBackupRestoreFile
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,25 +11,18 @@ class BackupUtilityCommonPolicyTest {
         val vector = loadGoldenVectorText("sdk/backup-utils/backup-expansion-and-restore-writes.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
-        val backup = FakeBackupUtility(input.objectValue("files"))
+        val files = input.objectValue("files").objectEntries()
+        val backupText = hexToBytes(files.getValue("/SYS/BACKUP.TXT")).decodeAscii()
 
-        val rootPaths = PolarWorkflowRuntimePlanning.backupRootPaths(
-            backup.backupTextEntries(input.objectValue("files").stringValue("/SYS/BACKUP.TXT"))
-        )
-        val expandedPaths = backup.expandBackupEntries(rootPaths)
-        val actualBackupFiles = backup.readBackupFiles(expandedPaths)
+        val rootPaths = PolarWorkflowRuntimePlanning.backupRootPaths(backupText.split("\n").filter { path -> path.isNotEmpty() })
+        val expandedPaths = PolarWorkflowRuntimePlanning.expandBackupEntries(rootPaths.joinToString(separator = "\n"), files.keys.toList())
+        val actualBackupFiles = PolarWorkflowRuntimePlanning.readBackupFiles(expandedPaths, files)
 
         assertEquals(expected.objectArray("backupFiles").map { it.stringValue("path") }, actualBackupFiles.map { it.path })
         assertEquals(expected.objectArray("backupFiles").map { it.stringValue("dataHex") }, actualBackupFiles.map { it.dataHex })
 
-        val restoreTransport = ScriptedCommonFakeTransport(input.objectArray("restoreFiles").map { CommonFakeTransportOutcome.Complete })
-        backup.restore(input.objectArray("restoreFiles"), restoreTransport)
-        assertEquals(
-            expected.objectArray("restoreWrites").map { expectedWrite ->
-                CommonFakeTransportCommand(CommonFakeTransportOperation.WRITE, expectedWrite.stringValue("path"), expectedWrite.stringValue("dataHex"))
-            },
-            restoreTransport.commands
-        )
+        val restorePlan = PolarWorkflowRuntimePlanning.planBackupRestore(input.objectArray("restoreFiles").map { restoreFile -> restoreFile.toBackupRestoreFile() })
+        assertEquals(expected.objectArray("restoreWrites").map { expectedWrite -> "PUT:${expectedWrite.stringValue("path")}:${expectedWrite.stringValue("dataHex")}" }, restorePlan.commands)
     }
 
     @Test
@@ -37,20 +31,11 @@ class BackupUtilityCommonPolicyTest {
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
         val consumerTests = vector.objectValue("consumerTests")
-        val transport = ScriptedCommonFakeTransport(input.objectArray("restoreFiles").map { restoreFile ->
-            when (restoreFile.stringValue("writeResult")) {
-                "success" -> CommonFakeTransportOutcome.Complete
-                "failure" -> CommonFakeTransportOutcome.TransportError("Restore failed")
-                else -> error("Unsupported restore write result ${restoreFile.stringValue("writeResult")}")
-            }
-        })
-        val failures = FakeBackupUtility("{}").restore(input.objectArray("restoreFiles"), transport)
+        val restorePlan = PolarWorkflowRuntimePlanning.planBackupRestore(input.objectArray("restoreFiles").map { restoreFile -> restoreFile.toBackupRestoreFile() })
 
         assertEquals(
-            expected.objectArray("writes").map { expectedWrite ->
-                CommonFakeTransportCommand(CommonFakeTransportOperation.WRITE, expectedWrite.stringValue("path"), expectedWrite.stringValue("dataHex"))
-            },
-            transport.commands
+            expected.objectArray("writes").map { expectedWrite -> "PUT:${expectedWrite.stringValue("path")}:${expectedWrite.stringValue("dataHex")}" },
+            restorePlan.commands
         )
         assertEquals("restore-failure-platform-policy", vector.stringValue("id"))
         assertEquals("sdk.backup-utils", vector.stringValue("area"))
@@ -60,7 +45,7 @@ class BackupUtilityCommonPolicyTest {
         assertEquals(listOf("0102", "0304", "0506"), expected.objectArray("writes").map { write -> write.stringValue("dataHex") }, vector.stringValue("id"))
         assertEquals(false, expected.objectValue("android").booleanValue("throws"))
         assertEquals(true, expected.objectValue("ios").booleanValue("throws"))
-        assertEquals(listOf("/SYS/BT/SVSTATUS.BPB"), failures)
+        assertEquals(listOf("/SYS/BT/SVSTATUS.BPB"), restorePlan.terminalError?.split(",") ?: emptyList())
         assertEquals("/SYS/BT/SVSTATUS.BPB", expected.objectValue("ios").stringValue("errorContains"))
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarBackupManagerTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarBackupManagerTest"), consumerTests.stringArrayValue("ios"))
@@ -137,44 +122,13 @@ class BackupUtilityCommonPolicyTest {
 
     private val backupWorkflowReadinessDecision = "Backup workflow migration may proceed only after backup-expansion-and-restore-writes.json, restore-failure-platform-policy.json, and this readiness manifest are executable from shared commonTest, Android and iOS backup tests continue to reference the same vectors, BACKUP.TXT expansion and default user-file inclusion stay covered, restore PUT command order and payload bytes remain pinned, restore failure aggregation is deliberately standardized or deliberately preserved as a platform split, and the shared tests are compile-verified."
 
-    private class FakeBackupUtility(
-        private val filesJson: String
-    ) {
-        fun backupTextEntries(backupTextHex: String): List<String> {
-            return hexToBytes(backupTextHex).decodeAscii().split("\n").filter { path -> path.isNotEmpty() }
-        }
-
-        fun expandBackupEntries(rootPaths: List<String>): List<String> {
-            return rootPaths.flatMap { path ->
-                if (path.endsWith("/")) {
-                    listDirectory(path)
-                } else {
-                    listOf(path)
-                }
-            }
-        }
-
-        fun readBackupFiles(paths: List<String>): List<BackupArtifact> {
-            return paths.map { path -> BackupArtifact(path, filesJson.stringValue(path)) }
-        }
-
-        fun restore(restoreFiles: List<String>, transport: ScriptedCommonFakeTransport): List<String> {
-            val failures = mutableListOf<String>()
-            restoreFiles.forEach { restoreFile ->
-                val path = restoreFile.stringValue("directory") + restoreFile.stringValue("fileName")
-                val outcome = transport.write(path, hexToBytes(restoreFile.stringValue("dataHex")))
-                if (outcome is CommonFakeTransportOutcome.TransportError || outcome is CommonFakeTransportOutcome.ResponseError || outcome is CommonFakeTransportOutcome.Timeout) {
-                    failures += path
-                }
-            }
-            return failures
-        }
-
-        private fun listDirectory(directory: String): List<String> {
-            return Regex("\"([^\"]+)\"\\s*:\\s*\"[^\"]*\"").findAll(filesJson).map { match -> match.groupValues[1] }.filter { path ->
-                path.startsWith(directory) && path != directory
-            }.toList()
-        }
+    private fun String.toBackupRestoreFile(): PolarBackupRestoreFile {
+        return PolarBackupRestoreFile(
+            directory = stringValue("directory"),
+            fileName = stringValue("fileName"),
+            dataHex = stringValue("dataHex"),
+            writeResult = optionalStringValue("writeResult") ?: "success"
+        )
     }
 
     private fun String.booleanValue(field: String): Boolean {
@@ -185,8 +139,9 @@ class BackupUtilityCommonPolicyTest {
         return joinToString(separator = "") { byte -> (byte.toInt() and 0xFF).toChar().toString() }
     }
 
-    private data class BackupArtifact(
-        val path: String,
-        val dataHex: String
-    )
+    private fun String.objectEntries(): Map<String, String> {
+        return Regex("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"").findAll(this).associate { match ->
+            match.groupValues[1] to match.groupValues[2]
+        }
+    }
 }

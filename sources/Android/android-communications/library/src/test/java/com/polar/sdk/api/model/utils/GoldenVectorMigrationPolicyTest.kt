@@ -4329,7 +4329,7 @@ class GoldenVectorMigrationPolicyTest {
             "restore-failure-aggregation-decision-gate",
             "compile-verification-gate",
             "choose whether restore failure aggregation belongs in shared code",
-            "ScriptedCommonFakeTransport"
+            "PolarWorkflowRuntimePlanning.planBackupRestore"
         )
         val FAKE_TRANSPORT_COMMON_OFFLINE_TRIGGER_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "offlineTriggerRuntimePolicyVectorRunsThroughProductionCommonPlanner",
