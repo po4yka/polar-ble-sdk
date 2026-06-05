@@ -33,6 +33,20 @@ class PolarDeviceToHostNotificationsApiTests: XCTestCase {
         mockSession = nil
         api = nil
     }
+
+    func testD2HNotificationMappingUsesSharedPlannerWhenLinked() async throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("STOP_GPS_MEASUREMENT", PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Protocol_PbPFtpDevToHostNotification.stopGpsMeasurement.rawValue))
+        #endif
+        mockClient.receiveNotificationCalls.append(contentsOf: [
+            (Protocol_PbPFtpDevToHostNotification.stopGpsMeasurement.rawValue, [Data()], false)
+        ])
+
+        let result = try await collectStream(api.observeDeviceToHostNotifications(identifier: deviceId)).first
+
+        XCTAssertEqual(result?.notificationType, .stopGpsMeasurement)
+        XCTAssertEqual(result?.parameters, Data())
+    }
     
     func testReceivesSyncRequiredNotification() async throws {
         // Arrange
