@@ -3978,6 +3978,12 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(directoryOperation.path, "/U/0/20240615/R/103000/")
     }
 
+    func testGenericDirectoryHeadersUseSharedFileFacadePlanning() {
+        let directoryOperation = PolarBleApiImpl.genericDirectoryReadOperation(path: "/U/0/")
+        XCTAssertEqual(directoryOperation.command, .get)
+        XCTAssertEqual(directoryOperation.path, "/U/0/")
+    }
+
     // MARK: - listOfflineRecordings tests
 
     func test_listOfflineRecordings_sessionNotReady_propagatesError() {

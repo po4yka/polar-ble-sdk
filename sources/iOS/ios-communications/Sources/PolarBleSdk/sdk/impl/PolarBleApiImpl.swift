@@ -103,6 +103,10 @@ import UIKit
         return facadeFileOperation(id: "offline-recording-read-directory", command: "GET", path: path)
     }
 
+    static func genericDirectoryReadOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "generic-directory-read", command: "GET", path: path)
+    }
+
     private static func facadeFileOperation(id: String, command: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
             return plannedOperation
@@ -3488,23 +3492,11 @@ extension PolarBleApiImpl: PolarBleApi  {
         }
     }
     
-    private func fetchDirectoryEntries(_ path: String, client: BlePsFtpClient, condition: @escaping (_ p: String) -> Bool) async throws -> [(name: String, size: UInt64)] {
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
-        let request = try operation.serializedData()
-        let data = try await client.request(request)
-        let dir = try Protocol_PbPFtpDirectory(serializedBytes: data as Data)
-        return dir.entries.compactMap { entry -> (name: String, size: UInt64)? in
-            condition(entry.name) ? (name: path + entry.name, size: entry.size) : nil
-        }
-    }
-
-    
     private func fetchRecursive(_ path: String, client: BlePsFtpClient, condition: @escaping (_ p: String) -> Bool) async throws -> [(name: String, size: UInt64)] {
+        let readOperation = Self.genericDirectoryReadOperation(path: path)
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
+        operation.command = readOperation.command
+        operation.path = readOperation.path
         let request = try operation.serializedData()
         do {
             let data = try await client.request(request)
