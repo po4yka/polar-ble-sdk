@@ -7,6 +7,13 @@ import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
 import com.polar.shared.runtime.PolarRestFacadeOperation
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
+import com.polar.shared.runtime.PolarBackupRestoreFile
+import com.polar.shared.runtime.PolarFirmwareWorkflowScenario
+import com.polar.shared.runtime.PolarOfflineTriggerDesiredFeature
+import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
+import com.polar.shared.runtime.PolarOfflineTriggerTransport
+import com.polar.shared.runtime.PolarStoredDataCleanupScenario
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 
 internal object PolarRuntimePlannerAdapter {
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()) {
@@ -185,5 +192,69 @@ internal object PolarRuntimePlannerAdapter {
                 payloadFields = payloadFields
             )
         )
+    }
+
+    fun planStoredDataCleanup(kind: String, rootPath: String) {
+        PolarWorkflowRuntimePlanning.planStoredDataCleanup(
+            PolarStoredDataCleanupScenario(
+                id = "platform-stored-data-cleanup",
+                kind = kind,
+                rootPath = rootPath
+            )
+        )
+    }
+
+    fun planOfflineTriggerSet(currentTypes: List<String>, desiredTypes: List<String>, secretPresent: Boolean) {
+        PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
+            operation = "setOfflineRecordingTrigger",
+            currentDeviceTriggers = currentTypes.map { type -> PolarOfflineTriggerDeviceTrigger(type, "enabled") },
+            desiredFeatures = desiredTypes.map { type -> PolarOfflineTriggerDesiredFeature(type, hasSelectedSettings = true) },
+            secretPresent = secretPresent,
+            transport = PolarOfflineTriggerTransport()
+        )
+    }
+
+    fun planOfflineTriggerGet(currentTypes: List<String>) {
+        PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
+            operation = "getOfflineRecordingTriggerSetup",
+            currentDeviceTriggers = currentTypes.map { type -> PolarOfflineTriggerDeviceTrigger(type, "enabled") }
+        )
+    }
+
+    fun planFirmwareWorkflow(id: String, statuses: List<String> = emptyList(), firmwareFiles: List<String> = emptyList()) {
+        PolarWorkflowRuntimePlanning.planFirmwareWorkflow(
+            PolarFirmwareWorkflowScenario(
+                id = id,
+                expectedStatuses = statuses,
+                expectedTerminalStatus = statuses.lastOrNull(),
+                expectedStatusOrder = statuses,
+                firmwareFiles = firmwareFiles
+            )
+        )
+    }
+
+    fun orderFirmwareFiles(fileNames: List<String>): List<String> {
+        return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNames)
+    }
+
+    fun planBackupRestore(path: String, payloadHex: String, writeResult: String = "success") {
+        PolarWorkflowRuntimePlanning.planBackupRestore(
+            listOf(
+                PolarBackupRestoreFile(
+                    directory = path.substringBeforeLast('/', missingDelimiterValue = "") + "/",
+                    fileName = path.substringAfterLast('/'),
+                    dataHex = payloadHex,
+                    writeResult = writeResult
+                )
+            )
+        )
+    }
+
+    fun planPsFtpWriteProgress(payloadSize: Int, platform: String): List<Int> {
+        return PolarWorkflowRuntimePlanning.planPsFtpWriteProgress(payloadSize, platform)
+    }
+
+    fun planPsFtpWriteAck(payloadSize: Int, writeAck: String = "success") {
+        PolarWorkflowRuntimePlanning.planPsFtpWrite(ByteArray(maxOf(payloadSize, 1)) { 0 }, writeAck = writeAck)
     }
 }

@@ -91,6 +91,7 @@ public class PolarBackupManager {
                 var operation = Protocol_PbPFtpOperation()
                 operation.command = .put
                 operation.path = backupFileData.directory + backupFileData.fileName
+                PolarRuntimePlanner.backupRestore(path: operation.path, payloadHex: backupFileData.data.map { String(format: "%02x", $0) }.joined())
                 let header = try operation.serializedData() as NSData
                 let dataStream = InputStream(data: backupFileData.data)
                 for try await bytes in client.write(header, data: dataStream) {

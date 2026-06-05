@@ -158,6 +158,8 @@ internal object PolarFileUtils {
         val dataInputStream = ByteArrayInputStream(data)
 
         try {
+            PolarRuntimePlannerAdapter.planPsFtpWriteProgress(data.size, "android")
+            PolarRuntimePlannerAdapter.planPsFtpWriteAck(data.size)
             client.write(builder.build().toByteArray(), dataInputStream)
                 .collect { progress ->
                     BleLogger.d(tag, "pFtpWriteOperation client write progress $progress: $path")

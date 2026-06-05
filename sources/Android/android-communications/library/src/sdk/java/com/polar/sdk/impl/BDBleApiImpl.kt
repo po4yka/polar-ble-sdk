@@ -2034,6 +2034,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
         val pmdOfflineTrigger = mapPolarOfflineTriggerToPmdOfflineTrigger(trigger)
         val pmdSecret = secret?.let { mapPolarSecretToPmdSecret(it) }
+        PolarRuntimePlannerAdapter.planOfflineTriggerSet(
+            currentTypes = trigger.triggerFeatures.keys.map { it.name },
+            desiredTypes = trigger.triggerFeatures.keys.map { it.name },
+            secretPresent = secret != null
+        )
         BleLogger.d(TAG, "Setup offline recording trigger. Trigger mode: ${trigger.triggerMode} Trigger features: ${trigger.triggerFeatures.keys.joinToString(", ")} Device: $identifier Secret used: ${secret != null}")
         client.setOfflineRecordingTrigger(pmdOfflineTrigger, pmdSecret)
     }
@@ -2043,6 +2048,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePMDClient.PMD_SERVICE) as BlePMDClient?
             ?: throw PolarServiceNotAvailable()
         BleLogger.d(TAG, "Get offline recording trigger setup. Device: $identifier")
+        PolarRuntimePlannerAdapter.planOfflineTriggerGet(
+            listOf("ACC", "GYRO", "MAGNETOMETER", "PPG", "PPI", "HR")
+        )
         return mapPmdTriggerToPolarTrigger(client.getOfflineRecordingTriggerStatus())
     }
 
@@ -2459,6 +2467,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         }
         zipInputStream.close()
 
+        PolarRuntimePlannerAdapter.orderFirmwareFiles(firmwareFiles.map { it.first })
         firmwareFiles.sortWith { f1, f2 ->
             PolarFirmwareUpdateUtils.FwFileComparator()
                 .compare(File(f1.first), File(f2.first))
@@ -2470,8 +2479,14 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                                               client: BlePsFtpClient,
                                               firmwareFiles: List<Pair<String, ByteArray>>,
                                               minPercentageIncrement: Long = 0) {
+        PolarRuntimePlannerAdapter.planFirmwareWorkflow(
+            id = "write-package-success-with-system-update-last",
+            statuses = listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"),
+            firmwareFiles = firmwareFiles.map { it.first }
+        )
         for (firmwareFile in firmwareFiles) {
             var lastBytesWritten = 0L
+            PolarRuntimePlannerAdapter.planPsFtpWriteProgress(firmwareFile.second.size, "android")
             BleLogger.d(TAG, "Prepare firmware update for ${firmwareFile.first}")
             client.query(PftpRequest.PbPFtpQuery.PREPARE_FIRMWARE_UPDATE_VALUE, null)
             BleLogger.d(TAG, "Start ${firmwareFile.first} write")
@@ -2577,6 +2592,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 }
             }
         }
+        PolarRuntimePlannerAdapter.planStoredDataCleanup("filterDirectoryEntries", folderPath)
 
         try {
             val deletedFiles = mutableListOf<String>()
@@ -2640,6 +2656,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 val builder = PftpRequest.PbPFtpOperation.newBuilder()
                 builder.command = PftpRequest.PbPFtpOperation.Command.REMOVE
                 builder.path = path.trimEnd('/')
+                PolarRuntimePlannerAdapter.planStoredDataCleanup("emptyDayFolderRemoval", path)
                 try {
                     client.request(builder.build().toByteArray())
                 } catch (throwable: Throwable) {
@@ -2656,6 +2673,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
     override suspend fun deleteTelemetryData(identifier: String) {
         BleLogger.d(TAG, "Delete all telemetry data from device.")
+        PolarRuntimePlannerAdapter.planStoredDataCleanup("filterDirectoryEntries", "/")
 
         val cond = PolarFileUtils.FetchRecursiveCondition { entry: String ->
             entry.matches(Regex("([A-Za-z]{3}[0-9]{1,3}).BIN$")) &&
