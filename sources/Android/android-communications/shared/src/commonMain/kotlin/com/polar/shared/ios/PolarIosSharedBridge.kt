@@ -1025,6 +1025,12 @@ object PolarIosSharedBridge {
         ).joinToString(separator = ",")
     }
 
+    fun psFtpSplitRfc76FramesHex(payloadHex: String, mtu: Int): String {
+        return PolarWorkflowRuntimePlanning.splitRfc76Frames(payloadHex.hexToBytes(), mtu).joinToString(separator = "|") { frame ->
+            frame.toHex()
+        }
+    }
+
     fun d2hNotificationType(notificationId: Int): String {
         return PolarD2hRuntimePlanning.notificationTypeOrNull(notificationId) ?: ""
     }

@@ -279,6 +279,15 @@ public class BlePsFtpUtility {
     ///   - sequenceNumber: RFC76 ring counter
     /// - Returns: list of air packets
     public static func buildRfc76MessageFrameAll(_ data: InputStream, mtuSize: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> [Data] {
+        #if canImport(PolarBleSdkShared)
+        if sequenceNumber.getSeq() == 0,
+           let sharedFrames = sharedSplitRfc76Frames(data, mtuSize: mtuSize) {
+            for _ in sharedFrames {
+                sequenceNumber.increment()
+            }
+            return sharedFrames
+        }
+        #endif
         var next: Int=0
         var requs = [Data]()
         var more = true
@@ -406,5 +415,25 @@ private func sharedDecodedRfc76Frame(_ packet: Data) -> SharedRfc76Frame? {
         error: fields[3].isEmpty ? nil : Int(fields[3]),
         payload: payload
     )
+}
+
+private func sharedSplitRfc76Frames(_ stream: InputStream, mtuSize: Int) -> [Data]? {
+    let payload = Data(readingRemaining: stream)
+    let frameHexValues = PolarIosSharedBridge.shared.psFtpSplitRfc76FramesHex(payloadHex: payload.hexString, mtu: Int32(mtuSize)).split(separator: "|", omittingEmptySubsequences: false)
+    let frames = frameHexValues.compactMap { Data(hexBytes: String($0)) }
+    return frames.count == frameHexValues.count ? frames : nil
+}
+
+private extension Data {
+    init(readingRemaining stream: InputStream) {
+        var output = Data()
+        var buffer = [UInt8](repeating: 0, count: 512)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            if count <= 0 { break }
+            output.append(buffer, count: count)
+        }
+        self = output
+    }
 }
 #endif
