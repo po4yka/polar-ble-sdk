@@ -663,6 +663,7 @@ FAKE_TRANSPORT_COMMON_FILE_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
 ].freeze
 FAKE_TRANSPORT_COMMON_REST_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
   "restFacadeRuntimePolicyVectorDefinesExecutableCommonRequestPlanning",
+  "restFacadeRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
   "restFacadeRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/rest-service/rest-facade-runtime-policy.json",
   "sdk/rest-service/rest-facade-runtime-readiness.json",
@@ -704,6 +705,8 @@ FAKE_TRANSPORT_COMMON_REST_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
   "malformed-json",
   "json-parse-failure",
   "json-decoder-failure",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "rest-request-transport-policy.json",
   "service-list-request-path",
   "service-description-action-field-mapping",

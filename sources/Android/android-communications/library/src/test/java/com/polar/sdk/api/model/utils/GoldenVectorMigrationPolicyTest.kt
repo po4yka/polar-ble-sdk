@@ -4121,6 +4121,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_REST_FACADE_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "restFacadeRuntimePolicyVectorDefinesExecutableCommonRequestPlanning",
+            "restFacadeRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
             "restFacadeRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/rest-service/rest-facade-runtime-policy.json",
             "sdk/rest-service/rest-facade-runtime-readiness.json",
@@ -4162,6 +4163,8 @@ class GoldenVectorMigrationPolicyTest {
             "malformed-json",
             "json-parse-failure",
             "json-decoder-failure",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "rest-request-transport-policy.json",
             "service-list-request-path",
             "service-description-action-field-mapping",

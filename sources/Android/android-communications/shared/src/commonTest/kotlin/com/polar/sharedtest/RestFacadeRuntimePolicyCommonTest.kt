@@ -72,6 +72,35 @@ class RestFacadeRuntimePolicyCommonTest {
         assertEquals(listOf("com.polar.sharedtest.RestFacadeRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
+    @Test
+    fun restFacadeRuntimeVectorRunsThroughCommonFakeTransportFacadeShape() {
+        val vector = loadGoldenVectorText("sdk/rest-service/rest-facade-runtime-policy.json")
+        val input = vector.objectValue("input")
+        val expectedCases = vector.objectValue("expected").objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
+
+        input.objectArray("operations").forEach { operationJson ->
+            val operation = PolarRestFacadeOperation(
+                id = operationJson.stringValue("id"),
+                command = operationJson.stringValue("command"),
+                path = operationJson.stringValue("path"),
+                payloadShape = operationJson.optionalStringValue("payloadShape"),
+                expectedFields = operationJson.optionalStringArrayValue("expectedFields") ?: emptyList(),
+                transportMode = operationJson.optionalObjectValue("transport")?.stringValue("mode"),
+                responseErrorStatus = operationJson.optionalObjectValue("transport")?.optionalIntValue("status"),
+                responseErrorMessage = operationJson.optionalObjectValue("transport")?.optionalStringValue("message"),
+                expectedPlatformTerminal = operationJson.optionalObjectValue("expectedPlatformTerminal")?.stringValue("android")
+            )
+            val planned = PolarRuntimeOrchestration.planRestFacade(operation)
+            val expected = expectedCases.getValue(operation.id)
+            val transport = ScriptedCommonFakeTransport(listOf(outcomeForRestFacadeTerminal(expected.stringValue("terminal"))))
+            val terminal = executePlannedRestFacade(expected.stringArrayValue("commands"), transport)
+
+            assertEquals(expected.stringArrayValue("commands"), planned.commands, operation.id)
+            assertEquals(expected.stringValue("terminal"), terminal, operation.id)
+            assertEquals(expectedRestFacadeTransportCommands(expected.stringArrayValue("commands")), transport.commands, operation.id)
+        }
+    }
+
     private fun assertRestFacadePolicyVectorShape(policy: String) {
         val policyInput = policy.objectValue("input")
         val policyExpected = policy.objectValue("expected")
@@ -219,6 +248,53 @@ class RestFacadeRuntimePolicyCommonTest {
     private val restFacadeRuntimeTopLevelDecision = "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
 
     private val restFacadeRuntimeReadinessCommonDecision = "REST facade runtime migration may proceed only after rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified."
+
+    private fun outcomeForRestFacadeTerminal(terminal: String): CommonFakeTransportOutcome {
+        return when (terminal) {
+            "success" -> CommonFakeTransportOutcome.Bytes("""{"ok":true}""".encodeToByteArray())
+            "transport-error" -> CommonFakeTransportOutcome.TransportError("rest-facade-request-failed")
+            "response-error" -> CommonFakeTransportOutcome.ResponseError(status = 103, message = "NO_SUCH_FILE_OR_DIRECTORY")
+            "empty-response-parse-failure" -> CommonFakeTransportOutcome.Bytes(byteArrayOf())
+            "malformed-response-parse-failure" -> CommonFakeTransportOutcome.Bytes("{".encodeToByteArray())
+            else -> error("Unsupported REST facade terminal $terminal")
+        }
+    }
+
+    private fun executePlannedRestFacade(
+        commands: List<String>,
+        transport: ScriptedCommonFakeTransport
+    ): String {
+        val getCommand = commands.first { command -> command.startsWith("GET:") }
+        return when (val outcome = transport.read(getCommand.removePrefix("GET:"))) {
+            is CommonFakeTransportOutcome.Bytes -> {
+                val payload = outcome.value.decodeToString()
+                when {
+                    payload.isEmpty() -> "empty-response-parse-failure"
+                    payload == "{" -> "malformed-response-parse-failure"
+                    else -> "success"
+                }
+            }
+            is CommonFakeTransportOutcome.TransportError -> "transport-error"
+            is CommonFakeTransportOutcome.ResponseError -> {
+                assertEquals(103, outcome.status)
+                assertEquals("NO_SUCH_FILE_OR_DIRECTORY", outcome.message)
+                "response-error"
+            }
+            is CommonFakeTransportOutcome.Timeout -> error("REST facade vector does not use timeout outcome ${outcome.label}")
+            CommonFakeTransportOutcome.Complete -> error("REST facade GET cannot complete without bytes")
+        }
+    }
+
+    private fun expectedRestFacadeTransportCommands(commands: List<String>): List<CommonFakeTransportCommand> {
+        return commands.mapNotNull { command ->
+            when {
+                command.startsWith("GET:") -> CommonFakeTransportCommand(CommonFakeTransportOperation.READ, command.removePrefix("GET:"))
+                command.startsWith("response-error:") -> null
+                command.startsWith("payload:") || command.startsWith("field:") -> null
+                else -> null
+            }
+        }
+    }
 
     private fun String.optionalIntValue(field: String): Int? {
         val valueStart = "\"$field\"".toRegex().find(this)?.range?.last?.plus(1) ?: return null
