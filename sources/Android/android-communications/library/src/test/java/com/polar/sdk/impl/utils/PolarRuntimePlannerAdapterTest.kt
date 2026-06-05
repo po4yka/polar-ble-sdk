@@ -82,4 +82,21 @@ class PolarRuntimePlannerAdapterTest {
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, operation?.first)
         Assert.assertEquals("/U/0/BACKUP.TXT", operation?.second)
     }
+
+    @Test
+    fun `shared user device settings plans select Android protobuf read and write operations`() {
+        val read = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("get-user-device-settings", "read", "/U/0/S/UDEVSET.BPB")
+        val write = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("set-user-device-settings", "write", "/U/0/S/UDEVSET.BPB", listOf("protobufPayload=platform-built"))
+        val readThenWrite = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("set-telemetry-enabled", "readThenWrite", "/U/0/S/UDEVSET.BPB", listOf("telemetryEnabled=true"))
+
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpOperation.Command.GET to "/U/0/S/UDEVSET.BPB"), read)
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpOperation.Command.PUT to "/U/0/S/UDEVSET.BPB"), write)
+        Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpOperation.Command.GET to "/U/0/S/UDEVSET.BPB",
+                PftpRequest.PbPFtpOperation.Command.PUT to "/U/0/S/UDEVSET.BPB"
+            ),
+            readThenWrite
+        )
+    }
 }

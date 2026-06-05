@@ -197,6 +197,25 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun planUserDeviceSettingsOperations(id: String, kind: String, path: String, payloadFields: List<String> = emptyList()): List<Pair<PftpRequest.PbPFtpOperation.Command, String>> {
+        return PolarRuntimeOrchestration.planUserDeviceSettings(
+            PolarUserDeviceSettingsOperation(
+                id = id,
+                kind = kind,
+                path = path,
+                payloadFields = payloadFields
+            )
+        ).commands.mapNotNull { command ->
+            val parts = command.split(":", limit = 2)
+            if (parts.size != 2) return@mapNotNull null
+            when (parts[0]) {
+                "read" -> PftpRequest.PbPFtpOperation.Command.GET to parts[1]
+                "write" -> PftpRequest.PbPFtpOperation.Command.PUT to parts[1]
+                else -> null
+            }
+        }
+    }
+
     fun planStoredDataCleanup(kind: String, rootPath: String) {
         PolarWorkflowRuntimePlanning.planStoredDataCleanup(
             PolarStoredDataCleanupScenario(
