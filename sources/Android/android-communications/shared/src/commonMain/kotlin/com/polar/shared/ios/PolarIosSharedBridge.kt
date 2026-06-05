@@ -515,6 +515,53 @@ object PolarIosSharedBridge {
         return PolarSpo2Models.triggerTypeName(value)
     }
 
+    fun spo2ProjectionFields(
+        date: String,
+        timeDirName: String,
+        recordingDevice: String,
+        timeZoneOffsetMinutes: Int,
+        testStatus: Int,
+        bloodOxygenPercent: String,
+        spo2Class: String,
+        spo2ValueDeviationFromBaseline: String,
+        spo2QualityAveragePercent: String,
+        averageHeartRateBpm: String,
+        heartRateVariabilityMs: String,
+        spo2HrvDeviationFromBaseline: String,
+        altitudeMeters: String,
+        triggerType: String
+    ): String {
+        val projection = PolarSpo2Models.projectTestData(
+            date = date,
+            timeDirName = timeDirName,
+            recordingDevice = recordingDevice,
+            timeZoneOffsetMinutes = timeZoneOffsetMinutes,
+            testStatus = testStatus,
+            bloodOxygenPercent = bloodOxygenPercent.optionalIntValue(),
+            spo2Class = spo2Class.optionalIntValue(),
+            spo2ValueDeviationFromBaseline = spo2ValueDeviationFromBaseline.optionalIntValue(),
+            spo2QualityAveragePercent = spo2QualityAveragePercent.optionalFloatValue(),
+            averageHeartRateBpm = averageHeartRateBpm.optionalIntValue(),
+            heartRateVariabilityMs = heartRateVariabilityMs.optionalFloatValue(),
+            spo2HrvDeviationFromBaseline = spo2HrvDeviationFromBaseline.optionalIntValue(),
+            altitudeMeters = altitudeMeters.optionalFloatValue(),
+            triggerType = triggerType.optionalIntValue()
+        )
+        return listOf(
+            projection.recordingDevice,
+            projection.testStatus,
+            projection.bloodOxygenPercent?.toString(),
+            projection.spo2Class,
+            projection.spo2ValueDeviationFromBaseline,
+            projection.spo2QualityAveragePercent?.toString(),
+            projection.averageHeartRateBpm?.toString(),
+            projection.heartRateVariabilityMs?.toString(),
+            projection.spo2HrvDeviationFromBaseline,
+            projection.altitudeMeters?.toString(),
+            projection.triggerType
+        ).joinToString(separator = "\u001F") { value -> value ?: "" }
+    }
+
     fun restServiceNames(entries: String): String {
         return PolarRestServiceModels.serviceNames(entries.lineMap()).joinToString("|")
     }
@@ -1086,6 +1133,14 @@ object PolarIosSharedBridge {
 
     private fun List<String>.optionalBooleanField(index: Int): Boolean? {
         return optionalField(index)?.toBooleanStrictOrNull()
+    }
+
+    private fun String.optionalIntValue(): Int? {
+        return takeIf { it.isNotEmpty() }?.toIntOrNull()
+    }
+
+    private fun String.optionalFloatValue(): Float? {
+        return takeIf { it.isNotEmpty() }?.toFloatOrNull()
     }
 
     private fun String.hexToBytes(): ByteArray {

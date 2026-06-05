@@ -54,6 +54,23 @@ internal class PolarTestUtils {
         let testDate = dateFromFolderNames(dayDate: date, timeDirName: timeDirName, tzOffsetMinutes: tzOffsetMinutes)
             ?? (proto.testTime != 0 ? Date(timeIntervalSince1970: TimeInterval(proto.testTime) / 1000.0) : nil)
             ?? date
+        if let projection = Spo2SharedProjection.fromShared(proto: proto, date: date, timeDirName: timeDirName, timeZoneOffsetMinutes: tzOffsetMinutes) {
+            return PolarSpo2TestData(
+                recordingDevice: projection.recordingDevice,
+                date: testDate,
+                timeZoneOffsetMinutes: tzOffsetMinutes,
+                testStatus: projection.testStatus.flatMap(PolarSpo2TestData.Spo2TestStatus.fromSharedName),
+                bloodOxygenPercent: projection.bloodOxygenPercent,
+                spo2Class: projection.spo2Class.flatMap(PolarSpo2TestData.Spo2Class.fromSharedName),
+                spo2ValueDeviationFromBaseline: projection.spo2ValueDeviationFromBaseline.flatMap(PolarSpo2TestData.DeviationFromBaseline.fromSharedName),
+                spo2QualityAveragePercent: projection.spo2QualityAveragePercent,
+                averageHeartRateBpm: projection.averageHeartRateBpm,
+                heartRateVariabilityMs: projection.heartRateVariabilityMs,
+                spo2HrvDeviationFromBaseline: projection.spo2HrvDeviationFromBaseline.flatMap(PolarSpo2TestData.DeviationFromBaseline.fromSharedName),
+                altitudeMeters: projection.altitudeMeters,
+                triggerType: projection.triggerType.flatMap(PolarSpo2TestData.Spo2TestTriggerType.fromSharedName)
+            )
+        }
         return PolarSpo2TestData(
             recordingDevice: proto.recordingDevice.isEmpty ? nil : proto.recordingDevice,
             date: testDate, timeZoneOffsetMinutes: tzOffsetMinutes,
@@ -84,6 +101,63 @@ internal class PolarTestUtils {
         components.year = dayComponents.year; components.month = dayComponents.month; components.day = dayComponents.day
         components.hour = hh; components.minute = mm; components.second = ss
         return cal.date(from: components)
+    }
+}
+
+private struct Spo2SharedProjection {
+    let recordingDevice: String?
+    let testStatus: String?
+    let bloodOxygenPercent: Int?
+    let spo2Class: String?
+    let spo2ValueDeviationFromBaseline: String?
+    let spo2QualityAveragePercent: Float?
+    let averageHeartRateBpm: UInt?
+    let heartRateVariabilityMs: Float?
+    let spo2HrvDeviationFromBaseline: String?
+    let altitudeMeters: Float?
+    let triggerType: String?
+
+    static func fromShared(proto: Data_PbSpo2TestResult, date: Date, timeDirName: String, timeZoneOffsetMinutes: Int?) -> Spo2SharedProjection? {
+        #if canImport(PolarBleSdkShared)
+        let fields = PolarIosSharedBridge.shared.spo2ProjectionFields(
+            date: dateFormat.string(from: date),
+            timeDirName: timeDirName,
+            recordingDevice: proto.recordingDevice,
+            timeZoneOffsetMinutes: Int32(timeZoneOffsetMinutes ?? 0),
+            testStatus: Int32(proto.testStatus.rawValue),
+            bloodOxygenPercent: proto.hasBloodOxygenPercent ? String(proto.bloodOxygenPercent) : "",
+            spo2Class: proto.hasSpo2Class ? String(proto.spo2Class.rawValue) : "",
+            spo2ValueDeviationFromBaseline: proto.hasSpo2ValueDeviationFromBaseline ? String(proto.spo2ValueDeviationFromBaseline.rawValue) : "",
+            spo2QualityAveragePercent: proto.hasSpo2QualityAveragePercent ? String(proto.spo2QualityAveragePercent) : "",
+            averageHeartRateBpm: proto.hasAverageHeartRateBpm ? String(proto.averageHeartRateBpm) : "",
+            heartRateVariabilityMs: proto.hasHeartRateVariabilityMs ? String(proto.heartRateVariabilityMs) : "",
+            spo2HrvDeviationFromBaseline: proto.hasSpo2HrvDeviationFromBaseline ? String(proto.spo2HrvDeviationFromBaseline.rawValue) : "",
+            altitudeMeters: proto.hasAltitudeMeters ? String(proto.altitudeMeters) : "",
+            triggerType: proto.hasTriggerType ? String(proto.triggerType.rawValue) : ""
+        ).split(separator: "\u{1F}", omittingEmptySubsequences: false).map(String.init)
+        guard fields.count == 11 else { return nil }
+        return Spo2SharedProjection(
+            recordingDevice: fields[0].nilIfEmpty,
+            testStatus: fields[1].nilIfEmpty,
+            bloodOxygenPercent: fields[2].nilIfEmpty.flatMap(Int.init),
+            spo2Class: fields[3].nilIfEmpty,
+            spo2ValueDeviationFromBaseline: fields[4].nilIfEmpty,
+            spo2QualityAveragePercent: fields[5].nilIfEmpty.flatMap(Float.init),
+            averageHeartRateBpm: fields[6].nilIfEmpty.flatMap(UInt.init),
+            heartRateVariabilityMs: fields[7].nilIfEmpty.flatMap(Float.init),
+            spo2HrvDeviationFromBaseline: fields[8].nilIfEmpty,
+            altitudeMeters: fields[9].nilIfEmpty.flatMap(Float.init),
+            triggerType: fields[10].nilIfEmpty
+        )
+        #else
+        return nil
+        #endif
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
     }
 }
 
