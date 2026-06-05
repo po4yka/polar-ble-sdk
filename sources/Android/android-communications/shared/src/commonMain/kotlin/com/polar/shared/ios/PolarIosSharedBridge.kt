@@ -30,6 +30,8 @@ import com.polar.shared.sdk.PolarKvtxMalformedScriptException
 import com.polar.shared.sdk.PolarKvtxScriptCodec
 import com.polar.shared.sdk.PolarOfflineRecordingModels
 import com.polar.shared.sdk.PolarSdkModelMappers
+import com.polar.shared.sdk.PolarSleepRatingName
+import com.polar.shared.sdk.PolarSleepWakeStateName
 import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
@@ -248,6 +250,14 @@ object PolarIosSharedBridge {
 
     fun watchFaceComplicationName(id: Int): String? {
         return PolarWatchFaceComplicationName.fromId(id)?.name
+    }
+
+    fun sleepWakeStateName(value: Int): String? {
+        return PolarSleepWakeStateName.fromValue(value)?.name
+    }
+
+    fun sleepRatingName(value: Int): String? {
+        return PolarSleepRatingName.fromValue(value)?.name
     }
 
     fun resolveDeviceCapabilities(

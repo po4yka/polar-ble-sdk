@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarSleepWakeStateName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -164,14 +165,15 @@ class SleepNightlyRechargeCommonPolicyTest {
     }
 
     private fun String.sleepStageName(): String {
-        return when (this) {
-            "PB_UNKNOWN" -> "UNKNOWN"
-            "PB_WAKE" -> "WAKE"
-            "PB_REM" -> "REM"
-            "PB_NONREM12" -> "NONREM12"
-            "PB_NONREM3" -> "NONREM3"
+        val value = when (this) {
+            "PB_UNKNOWN" -> 0
+            "PB_WAKE" -> -2
+            "PB_REM" -> -3
+            "PB_NONREM12" -> -5
+            "PB_NONREM3" -> -6
             else -> error("Unexpected sleep stage $this")
         }
+        return PolarSleepWakeStateName.fromValue(value)?.name ?: error("Unexpected sleep stage value $value")
     }
 
     private fun String.defaultNightlyValue(): String {
