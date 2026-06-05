@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -85,6 +86,20 @@ class StoredDataCleanupRuntimePolicyCommonTest {
         assertEquals(true, platforms.booleanValue("android"))
         assertEquals(true, platforms.booleanValue("ios"))
         assertEquals(true, platforms.booleanValue("common"))
+    }
+
+    @Test
+    fun cleanupFilterHelpersExposeProductionSharedPolicy() {
+        assertEquals(true, PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter("TRC10.BIN", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
+        assertEquals(false, PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter("ABC10.BIN", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
+        assertEquals(false, PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter("TRC10.TXT", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
+        assertEquals(true, PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter("A.SLG", includeSuffixes = listOf(".SLG", ".TXT")))
+        assertEquals(true, PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter("B.TXT", includeSuffixes = listOf(".SLG", ".TXT")))
+        assertEquals(false, PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter("C.BPB", includeSuffixes = listOf(".SLG", ".TXT")))
+        assertEquals(true, PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents("ACT"))
+        assertEquals(false, PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents("AUTOS"))
+        assertEquals(false, PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents("SDLOGS"))
+        assertEquals(false, PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents("UNDEFINED"))
     }
 
     private val requiredCleanupScenarioIds = listOf(

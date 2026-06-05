@@ -661,6 +661,18 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun storedDataEntryMatchesFilter(entry: String, includePrefixesCsv: String, includeSuffixesCsv: String): Boolean {
+        return PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter(
+            entry = entry,
+            includePrefixes = includePrefixesCsv.csvValues(),
+            includeSuffixes = includeSuffixesCsv.csvValues()
+        )
+    }
+
+    fun shouldPruneStoredDataEmptyParents(dataType: String): Boolean {
+        return PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents(dataType)
+    }
+
     fun planRuntimeOfflineTrigger(operation: String, currentTypesCsv: String, desiredTypesCsv: String, secretPresent: Boolean): String {
         return PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
             operation = operation,

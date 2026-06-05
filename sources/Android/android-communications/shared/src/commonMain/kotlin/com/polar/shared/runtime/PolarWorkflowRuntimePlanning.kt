@@ -117,6 +117,15 @@ object PolarWorkflowRuntimePlanning {
         }
     }
 
+    fun storedDataEntryMatchesFilter(entry: String, includePrefixes: List<String> = emptyList(), includeSuffixes: List<String> = emptyList()): Boolean {
+        return (includePrefixes.isEmpty() || includePrefixes.any { prefix -> entry.startsWith(prefix) }) &&
+            (includeSuffixes.isEmpty() || includeSuffixes.any { suffix -> entry.endsWith(suffix) })
+    }
+
+    fun shouldPruneStoredDataEmptyParents(dataType: String): Boolean {
+        return dataType !in setOf("AUTOS", "SDLOGS", "UNDEFINED")
+    }
+
     fun planOfflineTriggerRuntime(
         operation: String,
         currentDeviceTriggers: List<PolarOfflineTriggerDeviceTrigger>,
@@ -299,10 +308,7 @@ object PolarWorkflowRuntimePlanning {
         val root = requireNotNull(scenario.rootPath)
         val commands = mutableListOf("GET:$root")
         scenario.entries
-            .filter { entry ->
-                (scenario.includePrefixes.isEmpty() || scenario.includePrefixes.any { prefix -> entry.startsWith(prefix) }) &&
-                    (scenario.includeSuffixes.isEmpty() || scenario.includeSuffixes.any { suffix -> entry.endsWith(suffix) })
-            }
+            .filter { entry -> storedDataEntryMatchesFilter(entry, scenario.includePrefixes, scenario.includeSuffixes) }
             .mapTo(commands) { entry -> "REMOVE:${root.withTrailingSlash()}$entry" }
         return commands
     }

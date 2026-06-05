@@ -2655,7 +2655,11 @@ extension PolarBleApiImpl: PolarBleApi  {
             condition = { e in e.contains("^(\\d{8})(/)") || e == "\(entryPattern)/" || e.contains(".BPB") }
         case .SDLOGS:
             folderPath = "/SDLOGS"
-            condition = { e in e.contains("^(\\d{8})(/)") || e == "\(entryPattern)/" || e.contains(".SLG") || e.contains(".TXT") }
+            condition = { e in
+                e.contains("^(\\d{8})(/)") ||
+                e == "\(entryPattern)/" ||
+                (PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includeSuffixes: [".SLG", ".TXT"]) ?? (e.contains(".SLG") || e.contains(".TXT")))
+            }
         case .ACTIVITY, .DAILY_SUMMARY, .NIGHTLY_RECOVERY, .SLEEP, .SKIN_CONTACT_CHANGES, .SKINTEMP, .SLEEP_SCORE:
             folderPath = "/U/0/"
             condition = { e in
@@ -2699,6 +2703,10 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
     private func shouldPruneEmptyParents(for dataType: PolarStoredDataType.StoredDataType) -> Bool {
+        if let sharedDecision = PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: dataType.rawValue) {
+            return sharedDecision
+        }
+
         switch dataType {
         case .ACTIVITY, .DAILY_SUMMARY, .NIGHTLY_RECOVERY, .SLEEP, .SKIN_CONTACT_CHANGES, .SKINTEMP, .SLEEP_SCORE:
             return true
@@ -2736,7 +2744,10 @@ extension PolarBleApiImpl: PolarBleApi  {
 
 
     func deleteTelemetryData(_ identifier: String) async throws {
-        let condition: (_ p: String) -> Bool = { e in e.contains("^([A-Za-z]{3}[0-9]{1,3})") && e.contains("TRC") && e.contains(".BIN") }
+        let condition: (_ p: String) -> Bool = { e in
+            PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includePrefixes: ["TRC"], includeSuffixes: [".BIN"]) ??
+            (e.contains("^([A-Za-z]{3}[0-9]{1,3})") && e.contains("TRC") && e.contains(".BIN"))
+        }
         PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/")
         for try await file in fileUtils.listFiles(identifier: identifier, folderPath: "/", condition: condition) {
             _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: file)

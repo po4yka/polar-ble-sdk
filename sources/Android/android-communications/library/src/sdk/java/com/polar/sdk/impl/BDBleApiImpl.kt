@@ -62,6 +62,7 @@ import com.polar.sdk.api.model.restapi.PolarDeviceRestApiServiceDescription
 import com.polar.sdk.api.model.restapi.PolarDeviceRestApiServices
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionReference
 import com.polar.sdk.api.PolarTrainingSessionApi
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.sdk.impl.utils.PolarBackupManager
 import com.polar.sdk.impl.utils.PolarDataUtils
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPMDClientLocationDataToPolarLocationData
@@ -2573,8 +2574,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 cond = PolarFileUtils.FetchRecursiveCondition { entry: String ->
                     entry.matches(Regex("^(\\d{8})(/)")) ||
                             entry == "${entryPattern}/" ||
-                            entry.contains(".SLG") ||
-                            entry.contains(".TXT")
+                            PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter(entry, includeSuffixes = listOf(".SLG", ".TXT"))
                 }
             }
 
@@ -2616,7 +2616,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                     }
                 }
 
-            if (dataType.type != PolarStoredDataType.AUTO_SAMPLE.type && dataType.type != PolarStoredDataType.SDLOGS.type) {
+            if (PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents(dataType.type)) {
                 val dirs = mutableListOf<String>()
                 for (file in deletedFiles) {
                     if (file != "") {
@@ -2674,7 +2674,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         val cond = PolarFileUtils.FetchRecursiveCondition { entry: String ->
             entry.matches(Regex("([A-Za-z]{3}[0-9]{1,3}).BIN$")) &&
-                    entry.startsWith("TRC")
+                    PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter(entry, includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN"))
         }
 
         try {

@@ -79,6 +79,26 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func storedDataEntryMatchesFilter(entry: String, includePrefixes: [String] = [], includeSuffixes: [String] = []) -> Bool? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.storedDataEntryMatchesFilter(
+            entry: entry,
+            includePrefixesCsv: includePrefixes.joined(separator: ","),
+            includeSuffixesCsv: includeSuffixes.joined(separator: ",")
+        )
+        #else
+        return nil
+        #endif
+    }
+
+    static func shouldPruneStoredDataEmptyParents(dataType: String) -> Bool? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.shouldPruneStoredDataEmptyParents(dataType: dataType)
+        #else
+        return nil
+        #endif
+    }
+
     static func offlineTriggerSet(currentTypes: [String], desiredTypes: [String], secretPresent: Bool) {
         #if canImport(PolarBleSdkShared)
         _ = PolarIosSharedBridge.shared.planRuntimeOfflineTrigger(operation: "setOfflineRecordingTrigger", currentTypesCsv: currentTypes.joined(separator: ","), desiredTypesCsv: desiredTypes.joined(separator: ","), secretPresent: secretPresent)

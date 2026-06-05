@@ -1976,6 +1976,21 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(["/", "/TRC10.BIN"], operations.map { $0.path })
     }
 
+    func test_storedDataCleanupFilterHelpersUseSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: "TRC10.BIN", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: "ABC10.BIN", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: "TRC10.TXT", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: "A.SLG", includeSuffixes: [".SLG", ".TXT"]))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: "C.BPB", includeSuffixes: [".SLG", ".TXT"]))
+        XCTAssertEqual(true, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue))
+        XCTAssertEqual(false, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.AUTO_SAMPLE.rawValue))
+        XCTAssertEqual(false, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.SDLOGS.rawValue))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func test_deleteTelemetryData_listFailurePropagatesError() throws {
         try assertStoredDataCleanupWorkflowVectorContains("telemetry-list-failure-platform-policy")
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7021, userInfo: [NSLocalizedDescriptionKey: "telemetry list failed"])
