@@ -1,6 +1,9 @@
 /// Copyright © 2024 Polar Electro Oy. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 let SERVICE_DATALOG_CONFIG_FILEPATH="/SDLOGS.BPB"
 
@@ -119,9 +122,39 @@ public struct SDLogConfig {
         if (sdLogConfig.skinTemperatureLogEnabled != nil) {pbSensorDataLog.skinTemperatureLogEnabled = sdLogConfig.skinTemperatureLogEnabled!}
         if (sdLogConfig.compassLogEnabled != nil) {pbSensorDataLog.compassLogEnabled = sdLogConfig.compassLogEnabled!}
         if (sdLogConfig.speed3DLogEnabled != nil) {pbSensorDataLog.speed3DLogEnabled = sdLogConfig.speed3DLogEnabled!}
-        if (sdLogConfig.magnetometerFrequency != nil) {pbSensorDataLog.magnetometerLogFrequency = Data_PbSensorDataLog.PbMagnetometerLogFrequency.init(rawValue: sdLogConfig.magnetometerFrequency!)! }
-        if (sdLogConfig.logTrigger != nil) {pbSensorDataLog.logTrigger = Data_PbSensorDataLog.PbLogTrigger.init(rawValue: sdLogConfig.logTrigger!)! }
+        if let magnetometerFrequency = sdLogConfig.magnetometerFrequency {
+            pbSensorDataLog.magnetometerLogFrequency = magnetometerLogFrequencyProtoValue(value: magnetometerFrequency)
+        }
+        if let logTrigger = sdLogConfig.logTrigger {
+            pbSensorDataLog.logTrigger = logTriggerProtoValue(value: logTrigger)
+        }
         
         return pbSensorDataLog
+    }
+
+    private static func logTriggerProtoValue(value: Int) -> Data_PbSensorDataLog.PbLogTrigger {
+        #if canImport(PolarBleSdkShared)
+        guard value >= Int(Int32.min) && value <= Int(Int32.max) else {
+            return Data_PbSensorDataLog.PbLogTrigger(rawValue: value)!
+        }
+        if let sharedValue = PolarIosSharedBridge.shared.sdLogTriggerValue(value: Int32(value)),
+           let proto = Data_PbSensorDataLog.PbLogTrigger(rawValue: Int(truncating: sharedValue)) {
+            return proto
+        }
+        #endif
+        return Data_PbSensorDataLog.PbLogTrigger(rawValue: value)!
+    }
+
+    private static func magnetometerLogFrequencyProtoValue(value: Int) -> Data_PbSensorDataLog.PbMagnetometerLogFrequency {
+        #if canImport(PolarBleSdkShared)
+        guard value >= Int(Int32.min) && value <= Int(Int32.max) else {
+            return Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: value)!
+        }
+        if let sharedValue = PolarIosSharedBridge.shared.sdLogMagnetometerFrequencyValue(value: Int32(value)),
+           let proto = Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: Int(truncating: sharedValue)) {
+            return proto
+        }
+        #endif
+        return Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: value)!
     }
 }

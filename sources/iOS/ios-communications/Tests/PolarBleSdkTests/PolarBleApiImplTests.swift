@@ -1485,6 +1485,43 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(.magLog10Hz, writtenConfig.magnetometerLogFrequency)
     }
 
+    func test_sdLogConfigEnumMappingPreservesProtoValues() throws {
+        let config = SDLogConfig(
+            ppiLogEnabled: nil,
+            accelerationLogEnabled: nil,
+            caloriesLogEnabled: nil,
+            gpsLogEnabled: nil,
+            gpsNmeaLogEnabled: nil,
+            magnetometerLogEnabled: nil,
+            tapLogEnabled: nil,
+            barometerLogEnabled: nil,
+            gyroscopeLogEnabled: nil,
+            sleepLogEnabled: nil,
+            slopeLogEnabled: nil,
+            ambientLightLogEnabled: nil,
+            tlrLogEnabled: nil,
+            ondemandLogEnabled: nil,
+            capsenseLogEnabled: nil,
+            fusionLogEnabled: nil,
+            metLogEnabled: nil,
+            ohrLogEnabled: nil,
+            verticalAccLogEnabled: nil,
+            amdLogEnabled: nil,
+            skinTemperatureLogEnabled: nil,
+            compassLogEnabled: nil,
+            speed3DLogEnabled: nil,
+            logTrigger: Data_PbSensorDataLog.PbLogTrigger.logTriggerExercise.rawValue,
+            magnetometerFrequency: Data_PbSensorDataLog.PbMagnetometerLogFrequency.magLog100Hz.rawValue
+        )
+
+        let proto = SDLogConfig.toProto(sdLogConfig: config)
+
+        XCTAssertEqual(.logTriggerExercise, proto.logTrigger)
+        XCTAssertEqual(2, proto.logTrigger.rawValue)
+        XCTAssertEqual(.magLog100Hz, proto.magnetometerLogFrequency)
+        XCTAssertEqual(3, proto.magnetometerLogFrequency.rawValue)
+    }
+
     func test_setSDLogConfiguration_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7022, userInfo: [NSLocalizedDescriptionKey: "sd log write failed"])
         v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in

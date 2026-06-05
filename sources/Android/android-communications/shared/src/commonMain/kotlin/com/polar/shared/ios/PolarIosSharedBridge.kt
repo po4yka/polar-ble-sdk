@@ -41,6 +41,8 @@ import com.polar.shared.sdk.PolarPpiMovementName
 import com.polar.shared.sdk.PolarPpiSampleTriggerName
 import com.polar.shared.sdk.PolarPpiSkinContactName
 import com.polar.shared.sdk.PolarPpiStatusNames
+import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
+import com.polar.shared.sdk.PolarSdLogTriggerName
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepRatingName
 import com.polar.shared.sdk.PolarSleepWakeStateName
@@ -341,6 +343,14 @@ object PolarIosSharedBridge {
 
     fun exerciseSportProfileName(id: Int): String {
         return PolarExerciseSportProfileName.fromId(id).name
+    }
+
+    fun sdLogTriggerValue(value: Int): Int? {
+        return PolarSdLogTriggerName.fromValue(value)?.value
+    }
+
+    fun sdLogMagnetometerFrequencyValue(value: Int): Int? {
+        return PolarSdLogMagnetometerFrequencyName.fromValue(value)?.value
     }
 
     fun ppiSampleTriggerName(value: Int): String? {
