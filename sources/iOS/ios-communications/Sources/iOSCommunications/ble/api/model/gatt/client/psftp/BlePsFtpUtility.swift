@@ -130,7 +130,7 @@ public class BlePsFtpUtility {
         id: Int) ->  InputStream  {
         #if canImport(PolarBleSdkShared)
         if type != .request || header != nil,
-           let sharedData = Data(hexBytes: PolarIosSharedBridge.shared.psFtpCompleteMessageStreamHex(type: type.sharedName, headerHex: (header ?? Data()).hexString, dataHex: "", idValue: Int32(id))) {
+           let sharedData = SharedPsFtpByteCodec.completeMessageStream(type: type, header: header, id: id) {
             return InputStream(data: sharedData)
         }
         #endif
@@ -281,7 +281,7 @@ public class BlePsFtpUtility {
     public static func buildRfc76MessageFrameAll(_ data: InputStream, mtuSize: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> [Data] {
         #if canImport(PolarBleSdkShared)
         if sequenceNumber.getSeq() == 0,
-           let sharedFrames = sharedSplitRfc76Frames(data, mtuSize: mtuSize) {
+           let sharedFrames = SharedPsFtpByteCodec.splitRfc76Frames(data, mtuSize: mtuSize) {
             for _ in sharedFrames {
                 sequenceNumber.increment()
             }
@@ -322,7 +322,7 @@ public class BlePsFtpUtility {
         }
 
         #if canImport(PolarBleSdkShared)
-        if let sharedFrame = sharedDecodedRfc76Frame(packet) {
+        if let sharedFrame = SharedPsFtpByteCodec.decodedRfc76Frame(packet) {
             header.next = sharedFrame.next
             header.status = sharedFrame.status
             header.sequenceNumber = sharedFrame.sequenceNumber
@@ -370,6 +370,45 @@ private extension BlePsFtpUtility.MessageType {
     }
 }
 
+private struct SharedRfc76Frame {
+    let next: Int
+    let status: Int
+    let sequenceNumber: Int
+    let error: Int?
+    let payload: Data
+}
+
+private enum SharedPsFtpByteCodec {
+    static func completeMessageStream(type: BlePsFtpUtility.MessageType, header: Data?, id: Int) -> Data? {
+        return Data(hexBytes: PolarIosSharedBridge.shared.psFtpCompleteMessageStreamHex(type: type.sharedName, headerHex: (header ?? Data()).hexString, dataHex: "", idValue: Int32(id)))
+    }
+
+    static func decodedRfc76Frame(_ packet: Data) -> SharedRfc76Frame? {
+        let fields = PolarIosSharedBridge.shared.psFtpDecodedRfc76Frame(frameHex: packet.hexString).split(separator: ",", omittingEmptySubsequences: false)
+        guard fields.count == 5,
+              let next = Int(fields[0]),
+              let status = Int(fields[1]),
+              let sequenceNumber = Int(fields[2]),
+              let payload = Data(hexBytes: String(fields[4])) else {
+            return nil
+        }
+        return SharedRfc76Frame(
+            next: next,
+            status: status,
+            sequenceNumber: sequenceNumber,
+            error: fields[3].isEmpty ? nil : Int(fields[3]),
+            payload: payload
+        )
+    }
+
+    static func splitRfc76Frames(_ stream: InputStream, mtuSize: Int) -> [Data]? {
+        let payload = Data(readingRemaining: stream)
+        let frameHexValues = PolarIosSharedBridge.shared.psFtpSplitRfc76FramesHex(payloadHex: payload.hexString, mtu: Int32(mtuSize)).split(separator: "|", omittingEmptySubsequences: false)
+        let frames = frameHexValues.compactMap { Data(hexBytes: String($0)) }
+        return frames.count == frameHexValues.count ? frames : nil
+    }
+}
+
 private extension Data {
     var hexString: String {
         map { String(format: "%02x", $0) }.joined()
@@ -389,39 +428,6 @@ private extension Data {
         }
         self = Data(bytes)
     }
-}
-
-private struct SharedRfc76Frame {
-    let next: Int
-    let status: Int
-    let sequenceNumber: Int
-    let error: Int?
-    let payload: Data
-}
-
-private func sharedDecodedRfc76Frame(_ packet: Data) -> SharedRfc76Frame? {
-    let fields = PolarIosSharedBridge.shared.psFtpDecodedRfc76Frame(frameHex: packet.hexString).split(separator: ",", omittingEmptySubsequences: false)
-    guard fields.count == 5,
-          let next = Int(fields[0]),
-          let status = Int(fields[1]),
-          let sequenceNumber = Int(fields[2]),
-          let payload = Data(hexBytes: String(fields[4])) else {
-        return nil
-    }
-    return SharedRfc76Frame(
-        next: next,
-        status: status,
-        sequenceNumber: sequenceNumber,
-        error: fields[3].isEmpty ? nil : Int(fields[3]),
-        payload: payload
-    )
-}
-
-private func sharedSplitRfc76Frames(_ stream: InputStream, mtuSize: Int) -> [Data]? {
-    let payload = Data(readingRemaining: stream)
-    let frameHexValues = PolarIosSharedBridge.shared.psFtpSplitRfc76FramesHex(payloadHex: payload.hexString, mtu: Int32(mtuSize)).split(separator: "|", omittingEmptySubsequences: false)
-    let frames = frameHexValues.compactMap { Data(hexBytes: String($0)) }
-    return frames.count == frameHexValues.count ? frames : nil
 }
 
 private extension Data {
