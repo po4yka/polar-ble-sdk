@@ -4,6 +4,9 @@ import XCTest
 import Foundation
 import CoreBluetooth
 @testable import iOSCommunications
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 final class StreamContinuationListTest: XCTestCase {
 
@@ -27,6 +30,9 @@ final class StreamContinuationListTest: XCTestCase {
 
     func testMakeStream_checkConnectionTrue_transportNotConnected_finishesWithGattDisconnected() async throws {
         try assertStreamRuntimePolicyVectorContains(fileName: "initial-disconnected-policy.json", vectorId: "initial-disconnected-policy")
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("gattDisconnected", PolarIosSharedBridge.shared.planRuntimeStreamSubscription(target: "stream", startConnected: false, checkConnection: true))
+        #endif
 
         // Arrange
         let list = StreamContinuationList<Int>()

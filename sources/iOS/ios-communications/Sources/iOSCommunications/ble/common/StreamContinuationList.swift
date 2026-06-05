@@ -19,8 +19,8 @@ final class StreamContinuationList<T>: @unchecked Sendable {
         initialValues: [T] = []
     ) -> AsyncThrowingStream<T, Error> {
         let connected = transport?.isConnected() ?? false
-        planRuntimeStreamSubscription(target: "stream", startConnected: connected, checkConnection: checkConnection)
-        if checkConnection && !connected {
+        let plannedTerminal = planRuntimeStreamSubscription(target: "stream", startConnected: connected, checkConnection: checkConnection)
+        if plannedTerminal == "gattDisconnected" || (plannedTerminal == nil && checkConnection && !connected) {
             return AsyncThrowingStream { $0.finish(throwing: BleGattException.gattDisconnected) }
         }
         let id = UUID()
@@ -112,8 +112,8 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
         checkConnection: Bool
     ) -> AsyncThrowingStream<T, Error> {
         let connected = transport?.isConnected() ?? false
-        planRuntimeStreamSubscription(target: "stream", startConnected: connected, checkConnection: checkConnection)
-        if checkConnection && !connected {
+        let plannedTerminal = planRuntimeStreamSubscription(target: "stream", startConnected: connected, checkConnection: checkConnection)
+        if plannedTerminal == "gattDisconnected" || (plannedTerminal == nil && checkConnection && !connected) {
             return AsyncThrowingStream { $0.finish(throwing: BleGattException.gattDisconnected) }
         }
         let id = UUID()
@@ -179,9 +179,11 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
     }
 }
 
-private func planRuntimeStreamSubscription(target: String, startConnected: Bool, checkConnection: Bool) {
+private func planRuntimeStreamSubscription(target: String, startConnected: Bool, checkConnection: Bool) -> String? {
     #if canImport(PolarBleSdkShared)
-    _ = PolarIosSharedBridge.shared.planRuntimeStreamSubscription(target: target, startConnected: startConnected, checkConnection: checkConnection)
+    return PolarIosSharedBridge.shared.planRuntimeStreamSubscription(target: target, startConnected: startConnected, checkConnection: checkConnection)
+    #else
+    return nil
     #endif
 }
 
