@@ -3272,23 +3272,23 @@ class GoldenVectorMigrationPolicyTest {
             "PROTOCOL_ONLY_MIGRATION_OWNERSHIP"
         )
         val GNSS_LOCATION_OWNERSHIP_COMMON_POLICY_REQUIRED_TERMS = listOf(
-            "gnssLocationGoldenVectorsPinAndroidOwnedParserPolicyBeforeCommonMigration",
-            "gnssLocationReadinessManifestNamesEveryPreMigrationOwnershipFamily",
-            "GNSS_LOCATION_ANDROID_OWNED_VECTORS",
+            "gnssLocationGoldenVectorsPinSharedParserPolicyWithAndroidProductionDelegation",
+            "gnssLocationReadinessManifestNamesEverySharedParserDelegationFamily",
+            "GNSS_LOCATION_SHARED_PARSER_VECTORS",
             "protocol/sensors/gnss-location-readiness.json",
             "gnss-location-readiness",
-            "androidOwnedPreMigrationCharacterization",
+            "sharedParserAndroidProductionDelegation",
             "protocol/sensors/gnss-location-raw-type0-coordinate.json",
             "protocol/sensors/gnss-location-raw-type1-satellite-dilution.json",
             "protocol/sensors/gnss-location-raw-type2-satellite-summary.json",
             "protocol/sensors/gnss-location-raw-type3-nmea.json",
-            "android-owned-raw-type0-coordinate",
-            "android-owned-raw-type1-satellite-dilution",
-            "android-owned-raw-type2-satellite-summary",
-            "android-owned-raw-type3-nmea",
+            "shared-parser-raw-type0-coordinate",
+            "shared-parser-raw-type1-satellite-dilution",
+            "shared-parser-raw-type2-satellite-summary",
+            "shared-parser-raw-type3-nmea",
+            "android-production-delegation",
             "non-ios-parser-ownership",
-            "non-common-parser-ownership",
-            "future-shared-parser-parity-gate",
+            "shared-parser-parity-gate",
             "compile-verification-gate",
             "coordinate",
             "satelliteDilution",
@@ -3297,7 +3297,7 @@ class GoldenVectorMigrationPolicyTest {
             "consumerTests.hasStringArray(\"ios\")",
             "platforms.booleanValue(\"ios\")",
             "platforms.booleanValue(\"common\")",
-            "PROTOCOL_ONLY_MIGRATION_OWNERSHIP"
+            "SHARED_GNSS_LOCATION_MIGRATION_OWNERSHIP"
         )
         val OFFLINE_HR_COMMON_POLICY_REQUIRED_TERMS = listOf(
             "offlineHrGoldenVectorsDefineExecutableCommonRawAndUnsupportedFramePolicy",

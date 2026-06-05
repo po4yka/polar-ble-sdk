@@ -69,6 +69,57 @@ data class PolarPressureSample(val timeStamp: ULong, val pressure: Float)
 data class PolarTemperatureSample(val timeStamp: ULong, val temperature: Float)
 data class PolarSkinTemperatureSample(val timeStamp: ULong, val skinTemperature: Float)
 data class PolarOfflineHrSample(val hr: Int, val ppgQuality: Int, val correctedHr: Int)
+sealed class PolarGnssLocationSample
+data class PolarGnssCoordinateSample(
+    val timeStamp: ULong,
+    val latitude: Double,
+    val longitude: Double,
+    val date: String,
+    val cumulativeDistance: Double,
+    val speed: Float,
+    val usedAccelerationSpeed: Float,
+    val coordinateSpeed: Float,
+    val accelerationSpeedFactor: Float,
+    val course: Float,
+    val gpsChipSpeed: Float,
+    val fix: Boolean,
+    val speedFlag: Int,
+    val fusionState: UInt
+) : PolarGnssLocationSample()
+data class PolarGnssSatelliteDilutionSample(
+    val timeStamp: ULong,
+    val dilution: Float,
+    val altitude: Int,
+    val numberOfSatellites: UInt,
+    val fix: Boolean
+) : PolarGnssLocationSample()
+data class PolarGnssSatelliteSummary(
+    val gpsNbrOfSat: UByte,
+    val gpsMaxSnr: UByte,
+    val glonassNbrOfSat: UByte,
+    val glonassMaxSnr: UByte,
+    val galileoNbrOfSat: UByte,
+    val galileoMaxSnr: UByte,
+    val beidouNbrOfSat: UByte,
+    val beidouMaxSnr: UByte,
+    val nbrOfSat: UByte,
+    val snrTop5Avg: UByte
+)
+data class PolarGnssSatelliteSummarySample(
+    val timeStamp: ULong,
+    val seenGnssSatelliteSummaryBand1: PolarGnssSatelliteSummary,
+    val usedGnssSatelliteSummaryBand1: PolarGnssSatelliteSummary,
+    val seenGnssSatelliteSummaryBand2: PolarGnssSatelliteSummary,
+    val usedGnssSatelliteSummaryBand2: PolarGnssSatelliteSummary,
+    val maxSnr: UInt
+) : PolarGnssLocationSample()
+data class PolarGnssNmeaSample(
+    val timeStamp: ULong,
+    val measurementPeriod: UInt,
+    val messageLength: UInt,
+    val statusFlags: UByte,
+    val nmeaMessage: String
+) : PolarGnssLocationSample()
 
 enum class PolarMagCalibrationStatus(val id: Int) {
     NOT_AVAILABLE(-1),
@@ -247,6 +298,129 @@ object PolarSensorDataParser {
             }
             else -> throw IllegalArgumentException("unsupportedFrame")
         }
+    }
+
+    fun parseGnssLocation(frame: PolarPmdDataFrame): List<PolarGnssLocationSample> {
+        if (frame.compressed) throw IllegalArgumentException("unsupportedCompressedFrame")
+        return when (frame.frameType) {
+            0 -> parseGnssRawType0(frame)
+            1 -> parseGnssRawType1(frame)
+            2 -> parseGnssRawType2(frame)
+            3 -> parseGnssRawType3(frame)
+            else -> throw IllegalArgumentException("unsupportedFrame")
+        }
+    }
+
+    private fun parseGnssRawType0(frame: PolarPmdDataFrame): List<PolarGnssLocationSample> {
+        val sampleSize = 51
+        if (frame.dataContent.size % sampleSize != 0) throw IllegalArgumentException("malformedFrame")
+        val timeStamps = getTimeStamps(frame, frame.dataContent.size / sampleSize)
+        return (0 until frame.dataContent.size / sampleSize).map { index ->
+            var offset = index * sampleSize
+            val latitude = frame.dataContent.readDouble(offset)
+            offset += 8
+            val longitude = frame.dataContent.readDouble(offset)
+            offset += 8
+            val year = frame.dataContent.readUnsignedLong(offset, 2).toInt()
+            offset += 2
+            val month = frame.dataContent.readUnsignedLong(offset, 1).toInt()
+            offset += 1
+            val day = frame.dataContent.readUnsignedLong(offset, 1).toInt()
+            offset += 1
+            val time = frame.dataContent.readUnsignedLong(offset, 4).toUInt()
+            offset += 4
+            val milliseconds = time and 0x3FFu
+            val hours = (time and 0x7C00u) shr 10
+            val minutes = (time and 0x1F8000u) shr 15
+            val seconds = (time and 0x7E00000u) shr 21
+            val cumulativeDistance = frame.dataContent.readUnsignedLong(offset, 4).toDouble() / 10.0
+            offset += 4
+            val speed = frame.dataContent.readFloat(offset)
+            offset += 4
+            val usedAccelerationSpeed = frame.dataContent.readFloat(offset)
+            offset += 4
+            val coordinateSpeed = frame.dataContent.readFloat(offset)
+            offset += 4
+            val accelerationSpeedFactor = frame.dataContent.readFloat(offset)
+            offset += 4
+            val course = frame.dataContent.readUnsignedLong(offset, 2).toFloat() / 100f
+            offset += 2
+            val gpsChipSpeed = frame.dataContent.readUnsignedLong(offset, 2).toFloat() / 100f
+            offset += 2
+            val fix = frame.dataContent[offset].toInt() != 0
+            offset += 1
+            val speedFlag = frame.dataContent.readSignedInt(offset, 1)
+            offset += 1
+            val fusionState = frame.dataContent.readUnsignedLong(offset, 1).toUInt()
+            PolarGnssCoordinateSample(
+                timeStamp = timeStamps[index],
+                latitude = latitude,
+                longitude = longitude,
+                date = "${year.padded(4)}-${month.padded(2)}-${day.padded(2)}T${hours.toInt().padded(2)}:${minutes.toInt().padded(2)}:${seconds.toInt().padded(2)}.${milliseconds.toInt().padded(3)}",
+                cumulativeDistance = cumulativeDistance,
+                speed = speed,
+                usedAccelerationSpeed = usedAccelerationSpeed,
+                coordinateSpeed = coordinateSpeed,
+                accelerationSpeedFactor = accelerationSpeedFactor,
+                course = course,
+                gpsChipSpeed = gpsChipSpeed,
+                fix = fix,
+                speedFlag = speedFlag,
+                fusionState = fusionState
+            )
+        }
+    }
+
+    private fun parseGnssRawType1(frame: PolarPmdDataFrame): List<PolarGnssLocationSample> {
+        val sampleSize = 6
+        if (frame.dataContent.size % sampleSize != 0) throw IllegalArgumentException("malformedFrame")
+        val timeStamps = getTimeStamps(frame, frame.dataContent.size / sampleSize)
+        return (0 until frame.dataContent.size / sampleSize).map { index ->
+            val offset = index * sampleSize
+            PolarGnssSatelliteDilutionSample(
+                timeStamp = timeStamps[index],
+                dilution = frame.dataContent.readUnsignedLong(offset, 2).toFloat() / 100f,
+                altitude = frame.dataContent.readSignedInt(offset + 2, 2),
+                numberOfSatellites = frame.dataContent.readUnsignedLong(offset + 4, 1).toUInt(),
+                fix = frame.dataContent[offset + 5].toInt() != 0
+            )
+        }
+    }
+
+    private fun parseGnssRawType2(frame: PolarPmdDataFrame): List<PolarGnssLocationSample> {
+        val sampleSize = 41
+        if (frame.dataContent.size % sampleSize != 0) throw IllegalArgumentException("malformedFrame")
+        val timeStamps = getTimeStamps(frame, frame.dataContent.size / sampleSize)
+        return (0 until frame.dataContent.size / sampleSize).map { index ->
+            val offset = index * sampleSize
+            PolarGnssSatelliteSummarySample(
+                timeStamp = timeStamps[index],
+                seenGnssSatelliteSummaryBand1 = frame.dataContent.readGnssSatelliteSummary(offset),
+                usedGnssSatelliteSummaryBand1 = frame.dataContent.readGnssSatelliteSummary(offset + 10),
+                seenGnssSatelliteSummaryBand2 = frame.dataContent.readGnssSatelliteSummary(offset + 20),
+                usedGnssSatelliteSummaryBand2 = frame.dataContent.readGnssSatelliteSummary(offset + 30),
+                maxSnr = frame.dataContent.readUnsignedLong(offset + 40, 1).toUInt()
+            )
+        }
+    }
+
+    private fun parseGnssRawType3(frame: PolarPmdDataFrame): List<PolarGnssLocationSample> {
+        val samples = mutableListOf<PolarGnssLocationSample>()
+        var offset = 0
+        while (offset < frame.dataContent.size) {
+            if (offset + 7 > frame.dataContent.size) throw IllegalArgumentException("malformedFrame")
+            val measurementPeriod = frame.dataContent.readUnsignedLong(offset, 4).toUInt()
+            offset += 4
+            val messageLength = frame.dataContent.readUnsignedLong(offset, 2).toUInt()
+            offset += 2
+            val statusFlags = frame.dataContent.readUnsignedLong(offset, 1).toUByte()
+            offset += 1
+            if (offset + messageLength.toInt() > frame.dataContent.size) throw IllegalArgumentException("malformedFrame")
+            val nmeaMessage = frame.dataContent.copyOfRange(offset, offset + messageLength.toInt()).decodeToString()
+            offset += messageLength.toInt()
+            samples += PolarGnssNmeaSample(frame.timeStamp, measurementPeriod, messageLength, statusFlags, nmeaMessage)
+        }
+        return samples
     }
 
     private fun parseEcgRawType0(frame: PolarPmdDataFrame): List<PolarEcgSample> {
@@ -587,6 +761,30 @@ private fun ByteArray.readUnsignedLong(offset: Int, size: Int): ULong {
 
 private fun ByteArray.readFloat(offset: Int): Float {
     return readUnsignedLong(offset, 4).toInt().let { Float.fromBits(it) }
+}
+
+private fun ByteArray.readDouble(offset: Int): Double {
+    return readUnsignedLong(offset, 8).toLong().let { Double.fromBits(it) }
+}
+
+private fun ByteArray.readGnssSatelliteSummary(offset: Int): PolarGnssSatelliteSummary {
+    if (offset < 0 || offset + 10 > size) throw IllegalArgumentException("malformedFrame")
+    return PolarGnssSatelliteSummary(
+        gpsNbrOfSat = this[offset].toUByte(),
+        gpsMaxSnr = this[offset + 1].toUByte(),
+        glonassNbrOfSat = this[offset + 2].toUByte(),
+        glonassMaxSnr = this[offset + 3].toUByte(),
+        galileoNbrOfSat = this[offset + 4].toUByte(),
+        galileoMaxSnr = this[offset + 5].toUByte(),
+        beidouNbrOfSat = this[offset + 6].toUByte(),
+        beidouMaxSnr = this[offset + 7].toUByte(),
+        nbrOfSat = this[offset + 8].toUByte(),
+        snrTop5Avg = this[offset + 9].toUByte()
+    )
+}
+
+private fun Int.padded(size: Int): String {
+    return toString().padStart(size, '0')
 }
 
 private fun Int.scaled(factor: Float): Float {
