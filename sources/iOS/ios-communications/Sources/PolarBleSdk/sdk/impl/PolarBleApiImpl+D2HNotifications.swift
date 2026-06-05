@@ -15,7 +15,7 @@ extension PolarBleApiImpl: PolarDeviceToHostNotificationsApi {
                         let parameters = Data(notification.parameters)
                         let parametersHex = parameters.map { String(format: "%02x", $0) }.joined()
                         let sharedParsedProtoName: String?
-                        if let sharedPlan = PolarD2hRuntimePlanner.notificationPlan(notificationId: Int(notification.id), parametersHex: parametersHex) {
+                        if let sharedPlan = PolarRuntimePlanner.d2hNotificationPlan(notificationId: Int(notification.id), parametersHex: parametersHex) {
                             guard let sharedMappedNotification = PolarDeviceToHostNotification(sharedNotificationType: sharedPlan.notificationType) else {
                                 continuation.finish(throwing: PolarErrors.invalidArgument(description: "Shared D2H notification type \(sharedPlan.notificationType) is not represented by the iOS public enum"))
                                 return
@@ -28,7 +28,7 @@ extension PolarBleApiImpl: PolarDeviceToHostNotificationsApi {
                                 continue
                             }
                             mappedNotification = rawMappedNotification
-                            sharedParsedProtoName = PolarD2hRuntimePlanner.parsedProtoName(notificationType: rawMappedNotification.sharedNotificationType, parametersHex: parametersHex)
+                            sharedParsedProtoName = PolarRuntimePlanner.d2hParsedProtoName(notificationType: rawMappedNotification.sharedNotificationType, parametersHex: parametersHex)
                         }
                         let parsedParameters = BlePsFtpClient.parseD2HNotificationParameters(mappedNotification, data: parameters, sharedParsedProtoName: sharedParsedProtoName)
                         let data = PolarD2HNotificationData(

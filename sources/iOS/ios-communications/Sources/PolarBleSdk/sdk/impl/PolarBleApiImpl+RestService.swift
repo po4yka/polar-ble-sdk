@@ -176,14 +176,14 @@ extension PolarBleApiImpl: PolarRestServiceApi {
 
     func listRestApiServices(identifier: String) async throws -> PolarDeviceRestApiServices {
         let serviceApiPath = "/REST/SERVICE.API"
-        let plannedOperation = PolarRestFacadeRuntimePlanner.getOperation(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
-        PolarRestFacadeRuntimePlanner.get(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
+        let plannedOperation = PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
+        PolarRuntimePlanner.restFacadeGet(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
         return try await getJSONDecodableFromPath(identifier: identifier, path: plannedOperation?.path ?? serviceApiPath)
     }
 
     func getRestApiDescription(identifier: String, path: String) async throws -> PolarDeviceRestApiServiceDescription {
-        let plannedOperation = PolarRestFacadeRuntimePlanner.getOperation(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
-        PolarRestFacadeRuntimePlanner.get(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
+        let plannedOperation = PolarRuntimePlanner.restFacadeGetOperation(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
+        PolarRuntimePlanner.restFacadeGet(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
         return try await getJSONDecodableFromPath(identifier: identifier, path: plannedOperation?.path ?? path)
     }
 
@@ -198,10 +198,10 @@ extension PolarBleApiImpl: PolarRestServiceApi {
             throw PolarErrors.serviceNotFound
         }
         var operation = Protocol_PbPFtpOperation()
-        let plannedOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
         operation.command = plannedOperation?.command ?? .get
         operation.path = plannedOperation?.path ?? path
-        PolarFileFacadeRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
+        PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
         let requestData = try operation.serializedData()
         let responseData = try await client.request(requestData)
         return responseData as Data
@@ -222,19 +222,19 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         }
         var operation = Protocol_PbPFtpOperation()
         let payloadHex = data.map { String(format: "%02x", $0) }.joined()
-        let plannedOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
         operation.command = plannedOperation?.command ?? command
         operation.path = plannedOperation?.path ?? path
-        PolarFileFacadeRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
-        _ = PolarFileRuntimePlanner.psFtpWriteProgress(payloadSize: data.count)
-        PolarFileRuntimePlanner.psFtpWriteAck(payloadSize: data.count)
+        PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
+        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: data.count)
+        PolarRuntimePlanner.psFtpWriteAck(payloadSize: data.count)
         let proto = try operation.serializedData()
         let inputStream = InputStream(data: data)
         // Consume the write stream to completion (ignore progress values)
         do {
             for try await _ in client.write(proto as NSData, data: inputStream) {}
         } catch {
-            PolarFileRuntimePlanner.runtimeError(operation: "writeFile", path: path, error: error)
+            PolarRuntimePlanner.fileRuntimeError(operation: "writeFile", path: path, error: error)
             throw error
         }
     }
