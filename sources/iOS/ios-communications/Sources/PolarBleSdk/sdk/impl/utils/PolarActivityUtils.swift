@@ -28,7 +28,7 @@ internal class PolarActivityUtils {
     }
 
     private static func activityReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: "GET", path: path) {
+        if let plannedOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: id, command: "GET", path: path) {
             return plannedOperation
         }
         return (.get, path)

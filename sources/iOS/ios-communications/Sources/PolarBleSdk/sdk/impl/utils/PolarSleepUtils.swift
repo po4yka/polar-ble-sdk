@@ -30,7 +30,7 @@ internal class PolarSleepUtils {
     }
 
     private static func fileReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
-        return PolarRuntimePlanner.fileFacadeOperation(id: id, command: "GET", path: path)
+        return PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: id, command: "GET", path: path)
     }
 
     static func readSleepFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> PolarSleepData.PolarSleepAnalysisResult {

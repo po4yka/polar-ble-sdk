@@ -198,10 +198,10 @@ extension PolarBleApiImpl: PolarRestServiceApi {
             throw PolarErrors.serviceNotFound
         }
         var operation = Protocol_PbPFtpOperation()
-        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
+        let plannedOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
         operation.command = plannedOperation?.command ?? .get
         operation.path = plannedOperation?.path ?? path
-        PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
+        PolarFileFacadeRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
         let requestData = try operation.serializedData()
         let responseData = try await client.request(requestData)
         return responseData as Data
@@ -222,10 +222,10 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         }
         var operation = Protocol_PbPFtpOperation()
         let payloadHex = data.map { String(format: "%02x", $0) }.joined()
-        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
+        let plannedOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
         operation.command = plannedOperation?.command ?? command
         operation.path = plannedOperation?.path ?? path
-        PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
+        PolarFileFacadeRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
         _ = PolarFileRuntimePlanner.psFtpWriteProgress(payloadSize: data.count)
         PolarFileRuntimePlanner.psFtpWriteAck(payloadSize: data.count)
         let proto = try operation.serializedData()

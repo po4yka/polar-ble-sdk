@@ -116,7 +116,7 @@ import UIKit
     }
 
     private static func facadeFileOperation(id: String, command: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
+        if let plannedOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
             return plannedOperation
         }
         switch command {

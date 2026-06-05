@@ -7,6 +7,15 @@ import PolarBleSdkShared
 #endif
 
 enum PolarFileFacadeRuntimePlanner {
+    @discardableResult
+    static func fileFacade(id: String, command: String, path: String, payloadHex: String = "") -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.planRuntimeFileFacade(id: id, command: command, path: path, payloadHex: payloadHex)
+        #else
+        return "platform-owned"
+        #endif
+    }
+
     static func fileFacadeOperation(id: String, command: String, path: String, payloadHex: String = "") -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
         #if canImport(PolarBleSdkShared)
         return fileOperation(PolarIosSharedBridge.shared.planRuntimeFileFacadeOperation(id: id, command: command, path: path, payloadHex: payloadHex)).first

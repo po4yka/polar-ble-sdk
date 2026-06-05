@@ -2087,6 +2087,7 @@ final class PolarBleApiImplTests: XCTestCase {
 
     func test_fileFacadeRuntimePlannerMapsSharedOperationCommandsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarFileFacadeRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102"))
         let putOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102")
         XCTAssertEqual(.put, putOperation?.command)
         XCTAssertEqual("/U/0/CUSTOM.BIN", putOperation?.path)
