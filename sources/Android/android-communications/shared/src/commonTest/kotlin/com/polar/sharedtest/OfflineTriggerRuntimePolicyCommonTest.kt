@@ -41,7 +41,7 @@ class OfflineTriggerRuntimePolicyCommonTest {
         assertEquals("offlineTriggerRuntimePolicy", input.stringValue("kind"))
         assertEquals(REQUIRED_TRIGGER_RUNTIME_SCENARIOS, scenarios.map { it.id })
         assertEquals("offline-trigger-runtime-matrix", expected.stringValue("policy"))
-        assertEquals("executable shared commonTest plus Android-hosted prototype", expectedPrototype.stringValue("status"))
+        assertEquals("executable shared commonTest", expectedPrototype.stringValue("status"))
         assertEquals(REQUIRED_TRIGGER_RUNTIME_SCENARIOS, expectedCases.keys.toList())
         assertEquals(TRIGGER_RUNTIME_COMMON_DECISION, expected.stringValue("commonDecision"))
         assertEquals("shared-common-test", vector.objectValue("execution").stringValue("status"))
@@ -49,9 +49,9 @@ class OfflineTriggerRuntimePolicyCommonTest {
         val cleanupEvidence = expected.objectValue("platformCleanupEvidence")
         assertEquals("android-stale-wrong-command-response-discard", cleanupEvidence.objectValue("android").stringValue("id"))
         assertEquals("ios-pre-command-response-queue-clear", cleanupEvidence.objectValue("ios").stringValue("id"))
-        assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientTest", "com.polar.sdk.impl.BDBleApiImplTest", "com.polar.sdk.impl.utils.PolarDataUtilsTest", "com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest"), consumerTests.stringArrayValue("android"))
+        assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientTest", "com.polar.sdk.impl.BDBleApiImplTest", "com.polar.sdk.impl.utils.PolarDataUtilsTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("BlePmdClientTest", "PolarBleApiImplTests", "PolarDataUtilsTest"), consumerTests.stringArrayValue("ios"))
-        assertEquals(listOf("com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest", "com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
+        assertEquals(listOf("com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
 
         scenarios.forEach { scenario ->
             val outcome = PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(

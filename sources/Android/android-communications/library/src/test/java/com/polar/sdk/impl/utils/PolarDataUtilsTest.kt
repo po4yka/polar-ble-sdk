@@ -116,10 +116,10 @@ class PolarDataUtilsTest {
         Assert.assertEquals("trigger-runtime-policy", vector.get("id").asString)
         Assert.assertEquals(TRIGGER_RUNTIME_SCENARIO_IDS, scenarioIds)
         Assert.assertEquals(TRIGGER_RUNTIME_SCENARIO_IDS, expectedCaseIds)
-        Assert.assertTrue("trigger-runtime-policy", prototype.get("status").asString.contains("prototype"))
-        Assert.assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientTest", "com.polar.sdk.impl.BDBleApiImplTest", "com.polar.sdk.impl.utils.PolarDataUtilsTest", "com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals("executable shared commonTest", prototype.get("status").asString)
+        Assert.assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientTest", "com.polar.sdk.impl.BDBleApiImplTest", "com.polar.sdk.impl.utils.PolarDataUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         Assert.assertEquals(listOf("BlePmdClientTest", "PolarBleApiImplTests", "PolarDataUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
-        Assert.assertEquals(listOf("com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest", "com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
     }
 
     @Test

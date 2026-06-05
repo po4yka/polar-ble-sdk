@@ -91,7 +91,7 @@
   "expected": {
     "policy": "offline-trigger-runtime-matrix",
     "commonRuntimePrototype": {
-      "status": "executable shared commonTest plus Android-hosted prototype",
+      "status": "executable shared commonTest",
       "cases": [
         {
           "id": "set-trigger-success-with-secret",
@@ -169,8 +169,7 @@
     "android": [
       "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientTest",
       "com.polar.sdk.impl.BDBleApiImplTest",
-      "com.polar.sdk.impl.utils.PolarDataUtilsTest",
-      "com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest"
+      "com.polar.sdk.impl.utils.PolarDataUtilsTest"
     ],
     "ios": [
       "BlePmdClientTest",
@@ -178,7 +177,6 @@
       "PolarDataUtilsTest"
     ],
     "commonPrototype": [
-      "com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest",
       "com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"
     ]
   },
