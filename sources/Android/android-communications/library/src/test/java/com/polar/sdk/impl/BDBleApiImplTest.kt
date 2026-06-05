@@ -32,6 +32,8 @@ import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarRestFacadeOperation
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
+import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
+import com.polar.shared.sdk.PolarSdLogTriggerName
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.PolarH10OfflineExerciseApi
 import com.polar.sdk.api.errors.PolarBleSdkInstanceException
@@ -1220,6 +1222,24 @@ class BDBleApiImplTest {
         Assert.assertTrue(writtenConfig.ohrLogEnabled)
         Assert.assertFalse(writtenConfig.ppiLogEnabled)
         Assert.assertEquals(PbSensorDataLog.PbMagnetometerLogFrequency.MAG_LOG_10HZ, writtenConfig.magnetometerLogFrequency)
+    }
+
+    @Test
+    fun `LogConfig maps known SD log enum values through shared KMP`() {
+        val trigger = PbSensorDataLog.PbLogTrigger.valueOf(PolarSdLogTriggerName.fromValue(2)!!.name)
+        val magnetometerFrequency = PbSensorDataLog.PbMagnetometerLogFrequency.valueOf(PolarSdLogMagnetometerFrequencyName.fromValue(3)!!.name)
+        val proto = PbSensorDataLog.newBuilder()
+            .setLogTrigger(trigger)
+            .setMagnetometerLogFrequency(magnetometerFrequency)
+            .build()
+
+        val config = LogConfig.fromBytes(proto.toByteArray())
+
+        Assert.assertEquals(PbSensorDataLog.PbLogTrigger.LOG_TRIGGER_EXERCISE, config.logTriggerSettings)
+        Assert.assertEquals(PbSensorDataLog.PbMagnetometerLogFrequency.MAG_LOG_100HZ, config.magnetometerFrequency)
+        val encoded = config.toProto()
+        Assert.assertEquals(PbSensorDataLog.PbLogTrigger.LOG_TRIGGER_EXERCISE, encoded.logTrigger)
+        Assert.assertEquals(PbSensorDataLog.PbMagnetometerLogFrequency.MAG_LOG_100HZ, encoded.magnetometerLogFrequency)
     }
 
     @Test

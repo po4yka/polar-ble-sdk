@@ -2,6 +2,8 @@ package com.polar.sdk.api.model
 
 import data.SensorDataLog
 import data.SensorDataLog.PbSensorDataLog
+import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
+import com.polar.shared.sdk.PolarSdLogTriggerName
 
 data class LogConfig(
     val ohrLogEnabled: Boolean? = null,
@@ -61,8 +63,8 @@ data class LogConfig(
                 compassLogEnabled = if (proto.hasCompassLogEnabled()) proto.compassLogEnabled else null,
                 speed3DLogEnabled = if (proto.hasSpeed3DLogEnabled()) proto.speed3DLogEnabled else null,
                 retainSettingsOverBoot = if (proto.hasRetainSettingsOverBoot()) proto.retainSettingsOverBoot else null,
-                logTriggerSettings = if (proto.hasLogTrigger()) proto.logTrigger else null,
-                magnetometerFrequency = if (proto.hasMagnetometerLogFrequency()) proto.magnetometerLogFrequency else null
+                logTriggerSettings = if (proto.hasLogTrigger()) proto.logTrigger.sharedKnownValue() else null,
+                magnetometerFrequency = if (proto.hasMagnetometerLogFrequency()) proto.magnetometerLogFrequency.sharedKnownValue() else null
             )
         }
     }
@@ -93,9 +95,22 @@ data class LogConfig(
         if (compassLogEnabled != null) builder.compassLogEnabled = compassLogEnabled
         if (speed3DLogEnabled != null) builder.speed3DLogEnabled = speed3DLogEnabled
         if (retainSettingsOverBoot != null) builder.retainSettingsOverBoot = retainSettingsOverBoot
-        if (logTriggerSettings != null) builder.logTrigger = logTriggerSettings
-        if (magnetometerFrequency != null) builder.magnetometerLogFrequency = magnetometerFrequency
+        if (logTriggerSettings != null) builder.logTrigger = logTriggerSettings.sharedKnownValue()
+        if (magnetometerFrequency != null) builder.magnetometerLogFrequency = magnetometerFrequency.sharedKnownValue()
 
         return builder.build()
     }
+
+}
+
+private fun PbSensorDataLog.PbLogTrigger.sharedKnownValue(): PbSensorDataLog.PbLogTrigger {
+    return PolarSdLogTriggerName.fromValue(number)
+        ?.let { PbSensorDataLog.PbLogTrigger.valueOf(it.name) }
+        ?: this
+}
+
+private fun PbSensorDataLog.PbMagnetometerLogFrequency.sharedKnownValue(): PbSensorDataLog.PbMagnetometerLogFrequency {
+    return PolarSdLogMagnetometerFrequencyName.fromValue(number)
+        ?.let { PbSensorDataLog.PbMagnetometerLogFrequency.valueOf(it.name) }
+        ?: this
 }
