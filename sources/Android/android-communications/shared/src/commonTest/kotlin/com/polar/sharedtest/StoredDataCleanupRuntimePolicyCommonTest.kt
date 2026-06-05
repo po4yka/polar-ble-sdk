@@ -1,6 +1,9 @@
 package com.polar.sharedtest
 
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
+import com.polar.shared.runtime.PolarStoredDataCleanupDateFolder
+import com.polar.shared.runtime.PolarStoredDataCleanupSampleFile
+import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -35,6 +38,7 @@ class StoredDataCleanupRuntimePolicyCommonTest {
         assertEquals(requiredCleanupScenarioIds, expectedCaseList.map { it.stringValue("id") })
         assertEquals("fake-cleanup-runtime-policy", vector.objectValue("execution").stringValue("kind"))
         assertEquals("directory-list-and-remove-command-capture", vector.objectValue("execution").stringValue("transport"))
+        assertEquals("platform-path-split", expectedCases.getValue("activity-prune-empty-parents").stringValue("terminal"))
         assertCleanupPolicyFields(scenarioList.associateBy { it.stringValue("id") })
 
         scenarios.forEach { scenario ->
@@ -171,62 +175,8 @@ class StoredDataCleanupRuntimePolicyCommonTest {
 
     private class FakeStoredDataCleanupRuntime {
         fun run(scenario: CleanupScenario): CleanupRuntimeOutcome {
-            return when (scenario.kind) {
-                "filterDirectoryEntries" -> CleanupRuntimeOutcome(filterDirectoryEntries(scenario), "success")
-                "activityPrune" -> CleanupRuntimeOutcome(activityPrune(scenario), "platform-path-split")
-                "automaticSamplePrune" -> CleanupRuntimeOutcome(automaticSamplePrune(scenario), "success")
-                "listFailure" -> CleanupRuntimeOutcome(listOf("GET:${requireNotNull(scenario.rootPath)}"), "platform-split")
-                else -> error("Unsupported cleanup scenario ${scenario.kind}")
-            }
-        }
-
-        private fun filterDirectoryEntries(scenario: CleanupScenario): List<String> {
-            val root = requireNotNull(scenario.rootPath)
-            val commands = mutableListOf("GET:$root")
-            scenario.entries
-                .filter { entry ->
-                    (scenario.includePrefixes.isEmpty() || scenario.includePrefixes.any { prefix -> entry.startsWith(prefix) }) &&
-                        (scenario.includeSuffixes.isEmpty() || scenario.includeSuffixes.any { suffix -> entry.endsWith(suffix) })
-                }
-                .mapTo(commands) { entry -> "REMOVE:${root.withTrailingSlash()}$entry" }
-            return commands
-        }
-
-        private fun activityPrune(scenario: CleanupScenario): List<String> {
-            val commands = mutableListOf("GET:/U/0/")
-            scenario.dateFolders
-                .filter { folder -> folder.booleanValue("beforeCutoff") }
-                .forEach { folder ->
-                    val folderPath = folder.stringValue("path")
-                    val actPath = "${folderPath}ACT/"
-                    commands += "GET:$folderPath"
-                    commands += "GET:$actPath"
-                    folder.stringArrayValue("removeFiles").forEach { fileName ->
-                        commands += "REMOVE:$actPath$fileName"
-                    }
-                    if (folder.booleanValue("pruneEmptyParents")) {
-                        commands += "GET:$actPath"
-                        commands += "REMOVE_EMPTY_DIRECTORY:${actPath.removeSuffix("/")}"
-                        commands += "GET:$folderPath"
-                        commands += "REMOVE_EMPTY_DIRECTORY:${folderPath.removeSuffix("/")}"
-                    }
-                }
-            return commands
-        }
-
-        private fun automaticSamplePrune(scenario: CleanupScenario): List<String> {
-            val cutoff = requireNotNull(scenario.cutoffDate)
-            val commands = mutableListOf("GET:/U/0/AUTOS/")
-            scenario.sampleFiles.forEach { sample ->
-                val path = sample.stringValue("path")
-                val parent = path.substringBeforeLast('/') + "/"
-                commands += "GET:$parent"
-                commands += "GET:$path"
-                if (sample.stringValue("embeddedDay") < cutoff) {
-                    commands += "REMOVE:$path"
-                }
-            }
-            return commands
+            val plan = PolarWorkflowRuntimePlanning.planStoredDataCleanup(scenario.toSharedScenario())
+            return CleanupRuntimeOutcome(plan.commands, plan.terminal)
         }
     }
 
@@ -240,7 +190,33 @@ class StoredDataCleanupRuntimePolicyCommonTest {
         val cutoffDate: String?,
         val dateFolders: List<String>,
         val sampleFiles: List<String>
-    )
+    ) {
+        fun toSharedScenario(): PolarStoredDataCleanupScenario {
+            return PolarStoredDataCleanupScenario(
+                id = id,
+                kind = kind,
+                rootPath = rootPath,
+                includePrefixes = includePrefixes,
+                includeSuffixes = includeSuffixes,
+                entries = entries,
+                cutoffDate = cutoffDate,
+                dateFolders = dateFolders.map { folder ->
+                    PolarStoredDataCleanupDateFolder(
+                        path = folder.stringValue("path"),
+                        beforeCutoff = folder.booleanValue("beforeCutoff"),
+                        removeFiles = folder.stringArrayValue("removeFiles"),
+                        pruneEmptyParents = folder.booleanValue("pruneEmptyParents")
+                    )
+                },
+                sampleFiles = sampleFiles.map { sample ->
+                    PolarStoredDataCleanupSampleFile(
+                        path = sample.stringValue("path"),
+                        embeddedDay = sample.stringValue("embeddedDay")
+                    )
+                }
+            )
+        }
+    }
 
     private data class CleanupRuntimeOutcome(
         val commands: List<String>,
@@ -251,7 +227,4 @@ class StoredDataCleanupRuntimePolicyCommonTest {
         return if (contains("\"$field\"")) objectArray(field) else emptyList()
     }
 
-    private fun String.withTrailingSlash(): String {
-        return if (endsWith("/")) this else "$this/"
-    }
 }
