@@ -428,6 +428,8 @@
 		AA9903E52F5B61B500FD4744 /* PolarD2hRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903E32F5B61B500FD4744 /* PolarD2hRuntimePlanner.swift */; };
 		AA9903E72F5B6A7E00FD4744 /* PolarStreamRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903E62F5B6A7E00FD4744 /* PolarStreamRuntimePlanner.swift */; };
 		AA9903E82F5B6A7E00FD4744 /* PolarStreamRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903E62F5B6A7E00FD4744 /* PolarStreamRuntimePlanner.swift */; };
+		AA9903EA2F5B713A00FD4744 /* PolarRestFacadeRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903E92F5B713A00FD4744 /* PolarRestFacadeRuntimePlanner.swift */; };
+		AA9903EB2F5B713A00FD4744 /* PolarRestFacadeRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903E92F5B713A00FD4744 /* PolarRestFacadeRuntimePlanner.swift */; };
 		AA9903E12F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903E02F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift */; };
 		AA9903E22F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903E02F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift */; };
 		AA9903DE2F5B2F0100FD4744 /* PolarRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903DD2F5B2F0100FD4744 /* PolarRuntimePlanner.swift */; };
@@ -622,6 +624,7 @@
 		A5743682291A7DB400E901A4 /* PolarTimeUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarTimeUtils.swift; sourceTree = "<group>"; };
 		AA9903E32F5B61B500FD4744 /* PolarD2hRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarD2hRuntimePlanner.swift; sourceTree = "<group>"; };
 		AA9903E62F5B6A7E00FD4744 /* PolarStreamRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarStreamRuntimePlanner.swift; sourceTree = "<group>"; };
+		AA9903E92F5B713A00FD4744 /* PolarRestFacadeRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarRestFacadeRuntimePlanner.swift; sourceTree = "<group>"; };
 		AA9903E02F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarFileFacadeRuntimePlanner.swift; sourceTree = "<group>"; };
 		AA9903DD2F5B2F0100FD4744 /* PolarRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarRuntimePlanner.swift; sourceTree = "<group>"; };
 		A5743686291A825F00E901A4 /* PolarTimeUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarTimeUtilsTests.swift; sourceTree = "<group>"; };
@@ -1107,6 +1110,7 @@
 				AA9903D72F30D40800FD4744 /* PolarFileUtils.swift */,
 				AA9903E32F5B61B500FD4744 /* PolarD2hRuntimePlanner.swift */,
 				AA9903E62F5B6A7E00FD4744 /* PolarStreamRuntimePlanner.swift */,
+				AA9903E92F5B713A00FD4744 /* PolarRestFacadeRuntimePlanner.swift */,
 				AA9903E02F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift */,
 				AA9903DD2F5B2F0100FD4744 /* PolarRuntimePlanner.swift */,
 				AA1234560000000000000001 /* AsyncCombineHelpers.swift */,
@@ -1882,6 +1886,7 @@
 				A5A127E0273689E0007874B8 /* PolarAdvDataUtility.swift in Sources */,
 				AA9903E42F5B61B500FD4744 /* PolarD2hRuntimePlanner.swift in Sources */,
 				AA9903E72F5B6A7E00FD4744 /* PolarStreamRuntimePlanner.swift in Sources */,
+				AA9903EA2F5B713A00FD4744 /* PolarRestFacadeRuntimePlanner.swift in Sources */,
 				6C0C54FE1CFEB3C900FF23E9 /* TimeUtility.swift in Sources */,
 				6C5A44971CB291500006220D /* BleGattClientBase.swift in Sources */,
 				6C5A44981CB291500006220D /* BleGattClientFactory.swift in Sources */,
@@ -2159,6 +2164,7 @@
 				AA9903D82F30D40C00FD4744 /* PolarFileUtils.swift in Sources */,
 				AA9903E52F5B61B500FD4744 /* PolarD2hRuntimePlanner.swift in Sources */,
 				AA9903E82F5B6A7E00FD4744 /* PolarStreamRuntimePlanner.swift in Sources */,
+				AA9903EB2F5B713A00FD4744 /* PolarRestFacadeRuntimePlanner.swift in Sources */,
 				AA9903E22F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift in Sources */,
 				AA9903DE2F5B2F0100FD4744 /* PolarRuntimePlanner.swift in Sources */,
 				6C770B94206B77F300F3D51D /* BleHrClient.swift in Sources */,

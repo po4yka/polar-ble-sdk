@@ -2098,6 +2098,17 @@ final class PolarBleApiImplTests: XCTestCase {
         #endif
     }
 
+    func test_restFacadeRuntimePlannerMapsSharedGetOperationWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarRestFacadeRuntimePlanner.get(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json"))
+        let operation = PolarRestFacadeRuntimePlanner.getOperation(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")
+        XCTAssertEqual(.get, operation?.command)
+        XCTAssertEqual("/REST/SERVICE.API", operation?.path)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func test_streamRuntimePlannerSurfacesSharedEdgeDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("gattDisconnected", PolarStreamRuntimePlanner.subscription(target: "stream", startConnected: false, checkConnection: true))

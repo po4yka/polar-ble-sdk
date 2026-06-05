@@ -188,19 +188,11 @@ enum PolarRuntimePlanner {
 
     @discardableResult
     static func restFacadeGet(id: String, path: String, payloadShape: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeRestFacadeGet(id: id, path: path, payloadShape: payloadShape)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarRestFacadeRuntimePlanner.get(id: id, path: path, payloadShape: payloadShape)
     }
 
     static func restFacadeGetOperation(id: String, path: String, payloadShape: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
-        #if canImport(PolarBleSdkShared)
-        return fileOperation(PolarIosSharedBridge.shared.planRuntimeRestFacadeGetOperation(id: id, path: path, payloadShape: payloadShape)).first
-        #else
-        return nil
-        #endif
+        return PolarRestFacadeRuntimePlanner.getOperation(id: id, path: path, payloadShape: payloadShape)
     }
 
     @discardableResult

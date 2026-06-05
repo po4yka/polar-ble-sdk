@@ -176,14 +176,14 @@ extension PolarBleApiImpl: PolarRestServiceApi {
 
     func listRestApiServices(identifier: String) async throws -> PolarDeviceRestApiServices {
         let serviceApiPath = "/REST/SERVICE.API"
-        let plannedOperation = PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
-        PolarRuntimePlanner.restFacadeGet(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
+        let plannedOperation = PolarRestFacadeRuntimePlanner.getOperation(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
+        PolarRestFacadeRuntimePlanner.get(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
         return try await getJSONDecodableFromPath(identifier: identifier, path: plannedOperation?.path ?? serviceApiPath)
     }
 
     func getRestApiDescription(identifier: String, path: String) async throws -> PolarDeviceRestApiServiceDescription {
-        let plannedOperation = PolarRuntimePlanner.restFacadeGetOperation(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
-        PolarRuntimePlanner.restFacadeGet(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
+        let plannedOperation = PolarRestFacadeRuntimePlanner.getOperation(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
+        PolarRestFacadeRuntimePlanner.get(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
         return try await getJSONDecodableFromPath(identifier: identifier, path: plannedOperation?.path ?? path)
     }
 
