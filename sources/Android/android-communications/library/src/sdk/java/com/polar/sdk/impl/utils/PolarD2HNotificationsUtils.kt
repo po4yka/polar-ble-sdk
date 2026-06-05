@@ -25,7 +25,7 @@ fun BlePsFtpClient.observeDeviceToHostNotifications(identifier: String): Flow<Po
     return waitForNotification()
         .transform { notification ->
             val parameters = notification.byteArrayOutputStream.toByteArray()
-            val emissionPlan = PolarD2hRuntimePlanning.mapNotification(notification.id, parameters.toHexString()).firstOrNull()
+            val emissionPlan = PolarD2hRuntimePlanning.planNotificationEmission(notification.id, parameters.toHexString())
             if (emissionPlan == null) {
                 BleLogger.w(TAG, "Unknown notification type: ${notification.id}")
             } else {

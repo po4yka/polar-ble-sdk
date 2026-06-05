@@ -1094,8 +1094,8 @@ object PolarIosSharedBridge {
     }
 
     fun d2hNotificationPlan(notificationId: Int, parametersHex: String): String {
-        val event = PolarD2hRuntimePlanning.mapNotification(notificationId, parametersHex).firstOrNull() ?: return ""
-        return listOf(event.notificationType, event.parsedProto.orEmpty()).joinToString(separator = ",")
+        val plan = PolarD2hRuntimePlanning.planNotificationEmission(notificationId, parametersHex) ?: return ""
+        return listOf(plan.notificationType, plan.parsedProto.orEmpty()).joinToString(separator = ",")
     }
 
     fun planRuntimeStreamSubscription(target: String, startConnected: Boolean, checkConnection: Boolean): String {

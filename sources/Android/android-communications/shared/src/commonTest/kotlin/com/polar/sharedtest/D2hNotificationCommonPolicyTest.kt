@@ -12,6 +12,9 @@ class D2hNotificationCommonPolicyTest {
     fun d2hGoldenVectorsDefineExecutableCommonMappingFilteringAndOrderingPolicy() {
         assertEquals("STOP_GPS_MEASUREMENT", PolarD2hRuntimePlanning.notificationTypeOrNull(12))
         assertEquals("PbPFtpSyncRequiredParams", PolarD2hRuntimePlanning.parsedProtoName("SYNC_REQUIRED", "0a020802"))
+        val emissionPlan = requireNotNull(PolarD2hRuntimePlanning.planNotificationEmission(7, "0a020802"))
+        assertEquals("SYNC_REQUIRED", emissionPlan.notificationType)
+        assertEquals("PbPFtpSyncRequiredParams", emissionPlan.parsedProto)
 
         D2H_VECTORS.forEach { relativePath ->
             val vector = loadGoldenVectorText(relativePath)

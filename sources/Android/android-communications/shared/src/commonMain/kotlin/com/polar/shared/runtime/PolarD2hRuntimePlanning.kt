@@ -20,6 +20,11 @@ data class PolarD2hStreamNotification(
     val parametersHex: String = ""
 )
 
+data class PolarD2hNotificationPlan(
+    val notificationType: String,
+    val parsedProto: String?
+)
+
 data class PolarD2hStreamScenario(
     val id: String,
     val target: String,
@@ -68,13 +73,21 @@ object PolarD2hRuntimePlanning {
     }
 
     fun mapNotification(notificationId: Int, parametersHex: String): List<PolarD2hEvent> {
-        val type = notificationTypeOrNull(notificationId) ?: return emptyList()
+        val plan = planNotificationEmission(notificationId, parametersHex) ?: return emptyList()
         val event = PolarD2hEvent(
-            notificationType = type,
+            notificationType = plan.notificationType,
             parametersHex = parametersHex,
-            parsedProto = parsedProtoName(type, parametersHex)
+            parsedProto = plan.parsedProto
         )
         return listOf(decodeKnownParameters(event))
+    }
+
+    fun planNotificationEmission(notificationId: Int, parametersHex: String): PolarD2hNotificationPlan? {
+        val type = notificationTypeOrNull(notificationId) ?: return null
+        return PolarD2hNotificationPlan(
+            notificationType = type,
+            parsedProto = parsedProtoName(type, parametersHex)
+        )
     }
 
     fun parsedProtoName(type: String, parametersHex: String): String? {
