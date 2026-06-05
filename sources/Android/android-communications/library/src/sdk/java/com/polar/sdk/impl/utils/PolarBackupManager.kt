@@ -42,9 +42,10 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
         BleLogger.d(TAG, "Backing up device")
         BleLogger.d(TAG, "Requesting backup content")
 
+        val rootPlan = PolarRuntimePlannerAdapter.planFileFacade("backup-read-root-directory", "GET", ARABICA_SYS_FOLDER)
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-            .setPath(ARABICA_SYS_FOLDER)
+            .setCommand(PolarRuntimePlannerAdapter.fileOperationCommand(rootPlan))
+            .setPath(PolarRuntimePlannerAdapter.fileOperationPath(rootPlan))
 
         val response = client.request(builder.build().toByteArray())
         BleLogger.d(TAG, "Received response from client request")
@@ -131,10 +132,11 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
 
     private suspend fun loadFile(path: String): ByteArray {
         return try {
+            val plan = PolarRuntimePlannerAdapter.planFileFacade("backup-read-file", "GET", path)
             client.request(
                 PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                    .setPath(path)
+                    .setCommand(PolarRuntimePlannerAdapter.fileOperationCommand(plan))
+                    .setPath(PolarRuntimePlannerAdapter.fileOperationPath(plan))
                     .build().toByteArray()
             ).toByteArray()
         } catch (error: Throwable) {
@@ -209,9 +211,10 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
     }
 
     private suspend fun fetchRecursively(path: String): List<Pair<String, Long>> {
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("backup-read-directory", "GET", path)
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-            .setPath(path)
+            .setCommand(PolarRuntimePlannerAdapter.fileOperationCommand(plan))
+            .setPath(PolarRuntimePlannerAdapter.fileOperationPath(plan))
         val response = client.request(builder.build().toByteArray())
         val dir = PbPFtpDirectory.parseFrom(response.toByteArray())
         val entries = dir.entriesList.associate { path + it.name to it.size }
