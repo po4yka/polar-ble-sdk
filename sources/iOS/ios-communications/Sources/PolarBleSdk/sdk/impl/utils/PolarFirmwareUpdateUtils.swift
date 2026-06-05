@@ -30,10 +30,12 @@ class PolarFirmwareUpdateUtils {
     }
     
     static func readDeviceFirmwareInfo(client: BlePsFtpClient, deviceId: String) async -> PolarFirmwareVersionInfo? {
+        let plannedOperation = deviceFirmwareInfoOperation()
         let request = Protocol_PbPFtpOperation.with {
-            $0.command = .get
-            $0.path = DEVICE_FIRMWARE_INFO_PATH
+            $0.command = plannedOperation?.command ?? .get
+            $0.path = plannedOperation?.path ?? DEVICE_FIRMWARE_INFO_PATH
         }
+        planDeviceFirmwareInfoRead()
         do {
             let serializedBytes = try request.serializedData()
             let response = try await client.request(serializedBytes)
@@ -47,6 +49,26 @@ class PolarFirmwareUpdateUtils {
             BleLogger.error("Failed to request device info: \(deviceId), error: \(error)")
             return nil
         }
+    }
+
+    private static func deviceFirmwareInfoOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
+        #if canImport(PolarBleSdkShared)
+        let plannedOperation = PolarIosSharedBridge.shared.planRuntimeFileFacadeOperation(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH, payloadHex: "")
+        let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
+        guard parts.count == 2 else { return nil }
+        switch parts[0] {
+        case "GET": return (.get, parts[1])
+        default: return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    private static func planDeviceFirmwareInfoRead() {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimeFileFacade(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH, payloadHex: "")
+        #endif
     }
 
     static func isAvailableFirmwareVersionHigher(currentVersion: String, availableVersion: String) -> Bool {

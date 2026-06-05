@@ -45,6 +45,9 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(firmwareInfo?.deviceModelName, expectedModelName)
         XCTAssertEqual(firmwareInfo?.deviceHardwareCode, expectedHardwareCode)
         XCTAssertEqual(mockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: mockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(PolarFirmwareUpdateUtils.DEVICE_FIRMWARE_INFO_PATH, requestOperation.path)
     }
     
     func testIsAvailableFirmwareVersionHigher_shouldReturnTrue_whenCurrentVersionIsSmallerThanAvailableVersion() {

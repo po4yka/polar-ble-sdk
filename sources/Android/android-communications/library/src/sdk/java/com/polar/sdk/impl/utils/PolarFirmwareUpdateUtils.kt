@@ -32,10 +32,11 @@ internal object PolarFirmwareUpdateUtils {
 
     suspend fun readDeviceFirmwareInfo(client: BlePsFtpClient, deviceId: String): PolarFirmwareVersionInfo {
         BleLogger.d(TAG, "readDeviceFirmwareInfo: $deviceId")
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("firmware-read-device-info", "GET", DEVICE_FIRMWARE_INFO_PATH)
         val response = client.request(
             PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                .setPath(DEVICE_FIRMWARE_INFO_PATH)
+                .setCommand(PolarRuntimePlannerAdapter.fileOperationCommand(plan))
+                .setPath(PolarRuntimePlannerAdapter.fileOperationPath(plan))
                 .build()
                 .toByteArray()
         )
