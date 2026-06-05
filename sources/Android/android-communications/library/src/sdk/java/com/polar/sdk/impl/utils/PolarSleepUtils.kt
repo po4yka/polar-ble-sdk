@@ -19,6 +19,17 @@ private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ENGLI
 private const val TAG = "PolarSleepUtils"
 
 internal object PolarSleepUtils {
+    internal fun sleepDataReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val path = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/${SLEEP_DIRECTORY}${SLEEP_PROTO}"
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("sleep-read-analysis", "GET", path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
+
+    internal fun sleepSkinTemperatureReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val path = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/${NRST_DIRECTORY}${NRST_PROTO}"
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("sleep-read-skin-temperature", "GET", path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
 
     /**
      * Read sleep data for a given date.
@@ -37,11 +48,11 @@ internal object PolarSleepUtils {
     private suspend fun readSleepData(client: BlePsFtpClient, date: LocalDate): PolarSleepAnalysisResult {
         BleLogger.d(TAG, "readSleepData: $date")
         return try {
-            val sleepFilePath = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/${SLEEP_DIRECTORY}${SLEEP_PROTO}"
+            val readOperation = sleepDataReadOperation(date)
             val response = client.request(
                 PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                    .setPath(sleepFilePath)
+                    .setCommand(readOperation.first)
+                    .setPath(readOperation.second)
                     .build()
                     .toByteArray()
             )
@@ -91,11 +102,11 @@ internal object PolarSleepUtils {
         BleLogger.d(TAG, "readSleepSkinTemperatureResult: $date")
         return try {
             val result = sleepAnalysisResult
-            val sleepFilePath = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/${NRST_DIRECTORY}${NRST_PROTO}"
+            val readOperation = sleepSkinTemperatureReadOperation(date)
             val response = client.request(
                 PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                    .setPath(sleepFilePath)
+                    .setCommand(readOperation.first)
+                    .setPath(readOperation.second)
                     .build()
                     .toByteArray()
             )

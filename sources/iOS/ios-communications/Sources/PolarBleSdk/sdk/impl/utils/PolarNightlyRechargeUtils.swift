@@ -1,6 +1,9 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
 private let NIGHTLY_RECOVERY_DIRECTORY = "NR/"
@@ -16,10 +19,23 @@ private let TAG = "PolarNightlyRechargeUtils"
 internal class PolarNightlyRechargeUtils {
     enum PolarNightlyRechargeError: Error { case missingOrInvalidRecoveryDate }
 
+    static func nightlyRechargeReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        let path = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(NIGHTLY_RECOVERY_DIRECTORY)\(NIGHTLY_RECOVERY_PROTO)"
+        #if canImport(PolarBleSdkShared)
+        let plannedOperation = PolarIosSharedBridge.shared.planRuntimeFileFacadeOperation(id: "nightly-recharge-read", command: "GET", path: path, payloadHex: "")
+        let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
+        if parts.count == 2, parts[0] == "GET" {
+            return (.get, parts[1])
+        }
+        #endif
+        return (.get, path)
+    }
+
     static func readNightlyRechargeData(client: BlePsFtpClient, date: Date) async -> PolarNightlyRechargeData? {
         BleLogger.trace(TAG, "readNightlyRechargeData: \(date)")
-        let filePath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(NIGHTLY_RECOVERY_DIRECTORY)\(NIGHTLY_RECOVERY_PROTO)"
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = filePath }
+        let plannedOperation = nightlyRechargeReadOperation(date: date)
+        let filePath = plannedOperation.path
+        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
             let response = try await client.request(try operation.serializedBytes())
             let recoveryStatus = try Data_PbNightlyRecoveryStatus(serializedBytes: Data(response))

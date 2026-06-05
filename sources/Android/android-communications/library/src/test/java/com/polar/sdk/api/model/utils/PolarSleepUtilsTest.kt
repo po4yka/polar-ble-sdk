@@ -43,6 +43,20 @@ import java.util.*
 class PolarSleepUtilsTest {
 
     @Test
+    fun `sleep read headers use shared file facade planning`() {
+        val date = LocalDate.of(2026, 1, 2)
+
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/SLEEP/SLEEPRES.BPB",
+            PolarSleepUtils.sleepDataReadOperation(date)
+        )
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/NSTRESUL/NSTRCONT.BPB",
+            PolarSleepUtils.sleepSkinTemperatureReadOperation(date)
+        )
+    }
+
+    @Test
     fun `readSleepFromDayDirectory() should return sleep analysis data`() = runTest {
         val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ENGLISH)
 

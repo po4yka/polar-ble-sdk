@@ -18,6 +18,18 @@ class PolarSleepUtilsTests: XCTestCase {
         mockClient = nil
     }
 
+    func testSleepReadHeadersUseSharedFileFacadePlanning() throws {
+        let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
+
+        let sleepOperation = PolarSleepUtils.sleepDataReadOperation(date: date)
+        XCTAssertEqual(sleepOperation.command, .get)
+        XCTAssertEqual(sleepOperation.path, "/U/0/20260102/SLEEP/SLEEPRES.BPB")
+
+        let skinTemperatureOperation = PolarSleepUtils.sleepSkinTemperatureReadOperation(date: date)
+        XCTAssertEqual(skinTemperatureOperation.command, .get)
+        XCTAssertEqual(skinTemperatureOperation.path, "/U/0/20260102/NSTRESUL/NSTRCONT.BPB")
+    }
+
     func testReadSleepDataFromDayDirectory_SuccessfulResponse() async throws {
         // Arrange
         let date = Date()

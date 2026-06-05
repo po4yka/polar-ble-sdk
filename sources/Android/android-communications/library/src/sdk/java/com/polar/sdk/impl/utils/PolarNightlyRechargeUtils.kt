@@ -15,17 +15,23 @@ private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 private const val TAG = "PolarNightlyRechargeUtils"
 
 internal object PolarNightlyRechargeUtils {
+    internal fun nightlyRechargeReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val path = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$NIGHTLY_RECOVERY_DIRECTORY$NIGHTLY_RECOVERY_PROTO"
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("nightly-recharge-read", "GET", path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
 
     /**
      * Read nightly recharge data for given date range.
      */
     suspend fun readNightlyRechargeData(client: BlePsFtpClient, date: LocalDate): PolarNightlyRechargeData? {
         BleLogger.d(TAG, "readNightlyRechargeData: $date")
-        val nightlyRecoveryFilePath = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$NIGHTLY_RECOVERY_DIRECTORY$NIGHTLY_RECOVERY_PROTO"
+        val readOperation = nightlyRechargeReadOperation(date)
+        val nightlyRecoveryFilePath = readOperation.second
         return try {
             val response = client.request(
                 PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
+                    .setCommand(readOperation.first)
                     .setPath(nightlyRecoveryFilePath)
                     .build()
                     .toByteArray()

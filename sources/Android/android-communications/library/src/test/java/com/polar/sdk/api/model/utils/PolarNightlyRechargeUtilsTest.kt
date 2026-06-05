@@ -32,6 +32,16 @@ class PolarNightlyRechargeUtilsTest {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
     @Test
+    fun `nightly recharge read header uses shared file facade planning`() {
+        val date = LocalDate.of(2026, 1, 2)
+
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/NR/NR.BPB",
+            PolarNightlyRechargeUtils.nightlyRechargeReadOperation(date)
+        )
+    }
+
+    @Test
     fun `readNightlyRechargeData() should return nightly recharge data`() = runTest {
         // Arrange
         val mockClient = mockk<BlePsFtpClient>()

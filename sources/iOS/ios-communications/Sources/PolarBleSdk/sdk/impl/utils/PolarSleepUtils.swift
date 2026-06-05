@@ -1,6 +1,9 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
 private let SLEEP_DIRECTORY = "SLEEP/"
@@ -16,6 +19,26 @@ private let dateFormat: DateFormatter = {
 private let TAG = "PolarSleepUtils"
 
 internal class PolarSleepUtils {
+    static func sleepDataReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        let path = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(SLEEP_DIRECTORY)\(SLEEP_PROTO)"
+        return fileReadOperation(id: "sleep-read-analysis", path: path) ?? (.get, path)
+    }
+
+    static func sleepSkinTemperatureReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        let path = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(NRST_DIRECTORY)\(NRST_PROTO)"
+        return fileReadOperation(id: "sleep-read-skin-temperature", path: path) ?? (.get, path)
+    }
+
+    private static func fileReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
+        #if canImport(PolarBleSdkShared)
+        let plannedOperation = PolarIosSharedBridge.shared.planRuntimeFileFacadeOperation(id: id, command: "GET", path: path, payloadHex: "")
+        let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
+        guard parts.count == 2, parts[0] == "GET" else { return nil }
+        return (.get, parts[1])
+        #else
+        return nil
+        #endif
+    }
 
     static func readSleepFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> PolarSleepData.PolarSleepAnalysisResult {
         var result = try await readSleepData(client: client, date: date)
@@ -25,8 +48,9 @@ internal class PolarSleepUtils {
 
     static func readSleepData(client: BlePsFtpClient, date: Date) async throws -> PolarSleepData.PolarSleepAnalysisResult {
         BleLogger.trace(TAG, "readSleepFromDayDirectory: \(date)")
-        let sleepDataFilePath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(SLEEP_DIRECTORY)\(SLEEP_PROTO)"
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = sleepDataFilePath }
+        let plannedOperation = sleepDataReadOperation(date: date)
+        let sleepDataFilePath = plannedOperation.path
+        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
             let response = try await client.request(try operation.serializedBytes())
             let proto = try Data_PbSleepAnalysisResult(serializedBytes: Data(response))
@@ -61,8 +85,9 @@ internal class PolarSleepUtils {
     static func readSleepSkinTemperatureResult(client: BlePsFtpClient, date: Date, sleepAnalysisResult: PolarSleepData.PolarSleepAnalysisResult) async throws -> PolarSleepData.PolarSleepAnalysisResult {
         BleLogger.trace(TAG, "readSleepSkinTemperature: \(date)")
         var result = sleepAnalysisResult
-        let filePath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(NRST_DIRECTORY)\(NRST_PROTO)"
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = filePath }
+        let plannedOperation = sleepSkinTemperatureReadOperation(date: date)
+        let filePath = plannedOperation.path
+        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
             let response = try await client.request(try operation.serializedBytes())
             let proto = try Data_PbSleepSkinTemperatureResult(serializedBytes: Data(response))
