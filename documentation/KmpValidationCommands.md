@@ -79,6 +79,22 @@ When shared artifact consumption documentation or artifact shape changes, run th
 ANDROID_HOME=/Users/po4yka/Library/Android/sdk ./gradlew :shared:bundleAndroidMainAar :shared:linkDebugFrameworkIosX64 --no-daemon
 ```
 
+When Android release packaging or example local-AAR consumption changes, run the example AAR gate from the repository root:
+
+```bash
+ANDROID_HOME=/Users/po4yka/Library/Android/sdk ANDROID_SDK_ROOT=/Users/po4yka/Library/Android/sdk scripts/verify_android_example_aar_consumption.sh
+```
+
+When iOS release packaging changes, validate the SwiftPM manifest surface and the CocoaPods shared-framework path from the repository root:
+
+```bash
+swift package describe
+pod install --project-directory=sources/iOS/ios-communications
+pod lib lint PolarBleSdk.podspec --allow-warnings
+```
+
+`swift package describe` proves only that the SwiftPM manifest remains valid. During the compatibility phase, SwiftPM iOS and SwiftPM/watchOS do not link `PolarBleSdkShared.framework`; they use the Swift fallback code behind `#if canImport(PolarBleSdkShared)`. CocoaPods and the Xcode workspace are the supported Apple shared-consumption paths until a checked-in or downloaded `PolarBleSdkShared.xcframework` strategy is added.
+
 ## Documentation And Fixture Gates
 
 `GoldenVectorMigrationPolicyTest` is the repository gate for golden-vector metadata, migration-rationale fields, runtime `consumerTests`, fixture README ownership notes, and coverage-doc test references. Run it whenever a migration slice changes `testdata/golden-vectors` or KMP migration documentation.

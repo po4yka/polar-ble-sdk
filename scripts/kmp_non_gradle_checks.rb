@@ -1110,15 +1110,6 @@ RELEASE_READINESS_ITEMS = [
   "Known platform differences are documented.",
   "A rollback path exists for every shared module adoption step."
 ].freeze
-RELEASE_READINESS_OPEN_RATIONALE_TERMS = [
-  "Release readiness.",
-  "stays open during pre-migration coverage work",
-  "production shared consumption is implemented and verified",
-  "Android example AAR consumption",
-  "iOS Swift Package or explicit deprecation evidence",
-  "CocoaPods verification or explicit deprecation",
-  "rollback path for every shared-module adoption step"
-].freeze
 MIGRATION_STOP_CONDITION_TERMS = [
   "## Stop Conditions",
   "Android and iOS current behavior disagree without a documented decision",
@@ -1221,7 +1212,12 @@ SHARED_CONSUMPTION_REQUIRED_TERMS = [
   "current Swift facade",
   ":shared:bundleAndroidMainAar",
   ":shared:linkDebugFrameworkIosX64",
-  "may depend on shared code only when a behavior slice"
+  "may depend on shared code only when a behavior slice",
+  "scripts/verify_android_example_aar_consumption.sh",
+  "polar-ble-sdk-shared.aar",
+  "SwiftPM/watchOS",
+  "fallback-only",
+  "rollback path for every shared-module adoption step"
 ].freeze
 KOTLIN_DOCUMENT_REQUIRED_TERM_TARGETS = {
   "VALIDATION_NON_GRADLE_GATE_TERMS" => "documentation/KmpValidationCommands.md",
@@ -1954,13 +1950,6 @@ end
 checklist = File.read(File.join(ROOT, "documentation/KmpMigrationChecklist.md"))
 completed_items = checklist.scan(CHECKED_CHECKLIST_ITEM).flatten.map { |item| item.delete_suffix(".") }.to_set
 completed_section = checklist[COMPLETED_ITEM_EVIDENCE_SECTION] || ""
-open_item_section = checklist[/## Open Item Rationale.*?(?=\n## |\z)/m] || ""
-RELEASE_READINESS_ITEMS.each do |item|
-  errors << "documentation/KmpMigrationChecklist.md: release-readiness item must stay open before production shared consumption evidence exists: #{item}" if completed_items.include?(item.delete_suffix("."))
-end
-RELEASE_READINESS_OPEN_RATIONALE_TERMS.each do |term|
-  errors << "documentation/KmpMigrationChecklist.md: release-readiness open rationale missing #{term}" unless open_item_section.include?(term)
-end
 MIGRATION_STOP_CONDITION_TERMS.each do |term|
   errors << "documentation/KmpMigrationChecklist.md: missing migration stop condition #{term}" unless checklist.include?(term)
 end

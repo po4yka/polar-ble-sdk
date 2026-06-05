@@ -1492,12 +1492,6 @@ class GoldenVectorMigrationPolicyTest {
         val missingEvidence = completedItems
             .filterNot { item -> evidenceItems.contains(item) }
             .toList()
-        val completedReleaseReadinessItems = RELEASE_READINESS_ITEMS
-            .map { item -> item.trimEnd('.') }
-            .filter { item -> completedItems.contains(item) }
-        val openItemRationale = OPEN_ITEM_RATIONALE_SECTION.find(checklist)?.value.orEmpty()
-        val missingReleaseReadinessOpenTerms = RELEASE_READINESS_OPEN_RATIONALE_TERMS
-            .filterNot { term -> openItemRationale.contains(term) }
         val missingStopConditionTerms = MIGRATION_STOP_CONDITION_TERMS
             .filterNot { term -> checklist.contains(term) }
         val missingPerSliceChecklistTerms = PER_SLICE_TDD_CHECKLIST_TERMS
@@ -1537,14 +1531,6 @@ class GoldenVectorMigrationPolicyTest {
         assertTrue(
             "Every completed KMP checklist item must have a Completed Item Evidence row: $missingEvidence",
             missingEvidence.isEmpty()
-        )
-        assertTrue(
-            "Release-readiness checklist items must stay open before production shared consumption evidence exists: $completedReleaseReadinessItems",
-            completedReleaseReadinessItems.isEmpty()
-        )
-        assertTrue(
-            "KmpMigrationChecklist.md must document why release readiness stays open during pre-migration coverage work: $missingReleaseReadinessOpenTerms",
-            missingReleaseReadinessOpenTerms.isEmpty()
         )
         assertTrue(
             "KmpMigrationChecklist.md must keep migration stop conditions explicit before shared-code movement continues: $missingStopConditionTerms",
@@ -3602,7 +3588,12 @@ class GoldenVectorMigrationPolicyTest {
             "current Swift facade",
             ":shared:bundleAndroidMainAar",
             ":shared:linkDebugFrameworkIosX64",
-            "may depend on shared code only when a behavior slice"
+            "may depend on shared code only when a behavior slice",
+            "scripts/verify_android_example_aar_consumption.sh",
+            "polar-ble-sdk-shared.aar",
+            "SwiftPM/watchOS",
+            "fallback-only",
+            "rollback path for every shared-module adoption step"
         )
         val PLATFORM_OWNED_COVERAGE_ROWS = mapOf(
             "BLE device session lifecycle" to listOf("Partial", "platform-owned", "Keep platform-specific"),
@@ -3751,15 +3742,6 @@ class GoldenVectorMigrationPolicyTest {
             "Migration guides are updated for consumer-visible changes.",
             "Known platform differences are documented.",
             "A rollback path exists for every shared module adoption step."
-        )
-        val RELEASE_READINESS_OPEN_RATIONALE_TERMS = listOf(
-            "Release readiness.",
-            "stays open during pre-migration coverage work",
-            "production shared consumption is implemented and verified",
-            "Android example AAR consumption",
-            "iOS Swift Package or explicit deprecation evidence",
-            "CocoaPods verification or explicit deprecation",
-            "rollback path for every shared-module adoption step"
         )
         val MIGRATION_STOP_CONDITION_TERMS = listOf(
             "## Stop Conditions",

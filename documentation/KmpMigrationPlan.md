@@ -125,6 +125,8 @@ Android should continue publishing an AAR with the same Maven coordinates during
 
 iOS should continue supporting Swift Package Manager and CocoaPods during the compatibility phase. The KMP framework should be hidden behind the existing Swift API until a deliberate public API migration is planned.
 
+During the current compatibility phase, direct Android local-AAR consumers need the SDK AAR plus the shared Android AAR unless publication metadata supplies the shared dependency. CocoaPods and the Xcode workspace are the supported Apple shared-consumption paths; SwiftPM and watchOS stay on Swift fallback implementations until a binary `PolarBleSdkShared.xcframework` packaging strategy is added and validated.
+
 Examples should be updated only after the SDK packaging path they use is validated.
 
 ## Compatibility Policy

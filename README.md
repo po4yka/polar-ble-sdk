@@ -298,6 +298,8 @@ dependencies: [
 ```
 or alternatively use [XCode package manager](https://developer.apple.com/documentation/swift_packages/adding_package_dependencies_to_your_app) to add Swift package to your project.
 
+Swift Package Manager and watchOS builds use the Swift implementation fallback during the current KMP compatibility phase. CocoaPods and the Xcode workspace are the supported paths that build and link `PolarBleSdkShared.framework`; see [KMP shared artifact consumption](./documentation/KmpSharedArtifactConsumption.md) for the package matrix and rollback rules.
+
 > **Note:** Carthage is not supported.
 
 ### Setup your application
@@ -414,6 +416,7 @@ class MyController: UIViewController,
 - [KMP Migration TDD Strategy](./documentation/KmpTddStrategy.md) – Characterization and golden-vector testing strategy before migration
 - [KMP Pre-Migration Coverage Inventory](./documentation/KmpCoverageInventory.md) – Current Android/iOS coverage map and pre-migration coverage obligations
 - [KMP Migration Checklist](./documentation/KmpMigrationChecklist.md) – Per-slice gates for test-first migration work
+- [KMP Shared Artifact Consumption](./documentation/KmpSharedArtifactConsumption.md) – Android AAR, CocoaPods, SwiftPM/watchOS, and rollback packaging contract
 - [CI/CD](./documentation/CiCd.md) – GitHub Actions validation, artifact-only release builds, and failure triage
 
 [↑ Back to contents](#contents)
