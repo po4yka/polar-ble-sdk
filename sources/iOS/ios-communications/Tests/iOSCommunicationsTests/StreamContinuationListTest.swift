@@ -226,6 +226,33 @@ final class StreamContinuationListTest: XCTestCase {
         XCTAssertTrue(list.isEmpty)
     }
 
+    func testConsumerCancellation_suppressesLateEvents() async throws {
+        try assertStreamRuntimePolicyVectorContains(fileName: "consumer-cancellation-late-events-policy.json", vectorId: "consumer-cancellation-late-events-policy")
+
+        let list = StreamContinuationList<Int>()
+        let stream = list.makeStream(transport: nil, checkConnection: false)
+        var received: [Int] = []
+        let task = Task {
+            do {
+                for try await value in stream {
+                    received.append(value)
+                }
+            } catch is CancellationError {}
+        }
+
+        list.yield(1)
+        await Task.yield()
+        task.cancel()
+        _ = await task.result
+        try await Task.sleep(nanoseconds: 10_000_000)
+        list.yield(2)
+        list.finish(throwing: BleGattException.gattDisconnected)
+        try await Task.sleep(nanoseconds: 10_000_000)
+
+        XCTAssertEqual(received, [1])
+        XCTAssertTrue(list.isEmpty)
+    }
+
     func testDisconnectAfterSubscription_finishesWithGattDisconnectedAndRemovesEntry() async throws {
         try assertStreamRuntimePolicyVectorContains(fileName: "disconnect-after-subscription-policy.json", vectorId: "disconnect-after-subscription-policy")
 
@@ -475,6 +502,7 @@ private let STREAM_RUNTIME_READINESS_POLICY_VECTOR_PATHS = [
     "sdk/stream-runtime/initial-disconnected-policy.json",
     "sdk/stream-runtime/unchecked-subscription-policy.json",
     "sdk/stream-runtime/consumer-cancellation-policy.json",
+    "sdk/stream-runtime/consumer-cancellation-late-events-policy.json",
     "sdk/stream-runtime/disconnect-after-subscription-policy.json",
     "sdk/stream-runtime/duplicate-completion-policy.json",
     "sdk/stream-runtime/late-emission-after-completion-policy.json"
@@ -489,6 +517,7 @@ private let STREAM_RUNTIME_READINESS_FAMILIES = [
     "consumer-cancellation-observer-cleanup",
     "consumer-cancellation-upstream-cancel",
     "consumer-cancellation-idempotence",
+    "post-cancellation-late-event-suppression",
     "disconnect-after-subscription-terminal",
     "disconnect-after-subscription-observer-cleanup",
     "disconnect-after-subscription-upstream-cancel",
@@ -505,12 +534,13 @@ private let STREAM_RUNTIME_POLICY_CONTRACTS = [
     "initial-disconnected-policy": StreamRuntimePolicyContract(inputKind: "genericStreamConnectionGuardPolicy", executionTransport: "generic-stream-connection-guard", commonDecision: "A checked stream subscription that starts disconnected must fail before observer registration or upstream work starts."),
     "unchecked-subscription-policy": StreamRuntimePolicyContract(inputKind: "genericStreamConnectionGuardPolicy", executionTransport: "generic-stream-connection-guard", commonDecision: "An unchecked stream subscription must register the observer without querying transport connection state."),
     "consumer-cancellation-policy": StreamRuntimePolicyContract(inputKind: "genericStreamCancellationPolicy", executionTransport: "generic-stream-cancellation", commonDecision: "Consumer cancellation must remove the observer, cancel upstream work once, and remain idempotent."),
+    "consumer-cancellation-late-events-policy": StreamRuntimePolicyContract(inputKind: "genericStreamCancellationPolicy", executionTransport: "generic-stream-cancellation", commonDecision: "After consumer cancellation, late stream values, terminal errors, and completion signals must not surface or mutate terminal counters."),
     "disconnect-after-subscription-policy": StreamRuntimePolicyContract(inputKind: "genericStreamDisconnectPolicy", executionTransport: "generic-stream-disconnect", commonDecision: "A stream that disconnects after observer registration must terminate consumers, clear observers, and cancel upstream work without leaking an active subscription."),
     "duplicate-completion-policy": StreamRuntimePolicyContract(inputKind: "genericStreamCompletionPolicy", executionTransport: "generic-stream-completion", commonDecision: "Complete or finish signals after the first terminal completion must be idempotent and must not re-register observers."),
     "late-emission-after-completion-policy": StreamRuntimePolicyContract(inputKind: "genericStreamCompletionPolicy", executionTransport: "generic-stream-completion", commonDecision: "Values emitted after terminal completion must not surface to consumers and must not re-register observers.")
 ]
 
-private let STREAM_RUNTIME_READINESS_COMMON_DECISION = "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified."
+private let STREAM_RUNTIME_READINESS_COMMON_DECISION = "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, post-cancellation late-event suppression, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified."
 
 private struct StreamRuntimePolicyContract {
     let inputKind: String

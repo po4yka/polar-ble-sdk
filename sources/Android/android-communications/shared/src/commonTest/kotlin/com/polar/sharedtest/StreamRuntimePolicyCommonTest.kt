@@ -108,6 +108,31 @@ class StreamRuntimePolicyCommonTest {
     }
 
     @Test
+    fun consumerCancellationLateEventsPolicyVectorRunsThroughCommonFakeStreamRuntime() {
+        val vector = loadGoldenVectorText("sdk/stream-runtime/consumer-cancellation-late-events-policy.json")
+        val input = vector.objectValue("input")
+        val expected = vector.objectValue("expected")
+        val runtime = PolarStreamRuntimePlanning.planConsumerCancellationLateEvents(
+            target = input.stringValue("target"),
+            preCancelValue = input.stringValue("preCancelEmission"),
+            postCancelValue = input.stringValue("postCancelEmission"),
+            terminalError = input.stringValue("terminalError")
+        )
+
+        assertEquals("genericStreamCancellationPolicy", input.stringValue("kind"))
+        assertEquals(expected.intValue("activeObserverCount"), runtime.activeObserverCount)
+        assertEquals(expected.stringArrayValue("cancelledStreams"), runtime.cancelledStreams)
+        assertEquals(expected.intValue("cleanupCallbackCount"), runtime.cleanupCallbackCount)
+        assertEquals(expected.booleanValue("upstreamCancelled"), runtime.upstreamCancelled)
+        assertEquals(expected.stringArrayValue("emittedValues"), runtime.emittedValues)
+        assertEquals(expected.nullableStringValue("terminalError"), runtime.terminalError)
+        assertEquals(expected.intValue("completionEventCount"), runtime.completionEventCount)
+        assertEquals(expected.intValue("errorEventCount"), runtime.errorEventCount)
+        assertEquals("suppress-after-consumer-cancellation", expected.stringValue("lateEventPolicy"))
+        assertEquals("After consumer cancellation, late stream values, terminal errors, and completion signals must not surface or mutate terminal counters.", expected.stringValue("commonDecision"))
+    }
+
+    @Test
     fun disconnectAfterSubscriptionPolicyVectorRunsThroughCommonFakeStreamRuntime() {
         val vector = loadGoldenVectorText("sdk/stream-runtime/disconnect-after-subscription-policy.json")
         val input = vector.objectValue("input")
@@ -232,6 +257,7 @@ class StreamRuntimePolicyCommonTest {
         "sdk/stream-runtime/initial-disconnected-policy.json",
         "sdk/stream-runtime/unchecked-subscription-policy.json",
         "sdk/stream-runtime/consumer-cancellation-policy.json",
+        "sdk/stream-runtime/consumer-cancellation-late-events-policy.json",
         "sdk/stream-runtime/disconnect-after-subscription-policy.json",
         "sdk/stream-runtime/duplicate-completion-policy.json",
         "sdk/stream-runtime/late-emission-after-completion-policy.json"
@@ -246,6 +272,7 @@ class StreamRuntimePolicyCommonTest {
         "consumer-cancellation-observer-cleanup",
         "consumer-cancellation-upstream-cancel",
         "consumer-cancellation-idempotence",
+        "post-cancellation-late-event-suppression",
         "disconnect-after-subscription-terminal",
         "disconnect-after-subscription-observer-cleanup",
         "disconnect-after-subscription-upstream-cancel",
@@ -256,6 +283,6 @@ class StreamRuntimePolicyCommonTest {
         "compile-verification-gate"
     )
 
-    private val streamRuntimeReadinessCommonDecision = "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified."
+    private val streamRuntimeReadinessCommonDecision = "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, post-cancellation late-event suppression, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified."
 
 }

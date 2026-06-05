@@ -1,0 +1,59 @@
+{
+  "id": "consumer-cancellation-late-events-policy",
+  "area": "sdk-stream-runtime",
+  "case": "consumer_cancellation_suppresses_late_events",
+  "source": "Android ChannelUtilsTests and iOS StreamContinuationListTest post-cancellation stream characterization",
+  "input": {
+    "kind": "genericStreamCancellationPolicy",
+    "target": "stream",
+    "actions": [
+      "subscribe",
+      "emit-before-cancel",
+      "cancel-consumer",
+      "emit-after-cancel",
+      "terminal-error-after-cancel",
+      "complete-after-cancel"
+    ],
+    "preCancelEmission": "value-before-cancel",
+    "postCancelEmission": "value-after-cancel",
+    "terminalError": "late stream failure"
+  },
+  "expected": {
+    "activeObserverCount": 0,
+    "upstreamCancelled": true,
+    "cleanupCallbackCount": 1,
+    "cancelledStreams": [
+      "stream"
+    ],
+    "emittedValues": [
+      "value-before-cancel"
+    ],
+    "terminalError": null,
+    "completionEventCount": 0,
+    "errorEventCount": 0,
+    "lateEventPolicy": "suppress-after-consumer-cancellation",
+    "commonDecision": "After consumer cancellation, late stream values, terminal errors, and completion signals must not surface or mutate terminal counters."
+  },
+  "execution": {
+    "kind": "fake-stream-runtime-policy",
+    "transport": "generic-stream-cancellation",
+    "wallClockSafe": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.common.ble.ChannelUtilsTests"
+    ],
+    "ios": [
+      "StreamContinuationListTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.StreamRuntimePolicyCommonTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "Stream utilities can move to shared KMP code only after late emissions, late terminal errors, and late completion signals after consumer cancellation are suppressed on Android, iOS, and the shared fake-stream runtime."
+}

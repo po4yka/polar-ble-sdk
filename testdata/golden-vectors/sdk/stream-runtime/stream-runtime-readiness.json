@@ -12,6 +12,7 @@
       "sdk/stream-runtime/initial-disconnected-policy.json",
       "sdk/stream-runtime/unchecked-subscription-policy.json",
       "sdk/stream-runtime/consumer-cancellation-policy.json",
+      "sdk/stream-runtime/consumer-cancellation-late-events-policy.json",
       "sdk/stream-runtime/disconnect-after-subscription-policy.json",
       "sdk/stream-runtime/duplicate-completion-policy.json",
       "sdk/stream-runtime/late-emission-after-completion-policy.json"
@@ -25,6 +26,7 @@
       "consumer-cancellation-observer-cleanup",
       "consumer-cancellation-upstream-cancel",
       "consumer-cancellation-idempotence",
+      "post-cancellation-late-event-suppression",
       "disconnect-after-subscription-terminal",
       "disconnect-after-subscription-observer-cleanup",
       "disconnect-after-subscription-upstream-cancel",
@@ -45,6 +47,7 @@
       "consumer-cancellation-observer-cleanup",
       "consumer-cancellation-upstream-cancel",
       "consumer-cancellation-idempotence",
+      "post-cancellation-late-event-suppression",
       "disconnect-after-subscription-terminal",
       "disconnect-after-subscription-observer-cleanup",
       "disconnect-after-subscription-upstream-cancel",
@@ -54,7 +57,7 @@
       "platform-stream-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified.",
+    "commonDecision": "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, post-cancellation late-event suppression, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
       "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."

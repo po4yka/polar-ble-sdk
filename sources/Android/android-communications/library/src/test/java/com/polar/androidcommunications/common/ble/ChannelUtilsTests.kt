@@ -271,6 +271,32 @@ class ChannelUtilsTests {
     }
 
     @Test
+    fun monitorNotifications_afterConsumerCancel_suppressesLateEvents() = runTest {
+        assertStreamRuntimePolicyVectorContains("consumer-cancellation-late-events-policy.json", "consumer-cancellation-late-events-policy")
+
+        val observers = AtomicSet<Channel<Int>>()
+        val values = mutableListOf<Int>()
+        val job = launch {
+            ChannelUtils.monitorNotifications(observers, mockk(relaxed = true), false)
+                .collect { values.add(it) }
+        }
+        testScheduler.advanceUntilIdle()
+        val observer = observers.objects().single()
+
+        observer.trySend(1)
+        testScheduler.advanceUntilIdle()
+        job.cancel()
+        testScheduler.advanceUntilIdle()
+        ChannelUtils.emitNext(observers) { channel -> channel.trySend(2) }
+        ChannelUtils.postExceptionAndClearList(observers, IllegalStateException("late stream failure"))
+        ChannelUtils.complete(observers)
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(listOf(1), values)
+        assertEquals(0, observers.size())
+    }
+
+    @Test
     fun monitorNotifications_whenDisconnectedAfterSubscription_terminatesCollectorWithCancellation() = runTest {
         assertStreamRuntimePolicyVectorContains("disconnect-after-subscription-policy.json", "disconnect-after-subscription-policy")
 
@@ -347,6 +373,7 @@ class ChannelUtilsTests {
             "sdk/stream-runtime/initial-disconnected-policy.json",
             "sdk/stream-runtime/unchecked-subscription-policy.json",
             "sdk/stream-runtime/consumer-cancellation-policy.json",
+            "sdk/stream-runtime/consumer-cancellation-late-events-policy.json",
             "sdk/stream-runtime/disconnect-after-subscription-policy.json",
             "sdk/stream-runtime/duplicate-completion-policy.json",
             "sdk/stream-runtime/late-emission-after-completion-policy.json"
@@ -361,6 +388,7 @@ class ChannelUtilsTests {
             "consumer-cancellation-observer-cleanup",
             "consumer-cancellation-upstream-cancel",
             "consumer-cancellation-idempotence",
+            "post-cancellation-late-event-suppression",
             "disconnect-after-subscription-terminal",
             "disconnect-after-subscription-observer-cleanup",
             "disconnect-after-subscription-upstream-cancel",
@@ -397,6 +425,11 @@ class ChannelUtilsTests {
                 executionTransport = "generic-stream-cancellation",
                 commonDecision = "Consumer cancellation must remove the observer, cancel upstream work once, and remain idempotent."
             ),
+            "consumer-cancellation-late-events-policy" to StreamRuntimePolicyContract(
+                inputKind = "genericStreamCancellationPolicy",
+                executionTransport = "generic-stream-cancellation",
+                commonDecision = "After consumer cancellation, late stream values, terminal errors, and completion signals must not surface or mutate terminal counters."
+            ),
             "disconnect-after-subscription-policy" to StreamRuntimePolicyContract(
                 inputKind = "genericStreamDisconnectPolicy",
                 executionTransport = "generic-stream-disconnect",
@@ -414,7 +447,7 @@ class ChannelUtilsTests {
             )
         )
 
-        const val STREAM_RUNTIME_READINESS_COMMON_DECISION = "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified."
+        const val STREAM_RUNTIME_READINESS_COMMON_DECISION = "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, post-cancellation late-event suppression, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified."
     }
 
     private data class StreamRuntimePolicyContract(
