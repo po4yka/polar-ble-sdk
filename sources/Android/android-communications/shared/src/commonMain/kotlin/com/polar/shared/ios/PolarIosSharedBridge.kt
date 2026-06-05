@@ -1115,6 +1115,17 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun planRuntimeUserDeviceSettingsOperations(id: String, kind: String, path: String, payloadFieldsCsv: String): String {
+        return PolarRuntimeOrchestration.planUserDeviceSettings(
+            PolarUserDeviceSettingsOperation(
+                id = id,
+                kind = kind,
+                path = path,
+                payloadFields = payloadFieldsCsv.csvValues()
+            )
+        ).userDeviceSettingsOperationCommandsCsv()
+    }
+
     fun planRuntimeStoredDataCleanup(kind: String, rootPath: String): String {
         return PolarWorkflowRuntimePlanning.planStoredDataCleanup(
             PolarStoredDataCleanupScenario(
@@ -1288,6 +1299,15 @@ object PolarIosSharedBridge {
                 command.startsWith("GET:") ||
                     command.startsWith("PUT:") ||
                     command.startsWith("REMOVE:")
+            }
+            .joinToString(separator = ",")
+    }
+
+    private fun PolarRuntimePlan.userDeviceSettingsOperationCommandsCsv(): String {
+        return commands
+            .filter { command ->
+                command.startsWith("read:") ||
+                    command.startsWith("write:")
             }
             .joinToString(separator = ",")
     }

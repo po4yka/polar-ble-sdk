@@ -2030,6 +2030,8 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(.remove, PolarRuntimePlanner.fileFacadeOperation(id: "delete-low-level-file-success", command: "REMOVE", path: "/U/0/CUSTOM.BIN")?.command)
         XCTAssertEqual("transport-error", PolarRuntimePlanner.fileRuntimeError(operation: "readFile", path: "/U/0/CUSTOM.BIN", error: NSError(domain: "PolarBleApiImplTests", code: 1)))
         XCTAssertEqual("success", PolarRuntimePlanner.userDeviceSettings(id: "set-user-device-settings", kind: "write", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["protobufPayload=platform-built"]))
+        XCTAssertEqual([.get, .put], PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-telemetry-enabled", kind: "readThenWrite", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["telemetryEnabled=true"])?.map { $0.command })
+        XCTAssertEqual(["/U/0/S/UDEVSET.BPB", "/U/0/S/UDEVSET.BPB"], PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-telemetry-enabled", kind: "readThenWrite", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["telemetryEnabled=true"])?.map { $0.path })
         XCTAssertEqual("success", PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
         XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
         XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["acc"]))
