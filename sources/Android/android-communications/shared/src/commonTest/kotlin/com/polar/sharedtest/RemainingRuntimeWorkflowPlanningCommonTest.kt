@@ -3,52 +3,12 @@ package com.polar.sharedtest
 import com.polar.shared.runtime.PolarBackupRestoreFile
 import com.polar.shared.runtime.PolarPsFtpNotificationPacket
 import com.polar.shared.runtime.PolarPsFtpWriteAckTimeout
-import com.polar.shared.runtime.PolarStoredDataCleanupDateFolder
-import com.polar.shared.runtime.PolarStoredDataCleanupSampleFile
-import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class RemainingRuntimeWorkflowPlanningCommonTest {
-    @Test
-    fun storedDataCleanupVectorsRunThroughProductionCommonPlanner() {
-        val vector = loadGoldenVectorText("sdk/stored-data-cleanup/cleanup-workflow-policy.json")
-        val expectedCases = vector.objectValue("expected").objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
-
-        vector.objectValue("input").objectArray("scenarios").forEach { scenarioJson ->
-            val scenario = PolarStoredDataCleanupScenario(
-                id = scenarioJson.stringValue("id"),
-                kind = scenarioJson.stringValue("kind"),
-                rootPath = scenarioJson.optionalStringValue("rootPath"),
-                includePrefixes = scenarioJson.optionalStringArrayValue("includePrefixes") ?: emptyList(),
-                includeSuffixes = scenarioJson.optionalStringArrayValue("includeSuffixes") ?: emptyList(),
-                entries = scenarioJson.optionalStringArrayValue("entries") ?: emptyList(),
-                cutoffDate = scenarioJson.optionalStringValue("cutoffDate"),
-                dateFolders = scenarioJson.optionalObjectArray("dateFolders").map { folder ->
-                    PolarStoredDataCleanupDateFolder(
-                        path = folder.stringValue("path"),
-                        beforeCutoff = folder.booleanValue("beforeCutoff"),
-                        removeFiles = folder.stringArrayValue("removeFiles"),
-                        pruneEmptyParents = folder.booleanValue("pruneEmptyParents")
-                    )
-                },
-                sampleFiles = scenarioJson.optionalObjectArray("sampleFiles").map { sample ->
-                    PolarStoredDataCleanupSampleFile(
-                        path = sample.stringValue("path"),
-                        embeddedDay = sample.stringValue("embeddedDay")
-                    )
-                }
-            )
-            val expected = expectedCases.getValue(scenario.id)
-            val outcome = PolarWorkflowRuntimePlanning.planStoredDataCleanup(scenario)
-
-            assertEquals(expected.stringArrayValue("commands"), outcome.commands, scenario.id)
-            assertEquals(expected.stringValue("terminal"), outcome.terminal, scenario.id)
-        }
-    }
-
     @Test
     fun backupWorkflowVectorsRunThroughProductionCommonPlanner() {
         val vector = loadGoldenVectorText("sdk/backup-utils/backup-expansion-and-restore-writes.json")
@@ -110,10 +70,6 @@ class RemainingRuntimeWorkflowPlanningCommonTest {
             PolarPsFtpNotificationPacket(hexToBytes(hex), 0)
         })
         assertEquals(notificationCase.objectValue("expected").intValue("id"), notifications.single().id)
-    }
-
-    private fun String.optionalObjectArray(field: String): List<String> {
-        return if (contains("\"$field\"")) objectArray(field) else emptyList()
     }
 
     private fun String.objectEntries(): Map<String, String> {

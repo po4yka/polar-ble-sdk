@@ -30,8 +30,6 @@ class StoredDataCleanupRuntimePolicyCommonTest {
         }
         val expectedCaseList = expected.objectValue("commonRuntimePrototype").objectArray("cases")
         val expectedCases = expectedCaseList.associateBy { it.stringValue("id") }
-        val runtime = FakeStoredDataCleanupRuntime()
-
         assertEquals("stored-data-cleanup-workflow-policy", vector.stringValue("id"))
         assertEquals("cleanup_workflow_policy", vector.stringValue("case"))
         assertEquals(requiredCleanupScenarioIds, scenarios.map { it.id })
@@ -42,7 +40,7 @@ class StoredDataCleanupRuntimePolicyCommonTest {
         assertCleanupPolicyFields(scenarioList.associateBy { it.stringValue("id") })
 
         scenarios.forEach { scenario ->
-            val outcome = runtime.run(scenario)
+            val outcome = PolarWorkflowRuntimePlanning.planStoredDataCleanup(scenario.toSharedScenario())
             val expected = expectedCases.getValue(scenario.id)
 
             assertEquals(expected.stringArrayValue("commands"), outcome.commands, scenario.id)
@@ -173,13 +171,6 @@ class StoredDataCleanupRuntimePolicyCommonTest {
         assertEquals("/", scenariosById.getValue("telemetry-list-failure-platform-policy").stringValue("rootPath"))
     }
 
-    private class FakeStoredDataCleanupRuntime {
-        fun run(scenario: CleanupScenario): CleanupRuntimeOutcome {
-            val plan = PolarWorkflowRuntimePlanning.planStoredDataCleanup(scenario.toSharedScenario())
-            return CleanupRuntimeOutcome(plan.commands, plan.terminal)
-        }
-    }
-
     private data class CleanupScenario(
         val id: String,
         val kind: String,
@@ -217,11 +208,6 @@ class StoredDataCleanupRuntimePolicyCommonTest {
             )
         }
     }
-
-    private data class CleanupRuntimeOutcome(
-        val commands: List<String>,
-        val terminal: String
-    )
 
     private fun String.optionalObjectArray(field: String): List<String> {
         return if (contains("\"$field\"")) objectArray(field) else emptyList()
