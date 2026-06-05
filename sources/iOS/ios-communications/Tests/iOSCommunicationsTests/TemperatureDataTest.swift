@@ -1,6 +1,9 @@
 ///  Copyright © 2023 Polar. All rights reserved.
 
 import XCTest
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 @testable import iOSCommunications
 
 final class TemperatureDataTest: XCTestCase {
@@ -55,6 +58,66 @@ final class TemperatureDataTest: XCTestCase {
         XCTAssertEqual(27.54, temperatureData.samples[0].temperature)
         XCTAssertEqual(27.54, temperatureData.samples[1].temperature)
         XCTAssertEqual(27.54, temperatureData.samples[2].temperature)
+    }
+
+    func testTemperatureRawType0ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "0c009435770000000000f628c041"
+        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.temperatureRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 120, factor: 1.0, sampleRate: 0))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 120 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let temperatureData = try TemperatureData.parseDataFromDataFrame(frame: dataFrame)
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt64, Float) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt64(fields[0])),
+                try XCTUnwrap(Float(fields[1]))
+            )
+        }
+
+        XCTAssertEqual(sharedSamples.count, temperatureData.samples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            XCTAssertEqual(sharedSample.0, temperatureData.samples[index].timeStamp)
+            XCTAssertEqual(sharedSample.1, temperatureData.samples[index].temperature, accuracy: 0.00001)
+        }
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func testPressureRawType0ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "0b009435770000000000ae277b44"
+        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.pressureRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let pressureData = try PressureData.parseDataFromDataFrame(frame: dataFrame)
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt64, Float) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt64(fields[0])),
+                try XCTUnwrap(Float(fields[1]))
+            )
+        }
+
+        XCTAssertEqual(sharedSamples.count, pressureData.samples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            XCTAssertEqual(sharedSample.0, pressureData.samples[index].timeStamp)
+            XCTAssertEqual(sharedSample.1, pressureData.samples[index].pressure, accuracy: 0.00001)
+        }
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testTemperatureGoldenVectorsMatchIOSCommunicationsBehavior() throws {
