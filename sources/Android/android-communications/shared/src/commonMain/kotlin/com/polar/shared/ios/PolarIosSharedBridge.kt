@@ -45,6 +45,7 @@ import com.polar.shared.sdk.PolarPpiMovementName
 import com.polar.shared.sdk.PolarPpiSampleTriggerName
 import com.polar.shared.sdk.PolarPpiSkinContactName
 import com.polar.shared.sdk.PolarPpiStatusNames
+import com.polar.shared.sdk.PolarRestServiceModels
 import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
 import com.polar.shared.sdk.PolarSdLogTriggerName
 import com.polar.shared.sdk.PolarSdkModelMappers
@@ -259,6 +260,30 @@ object PolarIosSharedBridge {
 
     fun spo2TriggerType(value: Int): String? {
         return PolarSpo2Models.triggerTypeName(value)
+    }
+
+    fun restServiceNames(entries: String): String {
+        return PolarRestServiceModels.serviceNames(entries.lineMap()).joinToString("|")
+    }
+
+    fun restServicePaths(entries: String): String {
+        return PolarRestServiceModels.servicePaths(entries.lineMap()).joinToString("|")
+    }
+
+    fun restActionNames(entries: String): String {
+        return PolarRestServiceModels.actionNames(entries.lineMap()).joinToString("|")
+    }
+
+    fun restActionPaths(entries: String): String {
+        return PolarRestServiceModels.actionPaths(entries.lineMap()).joinToString("|")
+    }
+
+    fun restEventDetails(detailsCsv: String, triggersCsv: String): String {
+        return PolarRestServiceModels.eventDetails(mapOf("details" to detailsCsv.csvFields(), "triggers" to triggersCsv.csvFields())).joinToString("|")
+    }
+
+    fun restEventTriggers(detailsCsv: String, triggersCsv: String): String {
+        return PolarRestServiceModels.eventTriggers(mapOf("details" to detailsCsv.csvFields(), "triggers" to triggersCsv.csvFields())).joinToString("|")
     }
 
     fun pmdActiveMeasurementIosState(responseByte: Int): String {
@@ -716,6 +741,17 @@ object PolarIosSharedBridge {
     private fun String.csvFields(): List<String> {
         if (isEmpty()) return emptyList()
         return split(",").map { it.trim() }
+    }
+
+    private fun String.lineMap(): Map<String, String> {
+        if (isEmpty()) return emptyMap()
+        return lineSequence()
+            .filter { line -> line.isNotEmpty() }
+            .associate { line ->
+                val separator = line.indexOf('\t')
+                require(separator >= 0) { "Missing tab separator in line-map entry" }
+                line.substring(0, separator) to line.substring(separator + 1)
+            }
     }
 
     private fun List<String>.optionalField(index: Int): String? {

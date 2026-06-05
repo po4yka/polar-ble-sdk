@@ -2,6 +2,9 @@
 
 import Foundation
 import CoreBluetooth
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 /// Lists REST API services and corresponding paths
 ///
@@ -15,12 +18,20 @@ public struct PolarDeviceRestApiServices: Decodable {
     
     /// Lists REST API service names
     var serviceNames: [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restServiceNames(entries: (pathsForServices ?? [:]).sharedLineMap))
+        #else
         Array((pathsForServices ?? [:]).keys)
+        #endif
     }
     
     /// Lists REST API service paths
     var servicePaths: [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restServicePaths(entries: (pathsForServices ?? [:]).sharedLineMap))
+        #else
         Array((pathsForServices ?? [:]).values)
+        #endif
     }
 }
 
@@ -95,12 +106,20 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     
     /// Just the action names from `actions` property
     var actionNames: [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restActionNames(entries: actions.sharedLineMap))
+        #else
         return Array(actions.keys)
+        #endif
     }
     
     /// Just the action paths from `actions` property
     var actionPaths: [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restActionPaths(entries: actions.sharedLineMap))
+        #else
         return Array(actions.values)
+        #endif
     }
     
     /// Lists event details that may be requested as returned event parameter values using action
@@ -109,7 +128,12 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     ///      - eventName: the REST API event to get details for
     /// - returns: detail names
     func eventDetails(for eventName: String) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        let eventDescription = dictionary?[eventName] as? [String: [String]] ?? [:]
+        return sharedList(PolarIosSharedBridge.shared.restEventDetails(detailsCsv: (eventDescription["details"] ?? []).joined(separator: ","), triggersCsv: (eventDescription["triggers"] ?? []).joined(separator: ",")))
+        #else
         return (dictionary?[eventName] as? [String: [String]])?["details"] ?? []
+        #endif
     }
     
     /// Lists triggers that may be used as trigger parameter list values when action path contains
@@ -118,9 +142,27 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     ///      - eventName: the REST API event to get triggers for
     /// - returns: triggers for the events
     func eventTriggers(for eventName: String) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        let eventDescription = dictionary?[eventName] as? [String: [String]] ?? [:]
+        return sharedList(PolarIosSharedBridge.shared.restEventTriggers(detailsCsv: (eventDescription["details"] ?? []).joined(separator: ","), triggersCsv: (eventDescription["triggers"] ?? []).joined(separator: ",")))
+        #else
         return  (dictionary?[eventName] as? [String: [String]])?["triggers"] ?? []
+        #endif
     }
 }
+
+#if canImport(PolarBleSdkShared)
+private func sharedList(_ value: String) -> [String] {
+    if value.isEmpty { return [] }
+    return value.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+}
+
+private extension Dictionary where Key == String, Value == String {
+    var sharedLineMap: String {
+        return map { key, value in "\(key)\t\(value)" }.joined(separator: "\n")
+    }
+}
+#endif
 
 /// Methods related to working with services conforming to SAGRFC95 Service discovery over PFTP
 public protocol PolarRestServiceApi {

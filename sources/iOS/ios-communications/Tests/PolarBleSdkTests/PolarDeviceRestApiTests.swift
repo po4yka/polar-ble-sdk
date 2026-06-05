@@ -4,6 +4,9 @@
 import XCTest
 
 @testable import PolarBleSdk
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 class PolarDeviceRestApiServiceTests: XCTestCase {
     
@@ -42,6 +45,27 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         
         XCTAssertEqual(result.pathsForServices?["ui_states"], "/REST/UISTATES.API")
         XCTAssertEqual(result.pathsForServices?["training"], "/REST/TRAINING.API")
+    }
+
+    func testRestServiceProjectionUsesSharedKmpWhenLinked() throws {
+        let serviceJson = #"{"services":{"ui_states":"/REST/UISTATES.API","training":"/REST/TRAINING.API"}}"#
+        let serviceList = try JSONDecoder().decode(PolarDeviceRestApiServices.self, from: try XCTUnwrap(serviceJson.data(using: .utf8)))
+
+        #if canImport(PolarBleSdkShared)
+        let entries = "ui_states\t/REST/UISTATES.API\ntraining\t/REST/TRAINING.API"
+        XCTAssertEqual(Set(["ui_states", "training"]), Set(PolarIosSharedBridge.shared.restServiceNames(entries: entries).split(separator: "|").map(String.init)))
+        XCTAssertEqual(Set(["/REST/UISTATES.API", "/REST/TRAINING.API"]), Set(PolarIosSharedBridge.shared.restServicePaths(entries: entries).split(separator: "|").map(String.init)))
+        #endif
+
+        XCTAssertEqual(Set(["ui_states", "training"]), Set(serviceList.serviceNames))
+        XCTAssertEqual(Set(["/REST/UISTATES.API", "/REST/TRAINING.API"]), Set(serviceList.servicePaths))
+
+        let descriptionJson = #"{"events":["lap_data"],"cmd":{"subscribe":"./REST/TRAINING.API?cmd=subscribe&event="},"lap_data":{"details":["sport","duration"],"triggers":["manual"]}}"#
+        let description = try JSONDecoder().decode(PolarDeviceRestApiServiceDescription.self, from: try XCTUnwrap(descriptionJson.data(using: .utf8)))
+        XCTAssertEqual(["subscribe"], description.actionNames)
+        XCTAssertEqual(["./REST/TRAINING.API?cmd=subscribe&event="], description.actionPaths)
+        XCTAssertEqual(["sport", "duration"], description.eventDetails(for: "lap_data"))
+        XCTAssertEqual(["manual"], description.eventTriggers(for: "lap_data"))
     }
     
     func testConvertsLapSummaryExampleJson() throws {
