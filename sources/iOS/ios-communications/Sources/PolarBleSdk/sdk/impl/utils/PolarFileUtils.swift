@@ -74,8 +74,10 @@ class PolarFileUtils {
         var path = directoryPath
         if !path.hasSuffix("/") { path = path + "/" }
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "list-low-level-directory-success", command: "GET", path: path)
+        operation.command = plannedOperation?.command ?? .get
+        operation.path = plannedOperation?.path ?? path
+        PolarRuntimePlanner.fileFacade(id: "list-low-level-directory-success", command: "GET", path: path)
         let request = try operation.serializedData()
         do {
             let data = try await client.request(request)
