@@ -23,6 +23,37 @@ internal class PolarTrainingSessionUtils {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         return formatter
     }()
+
+    static func trainingSessionSummaryReadOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return trainingSessionFileOperation(id: "training-session-read-summary", command: "GET", path: path)
+    }
+
+    static func trainingSessionExerciseFileReadOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return trainingSessionFileOperation(id: "training-session-read-exercise-file", command: "GET", path: path)
+    }
+
+    static func trainingSessionDeleteParentReadOperation(reference: PolarTrainingSessionReference) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        let components = reference.path.split(separator: "/")
+        return trainingSessionFileOperation(id: "training-session-delete-read-parent", command: "GET", path: "/U/0/" + components[2] + "/E/")
+    }
+
+    static func trainingSessionDeleteRemoveOperation(reference: PolarTrainingSessionReference, parentEntryCount: Int) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        let components = reference.path.split(separator: "/")
+        let removePath = parentEntryCount <= 1 ? "/U/0/" + components[2] + "/E/" : "/U/0/" + components[2] + "/E/" + components[4] + "/"
+        return trainingSessionFileOperation(id: "training-session-delete-remove", command: "REMOVE", path: removePath)
+    }
+
+    private static func trainingSessionFileOperation(id: String, command: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
+            return plannedOperation
+        }
+        switch command {
+        case "REMOVE":
+            return (.remove, path)
+        default:
+            return (.get, path)
+        }
+    }
     
     static func getTrainingSessionReferences(
         client: BlePsFtpClient,
@@ -103,9 +134,10 @@ internal class PolarTrainingSessionUtils {
     
     static func readTrainingSession(client: BlePsFtpClient, reference: PolarTrainingSessionReference) async throws -> PolarTrainingSession {
         BleLogger.trace("readTrainingSession: Starting to read session from path: \(reference.path)")
+        let summaryOperation = trainingSessionSummaryReadOperation(path: reference.path)
         var tsessOp = Protocol_PbPFtpOperation()
-        tsessOp.command = .get
-        tsessOp.path = reference.path
+        tsessOp.command = summaryOperation.command
+        tsessOp.path = summaryOperation.path
         let response = try await client.request(try tsessOp.serializedBytes())
         let sessionSummary = try Data_PbTrainingSession(serializedBytes: response as Data)
         let exercises = try await withThrowingTaskGroup(of: PolarExercise.self) { group in
@@ -147,9 +179,10 @@ internal class PolarTrainingSessionUtils {
         defer { client.progressCallback = nil }
         progressHandler(PolarTrainingSessionProgress(totalBytes: totalBytes, completedBytes: 0, progressPercent: 0, currentFileName: nil))
         
+        let summaryOperation = trainingSessionSummaryReadOperation(path: reference.path)
         var tsessOp = Protocol_PbPFtpOperation()
-        tsessOp.command = .get
-        tsessOp.path = reference.path
+        tsessOp.command = summaryOperation.command
+        tsessOp.path = summaryOperation.path
         let response = try await client.request(try tsessOp.serializedBytes())
         let sessionSummary = try Data_PbTrainingSession(serializedBytes: response as Data)
         let exercises = try await withThrowingTaskGroup(of: PolarExercise.self) { group in
@@ -165,19 +198,16 @@ internal class PolarTrainingSessionUtils {
     }
     
     static func deleteTrainingSession(client: BlePsFtpClient, reference: PolarTrainingSessionReference) async throws {
-        let components = reference.path.split(separator: "/")
+        let parentReadOperation = trainingSessionDeleteParentReadOperation(reference: reference)
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = "/U/0/" + components[2] + "/E/"
+        operation.command = parentReadOperation.command
+        operation.path = parentReadOperation.path
         let content = try await client.request(try operation.serializedBytes())
         let dir = try Protocol_PbPFtpDirectory(serializedBytes: content as Data)
+        let removePlan = trainingSessionDeleteRemoveOperation(reference: reference, parentEntryCount: dir.entries.count)
         var removeOperation = Protocol_PbPFtpOperation()
-        removeOperation.command = .remove
-        if dir.entries.count <= 1 {
-            removeOperation.path = "/U/0/" + components[2] + "/E/"
-        } else {
-            removeOperation.path = "/U/0/" + components[2] + "/E/" + components[4] + "/"
-        }
+        removeOperation.command = removePlan.command
+        removeOperation.path = removePlan.path
         _ = try await client.request(try removeOperation.serializedBytes())
     }
     
@@ -189,9 +219,10 @@ internal class PolarTrainingSessionUtils {
             for dataType in exercise.exerciseDataTypes {
                 group.addTask {
                     let filePath = "\(basePath)/\(dataType.rawValue)"
+                    let fileOperation = trainingSessionExerciseFileReadOperation(path: filePath)
                     var op = Protocol_PbPFtpOperation()
-                    op.command = .get
-                    op.path = filePath
+                    op.command = fileOperation.command
+                    op.path = fileOperation.path
                     let response = try await client.request(try op.serializedBytes())
                     let data: Data = filePath.hasSuffix(".GZB") ? try unzipGzip(response as Data) : response as Data
                     return (dataType, data)

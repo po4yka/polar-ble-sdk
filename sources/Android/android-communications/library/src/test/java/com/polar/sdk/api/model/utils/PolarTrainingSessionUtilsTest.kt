@@ -43,6 +43,38 @@ class PolarTrainingSessionUtilsTest {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss", Locale.ENGLISH)
 
     @Test
+    fun `training session read and delete headers use shared file facade planning`() {
+        val reference = PolarTrainingSessionReference(
+            date = LocalDate.of(2026, 1, 2),
+            path = "/U/0/20260102/E/123456/TSESS.BPB",
+            trainingDataTypes = listOf(PolarTrainingSessionDataTypes.TRAINING_SESSION_SUMMARY),
+            exercises = emptyList(),
+            fileSize = 1024L
+        )
+
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/E/123456/TSESS.BPB",
+            PolarTrainingSessionUtils.trainingSessionSummaryReadOperation(reference.path)
+        )
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/E/123456/00/BASE.BPB",
+            PolarTrainingSessionUtils.trainingSessionExerciseFileReadOperation("/U/0/20260102/E/123456/00/BASE.BPB")
+        )
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/E/",
+            PolarTrainingSessionUtils.trainingSessionDeleteParentReadOperation(reference)
+        )
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/20260102/E/",
+            PolarTrainingSessionUtils.trainingSessionDeleteRemoveOperation(reference, parentEntryCount = 1)
+        )
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/20260102/E/123456/",
+            PolarTrainingSessionUtils.trainingSessionDeleteRemoveOperation(reference, parentEntryCount = 2)
+        )
+    }
+
+    @Test
     fun `getTrainingSessionReferences() should return all training session references`() = runTest {
         // Arrange
         val client = mockk<BlePsFtpClient>()

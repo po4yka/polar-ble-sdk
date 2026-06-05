@@ -18,6 +18,36 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         cancellables.removeAll()
     }
 
+    func testTrainingSessionReadAndDeleteHeadersUseSharedFileFacadePlanning() throws {
+        let reference = PolarTrainingSessionReference(
+            date: try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2, hour: 12, minute: 34, second: 56).date),
+            path: "/U/0/20260102/E/123456/TSESS.BPB",
+            trainingDataTypes: [.trainingSessionSummary],
+            exercises: [],
+            fileSize: 1024
+        )
+
+        let summaryOperation = PolarTrainingSessionUtils.trainingSessionSummaryReadOperation(path: reference.path)
+        XCTAssertEqual(summaryOperation.command, .get)
+        XCTAssertEqual(summaryOperation.path, "/U/0/20260102/E/123456/TSESS.BPB")
+
+        let exerciseOperation = PolarTrainingSessionUtils.trainingSessionExerciseFileReadOperation(path: "/U/0/20260102/E/123456/00/BASE.BPB")
+        XCTAssertEqual(exerciseOperation.command, .get)
+        XCTAssertEqual(exerciseOperation.path, "/U/0/20260102/E/123456/00/BASE.BPB")
+
+        let parentOperation = PolarTrainingSessionUtils.trainingSessionDeleteParentReadOperation(reference: reference)
+        XCTAssertEqual(parentOperation.command, .get)
+        XCTAssertEqual(parentOperation.path, "/U/0/20260102/E/")
+
+        let removeWholeDayOperation = PolarTrainingSessionUtils.trainingSessionDeleteRemoveOperation(reference: reference, parentEntryCount: 1)
+        XCTAssertEqual(removeWholeDayOperation.command, .remove)
+        XCTAssertEqual(removeWholeDayOperation.path, "/U/0/20260102/E/")
+
+        let removeSessionOperation = PolarTrainingSessionUtils.trainingSessionDeleteRemoveOperation(reference: reference, parentEntryCount: 2)
+        XCTAssertEqual(removeSessionOperation.command, .remove)
+        XCTAssertEqual(removeSessionOperation.path, "/U/0/20260102/E/123456/")
+    }
+
     func testTrainingSessionFileClassificationUsesSharedBridgeWhenLinked() async throws {
         let date = "20250101"
         let time = "123000"

@@ -32,6 +32,42 @@ internal object PolarTrainingSessionUtils {
 
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ENGLISH)
 
+    internal fun trainingSessionSummaryReadOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return trainingSessionFileOperation("training-session-read-summary", "GET", path)
+    }
+
+    internal fun trainingSessionExerciseFileReadOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return trainingSessionFileOperation("training-session-read-exercise-file", "GET", path)
+    }
+
+    internal fun trainingSessionDeleteParentReadOperation(reference: PolarTrainingSessionReference): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val components = reference.path.split("/").toTypedArray()
+        val exerciseParent = ARABICA_USER_ROOT_FOLDER + components[3] + "/E/"
+        return trainingSessionFileOperation("training-session-delete-read-parent", "GET", exerciseParent)
+    }
+
+    internal fun trainingSessionDeleteRemoveOperation(
+        reference: PolarTrainingSessionReference,
+        parentEntryCount: Int
+    ): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val components = reference.path.split("/").toTypedArray()
+        val removePath = if (parentEntryCount <= 1) {
+            "/U/0/${components[3]}/E/"
+        } else {
+            "/U/0/${components[3]}/E/${components[5]}/"
+        }
+        return trainingSessionFileOperation("training-session-delete-remove", "REMOVE", removePath)
+    }
+
+    private fun trainingSessionFileOperation(
+        id: String,
+        command: String,
+        path: String
+    ): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val plan = PolarRuntimePlannerAdapter.planFileFacade(id, command, path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
+
     fun getTrainingSessionReferences(
         client: BlePsFtpClient,
         fromDate: LocalDate? = null,
@@ -108,9 +144,10 @@ internal object PolarTrainingSessionUtils {
         client: BlePsFtpClient,
         reference: PolarTrainingSessionReference
     ): PolarTrainingSession {
+        val summaryOperation = trainingSessionSummaryReadOperation(reference.path)
         val tsessOp = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-            .setPath(reference.path)
+            .setCommand(summaryOperation.first)
+            .setPath(summaryOperation.second)
             .build()
 
         val response = client.request(tsessOp.toByteArray())
@@ -132,9 +169,10 @@ internal object PolarTrainingSessionUtils {
         val results = exercise.exerciseDataTypes.map { dataType ->
             val filePath = "$basePath/${dataType.deviceFileName}"
             BleLogger.d(TAG, "  Fetching file: $filePath")
+            val readOperation = trainingSessionExerciseFileReadOperation(filePath)
             val operation = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                .setPath(filePath)
+                .setCommand(readOperation.first)
+                .setPath(readOperation.second)
                 .build()
             val data = try {
                 val fileResponse = client.request(operation.toByteArray())
@@ -209,24 +247,20 @@ internal object PolarTrainingSessionUtils {
     ): PolarTrainingSession = readTrainingSessionWithProgress(client, reference)
 
     suspend fun deleteTrainingSession(client: BlePsFtpClient, reference: PolarTrainingSessionReference) {
-        val components = reference.path.split("/").toTypedArray()
-        val exerciseParent = ARABICA_USER_ROOT_FOLDER + components[3] + "/E/"
+        val parentReadOperation = trainingSessionDeleteParentReadOperation(reference)
 
         val listOp = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-            .setPath(exerciseParent)
+            .setCommand(parentReadOperation.first)
+            .setPath(parentReadOperation.second)
             .build()
 
         try {
             val listResponse = client.request(listOp.toByteArray())
             val directory = PftpResponse.PbPFtpDirectory.parseFrom(listResponse.toByteArray())
-            val removePath = if (directory.entriesCount <= 1) {
-                "/U/0/${components[3]}/E/"
-            } else {
-                "/U/0/${components[3]}/E/${components[5]}/"
-            }
+            val removeOperation = trainingSessionDeleteRemoveOperation(reference, directory.entriesCount)
+            val removePath = removeOperation.second
             val removeOp = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(PftpRequest.PbPFtpOperation.Command.REMOVE)
+                .setCommand(removeOperation.first)
                 .setPath(removePath)
                 .build()
             client.request(removeOp.toByteArray())
