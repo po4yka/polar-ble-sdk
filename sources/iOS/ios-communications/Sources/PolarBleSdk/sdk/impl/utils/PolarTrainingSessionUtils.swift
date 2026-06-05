@@ -32,6 +32,17 @@ internal class PolarTrainingSessionUtils {
         return trainingSessionFileOperation(id: "training-session-read-exercise-file", command: "GET", path: path)
     }
 
+    static func trainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        let sharedReference = trainingSessionSharedReferenceText(reference: reference)
+        let sharedOrder = PolarIosSharedBridge.shared.trainingSessionPayloadFetchOrder(referenceText: sharedReference)
+        if !sharedOrder.isEmpty {
+            return sharedOrder.split(separator: "\n").map(String.init)
+        }
+        #endif
+        return fallbackTrainingSessionPayloadFetchOrder(reference: reference)
+    }
+
     static func trainingSessionDirectoryReadOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         return trainingSessionFileOperation(id: "training-session-read-directory", command: "GET", path: path)
     }
@@ -144,10 +155,11 @@ internal class PolarTrainingSessionUtils {
         tsessOp.path = summaryOperation.path
         let response = try await client.request(try tsessOp.serializedBytes())
         let sessionSummary = try Data_PbTrainingSession(serializedBytes: response as Data)
+        let payloadFetchOrder = trainingSessionPayloadFetchOrder(reference: reference)
         let exercises = try await withThrowingTaskGroup(of: PolarExercise.self) { group in
             for exercise in reference.exercises {
                 group.addTask {
-                    return try await readExercise(client: client, exercise: exercise)
+                    return try await readExercise(client: client, exercise: exercise, payloadFetchOrder: payloadFetchOrder)
                 }
             }
             var results: [PolarExercise] = []
@@ -189,9 +201,10 @@ internal class PolarTrainingSessionUtils {
         tsessOp.path = summaryOperation.path
         let response = try await client.request(try tsessOp.serializedBytes())
         let sessionSummary = try Data_PbTrainingSession(serializedBytes: response as Data)
+        let payloadFetchOrder = trainingSessionPayloadFetchOrder(reference: reference)
         let exercises = try await withThrowingTaskGroup(of: PolarExercise.self) { group in
             for exercise in reference.exercises {
-                group.addTask { return try await readExercise(client: client, exercise: exercise) }
+                group.addTask { return try await readExercise(client: client, exercise: exercise, payloadFetchOrder: payloadFetchOrder) }
             }
             var results: [PolarExercise] = []
             for try await exercise in group { results.append(exercise) }
@@ -217,12 +230,19 @@ internal class PolarTrainingSessionUtils {
     
     // MARK: - Private helpers
     
-    private static func readExercise(client: BlePsFtpClient, exercise: PolarExercise) async throws -> PolarExercise {
+    private static func readExercise(client: BlePsFtpClient, exercise: PolarExercise, payloadFetchOrder: [String]) async throws -> PolarExercise {
         let basePath = exercise.path
         let dataResults = try await withThrowingTaskGroup(of: (PolarExerciseDataTypes, Data).self) { group in
-            for dataType in exercise.exerciseDataTypes {
+            let dataTypesByFileName = Dictionary(uniqueKeysWithValues: exercise.exerciseDataTypes.map { ($0.rawValue, $0) })
+            let plannedFilePaths = payloadFetchOrder
+                .filter { $0.hasPrefix(basePath + "/") }
+                .filter { dataTypesByFileName[($0 as NSString).lastPathComponent] != nil }
+            let fallbackFilePaths = exercise.exerciseDataTypes
+                .map { "\(basePath)/\($0.rawValue)" }
+                .filter { !plannedFilePaths.contains($0) }
+            for filePath in plannedFilePaths + fallbackFilePaths {
                 group.addTask {
-                    let filePath = "\(basePath)/\(dataType.rawValue)"
+                    let dataType = dataTypesByFileName[(filePath as NSString).lastPathComponent]!
                     let fileOperation = trainingSessionExerciseFileReadOperation(path: filePath)
                     var op = Protocol_PbPFtpOperation()
                     op.command = fileOperation.command
@@ -356,6 +376,35 @@ internal class PolarTrainingSessionUtils {
         return references.filter { $0.fileSize >= 0 }
     }
 
+    private static func trainingSessionSharedReferenceText(reference: PolarTrainingSessionReference) -> String {
+        let sharedDateFormatter = DateFormatter()
+        sharedDateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        sharedDateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        let referenceLine = [
+            "R",
+            sharedDateFormatter.string(from: reference.date),
+            reference.path,
+            reference.trainingDataTypes.map { $0.sharedTypeName }.joined(separator: ";"),
+            String(reference.fileSize)
+        ].joined(separator: "|")
+        let exerciseLines = reference.exercises.map { exercise -> String in
+            let androidPath = exercise.path.hasSuffix(".BPB") || exercise.path.hasSuffix(".GZB") ? exercise.path : "\(exercise.path)/BASE.BPB"
+            let fileSizes = (exercise.fileSizes ?? [:])
+                .sorted { $0.key < $1.key }
+                .map { "\($0.key):\($0.value)" }
+                .joined(separator: ";")
+            return [
+                "E",
+                String(exercise.index),
+                androidPath,
+                exercise.path,
+                exercise.exerciseDataTypes.map { $0.sharedTypeName }.joined(separator: ";"),
+                fileSizes
+            ].joined(separator: "|")
+        }
+        return ([referenceLine] + exerciseLines).joined(separator: "\n")
+    }
+
     private static func sharedFileSizes(_ value: String) -> [String: Int64] {
         var fileSizes: [String: Int64] = [:]
         for entry in value.split(separator: ";") {
@@ -375,6 +424,12 @@ internal class PolarTrainingSessionUtils {
         return afterFrom && beforeTo
     }
     #endif
+
+    private static func fallbackTrainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference) -> [String] {
+        return [reference.path] + reference.exercises.flatMap { exercise in
+            exercise.exerciseDataTypes.map { "\(exercise.path)/\($0.rawValue)" }
+        }
+    }
 }
 
 private extension PolarTrainingSessionDataTypes {
@@ -391,6 +446,12 @@ private extension PolarTrainingSessionDataTypes {
         switch value {
         case "TRAINING_SESSION_SUMMARY": return .trainingSessionSummary
         default: return nil
+        }
+    }
+
+    var sharedTypeName: String {
+        switch self {
+        case .trainingSessionSummary: return "TRAINING_SESSION_SUMMARY"
         }
     }
 }
@@ -416,6 +477,19 @@ private extension PolarExerciseDataTypes {
         case "SAMPLES_GZIP": return .samplesGzip
         case "SAMPLES_ADVANCED_FORMAT_GZIP": return .samplesAdvancedFormatGzip
         default: return nil
+        }
+    }
+
+    var sharedTypeName: String {
+        switch self {
+        case .exerciseSummary: return "EXERCISE_SUMMARY"
+        case .route: return "ROUTE"
+        case .routeGzip: return "ROUTE_GZIP"
+        case .routeAdvancedFormat: return "ROUTE_ADVANCED_FORMAT"
+        case .routeAdvancedFormatGzip: return "ROUTE_ADVANCED_FORMAT_GZIP"
+        case .samples: return "SAMPLES"
+        case .samplesGzip: return "SAMPLES_GZIP"
+        case .samplesAdvancedFormatGzip: return "SAMPLES_ADVANCED_FORMAT_GZIP"
         }
     }
 }

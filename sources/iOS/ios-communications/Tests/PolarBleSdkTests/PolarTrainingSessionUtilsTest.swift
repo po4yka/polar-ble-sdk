@@ -79,6 +79,39 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         XCTAssertEqual(references.first?.exercises.first?.exerciseDataTypes, [.exerciseSummary, .samplesAdvancedFormatGzip])
     }
 
+    func testTrainingSessionPayloadFetchOrderUsesSharedPlanner() throws {
+        let reference = PolarTrainingSessionReference(
+            date: try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2, hour: 12, minute: 34, second: 56).date),
+            path: "/U/0/20260102/E/123456/TSESS.BPB",
+            trainingDataTypes: [.trainingSessionSummary],
+            exercises: [
+                PolarExercise(
+                    index: 0,
+                    path: "/U/0/20260102/E/123456/00",
+                    exerciseDataTypes: [.exerciseSummary, .route, .routeGzip, .samplesAdvancedFormatGzip],
+                    fileSizes: [
+                        "BASE.BPB": 10,
+                        "ROUTE.BPB": 20,
+                        "ROUTE.GZB": 30,
+                        "SAMPLES2.GZB": 40
+                    ]
+                )
+            ],
+            fileSize: 100
+        )
+
+        XCTAssertEqual(
+            [
+                "/U/0/20260102/E/123456/TSESS.BPB",
+                "/U/0/20260102/E/123456/00/BASE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.GZB",
+                "/U/0/20260102/E/123456/00/SAMPLES2.GZB"
+            ],
+            PolarTrainingSessionUtils.trainingSessionPayloadFetchOrder(reference: reference)
+        )
+    }
+
     // MARK: - Helpers
 
     private func awaitFirst<T>(_ publisher: AnyPublisher<T, Error>, timeout: TimeInterval = 5) throws -> T? {

@@ -69,8 +69,10 @@ import com.polar.shared.sdk.PolarSleepRatingName
 import com.polar.shared.sdk.PolarSleepWakeStateName
 import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.shared.sdk.PolarStoredDataModels
+import com.polar.shared.sdk.PolarTrainingExerciseReference
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
+import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarTrainingReadinessName
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
@@ -261,6 +263,35 @@ object PolarIosSharedBridge {
                 ).joinToString("|")
             }
         }.joinToString("\n")
+    }
+
+    fun trainingSessionPayloadFetchOrder(referenceText: String): String {
+        val lines = referenceText.lines().filter { line -> line.isNotEmpty() }
+        val referenceFields = lines.firstOrNull()?.split('|') ?: return ""
+        if (referenceFields.size < 5 || referenceFields[0] != "R") return ""
+        val exercises = lines.drop(1).mapNotNull { line ->
+            val fields = line.split('|')
+            if (fields.size < 6 || fields[0] != "E") {
+                null
+            } else {
+                PolarTrainingExerciseReference(
+                    index = fields[1].toIntOrNull() ?: return@mapNotNull null,
+                    androidPath = fields[2],
+                    iosPath = fields[3],
+                    exerciseDataTypes = fields[4].semicolonList(),
+                    fileSizes = fields[5].semicolonKeyLongMap()
+                )
+            }
+        }
+        val reference = PolarTrainingSessionReference(
+            dateTime = referenceFields[1],
+            date = referenceFields[1].substringBefore('T', missingDelimiterValue = referenceFields[1]),
+            path = referenceFields[2],
+            trainingDataTypes = referenceFields[3].semicolonList(),
+            exercises = exercises,
+            fileSize = referenceFields[4].toLongOrNull() ?: 0L
+        )
+        return PolarTrainingSessionModels.payloadFetchOrder(reference).joinToString("\n")
     }
 
     fun ecgType0Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
@@ -1279,6 +1310,19 @@ object PolarIosSharedBridge {
 
     private fun String.csvValues(): List<String> {
         return split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    }
+
+    private fun String.semicolonList(): List<String> {
+        return split(";").map { it.trim() }.filter { it.isNotEmpty() }
+    }
+
+    private fun String.semicolonKeyLongMap(): Map<String, Long> {
+        if (isEmpty()) return emptyMap()
+        return semicolonList().mapNotNull { entry ->
+            val key = entry.substringBefore(':', missingDelimiterValue = "")
+            val value = entry.substringAfter(':', missingDelimiterValue = "").toLongOrNull()
+            if (key.isEmpty() || value == null) null else key to value
+        }.toMap()
     }
 
     private fun PolarRuntimePlan.notificationCommandsCsv(): String {
