@@ -183,6 +183,14 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func restFacadeGetOperation(id: String, path: String, payloadShape: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
+        #if canImport(PolarBleSdkShared)
+        return fileOperation(PolarIosSharedBridge.shared.planRuntimeRestFacadeGetOperation(id: id, path: path, payloadShape: payloadShape)).first
+        #else
+        return nil
+        #endif
+    }
+
     @discardableResult
     static func fileFacade(id: String, command: String, path: String, payloadHex: String = "") -> String {
         #if canImport(PolarBleSdkShared)

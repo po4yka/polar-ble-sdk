@@ -2021,6 +2021,8 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("success", PolarRuntimePlanner.setLocalTimeH10(localTimeHour: 14))
         XCTAssertEqual([Protocol_PbPFtpQuery.setLocalTime.rawValue], PolarRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: 14))
         XCTAssertEqual("success", PolarRuntimePlanner.restFacadeGet(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json"))
+        XCTAssertEqual(.get, PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")?.command)
+        XCTAssertEqual("/REST/SERVICE.API", PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")?.path)
         XCTAssertEqual("success", PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102"))
         XCTAssertEqual(.put, PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102")?.command)
         XCTAssertEqual("/U/0/CUSTOM.BIN", PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102")?.path)

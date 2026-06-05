@@ -1044,6 +1044,22 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun planRuntimeRestFacadeGetOperation(id: String, path: String, payloadShape: String): String {
+        return PolarRuntimeOrchestration.planRestFacade(
+            PolarRestFacadeOperation(
+                id = id,
+                command = "GET",
+                path = path,
+                payloadShape = payloadShape.takeIf { it.isNotEmpty() },
+                expectedFields = emptyList(),
+                transportMode = null,
+                responseErrorStatus = null,
+                responseErrorMessage = null,
+                expectedPlatformTerminal = null
+            )
+        ).fileOperationCommandsCsv()
+    }
+
     fun planRuntimeFileFacade(id: String, command: String, path: String, payloadHex: String): String {
         return PolarRuntimeOrchestration.planFileFacade(
             PolarFileFacadeOperation(
