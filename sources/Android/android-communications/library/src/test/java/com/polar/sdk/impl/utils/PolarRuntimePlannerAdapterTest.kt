@@ -123,4 +123,16 @@ class PolarRuntimePlannerAdapterTest {
             readThenWrite
         )
     }
+
+    @Test
+    fun `shared stored data helpers preserve Android facade filters and empty parent cleanup`() {
+        Assert.assertTrue(PolarRuntimePlannerAdapter.storedDataEntryMatchesFilter("TRC001.BIN", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.storedDataEntryMatchesFilter("20260530.SLG", includeSuffixes = listOf(".SLG", ".TXT")))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.storedDataEntryMatchesFilter("USERID.BPB", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.shouldPruneStoredDataEmptyParents("ACT"))
+        Assert.assertEquals(
+            listOf("/U/0/20260530/ACT", "/U/0/20260530"),
+            PolarRuntimePlannerAdapter.storedDataEmptyParentDirectories("/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash = false)
+        )
+    }
 }

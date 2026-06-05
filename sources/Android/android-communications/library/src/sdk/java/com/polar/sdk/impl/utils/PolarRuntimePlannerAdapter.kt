@@ -226,6 +226,18 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun storedDataEntryMatchesFilter(entry: String, includePrefixes: List<String> = emptyList(), includeSuffixes: List<String> = emptyList()): Boolean {
+        return PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter(entry, includePrefixes, includeSuffixes)
+    }
+
+    fun shouldPruneStoredDataEmptyParents(dataType: String): Boolean {
+        return PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents(dataType)
+    }
+
+    fun storedDataEmptyParentDirectories(filePath: String, trailingSlash: Boolean): List<String> {
+        return PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories(filePath, trailingSlash = trailingSlash)
+    }
+
     fun planOfflineTriggerSet(currentTypes: List<String>, desiredTypes: List<String>, secretPresent: Boolean) {
         PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
             operation = "setOfflineRecordingTrigger",

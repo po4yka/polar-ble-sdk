@@ -62,7 +62,6 @@ import com.polar.sdk.api.model.restapi.PolarDeviceRestApiServiceDescription
 import com.polar.sdk.api.model.restapi.PolarDeviceRestApiServices
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionReference
 import com.polar.sdk.api.PolarTrainingSessionApi
-import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.sdk.impl.utils.PolarBackupManager
 import com.polar.sdk.impl.utils.PolarDataUtils
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPMDClientLocationDataToPolarLocationData
@@ -2601,7 +2600,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 cond = PolarFileUtils.FetchRecursiveCondition { entry: String ->
                     entry.matches(Regex("^(\\d{8})(/)")) ||
                             entry == "${entryPattern}/" ||
-                            PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter(entry, includeSuffixes = listOf(".SLG", ".TXT"))
+                            PolarRuntimePlannerAdapter.storedDataEntryMatchesFilter(entry, includeSuffixes = listOf(".SLG", ".TXT"))
                 }
             }
 
@@ -2643,10 +2642,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                     }
                 }
 
-            if (PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents(dataType.type)) {
+            if (PolarRuntimePlannerAdapter.shouldPruneStoredDataEmptyParents(dataType.type)) {
                 val dirs = mutableListOf<String>()
                 for (file in deletedFiles) {
-                    dirs += PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories(file, trailingSlash = false)
+                    dirs += PolarRuntimePlannerAdapter.storedDataEmptyParentDirectories(file, trailingSlash = false)
                 }
                 for (dir in dirs) {
                     val isEmpty = checkIfDirectoryIsEmpty(dir, client)
@@ -2696,7 +2695,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         val cond = PolarFileUtils.FetchRecursiveCondition { entry: String ->
             entry.matches(Regex("([A-Za-z]{3}[0-9]{1,3}).BIN$")) &&
-                    PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter(entry, includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN"))
+                    PolarRuntimePlannerAdapter.storedDataEntryMatchesFilter(entry, includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN"))
         }
 
         try {
