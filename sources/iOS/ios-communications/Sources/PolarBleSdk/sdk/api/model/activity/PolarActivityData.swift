@@ -1,6 +1,9 @@
 //  Copyright © 2025 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 // [PolarActivitySamplesData] data for given [startTime].
 public class PolarActivityData: Codable {
@@ -34,6 +37,12 @@ public class PolarActivityData: Codable {
         case NON_WEAR = "NON_WEAR"
 
         static func getByValue(value: Data_PbActivityInfo.ActivityClass) -> PolarActivityClass {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarIosSharedBridge.shared.activityClassName(value: Int32(value.rawValue)),
+               let sharedClass = PolarActivityClass(rawValue: sharedName) {
+                return sharedClass
+            }
+            #endif
 
             switch value {
 

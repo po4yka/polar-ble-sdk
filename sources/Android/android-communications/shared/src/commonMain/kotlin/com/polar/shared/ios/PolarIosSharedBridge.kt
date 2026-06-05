@@ -29,7 +29,9 @@ import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import com.polar.shared.sdk.PolarKvtxMalformedScriptException
 import com.polar.shared.sdk.PolarKvtxScriptCodec
 import com.polar.shared.sdk.PolarOfflineRecordingModels
+import com.polar.shared.sdk.PolarActivityClassName
 import com.polar.shared.sdk.PolarAutomaticHrTriggerName
+import com.polar.shared.sdk.PolarDailyBalanceFeedbackName
 import com.polar.shared.sdk.PolarPpiSampleTriggerName
 import com.polar.shared.sdk.PolarPpiStatusNames
 import com.polar.shared.sdk.PolarSdkModelMappers
@@ -38,6 +40,7 @@ import com.polar.shared.sdk.PolarSleepWakeStateName
 import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
+import com.polar.shared.sdk.PolarTrainingReadinessName
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
 import com.polar.shared.time.PolarDurationFields
 import com.polar.shared.time.PolarTimeFields
@@ -265,6 +268,18 @@ object PolarIosSharedBridge {
 
     fun automaticHrTriggerName(value: Int): String? {
         return PolarAutomaticHrTriggerName.fromValue(value)?.name
+    }
+
+    fun activityClassName(value: Int): String? {
+        return PolarActivityClassName.fromValue(value)?.name
+    }
+
+    fun dailyBalanceFeedbackName(value: Int): String? {
+        return PolarDailyBalanceFeedbackName.fromValue(value)?.name
+    }
+
+    fun trainingReadinessName(value: Int): String? {
+        return PolarTrainingReadinessName.fromValue(value)?.name
     }
 
     fun ppiSampleTriggerName(value: Int): String? {

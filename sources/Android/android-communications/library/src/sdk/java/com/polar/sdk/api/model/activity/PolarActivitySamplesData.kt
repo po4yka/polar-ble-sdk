@@ -1,6 +1,7 @@
 package com.polar.sdk.api.model.activity
 
 import com.polar.sdk.impl.utils.PolarTimeUtils
+import com.polar.shared.sdk.PolarActivityClassName
 import fi.polar.remote.representation.protobuf.ActivitySamples
 import java.time.LocalDateTime
 
@@ -30,8 +31,11 @@ enum class PolarActivityClass(val value: Int) {
     NON_WEAR(8);
 
     companion object {
-        infix fun from(value: Int): PolarActivityClass? =
-            PolarActivityClass.values().firstOrNull { it.value == value }
+        infix fun from(value: Int): PolarActivityClass? {
+            return PolarActivityClassName.fromValue(value)?.let { sharedName ->
+                entries.firstOrNull { activityClass -> activityClass.name == sharedName.name }
+            } ?: entries.firstOrNull { it.value == value }
+        }
     }
 }
 

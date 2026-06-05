@@ -1,7 +1,10 @@
 package com.polar.sharedtest
 
 import com.polar.shared.sdk.PolarAutomaticHrTriggerName
+import com.polar.shared.sdk.PolarActivityClassName
+import com.polar.shared.sdk.PolarDailyBalanceFeedbackName
 import com.polar.shared.sdk.PolarPpiStatusNames
+import com.polar.shared.sdk.PolarTrainingReadinessName
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -102,8 +105,8 @@ class ActivitySummaryCommonPolicyTest {
         assertEquals(expected.intValue("bmrCalories"), proto.intValue("bmrCalories"), vector.stringValue("id"))
         assertEquals(expected.intValue("steps"), proto.intValue("steps"), vector.stringValue("id"))
         assertDoubleEquals(expected.doubleValue("activityDistance"), proto.doubleValue("activityDistance"), vector.stringValue("id"))
-        assertEquals(expected.stringValue("dailyBalanceFeedback"), proto.stringValue("dailyBalanceFeedback").removePrefix("DB_"), vector.stringValue("id"))
-        assertEquals(expected.stringValue("readinessForSpeedAndStrengthTraining"), proto.stringValue("readinessForSpeedAndStrengthTraining").removePrefix("RSST_B4_"), vector.stringValue("id"))
+        assertEquals(expected.stringValue("dailyBalanceFeedback"), dailyBalanceFeedbackName(proto.stringValue("dailyBalanceFeedback")), vector.stringValue("id"))
+        assertEquals(expected.stringValue("readinessForSpeedAndStrengthTraining"), trainingReadinessName(proto.stringValue("readinessForSpeedAndStrengthTraining")), vector.stringValue("id"))
         val goalExpected = expected.objectValue("activityGoalSummary")
         val goalProto = proto.objectValue("activityGoalSummary")
         assertDoubleEquals(goalExpected.doubleValue("activityGoal"), goalProto.doubleValue("activityGoal"), vector.stringValue("id"))
@@ -151,11 +154,34 @@ class ActivitySummaryCommonPolicyTest {
             stepSamples = proto.intArrayValue("stepsSamples"),
             activityInfo = proto.objectArray("activityInfo").map { info ->
                 ActivityInfo(
-                    activityClass = info.stringValue("value"),
+                    activityClass = activityClassName(info.stringValue("value")),
                     factor = info.doubleValue("factor")
                 )
             }
         )
+    }
+
+    private fun activityClassName(protoName: String): String {
+        val value = when (protoName) {
+            "SLEEP" -> 1
+            "SEDENTARY" -> 2
+            "LIGHT" -> 3
+            "CONTINUOUS_MODERATE" -> 4
+            "INTERMITTENT_MODERATE" -> 5
+            "CONTINUOUS_VIGOROUS" -> 6
+            "INTERMITTENT_VIGOROUS" -> 7
+            "NON_WEAR" -> 8
+            else -> error("Unexpected activity class $protoName")
+        }
+        return PolarActivityClassName.fromValue(value)?.name ?: error("Unexpected activity class value $value")
+    }
+
+    private fun dailyBalanceFeedbackName(protoName: String): String {
+        return PolarDailyBalanceFeedbackName.valueOf(protoName.removePrefix("DB_")).name
+    }
+
+    private fun trainingReadinessName(protoName: String): String {
+        return PolarTrainingReadinessName.valueOf(protoName.removePrefix("RSST_B4_")).name
     }
 
     private fun hrTriggerName(value: Int): String {
