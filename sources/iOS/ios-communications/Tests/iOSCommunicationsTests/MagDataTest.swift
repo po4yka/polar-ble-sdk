@@ -1,9 +1,24 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import XCTest
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 @testable import iOSCommunications
 
 final class MagDataTest: XCTestCase {
+    func testCalibrationStatusLookupDelegatesKnownIdsToSharedBridgeWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("GOOD", PolarIosSharedBridge.shared.magCalibrationStatusName(id: 3))
+        XCTAssertEqual("NOT_AVAILABLE", PolarIosSharedBridge.shared.magCalibrationStatusName(id: 99))
+        #endif
+        XCTAssertEqual(.notAvailable, MagData.CalibrationStatus.getById(id: -1))
+        XCTAssertEqual(.unknown, MagData.CalibrationStatus.getById(id: 0))
+        XCTAssertEqual(.poor, MagData.CalibrationStatus.getById(id: 1))
+        XCTAssertEqual(.ok, MagData.CalibrationStatus.getById(id: 2))
+        XCTAssertEqual(.good, MagData.CalibrationStatus.getById(id: 3))
+        XCTAssertEqual(.notAvailable, MagData.CalibrationStatus.getById(id: 99))
+    }
     
     func testProcessMagnetometerCompressedDataType0() throws {
         // Arrange

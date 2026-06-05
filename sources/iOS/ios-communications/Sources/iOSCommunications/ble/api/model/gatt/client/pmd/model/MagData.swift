@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class MagData {
     let timeStamp: UInt64
@@ -21,6 +24,11 @@ public class MagData {
         case good = 3
         
         static func getById(id: Int) -> CalibrationStatus {
+            #if canImport(PolarBleSdkShared)
+            if let sharedStatus = CalibrationStatus(sharedName: PolarIosSharedBridge.shared.magCalibrationStatusName(id: Int32(id))) {
+                return sharedStatus
+            }
+            #endif
             guard let status = CalibrationStatus(rawValue: id) else {
                 BleLogger.error("Invalid CalibrationStatus ID: \(id)")
                 return notAvailable
@@ -98,3 +106,24 @@ public class MagData {
         return MagData(timeStamp: frame.timeStamp, samples: magSamples)
     }
 }
+
+#if canImport(PolarBleSdkShared)
+private extension MagData.CalibrationStatus {
+    init?(sharedName: String) {
+        switch sharedName {
+        case "NOT_AVAILABLE":
+            self = .notAvailable
+        case "UNKNOWN":
+            self = .unknown
+        case "POOR":
+            self = .poor
+        case "OK":
+            self = .ok
+        case "GOOD":
+            self = .good
+        default:
+            return nil
+        }
+    }
+}
+#endif

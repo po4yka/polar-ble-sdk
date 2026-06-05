@@ -11,6 +11,7 @@ import com.polar.shared.pmd.PolarPmdMeasurementTypeName
 import com.polar.shared.pmd.PolarPmdSecret
 import com.polar.shared.pmd.PolarPmdSettingType
 import com.polar.shared.pmd.PolarPmdSettings
+import com.polar.shared.pmd.sensors.PolarMagCalibrationStatus
 import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
@@ -259,6 +260,10 @@ object PolarIosSharedBridge {
 
     fun pmdMeasurementTypeName(id: Int): String? {
         return PolarPmdMeasurementTypeName.fromMaskedId(id)?.name
+    }
+
+    fun magCalibrationStatusName(id: Int): String {
+        return PolarMagCalibrationStatus.fromId(id).name
     }
 
     fun pmdSelectedSettingsHex(selectedCsv: String): String {
