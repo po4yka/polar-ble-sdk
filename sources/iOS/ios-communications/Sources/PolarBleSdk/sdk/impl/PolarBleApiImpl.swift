@@ -83,6 +83,10 @@ import UIKit
         return facadeFileOperation(id: "first-time-use-write-user-id", command: "PUT", path: UserIdentifierType.USER_IDENTIFIER_FILENAME)
     }
 
+    static func ledConfigWriteOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "led-config-write", command: "PUT", path: LedConfig.LED_CONFIG_FILENAME)
+    }
+
     static func h10ExerciseFetchOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         return facadeFileOperation(id: "h10-exercise-fetch", command: "GET", path: path)
     }
@@ -1995,9 +1999,10 @@ extension PolarBleApiImpl: PolarBleApi  {
     func setLedConfig(_ identifier: String, ledConfig: LedConfig) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
+        let writeOperation = Self.ledConfigWriteOperation()
         var builder = Protocol_PbPFtpOperation()
-        builder.command = .put
-        builder.path = LedConfig.LED_CONFIG_FILENAME
+        builder.command = writeOperation.command
+        builder.path = writeOperation.path
         let proto = try builder.serializedData()
         let sdkModeLedByte: UInt8 = ledConfig.sdkModeLedEnabled ? LedConfig.LED_ANIMATION_ENABLE_BYTE : LedConfig.LED_ANIMATION_DISABLE_BYTE
         let ppiModeLedByte: UInt8 = ledConfig.ppiModeLedEnabled ? LedConfig.LED_ANIMATION_ENABLE_BYTE : LedConfig.LED_ANIMATION_DISABLE_BYTE

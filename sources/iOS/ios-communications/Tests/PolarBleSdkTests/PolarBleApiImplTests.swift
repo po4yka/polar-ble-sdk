@@ -1397,6 +1397,13 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(Data([LedConfig.LED_ANIMATION_ENABLE_BYTE, LedConfig.LED_ANIMATION_DISABLE_BYTE]), try data(from: v2MockClient.writeCalls[0].data))
     }
 
+    func test_setLedConfig_headersUseSharedFileFacadePlanning() {
+        let writeOperation = PolarBleApiImpl.ledConfigWriteOperation()
+
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(LedConfig.LED_CONFIG_FILENAME, writeOperation.path)
+    }
+
     func test_setLedConfig_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7010, userInfo: [NSLocalizedDescriptionKey: "led config write failed"])
         v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in

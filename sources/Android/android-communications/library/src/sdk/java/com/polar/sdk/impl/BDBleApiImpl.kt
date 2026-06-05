@@ -1563,9 +1563,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
+        val writeOperation = ledConfigWriteOperation()
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = PftpRequest.PbPFtpOperation.Command.PUT
-        builder.path = LedConfig.LED_CONFIG_FILENAME
+        builder.command = writeOperation.first
+        builder.path = writeOperation.second
         val sdkModeLedByte = if (ledConfig.sdkModeLedEnabled) LedConfig.LED_ANIMATION_ENABLE_BYTE else LedConfig.LED_ANIMATION_DISABLE_BYTE
         val ppiModeLedByte = if (ledConfig.ppiModeLedEnabled) LedConfig.LED_ANIMATION_ENABLE_BYTE else LedConfig.LED_ANIMATION_DISABLE_BYTE
         val data = ByteArrayInputStream(byteArrayOf(sdkModeLedByte, ppiModeLedByte))
@@ -3727,6 +3728,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         internal fun firstTimeUseUserIdWriteOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
             return facadeFileOperation("first-time-use-write-user-id", "PUT", UserIdentifierType.USER_IDENTIFIER_FILENAME)
+        }
+
+        internal fun ledConfigWriteOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("led-config-write", "PUT", LedConfig.LED_CONFIG_FILENAME)
         }
 
         internal fun h10ExerciseFetchOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
