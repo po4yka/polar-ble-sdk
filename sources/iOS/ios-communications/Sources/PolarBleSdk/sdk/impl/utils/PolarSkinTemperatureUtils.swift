@@ -19,13 +19,9 @@ private let TAG = "PolarSkinTemperatureUtils"
 internal class PolarSkinTemperatureUtils {
     static func skinTemperatureReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         let path = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(SKIN_TEMPERATURE_DIRECTORY)\(SKIN_TEMPERATURE_PROTO)"
-        #if canImport(PolarBleSdkShared)
-        let plannedOperation = PolarIosSharedBridge.shared.planRuntimeFileFacadeOperation(id: "skin-temperature-read", command: "GET", path: path, payloadHex: "")
-        let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
-        if parts.count == 2, parts[0] == "GET" {
-            return (.get, parts[1])
+        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "skin-temperature-read", command: "GET", path: path) {
+            return plannedOperation
         }
-        #endif
         return (.get, path)
     }
 

@@ -1,9 +1,6 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
 
 private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
 private let NIGHTLY_RECOVERY_DIRECTORY = "NR/"
@@ -21,13 +18,9 @@ internal class PolarNightlyRechargeUtils {
 
     static func nightlyRechargeReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         let path = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(NIGHTLY_RECOVERY_DIRECTORY)\(NIGHTLY_RECOVERY_PROTO)"
-        #if canImport(PolarBleSdkShared)
-        let plannedOperation = PolarIosSharedBridge.shared.planRuntimeFileFacadeOperation(id: "nightly-recharge-read", command: "GET", path: path, payloadHex: "")
-        let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
-        if parts.count == 2, parts[0] == "GET" {
-            return (.get, parts[1])
+        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "nightly-recharge-read", command: "GET", path: path) {
+            return plannedOperation
         }
-        #endif
         return (.get, path)
     }
 
