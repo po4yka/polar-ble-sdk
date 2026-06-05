@@ -56,7 +56,6 @@ import UIKit
     var serviceList = [CBUUID.init(string: "180D")]
     let features:Set<PolarBleSdkFeature>
     let dateFormatter = ISO8601DateFormatter()
-    let PMDFilePath = "/PMDFILES.TXT"
     public private(set) var serviceClientUtils: PolarServiceClientUtils
     var fileUtils: PolarFileUtils
 
@@ -90,6 +89,18 @@ import UIKit
 
     static func h10ExerciseRemoveOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         return facadeFileOperation(id: "h10-exercise-remove", command: "REMOVE", path: path)
+    }
+
+    static func offlineRecordingPmdFilesReadOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "offline-recording-read-pmd-files", command: "GET", path: "/PMDFILES.TXT")
+    }
+
+    static func offlineRecordingFileReadOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "offline-recording-read-file", command: "GET", path: path)
+    }
+
+    static func offlineRecordingDirectoryReadOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "offline-recording-read-directory", command: "GET", path: path)
     }
 
     private static func facadeFileOperation(id: String, command: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
@@ -1375,9 +1386,10 @@ extension PolarBleApiImpl: PolarBleApi  {
     private func deviceSupportsFasterOfflineRecordListing(identifier: String) async throws -> [UInt8] {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
+        let readOperation = Self.offlineRecordingPmdFilesReadOperation()
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = PMDFilePath
+        operation.command = readOperation.command
+        operation.path = readOperation.path
         do {
             let request = try operation.serializedData()
             let data = try await client.request(request)
@@ -1389,9 +1401,10 @@ extension PolarBleApiImpl: PolarBleApi  {
 
     
     private func loadFileorEmpty(path: String, client: BlePsFtpClient) async throws -> [UInt8] {
+        let readOperation = Self.offlineRecordingFileReadOperation(path: path)
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
+        operation.command = readOperation.command
+        operation.path = readOperation.path
         let requestData = try operation.serializedData()
         do {
             let data = try await client.request(requestData)
@@ -1436,9 +1449,10 @@ extension PolarBleApiImpl: PolarBleApi  {
             } else {
                 subRecordingPath = entry.path
             }
+            let readOperation = Self.offlineRecordingFileReadOperation(path: subRecordingPath.isEmpty ? entry.path : subRecordingPath)
             var operation = Protocol_PbPFtpOperation()
-            operation.command = .get
-            operation.path = subRecordingPath.isEmpty ? entry.path : subRecordingPath
+            operation.command = readOperation.command
+            operation.path = readOperation.path
             let request = try operation.serializedData()
             BleLogger.trace("Offline record get. Device: \(identifier) Path: \(subRecordingPath) Secret used: \(secret != nil)")
 
@@ -1575,11 +1589,12 @@ extension PolarBleApiImpl: PolarBleApi  {
     func getSubRecordingCount(identifier: String, entry: PolarOfflineRecordingEntry) async throws -> Int {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
         let directoryPath = entry.path.components(separatedBy: "/").dropLast().joined(separator: "/") + "/"
         let fileType = try mapDeviceDataTypeToOfflineRecordingFileName(type: entry.type)
-        operation.path = directoryPath
+        let readOperation = Self.offlineRecordingDirectoryReadOperation(path: directoryPath)
+        var operation = Protocol_PbPFtpOperation()
+        operation.command = readOperation.command
+        operation.path = readOperation.path
         do {
             let data = try await client.request(try operation.serializedData())
             let directory = try Protocol_PbPFtpDirectory(serializedBytes: data as Data)
@@ -1594,11 +1609,12 @@ extension PolarBleApiImpl: PolarBleApi  {
     func getSubRecordings(identifier: String, entry: PolarOfflineRecordingEntry) async throws -> [String] {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
         let directoryPath = entry.path.components(separatedBy: "/").dropLast().joined(separator: "/") + "/"
         let type = entry.path.components(separatedBy: "/").last?.replacingOccurrences(of: "[0-9]+.REC", with: "", options: .regularExpression).replacingOccurrences(of: " ", with: "")
-        operation.path = directoryPath
+        let readOperation = Self.offlineRecordingDirectoryReadOperation(path: directoryPath)
+        var operation = Protocol_PbPFtpOperation()
+        operation.command = readOperation.command
+        operation.path = readOperation.path
         var parentDir = ""
         if let lastSlashIndex = entry.path.dropLast().lastIndex(of: "/") {
             parentDir = String(entry.path[...lastSlashIndex])
@@ -1659,9 +1675,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         guard .polarFileSystemV2 == BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
+        let readOperation = Self.offlineRecordingFileReadOperation(path: entry.path)
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = entry.path
+        operation.command = readOperation.command
+        operation.path = readOperation.path
         let request = try operation.serializedData()
         BleLogger.trace("Offline record get. Device: \(identifier) Path: \(entry.path) Secret used: \(secret != nil)")
         let data = try await client.request(request)

@@ -3964,6 +3964,20 @@ final class PolarBleApiImplTests: XCTestCase {
         }
     }
 
+    func testOfflineRecordingFileHeadersUseSharedFileFacadePlanning() {
+        let pmdFilesOperation = PolarBleApiImpl.offlineRecordingPmdFilesReadOperation()
+        XCTAssertEqual(pmdFilesOperation.command, .get)
+        XCTAssertEqual(pmdFilesOperation.path, "/PMDFILES.TXT")
+
+        let fileOperation = PolarBleApiImpl.offlineRecordingFileReadOperation(path: "/U/0/20240615/R/103000/ACC.REC")
+        XCTAssertEqual(fileOperation.command, .get)
+        XCTAssertEqual(fileOperation.path, "/U/0/20240615/R/103000/ACC.REC")
+
+        let directoryOperation = PolarBleApiImpl.offlineRecordingDirectoryReadOperation(path: "/U/0/20240615/R/103000/")
+        XCTAssertEqual(directoryOperation.command, .get)
+        XCTAssertEqual(directoryOperation.path, "/U/0/20240615/R/103000/")
+    }
+
     // MARK: - listOfflineRecordings tests
 
     func test_listOfflineRecordings_sessionNotReady_propagatesError() {
