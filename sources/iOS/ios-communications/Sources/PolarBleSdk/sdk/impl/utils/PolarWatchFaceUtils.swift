@@ -46,7 +46,7 @@ internal enum PolarWatchFaceUtils {
     }
 
     private static func watchFaceOperation(id: String, command: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
-        return PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: id, command: command, path: KVTX_FILE_PATH)
+        return PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: KVTX_FILE_PATH)
     }
 
     // MARK: - Public API

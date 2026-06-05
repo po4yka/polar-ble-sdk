@@ -52,11 +52,11 @@ class PolarFirmwareUpdateUtils {
     }
 
     private static func deviceFirmwareInfoOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
-        return PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH)
+        return PolarRuntimePlanner.fileFacadeOperation(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH)
     }
 
     private static func planDeviceFirmwareInfoRead() {
-        _ = PolarFileFacadeRuntimePlanner.fileFacade(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH)
+        _ = PolarRuntimePlanner.fileFacade(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH)
     }
 
     static func isAvailableFirmwareVersionHigher(currentVersion: String, availableVersion: String) -> Bool {

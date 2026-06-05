@@ -59,7 +59,7 @@ internal class PolarTrainingSessionUtils {
     }
 
     private static func trainingSessionFileOperation(id: String, command: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        if let plannedOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
+        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
             return plannedOperation
         }
         switch command {

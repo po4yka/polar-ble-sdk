@@ -18,7 +18,7 @@ internal class PolarNightlyRechargeUtils {
 
     static func nightlyRechargeReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         let path = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(NIGHTLY_RECOVERY_DIRECTORY)\(NIGHTLY_RECOVERY_PROTO)"
-        if let plannedOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "nightly-recharge-read", command: "GET", path: path) {
+        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "nightly-recharge-read", command: "GET", path: path) {
             return plannedOperation
         }
         return (.get, path)
