@@ -140,6 +140,22 @@ object PolarIosSharedBridge {
         return PolarFirmwareUpdateModels.firmwareFilePriority(fileName)
     }
 
+    fun diskSpaceTotalSpace(fragmentSize: Long, totalFragments: Long, freeFragments: Long): Long {
+        return PolarSdkModelMappers.diskSpace(
+            fragmentSize = fragmentSize,
+            totalFragments = totalFragments,
+            freeFragments = freeFragments
+        ).totalSpace
+    }
+
+    fun diskSpaceFreeSpace(fragmentSize: Long, totalFragments: Long, freeFragments: Long): Long {
+        return PolarSdkModelMappers.diskSpace(
+            fragmentSize = fragmentSize,
+            totalFragments = totalFragments,
+            freeFragments = freeFragments
+        ).freeSpace
+    }
+
     fun planRuntimeCommandQuery(id: String, query: String, parametersCsv: String): String {
         return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(
