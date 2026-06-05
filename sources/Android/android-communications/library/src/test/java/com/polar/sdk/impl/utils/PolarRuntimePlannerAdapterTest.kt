@@ -28,10 +28,19 @@ class PolarRuntimePlannerAdapterTest {
         val getLocalTime = PolarRuntimePlannerAdapter.planDiskTimeQuery("get-local-time", "GET_LOCAL_TIME")
         val getDiskSpace = PolarRuntimePlannerAdapter.planDiskTimeQuery("get-disk-space", "GET_DISK_SPACE")
         val setLocalTime = PolarRuntimePlannerAdapter.planSetLocalTimeH10(localTimeHour = 14)
+        val setLocalTimeV2 = PolarRuntimePlannerAdapter.planSetLocalTimeV2(systemTimeHour = 10, localTimeHour = 12)
 
         Assert.assertEquals(PftpRequest.PbPFtpQuery.GET_LOCAL_TIME_VALUE, PolarRuntimePlannerAdapter.queryValue(getLocalTime))
         Assert.assertEquals(PftpRequest.PbPFtpQuery.GET_DISK_SPACE_VALUE, PolarRuntimePlannerAdapter.queryValue(getDiskSpace))
         Assert.assertEquals(PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE, PolarRuntimePlannerAdapter.queryValue(setLocalTime))
+        Assert.assertEquals(listOf("SET_SYSTEM_TIME", "SET_LOCAL_TIME"), PolarRuntimePlannerAdapter.queryNames(setLocalTimeV2))
+        Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpQuery.SET_SYSTEM_TIME_VALUE,
+                PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE
+            ),
+            PolarRuntimePlannerAdapter.queryNames(setLocalTimeV2).map(PolarRuntimePlannerAdapter::queryValue)
+        )
     }
 
     @Test

@@ -330,6 +330,12 @@ internal object PolarRuntimePlannerAdapter {
         return plan.commands.first { command -> command.startsWith("query:") }.substringAfter("query:")
     }
 
+    fun queryNames(plan: PolarRuntimePlan): List<String> {
+        return plan.commands
+            .filter { command -> command.startsWith("query:") }
+            .map { command -> command.substringAfter("query:") }
+    }
+
     fun notificationNames(plan: PolarRuntimePlan): List<String> {
         return plan.commands
             .filter { command -> command.startsWith("notification:") }

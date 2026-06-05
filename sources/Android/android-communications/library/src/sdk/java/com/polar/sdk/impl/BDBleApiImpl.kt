@@ -462,28 +462,35 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         BleLogger.d(TAG, "set local time to $localTime device $identifier")
         val pbLocalTime = javaLocalDateTimeToPbPftpSetLocalTime(localTime)
-        when (getFileSystemType(session.polarDeviceType)) {
+        val plan = when (getFileSystemType(session.polarDeviceType)) {
             FileSystemType.POLAR_FILE_SYSTEM_V2 -> PolarRuntimePlannerAdapter.planSetLocalTimeV2(localTime.hour, localTime.hour)
             FileSystemType.H10_FILE_SYSTEM -> PolarRuntimePlannerAdapter.planSetLocalTimeH10(localTime.hour)
-            else -> Unit
+            else -> null
         }
+        val plannedQueries = plan?.let(PolarRuntimePlannerAdapter::queryNames) ?: emptyList()
         try {
-            setSystemTime(client, localTime)
+            setSystemTime(
+                client,
+                localTime,
+                plannedQueries.firstOrNull { it == "SET_SYSTEM_TIME" }?.let(PolarRuntimePlannerAdapter::queryValue)
+                    ?: PolarRuntimePlannerAdapter.queryValue("SET_SYSTEM_TIME")
+            )
         } catch (ignored: Throwable) {
             // ignore system time error, proceed with local time
         }
         client.query(
-            PolarRuntimePlannerAdapter.queryValue("SET_LOCAL_TIME"),
+            plannedQueries.firstOrNull { it == "SET_LOCAL_TIME" }?.let(PolarRuntimePlannerAdapter::queryValue)
+                ?: PolarRuntimePlannerAdapter.queryValue("SET_LOCAL_TIME"),
             pbLocalTime.toByteArray()
         )
     }
 
-    private suspend fun setSystemTime(client: BlePsFtpClient, localDataTime: LocalDateTime) {
+    private suspend fun setSystemTime(client: BlePsFtpClient, localDataTime: LocalDateTime, queryValue: Int = PolarRuntimePlannerAdapter.queryValue("SET_SYSTEM_TIME")) {
         val utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
             timeInMillis = localDataTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
         }
         val pbTime = javaCalendarToPbPftpSetSystemTime(utcCalendar)
-        client.query(PolarRuntimePlannerAdapter.queryValue("SET_SYSTEM_TIME"), pbTime.toByteArray())
+        client.query(queryValue, pbTime.toByteArray())
     }
 
     @Deprecated(
