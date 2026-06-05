@@ -422,12 +422,19 @@ final class PolarBleApiImplTests: XCTestCase {
         let commonRuntimeCases = try XCTUnwrap(commonRuntimePrototype["cases"] as? [[String: Any]], file: file, line: line)
         let operationIds = try operations.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
         let commonRuntimeCaseIds = try commonRuntimeCases.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        let commonRuntimeCasesById = Dictionary(uniqueKeysWithValues: commonRuntimeCases.compactMap { testCase -> (String, [String: Any])? in
+            guard let id = testCase["id"] as? String else { return nil }
+            return (id, testCase)
+        })
         XCTAssertEqual(vector["id"] as? String, "user-device-settings-runtime-policy", file: file, line: line)
         XCTAssertEqual(vector["case"] as? String, "user_device_settings_runtime_policy", file: file, line: line)
         XCTAssertEqual(input["settingsPath"] as? String, "/U/0/S/UDEVSET.BPB", file: file, line: line)
         XCTAssertEqual(USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS, operationIds, file: file, line: line)
         XCTAssertEqual(USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds, file: file, line: line)
         XCTAssertEqual(vectorTerm, operationIds.first { $0 == vectorTerm }, file: file, line: line)
+        let selectedCase = try XCTUnwrap(commonRuntimeCasesById[vectorTerm], file: file, line: line)
+        XCTAssertFalse(try XCTUnwrap(selectedCase["commands"] as? [String], file: file, line: line).isEmpty, file: file, line: line)
+        XCTAssertNotNil(selectedCase["terminal"] as? String, file: file, line: line)
         let execution = try XCTUnwrap(vector["execution"] as? [String: Any], file: file, line: line)
         XCTAssertEqual(execution["kind"] as? String, "fake-user-device-settings-runtime-policy", file: file, line: line)
         XCTAssertEqual(execution["transport"] as? String, "public-facade-psftp-read-write-capture", file: file, line: line)
@@ -477,12 +484,19 @@ final class PolarBleApiImplTests: XCTestCase {
         let commonRuntimeCases = try XCTUnwrap(commonRuntimePrototype["cases"] as? [[String: Any]], file: file, line: line)
         let operationIds = try operations.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
         let commonRuntimeCaseIds = try commonRuntimeCases.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        let commonRuntimeCasesById = Dictionary(uniqueKeysWithValues: commonRuntimeCases.compactMap { testCase -> (String, [String: Any])? in
+            guard let id = testCase["id"] as? String else { return nil }
+            return (id, testCase)
+        })
         XCTAssertEqual(vector["id"] as? String, "rest-facade-runtime-policy", file: file, line: line)
         XCTAssertEqual(vector["case"] as? String, "rest_facade_runtime_policy", file: file, line: line)
         XCTAssertEqual(input["kind"] as? String, "restFacadeRuntimePolicy", file: file, line: line)
         XCTAssertEqual(REST_FACADE_RUNTIME_POLICY_OPERATION_IDS, operationIds, file: file, line: line)
         XCTAssertEqual(REST_FACADE_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds, file: file, line: line)
         XCTAssertEqual(vectorTerm, operationIds.first { $0 == vectorTerm }, file: file, line: line)
+        let selectedCase = try XCTUnwrap(commonRuntimeCasesById[vectorTerm], file: file, line: line)
+        XCTAssertFalse(try XCTUnwrap(selectedCase["commands"] as? [String], file: file, line: line).isEmpty, file: file, line: line)
+        XCTAssertNotNil(selectedCase["terminal"] as? String, file: file, line: line)
         let operationsById = Dictionary(uniqueKeysWithValues: operations.compactMap { operation -> (String, [String: Any])? in
             guard let id = operation["id"] as? String else { return nil }
             return (id, operation)
@@ -553,12 +567,19 @@ final class PolarBleApiImplTests: XCTestCase {
         let commonRuntimeCases = try XCTUnwrap(commonRuntimePrototype["cases"] as? [[String: Any]], file: file, line: line)
         let operationIds = try operations.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
         let commonRuntimeCaseIds = try commonRuntimeCases.map { try XCTUnwrap($0["id"] as? String, file: file, line: line) }
+        let commonRuntimeCasesById = Dictionary(uniqueKeysWithValues: commonRuntimeCases.compactMap { testCase -> (String, [String: Any])? in
+            guard let id = testCase["id"] as? String else { return nil }
+            return (id, testCase)
+        })
         XCTAssertEqual(vector["id"] as? String, "file-facade-runtime-policy", file: file, line: line)
         XCTAssertEqual(vector["case"] as? String, "file_facade_runtime_policy", file: file, line: line)
         XCTAssertEqual(input["kind"] as? String, "fileFacadeRuntimePolicy", file: file, line: line)
         XCTAssertEqual(FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS, operationIds, file: file, line: line)
         XCTAssertEqual(FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS, commonRuntimeCaseIds, file: file, line: line)
         XCTAssertEqual(vectorTerm, operationIds.first { $0 == vectorTerm }, file: file, line: line)
+        let selectedCase = try XCTUnwrap(commonRuntimeCasesById[vectorTerm], file: file, line: line)
+        XCTAssertFalse(try XCTUnwrap(selectedCase["commands"] as? [String], file: file, line: line).isEmpty, file: file, line: line)
+        XCTAssertNotNil(selectedCase["terminal"] as? String, file: file, line: line)
         let operationsById = Dictionary(uniqueKeysWithValues: operations.compactMap { operation -> (String, [String: Any])? in
             guard let id = operation["id"] as? String else { return nil }
             return (id, operation)

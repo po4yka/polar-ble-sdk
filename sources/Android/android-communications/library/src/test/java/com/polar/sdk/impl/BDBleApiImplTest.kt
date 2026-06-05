@@ -4,6 +4,7 @@ import android.bluetooth.le.ScanFilter
 import android.content.Context
 import android.content.IntentFilter
 import android.os.ParcelUuid
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.model.BleDeviceSession
 import com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContent
@@ -26,6 +27,11 @@ import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabil
 import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtility.Companion.getFileSystemType
 import com.polar.sdk.api.model.PolarUserDeviceSettings
 import com.polar.androidcommunications.enpoints.ble.bluedroid.host.BDScanCallback
+import com.polar.shared.runtime.PolarFileFacadeOperation
+import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
+import com.polar.shared.runtime.PolarRuntimeOrchestration
+import com.polar.shared.runtime.PolarRestFacadeOperation
+import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.PolarH10OfflineExerciseApi
 import com.polar.sdk.api.errors.PolarBleSdkInstanceException
@@ -3041,12 +3047,33 @@ class BDBleApiImplTest {
         )
     }
 
+    @Test
+    fun `user device settings facade vector stays compatible with shared runtime planner`() {
+        val vector = loadSdkGoldenVector("sdk/user-device-settings-runtime/settings-runtime-policy.json")
+        val operations = vector.getAsJsonObject("input").getAsJsonArray("operations").map { it.asJsonObject }
+        val expectedCases = vector.getAsJsonObject("expected")
+            .getAsJsonObject("commonRuntimePrototype")
+            .getAsJsonArray("cases")
+            .associateBy { it.asJsonObject.get("id").asString }
+
+        operations.forEach { operation ->
+            val outcome = PolarRuntimeOrchestration.planUserDeviceSettings(
+                PolarUserDeviceSettingsOperation(
+                    id = operation.get("id").asString,
+                    kind = operation.get("kind").asString,
+                    path = operation.get("path").asString,
+                    payloadFields = operation.optionalStringArray("payloadFields")
+                )
+            )
+            val expected = expectedCases.getValue(operation.get("id").asString).asJsonObject
+
+            Assert.assertEquals(operation.get("id").asString, expected.getAsJsonArray("commands").map { it.asString }, outcome.commands)
+            Assert.assertEquals(operation.get("id").asString, expected.get("terminal").asString, outcome.terminal)
+        }
+    }
+
     private fun assertRestFacadeRuntimePolicyVectorContains(vectorTerm: String) {
-        val vector = JsonParser().parse(
-            findRepositoryRoot()
-                .resolve("testdata/golden-vectors/sdk/rest-service/rest-facade-runtime-policy.json")
-                .readText()
-        ).asJsonObject
+        val vector = loadSdkGoldenVector("sdk/rest-service/rest-facade-runtime-policy.json")
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
         val operations = input.getAsJsonArray("operations").map { it.asJsonObject }
@@ -3112,12 +3139,39 @@ class BDBleApiImplTest {
         )
     }
 
+    @Test
+    fun `rest facade vector stays compatible with shared runtime planner`() {
+        val vector = loadSdkGoldenVector("sdk/rest-service/rest-facade-runtime-policy.json")
+        val operations = vector.getAsJsonObject("input").getAsJsonArray("operations").map { it.asJsonObject }
+        val expectedCases = vector.getAsJsonObject("expected")
+            .getAsJsonObject("commonRuntimePrototype")
+            .getAsJsonArray("cases")
+            .associateBy { it.asJsonObject.get("id").asString }
+
+        operations.forEach { operation ->
+            val transport = operation.optionalObject("transport")
+            val outcome = PolarRuntimeOrchestration.planRestFacade(
+                PolarRestFacadeOperation(
+                    id = operation.get("id").asString,
+                    command = operation.get("command").asString,
+                    path = operation.get("path").asString,
+                    payloadShape = operation.optionalString("payloadShape"),
+                    expectedFields = operation.optionalStringArray("expectedFields"),
+                    transportMode = transport?.optionalString("mode"),
+                    responseErrorStatus = transport?.optionalInt("status"),
+                    responseErrorMessage = transport?.optionalString("message"),
+                    expectedPlatformTerminal = operation.optionalObject("expectedPlatformTerminal")?.optionalString("android")
+                )
+            )
+            val expected = expectedCases.getValue(operation.get("id").asString).asJsonObject
+
+            Assert.assertEquals(operation.get("id").asString, expected.getAsJsonArray("commands").map { it.asString }, outcome.commands)
+            Assert.assertEquals(operation.get("id").asString, expected.get("terminal").asString, outcome.terminal)
+        }
+    }
+
     private fun assertFileFacadeRuntimePolicyVectorContains(vectorTerm: String) {
-        val vector = JsonParser().parse(
-            findRepositoryRoot()
-                .resolve("testdata/golden-vectors/sdk/file-utils/file-facade-runtime-policy.json")
-                .readText()
-        ).asJsonObject
+        val vector = loadSdkGoldenVector("sdk/file-utils/file-facade-runtime-policy.json")
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
         val operations = input.getAsJsonArray("operations").map { it.asJsonObject }
@@ -3248,6 +3302,73 @@ class BDBleApiImplTest {
         )
     }
 
+    @Test
+    fun `file facade vector stays compatible with shared runtime planner`() {
+        val vector = loadSdkGoldenVector("sdk/file-utils/file-facade-runtime-policy.json")
+        val operations = vector.getAsJsonObject("input").getAsJsonArray("operations").map { it.asJsonObject }
+        val expectedCases = vector.getAsJsonObject("expected")
+            .getAsJsonObject("commonRuntimePrototype")
+            .getAsJsonArray("cases")
+            .associateBy { it.asJsonObject.get("id").asString }
+
+        operations.forEach { operation ->
+            val outcome = PolarRuntimeOrchestration.planFileFacade(
+                PolarFileFacadeOperation(
+                    id = operation.get("id").asString,
+                    command = operation.get("command").asString,
+                    path = operation.get("path").asString,
+                    payloadHex = operation.optionalString("payloadHex"),
+                    responseHex = operation.optionalString("responseHex"),
+                    progress = operation.optionalIntArray("progress"),
+                    transportMode = operation.optionalObject("transport")?.optionalString("mode")
+                )
+            )
+            val expected = expectedCases.getValue(operation.get("id").asString).asJsonObject
+
+            Assert.assertEquals(operation.get("id").asString, expected.getAsJsonArray("commands").map { it.asString }, outcome.commands)
+            Assert.assertEquals(operation.get("id").asString, expected.get("terminal").asString, outcome.terminal)
+            expected.optionalString("resultHex")?.let { resultHex ->
+                Assert.assertEquals(operation.get("id").asString, resultHex, outcome.resultHex)
+            }
+        }
+    }
+
+    @Test
+    fun `file runtime error vector stays compatible with shared runtime planner`() {
+        val vector = loadSdkGoldenVector("sdk/file-utils/runtime-error-policy.json")
+        val cases = vector.getAsJsonObject("input").getAsJsonArray("cases").map { it.asJsonObject }
+        val expectedCases = vector.getAsJsonObject("expected")
+            .getAsJsonObject("commonRuntimePrototype")
+            .getAsJsonArray("cases")
+            .associateBy { it.asJsonObject.get("id").asString }
+
+        cases.forEach { testCase ->
+            val transport = testCase.getAsJsonObject("transport")
+            val outcome = PolarRuntimeOrchestration.planFileRuntimeError(
+                PolarFileRuntimeErrorOperation(
+                    id = testCase.get("id").asString,
+                    operation = testCase.get("operation").asString,
+                    path = testCase.get("path").asString,
+                    payloadHex = testCase.optionalString("payloadHex"),
+                    transportMode = transport.get("mode").asString,
+                    status = transport.optionalInt("status"),
+                    message = transport.optionalString("message"),
+                    error = transport.optionalString("error"),
+                    responsePayloadHex = transport.optionalString("payloadHex")
+                )
+            )
+            val expected = expectedCases.getValue(testCase.get("id").asString).asJsonObject
+
+            Assert.assertEquals(testCase.get("id").asString, expected.get("command").asString, outcome.command)
+            Assert.assertEquals(testCase.get("id").asString, expected.get("path").asString, outcome.path)
+            Assert.assertEquals(testCase.get("id").asString, expected.get("outcome").asString, outcome.outcome)
+            expected.optionalInt("status")?.let { status -> Assert.assertEquals(testCase.get("id").asString, status, outcome.status) }
+            expected.optionalString("message")?.let { message -> Assert.assertEquals(testCase.get("id").asString, message, outcome.message) }
+            expected.optionalString("error")?.let { error -> Assert.assertEquals(testCase.get("id").asString, error, outcome.error) }
+            expected.optionalString("capturedPayloadHex")?.let { payload -> Assert.assertEquals(testCase.get("id").asString, payload, outcome.capturedPayloadHex) }
+        }
+    }
+
     private fun assertSinglePolicyReadinessManifest(
         manifestPath: String,
         id: String,
@@ -3292,6 +3413,34 @@ class BDBleApiImplTest {
         commonPrototypeConsumers?.let { expectedConsumers ->
             Assert.assertEquals(expectedConsumers, consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
         }
+    }
+
+    private fun loadSdkGoldenVector(relativePath: String): JsonObject {
+        return JsonParser().parse(
+            findRepositoryRoot()
+                .resolve("testdata/golden-vectors/$relativePath")
+                .readText()
+        ).asJsonObject
+    }
+
+    private fun JsonObject.optionalObject(field: String): JsonObject? {
+        return if (has(field)) getAsJsonObject(field) else null
+    }
+
+    private fun JsonObject.optionalString(field: String): String? {
+        return if (has(field)) get(field).asString else null
+    }
+
+    private fun JsonObject.optionalInt(field: String): Int? {
+        return if (has(field)) get(field).asInt else null
+    }
+
+    private fun JsonObject.optionalStringArray(field: String): List<String> {
+        return if (has(field)) getAsJsonArray(field).map { it.asString } else emptyList()
+    }
+
+    private fun JsonObject.optionalIntArray(field: String): List<Int> {
+        return if (has(field)) getAsJsonArray(field).map { it.asInt } else emptyList()
     }
 
     private fun findRepositoryRoot(): File {
