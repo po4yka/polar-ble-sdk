@@ -1,6 +1,11 @@
 package com.polar.sharedtest
 
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
+import com.polar.shared.sdk.PolarTrainingExerciseReference
+import com.polar.shared.sdk.PolarTrainingIntervalledSampleList
+import com.polar.shared.sdk.PolarTrainingPayloadFields
+import com.polar.shared.sdk.PolarTrainingPayloadResponse
+import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -64,8 +69,10 @@ class TrainingSessionCommonPolicyTest {
         val reference = input.objectValue("reference")
         val responses = input.objectValue("responses")
         val expected = vector.objectValue("expected")
-        val fetchOrder = payloadFetchOrder(reference)
-        val result = assemblePayloadReadResult(reference, responses, fetchOrder)
+        val sharedReference = payloadReference(reference)
+        val sharedResponses = payloadResponses(responses)
+        val fetchOrder = PolarTrainingSessionModels.payloadFetchOrder(sharedReference)
+        val result = PolarTrainingSessionModels.assemblePayloadReadResult(sharedReference, sharedResponses, fetchOrder)
 
         assertEquals(expected.stringArrayValue("fetchOrder"), fetchOrder, vector.stringValue("id"))
         val expectedProgress = expected.objectValue("progress")
@@ -73,6 +80,7 @@ class TrainingSessionCommonPolicyTest {
         assertEquals(expectedProgress.intValue("completedBytes"), result.completedBytes, vector.stringValue("id"))
         assertEquals(expectedProgress.intValue("progressPercent"), result.progressPercent, vector.stringValue("id"))
         assertEquals(expectedProgress.stringValue("currentFileName"), result.currentFileName, vector.stringValue("id"))
+        assertEquals("SAMPLES2.GZB", PolarTrainingSessionModels.exerciseDataTypeFileName("SAMPLES_ADVANCED_FORMAT_GZIP"), vector.stringValue("id"))
         val expectedSession = expected.objectValue("sessionSummary")
         assertEquals(expectedSession.stringValue("modelName"), result.modelName, vector.stringValue("id"))
         assertEquals(expectedSession.intValue("durationSeconds"), result.durationSeconds, vector.stringValue("id"))
@@ -175,75 +183,53 @@ class TrainingSessionCommonPolicyTest {
         assertEquals(true, platforms.booleanValue("common"))
     }
 
-    private fun payloadFetchOrder(reference: String): List<String> {
-        return listOf(reference.stringValue("path")) + reference.objectArray("exercises").flatMap { exercise ->
-            val basePath = exercise.stringValue("androidPath").substringBeforeLast("/")
-            exercise.stringArrayValue("exerciseDataTypes").map { dataType -> "$basePath/${dataType.deviceFileName()}" }
-        }
-    }
-
-    private fun assemblePayloadReadResult(reference: String, responses: String, fetchOrder: List<String>): TrainingPayloadResult {
-        val exercises = reference.objectArray("exercises").associate { exercise ->
-            exercise.intValue("index") to MutableExercisePayload(index = exercise.intValue("index"))
-        }.toMutableMap()
-        val result = TrainingPayloadResult(exercises = exercises.values.toList())
-        fetchOrder.forEach { path ->
-            val response = responses.objectValue(path)
-            val fileName = response.stringValue("fileName")
-            result.totalBytes += response.intValue("byteSize")
-            result.completedBytes += response.intValue("byteSize")
-            result.currentFileName = fileName
-            val exerciseIndex = path.exerciseIndexOrNull()
-            if (response.optionalBooleanValue("malformed") == true) {
-                exerciseIndex?.let { index -> exercises.getValue(index).malformedFilesIgnored += fileName }
-                return@forEach
-            }
-            val payload = response.objectValue("payload")
-            when (response.stringValue("kind")) {
-                "trainingSessionSummary" -> {
-                    result.modelName = payload.stringValue("modelName")
-                    result.durationSeconds = payload.intValue("durationSeconds")
-                    result.distanceMeters = payload.intValue("distanceMeters")
-                    result.calories = payload.intValue("calories")
-                }
-                "exerciseSummary" -> exerciseIndex?.let { index -> exercises.getValue(index).exerciseSummaryPresent = true }
-                "route", "routeGzip" -> exerciseIndex?.let { index -> exercises.getValue(index).routePresent = true }
-                "routeAdvanced", "routeAdvancedGzip" -> exerciseIndex?.let { index -> exercises.getValue(index).routeAdvancedPresent = true }
-                "samples", "samplesGzip" -> exerciseIndex?.let { index -> exercises.getValue(index).samplesHeartRate = payload.intArrayValue("heartRateSamples") }
-                "samplesAdvancedGzip" -> exerciseIndex?.let { index ->
-                    val sampleLists = payload.objectArray("intervalledSampleLists")
-                    exercises.getValue(index).samplesAdvancedHeartRate = sampleLists
-                        .filter { sampleList -> sampleList.stringValue("sampleType") == "HEART_RATE" }
-                        .flatMap { sampleList -> sampleList.intArrayValue("heartRateSamples") }
-                    exercises.getValue(index).unknownAdvancedSampleListsIgnored += sampleLists.count { sampleList -> sampleList.stringValue("sampleType") != "HEART_RATE" }
-                }
-            }
-        }
-        result.progressPercent = if (result.totalBytes == 0) 0 else result.completedBytes * 100 / result.totalBytes
-        return result
-    }
-
-    private fun String.exerciseIndexOrNull(): Int? {
-        val match = Regex("/(\\d{2})/[^/]+$").find(this) ?: return null
-        return match.groupValues[1].toInt()
-    }
-
-    private fun String.deviceFileName(): String {
-        return when (this) {
-            "EXERCISE_SUMMARY" -> "BASE.BPB"
-            "ROUTE" -> "ROUTE.BPB"
-            "ROUTE_GZIP" -> "ROUTE.GZB"
-            "ROUTE_ADVANCED_FORMAT" -> "ROUTE2.BPB"
-            "ROUTE_ADVANCED_FORMAT_GZIP" -> "ROUTE2.GZB"
-            "SAMPLES" -> "SAMPLES.BPB"
-            "SAMPLES_GZIP" -> "SAMPLES.GZB"
-            "SAMPLES_ADVANCED_FORMAT_GZIP" -> "SAMPLES2.GZB"
-            else -> error("Unknown training exercise data type $this")
-        }
-    }
-
     private fun exerciseDataTypeOrNull(name: String): String? {
         return PolarTrainingSessionModels.exerciseDataTypeOrNull(name)
+    }
+
+    private fun payloadReference(reference: String): PolarTrainingSessionReference {
+        return PolarTrainingSessionReference(
+            dateTime = "${reference.stringValue("date")}T00:00:00",
+            date = reference.stringValue("date"),
+            path = reference.stringValue("path"),
+            trainingDataTypes = reference.stringArrayValue("trainingDataTypes"),
+            exercises = reference.objectArray("exercises").map { exercise ->
+                PolarTrainingExerciseReference(
+                    index = exercise.intValue("index"),
+                    androidPath = exercise.stringValue("androidPath"),
+                    iosPath = exercise.stringValue("iosPath"),
+                    exerciseDataTypes = exercise.stringArrayValue("exerciseDataTypes"),
+                    fileSizes = exercise.objectValue("fileSizes").intObject().mapValues { entry -> entry.value.toLong() }
+                )
+            },
+            fileSize = reference.intValue("fileSize").toLong()
+        )
+    }
+
+    private fun payloadResponses(responses: String): Map<String, PolarTrainingPayloadResponse> {
+        return responses.objectMap().mapValues { entry ->
+            val response = entry.value
+            val payload = response.optionalObjectValue("payload")
+            PolarTrainingPayloadResponse(
+                kind = response.stringValue("kind"),
+                fileName = response.stringValue("fileName"),
+                byteSize = response.intValue("byteSize"),
+                malformed = response.optionalBooleanValue("malformed") == true,
+                payload = PolarTrainingPayloadFields(
+                    modelName = payload?.optionalStringValue("modelName"),
+                    durationSeconds = payload?.optionalIntValue("durationSeconds"),
+                    distanceMeters = payload?.optionalIntValue("distanceMeters"),
+                    calories = payload?.optionalIntValue("calories"),
+                    heartRateSamples = payload?.optionalSignedIntArrayValue("heartRateSamples").orEmpty(),
+                    intervalledSampleLists = payload?.optionalObjectArrayValue("intervalledSampleLists").orEmpty().map { sampleList ->
+                        PolarTrainingIntervalledSampleList(
+                            sampleType = sampleList.stringValue("sampleType"),
+                            heartRateSamples = sampleList.optionalSignedIntArrayValue("heartRateSamples").orEmpty()
+                        )
+                    }
+                )
+            )
+        }
     }
 
     private fun directoryEntries(directories: String, path: String): List<DirectoryEntry> {
@@ -299,32 +285,96 @@ class TrainingSessionCommonPolicyTest {
         return if (content.isEmpty()) emptyList() else content.split(',').map { item -> item.trim().toInt() }
     }
 
+    private fun String.optionalIntValue(field: String): Int? {
+        return Regex("\"$field\"\\s*:\\s*(-?\\d+)").find(this)?.groupValues?.get(1)?.toInt()
+    }
+
+    private fun String.intObject(): Map<String, Int> {
+        val content = trim().removeSurrounding("{", "}")
+        if (content.trim().isEmpty()) return emptyMap()
+        return Regex("\"([^\"]+)\"\\s*:\\s*(-?\\d+)").findAll(content).associate { match ->
+            match.groupValues[1] to match.groupValues[2].toInt()
+        }
+    }
+
+    private fun String.objectMap(): Map<String, String> {
+        val entries = linkedMapOf<String, String>()
+        var index = 0
+        while (index < length) {
+            val keyStart = indexOf('"', index)
+            if (keyStart < 0) return entries
+            val keyToken = readJsonStringToken(keyStart)
+            var colonIndex = keyToken.nextIndex
+            while (colonIndex < length && this[colonIndex].isWhitespace()) colonIndex += 1
+            if (colonIndex >= length || this[colonIndex] != ':') {
+                index = keyToken.nextIndex
+                continue
+            }
+            var valueStart = colonIndex + 1
+            while (valueStart < length && this[valueStart].isWhitespace()) valueStart += 1
+            if (valueStart < length && this[valueStart] == '{') {
+                val valueEnd = balancedEnd(valueStart, '{', '}')
+                entries[keyToken.value] = substring(valueStart, valueEnd + 1)
+                index = valueEnd + 1
+            } else {
+                index = valueStart + 1
+            }
+        }
+        return entries
+    }
+
+    private fun String.optionalObjectArrayValue(field: String): List<String>? {
+        val fieldIndex = indexOf("\"$field\"")
+        if (fieldIndex < 0) return null
+        val colonIndex = indexOf(':', fieldIndex)
+        if (colonIndex < 0) return null
+        var arrayStart = colonIndex + 1
+        while (arrayStart < length && this[arrayStart].isWhitespace()) arrayStart += 1
+        if (arrayStart >= length || this[arrayStart] != '[') return null
+        val arrayEnd = balancedEnd(arrayStart, '[', ']')
+        val content = substring(arrayStart + 1, arrayEnd)
+        val objects = mutableListOf<String>()
+        var index = 0
+        while (index < content.length) {
+            val objectStart = content.indexOf('{', index)
+            if (objectStart < 0) return objects
+            val objectEnd = content.balancedEnd(objectStart, '{', '}')
+            objects += content.substring(objectStart, objectEnd + 1)
+            index = objectEnd + 1
+        }
+        return objects
+    }
+
+    private fun String.readJsonStringToken(start: Int): JsonStringToken {
+        require(this[start] == '"') { "Expected JSON string at $start" }
+        val value = StringBuilder()
+        var index = start + 1
+        var escaped = false
+        while (index < length) {
+            val char = this[index]
+            if (escaped) {
+                value.append(char)
+                escaped = false
+            } else if (char == '\\') {
+                escaped = true
+            } else if (char == '"') {
+                return JsonStringToken(value.toString(), index + 1)
+            } else {
+                value.append(char)
+            }
+            index += 1
+        }
+        error("Unterminated JSON string at $start")
+    }
+
     private data class DirectoryEntry(
         val name: String,
         val size: Int
     )
 
-    private data class TrainingPayloadResult(
-        var totalBytes: Int = 0,
-        var completedBytes: Int = 0,
-        var progressPercent: Int = 0,
-        var currentFileName: String = "",
-        var modelName: String = "",
-        var durationSeconds: Int = 0,
-        var distanceMeters: Int = 0,
-        var calories: Int = 0,
-        val exercises: List<MutableExercisePayload>
-    )
-
-    private data class MutableExercisePayload(
-        val index: Int,
-        var exerciseSummaryPresent: Boolean = false,
-        var routePresent: Boolean = false,
-        var routeAdvancedPresent: Boolean = false,
-        var samplesHeartRate: List<Int> = emptyList(),
-        var samplesAdvancedHeartRate: List<Int> = emptyList(),
-        var unknownAdvancedSampleListsIgnored: Int = 0,
-        var malformedFilesIgnored: List<String> = emptyList()
+    private data class JsonStringToken(
+        val value: String,
+        val nextIndex: Int
     )
 
     private data class ParserCase(
