@@ -39,6 +39,7 @@ import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepRatingName
 import com.polar.shared.sdk.PolarSleepWakeStateName
 import com.polar.shared.sdk.PolarSpo2Models
+import com.polar.shared.sdk.PolarStoredDataModels
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarTrainingReadinessName
@@ -290,6 +291,14 @@ object PolarIosSharedBridge {
 
     fun trainingReadinessName(value: Int): String? {
         return PolarTrainingReadinessName.fromValue(value)?.name
+    }
+
+    fun iosStoredDataTypeName(value: Int): String? {
+        return PolarStoredDataModels.iosStoredDataTypeName(value)
+    }
+
+    fun iosStoredDataTypeValue(name: String): Int? {
+        return PolarStoredDataModels.iosStoredDataTypeValue(name)
     }
 
     fun userDeviceSettingsDeviceLocationName(value: Int): String? {
