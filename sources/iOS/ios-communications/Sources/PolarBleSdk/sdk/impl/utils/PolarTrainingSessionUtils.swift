@@ -305,19 +305,29 @@ internal class PolarTrainingSessionUtils {
                     fileSize: fileSize
                 ))
             case "E":
-                guard fields.count == 4,
+                guard fields.count == 4 || fields.count == 5,
                       let referenceIndex = Int(fields[1]),
                       referenceIndex < references.count else {
                     return nil
                 }
                 guard references[referenceIndex].fileSize >= 0 else { continue }
                 let exerciseDataTypes = fields[3].split(separator: ";").compactMap { PolarExerciseDataTypes.fromSharedTypeName(String($0)) }
-                references[referenceIndex].exercises.append(PolarExercise(index: 0, path: fields[2], exerciseDataTypes: exerciseDataTypes))
+                references[referenceIndex].exercises.append(PolarExercise(index: 0, path: fields[2], exerciseDataTypes: exerciseDataTypes, fileSizes: fields.count == 5 ? sharedFileSizes(fields[4]) : nil))
             default:
                 return nil
             }
         }
         return references.filter { $0.fileSize >= 0 }
+    }
+
+    private static func sharedFileSizes(_ value: String) -> [String: Int64] {
+        var fileSizes: [String: Int64] = [:]
+        for entry in value.split(separator: ";") {
+            let fields = entry.split(separator: ":", maxSplits: 1).map(String.init)
+            guard fields.count == 2, let size = Int64(fields[1]) else { continue }
+            fileSizes[fields[0]] = size
+        }
+        return fileSizes
     }
 
     private static func dateMatches(date: Date, fromDate: Date?, toDate: Date?) -> Bool {

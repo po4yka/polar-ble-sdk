@@ -240,7 +240,8 @@ object PolarIosSharedBridge {
                     "E",
                     referenceIndex.toString(),
                     exercise.iosPath,
-                    exercise.exerciseDataTypes.joinToString(";")
+                    exercise.exerciseDataTypes.joinToString(";"),
+                    exercise.fileSizes.entries.joinToString(";") { entry -> "${entry.key}:${entry.value}" }
                 ).joinToString("|")
             }
         }.joinToString("\n")

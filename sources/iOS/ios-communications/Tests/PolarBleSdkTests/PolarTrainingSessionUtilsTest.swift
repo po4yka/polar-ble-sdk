@@ -573,8 +573,18 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
                 XCTAssertEqual(actualExercise.index, try number(expectedExercise, "iosIndex", id: id), "\(id) exercise \(exerciseIndex) index")
                 XCTAssertEqual(actualExercise.path, try XCTUnwrap(expectedExercise["iosPath"] as? String, id), "\(id) exercise \(exerciseIndex) path")
                 XCTAssertEqual(actualExercise.exerciseDataTypes.map(\.rawValue), try XCTUnwrap(expectedExercise["exerciseDataTypes"] as? [String], id).map { androidExerciseTypeToIOSRawValue($0) }, "\(id) exercise \(exerciseIndex) dataTypes")
+                XCTAssertEqual(actualExercise.fileSizes ?? [:], try fileSizes(expectedExercise, id: id), "\(id) exercise \(exerciseIndex) fileSizes")
             }
         }
+    }
+
+    private func fileSizes(_ fields: [String: Any], id: String) throws -> [String: Int64] {
+        let values = try XCTUnwrap(fields["fileSizes"] as? [String: Any], id)
+        var result: [String: Int64] = [:]
+        for (key, value) in values {
+            result[key] = Int64(try number(["value": value], "value", id: id))
+        }
+        return result
     }
 
     private func buildTrainingSessionReference(from fields: [String: Any]) throws -> PolarTrainingSessionReference {
