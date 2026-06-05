@@ -24,9 +24,15 @@ class PolarFirstTimeUseConfigTest {
 
         val proto = config.toProto()
 
+        assertEquals(PhysData.PbUserGender.Gender.FEMALE, proto.gender.value)
+        assertEquals(2, proto.gender.value.number)
         assertEquals(PhysData.PbUserTrainingBackground.TrainingBackground.SEMI_PRO, proto.trainingBackground.value)
         assertEquals(50, proto.trainingBackground.value.number)
         assertEquals(PhysData.PbUserTypicalDay.TypicalDay.MOSTLY_MOVING, proto.typicalDay.value)
         assertEquals(3, proto.typicalDay.value.number)
+
+        val physicalConfiguration = proto.toPolarPhysicalConfiguration()
+
+        assertEquals(PolarFirstTimeUseConfig.Gender.FEMALE, physicalConfiguration.gender)
     }
 }

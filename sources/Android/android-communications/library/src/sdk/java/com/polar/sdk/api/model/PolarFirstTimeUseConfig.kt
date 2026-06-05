@@ -2,6 +2,7 @@ package com.polar.sdk.api.model
 
 import com.polar.sdk.api.model.PolarFirstTimeUseConfig.Gender
 import com.polar.sdk.api.model.PolarFirstTimeUseConfig.TypicalDay
+import com.polar.shared.sdk.PolarFirstTimeUseGenderName
 import com.polar.shared.sdk.PolarFirstTimeUseTrainingBackgroundName
 import com.polar.shared.sdk.PolarFirstTimeUseTypicalDayName
 import java.time.LocalDate
@@ -89,10 +90,7 @@ data class PolarFirstTimeUseConfig(
         }.build()
 
         val gender = PhysData.PbUserGender.newBuilder().apply {
-            setValue(when (gender) {
-                Gender.MALE -> PhysData.PbUserGender.Gender.MALE
-                Gender.FEMALE -> PhysData.PbUserGender.Gender.FEMALE
-            })
+            setValue(PhysData.PbUserGender.Gender.forNumber(PolarFirstTimeUseGenderName.fromName(gender.name)?.value ?: gender.protoFallbackValue()))
             setLastModified(lastModified)
         }.build()
 
@@ -152,10 +150,10 @@ data class PolarFirstTimeUseConfig(
     }
 
 fun PhysData.PbUserPhysData.toPolarPhysicalConfiguration(): PolarPhysicalConfiguration {
-    val gender = when (gender.value) {
-        PhysData.PbUserGender.Gender.MALE -> Gender.MALE
-        PhysData.PbUserGender.Gender.FEMALE -> Gender.FEMALE
-        else -> throw IllegalArgumentException("Unknown gender: ${gender.value}")
+    val gender = when (PolarFirstTimeUseGenderName.fromValue(gender.value.number)) {
+        PolarFirstTimeUseGenderName.MALE -> Gender.MALE
+        PolarFirstTimeUseGenderName.FEMALE -> Gender.FEMALE
+        null -> throw IllegalArgumentException("Unknown gender: ${gender.value}")
     }
 
     val birthDate = LocalDate.of(birthday.value.year, birthday.value.month, birthday.value.day)
@@ -195,6 +193,13 @@ fun PhysData.PbUserPhysData.toPolarPhysicalConfiguration(): PolarPhysicalConfigu
     )
 }
 
+private fun Gender.protoFallbackValue(): Int {
+    return when (this) {
+        Gender.MALE -> PhysData.PbUserGender.Gender.MALE.number
+        Gender.FEMALE -> PhysData.PbUserGender.Gender.FEMALE.number
+    }
+}
+
 data class PolarPhysicalConfiguration(
     val gender: Gender,
     val birthDate: LocalDate,
@@ -208,4 +213,3 @@ data class PolarPhysicalConfiguration(
     val typicalDay: TypicalDay,
     val sleepGoalMinutes: Int
 )
-

@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarFirstTimeUseGenderName
 import com.polar.shared.sdk.PolarFirstTimeUseTrainingBackgroundName
 import com.polar.shared.sdk.PolarFirstTimeUseTypicalDayName
 import kotlin.test.Test
@@ -9,6 +10,11 @@ import kotlin.test.assertNull
 class FirstTimeUseModelsCommonPolicyTest {
     @Test
     fun firstTimeUseEnumMappingsPreservePublicPhysicalConfigValues() {
+        assertEquals("MALE", PolarFirstTimeUseGenderName.fromValue(1)?.name)
+        assertEquals(2, PolarFirstTimeUseGenderName.fromName("FEMALE")?.value)
+        assertNull(PolarFirstTimeUseGenderName.fromValue(0))
+        assertNull(PolarFirstTimeUseGenderName.fromName("UNKNOWN"))
+
         assertEquals("OCCASIONAL", PolarFirstTimeUseTrainingBackgroundName.fromValue(10)?.name)
         assertEquals(20, PolarFirstTimeUseTrainingBackgroundName.fromValue(20)?.value)
         assertEquals("FREQUENT", PolarFirstTimeUseTrainingBackgroundName.fromValue(30)?.name)

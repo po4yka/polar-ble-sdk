@@ -28,6 +28,7 @@ import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import com.polar.shared.sdk.PolarExerciseSportProfileName
+import com.polar.shared.sdk.PolarFirstTimeUseGenderName
 import com.polar.shared.sdk.PolarFirstTimeUseTrainingBackgroundName
 import com.polar.shared.sdk.PolarFirstTimeUseTypicalDayName
 import com.polar.shared.sdk.PolarKvtxMalformedScriptException
@@ -339,6 +340,14 @@ object PolarIosSharedBridge {
 
     fun firstTimeUseTypicalDayValue(value: Int): Int? {
         return PolarFirstTimeUseTypicalDayName.fromValue(value)?.value
+    }
+
+    fun firstTimeUseGenderName(value: Int): String? {
+        return PolarFirstTimeUseGenderName.fromValue(value)?.name
+    }
+
+    fun firstTimeUseGenderValue(name: String): Int? {
+        return PolarFirstTimeUseGenderName.fromName(name)?.value
     }
 
     fun exerciseSportProfileName(id: Int): String {

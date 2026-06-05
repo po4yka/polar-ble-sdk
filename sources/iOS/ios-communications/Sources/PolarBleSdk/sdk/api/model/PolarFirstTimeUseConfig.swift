@@ -11,6 +11,17 @@ public struct PolarFirstTimeUseConfig {
         case female
     }
 
+    static func protobufValue(for gender: Gender) -> Data_PbUserGender.Gender {
+        #if canImport(PolarBleSdkShared)
+        let sharedName = gender == .male ? "MALE" : "FEMALE"
+        if let sharedValue = PolarIosSharedBridge.shared.firstTimeUseGenderValue(name: sharedName),
+           let proto = Data_PbUserGender.Gender(rawValue: Int(truncating: sharedValue)) {
+            return proto
+        }
+        #endif
+        return gender == .male ? .male : .female
+    }
+
     public enum TypicalDay: Int, CaseIterable {
         case mostlySitting = 1
         case mostlyStanding = 2
@@ -143,7 +154,7 @@ public struct PolarFirstTimeUseConfig {
         }
 
         let genderPb = Data_PbUserGender.with {
-            $0.value = (gender == .male) ? .male : .female
+            $0.value = PolarFirstTimeUseConfig.protobufValue(for: gender)
             $0.lastModified = lastModified
         }
 
@@ -205,13 +216,7 @@ public struct PolarFirstTimeUseConfig {
 
 extension Data_PbUserPhysData {
     func toPolarPhysicalConfiguration() -> PolarPhysicalConfiguration {
-        let gender: PolarPhysicalConfiguration.Gender
-        switch self.gender.value {
-        case .male:
-            gender = .male
-        case .female:
-            gender = .female
-        }
+        let gender = PolarFirstTimeUseConfig.physicalGender(from: self.gender.value)
 
         let birthDate: Date = {
             let date = self.birthday.value
@@ -265,6 +270,26 @@ extension Data_PbUserPhysData {
             typicalDay: typicalDay,
             sleepGoalMinutes: Int(self.sleepGoal.sleepGoalMinutes)
         )
+    }
+}
+
+private extension PolarFirstTimeUseConfig {
+    static func physicalGender(from value: Data_PbUserGender.Gender) -> PolarPhysicalConfiguration.Gender {
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarIosSharedBridge.shared.firstTimeUseGenderName(value: Int32(value.rawValue)) {
+            switch sharedName {
+            case "MALE": return .male
+            case "FEMALE": return .female
+            default: break
+            }
+        }
+        #endif
+        switch value {
+        case .male:
+            return .male
+        case .female:
+            return .female
+        }
     }
 }
 

@@ -1631,10 +1631,13 @@ final class PolarBleApiImplTests: XCTestCase {
 
         let proto = try XCTUnwrap(config.toProto())
 
+        XCTAssertEqual(Data_PbUserGender.Gender.female, proto.gender.value)
+        XCTAssertEqual(2, proto.gender.value.rawValue)
         XCTAssertEqual(Data_PbUserTrainingBackground.TrainingBackground.semiPro, proto.trainingBackground.value)
         XCTAssertEqual(50, proto.trainingBackground.value.rawValue)
         XCTAssertEqual(Data_PbUserTypicalDay.TypicalDay.mostlyMoving, proto.typicalDay.value)
         XCTAssertEqual(3, proto.typicalDay.value.rawValue)
+        XCTAssertEqual(.female, proto.toPolarPhysicalConfiguration().gender)
     }
 
     func test_getUserPhysicalConfiguration_returnsNilWhenPhysicalDataFileIsMissing() throws {

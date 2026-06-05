@@ -1,5 +1,20 @@
 package com.polar.shared.sdk
 
+enum class PolarFirstTimeUseGenderName(val value: Int) {
+    MALE(1),
+    FEMALE(2);
+
+    companion object {
+        fun fromValue(value: Int): PolarFirstTimeUseGenderName? {
+            return entries.firstOrNull { gender -> gender.value == value }
+        }
+
+        fun fromName(name: String): PolarFirstTimeUseGenderName? {
+            return entries.firstOrNull { gender -> gender.name == name }
+        }
+    }
+}
+
 enum class PolarFirstTimeUseTrainingBackgroundName(val value: Int) {
     OCCASIONAL(10),
     REGULAR(20),
