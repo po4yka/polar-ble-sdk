@@ -104,7 +104,7 @@ class PolarFileUtils {
         do {
             return try await client.request(request)
         } catch {
-            PolarRuntimePlanner.fileRuntimeError(operation: "removeSingleFile", path: filePath, error: error)
+            PolarFileRuntimePlanner.runtimeError(operation: "removeSingleFile", path: filePath, error: error)
             throw error
         }
     }
@@ -124,7 +124,7 @@ class PolarFileUtils {
             do {
                 _ = try await client.request(request)
             } catch {
-                PolarRuntimePlanner.fileRuntimeError(operation: "removeSingleFile", path: filePath, error: error)
+                PolarFileRuntimePlanner.runtimeError(operation: "removeSingleFile", path: filePath, error: error)
                 if case let BlePsFtpException.responseError(code) = error, code == 103 {
                     BleLogger.trace("File not found: \(filePath). Treating as already deleted.")
                     continue
@@ -148,7 +148,7 @@ class PolarFileUtils {
             let request = try operation.serializedData()
             return try await client.request(request)
         } catch {
-            PolarRuntimePlanner.fileRuntimeError(operation: "readFile", path: filePath, error: error)
+            PolarFileRuntimePlanner.runtimeError(operation: "readFile", path: filePath, error: error)
             throw PolarErrors.deviceError(description: "Failed to list files from \(filePath) path. Error \(error)")
         }
     }
@@ -177,7 +177,7 @@ class PolarFileUtils {
             }
             return results
         } catch {
-            PolarRuntimePlanner.fileRuntimeError(operation: "listFiles", path: path, error: error)
+            PolarFileRuntimePlanner.runtimeError(operation: "listFiles", path: path, error: error)
             throw handleError(error)
         }
     }
@@ -215,14 +215,14 @@ class PolarFileUtils {
         builder.command = plannedOperation?.command ?? .put
         builder.path = plannedOperation?.path ?? filePath
         PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: payloadHex)
-        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: fileData.count)
-        PolarRuntimePlanner.psFtpWriteAck(payloadSize: fileData.count)
+        _ = PolarFileRuntimePlanner.psFtpWriteProgress(payloadSize: fileData.count)
+        PolarFileRuntimePlanner.psFtpWriteAck(payloadSize: fileData.count)
         let proto = try builder.serializedData()
         let inputStream = InputStream(data: fileData)
         do {
             for try await _ in client.write(proto as NSData, data: inputStream) {}
         } catch {
-            PolarRuntimePlanner.fileRuntimeError(operation: "writeFile", path: filePath, error: error)
+            PolarFileRuntimePlanner.runtimeError(operation: "writeFile", path: filePath, error: error)
             throw error
         }
     }

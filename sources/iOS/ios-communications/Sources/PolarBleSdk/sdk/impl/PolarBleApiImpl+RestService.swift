@@ -226,15 +226,15 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         operation.command = plannedOperation?.command ?? command
         operation.path = plannedOperation?.path ?? path
         PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
-        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: data.count)
-        PolarRuntimePlanner.psFtpWriteAck(payloadSize: data.count)
+        _ = PolarFileRuntimePlanner.psFtpWriteProgress(payloadSize: data.count)
+        PolarFileRuntimePlanner.psFtpWriteAck(payloadSize: data.count)
         let proto = try operation.serializedData()
         let inputStream = InputStream(data: data)
         // Consume the write stream to completion (ignore progress values)
         do {
             for try await _ in client.write(proto as NSData, data: inputStream) {}
         } catch {
-            PolarRuntimePlanner.fileRuntimeError(operation: "writeFile", path: path, error: error)
+            PolarFileRuntimePlanner.runtimeError(operation: "writeFile", path: path, error: error)
             throw error
         }
     }

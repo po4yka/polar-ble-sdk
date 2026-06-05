@@ -2098,6 +2098,17 @@ final class PolarBleApiImplTests: XCTestCase {
         #endif
     }
 
+    func test_fileRuntimePlannerSurfacesSharedErrorAndWritePolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let error = NSError(domain: "PolarBleApiImplTests", code: 1)
+        XCTAssertEqual("transport-error", PolarFileRuntimePlanner.runtimeError(operation: "readFile", path: "/U/0/CUSTOM.BIN", error: error))
+        XCTAssertEqual([0, 1, 2], PolarFileRuntimePlanner.psFtpWriteProgress(payloadSize: 2))
+        XCTAssertEqual("success", PolarFileRuntimePlanner.psFtpWriteAck(payloadSize: 2))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func test_commandRuntimePlannerMapsSharedQueriesAndNotificationsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("success", PolarCommandRuntimePlanner.query(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS"))

@@ -434,6 +434,8 @@
 		AA9903EF2F5B7A3B00FD4744 /* PolarDiskTimeRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903EE2F5B7A3B00FD4744 /* PolarDiskTimeRuntimePlanner.swift */; };
 		AA9903F12F5B83C800FD4744 /* PolarUserDeviceSettingsRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903F02F5B83C800FD4744 /* PolarUserDeviceSettingsRuntimePlanner.swift */; };
 		AA9903F22F5B83C800FD4744 /* PolarUserDeviceSettingsRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903F02F5B83C800FD4744 /* PolarUserDeviceSettingsRuntimePlanner.swift */; };
+		AA9903F42F5B8D1000FD4744 /* PolarFileRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903F32F5B8D1000FD4744 /* PolarFileRuntimePlanner.swift */; };
+		AA9903F52F5B8D1000FD4744 /* PolarFileRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903F32F5B8D1000FD4744 /* PolarFileRuntimePlanner.swift */; };
 		AA9903E12F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903E02F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift */; };
 		AA9903E22F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903E02F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift */; };
 		AA9903DE2F5B2F0100FD4744 /* PolarRuntimePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9903DD2F5B2F0100FD4744 /* PolarRuntimePlanner.swift */; };
@@ -632,6 +634,7 @@
 		AA9903EC2F5B7A3B00FD4744 /* PolarCommandRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarCommandRuntimePlanner.swift; sourceTree = "<group>"; };
 		AA9903EE2F5B7A3B00FD4744 /* PolarDiskTimeRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarDiskTimeRuntimePlanner.swift; sourceTree = "<group>"; };
 		AA9903F02F5B83C800FD4744 /* PolarUserDeviceSettingsRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarUserDeviceSettingsRuntimePlanner.swift; sourceTree = "<group>"; };
+		AA9903F32F5B8D1000FD4744 /* PolarFileRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarFileRuntimePlanner.swift; sourceTree = "<group>"; };
 		AA9903E02F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarFileFacadeRuntimePlanner.swift; sourceTree = "<group>"; };
 		AA9903DD2F5B2F0100FD4744 /* PolarRuntimePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarRuntimePlanner.swift; sourceTree = "<group>"; };
 		A5743686291A825F00E901A4 /* PolarTimeUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarTimeUtilsTests.swift; sourceTree = "<group>"; };
@@ -1121,6 +1124,7 @@
 				AA9903EC2F5B7A3B00FD4744 /* PolarCommandRuntimePlanner.swift */,
 				AA9903EE2F5B7A3B00FD4744 /* PolarDiskTimeRuntimePlanner.swift */,
 				AA9903F02F5B83C800FD4744 /* PolarUserDeviceSettingsRuntimePlanner.swift */,
+				AA9903F32F5B8D1000FD4744 /* PolarFileRuntimePlanner.swift */,
 				AA9903E02F5B2F0100FD4744 /* PolarFileFacadeRuntimePlanner.swift */,
 				AA9903DD2F5B2F0100FD4744 /* PolarRuntimePlanner.swift */,
 				AA1234560000000000000001 /* AsyncCombineHelpers.swift */,
@@ -1898,6 +1902,7 @@
 				AA9903E72F5B6A7E00FD4744 /* PolarStreamRuntimePlanner.swift in Sources */,
 				AA9903EA2F5B713A00FD4744 /* PolarRestFacadeRuntimePlanner.swift in Sources */,
 				AA9903F12F5B83C800FD4744 /* PolarUserDeviceSettingsRuntimePlanner.swift in Sources */,
+				AA9903F42F5B8D1000FD4744 /* PolarFileRuntimePlanner.swift in Sources */,
 				6C0C54FE1CFEB3C900FF23E9 /* TimeUtility.swift in Sources */,
 				6C5A44971CB291500006220D /* BleGattClientBase.swift in Sources */,
 				6C5A44981CB291500006220D /* BleGattClientFactory.swift in Sources */,
@@ -2180,6 +2185,7 @@
 				AA9903ED2F5B7A3B00FD4744 /* PolarCommandRuntimePlanner.swift in Sources */,
 				AA9903EF2F5B7A3B00FD4744 /* PolarDiskTimeRuntimePlanner.swift in Sources */,
 				AA9903F22F5B83C800FD4744 /* PolarUserDeviceSettingsRuntimePlanner.swift in Sources */,
+				AA9903F52F5B8D1000FD4744 /* PolarFileRuntimePlanner.swift in Sources */,
 				AA9903DE2F5B2F0100FD4744 /* PolarRuntimePlanner.swift in Sources */,
 				6C770B94206B77F300F3D51D /* BleHrClient.swift in Sources */,
 				A55E08B42A29EB0C0059E6C7 /* BleHtsClient.swift in Sources */,

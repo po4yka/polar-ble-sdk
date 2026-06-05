@@ -2431,7 +2431,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                         var lastBytesWritten: Int = 0
                         let firmwareFilePath = "/\(firmwareFile.0)"
                         let firmwareFileBytes = firmwareFile.1
-                        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: firmwareFileBytes.count)
+                        _ = PolarFileRuntimePlanner.psFtpWriteProgress(payloadSize: firmwareFileBytes.count)
                         for try await bytesWritten in self.writeFirmwareToDeviceAsync(identifier: identifier, firmwareFilePath: firmwareFilePath, firmwareBytes: firmwareFileBytes) {
                             let bw = Int(bytesWritten)
                             let delta = bw - lastBytesWritten
@@ -3177,7 +3177,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                     var builder = Protocol_PbPFtpOperation()
                     builder.command = writeOperation.command
                     builder.path = writeOperation.path
-                    PolarRuntimePlanner.psFtpWriteAck(payloadSize: firmwareBytes.count)
+                    PolarFileRuntimePlanner.psFtpWriteAck(payloadSize: firmwareBytes.count)
                     let proto = try builder.serializedData()
                     for try await bytesWritten in client.write(proto as NSData, data: InputStream(data: firmwareBytes)) {
                         BleLogger.trace("Writing firmware update file, bytes written: \(bytesWritten)/\(firmwareBytes.count)")

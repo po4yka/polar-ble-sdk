@@ -100,11 +100,7 @@ enum PolarRuntimePlanner {
 
     @discardableResult
     static func fileRuntimeError(operation: String, path: String, error: Error) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeFileError(operation: operation, path: path, errorName: String(describing: type(of: error)))
-        #else
-        return "platform-owned"
-        #endif
+        return PolarFileRuntimePlanner.runtimeError(operation: operation, path: path, error: error)
     }
 
     @discardableResult
@@ -207,20 +203,12 @@ enum PolarRuntimePlanner {
     }
 
     static func psFtpWriteProgress(payloadSize: Int, platform: String = "ios") -> [Int] {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimePsFtpWriteProgress(payloadSize: Int32(payloadSize), platform: platform).split(separator: ",").compactMap { Int($0) }
-        #else
-        return []
-        #endif
+        return PolarFileRuntimePlanner.psFtpWriteProgress(payloadSize: payloadSize, platform: platform)
     }
 
     @discardableResult
     static func psFtpWriteAck(payloadSize: Int, writeAck: String = "success") -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimePsFtpWriteAck(payloadSize: Int32(payloadSize), writeAck: writeAck)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarFileRuntimePlanner.psFtpWriteAck(payloadSize: payloadSize, writeAck: writeAck)
     }
 
     static func d2hNotificationTypeName(notificationId: Int) -> String? {
