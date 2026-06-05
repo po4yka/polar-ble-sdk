@@ -4091,5 +4091,20 @@ final class PolarBleApiImplTests: XCTestCase {
 
         // Assert
         XCTAssertEqual(h10MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: h10MockClient.requestCalls[0])
+        XCTAssertEqual(.remove, requestOperation.command)
+        XCTAssertEqual(entry.path, requestOperation.path)
+    }
+
+    func testH10ExerciseFileHeadersUseSharedFileFacadePlanning() {
+        let path = "/EXERCISE/E0000001.BPB"
+
+        let fetchOperation = PolarBleApiImpl.h10ExerciseFetchOperation(path: path)
+        XCTAssertEqual(fetchOperation.command, .get)
+        XCTAssertEqual(fetchOperation.path, path)
+
+        let removeOperation = PolarBleApiImpl.h10ExerciseRemoveOperation(path: path)
+        XCTAssertEqual(removeOperation.command, .remove)
+        XCTAssertEqual(removeOperation.path, path)
     }
 }

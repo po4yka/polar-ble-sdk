@@ -1417,6 +1417,20 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `H10 exercise file headers use shared file facade planning`() {
+        val path = "/EXERCISE/E0000001.BPB"
+
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to path,
+            BDBleApiImpl.h10ExerciseFetchOperation(path)
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.REMOVE to path,
+            BDBleApiImpl.h10ExerciseRemoveOperation(path)
+        )
+    }
+
+    @Test
     fun `doFirstTimeUse terminates sync and propagates physical config write failure`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))

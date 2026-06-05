@@ -84,6 +84,14 @@ import UIKit
         return facadeFileOperation(id: "first-time-use-write-user-id", command: "PUT", path: UserIdentifierType.USER_IDENTIFIER_FILENAME)
     }
 
+    static func h10ExerciseFetchOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "h10-exercise-fetch", command: "GET", path: path)
+    }
+
+    static func h10ExerciseRemoveOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "h10-exercise-remove", command: "REMOVE", path: path)
+    }
+
     private static func facadeFileOperation(id: String, command: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
             return plannedOperation
@@ -1186,8 +1194,9 @@ extension PolarBleApiImpl: PolarBleApi  {
         case .polarFileSystemV2:
             throw PolarErrors.polarBleSdkInternalException(description: "Other than H10 sensor is not supported by removeExercise API method. For other than H10 sensor use API deleteTrainingSession API method instead.")
         case .h10FileSystem:
-            operation.command = .remove
-            operation.path = entry.path
+            let removeOperation = Self.h10ExerciseRemoveOperation(path: entry.path)
+            operation.command = removeOperation.command
+            operation.path = removeOperation.path
             let request = try operation.serializedData()
             _ = try await client.request(request)
         default:
@@ -1896,9 +1905,10 @@ extension PolarBleApiImpl: PolarBleApi  {
     func fetchExercise(_ identifier: String, entry: PolarExerciseEntry) async throws -> PolarExerciseData {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.operationNotSupported }
+        let fetchOperation = Self.h10ExerciseFetchOperation(path: entry.path)
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = entry.path
+        operation.command = fetchOperation.command
+        operation.path = fetchOperation.path
         let request = try operation.serializedData()
         let data = try await client.request(request)
         let samples = try Data_PbExerciseSamples(serializedBytes: data as Data)

@@ -912,9 +912,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
 
+        val fetchOperation = h10ExerciseFetchOperation(entry.path)
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = PftpRequest.PbPFtpOperation.Command.GET
-        builder.path = entry.path
+        builder.command = fetchOperation.first
+        builder.path = fetchOperation.second
 
         return try {
             val byteArrayOutputStream = client.request(builder.build().toByteArray())
@@ -1376,9 +1377,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         when (getFileSystemType(session.polarDeviceType)) {
             FileSystemType.POLAR_FILE_SYSTEM_V2 -> throw PolarBleSdkInternalException("Other than H10 sensor is not supported by removeExercise API method. For other than H10 sensor use API deleteTrainingSession API method instead.")
             FileSystemType.H10_FILE_SYSTEM -> {
+                val removeOperation = h10ExerciseRemoveOperation(entry.path)
                 val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                builder.command = PftpRequest.PbPFtpOperation.Command.REMOVE
-                builder.path = entry.path
+                builder.command = removeOperation.first
+                builder.path = removeOperation.second
                 try {
                     client.request(builder.build().toByteArray())
                 } catch (throwable: Throwable) {
@@ -3725,6 +3727,14 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         internal fun firstTimeUseUserIdWriteOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
             return facadeFileOperation("first-time-use-write-user-id", "PUT", UserIdentifierType.USER_IDENTIFIER_FILENAME)
+        }
+
+        internal fun h10ExerciseFetchOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("h10-exercise-fetch", "GET", path)
+        }
+
+        internal fun h10ExerciseRemoveOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("h10-exercise-remove", "REMOVE", path)
         }
 
         private fun facadeFileOperation(id: String, command: String, path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
