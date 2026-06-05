@@ -1796,11 +1796,14 @@
 			);
 			inputPaths = (
 				"$(SRCROOT)/scripts/build_kmp_ios_framework.sh",
+				"$(SRCROOT)/../../Android/android-communications/shared/build.gradle",
+				"$(SRCROOT)/../../Android/android-communications/shared/src",
 			);
 			name = "Build PolarBleSdkShared KMP Framework";
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)/PolarBleSdkShared.framework/Info.plist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1816,11 +1819,14 @@
 			);
 			inputPaths = (
 				"$(SRCROOT)/scripts/build_kmp_ios_framework.sh",
+				"$(SRCROOT)/../../Android/android-communications/shared/build.gradle",
+				"$(SRCROOT)/../../Android/android-communications/shared/src",
 			);
 			name = "Build PolarBleSdkShared KMP Framework";
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)/PolarBleSdkShared.framework/Info.plist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
