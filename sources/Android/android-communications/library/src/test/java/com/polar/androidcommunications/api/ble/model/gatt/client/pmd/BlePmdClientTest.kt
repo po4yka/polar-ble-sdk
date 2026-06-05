@@ -93,6 +93,19 @@ internal class BlePmdClientTest {
     }
 
     @Test
+    fun pmdMeasurementTypeLookupDelegatesKnownIdsToSharedModelAndPreservesUnknownFallback() {
+        assertEquals(PmdMeasurementType.ECG, PmdMeasurementType.fromId(0))
+        assertEquals(PmdMeasurementType.ACC, PmdMeasurementType.fromId(0xC2.toByte()))
+        assertEquals(PmdMeasurementType.GYRO, PmdMeasurementType.fromId(5))
+        assertEquals(PmdMeasurementType.MAGNETOMETER, PmdMeasurementType.fromId(6))
+        assertEquals(PmdMeasurementType.SKIN_TEMP, PmdMeasurementType.fromId(7))
+        assertEquals(PmdMeasurementType.OFFLINE_RECORDING, PmdMeasurementType.fromId(13))
+        assertEquals(PmdMeasurementType.OFFLINE_HR, PmdMeasurementType.fromId(14))
+        assertEquals(PmdMeasurementType.UNKNOWN_TYPE, PmdMeasurementType.fromId(4))
+        assertEquals(PmdMeasurementType.UNKNOWN_TYPE, PmdMeasurementType.fromId(0xFF.toByte()))
+    }
+
+    @Test
     fun `process not supported frame type`() {
         // Arrange
         // HEX: 01 01 00 00 00 00 00 00 70 FF

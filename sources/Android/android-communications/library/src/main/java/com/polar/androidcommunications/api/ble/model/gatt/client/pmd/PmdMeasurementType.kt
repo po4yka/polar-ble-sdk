@@ -1,5 +1,7 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
+import com.polar.shared.pmd.PolarPmdMeasurementTypeName
+
 enum class PmdMeasurementType(val numVal: UByte) {
     ECG(0u),
     PPG(1u),
@@ -26,15 +28,10 @@ enum class PmdMeasurementType(val numVal: UByte) {
     }
 
     internal companion object {
-        private const val MEASUREMENT_TYPE_BIT_MASK: UByte = 0x3Fu
-
         fun fromId(id: Byte): PmdMeasurementType {
-            for (type in values()) {
-                if (type.numVal == (id.toUByte() and MEASUREMENT_TYPE_BIT_MASK)) {
-                    return type
-                }
-            }
-            return UNKNOWN_TYPE
+            return PolarPmdMeasurementTypeName.fromMaskedId(id.toInt())?.let { sharedType ->
+                values().firstOrNull { it.sharedName == sharedType.name }
+            } ?: UNKNOWN_TYPE
         }
 
         fun fromByteArray(data: ByteArray): Set<PmdMeasurementType> {
@@ -57,3 +54,9 @@ enum class PmdMeasurementType(val numVal: UByte) {
         }
     }
 }
+
+private val PmdMeasurementType.sharedName: String
+    get() = when (this) {
+        PmdMeasurementType.MAGNETOMETER -> "MAG"
+        else -> name
+    }
