@@ -3829,7 +3829,6 @@ class GoldenVectorMigrationPolicyTest {
         val FIRMWARE_FACADE_GATE_REQUIRED_TERMS = listOf(
             "facade gate open",
             "PolarFirmwareUpdateUtilsTest.kt",
-            "FirmwareUpdateCommonFakeWorkflowTest.kt",
             "PolarFirmwareUpdateUtilsTest.swift",
             "workflow-runtime-policy.json",
             "FirmwareWorkflowRuntimePolicyCommonTest.kt",

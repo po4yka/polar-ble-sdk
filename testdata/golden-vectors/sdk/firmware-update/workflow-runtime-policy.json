@@ -140,7 +140,7 @@
     "policy": "firmware-update-workflow-runtime-matrix",
     "migrationRequirement": "Before moving firmware update orchestration into common KMP code, implement injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors.",
     "commonWorkflowPrototype": {
-      "status": "executable shared commonTest plus Android-hosted prototype",
+      "status": "executable shared commonTest",
       "cases": [
         {
           "id": "check-update-not-available",
@@ -241,14 +241,12 @@
   },
   "consumerTests": {
     "android": [
-      "com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest",
-      "com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest"
+      "com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"
     ],
     "ios": [
       "PolarFirmwareUpdateUtilsTest"
     ],
     "commonPrototype": [
-      "com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest",
       "com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"
     ]
   },

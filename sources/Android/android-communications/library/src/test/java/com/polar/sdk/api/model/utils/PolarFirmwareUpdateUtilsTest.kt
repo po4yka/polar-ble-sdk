@@ -285,14 +285,14 @@ class PolarFirmwareUpdateUtilsTest {
         Assert.assertEquals(FIRMWARE_WORKFLOW_SCENARIOS, scenarioIds)
         Assert.assertEquals("firmware-update-workflow-runtime-matrix", expected.get("policy").asString)
         Assert.assertEquals(FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT, expected.get("migrationRequirement").asString)
-        Assert.assertEquals("executable shared commonTest plus Android-hosted prototype", expectedCommonPrototype.get("status").asString)
+        Assert.assertEquals("executable shared commonTest", expectedCommonPrototype.get("status").asString)
         Assert.assertEquals(FIRMWARE_WORKFLOW_SCENARIOS, commonPrototypeCaseIds)
         Assert.assertEquals("shared-common-test", vector.getAsJsonObject("execution").get("common").asString)
         Assert.assertEquals(FIRMWARE_WORKFLOW_COMMON_DECISION, vector.getAsJsonObject("platformExpectations").getAsJsonObject("commonDecision").get("workflowPolicy").asString)
         Assert.assertTrue("workflow-runtime-policy", vector.has("execution"))
-        Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest", "com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         Assert.assertEquals(listOf("PolarFirmwareUpdateUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
-        Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest", "com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
     }
 
     @Test
