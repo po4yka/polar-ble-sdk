@@ -1,6 +1,7 @@
 package com.polar.shared.ios
 
 import com.polar.shared.device.PolarDeviceId
+import com.polar.shared.ble.PolarAdvertisementModels
 import com.polar.shared.ble.PolarTypeUtils
 import com.polar.shared.device.PolarDeviceCapabilities
 import com.polar.shared.device.PolarDeviceCapabilitiesConfig
@@ -47,6 +48,14 @@ import com.polar.shared.time.PolarTimeFields
 import com.polar.shared.time.PolarTimeUtils
 
 object PolarIosSharedBridge {
+    fun advertisementDeviceModelName(localName: String, prefixToTrim: String): String {
+        return PolarAdvertisementModels.deviceModelNameFromLocalName(localName, prefixToTrim)
+    }
+
+    fun isValidAdvertisementDeviceName(localName: String, requiredPrefix: String): Boolean {
+        return PolarAdvertisementModels.isValidDeviceLocalName(localName, requiredPrefix)
+    }
+
     fun isValidDeviceId(deviceId: String): Boolean {
         return PolarDeviceId.isValidOrFalse(deviceId)
     }
