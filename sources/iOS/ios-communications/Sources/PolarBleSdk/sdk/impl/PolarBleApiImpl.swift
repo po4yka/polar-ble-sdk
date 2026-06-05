@@ -1926,9 +1926,9 @@ extension PolarBleApiImpl: PolarBleApi  {
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = false
         builder.otaFwupdate = preservePairingInformation
-        PolarRuntimePlanner.commandReset(id: "factory-reset-preserve-pairing", sleep: false, factoryDefaults: true, otaFirmwareUpdate: preservePairingInformation)
+        let notification = plannedResetNotification(id: "factory-reset-preserve-pairing", sleep: false, factoryDefaults: true, otaFirmwareUpdate: preservePairingInformation)
         BleLogger.trace("Send do factory reset to device: \(identifier)")
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
+        try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)
     }
 
 
@@ -1937,9 +1937,9 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = false
-        PolarRuntimePlanner.commandReset(id: "factory-reset", sleep: false, factoryDefaults: true, otaFirmwareUpdate: false)
+        let notification = plannedResetNotification(id: "factory-reset", sleep: false, factoryDefaults: true, otaFirmwareUpdate: false)
         BleLogger.trace("Send do factory reset to device: \(identifier)")
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
+        try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)
     }
 
 
@@ -1950,10 +1950,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         builder.sleep = false
         builder.doFactoryDefaults = false
         builder.otaFwupdate = preservePairingInformation
-        PolarRuntimePlanner.commandReset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: preservePairingInformation)
+        let notification = plannedResetNotification(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: preservePairingInformation)
         BleLogger.trace("Send do restart to device: \(identifier)")
         do {
-            try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
+            try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)
         } catch let err as BleGattException {
             if case .gattDisconnected = err { BleLogger.trace("doRestart() gattDisconnected") } else { throw err }
         }
@@ -1966,13 +1966,18 @@ extension PolarBleApiImpl: PolarBleApi  {
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = false
         builder.doFactoryDefaults = false
-        PolarRuntimePlanner.commandReset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false)
+        let notification = plannedResetNotification(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false)
         BleLogger.trace("Send do restart to device: \(identifier)")
         do {
-            try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
+            try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)
         } catch let err as BleGattException {
             if case .gattDisconnected = err { BleLogger.trace("doRestart() gattDisconnected") } else { throw err }
         }
+    }
+
+    private func plannedResetNotification(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) -> Int {
+        PolarRuntimePlanner.commandReset(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
+        return PolarRuntimePlanner.commandResetNotification(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate) ?? Protocol_PbPFtpHostToDevNotification.reset.rawValue
     }
 
 
@@ -2569,9 +2574,9 @@ extension PolarBleApiImpl: PolarBleApi  {
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = enableWarehouseSleep ?? false
         builder.otaFwupdate = true
-        PolarRuntimePlanner.commandReset(id: "factory-reset-preserve-pairing", sleep: enableWarehouseSleep ?? false, factoryDefaults: true, otaFirmwareUpdate: true)
+        let notification = plannedResetNotification(id: "factory-reset-preserve-pairing", sleep: enableWarehouseSleep ?? false, factoryDefaults: true, otaFirmwareUpdate: true)
         BleLogger.trace("Setting warehouse sleep, device: \(identifier).")
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
+        try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)
     }
 
 
@@ -2581,9 +2586,9 @@ extension PolarBleApiImpl: PolarBleApi  {
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = true
         builder.doFactoryDefaults = true
-        PolarRuntimePlanner.commandReset(id: "warehouse-sleep", sleep: true, factoryDefaults: true, otaFirmwareUpdate: false)
+        let notification = plannedResetNotification(id: "warehouse-sleep", sleep: true, factoryDefaults: true, otaFirmwareUpdate: false)
         BleLogger.trace("Setting warehouse sleep to true, device: \(identifier).")
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
+        try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)
     }
 
     
@@ -2593,9 +2598,9 @@ extension PolarBleApiImpl: PolarBleApi  {
         var builder = Protocol_PbPFtpFactoryResetParams()
         builder.sleep = true
         builder.doFactoryDefaults = false
-        PolarRuntimePlanner.commandReset(id: "turn-device-off", sleep: true, factoryDefaults: false, otaFirmwareUpdate: false)
+        let notification = plannedResetNotification(id: "turn-device-off", sleep: true, factoryDefaults: false, otaFirmwareUpdate: false)
         BleLogger.trace("Turn off device \(identifier).")
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
+        try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)
     }
 
 

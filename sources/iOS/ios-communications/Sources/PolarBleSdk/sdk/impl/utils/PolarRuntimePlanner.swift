@@ -25,6 +25,14 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func commandResetNotification(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return notificationRawValues(PolarIosSharedBridge.shared.planRuntimeCommandResetNotifications(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)).first
+        #else
+        return nil
+        #endif
+    }
+
     @discardableResult
     static func commandSyncStart(id: String) -> String {
         #if canImport(PolarBleSdkShared)
