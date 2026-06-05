@@ -1,6 +1,9 @@
 //  Copyright © 2023 Polar. All rights reserved.
 
 import XCTest
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 @testable import iOSCommunications
 
 final class OfflineHrDataTest: XCTestCase {
@@ -129,6 +132,38 @@ final class OfflineHrDataTest: XCTestCase {
         XCTAssertEqual(expectedPPGQuality2, offlineHrData.samples.last?.ppgQuality)
         XCTAssertEqual(expectedCorrectedHR1, offlineHrData.samples.first?.correctedHr)
         XCTAssertEqual(expectedCorrectedHR2, offlineHrData.samples.last?.correctedHr)
+    }
+
+    func testOfflineHrRawParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "0e000000000000000001485647514052"
+        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.offlineHrRawSamples(dataFrameHex: dataFrameHex, previousTimeStamp: 0, factor: 1.0, sampleRate: 0))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 0 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let offlineHrData = try OfflineHrData.parseDataFromDataFrame(frame: dataFrame)
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt8, UInt8, UInt8) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt8(fields[0])),
+                try XCTUnwrap(UInt8(fields[1])),
+                try XCTUnwrap(UInt8(fields[2]))
+            )
+        }
+
+        XCTAssertEqual(sharedSamples.count, offlineHrData.samples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            XCTAssertEqual(sharedSample.0, offlineHrData.samples[index].hr)
+            XCTAssertEqual(sharedSample.1, offlineHrData.samples[index].ppgQuality)
+            XCTAssertEqual(sharedSample.2, offlineHrData.samples[index].correctedHr)
+        }
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testCompressedOfflineHrDataFrameType1ThrowsError() throws {

@@ -27,6 +27,7 @@ class SensorParserProductionCommonPolicyTest {
         assertPressure("protocol/sensors/pressure-raw-type0-single-sample.json")
         assertTemperature("protocol/sensors/temperature-raw-type0-single-sample.json")
         assertSkinTemperature("protocol/sensors/skin-temperature-raw-type0-single-sample.json")
+        assertOfflineHr("protocol/sensors/offline-hr-raw-type1-two-samples.json")
     }
 
     @Test
@@ -39,6 +40,9 @@ class SensorParserProductionCommonPolicyTest {
         }
         assertFailsWith<IllegalArgumentException> {
             PolarSensorDataParser.parseSkinTemperature(frame("protocol/sensors/skin-temperature-raw-type1-unsupported.json"))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            PolarSensorDataParser.parseOfflineHr(frame("protocol/sensors/offline-hr-raw-type1-truncated-tuple-android-error.json"))
         }
     }
 
@@ -130,6 +134,17 @@ class SensorParserProductionCommonPolicyTest {
         val expected = vector.expectedSamples().single()
         assertEquals(expected.jsonNumberString("timeStamp"), actual.timeStamp.toString())
         assertFloat(expected.doubleValue("skinTemperature"), actual.skinTemperature)
+    }
+
+    private fun assertOfflineHr(path: String) {
+        val vector = loadGoldenVectorText(path)
+        val samples = PolarSensorDataParser.parseOfflineHr(frameFromVector(vector))
+        vector.expectedSamples().forEachIndexed { index, expected ->
+            val actual = samples[index]
+            assertEquals(expected.intValue("hr"), actual.hr)
+            assertEquals(expected.intValue("ppgQuality"), actual.ppgQuality)
+            assertEquals(expected.intValue("correctedHr"), actual.correctedHr)
+        }
     }
 
     private fun assertXyz(expected: String, actual: PolarAccSample, caseId: String, index: Int) {

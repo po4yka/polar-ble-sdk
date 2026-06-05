@@ -68,6 +68,7 @@ data class PolarPpiSample(val hr: Int, val ppInMs: Int, val ppErrorEstimate: Int
 data class PolarPressureSample(val timeStamp: ULong, val pressure: Float)
 data class PolarTemperatureSample(val timeStamp: ULong, val temperature: Float)
 data class PolarSkinTemperatureSample(val timeStamp: ULong, val skinTemperature: Float)
+data class PolarOfflineHrSample(val hr: Int, val ppgQuality: Int, val correctedHr: Int)
 
 enum class PolarMagCalibrationStatus(val id: Int) {
     NOT_AVAILABLE(-1),
@@ -224,6 +225,28 @@ object PolarSensorDataParser {
     fun parseSkinTemperature(frame: PolarPmdDataFrame): List<PolarSkinTemperatureSample> {
         val rawSamples = parseFloatScalar(frame, rawName = "Skin Temperature").map { PolarSkinTemperatureSample(0uL, it) }
         return rawSamples.withSkinTemperatureTimeStamps(frame)
+    }
+
+    fun parseOfflineHr(frame: PolarPmdDataFrame): List<PolarOfflineHrSample> {
+        if (frame.compressed) throw IllegalArgumentException("unsupportedCompressedFrame")
+        return when (frame.frameType) {
+            0 -> frame.dataContent.map { byte ->
+                PolarOfflineHrSample(hr = byte.toInt() and BYTE_MASK, ppgQuality = 0, correctedHr = 0)
+            }
+            1 -> {
+                val sampleSize = 3
+                if (frame.dataContent.size % sampleSize != 0) throw IllegalArgumentException("malformedFrame")
+                (0 until frame.dataContent.size / sampleSize).map { index ->
+                    val offset = index * sampleSize
+                    PolarOfflineHrSample(
+                        hr = frame.dataContent[offset].toInt() and BYTE_MASK,
+                        ppgQuality = frame.dataContent[offset + 1].toInt() and BYTE_MASK,
+                        correctedHr = frame.dataContent[offset + 2].toInt() and BYTE_MASK
+                    )
+                }
+            }
+            else -> throw IllegalArgumentException("unsupportedFrame")
+        }
     }
 
     private fun parseEcgRawType0(frame: PolarPmdDataFrame): List<PolarEcgSample> {
