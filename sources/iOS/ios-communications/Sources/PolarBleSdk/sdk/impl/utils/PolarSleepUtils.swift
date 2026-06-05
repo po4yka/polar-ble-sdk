@@ -30,14 +30,7 @@ internal class PolarSleepUtils {
     }
 
     private static func fileReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
-        #if canImport(PolarBleSdkShared)
-        let plannedOperation = PolarIosSharedBridge.shared.planRuntimeFileFacadeOperation(id: id, command: "GET", path: path, payloadHex: "")
-        let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
-        guard parts.count == 2, parts[0] == "GET" else { return nil }
-        return (.get, parts[1])
-        #else
-        return nil
-        #endif
+        return PolarRuntimePlanner.fileFacadeOperation(id: id, command: "GET", path: path)
     }
 
     static func readSleepFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> PolarSleepData.PolarSleepAnalysisResult {

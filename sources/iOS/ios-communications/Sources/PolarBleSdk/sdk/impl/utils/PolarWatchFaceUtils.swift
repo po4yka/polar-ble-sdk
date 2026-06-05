@@ -46,18 +46,7 @@ internal enum PolarWatchFaceUtils {
     }
 
     private static func watchFaceOperation(id: String, command: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
-        #if canImport(PolarBleSdkShared)
-        let plannedOperation = PolarIosSharedBridge.shared.planRuntimeFileFacadeOperation(id: id, command: command, path: KVTX_FILE_PATH, payloadHex: "")
-        let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
-        guard parts.count == 2 else { return nil }
-        switch parts[0] {
-        case "GET": return (.get, parts[1])
-        case "PUT": return (.put, parts[1])
-        default: return nil
-        }
-        #else
-        return nil
-        #endif
+        return PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: KVTX_FILE_PATH)
     }
 
     // MARK: - Public API
