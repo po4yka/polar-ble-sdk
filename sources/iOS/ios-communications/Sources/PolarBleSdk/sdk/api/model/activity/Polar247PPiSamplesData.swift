@@ -54,6 +54,12 @@ public struct Polar247PPiSamplesData: Codable {
         case SKIN_CONTACT_DETECTED = "SKIN_CONTACT_DETECTED"
 
         static func getByValue(value: Int) -> SkinContact? {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarIosSharedBridge.shared.ppiSkinContactName(value: Int32(value)),
+               let sharedValue = SkinContact(rawValue: sharedName) {
+                return sharedValue
+            }
+            #endif
 
             switch value {
             case 0: return .NO_SKIN_CONTACT
@@ -69,6 +75,12 @@ public struct Polar247PPiSamplesData: Codable {
         case MOVING_DETECTED = "MOVING_DETECTED"
 
         static func getByValue(value: Int) -> Movement? {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarIosSharedBridge.shared.ppiMovementName(value: Int32(value)),
+               let sharedValue = Movement(rawValue: sharedName) {
+                return sharedValue
+            }
+            #endif
 
             switch value {
             case 0: return .NO_MOVING_DETECTED
@@ -84,6 +96,12 @@ public struct Polar247PPiSamplesData: Codable {
         case INTERVAL_DENOTES_OFFLINE_PERIOD = "INTERVAL_DENOTES_OFFLINE_PERIOD"
         
         static func getByValue(value: Int) -> IntervalStatus? {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarIosSharedBridge.shared.ppiIntervalStatusName(value: Int32(value)),
+               let sharedValue = IntervalStatus(rawValue: sharedName) {
+                return sharedValue
+            }
+            #endif
 
             switch value {
             case 0: return .INTERVAL_IS_ONLINE

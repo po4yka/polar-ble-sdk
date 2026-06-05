@@ -326,6 +326,18 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
         }
     }
 
+    func testPpiStatusValueHelpersPreservePublicMapping() {
+        XCTAssertEqual(.NO_SKIN_CONTACT, Polar247PPiSamplesData.SkinContact.getByValue(value: 0))
+        XCTAssertEqual(.SKIN_CONTACT_DETECTED, Polar247PPiSamplesData.SkinContact.getByValue(value: 1))
+        XCTAssertNil(Polar247PPiSamplesData.SkinContact.getByValue(value: 2))
+        XCTAssertEqual(.NO_MOVING_DETECTED, Polar247PPiSamplesData.Movement.getByValue(value: 0))
+        XCTAssertEqual(.MOVING_DETECTED, Polar247PPiSamplesData.Movement.getByValue(value: 1))
+        XCTAssertNil(Polar247PPiSamplesData.Movement.getByValue(value: 2))
+        XCTAssertEqual(.INTERVAL_IS_ONLINE, Polar247PPiSamplesData.IntervalStatus.getByValue(value: 0))
+        XCTAssertEqual(.INTERVAL_DENOTES_OFFLINE_PERIOD, Polar247PPiSamplesData.IntervalStatus.getByValue(value: 1))
+        XCTAssertNil(Polar247PPiSamplesData.IntervalStatus.getByValue(value: 2))
+    }
+
     func testAutomaticSampleGoldenVectorsFollowNeutralKmpShape() throws {
         for vector in try loadAutomaticSampleGoldenVectors() {
             let id = try XCTUnwrap(vector["id"] as? String)

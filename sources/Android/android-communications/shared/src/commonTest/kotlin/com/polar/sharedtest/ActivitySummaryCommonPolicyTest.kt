@@ -3,6 +3,9 @@ package com.polar.sharedtest
 import com.polar.shared.sdk.PolarAutomaticHrTriggerName
 import com.polar.shared.sdk.PolarActivityClassName
 import com.polar.shared.sdk.PolarDailyBalanceFeedbackName
+import com.polar.shared.sdk.PolarPpiIntervalStatusName
+import com.polar.shared.sdk.PolarPpiMovementName
+import com.polar.shared.sdk.PolarPpiSkinContactName
 import com.polar.shared.sdk.PolarPpiStatusNames
 import com.polar.shared.sdk.PolarTrainingReadinessName
 import kotlin.math.abs
@@ -75,6 +78,12 @@ class ActivitySummaryCommonPolicyTest {
         assertEquals(ppiExpectation.intArrayValue("ppiValueList"), cumulativeValues(ppiSample.intArrayValue("ppiDelta")), ppi.stringValue("id"))
         assertEquals(ppiExpectation.intArrayValue("ppiErrorEstimateList"), cumulativeValues(ppiSample.intArrayValue("ppiErrorEstimateDelta")), ppi.stringValue("id"))
         val decodedStatuses = ppiSample.intArrayValue("status").map { decodePpiStatus(it) }
+        assertEquals("NO_SKIN_CONTACT", PolarPpiSkinContactName.fromValue(0)?.name, ppi.stringValue("id"))
+        assertEquals("SKIN_CONTACT_DETECTED", PolarPpiSkinContactName.fromValue(1)?.name, ppi.stringValue("id"))
+        assertEquals("NO_MOVING_DETECTED", PolarPpiMovementName.fromValue(0)?.name, ppi.stringValue("id"))
+        assertEquals("MOVING_DETECTED", PolarPpiMovementName.fromValue(1)?.name, ppi.stringValue("id"))
+        assertEquals("INTERVAL_IS_ONLINE", PolarPpiIntervalStatusName.fromValue(0)?.name, ppi.stringValue("id"))
+        assertEquals("INTERVAL_DENOTES_OFFLINE_PERIOD", PolarPpiIntervalStatusName.fromValue(1)?.name, ppi.stringValue("id"))
         assertEquals(
             listOf("SKIN_CONTACT_DETECTED", "NO_SKIN_CONTACT", "MOVING_DETECTED", "NO_MOVING_DETECTED", "INTERVAL_DENOTES_OFFLINE_PERIOD", "INTERVAL_IS_ONLINE"),
             PPI_STATUS_POLICY_TERMS,

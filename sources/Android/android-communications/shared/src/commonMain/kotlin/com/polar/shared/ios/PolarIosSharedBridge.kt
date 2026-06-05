@@ -33,7 +33,10 @@ import com.polar.shared.sdk.PolarOfflineRecordingModels
 import com.polar.shared.sdk.PolarActivityClassName
 import com.polar.shared.sdk.PolarAutomaticHrTriggerName
 import com.polar.shared.sdk.PolarDailyBalanceFeedbackName
+import com.polar.shared.sdk.PolarPpiIntervalStatusName
+import com.polar.shared.sdk.PolarPpiMovementName
 import com.polar.shared.sdk.PolarPpiSampleTriggerName
+import com.polar.shared.sdk.PolarPpiSkinContactName
 import com.polar.shared.sdk.PolarPpiStatusNames
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepRatingName
@@ -319,6 +322,18 @@ object PolarIosSharedBridge {
 
     fun ppiSampleTriggerName(value: Int): String? {
         return PolarPpiSampleTriggerName.fromValue(value)?.name
+    }
+
+    fun ppiSkinContactName(value: Int): String? {
+        return PolarPpiSkinContactName.fromValue(value)?.name
+    }
+
+    fun ppiMovementName(value: Int): String? {
+        return PolarPpiMovementName.fromValue(value)?.name
+    }
+
+    fun ppiIntervalStatusName(value: Int): String? {
+        return PolarPpiIntervalStatusName.fromValue(value)?.name
     }
 
     fun ppiStatusNames(statusByte: Int): String? {
