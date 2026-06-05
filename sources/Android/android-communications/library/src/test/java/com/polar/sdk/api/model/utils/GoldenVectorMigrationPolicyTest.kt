@@ -4697,6 +4697,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "userDeviceSettingsRuntimePolicyVectorDefinesExecutableCommonReadWritePlanning",
+            "userDeviceSettingsRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
             "userDeviceSettingsRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/user-device-settings-runtime/settings-runtime-policy.json",
             "sdk/user-device-settings-runtime/settings-runtime-readiness.json",
@@ -4726,6 +4727,8 @@ class GoldenVectorMigrationPolicyTest {
             "automaticOhrMeasurement=ALWAYS_ON",
             "daylightSaving.nextDaylightSavingTime=present",
             "transport-error-after-payload",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "read-failure no-write behavior",
             "settings-read-failure-no-write",
             "telemetry-write-failure-after-payload",

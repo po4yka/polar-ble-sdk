@@ -4,6 +4,7 @@ import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class UserDeviceSettingsRuntimePolicyCommonTest {
     @Test
@@ -57,6 +58,30 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
 
         assertEquals(listOf("write:/U/0/S/UDEVSET.BPB", "field:protobufPayload=platform-built"), outcome.commands)
         assertEquals("success", outcome.terminal)
+    }
+
+    @Test
+    fun userDeviceSettingsRuntimeVectorRunsThroughCommonFakeTransportFacadeShape() {
+        val vector = loadGoldenVectorText("sdk/user-device-settings-runtime/settings-runtime-policy.json")
+        val input = vector.objectValue("input")
+        val expectedCases = vector.objectValue("expected").objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
+
+        input.objectArray("operations").forEach { operationJson ->
+            val operation = PolarUserDeviceSettingsOperation(
+                id = operationJson.stringValue("id"),
+                kind = operationJson.stringValue("kind"),
+                path = operationJson.stringValue("path"),
+                payloadFields = operationJson.optionalStringArrayValue("payloadFields") ?: emptyList()
+            )
+            val planned = PolarRuntimeOrchestration.planUserDeviceSettings(operation)
+            val expected = expectedCases.getValue(operation.id)
+            val transport = ScriptedCommonFakeTransport(outcomesForTerminal(expected.stringValue("terminal")))
+            val terminal = executePlannedSettingsOperation(planned.commands, operation.payloadFields, transport)
+
+            assertEquals(expected.stringArrayValue("commands"), planned.commands, operation.id)
+            assertEquals(expected.stringValue("terminal"), terminal, operation.id)
+            assertEquals(expectedTransportCommands(expected.stringArrayValue("commands"), operation.payloadFields), transport.commands, operation.id)
+        }
     }
 
     @Test
@@ -133,6 +158,61 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
     private val userDeviceSettingsRuntimePolicyCommonDecision = "Promote user-device-settings runtime only after read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
 
     private val readFailureNoWriteBehavior = "read-failure no-write behavior"
+
+    private fun outcomesForTerminal(terminal: String): List<CommonFakeTransportOutcome> {
+        return when (terminal) {
+            "success" -> listOf(
+                CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01)),
+                CommonFakeTransportOutcome.Complete
+            )
+            "transport-error" -> listOf(CommonFakeTransportOutcome.TransportError("settings-read-failed"))
+            "transport-error-after-payload" -> listOf(
+                CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01)),
+                CommonFakeTransportOutcome.TransportError("settings-write-failed")
+            )
+            else -> error("Unsupported settings runtime terminal $terminal")
+        }
+    }
+
+    private fun executePlannedSettingsOperation(
+        commands: List<String>,
+        payloadFields: List<String>,
+        transport: ScriptedCommonFakeTransport
+    ): String {
+        var terminal = "success"
+        commands.forEach { command ->
+            when {
+                command.startsWith("read:") -> {
+                    val outcome = transport.read(command.removePrefix("read:"))
+                    if (outcome is CommonFakeTransportOutcome.TransportError) {
+                        terminal = "transport-error"
+                        return terminal
+                    }
+                    assertIs<CommonFakeTransportOutcome.Bytes>(outcome, command)
+                }
+                command.startsWith("write:") -> {
+                    val outcome = transport.write(command.removePrefix("write:"), payloadFields.joinToString(separator = "|").encodeToByteArray())
+                    if (outcome is CommonFakeTransportOutcome.TransportError) {
+                        terminal = "transport-error-after-payload"
+                        return terminal
+                    }
+                    assertIs<CommonFakeTransportOutcome.Complete>(outcome, command)
+                }
+            }
+        }
+        return terminal
+    }
+
+    private fun expectedTransportCommands(commands: List<String>, payloadFields: List<String>): List<CommonFakeTransportCommand> {
+        val payloadHex = payloadFields.joinToString(separator = "|").encodeToByteArray().toHexString()
+        return commands.mapNotNull { command ->
+            when {
+                command.startsWith("read:") -> CommonFakeTransportCommand(CommonFakeTransportOperation.READ, command.removePrefix("read:"))
+                command.startsWith("write:") -> CommonFakeTransportCommand(CommonFakeTransportOperation.WRITE, command.removePrefix("write:"), payloadHex)
+                else -> null
+            }
+        }
+    }
 
     private fun assertUserDeviceSettingsPolicyFields(operationsById: Map<String, String>) {
         assertEquals("read", operationsById.getValue("get-user-device-settings").stringValue("kind"))

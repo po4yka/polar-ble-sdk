@@ -499,6 +499,7 @@ FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS = [
 ].freeze
 FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = [
   "userDeviceSettingsRuntimePolicyVectorDefinesExecutableCommonReadWritePlanning",
+  "userDeviceSettingsRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
   "userDeviceSettingsRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/user-device-settings-runtime/settings-runtime-policy.json",
   "sdk/user-device-settings-runtime/settings-runtime-readiness.json",
@@ -528,6 +529,8 @@ FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = [
   "automaticOhrMeasurement=ALWAYS_ON",
   "daylightSaving.nextDaylightSavingTime=present",
   "transport-error-after-payload",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "read-failure no-write behavior",
   "settings-read-failure-no-write",
   "telemetry-write-failure-after-payload",
