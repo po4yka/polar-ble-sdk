@@ -207,6 +207,8 @@ class PolarFileUtils {
         builder.command = .put
         builder.path = filePath
         PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: fileData.map { String(format: "%02x", $0) }.joined())
+        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: fileData.count)
+        PolarRuntimePlanner.psFtpWriteAck(payloadSize: fileData.count)
         let proto = try builder.serializedData()
         let inputStream = InputStream(data: fileData)
         do {

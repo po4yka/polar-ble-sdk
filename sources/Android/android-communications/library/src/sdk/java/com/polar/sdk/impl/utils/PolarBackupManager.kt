@@ -114,9 +114,11 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
             BleLogger.d(TAG, "Restoring backup file: ${it.directory} + ${it.fileName}")
         }
         for (backupFileData in backupFiles) {
+            val restorePath = backupFileData.directory + backupFileData.fileName
+            PolarRuntimePlannerAdapter.planBackupRestore(restorePath, backupFileData.data.toHexString())
             val header = PftpRequest.PbPFtpOperation.newBuilder()
                 .setCommand(PftpRequest.PbPFtpOperation.Command.PUT)
-                .setPath(backupFileData.directory + backupFileData.fileName)
+                .setPath(restorePath)
                 .build().toByteArray()
             val dataStream = ByteArrayInputStream(backupFileData.data)
             BleLogger.d(TAG, "Sending PftpRequest: ${header.toString(Charsets.UTF_8)}")
@@ -142,6 +144,10 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
             BleLogger.i(TAG, "Failed to load file: $path, error: $error")
             throw error
         }
+    }
+
+    private fun ByteArray.toHexString(): String {
+        return joinToString("") { "%02x".format(it.toInt() and 0xff) }
     }
 
     private suspend fun backupDirectory(backupDirectory: String): List<BackupFileData> {

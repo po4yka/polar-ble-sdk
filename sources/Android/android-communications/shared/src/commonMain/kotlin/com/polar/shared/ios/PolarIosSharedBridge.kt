@@ -5,9 +5,16 @@ import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
 import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
+import com.polar.shared.runtime.PolarBackupRestoreFile
+import com.polar.shared.runtime.PolarFirmwareWorkflowScenario
+import com.polar.shared.runtime.PolarOfflineTriggerDesiredFeature
+import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
+import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarRestFacadeOperation
 import com.polar.shared.runtime.PolarRuntimeOrchestration
+import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.time.PolarDurationFields
 import com.polar.shared.time.PolarTimeFields
 import com.polar.shared.time.PolarTimeUtils
@@ -221,6 +228,64 @@ object PolarIosSharedBridge {
                 payloadFields = payloadFieldsCsv.csvValues()
             )
         ).terminal
+    }
+
+    fun planRuntimeStoredDataCleanup(kind: String, rootPath: String): String {
+        return PolarWorkflowRuntimePlanning.planStoredDataCleanup(
+            PolarStoredDataCleanupScenario(
+                id = "platform-stored-data-cleanup",
+                kind = kind,
+                rootPath = rootPath
+            )
+        ).terminal
+    }
+
+    fun planRuntimeOfflineTrigger(operation: String, currentTypesCsv: String, desiredTypesCsv: String, secretPresent: Boolean): String {
+        return PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
+            operation = operation,
+            currentDeviceTriggers = currentTypesCsv.csvValues().map { type -> PolarOfflineTriggerDeviceTrigger(type, "enabled") },
+            desiredFeatures = desiredTypesCsv.csvValues().map { type -> PolarOfflineTriggerDesiredFeature(type, hasSelectedSettings = true) },
+            secretPresent = secretPresent,
+            transport = PolarOfflineTriggerTransport()
+        ).terminal
+    }
+
+    fun planRuntimeFirmwareWorkflow(id: String, statusesCsv: String, firmwareFilesCsv: String): String {
+        val statuses = statusesCsv.csvValues()
+        return PolarWorkflowRuntimePlanning.planFirmwareWorkflow(
+            PolarFirmwareWorkflowScenario(
+                id = id,
+                expectedStatuses = statuses,
+                expectedTerminalStatus = statuses.lastOrNull(),
+                expectedStatusOrder = statuses,
+                firmwareFiles = firmwareFilesCsv.csvValues()
+            )
+        ).terminal
+    }
+
+    fun planRuntimeOrderFirmwareFiles(fileNamesCsv: String): String {
+        return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNamesCsv.csvValues()).joinToString(",")
+    }
+
+    fun planRuntimeBackupRestore(path: String, payloadHex: String, writeResult: String): String {
+        return PolarWorkflowRuntimePlanning.planBackupRestore(
+            listOf(
+                PolarBackupRestoreFile(
+                    directory = path.substringBeforeLast('/', missingDelimiterValue = "") + "/",
+                    fileName = path.substringAfterLast('/'),
+                    dataHex = payloadHex,
+                    writeResult = writeResult
+                )
+            )
+        ).terminal
+    }
+
+    fun planRuntimePsFtpWriteProgress(payloadSize: Int, platform: String): String {
+        return PolarWorkflowRuntimePlanning.planPsFtpWriteProgress(payloadSize, platform).joinToString(",")
+    }
+
+    fun planRuntimePsFtpWriteAck(payloadSize: Int, writeAck: String): String {
+        return PolarWorkflowRuntimePlanning.planPsFtpWrite(ByteArray(maxOf(payloadSize, 1)) { 0 }, writeAck = writeAck).terminal
     }
 
     private fun String.csvValues(): List<String> {

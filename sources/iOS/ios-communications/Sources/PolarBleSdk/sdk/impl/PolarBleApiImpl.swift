@@ -1702,6 +1702,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         let pmdOfflineTrigger = try PolarDataUtils.mapToPmdOfflineTrigger(from: trigger)
         var pmdSecret: PmdSecret? = nil
         if let s = secret { pmdSecret = try PolarDataUtils.mapToPmdSecret(from: s) }
+        let triggerTypes = trigger.triggerFeatures.keys.map { String(describing: $0) }
+        PolarRuntimePlanner.offlineTriggerSet(currentTypes: triggerTypes, desiredTypes: triggerTypes, secretPresent: secret != nil)
         try await client.setOfflineRecordingTrigger(offlineRecordingTrigger: pmdOfflineTrigger, secret: pmdSecret)
     }
 
@@ -1710,6 +1712,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionPmdClientReady(identifier)
         guard let client = session.fetchGattClient(BlePmdClient.PMD_SERVICE) as? BlePmdClient else { throw PolarErrors.serviceNotFound }
         BleLogger.trace("Get offline recording trigger setup. Device: \(identifier)")
+        PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["acc", "gyro", "magnetometer", "ppg", "ppi", "hr"])
         let trigger = try await client.getOfflineRecordingTriggerStatus()
         return try PolarDataUtils.mapToPolarOfflineTrigger(from: trigger)
     }
@@ -2306,6 +2309,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                 return true
             }
             .sorted { PolarFirmwareUpdateUtils.FwFileComparator.compare($0.key, $1.key) == .orderedAscending }
+        _ = PolarRuntimePlanner.orderFirmwareFiles(sorted.map { $0.key })
         return Array(sorted)
     }
 
@@ -2313,10 +2317,12 @@ extension PolarBleApiImpl: PolarBleApi  {
         return AsyncThrowingStream { continuation in
             Task {
                 do {
+                    PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"], firmwareFiles: firmwareFiles.map { $0.0 })
                     for firmwareFile in firmwareFiles {
                         var lastBytesWritten: Int = 0
                         let firmwareFilePath = "/\(firmwareFile.0)"
                         let firmwareFileBytes = firmwareFile.1
+                        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: firmwareFileBytes.count)
                         for try await bytesWritten in self.writeFirmwareToDeviceAsync(identifier: identifier, firmwareFilePath: firmwareFilePath, firmwareBytes: firmwareFileBytes) {
                             let bw = Int(bytesWritten)
                             let delta = bw - lastBytesWritten
@@ -2655,6 +2661,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             }
         case .UNDEFINED: return
         }
+        PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: folderPath)
         var deletedFiles = [String]()
         for try await file in fileUtils.listFiles(identifier: identifier, folderPath: folderPath, condition: condition) {
             switch dataType {
@@ -2720,6 +2727,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             return false
         }
         for try await folder in fileUtils.listFiles(identifier: identifier, folderPath: path, condition: condition, recurseDeep: false) {
+            PolarRuntimePlanner.storedDataCleanup(kind: "emptyDayFolderRemoval", rootPath: folder)
             try await fileUtils.deleteDataDirectory(identifier: identifier, directoryPath: folder)
         }
     }
@@ -2727,6 +2735,7 @@ extension PolarBleApiImpl: PolarBleApi  {
 
     func deleteTelemetryData(_ identifier: String) async throws {
         let condition: (_ p: String) -> Bool = { e in e.contains("^([A-Za-z]{3}[0-9]{1,3})") && e.contains("TRC") && e.contains(".BIN") }
+        PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/")
         for try await file in fileUtils.listFiles(identifier: identifier, folderPath: "/", condition: condition) {
             _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: file)
             BleLogger.trace("Successfully deleted telemetry data \(file) from device \(identifier).")
@@ -3015,6 +3024,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                     var builder = Protocol_PbPFtpOperation()
                     builder.command = .put
                     builder.path = firmwareFilePath
+                    PolarRuntimePlanner.psFtpWriteAck(payloadSize: firmwareBytes.count)
                     let proto = try builder.serializedData()
                     for try await bytesWritten in client.write(proto as NSData, data: InputStream(data: firmwareBytes)) {
                         BleLogger.trace("Writing firmware update file, bytes written: \(bytesWritten)/\(firmwareBytes.count)")

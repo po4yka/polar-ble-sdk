@@ -72,4 +72,56 @@ enum PolarRuntimePlanner {
         _ = PolarIosSharedBridge.shared.planRuntimeUserDeviceSettings(id: id, kind: kind, path: path, payloadFieldsCsv: payloadFields.joined(separator: ","))
         #endif
     }
+
+    static func storedDataCleanup(kind: String, rootPath: String) {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimeStoredDataCleanup(kind: kind, rootPath: rootPath)
+        #endif
+    }
+
+    static func offlineTriggerSet(currentTypes: [String], desiredTypes: [String], secretPresent: Bool) {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimeOfflineTrigger(operation: "setOfflineRecordingTrigger", currentTypesCsv: currentTypes.joined(separator: ","), desiredTypesCsv: desiredTypes.joined(separator: ","), secretPresent: secretPresent)
+        #endif
+    }
+
+    static func offlineTriggerGet(currentTypes: [String]) {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimeOfflineTrigger(operation: "getOfflineRecordingTriggerSetup", currentTypesCsv: currentTypes.joined(separator: ","), desiredTypesCsv: "", secretPresent: false)
+        #endif
+    }
+
+    static func firmwareWorkflow(id: String, statuses: [String] = [], firmwareFiles: [String] = []) {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimeFirmwareWorkflow(id: id, statusesCsv: statuses.joined(separator: ","), firmwareFilesCsv: firmwareFiles.joined(separator: ","))
+        #endif
+    }
+
+    static func orderFirmwareFiles(_ fileNames: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.planRuntimeOrderFirmwareFiles(fileNamesCsv: fileNames.joined(separator: ",")).split(separator: ",").map(String.init)
+        #else
+        return fileNames
+        #endif
+    }
+
+    static func backupRestore(path: String, payloadHex: String, writeResult: String = "success") {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimeBackupRestore(path: path, payloadHex: payloadHex, writeResult: writeResult)
+        #endif
+    }
+
+    static func psFtpWriteProgress(payloadSize: Int, platform: String = "ios") -> [Int] {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.planRuntimePsFtpWriteProgress(payloadSize: Int32(payloadSize), platform: platform).split(separator: ",").compactMap { Int($0) }
+        #else
+        return []
+        #endif
+    }
+
+    static func psFtpWriteAck(payloadSize: Int, writeAck: String = "success") {
+        #if canImport(PolarBleSdkShared)
+        _ = PolarIosSharedBridge.shared.planRuntimePsFtpWriteAck(payloadSize: Int32(payloadSize), writeAck: writeAck)
+        #endif
+    }
 }
