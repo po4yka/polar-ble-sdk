@@ -103,6 +103,15 @@ final class PolarOfflineExerciseV2Tests: XCTestCase {
         XCTAssertEqual(decoded.sportIdentifier.value, UInt64(16))
     }
 
+    func test_sportProfileFromId_preservesPublicIdsAndUnknownFallback() {
+        XCTAssertEqual(.unknown, PolarExerciseSession.SportProfile.from(id: 0))
+        XCTAssertEqual(.running, PolarExerciseSession.SportProfile.from(id: 1))
+        XCTAssertEqual(.cycling, PolarExerciseSession.SportProfile.from(id: 2))
+        XCTAssertEqual(.otherOutdoor, PolarExerciseSession.SportProfile.from(id: 16))
+        XCTAssertEqual(.unknown, PolarExerciseSession.SportProfile.from(id: 3))
+        XCTAssertEqual(.unknown, PolarExerciseSession.SportProfile.from(id: Int.max))
+    }
+
     func test_stopExercise_request_creation() throws {
         // Arrange
         var params = Protocol_PbPFtpStopExerciseParams()

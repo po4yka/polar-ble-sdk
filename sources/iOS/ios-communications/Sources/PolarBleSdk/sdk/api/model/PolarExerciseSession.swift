@@ -1,6 +1,9 @@
 //  Copyright © 2025 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 /// Represents a live exercise session on a Polar device.
 public enum PolarExerciseSession {
@@ -12,7 +15,25 @@ public enum PolarExerciseSession {
         case cycling      = 2
         case otherOutdoor = 16
 
-        public static func from(id: Int) -> Self { Self(rawValue: id) ?? .unknown }
+        public static func from(id: Int) -> Self {
+            #if canImport(PolarBleSdkShared)
+            guard id >= Int(Int32.min) && id <= Int(Int32.max) else {
+                return .unknown
+            }
+            switch PolarIosSharedBridge.shared.exerciseSportProfileName(id: Int32(id)) {
+            case "RUNNING":
+                return .running
+            case "CYCLING":
+                return .cycling
+            case "OTHER_OUTDOOR":
+                return .otherOutdoor
+            default:
+                return .unknown
+            }
+            #else
+            return Self(rawValue: id) ?? .unknown
+            #endif
+        }
 
         public var displayName: String {
             switch self {
