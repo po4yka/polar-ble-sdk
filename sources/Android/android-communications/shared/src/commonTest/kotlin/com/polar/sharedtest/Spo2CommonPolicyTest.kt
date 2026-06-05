@@ -13,7 +13,22 @@ class Spo2CommonPolicyTest {
             val input = vector.objectValue("input")
             val proto = input.objectValue("proto")
             val expected = vector.objectValue("expected")
-            val common = mapSpo2(input.stringValue("date"), input.stringValue("timeDirName"), proto)
+            val common = PolarSpo2Models.projectTestData(
+                date = input.stringValue("date"),
+                timeDirName = input.stringValue("timeDirName"),
+                recordingDevice = proto.optionalStringValue("recordingDevice"),
+                timeZoneOffsetMinutes = proto.intValue("timeZoneOffsetMinutes"),
+                testStatus = proto.intValue("testStatus"),
+                bloodOxygenPercent = proto.optionalIntValue("bloodOxygenPercent"),
+                spo2Class = proto.optionalIntValue("spo2Class"),
+                spo2ValueDeviationFromBaseline = proto.optionalIntValue("spo2ValueDeviationFromBaseline"),
+                spo2QualityAveragePercent = proto.optionalFloatValue("spo2QualityAveragePercent"),
+                averageHeartRateBpm = proto.optionalIntValue("averageHeartRateBpm"),
+                heartRateVariabilityMs = proto.optionalFloatValue("heartRateVariabilityMs"),
+                spo2HrvDeviationFromBaseline = proto.optionalIntValue("spo2HrvDeviationFromBaseline"),
+                altitudeMeters = proto.optionalFloatValue("altitudeMeters"),
+                triggerType = proto.optionalIntValue("triggerType")
+            )
 
             assertEquals(expected.stringValue("policy"), common.policy, caseId)
             assertEquals(proto.optionalStringValue("recordingDevice"), common.recordingDevice, "$caseId recordingDevice")
@@ -73,35 +88,6 @@ class Spo2CommonPolicyTest {
         assertEquals(true, platforms.booleanValue("common"), vector.stringValue("id"))
     }
 
-    private fun mapSpo2(date: String, timeDirName: String, proto: String): Spo2Model {
-        val recordingDevice = proto.optionalStringValue("recordingDevice")?.takeIf { value -> value.isNotEmpty() }
-        return Spo2Model(
-            policy = when {
-                proto.optionalIntValue("spo2Class") == 99 -> "document-spo2-unknown-enum-platform-difference"
-                proto.optionalIntValue("triggerType") != null -> "map-spo2-trigger-type-when-platform-exposes-it"
-                proto.optionalIntValue("bloodOxygenPercent") == null -> "preserve-spo2-optional-field-presence"
-                else -> "map-spo2-proto-fields-to-public-model"
-            },
-            recordingDevice = recordingDevice,
-            sourceDateTimeKey = "${date}T$timeDirName",
-            timeZoneOffsetMinutes = proto.intValue("timeZoneOffsetMinutes"),
-            testStatus = proto.intValue("testStatus").testStatusName(),
-            bloodOxygenPercent = proto.optionalIntValue("bloodOxygenPercent"),
-            spo2Class = proto.optionalIntValue("spo2Class")?.let(PolarSpo2Models::spo2ClassName),
-            spo2ValueDeviationFromBaseline = proto.optionalIntValue("spo2ValueDeviationFromBaseline")?.let(PolarSpo2Models::deviationFromBaselineName),
-            spo2QualityAveragePercent = proto.optionalFloatValue("spo2QualityAveragePercent"),
-            averageHeartRateBpm = proto.optionalIntValue("averageHeartRateBpm"),
-            heartRateVariabilityMs = proto.optionalFloatValue("heartRateVariabilityMs"),
-            spo2HrvDeviationFromBaseline = proto.optionalIntValue("spo2HrvDeviationFromBaseline")?.let(PolarSpo2Models::deviationFromBaselineName),
-            altitudeMeters = proto.optionalFloatValue("altitudeMeters"),
-            triggerType = proto.optionalIntValue("triggerType")?.let(PolarSpo2Models::triggerTypeName)
-        )
-    }
-
-    private fun Int.testStatusName(): String {
-        return PolarSpo2Models.testStatusName(this) ?: "unknown"
-    }
-
     private fun String.optionalObjectValue(field: String): String? {
         val fieldIndex = indexOf("\"$field\"")
         if (fieldIndex < 0) return null
@@ -144,23 +130,6 @@ class Spo2CommonPolicyTest {
         }
         error("Unbalanced $open$close block")
     }
-
-    private data class Spo2Model(
-        val policy: String,
-        val recordingDevice: String?,
-        val sourceDateTimeKey: String,
-        val timeZoneOffsetMinutes: Int,
-        val testStatus: String,
-        val bloodOxygenPercent: Int?,
-        val spo2Class: String?,
-        val spo2ValueDeviationFromBaseline: String?,
-        val spo2QualityAveragePercent: Float?,
-        val averageHeartRateBpm: Int?,
-        val heartRateVariabilityMs: Float?,
-        val spo2HrvDeviationFromBaseline: String?,
-        val altitudeMeters: Float?,
-        val triggerType: String?
-    )
 
     private companion object {
         val SPO2_VECTORS = listOf(

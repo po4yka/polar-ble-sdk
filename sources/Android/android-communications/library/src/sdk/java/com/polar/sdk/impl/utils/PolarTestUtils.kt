@@ -6,6 +6,7 @@ import com.polar.sdk.api.model.DeviationFromBaseline
 import com.polar.sdk.api.model.PolarSpo2TestData
 import com.polar.sdk.api.model.Spo2Class
 import com.polar.sdk.api.model.Spo2TestStatus
+import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.services.datamodels.protobuf.Spo2TestResult
 import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
@@ -93,24 +94,40 @@ internal object PolarTestUtils {
         val tzOffsetMinutes = proto.timeZoneOffset
         val testTime = dateTimeFromFolderNames(date, timeDirName)
             ?: if (proto.testTime != 0L) {
-                val localDateTime = java.time.Instant.ofEpochMilli(proto.testTime.toLong())
+                val localDateTime = java.time.Instant.ofEpochMilli(proto.testTime)
                     .atOffset(ZoneOffset.ofTotalSeconds(tzOffsetMinutes * 60))
                     .toLocalDateTime()
                 testTimeFormatter.format(localDateTime)
             } else null
+        val projection = PolarSpo2Models.projectTestData(
+            date = date.toString(),
+            timeDirName = timeDirName,
+            recordingDevice = proto.recordingDevice,
+            timeZoneOffsetMinutes = tzOffsetMinutes,
+            testStatus = proto.testStatus.number,
+            bloodOxygenPercent = if (proto.hasBloodOxygenPercent()) proto.bloodOxygenPercent else null,
+            spo2Class = if (proto.hasSpo2Class()) proto.spo2Class.number else null,
+            spo2ValueDeviationFromBaseline = if (proto.hasSpo2ValueDeviationFromBaseline()) proto.spo2ValueDeviationFromBaseline.number else null,
+            spo2QualityAveragePercent = if (proto.hasSpo2QualityAveragePercent()) proto.spo2QualityAveragePercent else null,
+            averageHeartRateBpm = if (proto.hasAverageHeartRateBpm()) proto.averageHeartRateBpm else null,
+            heartRateVariabilityMs = if (proto.hasHeartRateVariabilityMs()) proto.heartRateVariabilityMs else null,
+            spo2HrvDeviationFromBaseline = if (proto.hasSpo2HrvDeviationFromBaseline()) proto.spo2HrvDeviationFromBaseline.number else null,
+            altitudeMeters = if (proto.hasAltitudeMeters()) proto.altitudeMeters else null,
+            triggerType = null
+        )
         return PolarSpo2TestData(
             recordingDevice = proto.recordingDevice,
             testTime = testTime,
-            timeZoneOffsetMinutes = tzOffsetMinutes,
-            testStatus = Spo2TestStatus.from(proto.testStatus.number),
-            bloodOxygenPercent = if (proto.hasBloodOxygenPercent()) proto.bloodOxygenPercent else null,
-            spo2Class = if (proto.hasSpo2Class()) Spo2Class.from(proto.spo2Class.number) else null,
-            spo2ValueDeviationFromBaseline = if (proto.hasSpo2ValueDeviationFromBaseline()) DeviationFromBaseline.from(proto.spo2ValueDeviationFromBaseline.number) else null,
-            spo2QualityAveragePercent = if (proto.hasSpo2QualityAveragePercent()) proto.spo2QualityAveragePercent else null,
-            averageHeartRateBpm = if (proto.hasAverageHeartRateBpm()) proto.averageHeartRateBpm.toUInt() else null,
-            heartRateVariabilityMs = if (proto.hasHeartRateVariabilityMs()) proto.heartRateVariabilityMs else null,
-            spo2HrvDeviationFromBaseline = if (proto.hasSpo2HrvDeviationFromBaseline()) DeviationFromBaseline.from(proto.spo2HrvDeviationFromBaseline.number) else null,
-            altitudeMeters = if (proto.hasAltitudeMeters()) proto.altitudeMeters else null
+            timeZoneOffsetMinutes = projection.timeZoneOffsetMinutes,
+            testStatus = projection.testStatus?.toSpo2TestStatus(),
+            bloodOxygenPercent = projection.bloodOxygenPercent,
+            spo2Class = projection.spo2Class?.toSpo2Class(),
+            spo2ValueDeviationFromBaseline = projection.spo2ValueDeviationFromBaseline?.toDeviationFromBaseline(),
+            spo2QualityAveragePercent = projection.spo2QualityAveragePercent,
+            averageHeartRateBpm = projection.averageHeartRateBpm?.toUInt(),
+            heartRateVariabilityMs = projection.heartRateVariabilityMs,
+            spo2HrvDeviationFromBaseline = projection.spo2HrvDeviationFromBaseline?.toDeviationFromBaseline(),
+            altitudeMeters = projection.altitudeMeters
         )
     }
 
@@ -120,5 +137,35 @@ internal object PolarTestUtils {
         val mm = timeDirName.substring(2, 4).toIntOrNull() ?: return null
         val ss = timeDirName.substring(4, 6).toIntOrNull() ?: return null
         return testTimeFormatter.format(LocalDateTime.of(date.year, date.monthValue, date.dayOfMonth, hh, mm, ss))
+    }
+
+    private fun String.toSpo2TestStatus(): Spo2TestStatus? {
+        return when (this) {
+            "passed" -> Spo2TestStatus.PASSED
+            "inconclusiveTooLowQualityInSamples" -> Spo2TestStatus.INCONCLUSIVE_TOO_LOW_QUALITY_IN_SAMPLES
+            "inconclusiveTooLowOverallQuality" -> Spo2TestStatus.INCONCLUSIVE_TOO_LOW_OVERALL_QUALITY
+            "inconclusiveTooManyMissingSamples" -> Spo2TestStatus.INCONCLUSIVE_TOO_MANY_MISSING_SAMPLES
+            else -> null
+        }
+    }
+
+    private fun String.toSpo2Class(): Spo2Class? {
+        return when (this) {
+            "unknown" -> Spo2Class.UNKNOWN
+            "veryLow" -> Spo2Class.VERY_LOW
+            "low" -> Spo2Class.LOW
+            "normal" -> Spo2Class.NORMAL
+            else -> null
+        }
+    }
+
+    private fun String.toDeviationFromBaseline(): DeviationFromBaseline? {
+        return when (this) {
+            "noBaseline" -> DeviationFromBaseline.NO_BASELINE
+            "belowUsual" -> DeviationFromBaseline.BELOW_USUAL
+            "usual" -> DeviationFromBaseline.USUAL
+            "aboveUsual" -> DeviationFromBaseline.ABOVE_USUAL
+            else -> null
+        }
     }
 }
