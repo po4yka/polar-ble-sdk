@@ -1522,6 +1522,16 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(3, proto.magnetometerLogFrequency.rawValue)
     }
 
+    func testSdLogConfigFileHeadersUseSharedFileFacadePlanning() {
+        let readOperation = PolarBleApiImpl.sdLogConfigReadOperation()
+        XCTAssertEqual(readOperation.command, .get)
+        XCTAssertEqual(readOperation.path, SERVICE_DATALOG_CONFIG_FILEPATH)
+
+        let writeOperation = PolarBleApiImpl.sdLogConfigWriteOperation()
+        XCTAssertEqual(writeOperation.command, .put)
+        XCTAssertEqual(writeOperation.path, SERVICE_DATALOG_CONFIG_FILEPATH)
+    }
+
     func test_setSDLogConfiguration_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7022, userInfo: [NSLocalizedDescriptionKey: "sd log write failed"])
         v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
@@ -1684,6 +1694,24 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(config.toProto()).serializedData(), try data(from: v2MockClient.writeCalls[1].data))
         let stopSyncParams = try Protocol_PbPFtpStopSyncParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[2].parameters) as Data)
         XCTAssertTrue(stopSyncParams.completed)
+    }
+
+    func testFirstTimeUseFileHeadersUseSharedFileFacadePlanning() {
+        let userIdReadOperation = PolarBleApiImpl.firstTimeUseUserIdReadOperation()
+        XCTAssertEqual(userIdReadOperation.command, .get)
+        XCTAssertEqual(userIdReadOperation.path, UserIdentifierType.USER_IDENTIFIER_FILENAME)
+
+        let userIdWriteOperation = PolarBleApiImpl.firstTimeUseUserIdWriteOperation()
+        XCTAssertEqual(userIdWriteOperation.command, .put)
+        XCTAssertEqual(userIdWriteOperation.path, UserIdentifierType.USER_IDENTIFIER_FILENAME)
+
+        let physicalConfigReadOperation = PolarBleApiImpl.firstTimeUsePhysicalConfigReadOperation()
+        XCTAssertEqual(physicalConfigReadOperation.command, .get)
+        XCTAssertEqual(physicalConfigReadOperation.path, PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH)
+
+        let physicalConfigWriteOperation = PolarBleApiImpl.firstTimeUsePhysicalConfigWriteOperation()
+        XCTAssertEqual(physicalConfigWriteOperation.command, .put)
+        XCTAssertEqual(physicalConfigWriteOperation.path, PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH)
     }
 
     func test_doFirstTimeUse_userIdWriteFailurePropagatesWithoutTerminateNotifications() throws {

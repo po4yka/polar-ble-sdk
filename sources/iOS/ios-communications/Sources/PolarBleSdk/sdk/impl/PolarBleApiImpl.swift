@@ -59,6 +59,44 @@ import UIKit
     let PMDFilePath = "/PMDFILES.TXT"
     public private(set) var serviceClientUtils: PolarServiceClientUtils
     var fileUtils: PolarFileUtils
+
+    static func sdLogConfigReadOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "sd-log-config-read", command: "GET", path: SERVICE_DATALOG_CONFIG_FILEPATH)
+    }
+
+    static func sdLogConfigWriteOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "sd-log-config-write", command: "PUT", path: SERVICE_DATALOG_CONFIG_FILEPATH)
+    }
+
+    static func firstTimeUsePhysicalConfigReadOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "first-time-use-read-physical-config", command: "GET", path: PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH)
+    }
+
+    static func firstTimeUsePhysicalConfigWriteOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "first-time-use-write-physical-config", command: "PUT", path: PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH)
+    }
+
+    static func firstTimeUseUserIdReadOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "first-time-use-read-user-id", command: "GET", path: UserIdentifierType.USER_IDENTIFIER_FILENAME)
+    }
+
+    static func firstTimeUseUserIdWriteOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "first-time-use-write-user-id", command: "PUT", path: UserIdentifierType.USER_IDENTIFIER_FILENAME)
+    }
+
+    private static func facadeFileOperation(id: String, command: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
+            return plannedOperation
+        }
+        switch command {
+        case "PUT":
+            return (.put, path)
+        case "REMOVE":
+            return (.remove, path)
+        default:
+            return (.get, path)
+        }
+    }
     
     required public init(_ queue: DispatchQueue, features: Set<PolarBleSdkFeature>, restoreIdentifier: String? = nil) {
         let resolvedFeatures = features.isEmpty ? Set(PolarBleSdkFeature.allCases) : features
@@ -2002,9 +2040,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         guard .polarFileSystemV2 == BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
+        let readOperation = Self.sdLogConfigReadOperation()
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = SERVICE_DATALOG_CONFIG_FILEPATH
+        operation.command = readOperation.command
+        operation.path = readOperation.path
         let request = try operation.serializedData()
         BleLogger.trace("Sensor datalog get. Device: \(identifier) Path: \(operation.path)")
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, parameters: nil)
@@ -2020,9 +2059,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let sdLogConfigProto = try SDLogConfig.toProto(sdLogConfig: logConfiguration).serializedData()
+        let writeOperation = Self.sdLogConfigWriteOperation()
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .put
-        operation.path = SERVICE_DATALOG_CONFIG_FILEPATH
+        operation.command = writeOperation.command
+        operation.path = writeOperation.path
         let proto = try operation.serializedData()
         BleLogger.trace("Sensor datalog set. Device: \(identifier) Path: \(operation.path)")
         let inputStream = InputStream(data: Data(sdLogConfigProto))
@@ -2040,9 +2080,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         try await sendInitializationAndStartSyncNotifications(identifier: identifier)
         try await setLocalTime(identifier, time: date, zone: TimeZone.current)
         // Write user ID
+        let userIdWriteOperation = Self.firstTimeUseUserIdWriteOperation()
         var userIdOperation = Protocol_PbPFtpOperation()
-        userIdOperation.command = .put
-        userIdOperation.path = UserIdentifierType.USER_IDENTIFIER_FILENAME
+        userIdOperation.command = userIdWriteOperation.command
+        userIdOperation.path = userIdWriteOperation.path
         let userIdentifier = UserIdentifierType.create()
         let userIdProto = try userIdentifier.toProto().serializedData()
         let userIdHeader = try userIdOperation.serializedData()
@@ -2050,9 +2091,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         BleLogger.trace("User data written to device: \(identifier)")
         // Write FTU config
         let ftuConfigProto = try ftuConfig.toProto()?.serializedData() ?? { throw PolarErrors.deviceError(description: "Serialization of FTU Config failed.") }()
+        let physicalConfigWriteOperation = Self.firstTimeUsePhysicalConfigWriteOperation()
         var physDataOp = Protocol_PbPFtpOperation()
-        physDataOp.command = .put
-        physDataOp.path = PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH
+        physDataOp.command = physicalConfigWriteOperation.command
+        physDataOp.path = physicalConfigWriteOperation.path
         let physDataHeader = try physDataOp.serializedData()
         for try await _ in client.write(physDataHeader as NSData, data: InputStream(data: ftuConfigProto)) {}
         BleLogger.trace("User physical data written to device: \(identifier)")
@@ -2066,9 +2108,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         guard .polarFileSystemV2 == BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
+        let readOperation = Self.firstTimeUseUserIdReadOperation()
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = UserIdentifierType.USER_IDENTIFIER_FILENAME
+        operation.command = readOperation.command
+        operation.path = readOperation.path
         let request = try operation.serializedData()
         logMessage("Check if FTU has been done to device \(identifier)")
         let data = try await client.request(request)
@@ -2079,9 +2122,10 @@ extension PolarBleApiImpl: PolarBleApi  {
     func getUserPhysicalConfiguration(_ identifier: String) async throws -> PolarPhysicalConfiguration? {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.deviceError(description: "Failed to fetch GATT client.") }
+        let readOperation = Self.firstTimeUsePhysicalConfigReadOperation()
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH
+        operation.command = readOperation.command
+        operation.path = readOperation.path
         let requestData = try operation.serializedData()
         do {
             let nsData = try await client.request(requestData)

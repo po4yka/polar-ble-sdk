@@ -1692,18 +1692,20 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ftuConfig.toProto().writeTo(baos)
             baos.toByteArray()
         }
+        val ftuOperation = firstTimeUsePhysicalConfigWriteOperation()
         val ftuBuilder = PftpRequest.PbPFtpOperation.newBuilder().apply {
-            command = PftpRequest.PbPFtpOperation.Command.PUT
-            path = PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME
+            command = ftuOperation.first
+            path = ftuOperation.second
         }
         val userIdentifier = UserIdentifierType.create().toProto()
         val userIdData = ByteArrayOutputStream().use { baos ->
             userIdentifier.writeTo(baos)
             baos.toByteArray()
         }
+        val userIdOperation = firstTimeUseUserIdWriteOperation()
         val userIdBuilder = PftpRequest.PbPFtpOperation.newBuilder().apply {
-            command = PftpRequest.PbPFtpOperation.Command.PUT
-            path = UserIdentifierType.USER_IDENTIFIER_FILENAME
+            command = userIdOperation.first
+            path = userIdOperation.second
         }
         val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ENGLISH)
         val localTime = LocalDateTime.parse(ftuConfig.deviceTime, dateTimeFormatter)
@@ -1724,7 +1726,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     override suspend fun isFtuDone(identifier: String): Boolean {
-        val byteArray = getFile(identifier, UserIdentifierType.USER_IDENTIFIER_FILENAME)
+        val readOperation = firstTimeUseUserIdReadOperation()
+        val byteArray = getFile(identifier, readOperation.second)
         return try {
             UserIds.PbUserIdentifier.parseFrom(byteArray).hasMasterIdentifier()
         } catch (e: Exception) {
@@ -1738,10 +1741,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
         return try {
+            val readOperation = firstTimeUsePhysicalConfigReadOperation()
             val response = client.request(
                 PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                    .setPath(PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME)
+                    .setCommand(readOperation.first)
+                    .setPath(readOperation.second)
                     .build()
                     .toByteArray()
             )
@@ -2255,7 +2259,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     override suspend fun getLogConfig(identifier: String): LogConfig {
-        val byteArray = getFile(identifier, LogConfig.LOG_CONFIG_FILENAME)
+        val readOperation = sdLogConfigReadOperation()
+        val byteArray = getFile(identifier, readOperation.second)
         return try {
             LogConfig.fromBytes(byteArray)
         } catch (e: Exception) {
@@ -2268,9 +2273,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
+        val writeOperation = sdLogConfigWriteOperation()
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = PftpRequest.PbPFtpOperation.Command.PUT
-        builder.path = LogConfig.LOG_CONFIG_FILENAME
+        builder.command = writeOperation.first
+        builder.path = writeOperation.second
         val data = ByteArrayInputStream(logConfig.toProto().toByteArray())
         client.write(builder.build().toByteArray(), data).collect {}
     }
@@ -3695,6 +3701,35 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         @androidx.annotation.VisibleForTesting
         internal fun clearInstance() {
             instance = null
+        }
+
+        internal fun sdLogConfigReadOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("sd-log-config-read", "GET", LogConfig.LOG_CONFIG_FILENAME)
+        }
+
+        internal fun sdLogConfigWriteOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("sd-log-config-write", "PUT", LogConfig.LOG_CONFIG_FILENAME)
+        }
+
+        internal fun firstTimeUsePhysicalConfigReadOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("first-time-use-read-physical-config", "GET", PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME)
+        }
+
+        internal fun firstTimeUsePhysicalConfigWriteOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("first-time-use-write-physical-config", "PUT", PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME)
+        }
+
+        internal fun firstTimeUseUserIdReadOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("first-time-use-read-user-id", "GET", UserIdentifierType.USER_IDENTIFIER_FILENAME)
+        }
+
+        internal fun firstTimeUseUserIdWriteOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("first-time-use-write-user-id", "PUT", UserIdentifierType.USER_IDENTIFIER_FILENAME)
+        }
+
+        private fun facadeFileOperation(id: String, command: String, path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            val plan = PolarRuntimePlannerAdapter.planFileFacade(id, command, path)
+            return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
         }
     }
 

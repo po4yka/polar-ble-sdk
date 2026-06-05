@@ -1244,6 +1244,18 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `LogConfig file headers use shared file facade planning`() {
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to LogConfig.LOG_CONFIG_FILENAME,
+            BDBleApiImpl.sdLogConfigReadOperation()
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.PUT to LogConfig.LOG_CONFIG_FILENAME,
+            BDBleApiImpl.sdLogConfigWriteOperation()
+        )
+    }
+
+    @Test
     fun `setLogConfig propagates write failure after payload is prepared`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
@@ -1382,6 +1394,26 @@ class BDBleApiImplTest {
         Assert.assertTrue(PbUserIdentifier.parseFrom(writeData[1]).hasMasterIdentifier())
         val stopSyncParams = PftpNotification.PbPFtpStopSyncParams.parseFrom(notificationParams[2])
         Assert.assertTrue(stopSyncParams.completed)
+    }
+
+    @Test
+    fun `first time use file headers use shared file facade planning`() {
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME,
+            BDBleApiImpl.firstTimeUsePhysicalConfigReadOperation()
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.PUT to PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME,
+            BDBleApiImpl.firstTimeUsePhysicalConfigWriteOperation()
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to UserIdentifierType.USER_IDENTIFIER_FILENAME,
+            BDBleApiImpl.firstTimeUseUserIdReadOperation()
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.PUT to UserIdentifierType.USER_IDENTIFIER_FILENAME,
+            BDBleApiImpl.firstTimeUseUserIdWriteOperation()
+        )
     }
 
     @Test
