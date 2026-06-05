@@ -569,7 +569,7 @@ FAKE_TRANSPORT_COMMON_FILE_RUNTIME_TEST_REQUIRED_TERMS = [
   "entry-name-contains-dot",
   "fileReadWriteDeleteGoldenVectorRunsThroughProductionFileFacadePlanner",
   "sdk/file-utils/file-read-write-delete-operations.json",
-  "fileRuntimeErrorPolicyVectorRunsThroughCommonFakeTransport",
+  "fileRuntimeErrorPolicyVectorRunsThroughProductionCommonPlanner",
   "fileRuntimeErrorReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/file-utils/runtime-error-policy.json",
   "sdk/file-utils/runtime-error-readiness.json",

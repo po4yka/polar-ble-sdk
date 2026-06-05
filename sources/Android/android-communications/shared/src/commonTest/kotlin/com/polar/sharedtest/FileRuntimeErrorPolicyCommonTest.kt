@@ -58,7 +58,7 @@ class FileRuntimeErrorPolicyCommonTest {
     }
 
     @Test
-    fun fileRuntimeErrorPolicyVectorRunsThroughCommonFakeTransport() {
+    fun fileRuntimeErrorPolicyVectorRunsThroughProductionCommonPlanner() {
         val vector = loadGoldenVectorText("sdk/file-utils/runtime-error-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -83,14 +83,14 @@ class FileRuntimeErrorPolicyCommonTest {
         assertEquals("fileRuntimeErrorPolicy", input.stringValue("kind"))
         assertEquals(requiredFileRuntimeErrorCaseIds, cases.map { it.id })
         assertEquals(fileRuntimeErrorMigrationRequirement, expected.stringValue("migrationRequirement"))
-        assertEquals("executable shared commonTest plus Android-hosted prototype", expectedPrototype.stringValue("status"))
+        assertEquals("executable shared commonTest", expectedPrototype.stringValue("status"))
         assertEquals(requiredFileRuntimeErrorCaseIds, expectedCases.keys.toList())
         assertEquals(fileRuntimeErrorCommonDecision, expected.stringValue("commonDecision"))
         assertEquals("shared-common-test", vector.objectValue("execution").stringValue("status"))
         assertEquals("executable shared commonTest covers file command capture and typed runtime errors before facade mapping moves", vector.objectValue("platformExpectations").stringValue("common"))
-        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFileUtilsTest", "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"), consumerTests.stringArrayValue("android"))
+        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFileUtilsTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarFileUtilsTest"), consumerTests.stringArrayValue("ios"))
-        assertEquals(listOf("com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
+        assertEquals(listOf("com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
 
         cases.forEach { testCase ->
             val outcome = PolarRuntimeOrchestration.planFileRuntimeError(testCase)

@@ -589,9 +589,9 @@ class PolarFileUtilsTest {
         Assert.assertEquals(FILE_RUNTIME_ERROR_CASE_IDS, inputCaseIds)
         Assert.assertEquals(FILE_RUNTIME_ERROR_CASE_IDS, expectedCaseIds)
         Assert.assertEquals(FILE_RUNTIME_ERROR_MIGRATION_REQUIREMENT, expected.get("migrationRequirement").asString)
-        Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFileUtilsTest", "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFileUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         Assert.assertEquals(listOf("PolarFileUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
-        Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
     }
 
     @Test

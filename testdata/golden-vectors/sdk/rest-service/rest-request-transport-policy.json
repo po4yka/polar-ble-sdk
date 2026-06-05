@@ -57,7 +57,7 @@
       "facade-level error mapping after shared transport errors are mapped back to Android and iOS public API shapes"
     ],
     "commonRuntimePrototype": {
-      "status": "executable shared commonTest plus Android-hosted prototype",
+      "status": "executable shared commonTest",
       "cases": [
         {
           "id": "service-list-request-error-payload",
@@ -93,14 +93,12 @@
   },
   "consumerTests": {
     "android": [
-      "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest",
-      "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"
+      "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"
     ],
     "ios": [
       "PolarDeviceRestApiTests"
     ],
     "commonPrototype": [
-      "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest",
       "com.polar.sharedtest.RestRequestTransportPolicyCommonTest"
     ]
   },

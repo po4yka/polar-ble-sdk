@@ -29,14 +29,14 @@ class RestRequestTransportPolicyCommonTest {
         assertEquals("restRequestTransportPolicy", input.stringValue("kind"))
         assertEquals(requiredRequestScenarioIds, requests.map { it.id })
         assertEquals(restRequestTransportMigrationRequirement, expected.stringValue("migrationRequirement"))
-        assertEquals("executable shared commonTest plus Android-hosted prototype", expectedPrototype.stringValue("status"))
+        assertEquals("executable shared commonTest", expectedPrototype.stringValue("status"))
         assertEquals(requiredRequestScenarioIds, expectedCases.keys.toList())
         assertEquals(restRequestTransportCommonDecision, expected.stringValue("commonDecision"))
         assertEquals("shared-common-test", vector.objectValue("execution").stringValue("status"))
         assertEquals("executable shared commonTest covers command capture, response errors, and empty-response policy before facade mapping moves", vector.objectValue("platformExpectations").stringValue("common"))
-        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest", "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"), consumerTests.stringArrayValue("android"))
+        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarDeviceRestApiTests"), consumerTests.stringArrayValue("ios"))
-        assertEquals(listOf("com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.RestRequestTransportPolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
+        assertEquals(listOf("com.polar.sharedtest.RestRequestTransportPolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
 
         requests.forEach { request ->
             val outcome = PolarRuntimeOrchestration.planRestRequestTransport(request.transport)

@@ -66,7 +66,7 @@
       "public Android and iOS facade error shape after shared runtime mapping"
     ],
     "commonRuntimePrototype": {
-      "status": "executable shared commonTest plus Android-hosted prototype",
+      "status": "executable shared commonTest",
       "cases": [
         {
           "id": "directory-list-response-error-103",
@@ -110,14 +110,12 @@
   },
   "consumerTests": {
     "android": [
-      "com.polar.sdk.api.model.utils.PolarFileUtilsTest",
-      "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"
+      "com.polar.sdk.api.model.utils.PolarFileUtilsTest"
     ],
     "ios": [
       "PolarFileUtilsTest"
     ],
     "commonPrototype": [
-      "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest",
       "com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"
     ]
   },

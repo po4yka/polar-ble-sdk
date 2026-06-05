@@ -4232,7 +4232,7 @@ class GoldenVectorMigrationPolicyTest {
             "entry-name-contains-dot",
             "fileReadWriteDeleteGoldenVectorRunsThroughProductionFileFacadePlanner",
             "sdk/file-utils/file-read-write-delete-operations.json",
-            "fileRuntimeErrorPolicyVectorRunsThroughCommonFakeTransport",
+            "fileRuntimeErrorPolicyVectorRunsThroughProductionCommonPlanner",
             "fileRuntimeErrorReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/file-utils/runtime-error-policy.json",
             "sdk/file-utils/runtime-error-readiness.json",

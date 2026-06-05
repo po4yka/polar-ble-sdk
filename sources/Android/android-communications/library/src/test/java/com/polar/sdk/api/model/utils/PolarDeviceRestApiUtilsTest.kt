@@ -167,9 +167,9 @@ class PolarDeviceRestApiUtilsTest {
         assertEquals(REST_REQUEST_TRANSPORT_SCENARIO_IDS, input.getAsJsonArray("requests").map { it.asJsonObject.get("id").asString })
         assertEquals(REST_REQUEST_TRANSPORT_SCENARIO_IDS, commonRuntimePrototype.getAsJsonArray("cases").map { it.asJsonObject.get("id").asString })
         assertEquals(REST_REQUEST_TRANSPORT_MIGRATION_REQUIREMENT, expected.get("migrationRequirement").asString)
-        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest", "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         assertEquals(listOf("PolarDeviceRestApiTests"), consumerTests.getAsJsonArray("ios").map { it.asString })
-        assertEquals(listOf("com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.RestRequestTransportPolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+        assertEquals(listOf("com.polar.sharedtest.RestRequestTransportPolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
     }
 
     @Test
