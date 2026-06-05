@@ -115,10 +115,12 @@ class UserDeviceSettingsCommonPolicyTest {
         expected.optionalStringValue("usbConnectionMode")?.let {
             assertEquals(it, actual.usbConnectionMode, "$caseId usb")
             assertEquals(it, PolarUserDeviceSettingsModels.usbConnectionModeName(it.userDeviceSettingsUsbValue()), "$caseId shared usb")
+            assertEquals(it.userDeviceSettingsUsbValue(), PolarUserDeviceSettingsModels.usbConnectionModeValue(it), "$caseId shared usb reverse")
         }
         expected.optionalStringValue("automaticTrainingDetectionMode")?.let {
             assertEquals(it, actual.automaticTrainingDetectionMode, "$caseId autos mode")
             assertEquals(it, PolarUserDeviceSettingsModels.automaticTrainingDetectionModeName(it.userDeviceSettingsAutomaticTrainingDetectionValue()), "$caseId shared autos mode")
+            assertEquals(it.userDeviceSettingsAutomaticTrainingDetectionValue(), PolarUserDeviceSettingsModels.automaticTrainingDetectionModeValue(it), "$caseId shared autos reverse")
         }
         expected.optionalIntValue("automaticTrainingDetectionSensitivity")?.let { assertEquals(it, actual.automaticTrainingDetectionSensitivity, "$caseId sensitivity") }
         expected.optionalIntValue("minimumTrainingDurationSeconds")?.let { assertEquals(it, actual.minimumTrainingDurationSeconds, "$caseId duration") }

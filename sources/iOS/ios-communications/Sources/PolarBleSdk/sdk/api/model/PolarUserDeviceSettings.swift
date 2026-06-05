@@ -48,6 +48,13 @@ public class PolarUserDeviceSettings {
         case OFF
 
         func toProto() -> Data_PbUsbConnectionSettings.PbUsbConnectionMode {
+            #if canImport(PolarBleSdkShared)
+            if let sharedValue = PolarIosSharedBridge.shared.userDeviceSettingsUsbModeValue(name: rawValue),
+               let proto = Data_PbUsbConnectionSettings.PbUsbConnectionMode(rawValue: Int(truncating: sharedValue)) {
+                return proto
+            }
+            #endif
+
             switch self {
             case .ON:
                 return Data_PbUsbConnectionSettings.PbUsbConnectionMode.on
@@ -79,6 +86,13 @@ public class PolarUserDeviceSettings {
         case OFF
 
         func toProto() -> Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState {
+            #if canImport(PolarBleSdkShared)
+            if let sharedValue = PolarIosSharedBridge.shared.userDeviceSettingsAutomaticTrainingDetectionModeValue(name: rawValue),
+               let proto = Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState(rawValue: Int(truncating: sharedValue)) {
+                return proto
+            }
+            #endif
+
             switch self {
             case .ON:
                 return Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.on
@@ -155,6 +169,7 @@ public class PolarUserDeviceSettings {
         if let automaticTrainingDetectionMode = userDeviceSettings.automaticTrainingDetectionMode {
             var automaticTrainingDetectionSettings = Data_PbAutomaticTrainingDetectionSettings()
             automaticTrainingDetectionSettings.state = automaticTrainingDetectionMode.toProto()
+            proto.automaticMeasurementSettings.automaticTrainingDetectionSettings = automaticTrainingDetectionSettings
         }
         
         proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.sensitivity = userDeviceSettings.automaticTrainingDetectionSensitivity ?? 50

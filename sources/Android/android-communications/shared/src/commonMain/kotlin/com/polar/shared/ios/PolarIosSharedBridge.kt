@@ -376,8 +376,16 @@ object PolarIosSharedBridge {
         return PolarUserDeviceSettingsModels.usbConnectionModeName(value)
     }
 
+    fun userDeviceSettingsUsbModeValue(name: String): Int? {
+        return PolarUserDeviceSettingsModels.usbConnectionModeValue(name)
+    }
+
     fun userDeviceSettingsAutomaticTrainingDetectionModeName(value: Int): String? {
         return PolarUserDeviceSettingsModels.automaticTrainingDetectionModeName(value)
+    }
+
+    fun userDeviceSettingsAutomaticTrainingDetectionModeValue(name: String): Int? {
+        return PolarUserDeviceSettingsModels.automaticTrainingDetectionModeValue(name)
     }
 
     fun firstTimeUseTrainingBackgroundName(value: Int): String? {

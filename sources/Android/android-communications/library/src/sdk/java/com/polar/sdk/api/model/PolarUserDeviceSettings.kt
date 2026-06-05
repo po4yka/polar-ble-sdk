@@ -52,23 +52,28 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
 
         val pbUsbConnectionSettings = UserDeviceSettings.PbUsbConnectionSettings.newBuilder()
         usbConnectionMode?.let {
-            pbUsbConnectionSettings.setMode(
-                if (it) UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.ON
-                else UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.OFF
-            )
+            val sharedMode = PolarUserDeviceSettingsModels.usbConnectionModeValue(if (it) "ON" else "OFF")
+                ?.let(UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode::forNumber)
+            val fallbackMode = if (it) {
+                UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.ON
+            } else {
+                UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.OFF
+            }
+            pbUsbConnectionSettings.setMode(sharedMode ?: fallbackMode)
         }
 
         val pbAutomaticTrainingDetectionSettings = UserDeviceSettings.PbAutomaticTrainingDetectionSettings.newBuilder()
         val pbUserAutomaticMeasurementSettings = UserDeviceSettings.PbUserAutomaticMeasurementSettings.newBuilder()
 
         automaticTrainingDetectionMode?.let {
-            pbAutomaticTrainingDetectionSettings.setState(
-                if(it) {
-                    UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.ON
-                } else {
-                    UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.OFF
-                }
-            )
+            val sharedState = PolarUserDeviceSettingsModels.automaticTrainingDetectionModeValue(if (it) "ON" else "OFF")
+                ?.let(UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState::forNumber)
+            val fallbackState = if (it) {
+                UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.ON
+            } else {
+                UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.OFF
+            }
+            pbAutomaticTrainingDetectionSettings.setState(sharedState ?: fallbackState)
         }
 
         automaticTrainingDetectionSensitivity?.let {

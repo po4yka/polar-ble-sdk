@@ -49,10 +49,26 @@ object PolarUserDeviceSettingsModels {
         }
     }
 
+    fun usbConnectionModeValue(name: String): Int? {
+        return when (name) {
+            "OFF" -> 1
+            "ON" -> 2
+            else -> null
+        }
+    }
+
     fun automaticTrainingDetectionModeName(value: Int): String? {
         return when (value) {
             0 -> "OFF"
             1 -> "ON"
+            else -> null
+        }
+    }
+
+    fun automaticTrainingDetectionModeValue(name: String): Int? {
+        return when (name) {
+            "OFF" -> 0
+            "ON" -> 1
             else -> null
         }
     }

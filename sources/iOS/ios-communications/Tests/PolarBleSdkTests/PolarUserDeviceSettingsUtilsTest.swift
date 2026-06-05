@@ -36,6 +36,22 @@ final class PolarUserDeviceSettingsUtilsTest: XCTestCase {
         XCTAssertEqual(PolarUserDeviceSettings.DeviceLocation.allCases.map { $0.rawValue }, PolarUserDeviceSettings.getAllAsString())
     }
 
+    func testUserDeviceSettingsToProtoWritesAutomaticTrainingDetectionOn() {
+        let model = PolarUserDeviceSettings()
+        model.deviceLocation = .WRIST_LEFT
+        model.automaticTrainingDetectionMode = .ON
+        model.automaticTrainingDetectionSensitivity = 77
+        model.minimumTrainingDurationSeconds = 300
+
+        let proto = PolarUserDeviceSettings.toProto(userDeviceSettings: model)
+
+        XCTAssertTrue(proto.hasAutomaticMeasurementSettings)
+        XCTAssertTrue(proto.automaticMeasurementSettings.hasAutomaticTrainingDetectionSettings)
+        XCTAssertEqual(.on, proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.state)
+        XCTAssertEqual(77, proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.sensitivity)
+        XCTAssertEqual(300, proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.minimumTrainingDurationSeconds)
+    }
+
     // MARK: - Request encoding
 
     func testGetUserDeviceSettings_sendsRequestWithCorrectPath() async throws {
