@@ -1165,6 +1165,14 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `stored data date folder removal header uses shared file facade planning`() {
+        val removeOperation = BDBleApiImpl.storedDataDateFolderRemoveOperation("/U/0/20260530")
+
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE, removeOperation.first)
+        Assert.assertEquals("/U/0/20260530", removeOperation.second)
+    }
+
+    @Test
     fun `setLedConfig propagates write failure after payload is prepared`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_LED_ANIMATION))

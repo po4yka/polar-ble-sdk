@@ -2672,8 +2672,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             for (date in dates) {
                 val path = "/U/0/${dateFormatter.format(date).plus("/")}"
                 val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                builder.command = PftpRequest.PbPFtpOperation.Command.REMOVE
-                builder.path = path.trimEnd('/')
+                val removeOperation = storedDataDateFolderRemoveOperation(path.trimEnd('/'))
+                builder.command = removeOperation.first
+                builder.path = removeOperation.second
                 PolarRuntimePlannerAdapter.planStoredDataCleanup("emptyDayFolderRemoval", path)
                 try {
                     client.request(builder.build().toByteArray())
@@ -3752,6 +3753,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         internal fun offlineRecordingRemoveOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
             return facadeFileOperation("offline-recording-remove", "REMOVE", path)
+        }
+
+        internal fun storedDataDateFolderRemoveOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("stored-data-remove-date-folder", "REMOVE", path)
         }
 
         internal fun h10ExerciseFetchOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
