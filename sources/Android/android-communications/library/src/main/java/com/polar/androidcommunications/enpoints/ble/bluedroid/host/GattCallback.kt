@@ -66,10 +66,12 @@ internal class GattCallback(
         return indicatesPairingProblem
     }
 
+    @SuppressLint("MissingPermission")
     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
         BleLogger.d(TAG, "GATT onServicesDiscovered. Status: $status")
         val deviceSession = sessions.getSession(gatt) ?: kotlin.run {
             BleLogger.e(TAG, "services discovered on non known gatt")
+            gatt.close()
             return
         }
 
@@ -209,19 +211,27 @@ internal class GattCallback(
         }
     }
 
+    @SuppressLint("MissingPermission")
     override fun onPhyUpdate(gatt: BluetoothGatt, txPhy: Int, rxPhy: Int, status: Int) {
         BleLogger.d(TAG, " phy updated tx: $txPhy rx: $rxPhy status: $status")
         val deviceSession = sessions.getSession(gatt)
         if (deviceSession != null) {
             scope.launch { connectionHandler.phyUpdated(deviceSession) }
+        } else {
+            BleLogger.e(TAG, "Dead gatt event?")
+            gatt.close()
         }
     }
 
+    @SuppressLint("MissingPermission")
     override fun onPhyRead(gatt: BluetoothGatt, txPhy: Int, rxPhy: Int, status: Int) {
         BleLogger.d(TAG, " phy read tx: $txPhy rx: $rxPhy status: $status")
         val deviceSession = sessions.getSession(gatt)
         if (deviceSession != null) {
             scope.launch { connectionHandler.phyUpdated(deviceSession) }
+        } else {
+            BleLogger.e(TAG, "Dead gatt event?")
+            gatt.close()
         }
     }
 
