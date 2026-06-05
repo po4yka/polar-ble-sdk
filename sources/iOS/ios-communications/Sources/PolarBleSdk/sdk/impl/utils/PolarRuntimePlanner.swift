@@ -7,75 +7,111 @@ import PolarBleSdkShared
 #endif
 
 enum PolarRuntimePlanner {
-    static func commandQuery(id: String, query: String, parameters: [String] = []) {
+    @discardableResult
+    static func commandQuery(id: String, query: String, parameters: [String] = []) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeCommandQuery(id: id, query: query, parametersCsv: parameters.joined(separator: ","))
+        return PolarIosSharedBridge.shared.planRuntimeCommandQuery(id: id, query: query, parametersCsv: parameters.joined(separator: ","))
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func commandReset(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) {
+    @discardableResult
+    static func commandReset(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeCommandReset(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
+        return PolarIosSharedBridge.shared.planRuntimeCommandReset(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func commandSyncStart(id: String) {
+    @discardableResult
+    static func commandSyncStart(id: String) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeCommandSyncStart(id: id)
+        return PolarIosSharedBridge.shared.planRuntimeCommandSyncStart(id: id)
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func commandSyncStop(id: String) {
+    @discardableResult
+    static func commandSyncStop(id: String) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeCommandSyncStop(id: id)
+        return PolarIosSharedBridge.shared.planRuntimeCommandSyncStop(id: id)
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func diskTimeQuery(id: String, query: String) {
+    @discardableResult
+    static func diskTimeQuery(id: String, query: String) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeDiskTimeQuery(id: id, query: query)
+        return PolarIosSharedBridge.shared.planRuntimeDiskTimeQuery(id: id, query: query)
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func setLocalTimeV2(systemTimeHour: Int, localTimeHour: Int) {
+    @discardableResult
+    static func setLocalTimeV2(systemTimeHour: Int, localTimeHour: Int) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeSetLocalTimeV2(systemTimeHour: Int32(systemTimeHour), localTimeHour: Int32(localTimeHour))
+        return PolarIosSharedBridge.shared.planRuntimeSetLocalTimeV2(systemTimeHour: Int32(systemTimeHour), localTimeHour: Int32(localTimeHour))
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func setLocalTimeH10(localTimeHour: Int) {
+    @discardableResult
+    static func setLocalTimeH10(localTimeHour: Int) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeSetLocalTimeH10(localTimeHour: Int32(localTimeHour))
+        return PolarIosSharedBridge.shared.planRuntimeSetLocalTimeH10(localTimeHour: Int32(localTimeHour))
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func restFacadeGet(id: String, path: String, payloadShape: String) {
+    @discardableResult
+    static func restFacadeGet(id: String, path: String, payloadShape: String) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeRestFacadeGet(id: id, path: path, payloadShape: payloadShape)
+        return PolarIosSharedBridge.shared.planRuntimeRestFacadeGet(id: id, path: path, payloadShape: payloadShape)
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func fileFacade(id: String, command: String, path: String, payloadHex: String = "") {
+    @discardableResult
+    static func fileFacade(id: String, command: String, path: String, payloadHex: String = "") -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeFileFacade(id: id, command: command, path: path, payloadHex: payloadHex)
+        return PolarIosSharedBridge.shared.planRuntimeFileFacade(id: id, command: command, path: path, payloadHex: payloadHex)
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func fileRuntimeError(operation: String, path: String, error: Error) {
+    @discardableResult
+    static func fileRuntimeError(operation: String, path: String, error: Error) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeFileError(operation: operation, path: path, errorName: String(describing: type(of: error)))
+        return PolarIosSharedBridge.shared.planRuntimeFileError(operation: operation, path: path, errorName: String(describing: type(of: error)))
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func userDeviceSettings(id: String, kind: String, path: String, payloadFields: [String] = []) {
+    @discardableResult
+    static func userDeviceSettings(id: String, kind: String, path: String, payloadFields: [String] = []) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeUserDeviceSettings(id: id, kind: kind, path: path, payloadFieldsCsv: payloadFields.joined(separator: ","))
+        return PolarIosSharedBridge.shared.planRuntimeUserDeviceSettings(id: id, kind: kind, path: path, payloadFieldsCsv: payloadFields.joined(separator: ","))
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func storedDataCleanup(kind: String, rootPath: String) {
+    @discardableResult
+    static func storedDataCleanup(kind: String, rootPath: String) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeStoredDataCleanup(kind: kind, rootPath: rootPath)
+        return PolarIosSharedBridge.shared.planRuntimeStoredDataCleanup(kind: kind, rootPath: rootPath)
+        #else
+        return "platform-owned"
         #endif
     }
 
@@ -99,21 +135,30 @@ enum PolarRuntimePlanner {
         #endif
     }
 
-    static func offlineTriggerSet(currentTypes: [String], desiredTypes: [String], secretPresent: Bool) {
+    @discardableResult
+    static func offlineTriggerSet(currentTypes: [String], desiredTypes: [String], secretPresent: Bool) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeOfflineTrigger(operation: "setOfflineRecordingTrigger", currentTypesCsv: currentTypes.joined(separator: ","), desiredTypesCsv: desiredTypes.joined(separator: ","), secretPresent: secretPresent)
+        return PolarIosSharedBridge.shared.planRuntimeOfflineTrigger(operation: "setOfflineRecordingTrigger", currentTypesCsv: currentTypes.joined(separator: ","), desiredTypesCsv: desiredTypes.joined(separator: ","), secretPresent: secretPresent)
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func offlineTriggerGet(currentTypes: [String]) {
+    @discardableResult
+    static func offlineTriggerGet(currentTypes: [String]) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeOfflineTrigger(operation: "getOfflineRecordingTriggerSetup", currentTypesCsv: currentTypes.joined(separator: ","), desiredTypesCsv: "", secretPresent: false)
+        return PolarIosSharedBridge.shared.planRuntimeOfflineTrigger(operation: "getOfflineRecordingTriggerSetup", currentTypesCsv: currentTypes.joined(separator: ","), desiredTypesCsv: "", secretPresent: false)
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func firmwareWorkflow(id: String, statuses: [String] = [], firmwareFiles: [String] = []) {
+    @discardableResult
+    static func firmwareWorkflow(id: String, statuses: [String] = [], firmwareFiles: [String] = []) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeFirmwareWorkflow(id: id, statusesCsv: statuses.joined(separator: ","), firmwareFilesCsv: firmwareFiles.joined(separator: ","))
+        return PolarIosSharedBridge.shared.planRuntimeFirmwareWorkflow(id: id, statusesCsv: statuses.joined(separator: ","), firmwareFilesCsv: firmwareFiles.joined(separator: ","))
+        #else
+        return "platform-owned"
         #endif
     }
 
@@ -125,9 +170,12 @@ enum PolarRuntimePlanner {
         #endif
     }
 
-    static func backupRestore(path: String, payloadHex: String, writeResult: String = "success") {
+    @discardableResult
+    static func backupRestore(path: String, payloadHex: String, writeResult: String = "success") -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeBackupRestore(path: path, payloadHex: payloadHex, writeResult: writeResult)
+        return PolarIosSharedBridge.shared.planRuntimeBackupRestore(path: path, payloadHex: payloadHex, writeResult: writeResult)
+        #else
+        return "platform-owned"
         #endif
     }
 
@@ -139,9 +187,12 @@ enum PolarRuntimePlanner {
         #endif
     }
 
-    static func psFtpWriteAck(payloadSize: Int, writeAck: String = "success") {
+    @discardableResult
+    static func psFtpWriteAck(payloadSize: Int, writeAck: String = "success") -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimePsFtpWriteAck(payloadSize: Int32(payloadSize), writeAck: writeAck)
+        return PolarIosSharedBridge.shared.planRuntimePsFtpWriteAck(payloadSize: Int32(payloadSize), writeAck: writeAck)
+        #else
+        return "platform-owned"
         #endif
     }
 
@@ -163,33 +214,48 @@ enum PolarRuntimePlanner {
         #endif
     }
 
-    static func streamSubscription(target: String, startConnected: Bool, checkConnection: Bool) {
+    @discardableResult
+    static func streamSubscription(target: String, startConnected: Bool, checkConnection: Bool) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeStreamSubscription(target: target, startConnected: startConnected, checkConnection: checkConnection)
+        return PolarIosSharedBridge.shared.planRuntimeStreamSubscription(target: target, startConnected: startConnected, checkConnection: checkConnection)
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func streamConsumerCancellation(target: String) {
+    @discardableResult
+    static func streamConsumerCancellation(target: String) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeStreamConsumerCancellation(target: target)
+        return PolarIosSharedBridge.shared.planRuntimeStreamConsumerCancellation(target: target)
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func streamDisconnect(target: String, error: String) {
+    @discardableResult
+    static func streamDisconnect(target: String, error: String) -> String {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeStreamDisconnect(target: target, error: error)
+        return PolarIosSharedBridge.shared.planRuntimeStreamDisconnect(target: target, error: error)
+        #else
+        return "platform-owned"
         #endif
     }
 
-    static func streamDuplicateCompletion(target: String) {
+    @discardableResult
+    static func streamDuplicateCompletion(target: String) -> Int {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeStreamDuplicateCompletion(target: target)
+        return Int(PolarIosSharedBridge.shared.planRuntimeStreamDuplicateCompletion(target: target))
+        #else
+        return 0
         #endif
     }
 
-    static func streamPostCompletionEmission(target: String, value: String) {
+    @discardableResult
+    static func streamPostCompletionEmission(target: String, value: String) -> Int {
         #if canImport(PolarBleSdkShared)
-        _ = PolarIosSharedBridge.shared.planRuntimeStreamPostCompletionEmission(target: target, value: value)
+        return Int(PolarIosSharedBridge.shared.planRuntimeStreamPostCompletionEmission(target: target, value: value))
+        #else
+        return 0
         #endif
     }
 }

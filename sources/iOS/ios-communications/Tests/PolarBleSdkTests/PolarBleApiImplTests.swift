@@ -1994,6 +1994,35 @@ final class PolarBleApiImplTests: XCTestCase {
         #endif
     }
 
+    func test_runtimePlannerSurfacesSharedTerminalDecisionsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarRuntimePlanner.commandQuery(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS"))
+        XCTAssertEqual("success", PolarRuntimePlanner.commandReset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
+        XCTAssertEqual("success", PolarRuntimePlanner.commandSyncStart(id: "sync-start-success"))
+        XCTAssertEqual("success", PolarRuntimePlanner.commandSyncStop(id: "sync-stop-success"))
+        XCTAssertEqual("success", PolarRuntimePlanner.diskTimeQuery(id: "get-disk-space", query: "GET_DISK_SPACE"))
+        XCTAssertEqual("success", PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: 12, localTimeHour: 14))
+        XCTAssertEqual("success", PolarRuntimePlanner.setLocalTimeH10(localTimeHour: 14))
+        XCTAssertEqual("success", PolarRuntimePlanner.restFacadeGet(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json"))
+        XCTAssertEqual("success", PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102"))
+        XCTAssertEqual("transport-error", PolarRuntimePlanner.fileRuntimeError(operation: "readFile", path: "/U/0/CUSTOM.BIN", error: NSError(domain: "PolarBleApiImplTests", code: 1)))
+        XCTAssertEqual("success", PolarRuntimePlanner.userDeviceSettings(id: "set-user-device-settings", kind: "write", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["protobufPayload=platform-built"]))
+        XCTAssertEqual("success", PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
+        XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
+        XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["acc"]))
+        XCTAssertEqual("success", PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "completed"], firmwareFiles: ["BTUPDAT.BIN", "SYSUPDAT.IMG"]))
+        XCTAssertEqual("success", PolarRuntimePlanner.backupRestore(path: "/U/0/BACKUP.TXT", payloadHex: "0102"))
+        XCTAssertEqual("success", PolarRuntimePlanner.psFtpWriteAck(payloadSize: 2))
+        XCTAssertEqual("gattDisconnected", PolarRuntimePlanner.streamSubscription(target: "stream", startConnected: false, checkConnection: true))
+        XCTAssertEqual("stream", PolarRuntimePlanner.streamConsumerCancellation(target: "stream"))
+        XCTAssertEqual("linkLost", PolarRuntimePlanner.streamDisconnect(target: "stream", error: "linkLost"))
+        XCTAssertEqual(1, PolarRuntimePlanner.streamDuplicateCompletion(target: "stream"))
+        XCTAssertEqual(0, PolarRuntimePlanner.streamPostCompletionEmission(target: "stream", value: "value"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func test_deleteTelemetryData_listFailurePropagatesError() throws {
         try assertStoredDataCleanupWorkflowVectorContains("telemetry-list-failure-platform-policy")
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7021, userInfo: [NSLocalizedDescriptionKey: "telemetry list failed"])
