@@ -1,6 +1,7 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.psftp
 
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
+import com.polar.shared.runtime.PolarPsFtpFrame
 import org.apache.commons.io.IOUtils
 import protocol.PftpError.PbPFtpError
 import java.io.ByteArrayInputStream
@@ -47,12 +48,8 @@ object BlePsFtpUtils {
         val sharedHeader = header?.let { IOUtils.toByteArray(it) } ?: ByteArray(0)
         val sharedData = data?.let { IOUtils.toByteArray(it) } ?: ByteArray(0)
         return ByteArrayInputStream(
-            PolarWorkflowRuntimePlanning.encodeCompleteMessageStream(
-                type = when (type) {
-                    MessageType.REQUEST -> "request"
-                    MessageType.QUERY -> "query"
-                    MessageType.NOTIFICATION -> "notification"
-                },
+            SharedPsFtpByteCodec.encodeCompleteMessageStream(
+                type = type,
                 header = sharedHeader,
                 idValue = id,
                 data = sharedData
@@ -111,7 +108,7 @@ object BlePsFtpUtils {
         sequenceNumber: Rfc76SequenceNumber
     ): MutableList<ByteArray> {
         if (sequenceNumber.seq == 0L) {
-            val packets = PolarWorkflowRuntimePlanning.splitRfc76Frames(IOUtils.toByteArray(data), mtuSize).toMutableList()
+            val packets = SharedPsFtpByteCodec.splitRfc76Frames(IOUtils.toByteArray(data), mtuSize).toMutableList()
             repeat(packets.size) {
                 sequenceNumber.increment()
             }
@@ -145,7 +142,7 @@ object BlePsFtpUtils {
      * @param packet air packet
      */
     fun processRfc76MessageFrameHeader(header: PftpRfc76ResponseHeader, packet: ByteArray) {
-        val decoded = PolarWorkflowRuntimePlanning.decodeRfc76Frame(packet)
+        val decoded = SharedPsFtpByteCodec.decodeRfc76Frame(packet)
         header.next = decoded.next
         header.status = decoded.status
         header.sequenceNumber = decoded.sequenceNumber.toLong()
@@ -230,5 +227,28 @@ object BlePsFtpUtils {
         REQUEST,
         QUERY,
         NOTIFICATION
+    }
+}
+
+private object SharedPsFtpByteCodec {
+    fun encodeCompleteMessageStream(type: BlePsFtpUtils.MessageType, header: ByteArray, idValue: Int, data: ByteArray): ByteArray {
+        return PolarWorkflowRuntimePlanning.encodeCompleteMessageStream(
+            type = when (type) {
+                BlePsFtpUtils.MessageType.REQUEST -> "request"
+                BlePsFtpUtils.MessageType.QUERY -> "query"
+                BlePsFtpUtils.MessageType.NOTIFICATION -> "notification"
+            },
+            header = header,
+            idValue = idValue,
+            data = data
+        )
+    }
+
+    fun splitRfc76Frames(payload: ByteArray, mtuSize: Int): List<ByteArray> {
+        return PolarWorkflowRuntimePlanning.splitRfc76Frames(payload, mtuSize)
+    }
+
+    fun decodeRfc76Frame(packet: ByteArray): PolarPsFtpFrame {
+        return PolarWorkflowRuntimePlanning.decodeRfc76Frame(packet)
     }
 }
