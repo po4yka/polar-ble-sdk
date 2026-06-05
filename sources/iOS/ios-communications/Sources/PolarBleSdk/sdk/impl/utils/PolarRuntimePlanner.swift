@@ -76,18 +76,6 @@ enum PolarRuntimePlanner {
         return (.put, parts[1])
     }
 
-    private static func userDeviceSettingsOperations(_ csv: String) -> [(command: Protocol_PbPFtpOperation.Command, path: String)] {
-        return csv.split(separator: ",").compactMap { plannedOperation in
-            let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
-            guard parts.count == 2 else { return nil }
-            switch parts[0] {
-            case "read": return (.get, parts[1])
-            case "write": return (.put, parts[1])
-            default: return nil
-            }
-        }
-    }
-
     @discardableResult
     static func restFacadeGet(id: String, path: String, payloadShape: String) -> String {
         return PolarRestFacadeRuntimePlanner.get(id: id, path: path, payloadShape: payloadShape)
@@ -121,19 +109,11 @@ enum PolarRuntimePlanner {
 
     @discardableResult
     static func userDeviceSettings(id: String, kind: String, path: String, payloadFields: [String] = []) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeUserDeviceSettings(id: id, kind: kind, path: path, payloadFieldsCsv: payloadFields.joined(separator: ","))
-        #else
-        return "platform-owned"
-        #endif
+        return PolarUserDeviceSettingsRuntimePlanner.plan(id: id, kind: kind, path: path, payloadFields: payloadFields)
     }
 
     static func userDeviceSettingsOperations(id: String, kind: String, path: String, payloadFields: [String] = []) -> [(command: Protocol_PbPFtpOperation.Command, path: String)]? {
-        #if canImport(PolarBleSdkShared)
-        return userDeviceSettingsOperations(PolarIosSharedBridge.shared.planRuntimeUserDeviceSettingsOperations(id: id, kind: kind, path: path, payloadFieldsCsv: payloadFields.joined(separator: ",")))
-        #else
-        return nil
-        #endif
+        return PolarUserDeviceSettingsRuntimePlanner.operations(id: id, kind: kind, path: path, payloadFields: payloadFields)
     }
 
     @discardableResult

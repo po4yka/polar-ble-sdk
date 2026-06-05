@@ -2144,6 +2144,17 @@ final class PolarBleApiImplTests: XCTestCase {
         #endif
     }
 
+    func test_userDeviceSettingsRuntimePlannerMapsSharedOperationsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarUserDeviceSettingsRuntimePlanner.plan(id: "set-user-device-settings", kind: "write", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["protobufPayload=platform-built"]))
+        let operations = PolarUserDeviceSettingsRuntimePlanner.operations(id: "set-telemetry-enabled", kind: "readThenWrite", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["telemetryEnabled=true"])
+        XCTAssertEqual([.get, .put], operations?.map { $0.command })
+        XCTAssertEqual(["/U/0/S/UDEVSET.BPB", "/U/0/S/UDEVSET.BPB"], operations?.map { $0.path })
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func test_streamRuntimePlannerSurfacesSharedEdgeDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("gattDisconnected", PolarStreamRuntimePlanner.subscription(target: "stream", startConnected: false, checkConnection: true))
