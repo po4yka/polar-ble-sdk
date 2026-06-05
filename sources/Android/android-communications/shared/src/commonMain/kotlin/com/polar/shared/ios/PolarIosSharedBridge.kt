@@ -6,6 +6,7 @@ import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
 import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
 import com.polar.shared.runtime.PolarBackupRestoreFile
+import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import com.polar.shared.runtime.PolarFirmwareWorkflowScenario
 import com.polar.shared.runtime.PolarOfflineTriggerDesiredFeature
 import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
@@ -13,6 +14,7 @@ import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarRestFacadeOperation
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
+import com.polar.shared.runtime.PolarStreamRuntimePlanning
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.time.PolarDurationFields
@@ -286,6 +288,35 @@ object PolarIosSharedBridge {
 
     fun planRuntimePsFtpWriteAck(payloadSize: Int, writeAck: String): String {
         return PolarWorkflowRuntimePlanning.planPsFtpWrite(ByteArray(maxOf(payloadSize, 1)) { 0 }, writeAck = writeAck).terminal
+    }
+
+    fun d2hNotificationType(notificationId: Int): String {
+        return PolarD2hRuntimePlanning.notificationTypeOrNull(notificationId) ?: ""
+    }
+
+    fun d2hParsedProtoName(notificationType: String, parametersHex: String): String {
+        return PolarD2hRuntimePlanning.parsedProtoName(notificationType, parametersHex) ?: ""
+    }
+
+    fun planRuntimeStreamSubscription(target: String, startConnected: Boolean, checkConnection: Boolean): String {
+        val snapshot = PolarStreamRuntimePlanning.planCheckedSubscription(target, startConnected, checkConnection)
+        return snapshot.terminalError ?: "success"
+    }
+
+    fun planRuntimeStreamConsumerCancellation(target: String): String {
+        return PolarStreamRuntimePlanning.planConsumerCancellation(target).cancelledStreams.joinToString(",")
+    }
+
+    fun planRuntimeStreamDisconnect(target: String, error: String): String {
+        return PolarStreamRuntimePlanning.planDisconnectAfterSubscription(target, error).terminalError ?: ""
+    }
+
+    fun planRuntimeStreamDuplicateCompletion(target: String): Int {
+        return PolarStreamRuntimePlanning.planDuplicateCompletion(target).completionEventCount
+    }
+
+    fun planRuntimeStreamPostCompletionEmission(target: String, value: String): Int {
+        return PolarStreamRuntimePlanning.planPostCompletionEmissionSuppression(target, value).emittedValues.size
     }
 
     private fun String.csvValues(): List<String> {

@@ -2,6 +2,7 @@ package com.polar.androidcommunications.common.ble
 
 import com.polar.androidcommunications.api.ble.exceptions.BleDisconnected
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattTxInterface
+import com.polar.shared.runtime.PolarStreamRuntimePlanning
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
@@ -24,12 +25,11 @@ class ChannelUtils private constructor() {
         }
 
         fun <T : Any> postError(list: AtomicSet<Channel<T>>, throwable: Throwable) {
-            if (throwable != null) {
-                val objects = list.objects()
-                for (channel in objects) {
-                    val cancellationEx = CancellationException("Channel closed due to error", throwable)
-                    channel.cancel(cancellationEx)
-                }
+            PolarStreamRuntimePlanning.planDisconnectAfterSubscription("stream", throwable.javaClass.simpleName.ifEmpty { throwable.toString() })
+            val objects = list.objects()
+            for (channel in objects) {
+                val cancellationEx = CancellationException("Channel closed due to error", throwable)
+                channel.cancel(cancellationEx)
             }
             list.clear()
         }
@@ -46,6 +46,7 @@ class ChannelUtils private constructor() {
         }
 
         fun <T : Any> complete(list: AtomicSet<Channel<T>>) {
+            PolarStreamRuntimePlanning.planDuplicateCompletion("stream")
             val objects = list.objects()
             for (channel in objects) {
                 channel.close()
@@ -67,7 +68,9 @@ class ChannelUtils private constructor() {
             checkConnection: Boolean
         ): Flow<T> {
             return callbackFlow {
-                if (!checkConnection || transport.isConnected()) {
+                val connected = !checkConnection || transport.isConnected()
+                PolarStreamRuntimePlanning.planCheckedSubscription("stream", connected, checkConnection)
+                if (connected) {
                     val observer = Channel<T>(Channel.BUFFERED)
                     observers.add(observer)
 
@@ -88,6 +91,7 @@ class ChannelUtils private constructor() {
                     }
 
                     awaitClose {
+                        PolarStreamRuntimePlanning.planConsumerCancellation("stream")
                         observers.remove(observer)
                         observer.close()
                         bridgeJob.cancel()
