@@ -85,6 +85,7 @@ class PolarStreamRuntimeState {
 
     fun cancelConsumer(target: String): PolarStreamRuntimeSnapshot {
         if (activeObserverCountState == 0) return snapshot()
+        completed = true
         activeObserverCountState = 0
         upstreamCancelledState = true
         cleanupCallbackCountState += 1
@@ -130,6 +131,16 @@ object PolarStreamRuntimePlanning {
         val state = newState()
         state.subscribe(target)
         return state.cancelConsumer(target)
+    }
+
+    fun planConsumerCancellationLateEvents(target: String, preCancelValue: String, postCancelValue: String, terminalError: String): PolarStreamRuntimeSnapshot {
+        val state = newState()
+        state.subscribe(target)
+        state.emit(preCancelValue)
+        state.cancelConsumer(target)
+        state.emit(postCancelValue)
+        state.fail(terminalError)
+        return state.complete()
     }
 
     fun planDisconnectAfterSubscription(target: String, error: String): PolarStreamRuntimeSnapshot {
