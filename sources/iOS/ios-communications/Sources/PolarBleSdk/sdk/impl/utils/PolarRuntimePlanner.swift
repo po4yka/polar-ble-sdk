@@ -138,6 +138,14 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.orderFirmwareFiles(fileNames)
     }
 
+    static func backupRootPaths(_ entries: [String]) -> [String] {
+        return PolarFirmwareBackupRuntimePlanner.backupRootPaths(entries)
+    }
+
+    static func backupFilePath(_ path: String) -> (directory: String, fileName: String) {
+        return PolarFirmwareBackupRuntimePlanner.backupFilePath(path)
+    }
+
     @discardableResult
     static func backupRestore(path: String, payloadHex: String, writeResult: String = "success") -> String {
         return PolarFirmwareBackupRuntimePlanner.backupRestore(path: path, payloadHex: payloadHex, writeResult: writeResult)
