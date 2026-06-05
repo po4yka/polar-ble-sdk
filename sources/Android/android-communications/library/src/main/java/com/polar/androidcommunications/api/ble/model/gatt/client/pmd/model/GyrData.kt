@@ -8,7 +8,7 @@ import java.lang.Float.intBitsToFloat
 
 internal class GyrData {
 
-    internal data class GyrSample internal constructor(
+    internal data class GyrSample(
         val timeStamp: ULong,
         // Sample contains signed x,y,z axis values in deg/sec
         val x: Float,

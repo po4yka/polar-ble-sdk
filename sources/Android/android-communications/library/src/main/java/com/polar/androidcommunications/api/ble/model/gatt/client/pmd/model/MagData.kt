@@ -21,7 +21,7 @@ internal class MagData() {
         }
     }
 
-    data class MagSample internal constructor(
+    data class MagSample(
         val timeStamp: ULong = 0uL,
         // Sample contains signed x,y,z axis values in Gauss
         val x: Float,

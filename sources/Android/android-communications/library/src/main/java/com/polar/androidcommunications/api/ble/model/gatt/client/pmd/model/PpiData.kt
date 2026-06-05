@@ -5,7 +5,7 @@ import com.polar.androidcommunications.common.ble.TypeUtils
 import com.polar.shared.pmd.sensors.PolarSensorDataParser
 
 internal class PpiData {
-    data class PpiSample internal constructor(
+    data class PpiSample(
         val hr: Int,
         val ppInMs: Int,
         val ppErrorEstimate: Int,

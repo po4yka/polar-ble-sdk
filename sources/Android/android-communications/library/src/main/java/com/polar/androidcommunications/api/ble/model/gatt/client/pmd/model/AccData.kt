@@ -7,7 +7,7 @@ import com.polar.androidcommunications.common.ble.TypeUtils
 import com.polar.shared.pmd.sensors.PolarSensorDataParser
 
 internal class AccData {
-    data class AccSample internal constructor(
+    data class AccSample(
         val timeStamp: ULong,
         // Sample contains signed x,y,z axis values in milliG
         val x: Int,

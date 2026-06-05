@@ -8,7 +8,7 @@ import com.polar.androidcommunications.common.ble.TypeUtils.convertUnsignedByteT
  */
 internal class OfflineHrData {
 
-    data class OfflineHrSample internal constructor(
+    data class OfflineHrSample(
         val hr: Int,
         val ppgQuality: Int,
         val correctedHr: Int

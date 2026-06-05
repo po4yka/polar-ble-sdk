@@ -25,21 +25,21 @@ internal sealed class PpgDataSample
 
 internal class PpgData {
     // PPG Data Sample 0
-    data class PpgDataFrameType0 internal constructor(
+    data class PpgDataFrameType0(
         val timeStamp: ULong,
         val ppgDataSamples: List<Int>,
         val ambientSample: Int
     ) : PpgDataSample()
 
     // PPG Data Sample 3
-    data class PpgDataFrameType8 internal constructor(
+    data class PpgDataFrameType8(
         val timeStamp: ULong,
         val ppgDataSamples: List<Int>,
         val statusBits: List<Int>
     ) : PpgDataSample()
 
     // PPG Data frame type 4
-    data class PpgDataFrameType4 internal constructor(
+    data class PpgDataFrameType4(
         val timeStamp: ULong,
         val numIntTs: List<UInt>,
         val channel1GainTs: List<UInt>,
@@ -47,26 +47,26 @@ internal class PpgData {
     ) : PpgDataSample()
 
     // PPG Data frame type 5
-    data class PpgDataFrameType5 internal constructor(
+    data class PpgDataFrameType5(
         val timeStamp: ULong,
         val operationMode: UInt
     ) : PpgDataSample()
 
     // PPG Data Sample 2
-    data class PpgDataFrameType7 internal constructor(
+    data class PpgDataFrameType7(
         val timeStamp: ULong,
         val ppgDataSamples: List<Int>,
         val statusBits: List<Int>
     ) : PpgDataSample()
 
-    data class PpgDataFrameType9 internal constructor(
+    data class PpgDataFrameType9(
         val timeStamp: ULong,
         val numIntTs: List<UInt>,
         val channel1GainTs: List<UInt>,
         val channel2GainTs: List<UInt>
     ) : PpgDataSample()
 
-    data class PpgDataFrameType10 internal constructor(
+    data class PpgDataFrameType10(
         val timeStamp: ULong,
         val greenSamples: List<Int>,
         val redSamples: List<Int>,
@@ -74,14 +74,14 @@ internal class PpgData {
         val statusBits: List<Int>
     ) : PpgDataSample()
 
-    data class PpgDataFrameType13 internal constructor(
+    data class PpgDataFrameType13(
         val timeStamp: ULong,
         val ppgChannel0: List<Int>,
         val ppgChannel1: List<Int>,
         val statusBits: List<Int>
     ) : PpgDataSample()
 
-    data class PpgDataFrameType14 internal constructor(
+    data class PpgDataFrameType14(
         val timeStamp: ULong,
         val numIntTs1: List<UInt>,
         val channel1GainTs1: List<UInt>,
@@ -89,7 +89,7 @@ internal class PpgData {
     ) : PpgDataSample()
 
     // PPG Data Sport Id
-    data class PpgDataSampleSportId internal constructor(
+    data class PpgDataSampleSportId(
         val timeStamp: ULong,
         val sportId: ULong
     ) : PpgDataSample()

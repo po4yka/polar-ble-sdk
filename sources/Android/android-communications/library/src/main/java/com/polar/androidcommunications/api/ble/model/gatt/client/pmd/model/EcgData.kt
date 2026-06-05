@@ -13,7 +13,7 @@ sealed class EcgDataSample
 
 internal class EcgData {
 
-    data class EcgSample internal constructor(
+    data class EcgSample(
         val timeStamp: ULong,
         val microVolts: Int,
         val overSampling: Boolean = false,
@@ -23,7 +23,7 @@ internal class EcgData {
         val paceDataTag: Byte = 0,
     ) : EcgDataSample()
 
-    data class EcgSampleFrameType3 internal constructor(
+    data class EcgSampleFrameType3(
         val timeStamp: ULong,
         val data0: Int,
         val data1: Int,

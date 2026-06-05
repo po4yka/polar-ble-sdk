@@ -9,7 +9,7 @@ import java.lang.Float.intBitsToFloat
 
 internal class SkinTemperatureData {
 
-    data class SkinTemperatureSample internal constructor(
+    data class SkinTemperatureSample(
         // timeStamp ns since epoch time
         val timeStamp: ULong,
         // Sample contains signed temperature value in celsius

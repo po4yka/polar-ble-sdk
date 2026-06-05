@@ -9,7 +9,7 @@ import java.lang.Float.intBitsToFloat
 
 internal class PressureData {
 
-    data class PressureSample internal constructor(
+    data class PressureSample(
         val timeStamp: ULong = 0uL,
         // Sample contains signed pressure value in bar
         val pressure: Float
