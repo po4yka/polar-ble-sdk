@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import iOSCommunications
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 final class EcgDataTest: XCTestCase {
     
@@ -46,6 +49,29 @@ final class EcgDataTest: XCTestCase {
         
         XCTAssertEqual(timeStamp, ecgData.timeStamp)
         XCTAssertEqual(timeStamp, ecgData.samples[1].timeStamp)
+    }
+
+    func testEcgRawType0ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "000094357700000000000280ff028000"
+        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ecgType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        XCTAssertEqual("1000000050,-32766|2000000000,32770", sharedRows)
+
+        let frame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let ecgData = try EcgData.parseDataFromDataFrame(frame: frame)
+
+        XCTAssertEqual(2, ecgData.samples.count)
+        XCTAssertEqual(1_000_000_050, ecgData.samples[0].timeStamp)
+        XCTAssertEqual(-32766, ecgData.samples[0].microVolts)
+        XCTAssertEqual(2_000_000_000, ecgData.samples[1].timeStamp)
+        XCTAssertEqual(32770, ecgData.samples[1].microVolts)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testEcgGoldenVectorsMatchIOSCommunicationsBehavior() throws {

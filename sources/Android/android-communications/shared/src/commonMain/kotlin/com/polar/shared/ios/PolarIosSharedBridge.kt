@@ -12,7 +12,10 @@ import com.polar.shared.pmd.PolarPmdRecordingType
 import com.polar.shared.pmd.PolarPmdSecret
 import com.polar.shared.pmd.PolarPmdSettingType
 import com.polar.shared.pmd.PolarPmdSettings
+import com.polar.shared.pmd.sensors.PolarEcgType0Sample
 import com.polar.shared.pmd.sensors.PolarMagCalibrationStatus
+import com.polar.shared.pmd.sensors.PolarPmdDataFrame
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
@@ -245,6 +248,24 @@ object PolarIosSharedBridge {
                 ).joinToString("|")
             }
         }.joinToString("\n")
+    }
+
+    fun ecgType0Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
+        val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
+        if (bytes.size < 10) return null
+        val frameType = bytes[9].toInt() and 0xFF
+        if ((frameType and 0x80) != 0 || (frameType and 0x7F) != 0) return null
+        return runCatching {
+            PolarSensorDataParser.parseEcg(
+                PolarPmdDataFrame.fromByteArray(
+                    data = bytes,
+                    previousTimeStamp = previousTimeStamp,
+                    factor = factor,
+                    sampleRate = sampleRate
+                )
+            ).filterIsInstance<PolarEcgType0Sample>()
+                .joinToString(separator = "|") { sample -> "${sample.timeStamp},${sample.microVolts}" }
+        }.getOrNull()
     }
 
     fun spo2TestStatus(value: Int): String? {

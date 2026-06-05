@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class EcgData {
     let timeStamp: UInt64
@@ -31,6 +34,11 @@ public class EcgData {
     }
     
     private static func dataFromRawType0(frame: PmdDataFrame) throws -> EcgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawType0Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         var offset = 0
         let step = TYPE_0_SAMPLE_SIZE_IN_BYTES
         let samplesSize = Int(Double(frame.dataContent.count) / Double(step))
@@ -46,4 +54,50 @@ public class EcgData {
         }
         return EcgData(timeStamp: frame.timeStamp, samples: ecgSamples)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedRawType0Data(frame: PmdDataFrame) -> EcgData? {
+        guard frame.frameType == .type_0,
+              !frame.isCompressedFrame,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PolarIosSharedBridge.shared.ecgType0Samples(
+            dataFrameHex: frame.sharedDataFrameHex,
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let samples = sharedRows.split(separator: "|").compactMap { row -> EcgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 2,
+                  let timeStamp = UInt64(fields[0]),
+                  let microVolts = Int32(fields[1]) else {
+                return nil
+            }
+            return EcgSample(timeStamp: timeStamp, microVolts: microVolts)
+        }
+        guard samples.count == sharedRows.split(separator: "|").count else {
+            return nil
+        }
+        return EcgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
 }
+
+#if canImport(PolarBleSdkShared)
+private extension PmdDataFrame {
+    var sharedDataFrameHex: String {
+        var data = Data([measurementType.rawValue])
+        var littleEndianTimestamp = timeStamp.littleEndian
+        withUnsafeBytes(of: &littleEndianTimestamp) { data.append(contentsOf: $0) }
+        let frameTypeByte = frameType.rawValue | (isCompressedFrame ? 0x80 : 0)
+        data.append(frameTypeByte)
+        data.append(dataContent)
+        return data.map { String(format: "%02x", $0) }.joined()
+    }
+}
+#endif
