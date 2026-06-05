@@ -4429,7 +4429,7 @@ class GoldenVectorMigrationPolicyTest {
             "initial-silence",
             "wait-notification-has-no-built-in-initial-silence-timeout",
             "commonFakeNotificationRuntimeConsumerTimeoutCleansObserverWithVirtualClock",
-            "FakeNotificationTimeoutRuntime",
+            "PolarWorkflowRuntimePlanning.planConsumerTimeoutObserverCleanup",
             "consumerTimeout",
             "activeObserverCount",
             "cleanupCallbackCount",

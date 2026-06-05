@@ -871,7 +871,7 @@ FAKE_TRANSPORT_COMMON_PSFTP_RUNTIME_TEST_REQUIRED_TERMS = [
   "initial-silence",
   "wait-notification-has-no-built-in-initial-silence-timeout",
   "commonFakeNotificationRuntimeConsumerTimeoutCleansObserverWithVirtualClock",
-  "FakeNotificationTimeoutRuntime",
+  "PolarWorkflowRuntimePlanning.planConsumerTimeoutObserverCleanup",
   "consumerTimeout",
   "activeObserverCount",
   "cleanupCallbackCount",
