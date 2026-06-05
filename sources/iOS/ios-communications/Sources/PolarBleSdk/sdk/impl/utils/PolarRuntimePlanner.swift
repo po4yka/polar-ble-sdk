@@ -16,6 +16,14 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func commandQueryValue(id: String, query: String, parameters: [String] = []) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return queryRawValues(PolarIosSharedBridge.shared.planRuntimeCommandQueryCommands(id: id, query: query, parametersCsv: parameters.joined(separator: ","))).first
+        #else
+        return nil
+        #endif
+    }
+
     @discardableResult
     static func commandReset(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) -> String {
         #if canImport(PolarBleSdkShared)
@@ -102,6 +110,22 @@ enum PolarRuntimePlanner {
             case "STOP_SYNC": return Protocol_PbPFtpHostToDevNotification.stopSync.rawValue
             case "TERMINATE_SESSION": return Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
             case "RESET": return Protocol_PbPFtpHostToDevNotification.reset.rawValue
+            default: return nil
+            }
+        }
+    }
+
+    private static func queryRawValues(_ csv: String) -> [Int] {
+        return csv.split(separator: ",").compactMap { plannedName in
+            switch String(plannedName) {
+            case "GET_DISK_SPACE": return Protocol_PbPFtpQuery.getDiskSpace.rawValue
+            case "GET_LOCAL_TIME": return Protocol_PbPFtpQuery.getLocalTime.rawValue
+            case "REQUEST_START_RECORDING": return Protocol_PbPFtpQuery.requestStartRecording.rawValue
+            case "REQUEST_STOP_RECORDING": return Protocol_PbPFtpQuery.requestStopRecording.rawValue
+            case "REQUEST_RECORDING_STATUS": return Protocol_PbPFtpQuery.requestRecordingStatus.rawValue
+            case "REQUEST_SYNCHRONIZATION": return Protocol_PbPFtpQuery.requestSynchronization.rawValue
+            case "SET_LOCAL_TIME": return Protocol_PbPFtpQuery.setLocalTime.rawValue
+            case "SET_SYSTEM_TIME": return Protocol_PbPFtpQuery.setSystemTime.rawValue
             default: return nil
             }
         }

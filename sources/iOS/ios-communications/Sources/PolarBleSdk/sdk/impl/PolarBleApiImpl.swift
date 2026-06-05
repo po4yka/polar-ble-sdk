@@ -1098,8 +1098,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         params.sampleDataIdentifier = exerciseId
         params.sampleType = sampleType == .hr ? PbSampleType.sampleTypeHeartRate : PbSampleType.sampleTypeRrInterval
         let queryParams = try params.serializedData()
-        PolarRuntimePlanner.commandQuery(id: "h10-start-recording", query: "REQUEST_START_RECORDING", parameters: ["sampleDataIdentifier=\(exerciseId)", "sampleType=\(params.sampleType)", "recordingIntervalSeconds=\(interval.rawValue)"])
-        _ = try await client.query(Protocol_PbPFtpQuery.requestStartRecording.rawValue, parameters: queryParams as NSData)
+        let query = plannedCommandQueryValue(id: "h10-start-recording", query: "REQUEST_START_RECORDING", parameters: ["sampleDataIdentifier=\(exerciseId)", "sampleType=\(params.sampleType)", "recordingIntervalSeconds=\(interval.rawValue)"]) ?? Protocol_PbPFtpQuery.requestStartRecording.rawValue
+        _ = try await client.query(query, parameters: queryParams as NSData)
     }
 
     
@@ -1107,8 +1107,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         guard BlePolarDeviceCapabilitiesUtility.isRecordingSupported(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
-        PolarRuntimePlanner.commandQuery(id: "h10-stop-recording", query: "REQUEST_STOP_RECORDING")
-        _ = try await client.query(Protocol_PbPFtpQuery.requestStopRecording.rawValue, parameters: nil)
+        let query = plannedCommandQueryValue(id: "h10-stop-recording", query: "REQUEST_STOP_RECORDING") ?? Protocol_PbPFtpQuery.requestStopRecording.rawValue
+        _ = try await client.query(query, parameters: nil)
     }
 
     
@@ -1116,10 +1116,15 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         guard BlePolarDeviceCapabilitiesUtility.isRecordingSupported(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
-        PolarRuntimePlanner.commandQuery(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS")
-        let data = try await client.query(Protocol_PbPFtpQuery.requestRecordingStatus.rawValue, parameters: nil)
+        let query = plannedCommandQueryValue(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS") ?? Protocol_PbPFtpQuery.requestRecordingStatus.rawValue
+        let data = try await client.query(query, parameters: nil)
         let result = try Protocol_PbRequestRecordingStatusResult(serializedBytes: data as Data)
         return (ongoing: result.recordingOn, entryId: result.hasSampleDataIdentifier ? result.sampleDataIdentifier : "")
+    }
+
+    private func plannedCommandQueryValue(id: String, query: String, parameters: [String] = []) -> Int? {
+        PolarRuntimePlanner.commandQuery(id: id, query: query, parameters: parameters)
+        return PolarRuntimePlanner.commandQueryValue(id: id, query: query, parameters: parameters)
     }
 
     

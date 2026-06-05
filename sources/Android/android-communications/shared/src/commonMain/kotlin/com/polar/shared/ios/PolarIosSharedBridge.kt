@@ -845,6 +845,21 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun planRuntimeCommandQueryCommands(id: String, query: String, parametersCsv: String): String {
+        return PolarRuntimeOrchestration.planCommand(
+            PolarFacadeCommandOperation(
+                id = id,
+                kind = "query",
+                query = query,
+                parameters = parametersCsv.csvValues(),
+                notifications = emptyList(),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
+            )
+        ).queryCommandsCsv()
+    }
+
     fun planRuntimeCommandReset(id: String, sleep: Boolean, factoryDefaults: Boolean, otaFirmwareUpdate: Boolean): String {
         return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(
@@ -1177,6 +1192,12 @@ object PolarIosSharedBridge {
         return commands
             .filter { command -> command.startsWith("notification:") }
             .joinToString(separator = ",") { command -> command.substringAfter("notification:") }
+    }
+
+    private fun PolarRuntimePlan.queryCommandsCsv(): String {
+        return commands
+            .filter { command -> command.startsWith("query:") }
+            .joinToString(separator = ",") { command -> command.substringAfter("query:") }
     }
 
     private fun String.csvFields(): List<String> {
