@@ -252,6 +252,27 @@ final class PpgDataTest: XCTestCase {
         XCTAssertEqual(expectedOperationMode, sample.operationMode)
         XCTAssertEqual(timeStamp, sample.timeStamp)
     }
+
+    func testPpgRawType5ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "01009435770000000005ffffffff"
+        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgRawType5Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let ppgData = try PpgData.parseDataFromDataFrame(frame: dataFrame)
+        let fields = sharedRows.split(separator: ",")
+        let sample = try XCTUnwrap(ppgData.samples.first as? PpgData.PpgDataFrameType5)
+        XCTAssertEqual(try XCTUnwrap(UInt64(fields[0])), sample.timeStamp)
+        XCTAssertEqual(try XCTUnwrap(UInt64(fields[1])), sample.operationMode)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
     
     func testCompressedPpgFrameType5Throws() throws {
 
@@ -312,6 +333,27 @@ final class PpgDataTest: XCTestCase {
         XCTAssertEqual(1, result.samples.count)
         XCTAssertEqual(expectedSportId, sample.sportId)
         XCTAssertEqual(timeStamp, sample.timeStamp)
+    }
+
+    func testPpgRawType6ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "010094357700000000061b00000000000000"
+        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgRawType6Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let ppgData = try PpgData.parseDataFromDataFrame(frame: dataFrame)
+        let fields = sharedRows.split(separator: ",")
+        let sample = try XCTUnwrap(ppgData.samples.first as? PpgData.PpgDataFrameType6)
+        XCTAssertEqual(try XCTUnwrap(UInt64(fields[0])), sample.timeStamp)
+        XCTAssertEqual(try XCTUnwrap(Int32(fields[1])), sample.sportId)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
     
     func testCompressedPpgFrameType6ThrowsException() throws {

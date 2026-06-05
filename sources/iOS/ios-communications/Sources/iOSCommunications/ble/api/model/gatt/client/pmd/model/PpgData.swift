@@ -259,6 +259,11 @@ public class PpgData {
     }
     
     private static func dataFromRawType5(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawType5Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         let samplesSize = Int(Double(frame.dataContent.count) / Double(TYPE_0_CHANNELS_IN_SAMPLE))
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samplesSize), sampleRate: frame.sampleRate)
         var ppgSamples = [PpgSample]()
@@ -275,6 +280,11 @@ public class PpgData {
     }
 
     private static func dataFromRawType6(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawType6Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         var ppgSamples = [PpgSample]()
         
         let sportId = TypeUtils.convertArrayToUnsignedInt64(frame.dataContent, offset: 0, size: TYPE_6_SAMPLE_SIZE_IN_BYTES)
@@ -284,6 +294,70 @@ public class PpgData {
         
         return PpgData(timeStamp: timeStamps.first!, samples: ppgSamples)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedRawType5Data(frame: PmdDataFrame) -> PpgData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_5,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PolarIosSharedBridge.shared.ppgRawType5Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 2,
+                  let timeStamp = UInt64(fields[0]),
+                  let operationMode = UInt64(fields[1]) else {
+                return nil
+            }
+            return PpgDataFrameType5(timeStamp: timeStamp, frameType: frame.frameType, operationMode: operationMode)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+
+    private static func sharedRawType6Data(frame: PmdDataFrame) -> PpgData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_6,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PolarIosSharedBridge.shared.ppgRawType6Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 2,
+                  let timeStamp = UInt64(fields[0]),
+                  let sportId = Int32(fields[1]) else {
+                return nil
+            }
+            return PpgDataFrameType6(timeStamp: timeStamp, frameType: frame.frameType, sportId: sportId)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
     
     private static func dataFromRawType9(frame: PmdDataFrame) throws -> PpgData {
         

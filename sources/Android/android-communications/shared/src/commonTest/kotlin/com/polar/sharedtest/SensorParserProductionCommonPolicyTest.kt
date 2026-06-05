@@ -4,6 +4,8 @@ import com.polar.shared.pmd.sensors.PolarAccSample
 import com.polar.shared.pmd.sensors.PolarEcgType0Sample
 import com.polar.shared.pmd.sensors.PolarPmdDataFrame
 import com.polar.shared.pmd.sensors.PolarPpgType0Sample
+import com.polar.shared.pmd.sensors.PolarPpgType5Sample
+import com.polar.shared.pmd.sensors.PolarPpgSportIdSample
 import com.polar.shared.pmd.sensors.PolarSensorDataParser
 import kotlin.math.abs
 import kotlin.test.Test
@@ -19,6 +21,8 @@ class SensorParserProductionCommonPolicyTest {
         assertGyr("protocol/sensors/gyr-compressed-type0-two-samples.json")
         assertMag("protocol/sensors/mag-compressed-type1-calibration-status.json")
         assertPpgType0("protocol/sensors/ppg-raw-type0-two-samples.json")
+        assertPpgType5("protocol/sensors/ppg-raw-type5-operation-mode-max.json")
+        assertPpgType6("protocol/sensors/ppg-raw-type6-sport-id.json")
     }
 
     @Test
@@ -95,6 +99,22 @@ class SensorParserProductionCommonPolicyTest {
             assertEquals(expected.signedIntArrayValue("ppg"), actual.ppgDataSamples)
             assertEquals(expected.intValue("ambient"), actual.ambientSample)
         }
+    }
+
+    private fun assertPpgType5(path: String) {
+        val vector = loadGoldenVectorText(path)
+        val actual = PolarSensorDataParser.parsePpg(frameFromVector(vector)).filterIsInstance<PolarPpgType5Sample>().single()
+        val expected = vector.expectedSamples().single()
+        assertEquals(expected.jsonNumberString("timeStamp"), actual.timeStamp.toString())
+        assertEquals(expected.jsonNumberString("operationMode"), actual.operationMode.toString())
+    }
+
+    private fun assertPpgType6(path: String) {
+        val vector = loadGoldenVectorText(path)
+        val actual = PolarSensorDataParser.parsePpg(frameFromVector(vector)).filterIsInstance<PolarPpgSportIdSample>().single()
+        val expected = vector.expectedSamples().single()
+        assertEquals(expected.jsonNumberString("timeStamp"), actual.timeStamp.toString())
+        assertEquals(expected.jsonNumberString("sportId"), actual.sportId.toString())
     }
 
     private fun assertPpi(path: String) {
