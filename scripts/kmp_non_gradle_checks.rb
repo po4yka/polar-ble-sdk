@@ -844,6 +844,7 @@ FAKE_TRANSPORT_COMMON_FIRMWARE_UTILITY_TEST_REQUIRED_TERMS = [
 ].freeze
 FAKE_TRANSPORT_COMMON_FIRMWARE_WORKFLOW_TEST_REQUIRED_TERMS = [
   "firmwareWorkflowRuntimePolicyVectorRunsThroughProductionCommonPlanner",
+  "firmwareWorkflowRuntimeVectorRunsThroughCommonFakeDependencies",
   "firmwareWorkflowRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/firmware-update/workflow-runtime-policy.json",
   "sdk/firmware-update/workflow-runtime-readiness.json",
@@ -862,6 +863,11 @@ FAKE_TRANSPORT_COMMON_FIRMWARE_WORKFLOW_TEST_REQUIRED_TERMS = [
   "battery-too-low-response-is-terminal-failure",
   "battery-too-low",
   "retryable server failure",
+  "CommonFirmwareFakeNetwork",
+  "CommonFirmwareFakePackageDownloader",
+  "CommonFirmwareFakeZipStore",
+  "CommonFirmwareFakeBleWriter",
+  "CommonFakeRetryScheduler",
   "fake-network-availability",
   "fake-filesystem-zip-extraction",
   "ble-write-progress",

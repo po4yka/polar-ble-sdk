@@ -4390,6 +4390,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_FIRMWARE_WORKFLOW_TEST_REQUIRED_TERMS = listOf(
             "firmwareWorkflowRuntimePolicyVectorRunsThroughProductionCommonPlanner",
+            "firmwareWorkflowRuntimeVectorRunsThroughCommonFakeDependencies",
             "firmwareWorkflowRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/firmware-update/workflow-runtime-policy.json",
             "sdk/firmware-update/workflow-runtime-readiness.json",
@@ -4408,6 +4409,11 @@ class GoldenVectorMigrationPolicyTest {
             "battery-too-low-response-is-terminal-failure",
             "battery-too-low",
             "retryable server failure",
+            "CommonFirmwareFakeNetwork",
+            "CommonFirmwareFakePackageDownloader",
+            "CommonFirmwareFakeZipStore",
+            "CommonFirmwareFakeBleWriter",
+            "CommonFakeRetryScheduler",
             "fake-network-availability",
             "fake-filesystem-zip-extraction",
             "ble-write-progress",

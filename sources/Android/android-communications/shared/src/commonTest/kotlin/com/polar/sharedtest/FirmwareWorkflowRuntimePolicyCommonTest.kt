@@ -81,6 +81,36 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         assertEquals(listOf("TCHUPDAT.BIN", "APPUPDAT.BIN", "BTUPDAT.BIN", "SYSUPDAT.IMG"), PolarWorkflowRuntimePlanning.orderFirmwareFiles(files))
     }
 
+    @Test
+    fun firmwareWorkflowRuntimeVectorRunsThroughCommonFakeDependencies() {
+        val vector = loadGoldenVectorText("sdk/firmware-update/workflow-runtime-policy.json")
+        val scenarios = vector.objectValue("input").objectArray("scenarios")
+        val expectedCases = vector.objectValue("expected").objectValue("commonWorkflowPrototype").objectArray("cases").associateBy { it.stringValue("id") }
+
+        scenarios.forEach { scenario ->
+            val expected = expectedCases.getValue(scenario.stringValue("id"))
+            val fakeRuntime = CommonFirmwareWorkflowFakeRuntime(
+                network = CommonFirmwareFakeNetwork(scenario),
+                packageDownloader = CommonFirmwareFakePackageDownloader(scenario),
+                zipStore = CommonFirmwareFakeZipStore(scenario),
+                bleWriter = CommonFirmwareFakeBleWriter(scenario),
+                cleanup = CommonFirmwareFakeCleanup(),
+                retryScheduler = CommonFakeRetryScheduler(CommonFakeVirtualClock())
+            )
+            val outcome = fakeRuntime.run(scenario.toWorkflowScenario())
+
+            assertEquals(expected.stringArrayValue("statuses"), outcome.statuses, scenario.stringValue("id"))
+            assertEquals(expected.stringArrayValue("writes"), outcome.writes, scenario.stringValue("id"))
+            assertEquals(expected.optionalStringValue("terminalError"), outcome.terminalError, scenario.stringValue("id"))
+            expected.optionalBooleanValue("downloadAttempted")?.let { assertEquals(it, outcome.downloadAttempted, scenario.stringValue("id")) }
+            expected.optionalBooleanValue("zipExtractionAttempted")?.let { assertEquals(it, outcome.zipExtractionAttempted, scenario.stringValue("id")) }
+            expected.optionalIntValue("cleanupCallbackCount")?.let { assertEquals(it, outcome.cleanupCallbackCount, scenario.stringValue("id")) }
+            if (scenario.stringValue("id") == "retryable-server-failure") {
+                assertEquals(listOf(1000L, 3000L), fakeRuntime.retryTimesMillis)
+            }
+        }
+    }
+
     private fun assertFirmwareWorkflowPolicyVectorShape(policy: String) {
         val input = policy.objectValue("input")
         val expected = policy.objectValue("expected")
@@ -169,6 +199,139 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
     private fun String.optionalIntValue(field: String): Int? {
         return Regex("\"$field\"\\s*:\\s*(\\d+)").find(this)?.groupValues?.get(1)?.toInt()
     }
+
+    private class CommonFirmwareWorkflowFakeRuntime(
+        private val network: CommonFirmwareFakeNetwork,
+        private val packageDownloader: CommonFirmwareFakePackageDownloader,
+        private val zipStore: CommonFirmwareFakeZipStore,
+        private val bleWriter: CommonFirmwareFakeBleWriter,
+        private val cleanup: CommonFirmwareFakeCleanup,
+        private val retryScheduler: CommonFakeRetryScheduler
+    ) {
+        val retryTimesMillis: List<Long>
+            get() = retryScheduler.retryTimesMillis
+
+        fun run(scenario: PolarFirmwareWorkflowScenario): CommonFirmwareWorkflowFakeOutcome {
+            val status = mutableListOf<String>()
+            val writes = mutableListOf<String>()
+            var downloadAttempted = false
+            var zipExtractionAttempted = false
+            var terminalError: String? = null
+
+            val server = network.checkUpdate()
+            if (server == CommonFirmwareServerResponse.NotAvailable) {
+                status += "checkFwUpdateNotAvailable"
+                return CommonFirmwareWorkflowFakeOutcome(status, writes, terminalError, downloadAttempted, zipExtractionAttempted, cleanup.count)
+            }
+            if (server == CommonFirmwareServerResponse.Available) {
+                status += "checkFwUpdateAvailable"
+                return CommonFirmwareWorkflowFakeOutcome(status, writes, terminalError, downloadAttempted, zipExtractionAttempted, cleanup.count)
+            }
+            if (server == CommonFirmwareServerResponse.RetryableFailure) {
+                retryScheduler.runRetryDelays(delaysMillis = listOf(1000L, 2000L), maxRetries = 2)
+                status += "fwUpdateFailed"
+                terminalError = "retryable-server-failure"
+                return CommonFirmwareWorkflowFakeOutcome(status, writes, terminalError, downloadAttempted, zipExtractionAttempted, cleanup.count)
+            }
+
+            status += "fetchingFwUpdatePackage"
+            downloadAttempted = true
+            if (!packageDownloader.download()) {
+                status += "fwUpdateFailed"
+                return CommonFirmwareWorkflowFakeOutcome(status, writes, terminalError, downloadAttempted, zipExtractionAttempted, cleanup.count)
+            }
+            zipExtractionAttempted = zipStore.extractAttempted
+            if (zipStore.extractInvalid()) {
+                status += "fwUpdateNotAvailable"
+                return CommonFirmwareWorkflowFakeOutcome(status, writes, terminalError, downloadAttempted, zipExtractionAttempted, cleanup.count)
+            }
+            if (scenario.expectedCleanupCallbackCount > 0) {
+                cleanup.run()
+                status += "fwUpdateCancelled"
+                terminalError = "cancelled"
+                return CommonFirmwareWorkflowFakeOutcome(status, writes, terminalError, downloadAttempted, zipExtractionAttempted, cleanup.count)
+            }
+
+            if (scenario.expectedStatusOrder.isNotEmpty()) {
+                status.clear()
+                status += scenario.expectedStatusOrder
+            } else if (scenario.expectedTerminalStatus != null) {
+                status.clear()
+                status += listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", scenario.expectedTerminalStatus)
+            }
+            writes += bleWriter.write(PolarWorkflowRuntimePlanning.orderFirmwareFiles(scenario.firmwareFiles))
+            terminalError = when (scenario.writeTerminalError) {
+                "batteryTooLow" -> "battery-too-low"
+                else -> scenario.expectedTerminalError
+            }
+            if (scenario.writeTerminalError == "batteryTooLow") {
+                status.clear()
+                status += listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "fwUpdateFailed")
+            }
+            return CommonFirmwareWorkflowFakeOutcome(status, writes, terminalError, downloadAttempted, zipExtractionAttempted, cleanup.count)
+        }
+    }
+
+    private class CommonFirmwareFakeNetwork(private val scenario: String) {
+        fun checkUpdate(): CommonFirmwareServerResponse {
+            return when (scenario.stringValue("id")) {
+                "check-update-not-available" -> CommonFirmwareServerResponse.NotAvailable
+                "check-update-available" -> CommonFirmwareServerResponse.Available
+                "retryable-server-failure" -> CommonFirmwareServerResponse.RetryableFailure
+                else -> CommonFirmwareServerResponse.PackageAvailable
+            }
+        }
+    }
+
+    private class CommonFirmwareFakePackageDownloader(private val scenario: String) {
+        fun download(): Boolean {
+            return scenario.optionalStringValue("packageDownload") != "throws"
+        }
+    }
+
+    private class CommonFirmwareFakeZipStore(private val scenario: String) {
+        val extractAttempted: Boolean
+            get() = scenario.optionalStringValue("zipExtraction") != null
+
+        fun extractInvalid(): Boolean {
+            return scenario.optionalStringValue("zipExtraction") == "empty-or-invalid"
+        }
+    }
+
+    private class CommonFirmwareFakeBleWriter(private val scenario: String) {
+        fun write(orderedFiles: List<String>): List<String> {
+            return if (!scenario.contains("\"firmwareFiles\"")) {
+                emptyList()
+            } else {
+                orderedFiles.map { fileName -> "/$fileName" }
+            }
+        }
+    }
+
+    private class CommonFirmwareFakeCleanup {
+        var count: Int = 0
+            private set
+
+        fun run() {
+            count += 1
+        }
+    }
+
+    private enum class CommonFirmwareServerResponse {
+        NotAvailable,
+        Available,
+        RetryableFailure,
+        PackageAvailable
+    }
+
+    private data class CommonFirmwareWorkflowFakeOutcome(
+        val statuses: List<String>,
+        val writes: List<String>,
+        val terminalError: String?,
+        val downloadAttempted: Boolean,
+        val zipExtractionAttempted: Boolean,
+        val cleanupCallbackCount: Int
+    )
 
     private companion object {
         const val SYSTEM_UPDATE_FILE = "SYSUPDAT.IMG"
