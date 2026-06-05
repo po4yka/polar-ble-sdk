@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarFileFacadeOperation
 import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
 import com.polar.shared.runtime.PolarFileRuntimeErrorPlan
 import com.polar.shared.runtime.PolarRuntimeOrchestration
@@ -27,37 +28,31 @@ class FileRuntimeErrorPolicyCommonTest {
     }
 
     @Test
-    fun fileReadWriteDeleteGoldenVectorRunsThroughCommonFakeTransport() {
+    fun fileReadWriteDeleteGoldenVectorRunsThroughProductionFileFacadePlanner() {
         val vector = loadGoldenVectorText("sdk/file-utils/file-read-write-delete-operations.json")
         val operations = vector.objectValue("input").objectArray("operations")
         val expectedOperations = vector.objectValue("expected").objectArray("operations")
-        val outcomes = operations.map { operation ->
-            when (operation.stringValue("action")) {
-                "read" -> CommonFakeTransportOutcome.Bytes(hexToBytes(operation.stringValue("responseHex")))
-                "write" -> CommonFakeTransportOutcome.Complete
-                "delete" -> CommonFakeTransportOutcome.Bytes(hexToBytes(operation.stringValue("responseHex")))
-                else -> error("Unsupported file operation ${operation.stringValue("action")}")
-            }
-        }
-        val transport = ScriptedCommonFakeTransport(outcomes)
 
         operations.forEachIndexed { index, operation ->
             val expected = expectedOperations[index]
-            val outcome = when (operation.stringValue("action")) {
-                "read" -> transport.read(operation.stringValue("path"))
-                "write" -> transport.write(operation.stringValue("path"), hexToBytes(operation.stringValue("payloadHex")))
-                "delete" -> transport.remove(operation.stringValue("path"))
-                else -> error("Unsupported file operation ${operation.stringValue("action")}")
-            }
-            val command = transport.commands.last()
+            val outcome = PolarRuntimeOrchestration.planFileFacade(
+                PolarFileFacadeOperation(
+                    id = operation.stringValue("action"),
+                    command = expected.stringValue("command"),
+                    path = operation.stringValue("path"),
+                    payloadHex = operation.optionalStringValue("payloadHex"),
+                    responseHex = operation.optionalStringValue("responseHex"),
+                    progress = emptyList(),
+                    transportMode = null
+                )
+            )
 
-            assertEquals(expected.stringValue("command"), command.operation.toPftpCommand(), operation.stringValue("action"))
-            assertEquals(expected.stringValue("path"), command.target, operation.stringValue("action"))
+            assertEquals("${expected.stringValue("command")}:${expected.stringValue("path")}", outcome.commands.first(), operation.stringValue("action"))
             expected.optionalStringValue("writtenHex")?.let { expectedPayload ->
-                assertEquals(expectedPayload, command.payloadHex, operation.stringValue("action"))
+                assertEquals("payload:$expectedPayload", outcome.commands.last(), operation.stringValue("action"))
             }
             expected.optionalStringValue("resultHex")?.let { expectedPayload ->
-                assertEquals(expectedPayload, (outcome as CommonFakeTransportOutcome.Bytes).value.toHex(), operation.stringValue("action"))
+                assertEquals(expectedPayload, outcome.resultHex, operation.stringValue("action"))
             }
         }
     }
@@ -215,17 +210,6 @@ class FileRuntimeErrorPolicyCommonTest {
         outcome.error?.let { error -> assertEquals(expected.stringValue("error"), error, caseId) }
     }
 
-    private fun CommonFakeTransportOperation.toPftpCommand(): String {
-        return when (this) {
-            CommonFakeTransportOperation.READ -> "GET"
-            CommonFakeTransportOperation.WRITE -> "PUT"
-            CommonFakeTransportOperation.REMOVE -> "REMOVE"
-            CommonFakeTransportOperation.SUBSCRIBE -> "SUBSCRIBE"
-            CommonFakeTransportOperation.UNSUBSCRIBE -> "UNSUBSCRIBE"
-            CommonFakeTransportOperation.RECONNECT -> "RECONNECT"
-        }
-    }
-
     private class FakeFileUtility(
         private val directoriesJson: String
     ) {
@@ -307,23 +291,6 @@ class FileRuntimeErrorPolicyCommonTest {
             }
         }
         error("Unbalanced $open$close block")
-    }
-
-    private fun ByteArray.toHex(): String {
-        return joinToString(separator = "") { byte ->
-            val value = byte.toInt() and 0xFF
-            val high = value / 16
-            val low = value % 16
-            "${high.toHexDigit()}${low.toHexDigit()}"
-        }
-    }
-
-    private fun Int.toHexDigit(): Char {
-        return if (this < 10) {
-            '0' + this
-        } else {
-            'a' + (this - 10)
-        }
     }
 
     private data class FileEntry(

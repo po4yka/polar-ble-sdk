@@ -567,14 +567,14 @@ FAKE_TRANSPORT_COMMON_FILE_RUNTIME_TEST_REQUIRED_TERMS = [
   "sdk/file-utils/list-files-shallow-all.json",
   "sdk/file-utils/list-files-recursive-filtered.json",
   "entry-name-contains-dot",
-  "fileReadWriteDeleteGoldenVectorRunsThroughCommonFakeTransport",
+  "fileReadWriteDeleteGoldenVectorRunsThroughProductionFileFacadePlanner",
   "sdk/file-utils/file-read-write-delete-operations.json",
   "fileRuntimeErrorPolicyVectorRunsThroughCommonFakeTransport",
   "fileRuntimeErrorReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/file-utils/runtime-error-policy.json",
   "sdk/file-utils/runtime-error-readiness.json",
   "runtime-error-readiness",
-  "ScriptedCommonFakeTransport",
+  "PolarRuntimeOrchestration.planFileFacade",
   "directory-list-response-error-103",
   "directory-list-malformed-payload",
   "read-file-transport-error",
@@ -589,7 +589,7 @@ FAKE_TRANSPORT_COMMON_FILE_RUNTIME_TEST_REQUIRED_TERMS = [
   "write-file-payload-capture-before-stream-error",
   "facade-error-mapping-deferred",
   "compile-verification-gate",
-  "toPftpCommand"
+  "PolarRuntimeOrchestration.planFileRuntimeError"
 ].freeze
 FAKE_TRANSPORT_COMMON_FILE_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
   "fileFacadeRuntimePolicyVectorDefinesExecutableCommonCommandPlanning",
