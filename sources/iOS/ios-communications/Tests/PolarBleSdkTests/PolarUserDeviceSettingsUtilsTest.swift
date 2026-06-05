@@ -27,6 +27,15 @@ final class PolarUserDeviceSettingsUtilsTest: XCTestCase {
         XCTAssertEqual("/UDEVSET.BPB", SENSOR_SETTINGS_FILE_PATH)
     }
 
+    func testDeviceLocationStringHelpersPreservePublicMapping() {
+        XCTAssertEqual("UNDEFINED", PolarUserDeviceSettings.getStringValue(deviceLocationIndex: 0))
+        XCTAssertEqual("WRIST_LEFT", PolarUserDeviceSettings.getStringValue(deviceLocationIndex: 2))
+        XCTAssertEqual("BIKE_MOUNT", PolarUserDeviceSettings.getStringValue(deviceLocationIndex: 13))
+        XCTAssertEqual(.WRIST_RIGHT, PolarUserDeviceSettings.getDeviceLocation(deviceLocation: "WRIST_RIGHT"))
+        XCTAssertEqual(.UNDEFINED, PolarUserDeviceSettings.getDeviceLocation(deviceLocation: "UNKNOWN_LOCATION"))
+        XCTAssertEqual(PolarUserDeviceSettings.DeviceLocation.allCases.map { $0.rawValue }, PolarUserDeviceSettings.getAllAsString())
+    }
+
     // MARK: - Request encoding
 
     func testGetUserDeviceSettings_sendsRequestWithCorrectPath() async throws {

@@ -211,10 +211,24 @@ public class PolarUserDeviceSettings {
     }
     
     public static func getStringValue(deviceLocationIndex: Int) -> String {
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationName(value: Int32(deviceLocationIndex)) {
+            return sharedName
+        }
+        #endif
+
         return String(describing: DeviceLocation.allCases[deviceLocationIndex])
     }
     
     public static func getDeviceLocation(deviceLocation: String) -> DeviceLocation {
+        #if canImport(PolarBleSdkShared)
+        if let sharedValue = PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationValue(name: deviceLocation) {
+            let sharedIndex = Int(truncating: sharedValue)
+            if DeviceLocation.allCases.indices.contains(sharedIndex) {
+                return DeviceLocation.allCases[sharedIndex]
+            }
+        }
+        #endif
         
         for devicelocation in DeviceLocation.allCases {
             if (devicelocation.rawValue == deviceLocation) {
