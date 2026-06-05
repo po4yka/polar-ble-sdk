@@ -92,6 +92,36 @@ class FileFacadeRuntimePolicyCommonTest {
         assertEquals(true, platforms.booleanValue("common"))
     }
 
+    @Test
+    fun fileFacadeRuntimeVectorRunsThroughCommonFakeTransportFacadeShape() {
+        val vector = loadGoldenVectorText("sdk/file-utils/file-facade-runtime-policy.json")
+        val input = vector.objectValue("input")
+        val expectedCases = vector.objectValue("expected").objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
+
+        input.objectArray("operations").forEach { operationJson ->
+            val operation = PolarFileFacadeOperation(
+                id = operationJson.stringValue("id"),
+                command = operationJson.stringValue("command"),
+                path = operationJson.stringValue("path"),
+                payloadHex = operationJson.optionalStringValue("payloadHex"),
+                responseHex = operationJson.optionalStringValue("responseHex"),
+                progress = operationJson.optionalSignedIntArrayValue("progress") ?: emptyList(),
+                transportMode = operationJson.optionalObjectValue("transport")?.stringValue("mode")
+            )
+            val planned = PolarRuntimeOrchestration.planFileFacade(operation)
+            val expected = expectedCases.getValue(operation.id)
+            val transport = ScriptedCommonFakeTransport(listOf(outcomeForFileFacade(operation, expected.stringValue("terminal"))))
+            val terminal = executePlannedFileFacade(expected.stringArrayValue("commands"), transport)
+
+            assertEquals(expected.stringArrayValue("commands"), planned.commands, operation.id)
+            assertEquals(expected.stringValue("terminal"), terminal, operation.id)
+            assertEquals(expectedFileFacadeTransportCommands(expected.stringArrayValue("commands")), transport.commands, operation.id)
+            expected.optionalStringValue("resultHex")?.let { resultHex ->
+                assertEquals(resultHex, planned.resultHex, operation.id)
+            }
+        }
+    }
+
     private val requiredFileFacadeRuntimeOperationIds = listOf(
         "read-low-level-file-success",
         "read-low-level-file-empty-success",
@@ -178,5 +208,75 @@ class FileFacadeRuntimePolicyCommonTest {
     private val fileFacadeRuntimeReadinessDecision = "File facade runtime migration may proceed only after file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
 
     private val fileFacadeRuntimeNotes = "This vector complements file-read-write-delete-operations.json and runtime-error-policy.json. It owns the public facade command paths, payload capture, empty read payload success, delete request failure, write progress success, and read/write/delete response-error propagation for low-level read/write/delete calls; directory-list traversal remains covered by list-files-shallow-all.json and list-files-recursive-filtered.json."
+
+    private fun outcomeForFileFacade(operation: PolarFileFacadeOperation, terminal: String): CommonFakeTransportOutcome {
+        return when {
+            terminal == "success" && operation.command == "GET" -> CommonFakeTransportOutcome.Bytes(hexToBytes(operation.responseHex ?: ""))
+            terminal == "success" -> CommonFakeTransportOutcome.Complete
+            terminal == "transport-error" -> CommonFakeTransportOutcome.TransportError("file-facade-request-failed")
+            terminal == "write-stream-error-after-payload" -> CommonFakeTransportOutcome.TransportError("file-write-stream-failed")
+            terminal.startsWith("response-error:") -> CommonFakeTransportOutcome.ResponseError(status = 103, message = "missing")
+            else -> error("Unsupported file facade terminal $terminal")
+        }
+    }
+
+    private fun executePlannedFileFacade(
+        commands: List<String>,
+        transport: ScriptedCommonFakeTransport
+    ): String {
+        val operationCommand = commands.first { command -> command.startsWith("GET:") || command.startsWith("PUT:") || command.startsWith("REMOVE:") }
+        return when {
+            operationCommand.startsWith("GET:") -> describeFileFacadeRead(transport.read(operationCommand.removePrefix("GET:")))
+            operationCommand.startsWith("PUT:") -> {
+                val payloadHex = commands.firstOrNull { command -> command.startsWith("payload:") }?.removePrefix("payload:") ?: ""
+                describeFileFacadeWrite(transport.write(operationCommand.removePrefix("PUT:"), hexToBytes(payloadHex)))
+            }
+            operationCommand.startsWith("REMOVE:") -> describeFileFacadeRemove(transport.remove(operationCommand.removePrefix("REMOVE:")))
+            else -> error("Unsupported file facade command $operationCommand")
+        }
+    }
+
+    private fun describeFileFacadeRead(outcome: CommonFakeTransportOutcome): String {
+        return when (outcome) {
+            is CommonFakeTransportOutcome.Bytes -> "success"
+            is CommonFakeTransportOutcome.TransportError -> "transport-error"
+            is CommonFakeTransportOutcome.ResponseError -> "response-error:${outcome.status}:${outcome.message}"
+            is CommonFakeTransportOutcome.Timeout -> error("File facade vector does not use timeout outcome ${outcome.label}")
+            CommonFakeTransportOutcome.Complete -> error("File GET cannot complete without bytes")
+        }
+    }
+
+    private fun describeFileFacadeWrite(outcome: CommonFakeTransportOutcome): String {
+        return when (outcome) {
+            CommonFakeTransportOutcome.Complete -> "success"
+            is CommonFakeTransportOutcome.TransportError -> "write-stream-error-after-payload"
+            is CommonFakeTransportOutcome.ResponseError -> "response-error:${outcome.status}:${outcome.message}"
+            is CommonFakeTransportOutcome.Bytes -> error("File PUT cannot return bytes ${outcome.value.toHexString()}")
+            is CommonFakeTransportOutcome.Timeout -> error("File facade vector does not use timeout outcome ${outcome.label}")
+        }
+    }
+
+    private fun describeFileFacadeRemove(outcome: CommonFakeTransportOutcome): String {
+        return when (outcome) {
+            CommonFakeTransportOutcome.Complete -> "success"
+            is CommonFakeTransportOutcome.TransportError -> "transport-error"
+            is CommonFakeTransportOutcome.ResponseError -> "response-error:${outcome.status}:${outcome.message}"
+            is CommonFakeTransportOutcome.Bytes -> error("File REMOVE cannot return bytes ${outcome.value.toHexString()}")
+            is CommonFakeTransportOutcome.Timeout -> error("File facade vector does not use timeout outcome ${outcome.label}")
+        }
+    }
+
+    private fun expectedFileFacadeTransportCommands(commands: List<String>): List<CommonFakeTransportCommand> {
+        val operationCommand = commands.first { command -> command.startsWith("GET:") || command.startsWith("PUT:") || command.startsWith("REMOVE:") }
+        return when {
+            operationCommand.startsWith("GET:") -> listOf(CommonFakeTransportCommand(CommonFakeTransportOperation.READ, operationCommand.removePrefix("GET:")))
+            operationCommand.startsWith("PUT:") -> {
+                val payloadHex = commands.first { command -> command.startsWith("payload:") }.removePrefix("payload:")
+                listOf(CommonFakeTransportCommand(CommonFakeTransportOperation.WRITE, operationCommand.removePrefix("PUT:"), payloadHex))
+            }
+            operationCommand.startsWith("REMOVE:") -> listOf(CommonFakeTransportCommand(CommonFakeTransportOperation.REMOVE, operationCommand.removePrefix("REMOVE:")))
+            else -> error("Unsupported file facade command $operationCommand")
+        }
+    }
 
 }

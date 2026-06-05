@@ -4258,6 +4258,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_FILE_FACADE_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "fileFacadeRuntimePolicyVectorDefinesExecutableCommonCommandPlanning",
+            "fileFacadeRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
             "fileFacadeRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/file-utils/file-facade-runtime-policy.json",
             "sdk/file-utils/file-facade-runtime-readiness.json",
@@ -4294,6 +4295,8 @@ class GoldenVectorMigrationPolicyTest {
             "pftp-response-error-code",
             "device-error-wrapper",
             "write-stream-error-after-payload",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "file-read-write-delete-operations.json",
             "runtime-error-policy.json",
             "list-files-shallow-all.json",
