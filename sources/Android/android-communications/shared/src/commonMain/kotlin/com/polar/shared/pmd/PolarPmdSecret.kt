@@ -4,8 +4,12 @@ data class PolarPmdSecret(
     val strategy: String,
     val key: ByteArray
 ) {
+    fun serializeBytes(): ByteArray {
+        return byteArrayOf(0x06, 0x01, strategyByte().toByte()) + key
+    }
+
     fun serializeHex(): String {
-        return "0601${strategyByte().toHexByte()}${key.toHexString()}"
+        return serializeBytes().toHexString()
     }
 
     private fun strategyByte(): Int {

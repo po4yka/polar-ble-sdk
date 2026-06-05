@@ -1,6 +1,7 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
 import com.polar.androidcommunications.api.ble.exceptions.SecurityError
+import com.polar.shared.pmd.PolarPmdSecret
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import kotlin.experimental.xor
@@ -18,35 +19,7 @@ class PmdSecret(val strategy: SecurityStrategy, val key: ByteArray) {
     }
 
     fun serializeToPmdSettings(): ByteArray {
-        when (strategy) {
-            SecurityStrategy.NONE -> {
-                val securitySetting = PmdSetting.PmdSettingType.SECURITY.numVal.toByte()
-                val securityStrategyByte = SecurityStrategy.NONE.numVal.toByte()
-                val length = 1.toByte()
-                return byteArrayOf(securitySetting, length, securityStrategyByte)
-            }
-            SecurityStrategy.XOR -> {
-                val securitySetting = PmdSetting.PmdSettingType.SECURITY.numVal.toByte()
-                val securityStrategyByte = SecurityStrategy.XOR.numVal.toByte()
-                val keyBytes = key
-                val length = 1.toByte()
-                return byteArrayOf(securitySetting, length, securityStrategyByte) + keyBytes
-            }
-            SecurityStrategy.AES128 -> {
-                val securitySetting = PmdSetting.PmdSettingType.SECURITY.numVal.toByte()
-                val securityStrategyByte = SecurityStrategy.AES128.numVal.toByte()
-                val keyBytes = key
-                val length = 1.toByte()
-                return byteArrayOf(securitySetting, length, securityStrategyByte) + keyBytes
-            }
-            SecurityStrategy.AES256 -> {
-                val securitySetting = PmdSetting.PmdSettingType.SECURITY.numVal.toByte()
-                val securityStrategyByte = SecurityStrategy.AES256.numVal.toByte()
-                val keyBytes = key
-                val length = 1.toByte()
-                return byteArrayOf(securitySetting, length, securityStrategyByte) + keyBytes
-            }
-        }
+        return PolarPmdSecret.from(strategy.name, key).serializeBytes()
     }
 
     fun decryptArray(cipherArray: ByteArray): ByteArray {
@@ -80,13 +53,9 @@ class PmdSecret(val strategy: SecurityStrategy, val key: ByteArray) {
 
         companion object {
             fun fromByte(strategyByte: UByte): SecurityStrategy {
-                return when {
-                    (strategyByte == NONE.numVal) -> NONE
-                    (strategyByte == XOR.numVal) -> XOR
-                    (strategyByte == AES128.numVal) -> AES128
-                    (strategyByte == AES256.numVal) -> AES256
-                    else -> throw SecurityError.SecurityStrategyUnknown("Cannot decide security strategy from byte  ${"0x%x".format(strategyByte.toInt())}")
-                }
+                return PolarPmdSecret.strategyNameFromByte(strategyByte.toInt())?.let { strategyName ->
+                    SecurityStrategy.valueOf(strategyName)
+                } ?: throw SecurityError.SecurityStrategyUnknown("Cannot decide security strategy from byte  ${"0x%x".format(strategyByte.toInt())}")
             }
         }
     }

@@ -17,6 +17,7 @@ class PmdSecretCommonPolicyTest {
                 "serialize" -> {
                     val secret = PolarPmdSecret.from(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
                     assertEquals(expected.stringValue("serializedHex"), secret.serializeHex(), caseId)
+                    assertEquals(expected.stringValue("serializedHex"), secret.serializeBytes().toHexString(), "$caseId bytes")
                 }
                 "construct" -> {
                     val actualError = PolarPmdSecret.validate(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
