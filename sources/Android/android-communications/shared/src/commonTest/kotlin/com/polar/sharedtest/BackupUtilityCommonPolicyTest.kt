@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -12,12 +13,7 @@ class BackupUtilityCommonPolicyTest {
         val backup = FakeBackupUtility(input.objectValue("files"))
 
         val expandedPaths = backup.expandBackupEntries(input.objectValue("files").stringValue("/SYS/BACKUP.TXT"))
-        val defaultPaths = listOf(
-            "/U/0/S/PHYSDATA.BPB",
-            "/U/0/S/UDEVSET.BPB",
-            "/U/0/S/PREFS.BPB",
-            "/U/0/USERID.BPB"
-        )
+        val defaultPaths = PolarWorkflowRuntimePlanning.defaultBackupPaths()
         val actualBackupFiles = backup.readBackupFiles(expandedPaths + defaultPaths)
 
         assertEquals(expected.objectArray("backupFiles").map { it.stringValue("path") }, actualBackupFiles.map { it.path })

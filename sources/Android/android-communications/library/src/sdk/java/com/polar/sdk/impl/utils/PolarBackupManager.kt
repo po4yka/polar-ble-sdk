@@ -2,6 +2,7 @@ package com.polar.sdk.impl.utils
 
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import java.io.ByteArrayInputStream
 import java.io.File
 import protocol.PftpRequest
@@ -55,12 +56,7 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
 
         BleLogger.d(TAG, "Entries retrieved: ${entries.size}")
 
-        val defaultBackupDirectories = linkedSetOf(
-            "/U/*/S/PHYSDATA.BPB",
-            "/U/*/S/UDEVSET.BPB",
-            "/U/*/S/PREFS.BPB",
-            "/U/*/USERID.BPB"
-        )
+        val defaultBackupDirectories = PolarWorkflowRuntimePlanning.defaultBackupPaths()
 
         val backupEntry = entries.find { it.first.endsWith("BACKUP.TXT") }
 
@@ -81,12 +77,12 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
                     }
                 }.toMutableSet()
             }
-            readLines.addAll(defaultBackupDirectories)
+            readLines.addDefaultBackupDirectories(defaultBackupDirectories)
             BleLogger.d(TAG, "Lines read from backup entry plus defaults: ${readLines.size}")
             readLines
         } else {
             BleLogger.w(TAG, "Device does not have BACKUP.TXT, using default backup directories")
-            defaultBackupDirectories
+            defaultBackupDirectories.toMutableSet()
         }
 
         return try {
@@ -236,6 +232,18 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
 
     private suspend fun backUpDirectories(folders: List<String>): List<BackupFileData> {
         return folders.flatMap { path -> backupDirectory(path) }
+    }
+
+    private fun MutableSet<String>.addDefaultBackupDirectories(defaultPaths: List<String>) {
+        defaultPaths.forEach { defaultPath ->
+            if (none { path -> path.normalizedUserRootPath() == defaultPath }) {
+                add(defaultPath)
+            }
+        }
+    }
+
+    private fun String.normalizedUserRootPath(): String {
+        return replace(USER_WILD_CARD_ROOT_FOLDER, ARABICA_USER_ROOT_FOLDER)
     }
 
     private fun String.isFolder() = this.endsWith("/")

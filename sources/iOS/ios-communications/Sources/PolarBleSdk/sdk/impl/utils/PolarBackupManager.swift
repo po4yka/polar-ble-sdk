@@ -1,6 +1,9 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let TAG = "PolarDeviceBackup"
 private let ARABICA_SYS_FOLDER = "/SYS/"
@@ -78,8 +81,16 @@ public class PolarBackupManager {
     }
 
     private func addDefaultBackupDirectories(to directories: inout [String]) {
+        #if canImport(PolarBleSdkShared)
+        let defaults = PolarIosSharedBridge.shared.defaultBackupPathsCsv().split(separator: ",").map(String.init)
+        #else
         let defaults = ["/U/*/S/PHYSDATA.BPB", "/U/*/S/UDEVSET.BPB", "/U/*/S/PREFS.BPB", "/U/*/USERID.BPB"]
-        for dir in defaults { if !directories.contains(dir) { directories.append(dir) } }
+        #endif
+        for dir in defaults {
+            if !directories.contains(where: { $0.normalizedBackupUserRootPath == dir }) {
+                directories.append(dir)
+            }
+        }
     }
 
     public func restoreBackup(backupFiles: [BackupFileData]) async throws {
@@ -193,4 +204,5 @@ public class PolarBackupManager {
 
 extension String {
     var isFolder: Bool { return hasSuffix("/") }
+    var normalizedBackupUserRootPath: String { return replacingOccurrences(of: USER_WILD_CARD_ROOT_FOLDER, with: ARABICA_USER_ROOT_FOLDER) }
 }
