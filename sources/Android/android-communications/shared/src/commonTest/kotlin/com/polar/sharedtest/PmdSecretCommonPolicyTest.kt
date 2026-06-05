@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.pmd.PolarPmdSecret
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -14,11 +15,11 @@ class PmdSecretCommonPolicyTest {
 
             when (input.stringValue("operation")) {
                 "serialize" -> {
-                    val secret = CommonSecret.from(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
-                    assertEquals(expected.stringValue("serializedHex"), secret.serialize(), caseId)
+                    val secret = PolarPmdSecret.from(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
+                    assertEquals(expected.stringValue("serializedHex"), secret.serializeHex(), caseId)
                 }
                 "construct" -> {
-                    val actualError = CommonSecret.validate(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
+                    val actualError = PolarPmdSecret.validate(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
                     assertEquals("invalidSecurityKey", actualError, caseId)
                     assertEquals(REQUIRED_COMMON_DECISIONS.getValue(caseId), expected.stringValue("commonDecision"), caseId)
                 }
@@ -33,7 +34,7 @@ class PmdSecretCommonPolicyTest {
                     }
                 }
                 "decrypt" -> {
-                    val secret = CommonSecret.from(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
+                    val secret = PolarPmdSecret.from(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
                     val cipherHex = input.stringValue("cipherHex")
                     val decryptedHex = when (secret.strategy) {
                         "NONE" -> cipherHex
@@ -74,13 +75,7 @@ class PmdSecretCommonPolicyTest {
     }
 
     private fun strategyFromByte(hex: String): String {
-        return when (hexToBytes(hex).firstOrNull()?.toInt()?.and(0xFF)) {
-            0 -> "NONE"
-            1 -> "XOR"
-            2 -> "AES128"
-            3 -> "AES256"
-            else -> "unknownSecurityStrategy"
-        }
+        return PolarPmdSecret.strategyNameFromByte(hexToBytes(hex).firstOrNull()?.toInt() ?: -1) ?: "unknownSecurityStrategy"
     }
 
     private fun xorDecrypt(cipherHex: String, key: ByteArray): String {
@@ -97,47 +92,6 @@ class PmdSecretCommonPolicyTest {
 
     private fun Int.toHexDigit(): Char {
         return if (this < 10) '0' + this else 'a' + (this - 10)
-    }
-
-    private data class CommonSecret(
-        val strategy: String,
-        val key: ByteArray
-    ) {
-        fun serialize(): String {
-            return "0601${strategyByte().toHexByte()}${key.toHexString()}"
-        }
-
-        private fun strategyByte(): Int {
-            return when (strategy) {
-                "NONE" -> 0
-                "XOR" -> 1
-                "AES128" -> 2
-                "AES256" -> 3
-                else -> error("Unexpected strategy $strategy")
-            }
-        }
-
-        companion object {
-            fun from(strategy: String, key: ByteArray): CommonSecret {
-                validate(strategy, key)?.let { validationError -> error(validationError) }
-                return CommonSecret(strategy, key)
-            }
-
-            fun validate(strategy: String, key: ByteArray): String? {
-                val valid = when (strategy) {
-                    "NONE" -> key.isEmpty()
-                    "XOR" -> key.isNotEmpty()
-                    "AES128" -> key.size == 16
-                    "AES256" -> key.size == 32
-                    else -> false
-                }
-                return if (valid) null else "invalidSecurityKey"
-            }
-        }
-    }
-
-    private fun ByteArray.toHexString(): String {
-        return joinToString(separator = "") { byte -> (byte.toInt() and 0xFF).toHexByte() }
     }
 
     private fun String.stringArrayValue(field: String): List<String> {

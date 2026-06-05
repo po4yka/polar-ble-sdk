@@ -6,6 +6,7 @@ import com.polar.shared.device.PolarDeviceCapabilities
 import com.polar.shared.device.PolarDeviceCapabilitiesConfig
 import com.polar.shared.device.PolarDeviceCapabilityDefaults
 import com.polar.shared.pmd.PolarPmdControlPoint
+import com.polar.shared.pmd.PolarPmdSecret
 import com.polar.shared.pmd.PolarPmdSettingType
 import com.polar.shared.pmd.PolarPmdSettings
 import com.polar.shared.runtime.PolarDiskTimeOperation
@@ -234,6 +235,14 @@ object PolarIosSharedBridge {
             if (type == null || value == null || value !in 0L..0xFFFF_FFFFL) null else type to value.toInt()
         }.toMap()
         return PolarPmdSettings.serializeSelectedSettings(selected).toHex()
+    }
+
+    fun pmdSecretSettingsHex(strategy: String, keyHex: String): String? {
+        return runCatching { PolarPmdSecret.from(strategy, keyHex.hexToBytes()).serializeHex() }.getOrNull()
+    }
+
+    fun pmdSecretStrategyName(strategyByte: Int): String? {
+        return PolarPmdSecret.strategyNameFromByte(strategyByte)
     }
 
     fun resolveDeviceCapabilities(
