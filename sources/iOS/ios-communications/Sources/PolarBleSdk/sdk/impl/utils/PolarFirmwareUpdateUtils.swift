@@ -52,17 +52,7 @@ class PolarFirmwareUpdateUtils {
     }
 
     private static func deviceFirmwareInfoOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
-        #if canImport(PolarBleSdkShared)
-        let plannedOperation = PolarIosSharedBridge.shared.planRuntimeFileFacadeOperation(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH, payloadHex: "")
-        let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
-        guard parts.count == 2 else { return nil }
-        switch parts[0] {
-        case "GET": return (.get, parts[1])
-        default: return nil
-        }
-        #else
-        return nil
-        #endif
+        return PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH)
     }
 
     private static func planDeviceFirmwareInfoRead() {
