@@ -36,6 +36,9 @@ class AdvertisementCommonPolicyTest {
             input.optionalStringValue("manufacturerDataHex")?.let { manufacturerDataHex ->
                 expected.optionalBooleanValue("hrPresent")?.let { expectedHrPresent ->
                     assertEquals(expectedHrPresent, parseManufacturerHrPresent(hexToBytes(manufacturerDataHex)), caseId)
+                    if (caseId == "manufacturer-hr-sagrfc23") {
+                        assertEquals(listOf("330000"), PolarAdvertisementModels.polarManufacturerHrPayloads(hexToBytes(manufacturerDataHex)).map { it.toHex() }, caseId)
+                    }
                 }
                 expected.optionalStringValue("policy")?.let { policy ->
                     assertEquals(ADVERTISEMENT_MALFORMED_GPB_COMMON_POLICY, policy, caseId)
@@ -88,12 +91,7 @@ class AdvertisementCommonPolicyTest {
     }
 
     private fun parseManufacturerHrPresent(bytes: ByteArray): Boolean {
-        if (bytes.size < 3) return false
-        val isPolarCompany = bytes[0] == 0x6b.toByte() && bytes[1] == 0x00.toByte()
-        if (!isPolarCompany) return false
-        return bytes.drop(2).windowed(size = 6, step = 1, partialWindows = false).any { window ->
-            window[0] == 0x7a.toByte() && window[1] == 0x01.toByte()
-        }
+        return PolarAdvertisementModels.polarManufacturerHrPayloads(bytes).isNotEmpty()
     }
 
     private fun parseRssi(sequence: List<Int>): RssiPolicy {
@@ -206,4 +204,15 @@ class AdvertisementCommonPolicyTest {
         const val ADVERTISEMENT_READINESS_DECISION = "Advertisement parsing migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS advertisement tests continue to reference the same vectors, Polar and custom-prefix local-name parsing, seven-digit device ID assembly, non-Polar local-name platform decisions, manufacturer HR presence and absence, non-Polar and unknown company behavior, unknown Polar segment handling, malformed GPB missing-length and truncated HR-candidate policies, service UUID membership, RSSI median calculation, and compile verification remain explicit before production advertisement parsing moves."
         const val ADVERTISEMENT_MALFORMED_GPB_COMMON_POLICY = "reject or ignore malformed GPB segments deterministically without indexing beyond payload bounds"
     }
+}
+
+private fun ByteArray.toHex(): String {
+    return joinToString(separator = "") { byte ->
+        val value = byte.toInt() and 0xFF
+        "${(value / 16).toHexDigit()}${(value % 16).toHexDigit()}"
+    }
+}
+
+private fun Int.toHexDigit(): Char {
+    return if (this < 10) '0' + this else 'a' + (this - 10)
 }

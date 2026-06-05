@@ -70,6 +70,12 @@ object PolarIosSharedBridge {
         return PolarAdvertisementModels.isValidDeviceLocalName(localName, requiredPrefix)
     }
 
+    fun polarHrAdvertisementPayloadsHex(manufacturerDataHex: String): String {
+        return PolarAdvertisementModels.polarManufacturerHrPayloads(manufacturerDataHex.hexToBytes()).joinToString(separator = "|") { payload ->
+            payload.toHex()
+        }
+    }
+
     fun isValidDeviceId(deviceId: String): Boolean {
         return PolarDeviceId.isValidOrFalse(deviceId)
     }

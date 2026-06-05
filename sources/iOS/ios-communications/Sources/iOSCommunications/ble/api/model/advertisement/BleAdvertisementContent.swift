@@ -1,6 +1,9 @@
 
 import Foundation
 import CoreBluetooth
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 
 public class BleAdvertisementContent {
@@ -58,6 +61,20 @@ public class BleAdvertisementContent {
     
     func processManufacturerData(_ advertisementData: [String : Any]) {
         var didContainHrData = false
+        #if canImport(PolarBleSdkShared)
+        if let manData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data {
+            let payloadsHex = PolarIosSharedBridge.shared.polarHrAdvertisementPayloadsHex(manufacturerDataHex: manData.hexString)
+            for payloadHex in payloadsHex.split(separator: "|").map(String.init) {
+                if let payload = Data(hexBytes: payloadHex) {
+                    polarHrAdvertisementData.processPolarManufacturerData(payload)
+                    didContainHrData = true
+                }
+            }
+        }
+        if !didContainHrData {
+            polarHrAdvertisementData.resetToDefault()
+        }
+        #else
         if let manData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data, manData.count >= 2 {
             var manufacturer: Int16 = 0
             memcpy(&manufacturer, (manData as NSData).bytes, 2)
@@ -91,6 +108,7 @@ public class BleAdvertisementContent {
         if(!didContainHrData) {
             polarHrAdvertisementData.resetToDefault()
         }
+        #endif
     }
     
     public func containsService(_ service: CBUUID) -> Bool {
@@ -104,3 +122,25 @@ public class BleAdvertisementContent {
         advData.removeAll()
     }
 }
+
+#if canImport(PolarBleSdkShared)
+private extension Data {
+    var hexString: String {
+        return map { String(format: "%02x", $0) }.joined()
+    }
+
+    init?(hexBytes: String) {
+        guard hexBytes.count % 2 == 0 else { return nil }
+        var bytes: [UInt8] = []
+        bytes.reserveCapacity(hexBytes.count / 2)
+        var index = hexBytes.startIndex
+        while index < hexBytes.endIndex {
+            let next = hexBytes.index(index, offsetBy: 2)
+            guard let byte = UInt8(hexBytes[index..<next], radix: 16) else { return nil }
+            bytes.append(byte)
+            index = next
+        }
+        self.init(bytes)
+    }
+}
+#endif

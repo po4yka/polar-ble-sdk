@@ -6,7 +6,9 @@ import com.polar.androidcommunications.api.ble.model.polar.PolarAdvDataUtility.g
 import com.polar.androidcommunications.api.ble.model.polar.PolarAdvDataUtility.isValidDevice
 import com.polar.androidcommunications.common.ble.BleUtils.AD_TYPE
 import com.polar.androidcommunications.common.ble.BleUtils.EVENT_TYPE
-import java.util.*
+import com.polar.shared.ble.PolarAdvertisementModels
+import java.util.ArrayList
+import java.util.HashMap
 
 class BleAdvertisementContent {
 
@@ -128,25 +130,10 @@ class BleAdvertisementContent {
         var didContainHrData = false
         if (advertisementData.containsKey(AD_TYPE.GAP_ADTYPE_MANUFACTURER_SPECIFIC)) {
             val content = advertisementData[AD_TYPE.GAP_ADTYPE_MANUFACTURER_SPECIFIC]
-            if (content != null && content.size > 3 && content[0] == 0x6B.toByte() && content[1] == 0x00.toByte()) {
-                var offset = 2
-                while (offset < content.size) {
-                    when (content[offset].toInt() and 0x40) {
-                        0 -> {
-                            if (offset + 3 <= content.size) {
-                                val subset = Arrays.copyOfRange(content, offset, content.size)
-                                polarHrAdvertisement.processPolarManufacturerData(subset)
-                                didContainHrData = true
-                            }
-                            offset += 5
-                        }
-                        0x40 -> {
-                            // gpb data, no handling for now
-                            offset += 1
-                            if (offset < content.size) offset += (content[offset].toInt() and 0x000000FF) + 1 else offset = content.size
-                        }
-                        else -> offset = content.size
-                    }
+            if (content != null) {
+                PolarAdvertisementModels.polarManufacturerHrPayloads(content).forEach { payload ->
+                    polarHrAdvertisement.processPolarManufacturerData(payload)
+                    didContainHrData = true
                 }
             }
         }
