@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class GyrData {
     let timeStamp: UInt64
@@ -39,6 +42,11 @@ public class GyrData {
     }
     
     private static func dataFromCompressedType0(frame: PmdDataFrame) throws -> GyrData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedCompressedType0Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_0_CHANNELS_IN_SAMPLE, resolution: TYPE_0_SAMPLE_SIZE_IN_BITS)
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
         
@@ -52,4 +60,49 @@ public class GyrData {
         }
         return GyrData(timeStamp: frame.timeStamp, samples: gyrSamples)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedCompressedType0Data(frame: PmdDataFrame) -> GyrData? {
+        guard frame.frameType == .type_0,
+              frame.isCompressedFrame,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PolarIosSharedBridge.shared.gyrCompressedType0Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> GyrSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 4,
+                  let timeStamp = UInt64(fields[0]),
+                  let x = Float(fields[1]),
+                  let y = Float(fields[2]),
+                  let z = Float(fields[3]) else {
+                return nil
+            }
+            return GyrSample(timeStamp: timeStamp, x: x, y: y, z: z)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return GyrData(timeStamp: frame.timeStamp, samples: samples)
+    }
+
+    private static func sharedDataFrameHex(frame: PmdDataFrame) -> String {
+        var data = Data([frame.measurementType.rawValue])
+        var littleEndianTimestamp = frame.timeStamp.littleEndian
+        withUnsafeBytes(of: &littleEndianTimestamp) { data.append(contentsOf: $0) }
+        let frameTypeByte = frame.frameType.rawValue | (frame.isCompressedFrame ? 0x80 : 0)
+        data.append(frameTypeByte)
+        data.append(frame.dataContent)
+        return data.map { String(format: "%02x", $0) }.joined()
+    }
+    #endif
 }

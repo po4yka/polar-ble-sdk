@@ -13,6 +13,7 @@ import com.polar.shared.pmd.PolarPmdSecret
 import com.polar.shared.pmd.PolarPmdSettingType
 import com.polar.shared.pmd.PolarPmdSettings
 import com.polar.shared.pmd.sensors.PolarEcgType0Sample
+import com.polar.shared.pmd.sensors.PolarGyrSample
 import com.polar.shared.pmd.sensors.PolarMagCalibrationStatus
 import com.polar.shared.pmd.sensors.PolarPmdDataFrame
 import com.polar.shared.pmd.sensors.PolarSensorDataParser
@@ -265,6 +266,24 @@ object PolarIosSharedBridge {
                 )
             ).filterIsInstance<PolarEcgType0Sample>()
                 .joinToString(separator = "|") { sample -> "${sample.timeStamp},${sample.microVolts}" }
+        }.getOrNull()
+    }
+
+    fun gyrCompressedType0Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
+        val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
+        if (bytes.size < 10) return null
+        val frameType = bytes[9].toInt() and 0xFF
+        if ((frameType and 0x80) == 0 || (frameType and 0x7F) != 0) return null
+        return runCatching {
+            PolarSensorDataParser.parseGyr(
+                PolarPmdDataFrame.fromByteArray(
+                    data = bytes,
+                    previousTimeStamp = previousTimeStamp,
+                    factor = factor,
+                    sampleRate = sampleRate
+                )
+            ).filterIsInstance<PolarGyrSample>()
+                .joinToString(separator = "|") { sample -> "${sample.timeStamp},${sample.x},${sample.y},${sample.z}" }
         }.getOrNull()
     }
 
