@@ -24,14 +24,14 @@ private const val TAG = "PolarD2HNotificationsUtils"
 fun BlePsFtpClient.observeDeviceToHostNotifications(identifier: String): Flow<PolarD2HNotificationData> {
     return waitForNotification()
         .transform { notification ->
-            val sharedNotificationType = PolarD2hRuntimePlanning.notificationTypeOrNull(notification.id)
-            if (sharedNotificationType == null) {
+            val parameters = notification.byteArrayOutputStream.toByteArray()
+            val emissionPlan = PolarD2hRuntimePlanning.mapNotification(notification.id, parameters.toHexString()).firstOrNull()
+            if (emissionPlan == null) {
                 BleLogger.w(TAG, "Unknown notification type: ${notification.id}")
             } else {
                 val notificationType = PolarDeviceToHostNotification.fromValue(notification.id)
-                    ?: error("Shared D2H notification type $sharedNotificationType is not represented by the Android public enum")
-                val parameters = notification.byteArrayOutputStream.toByteArray()
-                val parsedParameters = parseD2HNotificationParameters(notificationType, parameters)
+                    ?: error("Shared D2H notification type ${emissionPlan.notificationType} is not represented by the Android public enum")
+                val parsedParameters = parseD2HNotificationParameters(notificationType, parameters, emissionPlan.parsedProto)
                 emit(PolarD2HNotificationData(notificationType, parameters, parsedParameters))
             }
         }
@@ -53,16 +53,15 @@ fun BlePsFtpClient.observeDeviceToHostNotifications(identifier: String): Flow<Po
  */
 private fun parseD2HNotificationParameters(
     notificationType: PolarDeviceToHostNotification,
-    data: ByteArray
+    data: ByteArray,
+    sharedParsedProtoName: String? = PolarD2hRuntimePlanning.parsedProtoName(notificationType.name, data.toHexString())
 ): Any? {
     if (data.isEmpty()) {
         return null
     }
 
-    val parsedProtoName = PolarD2hRuntimePlanning.parsedProtoName(notificationType.name, data.toHexString())
-
     return try {
-        when (parsedProtoName) {
+        when (sharedParsedProtoName) {
             "PbPFtpSyncRequiredParams" -> {
                 PbPFtpSyncRequiredParams.parseFrom(data)
             }

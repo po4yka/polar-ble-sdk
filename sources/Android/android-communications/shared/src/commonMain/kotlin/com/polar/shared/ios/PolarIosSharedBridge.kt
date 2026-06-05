@@ -1093,6 +1093,11 @@ object PolarIosSharedBridge {
         return PolarD2hRuntimePlanning.parsedProtoName(notificationType, parametersHex) ?: ""
     }
 
+    fun d2hNotificationPlan(notificationId: Int, parametersHex: String): String {
+        val event = PolarD2hRuntimePlanning.mapNotification(notificationId, parametersHex).firstOrNull() ?: return ""
+        return listOf(event.notificationType, event.parsedProto.orEmpty()).joinToString(separator = ",")
+    }
+
     fun planRuntimeStreamSubscription(target: String, startConnected: Boolean, checkConnection: Boolean): String {
         val snapshot = PolarStreamRuntimePlanning.planCheckedSubscription(target, startConnected, checkConnection)
         return snapshot.terminalError ?: "success"

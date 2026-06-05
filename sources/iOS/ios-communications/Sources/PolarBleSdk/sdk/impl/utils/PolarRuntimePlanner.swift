@@ -214,6 +214,17 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func d2hNotificationPlan(notificationId: Int, parametersHex: String) -> (notificationType: String, parsedProtoName: String?)? {
+        #if canImport(PolarBleSdkShared)
+        let value = PolarIosSharedBridge.shared.d2hNotificationPlan(notificationId: Int32(notificationId), parametersHex: parametersHex)
+        if value.isEmpty { return nil }
+        let fields = value.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
+        return (notificationType: fields[0], parsedProtoName: fields.count > 1 && !fields[1].isEmpty ? fields[1] : nil)
+        #else
+        return nil
+        #endif
+    }
+
     @discardableResult
     static func streamSubscription(target: String, startConnected: Bool, checkConnection: Bool) -> String {
         #if canImport(PolarBleSdkShared)
