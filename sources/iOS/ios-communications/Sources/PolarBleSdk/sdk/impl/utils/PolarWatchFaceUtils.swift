@@ -1,6 +1,9 @@
 // Copyright 2026 Polar Electro Oy. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let TAG = "PolarWatchFaceUtils"
 
@@ -33,6 +36,29 @@ internal enum PolarWatchFaceUtils {
     private static let FB_FIELD_COMPLICATION_IDS:       Int = 4
     private static let FB_FIELD_FONTFACE_ID:            Int = 5
     private static let FB_TABLE_FIELD_COUNT:            Int = 6
+
+    static func watchFaceReadOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return watchFaceOperation(id: "watch-face-read-kvtx", command: "GET") ?? (.get, KVTX_FILE_PATH)
+    }
+
+    static func watchFaceWriteOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return watchFaceOperation(id: "watch-face-write-kvtx", command: "PUT") ?? (.put, KVTX_FILE_PATH)
+    }
+
+    private static func watchFaceOperation(id: String, command: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
+        #if canImport(PolarBleSdkShared)
+        let plannedOperation = PolarIosSharedBridge.shared.planRuntimeFileFacadeOperation(id: id, command: command, path: KVTX_FILE_PATH, payloadHex: "")
+        let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
+        guard parts.count == 2 else { return nil }
+        switch parts[0] {
+        case "GET": return (.get, parts[1])
+        case "PUT": return (.put, parts[1])
+        default: return nil
+        }
+        #else
+        return nil
+        #endif
+    }
 
     // MARK: - Public API
 
@@ -220,9 +246,10 @@ internal enum PolarWatchFaceUtils {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
+        let plannedOperation = watchFaceReadOperation()
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = KVTX_FILE_PATH
+        operation.command = plannedOperation.command
+        operation.path = plannedOperation.path
         BleLogger.trace("\(TAG): readWatchFaceConfigFields: GET \(KVTX_FILE_PATH)")
         let requestData = try operation.serializedData()
         let responseData = try await client.request(requestData)
@@ -250,9 +277,10 @@ internal enum PolarWatchFaceUtils {
         let kvtxScript = buildKvtxScript(fields: existingFields)
         BleLogger.trace("\(TAG): writeWatchFaceComplicationInts: PUT \(kvtxScript.count) bytes to \(KVTX_FILE_PATH)")
 
+        let plannedOperation = watchFaceWriteOperation()
         var operation = Protocol_PbPFtpOperation()
-        operation.command = .put
-        operation.path = KVTX_FILE_PATH
+        operation.command = plannedOperation.command
+        operation.path = plannedOperation.path
         let proto = try operation.serializedData()
         let inputStream = InputStream(data: Data(kvtxScript))
         for try await _ in client.write(proto as NSData, data: inputStream) {}

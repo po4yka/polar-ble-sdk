@@ -39,6 +39,16 @@ internal object PolarWatchFaceUtils {
 
     private const val KVTX_FILE_PATH = "/SYS/KVTX"
 
+    internal fun watchFaceReadOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("watch-face-read-kvtx", "GET", KVTX_FILE_PATH)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
+
+    internal fun watchFaceWriteOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("watch-face-write-kvtx", "PUT", KVTX_FILE_PATH)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
+
     /**
      * Build a KVTXScript (WRITE_BYTES + COMMIT) carrying a full WatchfaceConfig FlatBuffer.
      * Delegates generic framing to [KvtxScriptUtils.buildWriteAndCommit].
@@ -193,9 +203,10 @@ internal object PolarWatchFaceUtils {
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
         BleLogger.d(TAG, "readWatchFaceConfigFields: GET /SYS/KVTX")
+        val readOperation = watchFaceReadOperation()
         val requestBuilder = PftpRequest.PbPFtpOperation.newBuilder().apply {
-            command = PftpRequest.PbPFtpOperation.Command.GET
-            path = KVTX_FILE_PATH
+            command = readOperation.first
+            path = readOperation.second
         }
         val kvtxScript = try {
             client.request(requestBuilder.build().toByteArray()).toByteArray()
@@ -230,9 +241,10 @@ internal object PolarWatchFaceUtils {
             ?: throw PolarServiceNotAvailable()
         val kvtxScript = buildKvtxScript(mergedFields)
         BleLogger.d(TAG, "writeWatchFaceComplicationInts: PUT ${kvtxScript.size} bytes to $KVTX_FILE_PATH")
+        val writeOperation = watchFaceWriteOperation()
         val builder = PftpRequest.PbPFtpOperation.newBuilder().apply {
-            command = PftpRequest.PbPFtpOperation.Command.PUT
-            path = KVTX_FILE_PATH
+            command = writeOperation.first
+            path = writeOperation.second
         }
         client.write(builder.build().toByteArray(), ByteArrayInputStream(kvtxScript)).collect {}
     }

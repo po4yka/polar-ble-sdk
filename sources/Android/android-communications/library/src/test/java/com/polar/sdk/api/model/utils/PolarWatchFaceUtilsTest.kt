@@ -8,6 +8,7 @@ import com.polar.sdk.impl.utils.PolarWatchFaceUtils
 import com.polar.sdk.impl.utils.WatchfaceConfigFields
 import org.junit.Assert.*
 import org.junit.Test
+import protocol.PftpRequest
 import java.io.File
 import java.io.FileReader
 import java.nio.ByteBuffer
@@ -167,6 +168,12 @@ class PolarWatchFaceUtilsTest {
     @Test
     fun `PolarWatchFaceComplication CALORIES uses correct complicationId`() {
         assertEquals("calories-complication", PolarWatchFaceComplication.CALORIES.complicationId)
+    }
+
+    @Test
+    fun `watch face KVTX headers use shared file facade planning`() {
+        assertEquals(PftpRequest.PbPFtpOperation.Command.GET to "/SYS/KVTX", PolarWatchFaceUtils.watchFaceReadOperation())
+        assertEquals(PftpRequest.PbPFtpOperation.Command.PUT to "/SYS/KVTX", PolarWatchFaceUtils.watchFaceWriteOperation())
     }
 
     @Test

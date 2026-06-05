@@ -150,6 +150,16 @@ final class PolarWatchFaceUtilsTests: XCTestCase {
         }
     }
 
+    func testWatchFaceKvtxHeadersUseSharedFileFacadePlanning() {
+        let readOperation = PolarWatchFaceUtils.watchFaceReadOperation()
+        XCTAssertEqual(readOperation.command, .get)
+        XCTAssertEqual(readOperation.path, "/SYS/KVTX")
+
+        let writeOperation = PolarWatchFaceUtils.watchFaceWriteOperation()
+        XCTAssertEqual(writeOperation.command, .put)
+        XCTAssertEqual(writeOperation.path, "/SYS/KVTX")
+    }
+
     // MARK: - Preserve existing non-complication fields on write
 
     func test_writePreservesExistingFields() {
