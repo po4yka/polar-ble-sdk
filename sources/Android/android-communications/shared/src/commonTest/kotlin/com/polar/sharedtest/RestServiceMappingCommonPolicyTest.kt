@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarRestServiceModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -44,6 +45,8 @@ class RestServiceMappingCommonPolicyTest {
                 actions.objectEntries().forEach { action ->
                     assertEquals(action.value, description.actions[action.key], "${vector.stringValue("id")} action ${action.key}")
                 }
+                assertEquals(actions.objectEntries().map { action -> action.key }, description.actionNames, "${vector.stringValue("id")} action names")
+                assertEquals(actions.objectEntries().map { action -> action.value }, description.actionPaths, "${vector.stringValue("id")} action paths")
             }
             expected.objectValue("eventDetails").objectEntries().forEach { event ->
                 assertEquals(event.value.stringArrayItems(), description.details[event.key] ?: emptyList(), "${vector.stringValue("id")} details ${event.key}")
@@ -117,8 +120,9 @@ class RestServiceMappingCommonPolicyTest {
         val endpoints = json.optionalStringArrayValue("endpoints") ?: emptyList()
         val actions = json.optionalObjectValue("cmd")?.objectEntries()?.associate { action -> action.key to action.value } ?: emptyMap()
         val topLevelObjects = json.objectEntries().associate { entry -> entry.key to entry.value }
-        val details = events.associateWith { event -> topLevelObjects[event]?.optionalStringArrayValue("details") ?: emptyList() }
-        val triggers = events.associateWith { event -> topLevelObjects[event]?.optionalStringArrayValue("triggers") ?: emptyList() }
+        val eventDescriptions = events.associateWith { event -> topLevelObjects[event]?.stringArrayMapValue() ?: emptyMap() }
+        val details = events.associateWith { event -> PolarRestServiceModels.eventDetails(eventDescriptions.getValue(event)) }
+        val triggers = events.associateWith { event -> PolarRestServiceModels.eventTriggers(eventDescriptions.getValue(event)) }
         return RestServiceDescription(events, endpoints, actions, details, triggers)
     }
 
@@ -162,6 +166,10 @@ class RestServiceMappingCommonPolicyTest {
         return Regex("\"([^\"]*)\"").findAll(this).map { it.groupValues[1] }.toList()
     }
 
+    private fun String.stringArrayMapValue(): Map<String, List<String>> {
+        return objectEntries().associate { entry -> entry.key to entry.value.stringArrayItems() }
+    }
+
     private fun String.booleanValue(field: String): Boolean {
         return Regex("\"$field\"\\s*:\\s*(true|false)").find(this)?.groupValues?.get(1)?.let { value -> value == "true" } ?: error("Missing boolean field $field in $this")
     }
@@ -197,10 +205,10 @@ class RestServiceMappingCommonPolicyTest {
         val pathsForServices: Map<String, String>
     ) {
         val names: List<String>
-            get() = pathsForServices.keys.toList()
+            get() = PolarRestServiceModels.serviceNames(pathsForServices)
 
         val paths: List<String>
-            get() = pathsForServices.values.toList()
+            get() = PolarRestServiceModels.servicePaths(pathsForServices)
     }
 
     private data class RestServiceDescription(
@@ -209,7 +217,13 @@ class RestServiceMappingCommonPolicyTest {
         val actions: Map<String, String>,
         val details: Map<String, List<String>>,
         val triggers: Map<String, List<String>>
-    )
+    ) {
+        val actionNames: List<String>
+            get() = PolarRestServiceModels.actionNames(actions)
+
+        val actionPaths: List<String>
+            get() = PolarRestServiceModels.actionPaths(actions)
+    }
 
     private data class JsonEntry(
         val key: String,

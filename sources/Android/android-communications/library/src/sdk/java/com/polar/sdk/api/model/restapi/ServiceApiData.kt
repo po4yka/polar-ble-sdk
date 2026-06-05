@@ -1,5 +1,7 @@
 package com.polar.sdk.api.model.restapi
 
+import com.polar.shared.sdk.PolarRestServiceModels
+
 /**
  * Lists REST API services and corresponding paths
  */
@@ -8,19 +10,19 @@ data class PolarDeviceRestApiServices(val dictionary: Map<String, Any>) {
      * Maps available REST API service names to corresponding paths
       */
     val pathsForServices: Map<String,String>
-        get() = dictionary["services"] as? Map<String,String> ?: mapOf()
+        get() = dictionary["services"].asStringMap()
 
     /**
      * Lists REST API service names
      */
     val serviceNames: List<String>
-        get() = pathsForServices.keys.toList()
+        get() = PolarRestServiceModels.serviceNames(pathsForServices)
 
     /**
      * Lists REST API service paths
      */
     val servicePaths: List<String>
-        get() = pathsForServices.values.toList()
+        get() = PolarRestServiceModels.servicePaths(pathsForServices)
 }
 
 /**
@@ -35,13 +37,13 @@ data class PolarDeviceRestApiServiceDescription (
  * properties.
  */
 val PolarDeviceRestApiServiceDescription.events: List<String>
-    get() = dictionary["events"] as? List<String> ?: listOf<String>()
+    get() = dictionary["events"].asStringList()
 
 /**
  * Endpoints that can be applied in **endpoint=** parameter in paths from `actions` and `actionPaths`
  */
 val PolarDeviceRestApiServiceDescription.endpoints: List<String>
-    get() = dictionary["endpoints"] as? List<String> ?: listOf<String>()
+    get() = dictionary["endpoints"].asStringList()
 
 /**
  * Actions/commands that can be sent, using put operation of corresponding path string
@@ -64,19 +66,19 @@ val PolarDeviceRestApiServiceDescription.endpoints: List<String>
  *
  */
 val PolarDeviceRestApiServiceDescription.actions: Map<String, String>
-    get() = dictionary["cmd"] as? Map<String, String> ?: mapOf<String, String>()
+    get() = dictionary["cmd"].asStringMap()
 
 /**
  * Just the action names from `actions` property
  */
 val PolarDeviceRestApiServiceDescription.actionNames: List<String>
-    get() = actions.keys.toList()
+    get() = PolarRestServiceModels.actionNames(actions)
 
 /**
  * Just the action paths from `actions` property
  */
 val PolarDeviceRestApiServiceDescription.actionPaths: List<String>
-    get() = actions.values.toList()
+    get() = PolarRestServiceModels.actionPaths(actions)
 
 /**
  * Lists event details that may be requested as returned event parameter values using action
@@ -85,8 +87,8 @@ val PolarDeviceRestApiServiceDescription.actionPaths: List<String>
  * @return detail names
  */
 fun PolarDeviceRestApiServiceDescription.eventDetailsFor(eventName: String): List<String> {
-    val eventMap = dictionary[eventName] as? Map<String, List<String>> ?: mapOf<String, List<String>>()
-    return eventMap["details"] as? List<String> ?: listOf<String>()
+    val eventMap = dictionary[eventName].asStringListMap()
+    return PolarRestServiceModels.eventDetails(eventMap)
 }
 
 /**
@@ -96,6 +98,26 @@ fun PolarDeviceRestApiServiceDescription.eventDetailsFor(eventName: String): Lis
  * @return triggers for the events
  */
 fun PolarDeviceRestApiServiceDescription.eventTriggersFor(eventName: String): List<String> {
-    val eventMap = dictionary[eventName] as? Map<String, List<String>> ?: mapOf<String, List<String>>()
-    return eventMap["triggers"] as? List<String> ?: listOf<String>()
+    val eventMap = dictionary[eventName].asStringListMap()
+    return PolarRestServiceModels.eventTriggers(eventMap)
+}
+
+private fun Any?.asStringList(): List<String> {
+    return (this as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+}
+
+private fun Any?.asStringMap(): Map<String, String> {
+    return (this as? Map<*, *>)?.entries?.mapNotNull { entry ->
+        val key = entry.key as? String
+        val value = entry.value as? String
+        if (key != null && value != null) key to value else null
+    }?.toMap() ?: emptyMap()
+}
+
+private fun Any?.asStringListMap(): Map<String, List<String>> {
+    return (this as? Map<*, *>)?.entries?.mapNotNull { entry ->
+        val key = entry.key as? String
+        val value = entry.value.asStringList()
+        if (key != null) key to value else null
+    }?.toMap() ?: emptyMap()
 }
