@@ -3991,6 +3991,12 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(directoryOperation.path, "/U/0/")
     }
 
+    func testFirmwareWriteHeadersUseSharedFileFacadePlanning() {
+        let writeOperation = PolarBleApiImpl.firmwareFileWriteOperation(path: "SYSUPDAT.IMG")
+        XCTAssertEqual(writeOperation.command, .put)
+        XCTAssertEqual(writeOperation.path, "SYSUPDAT.IMG")
+    }
+
     // MARK: - listOfflineRecordings tests
 
     func test_listOfflineRecordings_sessionNotReady_propagatesError() {

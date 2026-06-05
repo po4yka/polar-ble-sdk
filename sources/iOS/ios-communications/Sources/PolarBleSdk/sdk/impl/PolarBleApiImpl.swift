@@ -111,6 +111,10 @@ import UIKit
         return facadeFileOperation(id: "generic-directory-read", command: "GET", path: path)
     }
 
+    static func firmwareFileWriteOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return facadeFileOperation(id: "firmware-write-file", command: "PUT", path: path)
+    }
+
     private static func facadeFileOperation(id: String, command: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path) {
             return plannedOperation
@@ -3169,9 +3173,10 @@ extension PolarBleApiImpl: PolarBleApi  {
                     BleLogger.trace("Initialize session")
                     _ = try await client.query(Protocol_PbPFtpQuery.prepareFirmwareUpdate.rawValue, parameters: nil)
                     BleLogger.trace("Start \(firmwareFilePath) write")
+                    let writeOperation = Self.firmwareFileWriteOperation(path: firmwareFilePath)
                     var builder = Protocol_PbPFtpOperation()
-                    builder.command = .put
-                    builder.path = firmwareFilePath
+                    builder.command = writeOperation.command
+                    builder.path = writeOperation.path
                     PolarRuntimePlanner.psFtpWriteAck(payloadSize: firmwareBytes.count)
                     let proto = try builder.serializedData()
                     for try await bytesWritten in client.write(proto as NSData, data: InputStream(data: firmwareBytes)) {
