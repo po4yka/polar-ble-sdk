@@ -145,22 +145,14 @@ object BlePsFtpUtils {
      * @param packet air packet
      */
     fun processRfc76MessageFrameHeader(header: PftpRfc76ResponseHeader, packet: ByteArray) {
-        header.next = packet[0].toInt() and 0x01
-        header.status = (packet[0].toInt() shr 1) and 0x03
-        header.sequenceNumber = ((packet[0].toInt() shr 4) and 0x0F).toLong()
-        if (header.status == 0) {
-            header.error =
-                ((packet[RFC76_HEADER_SIZE].toInt() and 0xFF) or ((packet[RFC76_HEADER_SIZE + 1].toInt() shl 8) and 0xFF)) and 0x0000FFFF
+        val decoded = PolarWorkflowRuntimePlanning.decodeRfc76Frame(packet)
+        header.next = decoded.next
+        header.status = decoded.status
+        header.sequenceNumber = decoded.sequenceNumber.toLong()
+        if (decoded.status == RFC76_STATUS_ERROR_OR_RESPONSE) {
+            header.error = decoded.androidErrorCode ?: 0
         } else {
-            val payload = ByteArray(packet.size - RFC76_HEADER_SIZE)
-            System.arraycopy(
-                packet,
-                RFC76_HEADER_SIZE,
-                payload,
-                0,
-                packet.size - RFC76_HEADER_SIZE
-            )
-            header.payload = payload
+            header.payload = decoded.payload
         }
     }
 
