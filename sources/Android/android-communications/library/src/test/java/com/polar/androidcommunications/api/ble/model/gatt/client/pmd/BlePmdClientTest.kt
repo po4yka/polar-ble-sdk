@@ -1308,6 +1308,12 @@ internal class BlePmdClientTest {
     }
 
     @Test
+    fun `pmd recording type bitfields delegate to shared KMP policy`() {
+        assertEquals(0x00.toUByte(), PmdRecordingType.ONLINE.asBitField())
+        assertEquals(0x80.toUByte(), PmdRecordingType.OFFLINE.asBitField())
+    }
+
+    @Test
     fun `startMeasurement - online recording type has high bit clear in first byte`() = runTest {
         // Arrange
         enableNotifications()

@@ -36,6 +36,23 @@ enum class PolarPmdMeasurementTypeName(val value: Int) {
     }
 }
 
+enum class PolarPmdRecordingType(val value: Int) {
+    ONLINE(0),
+    OFFLINE(1);
+
+    fun asBitField(): Int {
+        return (value shl 7) and RECORDING_TYPE_BIT_MASK
+    }
+
+    companion object {
+        private const val RECORDING_TYPE_BIT_MASK = 0x80
+
+        fun fromName(name: String): PolarPmdRecordingType? {
+            return entries.firstOrNull { it.name == name }
+        }
+    }
+}
+
 data class PolarPmdControlPointResponse(
     val responseCode: Int,
     val opCodeValue: Int,

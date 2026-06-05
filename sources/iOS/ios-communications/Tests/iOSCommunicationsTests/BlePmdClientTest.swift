@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import iOSCommunications
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS = ["set-trigger-success-with-secret", "set-trigger-mode-error", "set-trigger-status-read-error", "set-trigger-setting-error", "get-trigger-success", "get-trigger-transport-error"]
@@ -19,6 +22,16 @@ class BlePmdClientTest: XCTestCase {
     override func tearDownWithError() throws {
         mockGattServiceTransmitterImpl = nil
         blePmdClient = nil
+    }
+
+    func testPmdRecordingTypeBitfieldsDelegateToSharedKmpPolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(0x00, PolarIosSharedBridge.shared.pmdRecordingTypeBitField(name: "ONLINE"))
+        XCTAssertEqual(0x80, PolarIosSharedBridge.shared.pmdRecordingTypeBitField(name: "OFFLINE"))
+        XCTAssertEqual(0x00, PolarIosSharedBridge.shared.pmdRecordingTypeBitField(name: "UNKNOWN"))
+        #endif
+        XCTAssertEqual(0x00, PmdRecordingType.online.asBitField())
+        XCTAssertEqual(0x80, PmdRecordingType.offline.asBitField())
     }
 
     func testProcessControlPointResponseWhenStatusIsSuccess() throws {

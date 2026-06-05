@@ -8,6 +8,7 @@ import com.polar.shared.device.PolarDeviceCapabilitiesConfig
 import com.polar.shared.device.PolarDeviceCapabilityDefaults
 import com.polar.shared.pmd.PolarPmdControlPoint
 import com.polar.shared.pmd.PolarPmdMeasurementTypeName
+import com.polar.shared.pmd.PolarPmdRecordingType
 import com.polar.shared.pmd.PolarPmdSecret
 import com.polar.shared.pmd.PolarPmdSettingType
 import com.polar.shared.pmd.PolarPmdSettings
@@ -264,6 +265,10 @@ object PolarIosSharedBridge {
 
     fun magCalibrationStatusName(id: Int): String {
         return PolarMagCalibrationStatus.fromId(id).name
+    }
+
+    fun pmdRecordingTypeBitField(name: String): Int {
+        return PolarPmdRecordingType.fromName(name)?.asBitField() ?: PolarPmdRecordingType.ONLINE.asBitField()
     }
 
     fun pmdSelectedSettingsHex(selectedCsv: String): String {

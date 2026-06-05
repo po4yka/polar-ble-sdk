@@ -3,6 +3,7 @@ package com.polar.sharedtest
 import com.polar.shared.pmd.PolarPmdControlPoint
 import com.polar.shared.pmd.PolarPmdMeasurementTypeName
 import com.polar.shared.pmd.PolarPmdParseError
+import com.polar.shared.pmd.PolarPmdRecordingType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -23,6 +24,15 @@ class PmdControlPointCommonPolicyTest {
         assertEquals(PolarPmdMeasurementTypeName.ACC, PolarPmdMeasurementTypeName.fromMaskedId(0xC2))
         assertNull(PolarPmdMeasurementTypeName.fromMaskedId(4))
         assertNull(PolarPmdMeasurementTypeName.fromMaskedId(0xFF))
+    }
+
+    @Test
+    fun pmdRecordingTypeBitFieldsPreserveRequestBytePolicy() {
+        assertEquals(0x00, PolarPmdRecordingType.ONLINE.asBitField())
+        assertEquals(0x80, PolarPmdRecordingType.OFFLINE.asBitField())
+        assertEquals(PolarPmdRecordingType.ONLINE, PolarPmdRecordingType.fromName("ONLINE"))
+        assertEquals(PolarPmdRecordingType.OFFLINE, PolarPmdRecordingType.fromName("OFFLINE"))
+        assertNull(PolarPmdRecordingType.fromName("UNKNOWN"))
     }
 
     @Test
