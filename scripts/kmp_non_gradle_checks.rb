@@ -543,13 +543,13 @@ FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = [
   "planUserDeviceSettings"
 ].freeze
 FAKE_TRANSPORT_COMMON_REST_RUNTIME_TEST_REQUIRED_TERMS = [
-  "restRequestTransportPolicyVectorRunsThroughCommonFakeTransport",
+  "restRequestTransportPolicyVectorRunsThroughProductionCommonPlanner",
   "restRequestTransportReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "rest-request-transport-policy",
   "sdk/rest-service/rest-request-transport-policy.json",
   "sdk/rest-service/rest-request-transport-readiness.json",
   "rest-request-transport-readiness",
-  "ScriptedCommonFakeTransport",
+  "PolarRuntimeOrchestration.planRestRequestTransport",
   "service-list-request-error-payload",
   "service-description-request-error-payload",
   "service-list-empty-transport-response",
@@ -560,7 +560,7 @@ FAKE_TRANSPORT_COMMON_REST_RUNTIME_TEST_REQUIRED_TERMS = [
   "response-error-payload-message",
   "facade-error-mapping-deferred",
   "compile-verification-gate",
-  "toPftpCommand"
+  "PolarRestRequestTransportOperation"
 ].freeze
 FAKE_TRANSPORT_COMMON_FILE_RUNTIME_TEST_REQUIRED_TERMS = [
   "fileListingGoldenVectorsDefineExecutableCommonTraversalPolicy",

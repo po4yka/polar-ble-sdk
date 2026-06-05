@@ -38,6 +38,15 @@ data class PolarRestFacadeOperation(
     val expectedPlatformTerminal: String?
 )
 
+data class PolarRestRequestTransportOperation(
+    val id: String,
+    val path: String,
+    val transportMode: String,
+    val status: Int?,
+    val message: String?,
+    val payloadHex: String?
+)
+
 data class PolarFileFacadeOperation(
     val id: String,
     val command: String,
@@ -129,6 +138,21 @@ object PolarRuntimeOrchestration {
             else -> error("Unsupported REST facade transport mode ${operation.transportMode}")
         }
         return PolarRuntimePlan(commands, terminal)
+    }
+
+    fun planRestRequestTransport(operation: PolarRestRequestTransportOperation): PolarRuntimePlan {
+        val commands = mutableListOf("GET:${operation.path}")
+        return when (operation.transportMode) {
+            "pftpResponseError" -> {
+                commands += "response-error:${requireNotNull(operation.status)}:${requireNotNull(operation.message)}"
+                PolarRuntimePlan(commands, "response-error")
+            }
+            "success" -> {
+                require(operation.payloadHex == "") { "REST request transport policy only covers empty successful responses in this slice" }
+                PolarRuntimePlan(commands, "requires-empty-response-policy", resultHex = "")
+            }
+            else -> error("Unsupported REST request transport mode ${operation.transportMode}")
+        }
     }
 
     fun planFileFacade(operation: PolarFileFacadeOperation): PolarRuntimePlan {

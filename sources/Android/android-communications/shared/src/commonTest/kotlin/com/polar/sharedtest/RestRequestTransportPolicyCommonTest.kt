@@ -1,12 +1,14 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarRestRequestTransportOperation
+import com.polar.shared.runtime.PolarRuntimeOrchestration
+import com.polar.shared.runtime.PolarRuntimePlan
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class RestRequestTransportPolicyCommonTest {
     @Test
-    fun restRequestTransportPolicyVectorRunsThroughCommonFakeTransport() {
+    fun restRequestTransportPolicyVectorRunsThroughProductionCommonPlanner() {
         val vector = loadGoldenVectorText("sdk/rest-service/rest-request-transport-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -16,11 +18,13 @@ class RestRequestTransportPolicyCommonTest {
             RestRequestCase(
                 id = request.stringValue("id"),
                 path = request.stringValue("path"),
-                transport = request.objectValue("transport").toTransportOutcome()
+                transport = request.objectValue("transport").toRestRequestTransportOperation(
+                    id = request.stringValue("id"),
+                    path = request.stringValue("path")
+                )
             )
         }
         val expectedCases = expectedPrototype.objectArray("cases").associateBy { it.stringValue("id") }
-        val transport = ScriptedCommonFakeTransport(requests.map { it.transport })
 
         assertEquals("restRequestTransportPolicy", input.stringValue("kind"))
         assertEquals(requiredRequestScenarioIds, requests.map { it.id })
@@ -35,11 +39,10 @@ class RestRequestTransportPolicyCommonTest {
         assertEquals(listOf("com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.RestRequestTransportPolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
 
         requests.forEach { request ->
-            val outcome = transport.read(request.path)
+            val outcome = PolarRuntimeOrchestration.planRestRequestTransport(request.transport)
             val expected = expectedCases.getValue(request.id)
 
-            assertEquals(expected.stringValue("command"), transport.commands.last().operation.toPftpCommand(), request.id)
-            assertEquals(expected.stringValue("path"), transport.commands.last().target, request.id)
+            assertEquals("${expected.stringValue("command")}:${expected.stringValue("path")}", outcome.commands.first(), request.id)
             assertOutcome(request.id, expected, outcome)
         }
     }
@@ -134,43 +137,40 @@ class RestRequestTransportPolicyCommonTest {
 
     private val restRequestTransportReadinessCommonDecision = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping remains explicit, and the shared tests are compile-verified."
 
-    private fun assertOutcome(caseId: String, expected: String, outcome: CommonFakeTransportOutcome) {
+    private fun assertOutcome(caseId: String, expected: String, outcome: PolarRuntimePlan) {
         when (expected.stringValue("outcome")) {
             "response-error" -> {
-                val responseError = outcome as CommonFakeTransportOutcome.ResponseError
-                assertEquals(expected.intValue("status"), responseError.status, caseId)
-                assertEquals(expected.stringValue("message"), responseError.message, caseId)
+                assertEquals("response-error", outcome.terminal, caseId)
+                assertEquals("response-error:${expected.intValue("status")}:${expected.stringValue("message")}", outcome.commands.last(), caseId)
             }
             "requires-empty-response-policy" -> {
-                val bytes = outcome as CommonFakeTransportOutcome.Bytes
-                assertTrue(bytes.value.isEmpty(), caseId)
+                assertEquals("requires-empty-response-policy", outcome.terminal, caseId)
+                assertEquals("", outcome.resultHex, caseId)
             }
             else -> error("Unsupported expected REST runtime outcome ${expected.stringValue("outcome")} for $caseId")
         }
     }
 
-    private fun String.toTransportOutcome(): CommonFakeTransportOutcome {
-        return when (stringValue("mode")) {
-            "pftpResponseError" -> CommonFakeTransportOutcome.ResponseError(intValue("status"), stringValue("message"))
-            "success" -> CommonFakeTransportOutcome.Bytes(hexToBytes(stringValue("payloadHex")))
-            else -> error("Unsupported transport mode ${stringValue("mode")}")
-        }
+    private fun String.toRestRequestTransportOperation(id: String, path: String): PolarRestRequestTransportOperation {
+        return PolarRestRequestTransportOperation(
+            id = id,
+            path = path,
+            transportMode = stringValue("mode"),
+            status = optionalIntValue("status"),
+            message = optionalStringValue("message"),
+            payloadHex = optionalStringValue("payloadHex")
+        )
     }
 
-    private fun CommonFakeTransportOperation.toPftpCommand(): String {
-        return when (this) {
-            CommonFakeTransportOperation.READ -> "GET"
-            CommonFakeTransportOperation.WRITE -> "PUT"
-            CommonFakeTransportOperation.REMOVE -> "REMOVE"
-            CommonFakeTransportOperation.SUBSCRIBE -> "SUBSCRIBE"
-            CommonFakeTransportOperation.UNSUBSCRIBE -> "UNSUBSCRIBE"
-            CommonFakeTransportOperation.RECONNECT -> "RECONNECT"
-        }
+    private fun String.optionalIntValue(field: String): Int? {
+        val valueStart = "\"$field\"".toRegex().find(this)?.range?.last?.plus(1) ?: return null
+        val match = Regex("-?\\d+").find(this, valueStart) ?: return null
+        return match.value.toInt()
     }
 
     private data class RestRequestCase(
         val id: String,
         val path: String,
-        val transport: CommonFakeTransportOutcome
+        val transport: PolarRestRequestTransportOperation
     )
 }
