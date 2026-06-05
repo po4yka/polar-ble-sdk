@@ -792,6 +792,7 @@ FAKE_TRANSPORT_COMMON_BACKUP_UTILITY_TEST_REQUIRED_TERMS = [
 ].freeze
 FAKE_TRANSPORT_COMMON_OFFLINE_TRIGGER_RUNTIME_TEST_REQUIRED_TERMS = [
   "offlineTriggerRuntimePolicyVectorRunsThroughProductionCommonPlanner",
+  "offlineTriggerRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
   "offlineTriggerRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/offline-recording/trigger-runtime-policy.json",
   "sdk/offline-recording/trigger-runtime-readiness.json",
@@ -806,6 +807,8 @@ FAKE_TRANSPORT_COMMON_OFFLINE_TRIGGER_RUNTIME_TEST_REQUIRED_TERMS = [
   "setSetting",
   "control-point-error",
   "transport-error",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "enabledFeatures",
   "typed-set-mode",
   "settings-write",

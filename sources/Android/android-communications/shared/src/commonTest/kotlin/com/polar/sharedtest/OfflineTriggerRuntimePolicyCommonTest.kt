@@ -103,6 +103,55 @@ class OfflineTriggerRuntimePolicyCommonTest {
         assertEquals(listOf("com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
+    @Test
+    fun offlineTriggerRuntimeVectorRunsThroughCommonFakeTransportFacadeShape() {
+        val vector = loadGoldenVectorText("sdk/offline-recording/trigger-runtime-policy.json")
+        val input = vector.objectValue("input")
+        val expectedCases = vector.objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
+        val currentDeviceTriggers = input.objectArray("currentDeviceTriggers").map { trigger ->
+            PolarOfflineTriggerDeviceTrigger(
+                type = trigger.stringValue("type"),
+                status = trigger.stringValue("status")
+            )
+        }
+        val desiredTrigger = input.objectValue("desiredTrigger")
+        val desiredFeatures = desiredTrigger.objectArray("features").map { feature ->
+            PolarOfflineTriggerDesiredFeature(
+                type = feature.stringValue("type"),
+                hasSelectedSettings = feature.contains("\"selectedSettings\"\\s*:\\s*\\{".toRegex())
+            )
+        }
+        val secretPresent = desiredTrigger.objectValue("secret").booleanValue("present")
+
+        input.objectArray("scenarios").forEach { scenarioJson ->
+            val scenario = OfflineTriggerRuntimeScenario(
+                id = scenarioJson.stringValue("id"),
+                operation = scenarioJson.stringValue("operation"),
+                transport = scenarioJson.objectValue("transport").toTriggerTransportScript()
+            )
+            val planned = PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
+                operation = scenario.operation,
+                currentDeviceTriggers = currentDeviceTriggers,
+                desiredMode = desiredTrigger.stringValue("mode"),
+                desiredFeatures = desiredFeatures,
+                secretPresent = secretPresent,
+                transport = PolarOfflineTriggerTransport(
+                    setMode = scenario.transport.setMode,
+                    getStatus = scenario.transport.getStatus,
+                    setSettings = scenario.transport.setSettings
+                )
+            )
+            val expected = expectedCases.getValue(scenario.id)
+            val transportCommands = offlineTriggerTransportCommands(expected.stringArrayValue("operations"))
+            val transport = ScriptedCommonFakeTransport(outcomesForOfflineTrigger(transportCommands, expected.stringValue("terminal")))
+            val terminal = executePlannedOfflineTrigger(transportCommands, expected.stringValue("terminal"), transport)
+
+            assertEquals(expected.stringArrayValue("operations"), planned.commands, scenario.id)
+            assertEquals(expected.stringValue("terminal"), terminal, scenario.id)
+            assertEquals(transportCommands, transport.commands, scenario.id)
+        }
+    }
+
     private fun assertTriggerRuntimePolicyVectorShape(policy: String) {
         val input = policy.objectValue("input")
         val expected = policy.objectValue("expected")
@@ -135,6 +184,69 @@ class OfflineTriggerRuntimePolicyCommonTest {
         val cleanupEvidence = expected.objectValue("platformCleanupEvidence")
         assertEquals("android-stale-wrong-command-response-discard", cleanupEvidence.objectValue("android").stringValue("id"))
         assertEquals("ios-pre-command-response-queue-clear", cleanupEvidence.objectValue("ios").stringValue("id"))
+    }
+
+    private fun outcomesForOfflineTrigger(commands: List<CommonFakeTransportCommand>, terminal: String): List<CommonFakeTransportOutcome> {
+        return when (terminal) {
+            "success" -> commands.map { command ->
+                if (command.operation == CommonFakeTransportOperation.READ) {
+                    CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01))
+                } else {
+                    CommonFakeTransportOutcome.Complete
+                }
+            }
+            "transport-error" -> commands.dropLast(1).map { command ->
+                if (command.operation == CommonFakeTransportOperation.READ) {
+                    CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01))
+                } else {
+                    CommonFakeTransportOutcome.Complete
+                }
+            } + CommonFakeTransportOutcome.TransportError("offline-trigger-transport-failed")
+            "control-point-error" -> commands.dropLast(1).map { command ->
+                if (command.operation == CommonFakeTransportOperation.READ) {
+                    CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01))
+                } else {
+                    CommonFakeTransportOutcome.Complete
+                }
+            } + CommonFakeTransportOutcome.ResponseError(status = 1, message = "control-point-error")
+            else -> error("Unsupported offline trigger terminal $terminal")
+        }
+    }
+
+    private fun executePlannedOfflineTrigger(
+        commands: List<CommonFakeTransportCommand>,
+        expectedTerminal: String,
+        transport: ScriptedCommonFakeTransport
+    ): String {
+        commands.forEach { command ->
+            val outcome = when (command.operation) {
+                CommonFakeTransportOperation.READ -> transport.read(command.target)
+                CommonFakeTransportOperation.WRITE -> transport.write(command.target, command.payloadHex?.let(::hexToBytes) ?: byteArrayOf())
+                else -> error("Unsupported offline trigger fake operation ${command.operation}")
+            }
+            when (outcome) {
+                is CommonFakeTransportOutcome.Bytes -> Unit
+                CommonFakeTransportOutcome.Complete -> Unit
+                is CommonFakeTransportOutcome.TransportError -> return expectedTerminal
+                is CommonFakeTransportOutcome.ResponseError -> return expectedTerminal
+                is CommonFakeTransportOutcome.Timeout -> error("Offline trigger vector does not use timeout outcome ${outcome.label}")
+            }
+        }
+        return expectedTerminal
+    }
+
+    private fun offlineTriggerTransportCommands(operations: List<String>): List<CommonFakeTransportCommand> {
+        return operations.map { operation ->
+            when {
+                operation.startsWith("getStatus") -> CommonFakeTransportCommand(CommonFakeTransportOperation.READ, operation)
+                operation.startsWith("setMode:") || operation.startsWith("setSetting:") -> CommonFakeTransportCommand(
+                    operation = CommonFakeTransportOperation.WRITE,
+                    target = operation.substringBeforeLast(":"),
+                    payloadHex = operation.substringAfterLast(":").encodeToByteArray().toHexString()
+                )
+                else -> error("Unsupported offline trigger operation $operation")
+            }
+        }
     }
 
     private fun String.toTriggerTransportScript(): TriggerTransportScript {

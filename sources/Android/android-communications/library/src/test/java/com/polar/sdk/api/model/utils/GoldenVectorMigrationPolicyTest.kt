@@ -4338,6 +4338,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_OFFLINE_TRIGGER_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "offlineTriggerRuntimePolicyVectorRunsThroughProductionCommonPlanner",
+            "offlineTriggerRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
             "offlineTriggerRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/offline-recording/trigger-runtime-policy.json",
             "sdk/offline-recording/trigger-runtime-readiness.json",
@@ -4352,6 +4353,8 @@ class GoldenVectorMigrationPolicyTest {
             "setSetting",
             "control-point-error",
             "transport-error",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "enabledFeatures",
             "typed-set-mode",
             "settings-write",
