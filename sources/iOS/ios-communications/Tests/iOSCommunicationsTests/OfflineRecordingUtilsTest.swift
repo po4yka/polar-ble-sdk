@@ -1,5 +1,8 @@
 import XCTest
 @testable import iOSCommunications
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 final class OfflineRecordingUtilsTest: XCTestCase {
     
@@ -44,6 +47,18 @@ final class OfflineRecordingUtilsTest: XCTestCase {
       OfflineRecordingUtils.mapOfflineRecordingFileNameToMeasurementType(fileName: "INVALID.REC"),
             "Invalid file name"
         )
+    }
+
+    func testOfflineRecordingFilenameMappingUsesSharedBridgeWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("ACC", PolarIosSharedBridge.shared.offlineRecordingMeasurementType(fileName: "ACC0.REC"))
+        XCTAssertEqual("SKIN_TEMP", PolarIosSharedBridge.shared.offlineRecordingMeasurementType(fileName: "SKINTEMP.REC"))
+        XCTAssertNil(PolarIosSharedBridge.shared.offlineRecordingMeasurementType(fileName: "INVALID.REC"))
+        XCTAssertEqual(.acc, try OfflineRecordingUtils.mapOfflineRecordingFileNameToMeasurementType(fileName: "ACC0.REC"))
+        XCTAssertEqual(.skinTemperature, try OfflineRecordingUtils.mapOfflineRecordingFileNameToMeasurementType(fileName: "SKINTEMP.REC"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testOfflineRecordingFilenameMappingGoldenVectorsMatchIOSBehavior() throws {
