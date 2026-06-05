@@ -2179,6 +2179,20 @@ final class PolarBleApiImplTests: XCTestCase {
         #endif
     }
 
+    func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
+        XCTAssertEqual(true, PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: "TRC10.BIN", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(false, PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: "TRC10.TXT", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(true, PolarStoredDataOfflineRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue))
+        XCTAssertEqual(["/U/0/20260530/ACT/", "/U/0/20260530/"], PolarStoredDataOfflineRuntimePlanner.storedDataEmptyParentDirectories(filePath: "/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash: true))
+        XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
+        XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: ["acc"]))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func test_streamRuntimePlannerSurfacesSharedEdgeDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("gattDisconnected", PolarStreamRuntimePlanner.subscription(target: "stream", startConnected: false, checkConnection: true))

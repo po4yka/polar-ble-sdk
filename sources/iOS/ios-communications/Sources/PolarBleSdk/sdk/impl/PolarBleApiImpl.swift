@@ -1797,7 +1797,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var pmdSecret: PmdSecret? = nil
         if let s = secret { pmdSecret = try PolarDataUtils.mapToPmdSecret(from: s) }
         let triggerTypes = trigger.triggerFeatures.keys.map { String(describing: $0) }
-        PolarRuntimePlanner.offlineTriggerSet(currentTypes: triggerTypes, desiredTypes: triggerTypes, secretPresent: secret != nil)
+        PolarStoredDataOfflineRuntimePlanner.offlineTriggerSet(currentTypes: triggerTypes, desiredTypes: triggerTypes, secretPresent: secret != nil)
         try await client.setOfflineRecordingTrigger(offlineRecordingTrigger: pmdOfflineTrigger, secret: pmdSecret)
     }
 
@@ -1806,7 +1806,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionPmdClientReady(identifier)
         guard let client = session.fetchGattClient(BlePmdClient.PMD_SERVICE) as? BlePmdClient else { throw PolarErrors.serviceNotFound }
         BleLogger.trace("Get offline recording trigger setup. Device: \(identifier)")
-        PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["acc", "gyro", "magnetometer", "ppg", "ppi", "hr"])
+        PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: ["acc", "gyro", "magnetometer", "ppg", "ppi", "hr"])
         let trigger = try await client.getOfflineRecordingTriggerStatus()
         return try PolarDataUtils.mapToPolarOfflineTrigger(from: trigger)
     }
@@ -2767,7 +2767,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             condition = { e in
                 e.contains("^(\\d{8})(/)") ||
                 e == "\(entryPattern)/" ||
-                (PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includeSuffixes: [".SLG", ".TXT"]) ?? (e.contains(".SLG") || e.contains(".TXT")))
+                (PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includeSuffixes: [".SLG", ".TXT"]) ?? (e.contains(".SLG") || e.contains(".TXT")))
             }
         case .ACTIVITY, .DAILY_SUMMARY, .NIGHTLY_RECOVERY, .SLEEP, .SKIN_CONTACT_CHANGES, .SKINTEMP, .SLEEP_SCORE:
             folderPath = "/U/0/"
@@ -2776,7 +2776,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             }
         case .UNDEFINED: return
         }
-        PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: folderPath)
+        PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: folderPath)
         var deletedFiles = [String]()
         for try await file in fileUtils.listFiles(identifier: identifier, folderPath: folderPath, condition: condition) {
             switch dataType {
@@ -2798,7 +2798,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         }
         if shouldPruneEmptyParents(for: dataType) {
             for path in deletedFiles {
-                if let sharedParents = PolarRuntimePlanner.storedDataEmptyParentDirectories(filePath: path, trailingSlash: true) {
+                if let sharedParents = PolarStoredDataOfflineRuntimePlanner.storedDataEmptyParentDirectories(filePath: path, trailingSlash: true) {
                     for currentDir in sharedParents {
                         try await fileUtils.deleteDataDirectory(identifier: identifier, directoryPath: currentDir)
                     }
@@ -2818,7 +2818,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
     private func shouldPruneEmptyParents(for dataType: PolarStoredDataType.StoredDataType) -> Bool {
-        if let sharedDecision = PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: dataType.rawValue) {
+        if let sharedDecision = PolarStoredDataOfflineRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: dataType.rawValue) {
             return sharedDecision
         }
 
@@ -2852,7 +2852,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             return false
         }
         for try await folder in fileUtils.listFiles(identifier: identifier, folderPath: path, condition: condition, recurseDeep: false) {
-            PolarRuntimePlanner.storedDataCleanup(kind: "emptyDayFolderRemoval", rootPath: folder)
+            PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "emptyDayFolderRemoval", rootPath: folder)
             try await fileUtils.deleteDataDirectory(identifier: identifier, directoryPath: folder)
         }
     }
@@ -2860,10 +2860,10 @@ extension PolarBleApiImpl: PolarBleApi  {
 
     func deleteTelemetryData(_ identifier: String) async throws {
         let condition: (_ p: String) -> Bool = { e in
-            PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includePrefixes: ["TRC"], includeSuffixes: [".BIN"]) ??
+            PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includePrefixes: ["TRC"], includeSuffixes: [".BIN"]) ??
             (e.contains("^([A-Za-z]{3}[0-9]{1,3})") && e.contains("TRC") && e.contains(".BIN"))
         }
-        PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/")
+        PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/")
         for try await file in fileUtils.listFiles(identifier: identifier, folderPath: "/", condition: condition) {
             _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: file)
             BleLogger.trace("Successfully deleted telemetry data \(file) from device \(identifier).")

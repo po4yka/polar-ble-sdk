@@ -108,58 +108,29 @@ enum PolarRuntimePlanner {
 
     @discardableResult
     static func storedDataCleanup(kind: String, rootPath: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeStoredDataCleanup(kind: kind, rootPath: rootPath)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: kind, rootPath: rootPath)
     }
 
     static func storedDataEntryMatchesFilter(entry: String, includePrefixes: [String] = [], includeSuffixes: [String] = []) -> Bool? {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.storedDataEntryMatchesFilter(
-            entry: entry,
-            includePrefixesCsv: includePrefixes.joined(separator: ","),
-            includeSuffixesCsv: includeSuffixes.joined(separator: ",")
-        )
-        #else
-        return nil
-        #endif
+        return PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: entry, includePrefixes: includePrefixes, includeSuffixes: includeSuffixes)
     }
 
     static func shouldPruneStoredDataEmptyParents(dataType: String) -> Bool? {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.shouldPruneStoredDataEmptyParents(dataType: dataType)
-        #else
-        return nil
-        #endif
+        return PolarStoredDataOfflineRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: dataType)
     }
 
     static func storedDataEmptyParentDirectories(filePath: String, rootPath: String = "/U/0", trailingSlash: Bool = true) -> [String]? {
-        #if canImport(PolarBleSdkShared)
-        let csv = PolarIosSharedBridge.shared.storedDataEmptyParentDirectories(filePath: filePath, rootPath: rootPath, trailingSlash: trailingSlash)
-        return csv.isEmpty ? [] : csv.split(separator: ",").map(String.init)
-        #else
-        return nil
-        #endif
+        return PolarStoredDataOfflineRuntimePlanner.storedDataEmptyParentDirectories(filePath: filePath, rootPath: rootPath, trailingSlash: trailingSlash)
     }
 
     @discardableResult
     static func offlineTriggerSet(currentTypes: [String], desiredTypes: [String], secretPresent: Bool) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeOfflineTrigger(operation: "setOfflineRecordingTrigger", currentTypesCsv: currentTypes.joined(separator: ","), desiredTypesCsv: desiredTypes.joined(separator: ","), secretPresent: secretPresent)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarStoredDataOfflineRuntimePlanner.offlineTriggerSet(currentTypes: currentTypes, desiredTypes: desiredTypes, secretPresent: secretPresent)
     }
 
     @discardableResult
     static func offlineTriggerGet(currentTypes: [String]) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.planRuntimeOfflineTrigger(operation: "getOfflineRecordingTriggerSetup", currentTypesCsv: currentTypes.joined(separator: ","), desiredTypesCsv: "", secretPresent: false)
-        #else
-        return "platform-owned"
-        #endif
+        return PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: currentTypes)
     }
 
     @discardableResult
