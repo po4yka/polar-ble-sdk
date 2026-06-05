@@ -1,5 +1,8 @@
 import Foundation
 import SwiftProtobuf
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public struct PolarFirstTimeUseConfig {
 
@@ -25,6 +28,16 @@ public struct PolarFirstTimeUseConfig {
         }
     }
 
+    static func protobufValue(for typicalDay: TypicalDay) -> Data_PbUserTypicalDay.TypicalDay {
+        #if canImport(PolarBleSdkShared)
+        if let sharedValue = PolarIosSharedBridge.shared.firstTimeUseTypicalDayValue(value: Int32(typicalDay.rawValue)),
+           let proto = Data_PbUserTypicalDay.TypicalDay(rawValue: Int(truncating: sharedValue)) {
+            return proto
+        }
+        #endif
+        return Data_PbUserTypicalDay.TypicalDay(rawValue: typicalDay.rawValue)!
+    }
+
     public enum TrainingBackground: Int {
             case occasional = 10
             case regular = 20
@@ -32,6 +45,16 @@ public struct PolarFirstTimeUseConfig {
             case heavy = 40
             case semiPro = 50
             case pro = 60
+
+            static func protobufValue(for trainingBackground: TrainingBackground) -> Data_PbUserTrainingBackground.TrainingBackground {
+                #if canImport(PolarBleSdkShared)
+                if let sharedValue = PolarIosSharedBridge.shared.firstTimeUseTrainingBackgroundValue(value: Int32(trainingBackground.rawValue)),
+                   let proto = Data_PbUserTrainingBackground.TrainingBackground(rawValue: Int(truncating: sharedValue)) {
+                    return proto
+                }
+                #endif
+                return Data_PbUserTrainingBackground.TrainingBackground(rawValue: trainingBackground.rawValue)!
+            }
         }
 
     public let gender: Gender
@@ -145,7 +168,7 @@ public struct PolarFirstTimeUseConfig {
         }
 
         let trainingBackgroundPb = Data_PbUserTrainingBackground.with {
-            $0.value = Data_PbUserTrainingBackground.TrainingBackground(rawValue: trainingBackground.rawValue)!
+            $0.value = TrainingBackground.protobufValue(for: trainingBackground)
             $0.lastModified = lastModified
         }
 
@@ -155,7 +178,7 @@ public struct PolarFirstTimeUseConfig {
         }
 
         let typicalDayPb = Data_PbUserTypicalDay.with {
-            $0.value = Data_PbUserTypicalDay.TypicalDay(rawValue: typicalDay.rawValue)!
+            $0.value = PolarFirstTimeUseConfig.protobufValue(for: typicalDay)
             $0.lastModified = lastModified
         }
 

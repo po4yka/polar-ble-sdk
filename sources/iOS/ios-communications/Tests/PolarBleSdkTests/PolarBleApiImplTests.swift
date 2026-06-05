@@ -1576,6 +1576,30 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH, requestOperation.path)
     }
 
+    func test_firstTimeUsePhysicalConfigEnumMappingPreservesProtoValues() throws {
+        let birthDate = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: DateComponents(year: 1990, month: 1, day: 2)))
+        let config = PolarFirstTimeUseConfig(
+            gender: .female,
+            birthDate: birthDate,
+            height: 170.0,
+            weight: 65.0,
+            maxHeartRate: 185,
+            vo2Max: 45,
+            restingHeartRate: 52,
+            trainingBackground: .semiPro,
+            deviceTime: "2026-05-31T12:00:00Z",
+            typicalDay: .mostlyMoving,
+            sleepGoalMinutes: 480
+        )
+
+        let proto = try XCTUnwrap(config.toProto())
+
+        XCTAssertEqual(Data_PbUserTrainingBackground.TrainingBackground.semiPro, proto.trainingBackground.value)
+        XCTAssertEqual(50, proto.trainingBackground.value.rawValue)
+        XCTAssertEqual(Data_PbUserTypicalDay.TypicalDay.mostlyMoving, proto.typicalDay.value)
+        XCTAssertEqual(3, proto.typicalDay.value.rawValue)
+    }
+
     func test_getUserPhysicalConfiguration_returnsNilWhenPhysicalDataFileIsMissing() throws {
         v2MockClient.requestReturnValueClosure = { _ in throw BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue) }
 
