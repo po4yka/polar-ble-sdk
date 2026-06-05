@@ -207,6 +207,14 @@ class BlePmdClientTest: XCTestCase {
         }
     }
 
+    func testPmdControlPointResponseKeepsIOSFallbackForErrorPayloadBytes() throws {
+        let response = PmdControlPointResponse(Data([0xF0, PmdControlPointCommandClientToService.GET_MEASUREMENT_SETTINGS, PmdMeasurementType.acc.rawValue, UInt8(PmdResponseCode.errorInvalidLength.rawValue), 0x01, 0xAA]))
+
+        XCTAssertEqual(PmdResponseCode.errorInvalidLength, response.errorCode)
+        XCTAssertTrue(response.more)
+        XCTAssertEqual("aa", response.parameters.asData.hexString)
+    }
+
     func testPmdControlPointResponseGoldenVectorsFollowNeutralKmpVectorShape() throws {
         for vector in try loadControlPointGoldenVectors() {
             let id = vector["id"] as? String ?? "unknown-vector"

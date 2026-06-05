@@ -48,6 +48,9 @@ internal struct PmdControlPointResponse {
               let statusValue = Int(fields[3]) else {
             return nil
         }
+        if statusValue != PmdResponseCode.success.rawValue && data.count > 4 {
+            return nil
+        }
         let more = fields[4] == "1"
         let type = PmdMeasurementType(rawValue: typeValue) ?? PmdMeasurementType.unknown_type
         let errorCode = PmdResponseCode(rawValue: statusValue) ?? PmdResponseCode.unknown_error
