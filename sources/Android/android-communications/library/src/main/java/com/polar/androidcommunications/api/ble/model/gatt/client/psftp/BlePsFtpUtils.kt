@@ -1,5 +1,6 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.psftp
 
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import org.apache.commons.io.IOUtils
 import protocol.PftpError.PbPFtpError
 import java.io.ByteArrayInputStream
@@ -43,48 +44,21 @@ object BlePsFtpUtils {
         type: MessageType,
         id: Int
     ): ByteArrayInputStream {
-        val outputStream = ByteArrayOutputStream()
-        // for request and query add RFC60 header
-        when (type) {
-            MessageType.REQUEST -> {
-                val headerSize = header?.available()
-                val request = ByteArray(2)
-                // RFC60
-                if (headerSize != null) {
-                    request[1] = ((headerSize and 0x7F00) shr 8).toByte()
-                }
-                if (headerSize != null) {
-                    request[0] = (headerSize and 0x00FF).toByte()
-                }
-                outputStream.write(request, 0, 2)
-                IOUtils.copy(header, outputStream)
-                if (data != null) {
-                    IOUtils.copy(data, outputStream)
-                }
-            }
+        val sharedHeader = header?.let { IOUtils.toByteArray(it) } ?: ByteArray(0)
+        val sharedData = data?.let { IOUtils.toByteArray(it) } ?: ByteArray(0)
+        return ByteArrayInputStream(
+            PolarWorkflowRuntimePlanning.encodeCompleteMessageStream(
+                type = when (type) {
+                    MessageType.REQUEST -> "request"
+                    MessageType.QUERY -> "query"
+                    MessageType.NOTIFICATION -> "notification"
+                },
+                header = sharedHeader,
+                idValue = id,
+                data = sharedData
+            )
+        )
 
-            MessageType.QUERY -> {
-                val request = ByteArray(2)
-                // RFC60
-                request[1] = (((id and 0x7F00) shr 8) or 0x80).toByte()
-                request[0] = (id and 0x00FF).toByte()
-                outputStream.write(request, 0, 2)
-                if (header != null) {
-                    IOUtils.copy(header, outputStream)
-                }
-            }
-
-            MessageType.NOTIFICATION -> {
-                val request = ByteArray(1)
-                request[0] = id.toByte()
-                outputStream.write(request, 0, 1)
-                if (header != null) {
-                    IOUtils.copy(header, outputStream)
-                }
-            }
-        }
-
-        return ByteArrayInputStream(outputStream.toByteArray())
     }
 
     /**
@@ -136,6 +110,13 @@ object BlePsFtpUtils {
         mtuSize: Int,
         sequenceNumber: Rfc76SequenceNumber
     ): MutableList<ByteArray> {
+        if (sequenceNumber.seq == 0L) {
+            val packets = PolarWorkflowRuntimePlanning.splitRfc76Frames(IOUtils.toByteArray(data), mtuSize).toMutableList()
+            repeat(packets.size) {
+                sequenceNumber.increment()
+            }
+            return packets
+        }
         val packets: MutableList<ByteArray> = ArrayList()
         var next = 0
         do {
@@ -171,14 +152,15 @@ object BlePsFtpUtils {
             header.error =
                 ((packet[RFC76_HEADER_SIZE].toInt() and 0xFF) or ((packet[RFC76_HEADER_SIZE + 1].toInt() shl 8) and 0xFF)) and 0x0000FFFF
         } else {
-            header.payload = ByteArray(packet.size - RFC76_HEADER_SIZE)
+            val payload = ByteArray(packet.size - RFC76_HEADER_SIZE)
             System.arraycopy(
                 packet,
                 RFC76_HEADER_SIZE,
-                header.payload,
+                payload,
                 0,
                 packet.size - RFC76_HEADER_SIZE
             )
+            header.payload = payload
         }
     }
 
