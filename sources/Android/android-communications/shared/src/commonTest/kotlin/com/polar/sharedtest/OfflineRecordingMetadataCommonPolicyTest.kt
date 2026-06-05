@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarOfflineRecordingModels
+import com.polar.shared.sdk.PolarOfflineRecordingMeasurementType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -17,7 +19,7 @@ class OfflineRecordingMetadataCommonPolicyTest {
                 assertEquals(null, measurementTypeOrNull(fileName), fileName)
             } else {
                 val expected = item.objectValue("measurementType")
-                assertEquals(expected.stringValue("android"), measurementTypeOrNull(fileName), fileName)
+                assertEquals(expected.stringValue("android"), PolarOfflineRecordingModels.measurementTypeFromFileName(fileName).name, fileName)
                 assertTrue(expected.stringValue("ios").isNotEmpty(), "$fileName keeps iOS public enum expectation")
             }
         }
@@ -27,7 +29,7 @@ class OfflineRecordingMetadataCommonPolicyTest {
     @Test
     fun offlineRecordingPmdFilesGoldenVectorDefinesExecutableCommonGroupingPolicy() {
         val vector = loadGoldenVectorText("sdk/offline-recording/pmdfiles-v2-grouping.json")
-        val grouped = parsePmdFiles(vector.objectValue("input").stringValue("pmdFilesTxt"))
+        val grouped = PolarOfflineRecordingModels.parsePmdFilesV2(vector.objectValue("input").stringValue("pmdFilesTxt"))
         val expected = vector.objectValue("expected").objectArray("entries")
 
         assertEquals(expected.size, grouped.size, vector.stringValue("id"))
@@ -36,7 +38,7 @@ class OfflineRecordingMetadataCommonPolicyTest {
             assertEquals(expectedEntry.stringValue("type"), actual.type, "entry $index type")
             assertEquals(expectedEntry.stringValue("androidPath"), actual.androidPath, "entry $index Android representative path")
             assertEquals(expectedEntry.stringValue("iosPath"), actual.iosPath, "entry $index iOS representative path")
-            assertEquals(expectedEntry.intValue("size"), actual.size, "entry $index size")
+            assertEquals(expectedEntry.intValue("size").toLong(), actual.size, "entry $index size")
             assertEquals(expectedEntry.stringValue("dateTime"), actual.dateTime, "entry $index dateTime")
         }
 
@@ -97,18 +99,7 @@ class OfflineRecordingMetadataCommonPolicyTest {
     }
 
     private fun measurementTypeOrNull(fileName: String): String? {
-        val baseName = fileName.removeSuffix(".REC").dropLastWhile { char -> char in '0'..'9' }
-        return when (baseName) {
-            "ACC" -> "ACC"
-            "GYRO" -> "GYRO"
-            "MAG" -> "MAGNETOMETER"
-            "PPG" -> "PPG"
-            "PPI" -> "PPI"
-            "HR" -> "OFFLINE_HR"
-            "TEMP" -> "TEMPERATURE"
-            "SKINTEMP" -> "SKIN_TEMP"
-            else -> null
-        }
+        return runCatching { PolarOfflineRecordingModels.measurementTypeFromFileName(fileName).name }.getOrNull()
     }
 
     private fun pmdFilesTypeOrNull(fileName: String): String? {
@@ -120,59 +111,11 @@ class OfflineRecordingMetadataCommonPolicyTest {
     }
 
     private fun pmdType(publicType: String): String {
-        return if (publicType == "HR") "OFFLINE_HR" else publicType
+        return if (publicType == "HR") PolarOfflineRecordingMeasurementType.OFFLINE_HR.name else publicType
     }
 
     private fun publicType(pmdType: String): String {
         return if (pmdType == "OFFLINE_HR") "HR" else pmdType
-    }
-
-    private fun parsePmdFiles(text: String): List<RecordingEntry> {
-        val grouped = linkedMapOf<String, RecordingGroup>()
-        text.lines().filter { line -> line.isNotBlank() }.forEach { line ->
-            val parts = line.split(' ').filter { part -> part.isNotBlank() }
-            if (parts.size != 2) return@forEach
-            val size = parts[0].toIntOrNull() ?: return@forEach
-            if (size == 0) return@forEach
-            val path = parts[1]
-            val segments = path.split('/')
-            if (segments.size < 7) return@forEach
-            val date = segments[3]
-            val time = segments[5]
-            if (!isValidDateTime(date, time)) return@forEach
-            val fileName = segments.last()
-            val type = pmdFilesTypeOrNull(fileName) ?: return@forEach
-            val baseFileName = fileName.removeSuffix(".REC").dropLastWhile { char -> char in '0'..'9' } + ".REC"
-            val key = "$date/$time/$type"
-            val group = grouped.getOrPut(key) {
-                RecordingGroup(
-                    type = type,
-                    firstPath = path,
-                    normalizedPath = "/U/0/$date/R/$time/$baseFileName",
-                    dateTime = "${date.substring(0, 4)}-${date.substring(4, 6)}-${date.substring(6, 8)}T${time.substring(0, 2)}:${time.substring(2, 4)}:${time.substring(4, 6)}"
-                )
-            }
-            group.size += size
-        }
-        return grouped.values.map { group ->
-            RecordingEntry(
-                type = group.type,
-                androidPath = group.normalizedPath,
-                iosPath = group.firstPath,
-                size = group.size,
-                dateTime = group.dateTime
-            )
-        }
-    }
-
-    private fun isValidDateTime(date: String, time: String): Boolean {
-        if (!DATE.matches(date) || !TIME.matches(time)) return false
-        val month = date.substring(4, 6).toInt()
-        val day = date.substring(6, 8).toInt()
-        val hour = time.substring(0, 2).toInt()
-        val minute = time.substring(2, 4).toInt()
-        val second = time.substring(4, 6).toInt()
-        return month in 1..12 && day in 1..31 && hour in 0..23 && minute in 0..59 && second in 0..59
     }
 
     private fun convertEnabledTriggers(triggers: List<String>): ConvertedTriggers {
@@ -224,22 +167,6 @@ class OfflineRecordingMetadataCommonPolicyTest {
         error("Unbalanced $open$close block")
     }
 
-    private data class RecordingGroup(
-        val type: String,
-        val firstPath: String,
-        val normalizedPath: String,
-        val dateTime: String,
-        var size: Int = 0
-    )
-
-    private data class RecordingEntry(
-        val type: String,
-        val androidPath: String,
-        val iosPath: String,
-        val size: Int,
-        val dateTime: String
-    )
-
     private data class TriggerConfig(
         val type: String,
         val status: String,
@@ -256,8 +183,6 @@ class OfflineRecordingMetadataCommonPolicyTest {
     )
 
     private companion object {
-        val DATE = Regex("\\d{8}")
-        val TIME = Regex("\\d{6}")
         val metadataVectors = listOf(
             "sdk/offline-recording/filename-mapping.json",
             "sdk/offline-recording/pmdfiles-v2-grouping.json",

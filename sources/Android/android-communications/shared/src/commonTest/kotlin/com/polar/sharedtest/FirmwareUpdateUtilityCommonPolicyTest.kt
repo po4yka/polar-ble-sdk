@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.FirmwareVersionParseException
+import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -33,7 +35,7 @@ class FirmwareUpdateUtilityCommonPolicyTest {
         vector.objectValue("input").objectArray("cases").forEach { testCase ->
             assertEquals(
                 testCase.booleanValue("expectedHigher"),
-                isAvailableVersionHigher(testCase.stringValue("currentVersion"), testCase.stringValue("availableVersion")),
+                PolarFirmwareUpdateModels.isAvailableFirmwareVersionHigher(testCase.stringValue("currentVersion"), testCase.stringValue("availableVersion")),
                 "${testCase.stringValue("currentVersion")} -> ${testCase.stringValue("availableVersion")}"
             )
         }
@@ -46,8 +48,8 @@ class FirmwareUpdateUtilityCommonPolicyTest {
         assertEquals("invalid-version-error", vector.objectValue("expected").stringValue("policy"))
 
         vector.objectValue("input").objectArray("cases").forEach { testCase ->
-            assertFailsWith<VersionParseFailure>(testCase.stringValue("currentVersion")) {
-                isAvailableVersionHigher(testCase.stringValue("currentVersion"), testCase.stringValue("availableVersion"))
+            assertFailsWith<FirmwareVersionParseException>(testCase.stringValue("currentVersion")) {
+                PolarFirmwareUpdateModels.isAvailableFirmwareVersionHigher(testCase.stringValue("currentVersion"), testCase.stringValue("availableVersion"))
             }
             val expectedError = testCase.objectValue("expectedError")
             assertEquals("NumberFormatException", expectedError.stringValue("android"), testCase.stringValue("currentVersion"))
@@ -62,7 +64,7 @@ class FirmwareUpdateUtilityCommonPolicyTest {
         assertEquals("system-update-last", vector.objectValue("expected").stringValue("policy"))
 
         vector.objectValue("input").objectArray("cases").forEach { testCase ->
-            assertEquals(testCase.stringArrayValue("expected"), orderFirmwareFiles(testCase.stringArrayValue("input")), testCase.stringArrayValue("input").joinToString(","))
+            assertEquals(testCase.stringArrayValue("expected"), PolarFirmwareUpdateModels.orderFirmwareFiles(testCase.stringArrayValue("input")), testCase.stringArrayValue("input").joinToString(","))
         }
         assertEquals(FIRMWARE_FILE_ORDERING_POLICY_DECISION, vector.objectValue("platformExpectations").objectValue("commonDecision").stringValue("orderingPolicy"))
     }
@@ -91,31 +93,10 @@ class FirmwareUpdateUtilityCommonPolicyTest {
     private fun mapDeviceInfo(proto: String): FirmwareDeviceInfo {
         val version = proto.objectValue("version")
         return FirmwareDeviceInfo(
-            deviceFwVersion = "${version.intValue("major")}.${version.intValue("minor")}.${version.intValue("patch")}",
+            deviceFwVersion = PolarFirmwareUpdateModels.deviceVersionToString(version.intValue("major"), version.intValue("minor"), version.intValue("patch")),
             deviceModelName = proto.stringValue("modelName"),
             deviceHardwareCode = proto.stringValue("hardwareCode")
         )
-    }
-
-    private fun isAvailableVersionHigher(currentVersion: String, availableVersion: String): Boolean {
-        val currentParts = currentVersion.versionParts()
-        val availableParts = availableVersion.versionParts()
-        val sharedSize = minOf(currentParts.size, availableParts.size)
-        for (index in 0 until sharedSize) {
-            if (availableParts[index] > currentParts[index]) return true
-            if (availableParts[index] < currentParts[index]) return false
-        }
-        return availableParts.size > currentParts.size
-    }
-
-    private fun String.versionParts(): List<Int> {
-        return split(".").map { part ->
-            part.toIntOrNull() ?: throw VersionParseFailure(this)
-        }
-    }
-
-    private fun orderFirmwareFiles(files: List<String>): List<String> {
-        return files.filterNot { file -> file.contains(SYSTEM_UPDATE_FILE) } + files.filter { file -> file.contains(SYSTEM_UPDATE_FILE) }
     }
 
     private fun String.optionalObjectValue(field: String): String? {
@@ -163,10 +144,7 @@ class FirmwareUpdateUtilityCommonPolicyTest {
         val deviceHardwareCode: String
     )
 
-    private class VersionParseFailure(version: String) : RuntimeException("Invalid firmware version $version")
-
     private companion object {
-        const val SYSTEM_UPDATE_FILE = "SYSUPDAT.IMG"
         val FIRMWARE_UTILITY_POLICY_VECTORS = listOf(
             "sdk/firmware-update/device-info-basic.json",
             "sdk/firmware-update/device-info-zero-version.json",

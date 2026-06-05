@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarTrainingSessionFileEntry
+import com.polar.shared.sdk.PolarTrainingSessionModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -9,7 +11,7 @@ class TrainingSessionCommonPolicyTest {
     fun trainingSessionReferenceDiscoveryGoldenVectorDefinesExecutableCommonTraversalAndClassificationPolicy() {
         val vector = loadGoldenVectorText("sdk/training-session/reference-discovery-two-sessions.json")
         val directories = vector.objectValue("input").objectValue("directories")
-        val discovered = discoverReferences(directories)
+        val discovered = PolarTrainingSessionModels.buildReferences(flattenDirectoryEntries(directories))
         val expected = vector.objectValue("expected").objectArray("references")
 
         assertEquals(expected.size, discovered.size, vector.stringValue("id"))
@@ -19,7 +21,7 @@ class TrainingSessionCommonPolicyTest {
             assertEquals(expectedReference.stringValue("date"), actual.date, "reference $index date")
             assertEquals(expectedReference.stringValue("path"), actual.path, "reference $index path")
             assertEquals(expectedReference.stringArrayValue("trainingDataTypes"), actual.trainingDataTypes, "reference $index training data types")
-            assertEquals(expectedReference.intValue("fileSize"), actual.fileSize, "reference $index aggregate file size")
+            assertEquals(expectedReference.intValue("fileSize").toLong(), actual.fileSize, "reference $index aggregate file size")
             val expectedExercises = expectedReference.objectArray("exercises")
             assertEquals(expectedExercises.size, actual.exercises.size, "reference $index exercise count")
             expectedExercises.forEachIndexed { exerciseIndex, expectedExercise ->
@@ -173,56 +175,6 @@ class TrainingSessionCommonPolicyTest {
         assertEquals(true, platforms.booleanValue("common"))
     }
 
-    private fun discoverReferences(directories: String): List<TrainingReference> {
-        return directoryEntries(directories, ROOT_PATH)
-            .map { it.name }
-            .filter { name -> DATE_DIR.matches(name) }
-            .flatMap { dateDir ->
-                val date = dateDir.removeSuffix("/")
-                directoryEntries(directories, "$ROOT_PATH$dateDir")
-                    .filter { entry -> entry.name == "E/" }
-                    .flatMap {
-                        directoryEntries(directories, "$ROOT_PATH$dateDir${it.name}")
-                            .map { timeEntry -> timeEntry.name }
-                            .filter { timeDir -> TIME_DIR.matches(timeDir) }
-                            .mapNotNull { timeDir -> referenceOrNull(directories, date, timeDir.removeSuffix("/")) }
-                    }
-            }
-    }
-
-    private fun referenceOrNull(directories: String, date: String, time: String): TrainingReference? {
-        val sessionDirectory = "$ROOT_PATH$date/E/$time/"
-        val sessionEntries = directoryEntries(directories, sessionDirectory)
-        val summary = sessionEntries.firstOrNull { entry -> entry.name == "TSESS.BPB" } ?: return null
-        val exercises = sessionEntries
-            .filter { entry -> EXERCISE_DIR.matches(entry.name) }
-            .sortedBy { entry -> entry.name }
-            .mapNotNull { exerciseEntry -> exerciseOrNull(directories, sessionDirectory, exerciseEntry.name.removeSuffix("/")) }
-        return TrainingReference(
-            dateTime = "${date.substring(0, 4)}-${date.substring(4, 6)}-${date.substring(6, 8)}T${time.substring(0, 2)}:${time.substring(2, 4)}:${time.substring(4, 6)}",
-            date = "${date.substring(0, 4)}-${date.substring(4, 6)}-${date.substring(6, 8)}",
-            path = "${sessionDirectory}TSESS.BPB",
-            trainingDataTypes = listOf("TRAINING_SESSION_SUMMARY"),
-            fileSize = summary.size + exercises.sumOf { exercise -> exercise.fileSizes.values.sum() },
-            exercises = exercises
-        )
-    }
-
-    private fun exerciseOrNull(directories: String, sessionDirectory: String, exerciseIndexText: String): ExerciseReference? {
-        val exerciseDirectory = "$sessionDirectory$exerciseIndexText/"
-        val knownFiles = directoryEntries(directories, exerciseDirectory)
-            .mapNotNull { entry -> exerciseDataTypeOrNull(entry.name)?.let { type -> entry to type } }
-        if (knownFiles.isEmpty()) return null
-        val fileSizes = knownFiles.associate { pair -> pair.first.name to pair.first.size }
-        return ExerciseReference(
-            index = exerciseIndexText.toInt(),
-            androidPath = "$exerciseDirectory${knownFiles.first().first.name}",
-            iosPath = exerciseDirectory.removeSuffix("/"),
-            exerciseDataTypes = knownFiles.map { pair -> pair.second },
-            fileSizes = fileSizes
-        )
-    }
-
     private fun payloadFetchOrder(reference: String): List<String> {
         return listOf(reference.stringValue("path")) + reference.objectArray("exercises").flatMap { exercise ->
             val basePath = exercise.stringValue("androidPath").substringBeforeLast("/")
@@ -291,17 +243,7 @@ class TrainingSessionCommonPolicyTest {
     }
 
     private fun exerciseDataTypeOrNull(name: String): String? {
-        return when (name) {
-            "BASE.BPB" -> "EXERCISE_SUMMARY"
-            "ROUTE.BPB" -> "ROUTE"
-            "ROUTE.GZB" -> "ROUTE_GZIP"
-            "ROUTE2.BPB" -> "ROUTE_ADVANCED_FORMAT"
-            "ROUTE2.GZB" -> "ROUTE_ADVANCED_FORMAT_GZIP"
-            "SAMPLES.BPB" -> "SAMPLES"
-            "SAMPLES.GZB" -> "SAMPLES_GZIP"
-            "SAMPLES2.GZB" -> "SAMPLES_ADVANCED_FORMAT_GZIP"
-            else -> null
-        }
+        return PolarTrainingSessionModels.exerciseDataTypeOrNull(name)
     }
 
     private fun directoryEntries(directories: String, path: String): List<DirectoryEntry> {
@@ -311,6 +253,36 @@ class TrainingSessionCommonPolicyTest {
                 size = entry.intValue("size")
             )
         }
+    }
+
+    private fun flattenDirectoryEntries(directories: String): List<PolarTrainingSessionFileEntry> {
+        val root = directoryEntries(directories, ROOT_PATH)
+        return root
+            .map { it.name }
+            .filter { name -> DATE_DIR.matches(name) }
+            .flatMap { dateDir ->
+                directoryEntries(directories, "$ROOT_PATH$dateDir")
+                    .filter { entry -> entry.name == "E/" }
+                    .flatMap {
+                        directoryEntries(directories, "$ROOT_PATH$dateDir${it.name}")
+                            .map { timeEntry -> timeEntry.name }
+                            .filter { timeDir -> TIME_DIR.matches(timeDir) }
+                            .flatMap { timeDir ->
+                                val sessionDirectory = "$ROOT_PATH$dateDir${it.name}$timeDir"
+                                directoryEntries(directories, sessionDirectory)
+                                    .flatMap { entry ->
+                                        if (EXERCISE_DIR.matches(entry.name)) {
+                                            val exerciseDirectory = "$sessionDirectory${entry.name}"
+                                            directoryEntries(directories, exerciseDirectory).map { file ->
+                                                PolarTrainingSessionFileEntry(path = "$exerciseDirectory${file.name}", size = file.size.toLong())
+                                            }
+                                        } else {
+                                            listOf(PolarTrainingSessionFileEntry(path = "$sessionDirectory${entry.name}", size = entry.size.toLong()))
+                                        }
+                                    }
+                            }
+                    }
+            }
     }
 
     private fun String.booleanValue(field: String): Boolean {
@@ -353,23 +325,6 @@ class TrainingSessionCommonPolicyTest {
         var samplesAdvancedHeartRate: List<Int> = emptyList(),
         var unknownAdvancedSampleListsIgnored: Int = 0,
         var malformedFilesIgnored: List<String> = emptyList()
-    )
-
-    private data class TrainingReference(
-        val dateTime: String,
-        val date: String,
-        val path: String,
-        val trainingDataTypes: List<String>,
-        val fileSize: Int,
-        val exercises: List<ExerciseReference>
-    )
-
-    private data class ExerciseReference(
-        val index: Int,
-        val androidPath: String,
-        val iosPath: String,
-        val exerciseDataTypes: List<String>,
-        val fileSizes: Map<String, Int>
     )
 
     private data class ParserCase(

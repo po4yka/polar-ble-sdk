@@ -6,6 +6,9 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurem
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.errors.PolarInvalidArgument
 import com.polar.sdk.api.model.PolarOfflineRecordingEntry
+import com.polar.shared.sdk.PolarOfflineRecordingFileEntry
+import com.polar.shared.sdk.PolarOfflineRecordingMeasurementType
+import com.polar.shared.sdk.PolarOfflineRecordingModels
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.ByteArrayInputStream
@@ -19,17 +22,15 @@ internal object PolarOfflineRecordingUtils {
     private const val PMD_FILE_PATH = "/PMDFILES.TXT"
 
     private fun mapOfflineRecordingFileNameToMeasurementType(fileName: String): PmdMeasurementType {
-        val fileNameWithoutExtension = fileName.substringBeforeLast(".")
-        return when (fileNameWithoutExtension.replace(Regex("\\d+"), "")) {
-            "ACC" -> PmdMeasurementType.ACC
-            "GYRO" -> PmdMeasurementType.GYRO
-            "MAG" -> PmdMeasurementType.MAGNETOMETER
-            "PPG" -> PmdMeasurementType.PPG
-            "PPI" -> PmdMeasurementType.PPI
-            "HR" -> PmdMeasurementType.OFFLINE_HR
-            "TEMP" -> PmdMeasurementType.TEMPERATURE
-            "SKINTEMP" -> PmdMeasurementType.SKIN_TEMP
-            else -> throw IllegalArgumentException("Unknown offline file $fileName")
+        return when (PolarOfflineRecordingModels.measurementTypeFromFileName(fileName)) {
+            PolarOfflineRecordingMeasurementType.ACC -> PmdMeasurementType.ACC
+            PolarOfflineRecordingMeasurementType.GYRO -> PmdMeasurementType.GYRO
+            PolarOfflineRecordingMeasurementType.MAGNETOMETER -> PmdMeasurementType.MAGNETOMETER
+            PolarOfflineRecordingMeasurementType.PPG -> PmdMeasurementType.PPG
+            PolarOfflineRecordingMeasurementType.PPI -> PmdMeasurementType.PPI
+            PolarOfflineRecordingMeasurementType.OFFLINE_HR -> PmdMeasurementType.OFFLINE_HR
+            PolarOfflineRecordingMeasurementType.TEMPERATURE -> PmdMeasurementType.TEMPERATURE
+            PolarOfflineRecordingMeasurementType.SKIN_TEMP -> PmdMeasurementType.SKIN_TEMP
         }
     }
 
@@ -52,87 +53,53 @@ internal object PolarOfflineRecordingUtils {
         fetchRecursively: (client: BlePsFtpClient, path: String, condition: (String) -> Boolean) -> Flow<Pair<String, Long>>
     ): Flow<PolarOfflineRecordingEntry> = flow {
 
-        val grouped = mutableMapOf<String, MutableList<PolarOfflineRecordingEntry>>()
-
+        val entries = mutableListOf<PolarOfflineRecordingFileEntry>()
         fetchRecursively(client, "/U/0/") { entry ->
             entry.matches(Regex("^(\\d{8})(/)")) ||
                     entry == "R/" ||
                     entry.matches(Regex("^(\\d{6})(/)")) ||
                     entry.contains(".REC")
         }.collect { entry ->
-            try {
-                val components = entry.first.split("/")
-                val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss", Locale.ENGLISH)
-                val date = LocalDateTime.parse("${components[3]}${components[5]}", dateTimeFormatter)
-                    ?: throw PolarInvalidArgument("Cannot parse date from ${components[3]} and ${components[5]}")
-
-                val type = mapPmdMeasurementTypeToPolarDeviceDataType(
-                    mapOfflineRecordingFileNameToMeasurementType(
-                        components[6].substringBefore(".").filter { !it.isDigit() }
-                    )
-                )
-                if (entry.second <= 0) {
-                    BleLogger.e(TAG, "Encountered zero size entry in path ${entry.first}. Ignoring empty recording.")
-                    return@collect
-                }
-
-                val groupKey = entry.first.replace(Regex("\\d+\\.REC$"), ".REC")
-                grouped.getOrPut(groupKey) { mutableListOf() }.add(
-                    PolarOfflineRecordingEntry(entry.first, entry.second, date, type)
-                )
-            } catch (e: Exception) {
-                BleLogger.e(TAG, "Error processing offline recording entry ${entry.first}: ${e.message}")
-            }
+            entries += PolarOfflineRecordingFileEntry(path = entry.first, size = entry.second)
         }
-
-        for ((groupKey, entries) in grouped) {
-            if (entries.isEmpty()) continue
-            val totalSize = entries.sumOf { it.size }
-            val first = entries.first()
-            emit(PolarOfflineRecordingEntry(
-                path = groupKey,
-                size = totalSize,
-                date = first.date,
-                type = first.type
-            ))
+        PolarOfflineRecordingModels.groupedRecordingEntries(entries).forEach { entry ->
+            emit(
+                PolarOfflineRecordingEntry(
+                    path = entry.androidPath,
+                    size = entry.size,
+                    date = LocalDateTime.parse(entry.dateTime),
+                    type = entry.type.toPolarDeviceDataType()
+                )
+            )
         }
     }
 
     fun listOfflineRecordingsV2(file: ByteArray): List<PolarOfflineRecordingEntry> {
-        val offlineRecordings = ByteArrayInputStream(file)
+        return ByteArrayInputStream(file)
             .bufferedReader()
-            .useLines { lines ->
-                lines.mapNotNull { line ->
-                    try {
-                        val parts = line.split(" ")
-                        if (parts.size < 2 || !parts[1].endsWith(".REC")) return@mapNotNull null
-                        val path = parts[1].replace(Regex("(\\w*?)\\d+\\.REC$"), "$1.REC")
-                        if (parts[0].toInt() <= 0) {
-                            BleLogger.e(TAG, "Encountered zero size entry in path $path. Ignoring empty recording.")
-                            return@mapNotNull null
-                        }
-                        val type = mapPmdMeasurementTypeToPolarDeviceDataType(
-                            mapOfflineRecordingFileNameToMeasurementType(
-                                path.split("/")[6].substringBefore(".").filter { !it.isDigit() }
-                            )
-                        )
-                        val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss", Locale.ENGLISH)
-                        val date = LocalDateTime.parse("${path.split("/")[3]}${path.split("/")[5]}", dateTimeFormatter)
-
-                        PolarOfflineRecordingEntry(path, parts[0].toLong(), date, type)
-                    } catch (e: Exception) {
-                        BleLogger.e(TAG, "Failed to parse line: $line (${e.message})")
-                        null
-                    }
-                }.toList()
+            .use { reader ->
+                PolarOfflineRecordingModels.parsePmdFilesV2(reader.readText()).map { entry ->
+                    PolarOfflineRecordingEntry(
+                        path = entry.androidPath,
+                        size = entry.size,
+                        date = LocalDateTime.parse(entry.dateTime),
+                        type = entry.type.toPolarDeviceDataType()
+                    )
+                }
             }
+    }
 
-        return offlineRecordings
-            .groupBy { it.path to it.date }
-            .map { (_, entries) ->
-                val totalSize = entries.sumOf { it.size }
-                val first = entries.first()
-                first.copy(size = totalSize)
-            }
+    private fun String.toPolarDeviceDataType(): PolarBleApi.PolarDeviceDataType {
+        return when (this) {
+            "ACC" -> PolarBleApi.PolarDeviceDataType.ACC
+            "GYRO" -> PolarBleApi.PolarDeviceDataType.GYRO
+            "MAGNETOMETER" -> PolarBleApi.PolarDeviceDataType.MAGNETOMETER
+            "PPG" -> PolarBleApi.PolarDeviceDataType.PPG
+            "PPI" -> PolarBleApi.PolarDeviceDataType.PPI
+            "HR" -> PolarBleApi.PolarDeviceDataType.HR
+            "TEMPERATURE" -> PolarBleApi.PolarDeviceDataType.TEMPERATURE
+            "SKIN_TEMPERATURE" -> PolarBleApi.PolarDeviceDataType.SKIN_TEMPERATURE
+            else -> throw PolarInvalidArgument("Unknown offline recording type: $this")
+        }
     }
 }

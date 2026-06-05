@@ -3,6 +3,7 @@ package com.polar.sdk.impl.utils
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.PolarFirmwareVersionInfo
+import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import fi.polar.remote.representation.protobuf.Device
 import fi.polar.remote.representation.protobuf.Structures
 import protocol.PftpRequest
@@ -18,16 +19,8 @@ internal object PolarFirmwareUpdateUtils {
      * the SYSUPDAT.IMG file is the last one (since it makes the device boot itself).
      */
     class FwFileComparator : Comparator<File> {
-        companion object {
-            private const val SYSUPDAT_IMG = "SYSUPDAT.IMG"
-        }
-
         override fun compare(f1: File, f2: File): Int {
-            return when {
-                f1.name.contains(SYSUPDAT_IMG) -> 1
-                f2.name.contains(SYSUPDAT_IMG) -> -1
-                else -> 0
-            }
+            return PolarFirmwareUpdateModels.firmwareFilePriority(f1.name).compareTo(PolarFirmwareUpdateModels.firmwareFilePriority(f2.name))
         }
     }
 
@@ -55,19 +48,7 @@ internal object PolarFirmwareUpdateUtils {
     }
 
     fun isAvailableFirmwareVersionHigher(currentVersion: String, availableVersion: String): Boolean {
-        val current = currentVersion.split(".").map { it.toInt() }
-        val available = availableVersion.split(".").map { it.toInt() }
-
-        for (i in current.indices) {
-            if (available.size > i) {
-                if (current[i] < available[i]) {
-                    return true
-                } else if (current[i] > available[i]) {
-                    return false
-                }
-            }
-        }
-        return available.size > current.size
+        return PolarFirmwareUpdateModels.isAvailableFirmwareVersionHigher(currentVersion, availableVersion)
     }
 
     fun unzipFirmwarePackage(zipBytes: ByteArray): ByteArray {
@@ -94,6 +75,6 @@ internal object PolarFirmwareUpdateUtils {
         }
     }
 
-    private fun devicePbVersionToString(pbVersion: Structures.PbVersion): String
-            = "${pbVersion.major}.${pbVersion.minor}.${pbVersion.patch}"
+    private fun devicePbVersionToString(pbVersion: Structures.PbVersion): String =
+        PolarFirmwareUpdateModels.deviceVersionToString(pbVersion.major, pbVersion.minor, pbVersion.patch)
 }

@@ -1,22 +1,21 @@
 package com.polar.androidcommunications.api.ble.model.offlinerecording
 
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
+import com.polar.shared.sdk.PolarOfflineRecordingMeasurementType
+import com.polar.shared.sdk.PolarOfflineRecordingModels
 
 internal object OfflineRecordingUtility {
 
     fun mapOfflineRecordingFileNameToMeasurementType(fileName: String): PmdMeasurementType {
-        val fileNameWithoutExtension = fileName.substringBeforeLast(".")
-        return when (fileNameWithoutExtension.replace(Regex("\\d+"), "")) {
-            "ACC" -> PmdMeasurementType.ACC
-            "GYRO" -> PmdMeasurementType.GYRO
-            "MAG" -> PmdMeasurementType.MAGNETOMETER
-            "PPG" -> PmdMeasurementType.PPG
-            "PPI" -> PmdMeasurementType.PPI
-            "HR" -> PmdMeasurementType.OFFLINE_HR
-            "TEMP" -> PmdMeasurementType.TEMPERATURE
-            "SKINTEMP" -> PmdMeasurementType.SKIN_TEMP
-            else -> throw IllegalArgumentException("Unknown offline file $fileName")
+        return when (PolarOfflineRecordingModels.measurementTypeFromFileName(fileName)) {
+            PolarOfflineRecordingMeasurementType.ACC -> PmdMeasurementType.ACC
+            PolarOfflineRecordingMeasurementType.GYRO -> PmdMeasurementType.GYRO
+            PolarOfflineRecordingMeasurementType.MAGNETOMETER -> PmdMeasurementType.MAGNETOMETER
+            PolarOfflineRecordingMeasurementType.PPG -> PmdMeasurementType.PPG
+            PolarOfflineRecordingMeasurementType.PPI -> PmdMeasurementType.PPI
+            PolarOfflineRecordingMeasurementType.OFFLINE_HR -> PmdMeasurementType.OFFLINE_HR
+            PolarOfflineRecordingMeasurementType.TEMPERATURE -> PmdMeasurementType.TEMPERATURE
+            PolarOfflineRecordingMeasurementType.SKIN_TEMP -> PmdMeasurementType.SKIN_TEMP
         }
     }
 }
-
