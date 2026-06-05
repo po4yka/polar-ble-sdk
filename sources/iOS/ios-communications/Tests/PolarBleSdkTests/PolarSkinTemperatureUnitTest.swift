@@ -19,6 +19,14 @@ class PolarSkinTemperatureUtilsTests: XCTestCase {
     override func tearDownWithError() throws {
         mockClient = nil
     }
+
+    func testSkinTemperatureReadHeaderUsesSharedFileFacadePlanning() throws {
+        let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
+
+        let operation = PolarSkinTemperatureUtils.skinTemperatureReadOperation(date: date)
+        XCTAssertEqual(operation.command, .get)
+        XCTAssertEqual(operation.path, "/U/0/20260102/SKINTEMP/TEMPCONT.BPB")
+    }
     
     func testReadSkinTemperatureDataFromDayDirectory_SuccessfulResponse() async throws {
         // Arrange

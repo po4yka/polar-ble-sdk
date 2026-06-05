@@ -17,10 +17,23 @@ private let dateFormat: DateFormatter = {
 private let TAG = "PolarSkinTemperatureUtils"
 
 internal class PolarSkinTemperatureUtils {
+    static func skinTemperatureReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        let path = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(SKIN_TEMPERATURE_DIRECTORY)\(SKIN_TEMPERATURE_PROTO)"
+        #if canImport(PolarBleSdkShared)
+        let plannedOperation = PolarIosSharedBridge.shared.planRuntimeFileFacadeOperation(id: "skin-temperature-read", command: "GET", path: path, payloadHex: "")
+        let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
+        if parts.count == 2, parts[0] == "GET" {
+            return (.get, parts[1])
+        }
+        #endif
+        return (.get, path)
+    }
+
     static func readSkinTemperatureData(client: BlePsFtpClient, date: Date) async -> PolarSkinTemperatureData.PolarSkinTemperatureResult? {
         BleLogger.trace(TAG, "readSkinTemperatureData: \(date)")
-        let filePath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(SKIN_TEMPERATURE_DIRECTORY)\(SKIN_TEMPERATURE_PROTO)"
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = filePath }
+        let plannedOperation = skinTemperatureReadOperation(date: date)
+        let filePath = plannedOperation.path
+        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
             let response = try await client.request(try operation.serializedBytes())
             let skinTemp = try Data_TemperatureMeasurementPeriod(serializedBytes: Data(response))

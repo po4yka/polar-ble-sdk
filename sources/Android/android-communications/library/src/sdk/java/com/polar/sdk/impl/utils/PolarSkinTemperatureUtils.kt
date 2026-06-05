@@ -17,17 +17,23 @@ private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ENGLI
 private const val TAG = "PolarSkinTemperatureUtils"
 
 internal object PolarSkinTemperatureUtils {
+    internal fun skinTemperatureReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val path = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$SKIN_TEMPERATURE_DIRECTORY$SKIN_TEMPERATURE_PROTO"
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("skin-temperature-read", "GET", path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
 
     /**
      * Read skin temperature data for a given date.
      */
     suspend fun readSkinTemperatureDataFromDayDirectory(client: BlePsFtpClient, date: LocalDate): PolarSkinTemperatureResult? {
         BleLogger.d(TAG, "readSkinTemperatureDataFromDayDirectory: $date")
-        val skinTempFilePath = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$SKIN_TEMPERATURE_DIRECTORY$SKIN_TEMPERATURE_PROTO"
+        val readOperation = skinTemperatureReadOperation(date)
+        val skinTempFilePath = readOperation.second
         return try {
             val response = client.request(
                 PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
+                    .setCommand(readOperation.first)
                     .setPath(skinTempFilePath)
                     .build()
                     .toByteArray()

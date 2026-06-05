@@ -18,6 +18,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import protocol.PftpRequest
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileReader
@@ -26,6 +27,16 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class PolarSkinTemperatureUtilsTest {
+
+    @Test
+    fun `skin temperature read header uses shared file facade planning`() {
+        val date = LocalDate.of(2026, 1, 2)
+
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/SKINTEMP/TEMPCONT.BPB",
+            PolarSkinTemperatureUtils.skinTemperatureReadOperation(date)
+        )
+    }
 
     @Test
     fun `readSkinTemperatureData() should return skin temperature data`() = runTest {
