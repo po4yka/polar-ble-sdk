@@ -49,6 +49,20 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func backupRootPaths(_ entries: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.backupRootPathsCsv(entriesCsv: entries.joined(separator: ",")).split(separator: ",").map(String.init)
+        #else
+        var paths = entries.filter { !$0.isEmpty }
+        for defaultPath in defaultBackupPaths() {
+            if !paths.contains(where: { $0.replacingOccurrences(of: "/U/*/", with: "/U/0/") == defaultPath.replacingOccurrences(of: "/U/*/", with: "/U/0/") }) {
+                paths.append(defaultPath)
+            }
+        }
+        return paths
+        #endif
+    }
+
     private static func backupRestoreOperation(_ plannedOperation: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
         let parts = plannedOperation.split(separator: ":", maxSplits: 2).map(String.init)
         guard parts.count == 3, parts[0] == "PUT" else { return nil }

@@ -188,6 +188,17 @@ class PolarBackupManagerTest: XCTestCase {
         }
     }
 
+    func testBackupRootPathPlanningUsesSharedDefaultsAndUserWildcardDeduplication() throws {
+        XCTAssertEqual(
+            ["/SYS/BT/", "/U/*/USERID.BPB", "/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB"],
+            PolarFirmwareBackupRuntimePlanner.backupRootPaths(["/SYS/BT/", "/U/*/USERID.BPB"])
+        )
+        XCTAssertEqual(
+            PolarFirmwareBackupRuntimePlanner.defaultBackupPaths(),
+            PolarFirmwareBackupRuntimePlanner.backupRootPaths([])
+        )
+    }
+
     func testBackupGoldenVectorsFollowNeutralKmpShape() throws {
         for id in ["backup-expansion-and-restore-writes", "restore-failure-platform-policy", "backup-workflow-readiness"] {
             let vector = try loadBackupVector(id: id)

@@ -188,6 +188,16 @@ object PolarWorkflowRuntimePlanning {
         "/U/0/USERID.BPB"
     )
 
+    fun backupRootPaths(entries: List<String>, defaultPaths: List<String> = defaultBackupPaths()): List<String> {
+        val paths = entries.filter { entry -> entry.isNotEmpty() }.toMutableList()
+        defaultPaths.forEach { defaultPath ->
+            if (paths.none { path -> path.replace("/U/*/", "/U/0/") == defaultPath }) {
+                paths += defaultPath
+            }
+        }
+        return paths
+    }
+
     fun readBackupFiles(paths: List<String>, filesByPath: Map<String, String>): List<PolarBackupFile> {
         return paths.map { path -> PolarBackupFile(path, filesByPath.getValue(path)) }
     }

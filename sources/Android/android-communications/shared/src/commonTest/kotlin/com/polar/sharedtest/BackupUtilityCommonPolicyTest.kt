@@ -12,9 +12,11 @@ class BackupUtilityCommonPolicyTest {
         val expected = vector.objectValue("expected")
         val backup = FakeBackupUtility(input.objectValue("files"))
 
-        val expandedPaths = backup.expandBackupEntries(input.objectValue("files").stringValue("/SYS/BACKUP.TXT"))
-        val defaultPaths = PolarWorkflowRuntimePlanning.defaultBackupPaths()
-        val actualBackupFiles = backup.readBackupFiles(expandedPaths + defaultPaths)
+        val rootPaths = PolarWorkflowRuntimePlanning.backupRootPaths(
+            backup.backupTextEntries(input.objectValue("files").stringValue("/SYS/BACKUP.TXT"))
+        )
+        val expandedPaths = backup.expandBackupEntries(rootPaths)
+        val actualBackupFiles = backup.readBackupFiles(expandedPaths)
 
         assertEquals(expected.objectArray("backupFiles").map { it.stringValue("path") }, actualBackupFiles.map { it.path })
         assertEquals(expected.objectArray("backupFiles").map { it.stringValue("dataHex") }, actualBackupFiles.map { it.dataHex })
@@ -89,6 +91,18 @@ class BackupUtilityCommonPolicyTest {
         assertEquals(listOf("com.polar.sharedtest.BackupUtilityCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
+    @Test
+    fun backupRootPathPlanningMergesDefaultsAndNormalizesUserWildcardDuplicates() {
+        assertEquals(
+            listOf("/SYS/BT/", "/U/*/USERID.BPB", "/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB"),
+            PolarWorkflowRuntimePlanning.backupRootPaths(listOf("/SYS/BT/", "/U/*/USERID.BPB"))
+        )
+        assertEquals(
+            PolarWorkflowRuntimePlanning.defaultBackupPaths(),
+            PolarWorkflowRuntimePlanning.backupRootPaths(emptyList())
+        )
+    }
+
     private val requiredBackupWorkflowPolicyVectorPaths = listOf(
         "sdk/backup-utils/backup-expansion-and-restore-writes.json",
         "sdk/backup-utils/restore-failure-platform-policy.json"
@@ -118,8 +132,12 @@ class BackupUtilityCommonPolicyTest {
     private class FakeBackupUtility(
         private val filesJson: String
     ) {
-        fun expandBackupEntries(backupTextHex: String): List<String> {
-            return hexToBytes(backupTextHex).decodeAscii().split("\n").filter { path -> path.isNotEmpty() }.flatMap { path ->
+        fun backupTextEntries(backupTextHex: String): List<String> {
+            return hexToBytes(backupTextHex).decodeAscii().split("\n").filter { path -> path.isNotEmpty() }
+        }
+
+        fun expandBackupEntries(rootPaths: List<String>): List<String> {
+            return rootPaths.flatMap { path ->
                 if (path.endsWith("/")) {
                     listDirectory(path)
                 } else {

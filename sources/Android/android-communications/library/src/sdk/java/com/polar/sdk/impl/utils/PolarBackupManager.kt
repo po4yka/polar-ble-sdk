@@ -56,11 +56,9 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
 
         BleLogger.d(TAG, "Entries retrieved: ${entries.size}")
 
-        val defaultBackupDirectories = PolarRuntimePlannerAdapter.defaultBackupPaths()
-
         val backupEntry = entries.find { it.first.endsWith("BACKUP.TXT") }
 
-        val lines: MutableSet<String> = if (backupEntry != null) {
+        val backupRoots = if (backupEntry != null) {
             BleLogger.d(TAG, "Backup Entry: ${backupEntry.first}, Size: ${backupEntry.second}")
             val data = loadFile(backupEntry.first)
             BleLogger.d(TAG, "Data loaded for backup entry, size: ${data.size}")
@@ -77,16 +75,16 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
                     }
                 }.toMutableSet()
             }
-            readLines.addDefaultBackupDirectories(defaultBackupDirectories)
-            BleLogger.d(TAG, "Lines read from backup entry plus defaults: ${readLines.size}")
-            readLines
+            val plannedRoots = PolarRuntimePlannerAdapter.backupRootPaths(readLines)
+            BleLogger.d(TAG, "Lines read from backup entry plus defaults: ${plannedRoots.size}")
+            plannedRoots
         } else {
             BleLogger.w(TAG, "Device does not have BACKUP.TXT, using default backup directories")
-            defaultBackupDirectories.toMutableSet()
+            PolarRuntimePlannerAdapter.backupRootPaths(emptyList())
         }
 
         return try {
-            lines.flatMap { line ->
+            backupRoots.flatMap { line ->
                 BleLogger.d(TAG, "Backing up line: $line")
                 try {
                     backupDirectory(line)
@@ -235,18 +233,6 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
 
     private suspend fun backUpDirectories(folders: List<String>): List<BackupFileData> {
         return folders.flatMap { path -> backupDirectory(path) }
-    }
-
-    private fun MutableSet<String>.addDefaultBackupDirectories(defaultPaths: List<String>) {
-        defaultPaths.forEach { defaultPath ->
-            if (none { path -> path.normalizedUserRootPath() == defaultPath }) {
-                add(defaultPath)
-            }
-        }
-    }
-
-    private fun String.normalizedUserRootPath(): String {
-        return replace(USER_WILD_CARD_ROOT_FOLDER, ARABICA_USER_ROOT_FOLDER)
     }
 
     private fun String.isFolder() = this.endsWith("/")

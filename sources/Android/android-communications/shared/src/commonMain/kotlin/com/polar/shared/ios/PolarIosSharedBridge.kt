@@ -1240,6 +1240,10 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.defaultBackupPaths().joinToString(",")
     }
 
+    fun backupRootPathsCsv(entriesCsv: String): String {
+        return PolarWorkflowRuntimePlanning.backupRootPaths(entriesCsv.csvValues()).joinToString(",")
+    }
+
     fun planRuntimePsFtpWriteProgress(payloadSize: Int, platform: String): String {
         return PolarWorkflowRuntimePlanning.planPsFtpWriteProgress(payloadSize, platform).joinToString(",")
     }

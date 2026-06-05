@@ -6,6 +6,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.polar.sdk.impl.utils.PolarBackupManager
 import com.polar.sdk.impl.utils.PolarBackupManager.BackupFileData
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.confirmVerified
@@ -323,6 +324,18 @@ class PolarBackupManagerTest {
             Assert.assertEquals(expectedWrite.get("path").asString, operation.path)
             Assert.assertEquals(expectedWrite.get("dataHex").asString, capturedWrites[index].second.toHex())
         }
+    }
+
+    @Test
+    fun `backup root path planning delegates default merge to shared planner`() {
+        Assert.assertEquals(
+            listOf("/SYS/BT/", "/U/*/USERID.BPB", "/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB"),
+            PolarRuntimePlannerAdapter.backupRootPaths(listOf("/SYS/BT/", "/U/*/USERID.BPB"))
+        )
+        Assert.assertEquals(
+            PolarRuntimePlannerAdapter.defaultBackupPaths(),
+            PolarRuntimePlannerAdapter.backupRootPaths(emptyList())
+        )
     }
 
     @Test

@@ -69,7 +69,7 @@ public class PolarBackupManager {
             } else {
                 BleLogger.error("No BACKUP.TXT found, using default backup directories")
             }
-            addDefaultBackupDirectories(to: &backupDirectories)
+            backupDirectories = PolarFirmwareBackupRuntimePlanner.backupRootPaths(backupDirectories)
             BleLogger.trace("Backup directories found: \(backupDirectories)")
             var result = [BackupFileData]()
             for dir in backupDirectories {
@@ -82,15 +82,6 @@ public class PolarBackupManager {
         } catch {
             BleLogger.error("Failed to get backup content, error: \(error)")
             return []
-        }
-    }
-
-    private func addDefaultBackupDirectories(to directories: inout [String]) {
-        let defaults = PolarFirmwareBackupRuntimePlanner.defaultBackupPaths()
-        for dir in defaults {
-            if !directories.contains(where: { $0.normalizedBackupUserRootPath == dir }) {
-                directories.append(dir)
-            }
         }
     }
 
@@ -212,5 +203,4 @@ public class PolarBackupManager {
 
 extension String {
     var isFolder: Bool { return hasSuffix("/") }
-    var normalizedBackupUserRootPath: String { return replacingOccurrences(of: USER_WILD_CARD_ROOT_FOLDER, with: ARABICA_USER_ROOT_FOLDER) }
 }
