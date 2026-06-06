@@ -6,7 +6,6 @@ import PolarBleSdkShared
 #endif
 
 struct PolarDeviceUuid {
-    private static let polarUuidPrefix = "0e030000-0084-0000-0000-0000"
     private static let requiredDeviceIdLength = 8
     
     enum PolarDeviceUuidError: Error {
@@ -17,10 +16,16 @@ struct PolarDeviceUuid {
         guard deviceId.count == requiredDeviceIdLength else {
             throw PolarDeviceUuidError.invalidDeviceIdLength(expected: requiredDeviceIdLength, actual: deviceId.count)
         }
+        return PolarDeviceUuidRuntimePlanner.uuidFromDeviceId(deviceId)
+    }
+}
+
+enum PolarDeviceUuidRuntimePlanner {
+    static func uuidFromDeviceId(_ deviceId: String) -> String {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.uuidFromDeviceId(deviceId: deviceId)
         #else
-        return polarUuidPrefix + deviceId
+        return "0e030000-0084-0000-0000-0000" + deviceId
         #endif
     }
 }
