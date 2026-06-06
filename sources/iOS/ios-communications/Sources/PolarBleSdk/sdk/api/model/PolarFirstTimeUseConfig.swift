@@ -14,7 +14,7 @@ public struct PolarFirstTimeUseConfig {
     static func protobufValue(for gender: Gender) -> Data_PbUserGender.Gender {
         #if canImport(PolarBleSdkShared)
         let sharedName = gender == .male ? "MALE" : "FEMALE"
-        if let sharedValue = PolarIosSharedBridge.shared.firstTimeUseGenderValue(name: sharedName),
+        if let sharedValue = PolarFirstTimeUseRuntimePlanner.genderValue(name: sharedName),
            let proto = Data_PbUserGender.Gender(rawValue: Int(truncating: sharedValue)) {
             return proto
         }
@@ -41,7 +41,7 @@ public struct PolarFirstTimeUseConfig {
 
     static func protobufValue(for typicalDay: TypicalDay) -> Data_PbUserTypicalDay.TypicalDay {
         #if canImport(PolarBleSdkShared)
-        if let sharedValue = PolarIosSharedBridge.shared.firstTimeUseTypicalDayValue(value: Int32(typicalDay.rawValue)),
+        if let sharedValue = PolarFirstTimeUseRuntimePlanner.typicalDayValue(value: Int32(typicalDay.rawValue)),
            let proto = Data_PbUserTypicalDay.TypicalDay(rawValue: Int(truncating: sharedValue)) {
             return proto
         }
@@ -59,7 +59,7 @@ public struct PolarFirstTimeUseConfig {
 
             static func protobufValue(for trainingBackground: TrainingBackground) -> Data_PbUserTrainingBackground.TrainingBackground {
                 #if canImport(PolarBleSdkShared)
-                if let sharedValue = PolarIosSharedBridge.shared.firstTimeUseTrainingBackgroundValue(value: Int32(trainingBackground.rawValue)),
+                if let sharedValue = PolarFirstTimeUseRuntimePlanner.trainingBackgroundValue(value: Int32(trainingBackground.rawValue)),
                    let proto = Data_PbUserTrainingBackground.TrainingBackground(rawValue: Int(truncating: sharedValue)) {
                     return proto
                 }
@@ -268,7 +268,7 @@ extension Data_PbUserPhysData {
 private extension PolarFirstTimeUseConfig {
     static func physicalGender(from value: Data_PbUserGender.Gender) -> PolarPhysicalConfiguration.Gender {
         #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.firstTimeUseGenderName(value: Int32(value.rawValue)) {
+        if let sharedName = PolarFirstTimeUseRuntimePlanner.genderName(value: Int32(value.rawValue)) {
             switch sharedName {
             case "MALE": return .male
             case "FEMALE": return .female
@@ -286,7 +286,7 @@ private extension PolarFirstTimeUseConfig {
 
     static func physicalTypicalDay(from value: Data_PbUserTypicalDay.TypicalDay) -> PolarPhysicalConfiguration.TypicalDay {
         #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.firstTimeUseTypicalDayName(value: Int32(value.rawValue)) {
+        if let sharedName = PolarFirstTimeUseRuntimePlanner.typicalDayName(value: Int32(value.rawValue)) {
             switch sharedName {
             case "MOSTLY_SITTING": return .mostlySitting
             case "MOSTLY_STANDING": return .mostlyStanding
@@ -307,7 +307,7 @@ private extension PolarFirstTimeUseConfig {
 
     static func physicalTrainingBackgroundValue(from value: Data_PbUserTrainingBackground.TrainingBackground) -> Int {
         #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.firstTimeUseTrainingBackgroundName(value: Int32(value.rawValue)) {
+        if let sharedName = PolarFirstTimeUseRuntimePlanner.trainingBackgroundName(value: Int32(value.rawValue)) {
             switch sharedName {
             case "OCCASIONAL": return PolarFirstTimeUseConfig.TrainingBackground.occasional.rawValue
             case "REGULAR": return PolarFirstTimeUseConfig.TrainingBackground.regular.rawValue
@@ -320,6 +320,56 @@ private extension PolarFirstTimeUseConfig {
         }
         #endif
         return Int(value.rawValue)
+    }
+}
+
+enum PolarFirstTimeUseRuntimePlanner {
+    static func genderValue(name: String) -> NSNumber? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firstTimeUseGenderValue(name: name)
+        #else
+        return nil
+        #endif
+    }
+
+    static func typicalDayValue(value: Int32) -> NSNumber? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firstTimeUseTypicalDayValue(value: value)
+        #else
+        return nil
+        #endif
+    }
+
+    static func trainingBackgroundValue(value: Int32) -> NSNumber? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firstTimeUseTrainingBackgroundValue(value: value)
+        #else
+        return nil
+        #endif
+    }
+
+    static func genderName(value: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firstTimeUseGenderName(value: value)
+        #else
+        return nil
+        #endif
+    }
+
+    static func typicalDayName(value: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firstTimeUseTypicalDayName(value: value)
+        #else
+        return nil
+        #endif
+    }
+
+    static func trainingBackgroundName(value: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firstTimeUseTrainingBackgroundName(value: value)
+        #else
+        return nil
+        #endif
     }
 }
 
