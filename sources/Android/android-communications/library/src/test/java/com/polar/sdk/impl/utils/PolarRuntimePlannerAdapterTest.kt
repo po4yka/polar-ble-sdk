@@ -164,6 +164,18 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared firmware write progress policy preserves Android throttle and zero guard`() {
+        Assert.assertEquals(0L, PolarRuntimePlannerAdapter.firmwareWriteProgressPercent(bytesWritten = 0, payloadSize = 0))
+        Assert.assertEquals(0L, PolarRuntimePlannerAdapter.firmwareWriteProgressPercent(bytesWritten = 12, payloadSize = 0))
+        Assert.assertEquals(50L, PolarRuntimePlannerAdapter.firmwareWriteProgressPercent(bytesWritten = 2, payloadSize = 4))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.shouldEmitFirmwareWriteProgress(lastBytesWritten = 0, bytesWritten = 0, payloadSize = 0, minPercentageIncrement = 25, timeSinceLastEmitMs = 0))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 4, payloadSize = 4, minPercentageIncrement = 75, timeSinceLastEmitMs = 0))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 3, payloadSize = 100, minPercentageIncrement = 25, timeSinceLastEmitMs = 4999))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 3, payloadSize = 100, minPercentageIncrement = 25, timeSinceLastEmitMs = 5000))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 52, payloadSize = 100, minPercentageIncrement = 25, timeSinceLastEmitMs = 0))
+    }
+
+    @Test
     fun `shared user device settings plans select Android protobuf read and write operations`() {
         val read = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("get-user-device-settings", "read", "/U/0/S/UDEVSET.BPB")
         val write = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("set-user-device-settings", "write", "/U/0/S/UDEVSET.BPB", listOf("protobufPayload=platform-built"))

@@ -313,6 +313,26 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait(fileName)
     }
 
+    fun firmwareWriteProgressPercent(bytesWritten: Long, payloadSize: Int): Long {
+        return PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten.toInt(), payloadSize).toLong()
+    }
+
+    fun shouldEmitFirmwareWriteProgress(
+        lastBytesWritten: Long,
+        bytesWritten: Long,
+        payloadSize: Int,
+        minPercentageIncrement: Long,
+        timeSinceLastEmitMs: Long,
+        maxEmitIntervalMs: Long = 5_000L
+    ): Boolean {
+        return PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(
+            lastBytesWritten = lastBytesWritten.toInt(),
+            bytesWritten = bytesWritten.toInt(),
+            payloadSize = payloadSize,
+            minPercentageIncrement = minPercentageIncrement.toInt()
+        ) || timeSinceLastEmitMs >= maxEmitIntervalMs
+    }
+
     fun planBackupRestore(path: String, payloadHex: String, writeResult: String = "success") {
         PolarWorkflowRuntimePlanning.planBackupRestore(
             listOf(

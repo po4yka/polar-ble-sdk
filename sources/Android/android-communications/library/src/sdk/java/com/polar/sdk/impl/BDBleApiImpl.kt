@@ -2518,14 +2518,18 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 client.write(requestBytes, ByteArrayInputStream(firmwareFile.second))
                     .collect { bytesWritten: Long ->
                         val now = System.currentTimeMillis()
-                        val delta = bytesWritten - lastBytesWritten
-                        val deltaPercentage = if (firmwareFile.second.isNotEmpty()) delta * 100 / firmwareFile.second.size else 0
                         val timeSinceLastEmit = now - lastEmitTime
-                        val updateDownstream = lastBytesWritten == 0L || bytesWritten >= firmwareFile.second.size || deltaPercentage > minPercentageIncrement || timeSinceLastEmit >= 5000
+                        val updateDownstream = PolarRuntimePlannerAdapter.shouldEmitFirmwareWriteProgress(
+                            lastBytesWritten = lastBytesWritten,
+                            bytesWritten = bytesWritten,
+                            payloadSize = firmwareFile.second.size,
+                            minPercentageIncrement = minPercentageIncrement,
+                            timeSinceLastEmitMs = timeSinceLastEmit
+                        )
                         if (updateDownstream) {
                             lastBytesWritten = bytesWritten
                             lastEmitTime = now
-                            val percentage = if (firmwareFile.second.isNotEmpty()) bytesWritten * 100 / firmwareFile.second.size else 0
+                            val percentage = PolarRuntimePlannerAdapter.firmwareWriteProgressPercent(bytesWritten, firmwareFile.second.size)
                             BleLogger.d(TAG, "Writing firmware update file, bytes written: $bytesWritten/${firmwareFile.second.size}")
                             collector.emit(FirmwareUpdateStatus.WritingFwUpdatePackage(
                                 "Writing firmware update file ${firmwareFile.first} ($percentage%), bytes written: $bytesWritten/${firmwareFile.second.size}"
