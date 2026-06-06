@@ -727,6 +727,10 @@ object PolarIosSharedBridge {
         return PolarSleepModels.sleepSkinTemperaturePath(day)
     }
 
+    fun nightlyRechargePath(day: String): String {
+        return PolarSleepModels.nightlyRechargePath(day)
+    }
+
     fun automaticHrTriggerName(value: Int): String? {
         return PolarAutomaticHrTriggerName.fromValue(value)?.name
     }

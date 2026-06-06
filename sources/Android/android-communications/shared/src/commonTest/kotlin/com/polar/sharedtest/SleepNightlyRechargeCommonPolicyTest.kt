@@ -80,6 +80,7 @@ class SleepNightlyRechargeCommonPolicyTest {
     fun sleepFilePathPlanningUsesSharedDayPathPolicy() {
         assertEquals("/U/0/20260102/SLEEP/SLEEPRES.BPB", PolarSleepModels.sleepAnalysisPath("20260102"))
         assertEquals("/U/0/20260102/NSTRES" + "U" + "L/NSTRCONT.BPB", PolarSleepModels.sleepSkinTemperaturePath("20260102"))
+        assertEquals("/U/0/20260102/NR/NR.BPB", PolarSleepModels.nightlyRechargePath("20260102"))
     }
 
     @Test

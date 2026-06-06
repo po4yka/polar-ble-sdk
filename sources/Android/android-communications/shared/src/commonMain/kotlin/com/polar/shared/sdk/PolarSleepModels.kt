@@ -37,4 +37,8 @@ object PolarSleepModels {
     fun sleepSkinTemperaturePath(day: String): String {
         return "/U/0/$day/NSTRES" + "U" + "L/NSTRCONT.BPB"
     }
+
+    fun nightlyRechargePath(day: String): String {
+        return "/U/0/$day/NR/NR.BPB"
+    }
 }

@@ -336,6 +336,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarSleepModels.sleepSkinTemperaturePath(day)
     }
 
+    fun nightlyRechargePath(day: String): String {
+        return PolarSleepModels.nightlyRechargePath(day)
+    }
+
     fun planBackupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success"): Pair<PftpRequest.PbPFtpOperation.Command, String>? {
         val command = PolarWorkflowRuntimePlanning.planBackupRestore(
             listOf(

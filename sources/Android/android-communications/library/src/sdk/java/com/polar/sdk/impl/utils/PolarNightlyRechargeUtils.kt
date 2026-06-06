@@ -8,15 +8,12 @@ import protocol.PftpRequest
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-private const val ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private const val NIGHTLY_RECOVERY_DIRECTORY = "NR/"
-private const val NIGHTLY_RECOVERY_PROTO = "NR.BPB"
 private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 private const val TAG = "PolarNightlyRechargeUtils"
 
 internal object PolarNightlyRechargeUtils {
     internal fun nightlyRechargeReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        val path = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$NIGHTLY_RECOVERY_DIRECTORY$NIGHTLY_RECOVERY_PROTO"
+        val path = PolarRuntimePlannerAdapter.nightlyRechargePath(date.format(dateFormatter))
         val plan = PolarRuntimePlannerAdapter.planFileFacade("nightly-recharge-read", "GET", path)
         return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
     }
