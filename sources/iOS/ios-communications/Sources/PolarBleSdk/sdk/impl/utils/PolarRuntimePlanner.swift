@@ -34,6 +34,10 @@ enum PolarRuntimePlanner {
         return PolarCommandRuntimePlanner.syncStartNotifications(id: id)
     }
 
+    static func commandSyncStartQueryValue(id: String) -> Int? {
+        return PolarCommandRuntimePlanner.syncStartQueryValue(id: id)
+    }
+
     @discardableResult
     static func commandSyncStop(id: String) -> String {
         return PolarCommandRuntimePlanner.syncStop(id: id)

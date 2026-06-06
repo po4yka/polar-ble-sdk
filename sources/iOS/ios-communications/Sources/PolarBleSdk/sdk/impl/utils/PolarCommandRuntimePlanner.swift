@@ -58,6 +58,14 @@ enum PolarCommandRuntimePlanner {
         #endif
     }
 
+    static func syncStartQueryValue(id: String) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return queryRawValues(PolarIosSharedBridge.shared.planRuntimeCommandSyncStartCommands(id: id)).first
+        #else
+        return nil
+        #endif
+    }
+
     @discardableResult
     static func syncStop(id: String) -> String {
         #if canImport(PolarBleSdkShared)
@@ -90,7 +98,8 @@ enum PolarCommandRuntimePlanner {
 
     private static func queryRawValues(_ csv: String) -> [Int] {
         return csv.split(separator: ",").compactMap { plannedName in
-            switch String(plannedName) {
+            let queryName = plannedName.split(separator: ":").last.map(String.init) ?? String(plannedName)
+            switch queryName {
             case "GET_DISK_SPACE": return Protocol_PbPFtpQuery.getDiskSpace.rawValue
             case "GET_LOCAL_TIME": return Protocol_PbPFtpQuery.getLocalTime.rawValue
             case "REQUEST_START_RECORDING": return Protocol_PbPFtpQuery.requestStartRecording.rawValue

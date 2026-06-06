@@ -1222,6 +1222,21 @@ object PolarIosSharedBridge {
         ).notificationCommandsCsv()
     }
 
+    fun planRuntimeCommandSyncStartCommands(id: String): String {
+        return PolarRuntimeOrchestration.planCommand(
+            PolarFacadeCommandOperation(
+                id = id,
+                kind = "syncStart",
+                query = "REQUEST_SYNCHRONIZATION",
+                parameters = emptyList(),
+                notifications = listOf("INITIALIZE_SESSION", "START_SYNC"),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
+            )
+        ).queryCommandsCsv()
+    }
+
     fun planRuntimeCommandSyncStop(id: String): String {
         return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(

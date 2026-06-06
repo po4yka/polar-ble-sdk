@@ -2066,6 +2066,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("success", PolarRuntimePlanner.commandReset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
         XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, PolarRuntimePlanner.commandResetNotification(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
         XCTAssertEqual("success", PolarRuntimePlanner.commandSyncStart(id: "sync-start-success"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.requestSynchronization.rawValue, PolarRuntimePlanner.commandSyncStartQueryValue(id: "sync-start-success"))
         XCTAssertEqual([
             Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue,
             Protocol_PbPFtpHostToDevNotification.startSync.rawValue

@@ -3011,7 +3011,8 @@ extension PolarBleApiImpl: PolarBleApi  {
             Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue,
             Protocol_PbPFtpHostToDevNotification.startSync.rawValue
         ]
-        _ = try await client.query(Protocol_PbPFtpQuery.requestSynchronization.rawValue, parameters: nil)
+        let query = PolarRuntimePlanner.commandSyncStartQueryValue(id: "sync-start-success") ?? Protocol_PbPFtpQuery.requestSynchronization.rawValue
+        _ = try await client.query(query, parameters: nil)
         try await client.sendNotification(plannedNotifications[0], parameters: nil)
         try await client.sendNotification(plannedNotifications[1], parameters: nil)
     }
