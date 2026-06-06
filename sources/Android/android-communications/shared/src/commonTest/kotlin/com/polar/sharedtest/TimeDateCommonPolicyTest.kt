@@ -52,6 +52,14 @@ class TimeDateCommonPolicyTest {
         assertEquals(true, platforms.booleanValue("common"))
     }
 
+    @Test
+    fun basicDateRangeUsesInclusiveSharedCalendarPolicy() {
+        assertEquals(listOf("20240228", "20240229", "20240301"), PolarTimeUtils.basicDateRange("20240228", "20240301"))
+        assertEquals(listOf("20261231", "20270101"), PolarTimeUtils.basicDateRange("20261231", "20270101"))
+        assertEquals(emptyList<String>(), PolarTimeUtils.basicDateRange("20240302", "20240301"))
+        assertEquals(emptyList<String>(), PolarTimeUtils.basicDateRange("20230229", "20230301"))
+    }
+
     private fun assertDateTimeFields(input: String, expected: String, caseId: String) {
         val fields = PolarDateTimeFields(
             date = PolarDateFields(input.intValue("year"), input.intValue("month"), input.intValue("day")),

@@ -2793,7 +2793,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
+        val dates = getDatesBetween(fromDate, toDate)
         val result = mutableListOf<PolarNightlyRechargeData>()
         for (date in dates) {
             PolarNightlyRechargeUtils.readNightlyRechargeData(client, date)?.let { result.add(it) }
@@ -2805,7 +2805,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
+        val dates = getDatesBetween(fromDate, toDate)
         val result = mutableListOf<PolarSkinTemperatureData>()
         for (date in dates) {
             PolarSkinTemperatureUtils.readSkinTemperatureDataFromDayDirectory(client, date)?.let { skinTempResult ->
@@ -2819,7 +2819,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
+        val dates = getDatesBetween(fromDate, toDate)
         val result = mutableListOf<PolarSpo2TestData>()
         for (date in dates) {
             val entries = PolarTestUtils.readSpo2TestProtoFromDayDirectory(client, date)
@@ -3002,7 +3002,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
+        val dates = getDatesBetween(fromDate, toDate)
         return dates.map { date ->
             PolarStepsData(date, PolarActivityUtils.readStepsFromDayDirectory(client, date))
         }
@@ -3012,7 +3012,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
+        val dates = getDatesBetween(fromDate, toDate)
         return dates.map { date -> PolarActivityUtils.readActivitySamplesDataFromDayDirectory(client, date) }
     }
 
@@ -3020,7 +3020,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
+        val dates = getDatesBetween(fromDate, toDate)
         return dates.map { date -> PolarActivityUtils.readDailySummaryDataFromDayDirectory(client, date) }
     }
 
@@ -3028,7 +3028,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
+        val dates = getDatesBetween(fromDate, toDate)
         return dates.map { date ->
             PolarDistanceData(date, PolarActivityUtils.readDistanceFromDayDirectory(client, date))
         }
@@ -3080,7 +3080,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
+        val dates = getDatesBetween(fromDate, toDate)
         return dates.mapNotNull { date ->
             try {
                 PolarSleepData(date, PolarSleepUtils.readSleepDataFromDayDirectory(client, date))
@@ -3095,21 +3095,24 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
+        val dates = getDatesBetween(fromDate, toDate)
         return dates.map { date ->
             PolarCaloriesData(date, PolarActivityUtils.readSpecificCaloriesFromDayDirectory(client, date, caloriesType))
         }
     }
 
     private fun getDatesBetween(startDate: LocalDate, endDate: LocalDate): List<LocalDate> {
-        return generateSequence(startDate) { it.plusDays(1) }.takeWhile { !it.isAfter(endDate) }.toList()
+        return PolarRuntimePlannerAdapter.basicDateRange(
+            DateTimeFormatter.BASIC_ISO_DATE.format(startDate),
+            DateTimeFormatter.BASIC_ISO_DATE.format(endDate)
+        ).map { day -> LocalDate.parse(day, DateTimeFormatter.BASIC_ISO_DATE) }
     }
 
     override suspend fun getActiveTime(identifier: String, fromDate: LocalDate, toDate: LocalDate): List<PolarActiveTimeData> {
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
+        val dates = getDatesBetween(fromDate, toDate)
         return dates.map { date -> PolarActivityUtils.readActiveTimeFromDayDirectory(client, date) }
     }
 

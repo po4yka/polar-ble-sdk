@@ -81,6 +81,43 @@ object PolarTimeUtils {
         return "${date.year.fourDigits()}-${date.month.twoDigits()}-${date.day.twoDigits()}"
     }
 
+    fun basicDateRange(startInclusive: String, endInclusive: String): List<String> {
+        var current = parseBasicDate(startInclusive) ?: return emptyList()
+        val end = parseBasicDate(endInclusive) ?: return emptyList()
+        val dates = mutableListOf<String>()
+        while (!current.isAfter(end)) {
+            dates += current.basicString()
+            current = current.nextDay()
+        }
+        return dates
+    }
+
+    private fun parseBasicDate(value: String): PolarDateFields? {
+        if (value.length != 8) return null
+        val year = value.substring(0, 4).toIntOrNull() ?: return null
+        val month = value.substring(4, 6).toIntOrNull() ?: return null
+        val day = value.substring(6, 8).toIntOrNull() ?: return null
+        val date = PolarDateFields(year, month, day)
+        return if (date.isValid()) date else null
+    }
+
+    private fun PolarDateFields.isAfter(other: PolarDateFields): Boolean {
+        return year > other.year ||
+            (year == other.year && month > other.month) ||
+            (year == other.year && month == other.month && day > other.day)
+    }
+
+    private fun PolarDateFields.nextDay(): PolarDateFields {
+        val monthDays = daysInMonth(year, month)
+        if (day < monthDays) return copy(day = day + 1)
+        if (month < 12) return copy(month = month + 1, day = 1)
+        return PolarDateFields(year + 1, 1, 1)
+    }
+
+    private fun PolarDateFields.basicString(): String {
+        return "${year.fourDigits()}${month.twoDigits()}${day.twoDigits()}"
+    }
+
     private fun PolarDateFields.isValid(): Boolean {
         if (month !in 1..12) return false
         return day in 1..daysInMonth(year, month)

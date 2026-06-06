@@ -25,6 +25,7 @@ import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepModels
 import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.shared.sdk.PolarTrainingSessionModels
+import com.polar.shared.time.PolarTimeUtils
 import protocol.PftpNotification
 import protocol.PftpRequest
 
@@ -540,6 +541,10 @@ internal object PolarRuntimePlannerAdapter {
 
     fun trainingSessionProgressPercent(completedBytes: Long, totalBytes: Long): Int {
         return PolarTrainingSessionModels.progressPercent(completedBytes, totalBytes)
+    }
+
+    fun basicDateRange(startInclusive: String, endInclusive: String): List<String> {
+        return PolarTimeUtils.basicDateRange(startInclusive, endInclusive)
     }
 
     fun firmwareDeviceInfoPath(): String {

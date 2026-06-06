@@ -51,6 +51,20 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared basic date range planner preserves Android inclusive date iteration`() {
+        Assert.assertEquals(
+            listOf("20240228", "20240229", "20240301"),
+            PolarRuntimePlannerAdapter.basicDateRange("20240228", "20240301")
+        )
+        Assert.assertEquals(
+            listOf("20261231", "20270101"),
+            PolarRuntimePlannerAdapter.basicDateRange("20261231", "20270101")
+        )
+        Assert.assertEquals(emptyList<String>(), PolarRuntimePlannerAdapter.basicDateRange("20240302", "20240301"))
+        Assert.assertEquals(emptyList<String>(), PolarRuntimePlannerAdapter.basicDateRange("20230229", "20230301"))
+    }
+
+    @Test
     fun `shared reset and sync plans select Android protobuf notification ids`() {
         val reset = PolarRuntimePlannerAdapter.planCommandReset("factory-reset", sleep = false, factoryDefaults = true, otaFirmwareUpdate = false)
         val syncStart = PolarRuntimePlannerAdapter.planCommandSyncStart("sync-start-success")
