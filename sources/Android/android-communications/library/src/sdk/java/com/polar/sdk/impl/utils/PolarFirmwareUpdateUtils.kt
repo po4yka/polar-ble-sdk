@@ -23,7 +23,6 @@ internal object PolarFirmwareUpdateUtils {
         }
     }
 
-    const val FIRMWARE_UPDATE_FILE_PATH = "/SYSUPDAT.IMG"
     const val BUFFER_SIZE = 8192
 
     private val DEVICE_FIRMWARE_INFO_PATH: String
