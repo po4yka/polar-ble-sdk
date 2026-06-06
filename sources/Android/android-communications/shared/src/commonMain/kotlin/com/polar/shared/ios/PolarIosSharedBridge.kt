@@ -1214,6 +1214,10 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNamesCsv.csvValues()).joinToString(",")
     }
 
+    fun firmwarePackageEntryIsPayload(fileName: String): Boolean {
+        return PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload(fileName)
+    }
+
     fun planRuntimeBackupRestore(path: String, payloadHex: String, writeResult: String): String {
         return PolarWorkflowRuntimePlanning.planBackupRestore(
             listOf(

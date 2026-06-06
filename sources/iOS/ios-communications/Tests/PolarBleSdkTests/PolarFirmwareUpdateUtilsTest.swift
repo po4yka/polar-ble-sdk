@@ -237,6 +237,19 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         #endif
     }
 
+    func testFirmwarePackageEntryFilterUsesSharedPolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertFalse(PolarIosSharedBridge.shared.firmwarePackageEntryIsPayload(fileName: "readme.txt"))
+        XCTAssertFalse(PolarRuntimePlanner.firmwarePackageEntryIsPayload("readme.txt"))
+        XCTAssertFalse(PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload("readme.txt"))
+        XCTAssertTrue(PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload("README.TXT"))
+        XCTAssertTrue(PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload("BTUPDAT.BIN"))
+        XCTAssertTrue(PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload("SYSUPDAT.IMG"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func testFirmwareGoldenVectorsFollowNeutralKmpShape() throws {
         for vector in try loadFirmwareUpdateGoldenVectors() {
             let id = try XCTUnwrap(vector["id"] as? String)

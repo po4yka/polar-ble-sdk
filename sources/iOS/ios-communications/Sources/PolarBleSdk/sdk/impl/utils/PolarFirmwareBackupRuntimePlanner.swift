@@ -24,6 +24,14 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwarePackageEntryIsPayload(_ fileName: String) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firmwarePackageEntryIsPayload(fileName: fileName)
+        #else
+        return fileName != "readme.txt"
+        #endif
+    }
+
     @discardableResult
     static func backupRestore(path: String, payloadHex: String, writeResult: String = "success") -> String {
         #if canImport(PolarBleSdkShared)

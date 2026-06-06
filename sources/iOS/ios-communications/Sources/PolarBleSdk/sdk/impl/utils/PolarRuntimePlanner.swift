@@ -154,6 +154,10 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.orderFirmwareFiles(fileNames)
     }
 
+    static func firmwarePackageEntryIsPayload(_ fileName: String) -> Bool {
+        return PolarFirmwareBackupRuntimePlanner.firmwarePackageEntryIsPayload(fileName)
+    }
+
     static func backupRootPaths(_ entries: [String]) -> [String] {
         return PolarFirmwareBackupRuntimePlanner.backupRootPaths(entries)
     }

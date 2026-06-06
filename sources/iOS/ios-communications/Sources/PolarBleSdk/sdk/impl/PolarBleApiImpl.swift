@@ -2412,7 +2412,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         BleLogger.trace("Firmware package unzipped, total size: \(unzippedFirmwarePackage.reduce(0) { $0 + $1.value.count }) bytes")
         let sorted = unzippedFirmwarePackage
             .filter { (filename, _) -> Bool in
-                if filename == "readme.txt" { BleLogger.trace("Skipping file \(filename)"); return false }
+                if !PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload(filename) { BleLogger.trace("Skipping file \(filename)"); return false }
                 return true
             }
             .sorted { PolarFirmwareUpdateUtils.FwFileComparator.compare($0.key, $1.key) == .orderedAscending }

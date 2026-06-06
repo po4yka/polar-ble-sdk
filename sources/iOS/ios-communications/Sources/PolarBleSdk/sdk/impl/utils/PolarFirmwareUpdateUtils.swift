@@ -79,6 +79,10 @@ class PolarFirmwareUpdateUtils {
         #endif
     }
 
+    static func firmwarePackageEntryIsPayload(_ fileName: String) -> Bool {
+        return PolarRuntimePlanner.firmwarePackageEntryIsPayload(fileName)
+    }
+
     static func unzipFirmwarePackage(zippedData: Data) -> [String: Data]? {
         let temporaryDirectory = FileManager.default.temporaryDirectory
         
