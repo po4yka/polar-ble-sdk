@@ -171,6 +171,28 @@ final class PolarDataUtilsTest: XCTestCase {
         XCTAssertEqual(key, pmdSecret.key)
     }
 
+    func testPmdSecretSerializationAndStrategyLookupUseSharedPolicyWhenLinked() throws {
+        let aesKey = Data((0..<16).map { UInt8($0) })
+        let xorKey = Data([0x0F])
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("AES128", PmdSecretRuntimePlanner.strategyName(strategyByte: 2))
+        XCTAssertEqual("060102" + aesKey.map { String(format: "%02x", $0) }.joined(), PmdSecretRuntimePlanner.settingsHex(strategy: "AES128", keyHex: aesKey.map { String(format: "%02x", $0) }.joined()))
+        XCTAssertEqual("0601010f", PmdSecretRuntimePlanner.settingsHex(strategy: "XOR", keyHex: "0f"))
+        #endif
+        XCTAssertEqual(.aes128, try PmdSecret.SecurityStrategy.fromByte(strategyByte: 2))
+        XCTAssertEqual(Data([0x06, 0x01, 0x02]) + aesKey, try PmdSecret(strategy: .aes128, key: aesKey).serializeToPmdSettings())
+        XCTAssertEqual(Data([0x06, 0x01, 0x01, 0x0F]), try PmdSecret(strategy: .xor, key: xorKey).serializeToPmdSettings())
+    }
+
+    func testPmdSecretNoneAndXorDecryptUseSharedPolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("010203", PmdSecretRuntimePlanner.decryptHex(strategy: "NONE", keyHex: "", cipherHex: "010203"))
+        XCTAssertEqual("f0ff", PmdSecretRuntimePlanner.decryptHex(strategy: "XOR", keyHex: "0f", cipherHex: "fff0"))
+        #endif
+        XCTAssertEqual(Data([0x01, 0x02, 0x03]), try PmdSecret(strategy: .none, key: Data()).decryptArray(cipherArray: Data([0x01, 0x02, 0x03])))
+        XCTAssertEqual(Data([0xF0, 0xFF]), try PmdSecret(strategy: .xor, key: Data([0x0F])).decryptArray(cipherArray: Data([0xFF, 0xF0])))
+    }
+
     // MARK: - mapToPmdOfflineTriggerMode (via mapToPmdOfflineTrigger)
 
     func testMapToPmdOfflineTrigger_triggerDisabled() throws {
