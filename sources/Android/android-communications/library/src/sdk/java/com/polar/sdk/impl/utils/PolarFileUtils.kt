@@ -63,9 +63,7 @@ internal object PolarFileUtils {
             ?: return flow { throw PolarServiceNotAvailable() }
         return when (getFileSystemType(session.polarDeviceType)) {
             FileSystemType.POLAR_FILE_SYSTEM_V2 -> {
-                var path = folderPath.ifEmpty { "/" }
-                path = if (path.first() != '/') "/$path" else path
-                path = if (path.last() != '/') "$path/" else path
+                val path = PolarRuntimePlannerAdapter.normalizeFileListFolderPath(folderPath)
                 fetchRecursively(
                     client = client,
                     path = path,
@@ -241,9 +239,7 @@ internal object PolarFileUtils {
 
         return when (getFileSystemType(session.polarDeviceType)) {
             FileSystemType.POLAR_FILE_SYSTEM_V2 -> {
-                var path = filePath.ifEmpty { "/" }
-                path = if (path.first() != '/') "/$path" else path
-                path = if (path.last() != '/') "$path/" else path
+                val path = PolarRuntimePlannerAdapter.normalizeFileListFolderPath(filePath)
                 val results = mutableListOf<String>()
                 fetchRecursively(
                     client = client,

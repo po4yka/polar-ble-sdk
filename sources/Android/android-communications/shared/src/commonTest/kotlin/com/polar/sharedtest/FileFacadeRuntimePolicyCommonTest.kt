@@ -12,6 +12,8 @@ class FileFacadeRuntimePolicyCommonTest {
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
         val consumerTests = vector.objectValue("consumerTests")
+        assertEquals("/U/0/", PolarRuntimeOrchestration.normalizeFileListFolderPath("U/0"))
+        assertEquals("/", PolarRuntimeOrchestration.normalizeFileListFolderPath(""))
         val operations = vector.objectValue("input").objectArray("operations").map { operation ->
             PolarFileFacadeOperation(
                 id = operation.stringValue("id"),

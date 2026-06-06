@@ -154,6 +154,10 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun normalizeFileListFolderPath(folderPath: String): String {
+        return PolarRuntimeOrchestration.normalizeFileListFolderPath(folderPath)
+    }
+
     fun planFileRuntimeError(operation: String, path: String, error: Throwable) {
         PolarRuntimeOrchestration.planFileRuntimeError(
             PolarFileRuntimeErrorOperation(

@@ -1185,6 +1185,10 @@ object PolarIosSharedBridge {
         ).fileOperationCommandsCsv()
     }
 
+    fun normalizeFileListFolderPath(folderPath: String): String {
+        return PolarRuntimeOrchestration.normalizeFileListFolderPath(folderPath)
+    }
+
     fun planRuntimeFileError(operation: String, path: String, errorName: String): String {
         return PolarRuntimeOrchestration.planFileRuntimeError(
             PolarFileRuntimeErrorOperation(

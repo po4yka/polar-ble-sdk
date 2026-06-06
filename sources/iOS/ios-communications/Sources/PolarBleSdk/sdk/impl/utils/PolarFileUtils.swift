@@ -20,9 +20,7 @@ class PolarFileUtils {
                         continuation.finish(throwing: PolarErrors.serviceNotFound)
                         return
                     }
-                    var path = folderPath
-                    if path.first != "/" { path.insert("/", at: path.startIndex) }
-                    if path.last != "/" { path.insert("/", at: path.endIndex) }
+                    let path = PolarRuntimePlanner.normalizeFileListFolderPath(folderPath) ?? Self.fallbackNormalizedFileListFolderPath(folderPath)
                     let entries = try await fetchRecursive(path, client: client, condition: condition, recurseDeep: recurseDeep)
                     for entry in entries { continuation.yield(entry.name) }
                     continuation.finish()
@@ -31,6 +29,13 @@ class PolarFileUtils {
                 }
             }
         }
+    }
+
+    private static func fallbackNormalizedFileListFolderPath(_ folderPath: String) -> String {
+        var path = folderPath.isEmpty ? "/" : folderPath
+        if path.first != "/" { path.insert("/", at: path.startIndex) }
+        if path.last != "/" { path.insert("/", at: path.endIndex) }
+        return path
     }
 
     func checkAutoSampleFile(identifier: String, filePath: String, until: Date) async throws -> Bool {

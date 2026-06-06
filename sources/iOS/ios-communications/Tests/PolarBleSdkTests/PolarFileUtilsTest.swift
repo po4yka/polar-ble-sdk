@@ -371,6 +371,8 @@ final class PolarFileUtilsTest: XCTestCase {
     }
 
     func testFileUtilityGoldenVectorsListExpectedPaths() async throws {
+        XCTAssertEqual(PolarRuntimePlanner.normalizeFileListFolderPath("U/0"), "/U/0/")
+        XCTAssertEqual(PolarRuntimePlanner.normalizeFileListFolderPath(""), "/")
         for vector in try loadFileUtilityGoldenVectors() {
             let id = try XCTUnwrap(vector["id"] as? String)
             let input = try XCTUnwrap(vector["input"] as? [String: Any], id)

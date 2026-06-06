@@ -14,6 +14,7 @@ import com.polar.sdk.api.errors.PolarDeviceNotFound
 import com.polar.sdk.api.errors.PolarOperationNotSupported
 import com.polar.sdk.api.errors.PolarServiceNotAvailable
 import com.polar.sdk.impl.utils.PolarFileUtils
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import fi.polar.remote.representation.protobuf.DailySummary
 import fi.polar.remote.representation.protobuf.DailySummary.PbActivityGoalSummary
 import fi.polar.remote.representation.protobuf.DailySummary.PbDailySummary
@@ -430,6 +431,8 @@ class PolarFileUtilsTest {
 
     @Test
     fun `file utility golden vectors list expected paths`() = runTest {
+        Assert.assertEquals("/U/0/", PolarRuntimePlannerAdapter.normalizeFileListFolderPath("U/0"))
+        Assert.assertEquals("/", PolarRuntimePlannerAdapter.normalizeFileListFolderPath(""))
         loadFileUtilityVectors().forEach { vector ->
             val caseId = vector.get("id").asString
             val input = vector.getAsJsonObject("input")

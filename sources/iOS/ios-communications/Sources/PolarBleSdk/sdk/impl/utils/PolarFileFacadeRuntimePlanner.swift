@@ -24,6 +24,14 @@ enum PolarFileFacadeRuntimePlanner {
         #endif
     }
 
+    static func normalizeFileListFolderPath(_ folderPath: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.normalizeFileListFolderPath(folderPath: folderPath)
+        #else
+        return nil
+        #endif
+    }
+
     private static func fileOperation(_ csv: String) -> [(command: Protocol_PbPFtpOperation.Command, path: String)] {
         return csv.split(separator: ",").compactMap { plannedOperation in
             let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)

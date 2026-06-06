@@ -87,6 +87,12 @@ data class PolarUserDeviceSettingsOperation(
 )
 
 object PolarRuntimeOrchestration {
+    fun normalizeFileListFolderPath(folderPath: String): String {
+        val nonEmpty = folderPath.ifEmpty { "/" }
+        val withLeadingSlash = if (nonEmpty.first() == '/') nonEmpty else "/$nonEmpty"
+        return if (withLeadingSlash.last() == '/') withLeadingSlash else "$withLeadingSlash/"
+    }
+
     fun planCommand(operation: PolarFacadeCommandOperation): PolarRuntimePlan {
         return when (operation.kind) {
             "query" -> PolarRuntimePlan(operation.queryCommands(), "success")

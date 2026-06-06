@@ -88,6 +88,10 @@ enum PolarRuntimePlanner {
         return PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path, payloadHex: payloadHex)
     }
 
+    static func normalizeFileListFolderPath(_ folderPath: String) -> String? {
+        return PolarFileFacadeRuntimePlanner.normalizeFileListFolderPath(folderPath)
+    }
+
     @discardableResult
     static func fileRuntimeError(operation: String, path: String, error: Error) -> String {
         return PolarFileRuntimePlanner.runtimeError(operation: operation, path: path, error: error)
