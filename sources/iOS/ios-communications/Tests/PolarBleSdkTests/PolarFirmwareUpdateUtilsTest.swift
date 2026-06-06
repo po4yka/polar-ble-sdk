@@ -253,6 +253,10 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertTrue(PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait("/SYSUPDAT.IMG"))
         XCTAssertFalse(PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait("BTUPDAT.BIN"))
         XCTAssertFalse(PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait("sysupdat.img"))
+        XCTAssertEqual("success-rebooting", PolarRuntimePlanner.firmwareWriteTerminal(errorCode: 1, fileName: "/SYSUPDAT.IMG"))
+        XCTAssertEqual("propagate-error", PolarRuntimePlanner.firmwareWriteTerminal(errorCode: 1, fileName: "BTUPDAT.BIN"))
+        XCTAssertEqual("battery-too-low", PolarRuntimePlanner.firmwareWriteTerminal(errorCode: 209, fileName: "/SYSUPDAT.IMG"))
+        XCTAssertEqual("propagate-error", PolarRuntimePlanner.firmwareWriteTerminal(errorCode: 103, fileName: "/SYSUPDAT.IMG"))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif

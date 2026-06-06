@@ -95,6 +95,10 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         assertEquals(true, PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait("/SYSUPDAT.IMG"))
         assertEquals(false, PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait("BTUPDAT.BIN"))
         assertEquals(false, PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait("sysupdat.img"))
+        assertEquals("success-rebooting", PolarWorkflowRuntimePlanning.firmwareWriteTerminal(errorCode = 1, fileName = "/SYSUPDAT.IMG"))
+        assertEquals("propagate-error", PolarWorkflowRuntimePlanning.firmwareWriteTerminal(errorCode = 1, fileName = "BTUPDAT.BIN"))
+        assertEquals("battery-too-low", PolarWorkflowRuntimePlanning.firmwareWriteTerminal(errorCode = 209, fileName = "/SYSUPDAT.IMG"))
+        assertEquals("propagate-error", PolarWorkflowRuntimePlanning.firmwareWriteTerminal(errorCode = 103, fileName = "/SYSUPDAT.IMG"))
     }
 
     @Test

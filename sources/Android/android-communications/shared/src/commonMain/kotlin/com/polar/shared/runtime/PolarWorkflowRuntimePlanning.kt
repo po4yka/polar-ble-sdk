@@ -209,6 +209,14 @@ object PolarWorkflowRuntimePlanning {
         return fileName.contains("SYSUPDAT.IMG")
     }
 
+    fun firmwareWriteTerminal(errorCode: Int, fileName: String): String {
+        return when {
+            errorCode == 1 && firmwareFileTriggersRebootWait(fileName) -> "success-rebooting"
+            errorCode == 209 -> "battery-too-low"
+            else -> "propagate-error"
+        }
+    }
+
     fun firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int): Int {
         return if (payloadSize <= 0) 0 else bytesWritten * 100 / payloadSize
     }

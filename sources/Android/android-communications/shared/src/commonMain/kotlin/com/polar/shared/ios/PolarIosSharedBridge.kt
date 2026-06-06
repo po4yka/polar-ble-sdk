@@ -1702,6 +1702,10 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait(fileName)
     }
 
+    fun firmwareWriteTerminal(errorCode: Int, fileName: String): String {
+        return PolarWorkflowRuntimePlanning.firmwareWriteTerminal(errorCode, fileName)
+    }
+
     fun firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int): Int {
         return PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten, payloadSize)
     }

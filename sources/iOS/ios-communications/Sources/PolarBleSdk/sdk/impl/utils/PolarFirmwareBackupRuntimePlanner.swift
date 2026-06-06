@@ -49,6 +49,16 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwareWriteTerminal(errorCode: Int, fileName: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firmwareWriteTerminal(errorCode: Int32(errorCode), fileName: fileName)
+        #else
+        if errorCode == 1 && firmwareFileTriggersRebootWait(fileName) { return "success-rebooting" }
+        if errorCode == 209 { return "battery-too-low" }
+        return "propagate-error"
+        #endif
+    }
+
     static func firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int) -> Int {
         #if canImport(PolarBleSdkShared)
         return Int(PolarIosSharedBridge.shared.firmwareWriteProgressPercent(bytesWritten: Int32(bytesWritten), payloadSize: Int32(payloadSize)))

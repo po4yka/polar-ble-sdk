@@ -418,6 +418,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait(fileName)
     }
 
+    fun firmwareWriteTerminal(errorCode: Int, fileName: String): String {
+        return PolarWorkflowRuntimePlanning.firmwareWriteTerminal(errorCode, fileName)
+    }
+
     fun firmwareWriteProgressPercent(bytesWritten: Long, payloadSize: Int): Long {
         return PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten.toInt(), payloadSize).toLong()
     }

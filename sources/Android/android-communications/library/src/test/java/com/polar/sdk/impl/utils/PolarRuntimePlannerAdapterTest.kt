@@ -170,6 +170,10 @@ class PolarRuntimePlannerAdapterTest {
         Assert.assertTrue(PolarRuntimePlannerAdapter.firmwareFileTriggersRebootWait("/SYSUPDAT.IMG"))
         Assert.assertFalse(PolarRuntimePlannerAdapter.firmwareFileTriggersRebootWait("BTUPDAT.BIN"))
         Assert.assertFalse(PolarRuntimePlannerAdapter.firmwareFileTriggersRebootWait("sysupdat.img"))
+        Assert.assertEquals("success-rebooting", PolarRuntimePlannerAdapter.firmwareWriteTerminal(errorCode = 1, fileName = "/SYSUPDAT.IMG"))
+        Assert.assertEquals("propagate-error", PolarRuntimePlannerAdapter.firmwareWriteTerminal(errorCode = 1, fileName = "BTUPDAT.BIN"))
+        Assert.assertEquals("battery-too-low", PolarRuntimePlannerAdapter.firmwareWriteTerminal(errorCode = 209, fileName = "/SYSUPDAT.IMG"))
+        Assert.assertEquals("propagate-error", PolarRuntimePlannerAdapter.firmwareWriteTerminal(errorCode = 103, fileName = "/SYSUPDAT.IMG"))
     }
 
     @Test
