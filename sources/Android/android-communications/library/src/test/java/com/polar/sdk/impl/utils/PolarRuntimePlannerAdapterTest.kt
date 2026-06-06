@@ -16,7 +16,8 @@ class PolarRuntimePlannerAdapterTest {
             "live-exercise-pause" to ("PAUSE_EXERCISE" to PftpRequest.PbPFtpQuery.PAUSE_EXERCISE_VALUE),
             "live-exercise-resume" to ("RESUME_EXERCISE" to PftpRequest.PbPFtpQuery.RESUME_EXERCISE_VALUE),
             "live-exercise-stop" to ("STOP_EXERCISE" to PftpRequest.PbPFtpQuery.STOP_EXERCISE_VALUE),
-            "live-exercise-status" to ("GET_EXERCISE_STATUS" to PftpRequest.PbPFtpQuery.GET_EXERCISE_STATUS_VALUE)
+            "live-exercise-status" to ("GET_EXERCISE_STATUS" to PftpRequest.PbPFtpQuery.GET_EXERCISE_STATUS_VALUE),
+            "firmware-prepare-update" to ("PREPARE_FIRMWARE_UPDATE" to PftpRequest.PbPFtpQuery.PREPARE_FIRMWARE_UPDATE_VALUE)
         )
 
         cases.forEach { (id, queryAndValue) ->

@@ -2062,6 +2062,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(Protocol_PbPFtpQuery.resumeExercise.rawValue, PolarRuntimePlanner.commandQueryValue(id: "live-exercise-resume", query: "RESUME_EXERCISE"))
         XCTAssertEqual(Protocol_PbPFtpQuery.stopExercise.rawValue, PolarRuntimePlanner.commandQueryValue(id: "live-exercise-stop", query: "STOP_EXERCISE", parameters: ["save=true"]))
         XCTAssertEqual(Protocol_PbPFtpQuery.getExerciseStatus.rawValue, PolarRuntimePlanner.commandQueryValue(id: "live-exercise-status", query: "GET_EXERCISE_STATUS"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.prepareFirmwareUpdate.rawValue, PolarRuntimePlanner.commandQueryValue(id: "firmware-prepare-update", query: "PREPARE_FIRMWARE_UPDATE", parameters: ["file=SYSUPDAT.IMG"]))
         XCTAssertEqual("success", PolarRuntimePlanner.commandReset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
         XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, PolarRuntimePlanner.commandResetNotification(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
         XCTAssertEqual("success", PolarRuntimePlanner.commandSyncStart(id: "sync-start-success"))

@@ -3146,7 +3146,8 @@ extension PolarBleApiImpl: PolarBleApi  {
                         return
                     }
                     BleLogger.trace("Initialize session")
-                    _ = try await client.query(Protocol_PbPFtpQuery.prepareFirmwareUpdate.rawValue, parameters: nil)
+                    let query = self.plannedCommandQueryValue(id: "firmware-prepare-update", query: "PREPARE_FIRMWARE_UPDATE", parameters: ["file=\(firmwareFilePath)"]) ?? Protocol_PbPFtpQuery.prepareFirmwareUpdate.rawValue
+                    _ = try await client.query(query, parameters: nil)
                     BleLogger.trace("Start \(firmwareFilePath) write")
                     let writeOperation = Self.firmwareFileWriteOperation(path: firmwareFilePath)
                     PolarRuntimePlanner.psFtpWriteAck(payloadSize: firmwareBytes.count)

@@ -2502,7 +2502,12 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             var lastBytesWritten = 0L
             PolarRuntimePlannerAdapter.planPsFtpWriteProgress(firmwareFile.second.size, "android")
             BleLogger.d(TAG, "Prepare firmware update for ${firmwareFile.first}")
-            client.query(PftpRequest.PbPFtpQuery.PREPARE_FIRMWARE_UPDATE_VALUE, null)
+            val preparePlan = PolarRuntimePlannerAdapter.planCommandQuery(
+                id = "firmware-prepare-update",
+                query = "PREPARE_FIRMWARE_UPDATE",
+                parameters = listOf("file=${firmwareFile.first}")
+            )
+            client.query(PolarRuntimePlannerAdapter.queryValue(preparePlan), null)
             BleLogger.d(TAG, "Start ${firmwareFile.first} write")
             val plannedWriteOperation = plannedWriteOperations.getValue("/${firmwareFile.first}")
             val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(plannedWriteOperation)
