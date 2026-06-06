@@ -78,6 +78,7 @@ import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdClientSkinTemperatureDataTo
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdClientTemperatureDataToPolarTemperature
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdSettingsToPolarSettings
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdTriggerToPolarTrigger
+import com.polar.shared.ble.PolarAdvertisementModels
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarFeatureToPmdClientMeasurementType
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarOfflineTriggerToPmdOfflineTrigger
@@ -388,9 +389,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 }
 
                 PolarBleSdkFeature.FEATURE_POLAR_ACTIVITY_DATA -> {
-                    val deviceType = getDeviceName(deviceId).let {
-                        if (it.startsWith("Polar ")) it.removePrefix("Polar ")
-                        else it }.replace( Regex(" [0-9A-Fa-f]{8}$"), "").trim()
+                    val deviceType = activityCapabilityDeviceType(getDeviceName(deviceId))
                     BlePolarDeviceCapabilitiesUtility.isActivityDataSupported(deviceType)
                 }
 
@@ -3805,6 +3804,15 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         internal fun h10ExerciseRemoveOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
             return facadeFileOperation("h10-exercise-remove", "REMOVE", path)
+        }
+
+        internal fun activityCapabilityDeviceType(deviceName: String): String {
+            val sharedDeviceType = PolarAdvertisementModels.deviceModelNameFromLocalName(deviceName)
+            if (sharedDeviceType.isNotEmpty()) return sharedDeviceType
+            return deviceName.let {
+                if (it.startsWith("Polar ")) it.removePrefix("Polar ")
+                else it
+            }.replace(Regex(" [0-9A-Fa-f]{8}$"), "").trim()
         }
 
         private fun facadeFileOperation(id: String, command: String, path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {

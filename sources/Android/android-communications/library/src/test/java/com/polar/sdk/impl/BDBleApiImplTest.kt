@@ -188,6 +188,12 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `activity data readiness device type uses shared advertisement local name parsing`() {
+        Assert.assertEquals("GritX Pro", BDBleApiImpl.activityCapabilityDeviceType("Polar GritX Pro aa123459"))
+        Assert.assertEquals("Custom Strap", BDBleApiImpl.activityCapabilityDeviceType("Custom Strap aa123459"))
+    }
+
+    @Test
     fun `setLocalTime sends different UTC and local time values for non-UTC timezone`() = runTest {
         assertDiskTimeRuntimePolicyVectorContains("set-local-time-v2")
         // Arrange
