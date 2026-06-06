@@ -137,7 +137,7 @@ final class OfflineHrDataTest: XCTestCase {
     func testOfflineHrRawParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "0e000000000000000001485647514052"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.offlineHrRawSamples(dataFrameHex: dataFrameHex, previousTimeStamp: 0, factor: 1.0, sampleRate: 0))
+        let sharedRows = try XCTUnwrap(OfflineHrDataRuntimePlanner.rawSamples(dataFrameHex: dataFrameHex, previousTimeStamp: 0, factor: 1.0, sampleRate: 0))
         XCTAssertFalse(sharedRows.isEmpty)
 
         let dataFrame = try PmdDataFrame(

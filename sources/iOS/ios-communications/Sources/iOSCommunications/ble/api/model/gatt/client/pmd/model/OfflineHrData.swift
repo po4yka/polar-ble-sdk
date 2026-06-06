@@ -74,7 +74,7 @@ public class OfflineHrData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.offlineHrRawSamples(
+        guard let sharedRows = OfflineHrDataRuntimePlanner.rawSamples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -112,4 +112,14 @@ public class OfflineHrData {
         return data.map { String(format: "%02x", $0) }.joined()
     }
     #endif
+}
+
+enum OfflineHrDataRuntimePlanner {
+    static func rawSamples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.offlineHrRawSamples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
 }
