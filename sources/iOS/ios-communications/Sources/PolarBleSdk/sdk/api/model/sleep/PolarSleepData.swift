@@ -18,7 +18,7 @@ public class PolarSleepData {
 
         static func getByValue(value: Int) -> SleepWakeState {
             #if canImport(PolarBleSdkShared)
-            if let sharedName = PolarIosSharedBridge.shared.sleepWakeStateName(value: Int32(value)),
+            if let sharedName = PolarSleepRuntimePlanner.sleepWakeStateName(value: value),
                let sharedState = SleepWakeState(sharedName: sharedName) {
                 return sharedState
             }
@@ -45,7 +45,7 @@ public class PolarSleepData {
 
         static func getByValue(value: Int) -> SleepRating {
             #if canImport(PolarBleSdkShared)
-            if let sharedName = PolarIosSharedBridge.shared.sleepRatingName(value: Int32(value)),
+            if let sharedName = PolarSleepRuntimePlanner.sleepRatingName(value: value),
                let sharedRating = SleepRating(sharedName: sharedName) {
                 return sharedRating
             }
@@ -59,7 +59,7 @@ public class PolarSleepData {
 
         static func optionalFromProtoValue(value: Int) -> SleepRating? {
             #if canImport(PolarBleSdkShared)
-            if let sharedName = PolarIosSharedBridge.shared.sleepRatingName(value: Int32(value)),
+            if let sharedName = PolarSleepRuntimePlanner.sleepRatingName(value: value),
                let sharedRating = SleepRating(sharedName: sharedName) {
                 return sharedRating
             }

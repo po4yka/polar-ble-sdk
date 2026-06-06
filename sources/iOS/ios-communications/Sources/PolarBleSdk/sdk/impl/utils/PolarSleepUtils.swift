@@ -164,4 +164,20 @@ enum PolarSleepRuntimePlanner {
         return nil
         #endif
     }
+
+    static func sleepWakeStateName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepWakeStateName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func sleepRatingName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepRatingName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
 }
