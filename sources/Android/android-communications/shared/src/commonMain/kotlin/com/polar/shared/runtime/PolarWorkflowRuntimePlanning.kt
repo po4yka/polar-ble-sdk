@@ -131,6 +131,10 @@ object PolarWorkflowRuntimePlanning {
         return dataType !in setOf("AUTOS", "SDLOGS", "UNDEFINED")
     }
 
+    fun storedDataDateIsOnOrBefore(day: String, cutoffDate: String): Boolean {
+        return day <= cutoffDate
+    }
+
     fun storedDataEmptyParentDirectories(filePath: String, rootPath: String = "/U/0", trailingSlash: Boolean = false): List<String> {
         val normalizedRoot = rootPath.trimEnd('/')
         val directories = mutableListOf<String>()
@@ -373,7 +377,7 @@ object PolarWorkflowRuntimePlanning {
             val parent = sample.path.substringBeforeLast('/') + "/"
             commands += "GET:$parent"
             commands += "GET:${sample.path}"
-            if (sample.embeddedDay < cutoff) {
+            if (storedDataDateIsOnOrBefore(sample.embeddedDay, cutoff)) {
                 commands += "REMOVE:${sample.path}"
             }
         }

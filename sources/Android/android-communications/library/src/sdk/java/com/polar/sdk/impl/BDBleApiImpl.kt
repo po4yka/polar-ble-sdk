@@ -2623,7 +2623,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 .collect { filename ->
                     if (dataType.type != PolarStoredDataType.AUTO_SAMPLE.type && dataType.type != PolarStoredDataType.SDLOGS.type) {
                         val dateFromFileName = LocalDate.parse(filename.split("/")[3], dateFormatter)
-                        if (until != null && (until.isAfter(dateFromFileName) || until == dateFromFileName)) {
+                        if (until != null && PolarRuntimePlannerAdapter.storedDataDateIsOnOrBefore(dateFromFileName.toString(), until.toString())) {
                             PolarFileUtils.removeSingleFile(identifier, filename, listener, TAG)
                             deletedFiles.add(filename)
                         }
@@ -2632,7 +2632,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                         if (byteArray != null) {
                             val proto = PbAutomaticSampleSessions.parseFrom(byteArray)
                             val date = PolarTimeUtils.pbDateToLocalDate(proto.day)
-                            if (until != null && (date.isBefore(until) || date == until)) {
+                            if (until != null && PolarRuntimePlannerAdapter.storedDataDateIsOnOrBefore(date.toString(), until.toString())) {
                                 PolarFileUtils.removeSingleFile(identifier, filename, listener, TAG)
                                 deletedFiles.add(filename)
                             }

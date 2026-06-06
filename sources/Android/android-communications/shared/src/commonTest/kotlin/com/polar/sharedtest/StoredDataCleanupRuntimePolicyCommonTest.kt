@@ -163,6 +163,9 @@ class StoredDataCleanupRuntimePolicyCommonTest {
         assertEquals(false, PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents("AUTOS"))
         assertEquals(false, PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents("SDLOGS"))
         assertEquals(false, PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents("UNDEFINED"))
+        assertEquals(true, PolarWorkflowRuntimePlanning.storedDataDateIsOnOrBefore("2026-05-30", "2026-05-31"))
+        assertEquals(true, PolarWorkflowRuntimePlanning.storedDataDateIsOnOrBefore("2026-05-31", "2026-05-31"))
+        assertEquals(false, PolarWorkflowRuntimePlanning.storedDataDateIsOnOrBefore("2026-06-01", "2026-05-31"))
         assertEquals(
             listOf("/U/0/20260530/ACT", "/U/0/20260530"),
             PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories("/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash = false)

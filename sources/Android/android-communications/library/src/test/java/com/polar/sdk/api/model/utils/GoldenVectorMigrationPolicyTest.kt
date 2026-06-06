@@ -4721,6 +4721,7 @@ class GoldenVectorMigrationPolicyTest {
             "empty-parent-path-platform-split",
             "facade-error-mapping-gate",
             "compile-verified",
+            "storedDataDateIsOnOrBefore",
             "PolarWorkflowRuntimePlanning.planStoredDataCleanup"
         )
         val FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS = listOf(

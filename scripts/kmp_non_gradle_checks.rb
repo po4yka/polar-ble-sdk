@@ -473,6 +473,7 @@ FAKE_TRANSPORT_COMMON_STORED_DATA_CLEANUP_RUNTIME_TEST_REQUIRED_TERMS = [
   "empty-parent-path-platform-split",
   "facade-error-mapping-gate",
   "compile-verified",
+  "storedDataDateIsOnOrBefore",
   "PolarWorkflowRuntimePlanning.planStoredDataCleanup"
 ].freeze
 FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS = [
