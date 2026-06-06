@@ -1789,6 +1789,7 @@
 		};
 		AACF00000000000000000001 /* Build PolarBleSdkShared KMP Framework */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -1803,7 +1804,6 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)/PolarBleSdkShared.framework/Info.plist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1812,6 +1812,7 @@
 		};
 		AACF00000000000000000002 /* Build PolarBleSdkShared KMP Framework */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -1826,7 +1827,6 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(SRCROOT)/Generated/PolarBleSdkShared/$(PLATFORM_NAME)/PolarBleSdkShared.framework/Info.plist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
