@@ -24,6 +24,30 @@ enum PolarUserDeviceSettingsRuntimePlanner {
         #endif
     }
 
+    static func deviceLocationName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func usbConnectionModeName(enabled: Bool) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.userDeviceSettingsUsbModeName(value: enabled ? 2 : 1)
+        #else
+        return nil
+        #endif
+    }
+
+    static func automaticTrainingDetectionModeName(enabled: Bool) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.userDeviceSettingsAutomaticTrainingDetectionModeName(value: enabled ? 1 : 0)
+        #else
+        return nil
+        #endif
+    }
+
     private static func operations(_ csv: String) -> [(command: Protocol_PbPFtpOperation.Command, path: String)] {
         return csv.split(separator: ",").compactMap { plannedOperation in
             let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)

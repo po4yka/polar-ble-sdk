@@ -2070,6 +2070,9 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("success", PolarRuntimePlanner.userDeviceSettings(id: "set-user-device-settings", kind: "write", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["protobufPayload=platform-built"]))
         XCTAssertEqual([.get, .put], PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-telemetry-enabled", kind: "readThenWrite", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["telemetryEnabled=true"])?.map { $0.command })
         XCTAssertEqual(["/U/0/S/UDEVSET.BPB", "/U/0/S/UDEVSET.BPB"], PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-telemetry-enabled", kind: "readThenWrite", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["telemetryEnabled=true"])?.map { $0.path })
+        XCTAssertEqual("WRIST_RIGHT", PolarRuntimePlanner.userDeviceSettingsDeviceLocationName(value: PbDeviceLocation.deviceLocationWristRight.rawValue))
+        XCTAssertEqual("ON", PolarRuntimePlanner.userDeviceSettingsUsbConnectionModeName(enabled: true))
+        XCTAssertEqual("OFF", PolarRuntimePlanner.userDeviceSettingsAutomaticTrainingDetectionModeName(enabled: false))
         XCTAssertEqual("success", PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
         XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
         XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["acc"]))
@@ -2165,6 +2168,9 @@ final class PolarBleApiImplTests: XCTestCase {
         let operations = PolarUserDeviceSettingsRuntimePlanner.operations(id: "set-telemetry-enabled", kind: "readThenWrite", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["telemetryEnabled=true"])
         XCTAssertEqual([.get, .put], operations?.map { $0.command })
         XCTAssertEqual(["/U/0/S/UDEVSET.BPB", "/U/0/S/UDEVSET.BPB"], operations?.map { $0.path })
+        XCTAssertEqual("WRIST_RIGHT", PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: PbDeviceLocation.deviceLocationWristRight.rawValue))
+        XCTAssertEqual("ON", PolarUserDeviceSettingsRuntimePlanner.usbConnectionModeName(enabled: true))
+        XCTAssertEqual("OFF", PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionModeName(enabled: false))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif

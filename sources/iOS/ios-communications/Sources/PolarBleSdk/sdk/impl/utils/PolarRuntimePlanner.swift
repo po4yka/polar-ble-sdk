@@ -102,6 +102,18 @@ enum PolarRuntimePlanner {
         return PolarUserDeviceSettingsRuntimePlanner.operations(id: id, kind: kind, path: path, payloadFields: payloadFields)
     }
 
+    static func userDeviceSettingsDeviceLocationName(value: Int) -> String? {
+        return PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: value)
+    }
+
+    static func userDeviceSettingsUsbConnectionModeName(enabled: Bool) -> String? {
+        return PolarUserDeviceSettingsRuntimePlanner.usbConnectionModeName(enabled: enabled)
+    }
+
+    static func userDeviceSettingsAutomaticTrainingDetectionModeName(enabled: Bool) -> String? {
+        return PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionModeName(enabled: enabled)
+    }
+
     @discardableResult
     static func storedDataCleanup(kind: String, rootPath: String) -> String {
         return PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: kind, rootPath: rootPath)
