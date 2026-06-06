@@ -309,7 +309,7 @@ internal class PolarTimeUtils {
         formatter.dateFormat = "yyyyMMdd"
         let start = formatter.string(from: fromDate)
         let end = formatter.string(from: toDate)
-        if let sharedDays = PolarTimeRuntimePlanner.basicDateRange(startInclusive: start, endInclusive: end) {
+        if let sharedDays = basicDateRangeStrings(startInclusive: start, endInclusive: end) {
             let timeComponents = calendar.dateComponents([.hour, .minute, .second, .nanosecond], from: fromDate)
             return sharedDays.compactMap { day in
                 guard let baseDate = formatter.date(from: day) else { return nil }
@@ -329,6 +329,19 @@ internal class PolarTimeUtils {
             currentDate = nextDate
         }
         return datesList
+    }
+
+    static func basicDateRangeStrings(fromDate: Date, toDate: Date) -> [String] {
+        guard fromDate <= toDate else { return [] }
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar.current
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyyMMdd"
+        return basicDateRangeStrings(startInclusive: formatter.string(from: fromDate), endInclusive: formatter.string(from: toDate)) ?? basicDateRange(fromDate: fromDate, toDate: toDate).map { formatter.string(from: $0) }
+    }
+
+    private static func basicDateRangeStrings(startInclusive: String, endInclusive: String) -> [String]? {
+        return PolarTimeRuntimePlanner.basicDateRange(startInclusive: startInclusive, endInclusive: endInclusive)
     }
 
     private static func millisToNanos(milliseconds: Int) -> Int {

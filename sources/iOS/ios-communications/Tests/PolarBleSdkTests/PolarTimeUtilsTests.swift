@@ -41,6 +41,10 @@ class PolarTimeUtilsTests: XCTestCase {
             toDate: try makeDate(year: 2024, month: 2, day: 29, hour: 9, minute: 15)
         )
         XCTAssertEqual(["20240228 10:15:00"], clippedRange.map(formatBasicDateTime))
+        XCTAssertEqual(["20240228", "20240229", "20240301"], PolarTimeUtils.basicDateRangeStrings(
+            fromDate: try makeDate(year: 2024, month: 2, day: 28, hour: 10, minute: 15),
+            toDate: try makeDate(year: 2024, month: 3, day: 1, hour: 10, minute: 15)
+        ))
     }
 
     func testConversionToPftpSystemTimeFromTimeZoneGMT() throws {

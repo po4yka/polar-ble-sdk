@@ -9,6 +9,7 @@ import fi.polar.remote.representation.protobuf.AutomaticSamples.PbAutomaticSampl
 import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.regex.Pattern
 
 private const val AUTOMATIC_SAMPLES_PATTERN = "AUTOS\\d{3}\\.BPB"
@@ -43,6 +44,7 @@ internal object PolarAutomaticSamplesUtils {
             .map { it.name }
 
         val hrSamplesDataList = mutableListOf<Polar247HrSamplesData>()
+        val requestedDays = requestedBasicDays(fromDate, toDate)
 
         for (fileName in filteredFiles) {
             val fileOperation = automaticSamplesFileReadOperation(fileName)
@@ -51,7 +53,7 @@ internal object PolarAutomaticSamplesUtils {
             val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
             val sampleSessions = PbAutomaticSampleSessions.parseFrom(fileResponse.toByteArray())
             val sampleDate = PolarTimeUtils.pbDateToLocalDate(sampleSessions.day)
-            if (sampleDate in fromDate..toDate) {
+            if (sampleDate.format(DateTimeFormatter.BASIC_ISO_DATE) in requestedDays) {
                 hrSamplesDataList.add(Polar247HrSamplesData.fromProto(sampleSessions))
             } else {
                 BleLogger.d(TAG, "Sample date $sampleDate is out of range: $fromDate to $toDate")
@@ -73,6 +75,7 @@ internal object PolarAutomaticSamplesUtils {
             .map { it.name }
 
         val ppiSamplesDataList = mutableListOf<Polar247PPiSamplesData>()
+        val requestedDays = requestedBasicDays(fromDate, toDate)
 
         for (fileName in filteredFiles) {
             val fileOperation = automaticSamplesFileReadOperation(fileName)
@@ -83,7 +86,7 @@ internal object PolarAutomaticSamplesUtils {
             val sampleDateProto = sampleSessions.day
             val sampleDateForCheck = LocalDate.of(sampleDateProto.year, sampleDateProto.month, sampleDateProto.day)
             for (sample in sampleSessions.ppiSamplesList) {
-                if (sampleDateForCheck in fromDate..toDate) {
+                if (sampleDateForCheck.format(DateTimeFormatter.BASIC_ISO_DATE) in requestedDays) {
                     ppiSamplesDataList.add(Polar247PPiSamplesData(sampleDateForCheck, fromPbPPiDataSamples(sample)))
                 } else {
                     BleLogger.d(TAG, "Sample date $sampleDateForCheck is out of range: $fromDate to $toDate")
@@ -92,5 +95,12 @@ internal object PolarAutomaticSamplesUtils {
         }
 
         return ppiSamplesDataList
+    }
+
+    private fun requestedBasicDays(fromDate: LocalDate, toDate: LocalDate): Set<String> {
+        return PolarRuntimePlannerAdapter.basicDateRange(
+            fromDate.format(DateTimeFormatter.BASIC_ISO_DATE),
+            toDate.format(DateTimeFormatter.BASIC_ISO_DATE)
+        ).toSet()
     }
 }
