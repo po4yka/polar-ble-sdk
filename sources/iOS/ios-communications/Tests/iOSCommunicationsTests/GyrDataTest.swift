@@ -78,7 +78,7 @@ final class GyrDataTest: XCTestCase {
     func testGyrCompressedType0ParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "05ffffffffffffff7f80eaff08000d000301df00"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.gyrCompressedType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        let sharedRows = try XCTUnwrap(GyrDataRuntimePlanner.compressedType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
         XCTAssertFalse(sharedRows.isEmpty)
 
         let dataFrame = try PmdDataFrame(
