@@ -2738,6 +2738,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         let proto = try operation.serializedData()
         BleLogger.trace("Polar user device settings set. Device: \(identifier) Path: \(settingsPath)")
         let inputStream = InputStream(data: userDeviceSettingsData)
+        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: userDeviceSettingsData.count)
+        PolarRuntimePlanner.psFtpWriteAck(payloadSize: userDeviceSettingsData.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}
     }
 
@@ -3104,6 +3106,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         let proto = try operation.serializedData()
         let settingsData = try polarUserDeviceSettings.serializedData()
         let inputStream = InputStream(data: settingsData)
+        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: settingsData.count)
+        PolarRuntimePlanner.psFtpWriteAck(payloadSize: settingsData.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}
     }
 

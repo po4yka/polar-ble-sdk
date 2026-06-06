@@ -2973,6 +2973,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             deviceUserSetting.writeTo(baos)
             baos.toByteArray()
         }
+        PolarRuntimePlannerAdapter.planPsFtpWriteProgress(deviceSettingsData.size, "android")
+        PolarRuntimePlannerAdapter.planPsFtpWriteAck(deviceSettingsData.size)
         client.write(deviceSettingsBuilder.build().toByteArray(), ByteArrayInputStream(deviceSettingsData)).collect {}
     }
 
