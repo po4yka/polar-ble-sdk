@@ -369,20 +369,33 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `setDaylightSavingTime sends set local time query with current local timestamp`() = runTest {
+    fun `setDaylightSavingTime sends set local time query with platform current local timestamp`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-daylight-saving-time")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
         val (client, _) = mockPsFtpConnection(deviceId)
         val queryIds = mutableListOf<Int>()
         val queryParams = mutableListOf<ByteArray?>()
+        val currentPlatformTime = LocalDateTime.of(2026, 6, 7, 8, 9, 10, 123_000_000)
         coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns ByteArrayOutputStream()
 
-        api.setDaylightSavingTime(deviceId)
+        mockkStatic(LocalDateTime::class)
+        every { LocalDateTime.now() } returns currentPlatformTime
+        try {
+            api.setDaylightSavingTime(deviceId)
+        } finally {
+            unmockkStatic(LocalDateTime::class)
+        }
 
         Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE), queryIds)
         val params = PftpRequest.PbPFtpSetLocalTimeParams.parseFrom(queryParams.single())
-        Assert.assertTrue(params.hasDate())
-        Assert.assertTrue(params.hasTime())
+        Assert.assertEquals(2026, params.date.year)
+        Assert.assertEquals(6, params.date.month)
+        Assert.assertEquals(7, params.date.day)
+        Assert.assertEquals(8, params.time.hour)
+        Assert.assertEquals(9, params.time.minute)
+        Assert.assertEquals(10, params.time.seconds)
+        Assert.assertEquals(123, params.time.millis)
     }
 
     @Test
