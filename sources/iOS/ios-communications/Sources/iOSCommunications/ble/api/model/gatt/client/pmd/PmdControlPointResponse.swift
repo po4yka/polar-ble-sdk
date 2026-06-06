@@ -27,7 +27,7 @@ internal struct PmdControlPointResponse {
         #endif
         response = data[0]
         opCode = data[1]
-        type = PmdMeasurementType(rawValue: data[2]) ?? PmdMeasurementType.unknown_type
+        type = PmdMeasurementType.fromId(id: data[2])
         errorCode = PmdResponseCode(rawValue: Int(data[3])) ?? PmdResponseCode.unknown_error
         if data.count > 4 {
             more = data[4] != 0
@@ -52,7 +52,7 @@ internal struct PmdControlPointResponse {
             return nil
         }
         let more = fields[4] == "1"
-        let type = PmdMeasurementType(rawValue: typeValue) ?? PmdMeasurementType.unknown_type
+        let type = PmdMeasurementType.fromId(id: typeValue)
         let errorCode = PmdResponseCode(rawValue: statusValue) ?? PmdResponseCode.unknown_error
         return (response, opCode, type, errorCode, more, Data(hexBytes: String(fields[5])))
     }

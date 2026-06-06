@@ -102,6 +102,15 @@ final class PolarDataUtilsTest: XCTestCase {
         XCTAssertEqual(.hr, try PolarDataUtils.mapToPolarFeature(from: .offline_hr))
     }
 
+    func testPmdControlPointResponseUsesSharedBackedMaskedMeasurementType() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("ACC", PmdControlPointRuntimePlanner.measurementTypeName(id: 0xC2))
+        #endif
+        let response = PmdControlPointResponse(Data([PmdControlPointResponse.CONTROL_POINT_RESPONSE_CODE, 0x01, 0xC2, UInt8(PmdResponseCode.success.rawValue), 0x00]))
+        XCTAssertEqual(.acc, response.type)
+        XCTAssertEqual(.success, response.errorCode)
+    }
+
     // MARK: - mapToPolarFeature – unsupported types throw
 
     func testMapToPolarFeature_sdkMode_throws() {
