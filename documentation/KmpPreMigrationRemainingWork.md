@@ -4,7 +4,7 @@ This document records what is still required before the full pre-migration cover
 
 ## Current Verified State
 
-- Golden-vector metadata and documentation policy checks pass with `ruby scripts/kmp_non_gradle_checks.rb`; the current vector count is 353.
+- Golden-vector metadata and documentation policy checks pass with `ruby scripts/kmp_non_gradle_checks.rb`; the current vector count is 367.
 - Whitespace safety passes with `git diff --check`.
 - iOS test sources parse with `swiftc -parse sources/iOS/ios-communications/Tests/**/*.swift`.
 - Focused shared/Android fake-transport validation passes with `ANDROID_HOME="$HOME/Library/Android/sdk" ANDROID_SDK_ROOT="$HOME/Library/Android/sdk" ./gradlew :shared:jvmTest :library:testSdkDebugUnitTest --tests 'com.polar.testutils.FakeTransportContractTest' --no-daemon`.
