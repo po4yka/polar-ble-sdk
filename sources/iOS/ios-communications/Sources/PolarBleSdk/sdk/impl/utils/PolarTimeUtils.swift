@@ -82,11 +82,7 @@ internal class PolarTimeUtils {
     }
     
     static func nanosToMillis(nanoseconds: Int) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.nanosToMillis(nanoseconds: Int32(nanoseconds)))
-        #else
-        return Int(round(Double(nanoseconds) / Double(nanoToMillisMultiplier)))
-        #endif
+        return PolarTimeRuntimePlanner.nanosToMillis(nanoseconds: nanoseconds) ?? Int(round(Double(nanoseconds) / Double(nanoToMillisMultiplier)))
     }
     
     static func pbLocalDateTimeToDate(pbLocalDateTime: PbLocalDateTime?) throws -> Date {
@@ -297,43 +293,23 @@ internal class PolarTimeUtils {
     }
 
     static func pbDurationToMillis(pbDuration: PbDuration) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.durationToMillis(hours: Int32(pbDuration.hours), minutes: Int32(pbDuration.minutes), seconds: Int32(pbDuration.seconds), millis: Int32(pbDuration.millis)))
-        #else
-        return hoursToMillis(hours: Int(pbDuration.hours)) + minutesToMillis(minutes: Int(pbDuration.minutes)) + secondsToMillis(seconds: Int(pbDuration.seconds)) + Int(pbDuration.millis)
-        #endif
+        return PolarTimeRuntimePlanner.durationToMillis(hours: Int(pbDuration.hours), minutes: Int(pbDuration.minutes), seconds: Int(pbDuration.seconds), millis: Int(pbDuration.millis)) ?? hoursToMillis(hours: Int(pbDuration.hours)) + minutesToMillis(minutes: Int(pbDuration.minutes)) + secondsToMillis(seconds: Int(pbDuration.seconds)) + Int(pbDuration.millis)
     }
 
     static func pbTimeToTimeString(_ pbTime: PbTime) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.timeString(hour: Int32(pbTime.hour), minute: Int32(pbTime.minute), second: Int32(pbTime.seconds), millis: Int32(pbTime.millis))
-        #else
-        return String(format: "%02d:%02d:%02d.%02d", pbTime.hour, pbTime.minute, pbTime.seconds, pbTime.millis)
-        #endif
+        return PolarTimeRuntimePlanner.timeString(hour: Int(pbTime.hour), minute: Int(pbTime.minute), second: Int(pbTime.seconds), millis: Int(pbTime.millis)) ?? String(format: "%02d:%02d:%02d.%02d", pbTime.hour, pbTime.minute, pbTime.seconds, pbTime.millis)
     }
 
     private static func millisToNanos(milliseconds: Int) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.millisToNanos(milliseconds: Int32(milliseconds)))
-        #else
-        return milliseconds * nanoToMillisMultiplier
-        #endif
+        return PolarTimeRuntimePlanner.millisToNanos(milliseconds: milliseconds) ?? milliseconds * nanoToMillisMultiplier
     }
 
     private static func secondsToMinutes(seconds: Int) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.secondsToMinutes(seconds: Int32(seconds)))
-        #else
-        return Int(round(Double(seconds) / Double(secondsToMinutesMultiplier)))
-        #endif
+        return PolarTimeRuntimePlanner.secondsToMinutes(seconds: seconds) ?? Int(round(Double(seconds) / Double(secondsToMinutesMultiplier)))
     }
 
     private static func minutesToSeconds(minutes: Int) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.minutesToSeconds(minutes: Int32(minutes)))
-        #else
-        return minutes * secondsToMinutesMultiplier
-        #endif
+        return PolarTimeRuntimePlanner.minutesToSeconds(minutes: minutes) ?? minutes * secondsToMinutesMultiplier
     }
 
     private static func hoursToMillis(hours: Int) -> Int {
@@ -387,5 +363,55 @@ internal class PolarTimeUtils {
         } else {
             return nil
         }
+    }
+}
+
+enum PolarTimeRuntimePlanner {
+    static func nanosToMillis(nanoseconds: Int) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.nanosToMillis(nanoseconds: Int32(nanoseconds)))
+        #else
+        return nil
+        #endif
+    }
+
+    static func durationToMillis(hours: Int, minutes: Int, seconds: Int, millis: Int) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.durationToMillis(hours: Int32(hours), minutes: Int32(minutes), seconds: Int32(seconds), millis: Int32(millis)))
+        #else
+        return nil
+        #endif
+    }
+
+    static func timeString(hour: Int, minute: Int, second: Int, millis: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.timeString(hour: Int32(hour), minute: Int32(minute), second: Int32(second), millis: Int32(millis))
+        #else
+        return nil
+        #endif
+    }
+
+    static func millisToNanos(milliseconds: Int) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.millisToNanos(milliseconds: Int32(milliseconds)))
+        #else
+        return nil
+        #endif
+    }
+
+    static func secondsToMinutes(seconds: Int) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.secondsToMinutes(seconds: Int32(seconds)))
+        #else
+        return nil
+        #endif
+    }
+
+    static func minutesToSeconds(minutes: Int) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.minutesToSeconds(minutes: Int32(minutes)))
+        #else
+        return nil
+        #endif
     }
 }
