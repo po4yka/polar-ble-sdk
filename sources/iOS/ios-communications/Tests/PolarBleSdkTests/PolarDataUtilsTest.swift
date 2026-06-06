@@ -89,9 +89,25 @@ final class PolarDataUtilsTest: XCTestCase {
         XCTAssertEqual(.skinTemperature, try PolarDataUtils.mapToPolarFeature(from: .skinTemperature))
     }
 
+    func testMapToPolarFeatureUsesSharedPmdMeasurementNamesWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("ECG", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.ecg.rawValue)))
+        XCTAssertEqual("ACC", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.acc.rawValue)))
+        XCTAssertEqual("MAG", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.mgn.rawValue)))
+        XCTAssertEqual("OFFLINE_HR", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.offline_hr.rawValue)))
+        #endif
+        XCTAssertEqual(.ecg, try PolarDataUtils.mapToPolarFeature(from: .ecg))
+        XCTAssertEqual(.acc, try PolarDataUtils.mapToPolarFeature(from: .acc))
+        XCTAssertEqual(.magnetometer, try PolarDataUtils.mapToPolarFeature(from: .mgn))
+        XCTAssertEqual(.hr, try PolarDataUtils.mapToPolarFeature(from: .offline_hr))
+    }
+
     // MARK: - mapToPolarFeature – unsupported types throw
 
     func testMapToPolarFeature_sdkMode_throws() {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("SDK_MODE", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.sdkMode.rawValue)))
+        #endif
         XCTAssertThrowsError(try PolarDataUtils.mapToPolarFeature(from: .sdkMode)) { error in
             guard case PolarErrors.polarBleSdkInternalException = error else {
                 return XCTFail("Expected polarBleSdkInternalException, got \(error)")
@@ -100,6 +116,9 @@ final class PolarDataUtilsTest: XCTestCase {
     }
 
     func testMapToPolarFeature_location_throws() {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("LOCATION", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.location.rawValue)))
+        #endif
         XCTAssertThrowsError(try PolarDataUtils.mapToPolarFeature(from: .location)) { error in
             guard case PolarErrors.polarBleSdkInternalException = error else {
                 return XCTFail("Expected polarBleSdkInternalException, got \(error)")

@@ -3,6 +3,10 @@
 
 import Foundation
 
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
+
 internal class PolarDataUtils {
     
     static func mapToPmdClientMeasurementType(from polarDataType : PolarDeviceDataType) -> PmdMeasurementType {
@@ -31,6 +35,21 @@ internal class PolarDataUtils {
     }
     
     static func mapToPolarFeature(from pmdMeasurementType : PmdMeasurementType) throws -> PolarDeviceDataType {
+        if let sharedName = PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(pmdMeasurementType.rawValue)) {
+            switch sharedName {
+            case "ECG": return PolarDeviceDataType.ecg
+            case "PPG": return PolarDeviceDataType.ppg
+            case "ACC": return PolarDeviceDataType.acc
+            case "PPI": return PolarDeviceDataType.ppi
+            case "GYRO": return PolarDeviceDataType.gyro
+            case "MAG": return PolarDeviceDataType.magnetometer
+            case "OFFLINE_HR": return PolarDeviceDataType.hr
+            case "TEMPERATURE": return PolarDeviceDataType.temperature
+            case "PRESSURE": return PolarDeviceDataType.pressure
+            case "SKIN_TEMP": return PolarDeviceDataType.skinTemperature
+            default: break
+            }
+        }
         switch(pmdMeasurementType) {
         case .ecg:
             return PolarDeviceDataType.ecg
@@ -116,6 +135,16 @@ internal class PolarDataUtils {
         case .exerciseStart:
             return .triggerExerciseStart
         }
+    }
+}
+
+enum PolarPmdMeasurementRuntimePlanner {
+    static func measurementTypeName(id: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdMeasurementTypeName(id: Int32(id))
+        #else
+        return nil
+        #endif
     }
 }
 
