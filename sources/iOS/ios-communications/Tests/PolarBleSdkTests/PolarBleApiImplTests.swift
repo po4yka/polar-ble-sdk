@@ -2788,6 +2788,31 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(stopSyncParams?.completed == true)
     }
 
+    func test_sendTerminateSessionNotification_usesSharedSyncStopTerminateNotification() throws {
+        try assertCommandRuntimePolicyVectorContains("sync-stop-success")
+        let plannedNotifications = try XCTUnwrap(PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success"))
+
+        try awaitVoidAsync { [self] in try await v2Api.sendTerminateSessionNotification(identifier: deviceId) }
+
+        XCTAssertEqual(1, v2MockClient.sendNotificationCalls.count)
+        XCTAssertEqual(plannedNotifications.last, v2MockClient.sendNotificationCalls[0].notification)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        XCTAssertNil(v2MockClient.sendNotificationCalls[0].parameters)
+    }
+
+    func test_sendStopSyncNotification_usesSharedSyncStopNotificationWithCompletedParams() throws {
+        try assertCommandRuntimePolicyVectorContains("sync-stop-success")
+        let plannedNotifications = try XCTUnwrap(PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success"))
+
+        try awaitVoidAsync { [self] in try await v2Api.sendStopSyncNotification(identifier: deviceId) }
+
+        XCTAssertEqual(1, v2MockClient.sendNotificationCalls.count)
+        XCTAssertEqual(plannedNotifications.first, v2MockClient.sendNotificationCalls[0].notification)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.stopSync.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let stopSyncParams = try Protocol_PbPFtpStopSyncParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertTrue(stopSyncParams.completed)
+    }
+
     // MARK: - multi-BLE connection mode
 
     func test_setMultiBLEConnectionMode_sendsConfigureCommandWithEnableValue() throws {

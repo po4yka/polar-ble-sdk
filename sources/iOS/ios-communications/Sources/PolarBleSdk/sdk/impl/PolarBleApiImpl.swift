@@ -3037,7 +3037,9 @@ extension PolarBleApiImpl: PolarBleApi  {
     func sendTerminateSessionNotification(identifier: String) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, parameters: nil)
+        PolarRuntimePlanner.commandSyncStop(id: "sync-stop-success")
+        let notification = PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success")?.last ?? Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
+        try await client.sendNotification(notification, parameters: nil)
     }
 
     
@@ -3047,7 +3049,9 @@ extension PolarBleApiImpl: PolarBleApi  {
         var params = Protocol_PbPFtpStopSyncParams()
         params.completed = true
         let parameters = try params.serializedData() as NSData
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.stopSync.rawValue, parameters: parameters)
+        PolarRuntimePlanner.commandSyncStop(id: "sync-stop-success")
+        let notification = PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success")?.first ?? Protocol_PbPFtpHostToDevNotification.stopSync.rawValue
+        try await client.sendNotification(notification, parameters: parameters)
     }
 
     
