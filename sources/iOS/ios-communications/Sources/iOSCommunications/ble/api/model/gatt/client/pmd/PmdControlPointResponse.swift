@@ -39,7 +39,7 @@ internal struct PmdControlPointResponse {
 
     #if canImport(PolarBleSdkShared)
     private static func sharedParsedResponse(_ data: Data) -> (response: UInt8, opCode: UInt8, type: PmdMeasurementType, errorCode: PmdResponseCode, more: Bool, parameters: Data)? {
-        guard let encoded = PolarIosSharedBridge.shared.pmdControlPointResponseFields(responseHex: data.controlPointHexString) else { return nil }
+        guard let encoded = PmdControlPointRuntimePlanner.responseFields(responseHex: data.controlPointHexString) else { return nil }
         let fields = encoded.split(separator: ",", omittingEmptySubsequences: false)
         guard fields.count == 6,
               let response = UInt8(fields[0]),
@@ -57,6 +57,16 @@ internal struct PmdControlPointResponse {
         return (response, opCode, type, errorCode, more, Data(hexBytes: String(fields[5])))
     }
     #endif
+}
+
+enum PmdControlPointRuntimePlanner {
+    static func responseFields(responseHex: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdControlPointResponseFields(responseHex: responseHex)
+        #else
+        return nil
+        #endif
+    }
 }
 
 public enum PmdResponseCode: Int {

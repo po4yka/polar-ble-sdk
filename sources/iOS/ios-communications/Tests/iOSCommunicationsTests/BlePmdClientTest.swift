@@ -188,6 +188,9 @@ class BlePmdClientTest: XCTestCase {
     func testPmdControlPointResponseGoldenVectorsMatchIOSCommunicationsBehavior() throws {
         let vectors = try loadControlPointGoldenVectors()
         XCTAssertFalse(vectors.isEmpty, "Expected PMD control-point golden vectors")
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("240,1,2,0,0,ffffff", PmdControlPointRuntimePlanner.responseFields(responseHex: "f001020000ffffff"))
+        #endif
 
         for vector in vectors {
             let id = vector["id"] as? String ?? "unknown-vector"
