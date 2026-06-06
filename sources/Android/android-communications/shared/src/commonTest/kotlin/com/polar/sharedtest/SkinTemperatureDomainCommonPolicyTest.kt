@@ -60,11 +60,11 @@ class SkinTemperatureDomainCommonPolicyTest {
                     assertTrue(model.samples.isEmpty(), "$caseId preserve empty samples")
                 }
                 commonDecision.optionalStringValue("unknownEnumPolicy")?.let { policy ->
-                    assertEquals("choose-null-or-explicit-unknown-before-shared-model-migration", policy, caseId)
-                    assertNull(model.measurementType, "$caseId unresolved unknown measurement policy")
-                    assertNull(model.sensorLocation, "$caseId unresolved unknown sensor-location policy")
-                    assertEquals("SL_UNKNOWN", platformExpectations.objectValue("ios").stringValue("sensorLocation"), "$caseId iOS unknown enum characterization")
-                    assertEquals("TM_UNKNOWN", platformExpectations.objectValue("ios").stringValue("measurementType"), "$caseId iOS unknown enum characterization")
+                    assertEquals("map-unrecognized-measurement-and-sensor-location-to-null-in-shared-models", policy, caseId)
+                    assertNull(model.measurementType, "$caseId shared unknown measurement policy")
+                    assertNull(model.sensorLocation, "$caseId shared unknown sensor-location policy")
+                    assertNull(platformExpectations.objectValue("ios").optionalStringValue("sensorLocation"), "$caseId linked iOS shared unknown sensor-location policy")
+                    assertNull(platformExpectations.objectValue("ios").optionalStringValue("measurementType"), "$caseId linked iOS shared unknown measurement policy")
                 }
             }
         }

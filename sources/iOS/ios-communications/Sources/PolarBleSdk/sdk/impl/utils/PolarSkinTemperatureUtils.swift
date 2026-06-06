@@ -52,24 +52,24 @@ internal class PolarSkinTemperatureUtils {
         }
     }
 
-    private static func measurementType(from value: TemperatureMeasurementType) -> PolarSkinTemperatureData.SkinTemperatureMeasurementType {
+    private static func measurementType(from value: TemperatureMeasurementType) -> PolarSkinTemperatureData.SkinTemperatureMeasurementType? {
         #if canImport(PolarBleSdkShared)
         switch PolarIosSharedBridge.shared.skinTemperatureMeasurementType(value: Int32(value.rawValue)) {
         case "TM_SKIN_TEMPERATURE": return .TM_SKIN_TEMPERATURE
         case "TM_CORE_TEMPERATURE": return .TM_CORE_TEMPERATURE
-        default: return .TM_UNKNOWN
+        default: return nil
         }
         #else
         return PolarSkinTemperatureData.SkinTemperatureMeasurementType.getByValue(value: value)
         #endif
     }
 
-    private static func sensorLocation(from value: SensorLocation) -> PolarSkinTemperatureData.SkinTemperatureSensorLocation {
+    private static func sensorLocation(from value: SensorLocation) -> PolarSkinTemperatureData.SkinTemperatureSensorLocation? {
         #if canImport(PolarBleSdkShared)
         switch PolarIosSharedBridge.shared.skinTemperatureSensorLocation(value: Int32(value.rawValue)) {
         case "SL_DISTAL": return .SL_DISTAL
         case "SL_PROXIMAL": return .SL_PROXIMAL
-        default: return .SL_UNKNOWN
+        default: return nil
         }
         #else
         return PolarSkinTemperatureData.SkinTemperatureSensorLocation.getByValue(value: value)

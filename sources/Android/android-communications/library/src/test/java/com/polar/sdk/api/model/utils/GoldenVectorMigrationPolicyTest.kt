@@ -3405,7 +3405,7 @@ class GoldenVectorMigrationPolicyTest {
             "unknown-sensor-location-boundary",
             "compile-verification-gate",
             "include-nullable-source-device-id-in-shared-model-or-adapt-it-at-platform-facade",
-            "choose-null-or-explicit-unknown-before-shared-model-migration",
+            "map-unrecognized-measurement-and-sensor-location-to-null-in-shared-models",
             "preserve-empty-list"
         )
         val DISK_SPACE_COMMON_POLICY_REQUIRED_TERMS = listOf(
