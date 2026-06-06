@@ -58,7 +58,7 @@ public struct PolarPlainDate {
 
     #if canImport(PolarBleSdkShared)
     private static func sharedPlainDateString(from value: String) -> String? {
-        guard let fieldsCsv = PolarIosSharedBridge.shared.plainDateFieldsCsv(value: value) else { return nil }
+        guard let fieldsCsv = PolarPlainDateRuntimePlanner.plainDateFieldsCsv(value: value) else { return nil }
         let fields = fieldsCsv.split(separator: ",", omittingEmptySubsequences: false)
         guard fields.count == 3,
               let year = Int32(fields[0]),
@@ -66,7 +66,7 @@ public struct PolarPlainDate {
               let day = Int32(fields[2]) else {
             return nil
         }
-        return PolarIosSharedBridge.shared.formatPlainDate(year: year, month: month, day: day)
+        return PolarPlainDateRuntimePlanner.formatPlainDate(year: year, month: month, day: day)
     }
 
     private static func sharedPlainDateString(date: Date, calendar: Calendar) -> String? {
@@ -76,9 +76,27 @@ public struct PolarPlainDate {
               let day = components.day else {
             return nil
         }
-        return PolarIosSharedBridge.shared.formatPlainDate(year: Int32(year), month: Int32(month), day: Int32(day))
+        return PolarPlainDateRuntimePlanner.formatPlainDate(year: Int32(year), month: Int32(month), day: Int32(day))
     }
     #endif
+}
+
+enum PolarPlainDateRuntimePlanner {
+    static func plainDateFieldsCsv(value: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.plainDateFieldsCsv(value: value)
+        #else
+        return nil
+        #endif
+    }
+
+    static func formatPlainDate(year: Int32, month: Int32, day: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.formatPlainDate(year: year, month: month, day: day)
+        #else
+        return nil
+        #endif
+    }
 }
 
 extension PolarPlainDate: CustomStringConvertible {
