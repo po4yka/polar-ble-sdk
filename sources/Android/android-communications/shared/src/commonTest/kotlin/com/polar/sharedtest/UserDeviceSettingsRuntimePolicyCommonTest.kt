@@ -95,7 +95,7 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
             )
             val planned = PolarRuntimeOrchestration.planUserDeviceSettings(operation)
             val expected = expectedCases.getValue(operation.id)
-            val transport = ScriptedCommonFakeTransport(outcomesForTerminal(expected.stringValue("terminal")))
+            val transport = ScriptedCommonFakeTransport(outcomesForTerminal(expected.stringValue("terminal"), planned.commands))
             val terminal = executePlannedSettingsOperation(planned.commands, operation.payloadFields, transport)
 
             assertEquals(expected.stringArrayValue("commands"), planned.commands, operation.id)
@@ -138,6 +138,7 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
     private val requiredUserDeviceSettingsRuntimeOperationIds = listOf(
         "get-user-device-settings",
         "get-user-device-settings-read-failure",
+        "set-user-device-settings",
         "set-telemetry-enabled",
         "set-telemetry-read-failure",
         "set-telemetry-write-failure",
@@ -156,6 +157,7 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         "settings-path-gate",
         "settings-read-success",
         "settings-read-failure-no-write",
+        "whole-settings-direct-write",
         "telemetry-read-then-write",
         "telemetry-write-failure-after-payload",
         "device-location-read-then-write",
@@ -173,18 +175,21 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         "compile-verification-gate"
     )
 
-    private val userDeviceSettingsRuntimeReadinessCommonDecision = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, read-failure no-write and write-failure-after-payload behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+    private val userDeviceSettingsRuntimeReadinessCommonDecision = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
 
-    private val userDeviceSettingsRuntimePolicyCommonDecision = "Promote user-device-settings runtime only after read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+    private val userDeviceSettingsRuntimePolicyCommonDecision = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
 
     private val readFailureNoWriteBehavior = "read-failure no-write behavior"
 
-    private fun outcomesForTerminal(terminal: String): List<CommonFakeTransportOutcome> {
+    private fun outcomesForTerminal(terminal: String, commands: List<String> = listOf("read:", "write:")): List<CommonFakeTransportOutcome> {
         return when (terminal) {
-            "success" -> listOf(
-                CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01)),
-                CommonFakeTransportOutcome.Complete
-            )
+            "success" -> commands.mapNotNull { command ->
+                when {
+                    command.startsWith("read:") -> CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01))
+                    command.startsWith("write:") -> CommonFakeTransportOutcome.Complete
+                    else -> null
+                }
+            }
             "transport-error" -> listOf(CommonFakeTransportOutcome.TransportError("settings-read-failed"))
             "transport-error-after-payload" -> listOf(
                 CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01)),
@@ -237,6 +242,7 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
     private fun assertUserDeviceSettingsPolicyFields(operationsById: Map<String, String>) {
         assertEquals("read", operationsById.getValue("get-user-device-settings").stringValue("kind"))
         assertEquals("readFailure", operationsById.getValue("get-user-device-settings-read-failure").stringValue("kind"))
+        assertEquals(listOf("protobufPayload=platform-built"), operationsById.getValue("set-user-device-settings").stringArrayValue("payloadFields"))
         assertEquals(listOf("telemetryEnabled=true", "preserve:deviceLocation=WRIST_LEFT"), operationsById.getValue("set-telemetry-enabled").stringArrayValue("payloadFields"))
         assertEquals("readFailure", operationsById.getValue("set-telemetry-read-failure").stringValue("kind"))
         assertEquals(listOf("telemetryEnabled=true"), operationsById.getValue("set-telemetry-write-failure").stringArrayValue("payloadFields"))

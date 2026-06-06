@@ -11,6 +11,7 @@
       "settings-path-gate",
       "settings-read-success",
       "settings-read-failure-no-write",
+      "whole-settings-direct-write",
       "telemetry-read-then-write",
       "telemetry-write-failure-after-payload",
       "device-location-read-then-write",
@@ -33,6 +34,7 @@
       "settings-path-gate",
       "settings-read-success",
       "settings-read-failure-no-write",
+      "whole-settings-direct-write",
       "telemetry-read-then-write",
       "telemetry-write-failure-after-payload",
       "device-location-read-then-write",
@@ -49,7 +51,7 @@
       "platform-facade-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, read-failure no-write and write-failure-after-payload behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified.",
+    "commonDecision": "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
       "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."

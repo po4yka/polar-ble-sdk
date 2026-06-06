@@ -1104,6 +1104,79 @@ class BDBleApiImplTest {
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", requestOperation.path)
     }
 
+    @Suppress("DEPRECATION")
+    @Test
+    fun `setUserDeviceSettings writes whole settings payload through shared path planning`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val settings = PolarUserDeviceSettings(
+            deviceLocation = PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT.number,
+            usbConnectionMode = true,
+            telemetryEnabled = true,
+            automaticTrainingDetectionMode = false,
+            automaticTrainingDetectionSensitivity = 22,
+            minimumTrainingDurationSeconds = 300,
+            autosFilesEnabled = false
+        )
+
+        mockPolarFileSystemV2()
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.setUserDeviceSettings(deviceId, settings)
+
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertEquals(sharedDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT.number), writtenSettings.generalSettings.deviceLocation)
+        Assert.assertEquals(sharedUsbConnectionMode(true), writtenSettings.usbConnectionSettings.mode)
+        val atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
+        Assert.assertEquals(sharedAutomaticTrainingDetectionState(false), atdSettings.state)
+        Assert.assertEquals(22, atdSettings.sensitivity)
+        Assert.assertEquals(300, atdSettings.minimumTrainingDurationSeconds)
+        Assert.assertEquals(PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF, writtenSettings.automaticMeasurementSettings.automaticOhrMeasurement.state)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun `setUserDeviceSettings propagates write failure after whole settings payload is prepared`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("whole settings write failed")
+        val settings = PolarUserDeviceSettings(
+            deviceLocation = PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT.number,
+            telemetryEnabled = false
+        )
+
+        mockPolarFileSystemV2()
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flow { throw transportError }
+
+        try {
+            api.setUserDeviceSettings(deviceId, settings)
+            Assert.fail("Expected whole settings write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertEquals(sharedDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT.number), writtenSettings.generalSettings.deviceLocation)
+        Assert.assertFalse(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
     @Test
     fun `getDiskSpace decodes fake query response`() = runTest {
         assertDiskTimeRuntimePolicyVectorContains("get-disk-space")
@@ -3189,6 +3262,7 @@ class BDBleApiImplTest {
                 "settings-path-gate",
                 "settings-read-success",
                 "settings-read-failure-no-write",
+                "whole-settings-direct-write",
                 "telemetry-read-then-write",
                 "telemetry-write-failure-after-payload",
                 "device-location-read-then-write",
@@ -3653,8 +3727,8 @@ class BDBleApiImplTest {
         const val COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
         const val STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
         const val DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
-        const val USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, read-failure no-write and write-failure-after-payload behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
-        const val USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+        const val USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+        const val USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
         val COMMAND_RUNTIME_POLICY_OPERATION_IDS = listOf(
             "h10-start-recording",
             "h10-start-recording-query-failure",
@@ -3699,6 +3773,7 @@ class BDBleApiImplTest {
         val USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS = listOf(
             "get-user-device-settings",
             "get-user-device-settings-read-failure",
+            "set-user-device-settings",
             "set-telemetry-enabled",
             "set-telemetry-read-failure",
             "set-telemetry-write-failure",

@@ -15,15 +15,15 @@ private let DISK_TIME_RUNTIME_READINESS_COMMON_DECISION = "Disk/time facade runt
 private let COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
 private let STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
 private let DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
-private let USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, read-failure no-write and write-failure-after-payload behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
-private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+private let USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
 private let REST_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
 private let FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
 private let COMMAND_RUNTIME_POLICY_OPERATION_IDS = ["h10-start-recording", "h10-start-recording-query-failure", "h10-stop-recording", "h10-stop-recording-query-failure", "h10-recording-status", "h10-recording-status-query-failure", "factory-reset", "factory-reset-notification-failure", "factory-reset-preserve-pairing", "factory-reset-preserve-pairing-notification-failure", "restart", "restart-notification-failure", "warehouse-sleep", "warehouse-sleep-notification-failure", "turn-device-off", "turn-device-off-notification-failure", "sync-start-success", "sync-start-query-failure", "sync-stop-success", "sync-stop-notification-failure"]
 private let DISK_TIME_RUNTIME_POLICY_OPERATION_IDS = ["get-disk-space", "get-local-time", "get-local-time-with-zone", "set-local-time-v2", "set-local-time-h10", "set-local-time-failure", "get-local-time-failure", "get-local-time-with-zone-failure", "get-disk-space-failure"]
 private let STORED_DATA_CLEANUP_POLICY_SCENARIO_IDS = ["telemetry-root-trc-bin-filter", "sdlogs-extension-filter", "activity-prune-empty-parents", "automatic-sample-embedded-day-filter", "sdlogs-list-failure-platform-policy", "telemetry-list-failure-platform-policy"]
-private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS = ["get-user-device-settings", "get-user-device-settings-read-failure", "set-telemetry-enabled", "set-telemetry-read-failure", "set-telemetry-write-failure", "set-user-device-location", "set-user-device-location-write-failure", "set-usb-connection-mode", "set-usb-connection-mode-write-failure", "set-automatic-training-detection", "set-automatic-training-detection-write-failure", "set-automatic-ohr-measurement", "set-automatic-ohr-measurement-write-failure", "set-daylight-saving-time"]
+private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS = ["get-user-device-settings", "get-user-device-settings-read-failure", "set-user-device-settings", "set-telemetry-enabled", "set-telemetry-read-failure", "set-telemetry-write-failure", "set-user-device-location", "set-user-device-location-write-failure", "set-usb-connection-mode", "set-usb-connection-mode-write-failure", "set-automatic-training-detection", "set-automatic-training-detection-write-failure", "set-automatic-ohr-measurement", "set-automatic-ohr-measurement-write-failure", "set-daylight-saving-time"]
 private let REST_FACADE_RUNTIME_POLICY_OPERATION_IDS = ["list-rest-api-services-success", "get-rest-api-description-success", "list-rest-api-services-request-failure", "get-rest-api-description-request-failure", "list-rest-api-services-response-error", "get-rest-api-description-response-error", "list-rest-api-services-empty-success", "list-rest-api-services-malformed-success", "get-rest-api-description-empty-success", "get-rest-api-description-malformed-success"]
 private let FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS = ["read-low-level-file-success", "read-low-level-file-empty-success", "read-low-level-file-request-failure", "read-low-level-file-response-error", "write-low-level-file-success", "write-low-level-file-progress-success", "write-low-level-file-stream-failure", "write-low-level-file-response-error", "delete-low-level-file-success", "delete-low-level-file-request-failure", "delete-low-level-file-response-error"]
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS = ["set-trigger-success-with-secret", "set-trigger-mode-error", "set-trigger-status-read-error", "set-trigger-setting-error", "get-trigger-success", "get-trigger-transport-error"]
@@ -451,6 +451,7 @@ final class PolarBleApiImplTests: XCTestCase {
                 "settings-path-gate",
                 "settings-read-success",
                 "settings-read-failure-no-write",
+                "whole-settings-direct-write",
                 "telemetry-read-then-write",
                 "telemetry-write-failure-after-payload",
                 "device-location-read-then-write",
@@ -1250,6 +1251,66 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
         XCTAssertEqual(.off, writtenSettings.automaticMeasurementSettings.automaticOhrMeasurement.state)
+    }
+
+    // MARK: - setPolarUserDeviceSettings
+
+    func test_setPolarUserDeviceSettings_writesWholeSettingsPayloadThroughSharedPathPlanning() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings")
+        let settings = PolarUserDeviceSettings()
+        settings.deviceLocation = .WRIST_RIGHT
+        settings.usbConnectionMode = .ON
+        settings.telemetryEnabled = true
+        settings.automaticTrainingDetectionMode = .OFF
+        settings.automaticTrainingDetectionSensitivity = 22
+        settings.minimumTrainingDurationSeconds = 300
+        settings.autosFilesEnabled = false
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.setPolarUserDeviceSettings(deviceId, polarUserDeviceSettings: settings) }
+
+        XCTAssertTrue(v2MockClient.requestCalls.isEmpty)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertEqual(sharedDeviceLocation(PbDeviceLocation.deviceLocationWristRight.rawValue), writtenSettings.generalSettings.deviceLocation)
+        XCTAssertEqual(PolarUserDeviceSettings.UsbConnectionMode.ON.toProto(), writtenSettings.usbConnectionSettings.mode)
+        XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+        let atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
+        XCTAssertEqual(PolarUserDeviceSettings.AutomaticTrainingDetectionMode.OFF.toProto(), atdSettings.state)
+        XCTAssertEqual(22, atdSettings.sensitivity)
+        XCTAssertEqual(300, atdSettings.minimumTrainingDurationSeconds)
+        XCTAssertEqual(.off, writtenSettings.automaticMeasurementSettings.automaticOhrMeasurement.state)
+    }
+
+    func test_setPolarUserDeviceSettings_propagatesWriteFailureAfterWholeSettingsPayloadIsPrepared() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings")
+        let settings = PolarUserDeviceSettings()
+        settings.deviceLocation = .WRIST_LEFT
+        settings.telemetryEnabled = false
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7031, userInfo: [NSLocalizedDescriptionKey: "whole settings write failed"])
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setPolarUserDeviceSettings(deviceId, polarUserDeviceSettings: settings) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertTrue(v2MockClient.requestCalls.isEmpty)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertEqual(sharedDeviceLocation(PbDeviceLocation.deviceLocationWristLeft.rawValue), writtenSettings.generalSettings.deviceLocation)
+        XCTAssertFalse(writtenSettings.telemetrySettings.telemetryEnabled)
     }
 
     // MARK: - getPolarUserDeviceSettings
