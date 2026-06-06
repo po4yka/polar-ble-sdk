@@ -168,6 +168,11 @@ final class PmdSecretTest: XCTestCase {
     func testPmdSecretGoldenVectorsMatchIOSCommunicationsBehavior() throws {
         let vectors = try loadPmdSecretGoldenVectors()
         XCTAssertFalse(vectors.isEmpty, "Expected PMD secret golden vectors")
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("060100", PmdSecretRuntimePlanner.settingsHex(strategy: "NONE", keyHex: ""))
+        XCTAssertEqual("0a", PmdSecretRuntimePlanner.decryptHex(strategy: "NONE", keyHex: "", cipherHex: "0a"))
+        XCTAssertEqual("AES128", PmdSecretRuntimePlanner.strategyName(strategyByte: 2))
+        #endif
 
         for vector in vectors {
             let id = vector["id"] as? String ?? "unknown-vector"
