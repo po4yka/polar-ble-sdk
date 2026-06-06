@@ -34,19 +34,11 @@ internal class PolarSleepUtils {
     }
 
     private static func sleepAnalysisPath(day: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.sleepAnalysisPath(day: day)
-        #else
-        return "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(SLEEP_DIRECTORY)\(SLEEP_PROTO)"
-        #endif
+        return PolarSleepRuntimePlanner.sleepAnalysisPath(day: day) ?? "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(SLEEP_DIRECTORY)\(SLEEP_PROTO)"
     }
 
     private static func sleepSkinTemperaturePath(day: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.sleepSkinTemperaturePath(day: day)
-        #else
-        return "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(NRST_DIRECTORY)\(NRST_PROTO)"
-        #endif
+        return PolarSleepRuntimePlanner.sleepSkinTemperaturePath(day: day) ?? "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(NRST_DIRECTORY)\(NRST_PROTO)"
     }
 
     static func readSleepFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> PolarSleepData.PolarSleepAnalysisResult {
@@ -91,35 +83,19 @@ internal class PolarSleepUtils {
     }
 
     private static func sharedSleepStartOffsetSeconds(_ value: Int32) -> Int32 {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.sleepStartOffsetSeconds(value: value)
-        #else
-        return value
-        #endif
+        return PolarSleepRuntimePlanner.sleepStartOffsetSeconds(value) ?? value
     }
 
     private static func sharedSleepEndOffsetSeconds(startOffsetSeconds: Int32, endOffsetSeconds: Int32) -> Int32 {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.sleepEndOffsetSeconds(value: endOffsetSeconds)
-        #else
-        return startOffsetSeconds
-        #endif
+        return PolarSleepRuntimePlanner.sleepEndOffsetSeconds(endOffsetSeconds) ?? startOffsetSeconds
     }
 
     private static func sharedShouldIncludeOriginalSleepRange(_ hasOriginalSleepRange: Bool) -> Bool {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.shouldIncludeOriginalSleepRange(hasOriginalSleepRange: hasOriginalSleepRange)
-        #else
-        return true
-        #endif
+        return PolarSleepRuntimePlanner.shouldIncludeOriginalSleepRange(hasOriginalSleepRange) ?? true
     }
 
     private static func sharedShouldIncludeSleepSkinTemperatureResult(_ hasSleepDate: Bool) -> Bool {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.shouldIncludeSleepSkinTemperatureResult(hasSleepDate: hasSleepDate)
-        #else
-        return true
-        #endif
+        return PolarSleepRuntimePlanner.shouldIncludeSleepSkinTemperatureResult(hasSleepDate) ?? true
     }
 
     static func readSleepSkinTemperatureResult(client: BlePsFtpClient, date: Date, sleepAnalysisResult: PolarSleepData.PolarSleepAnalysisResult) async throws -> PolarSleepData.PolarSleepAnalysisResult {
@@ -137,5 +113,55 @@ internal class PolarSleepUtils {
             BleLogger.trace("readSleepSkinTemperature() failed for path: \(filePath), error: \(error). No sleep skin temperature data?")
         }
         return result
+    }
+}
+
+enum PolarSleepRuntimePlanner {
+    static func sleepAnalysisPath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepAnalysisPath(day: day)
+        #else
+        return nil
+        #endif
+    }
+
+    static func sleepSkinTemperaturePath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepSkinTemperaturePath(day: day)
+        #else
+        return nil
+        #endif
+    }
+
+    static func sleepStartOffsetSeconds(_ value: Int32) -> Int32? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepStartOffsetSeconds(value: value)
+        #else
+        return nil
+        #endif
+    }
+
+    static func sleepEndOffsetSeconds(_ value: Int32) -> Int32? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepEndOffsetSeconds(value: value)
+        #else
+        return nil
+        #endif
+    }
+
+    static func shouldIncludeOriginalSleepRange(_ hasOriginalSleepRange: Bool) -> Bool? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.shouldIncludeOriginalSleepRange(hasOriginalSleepRange: hasOriginalSleepRange)
+        #else
+        return nil
+        #endif
+    }
+
+    static func shouldIncludeSleepSkinTemperatureResult(_ hasSleepDate: Bool) -> Bool? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.shouldIncludeSleepSkinTemperatureResult(hasSleepDate: hasSleepDate)
+        #else
+        return nil
+        #endif
     }
 }
