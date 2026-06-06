@@ -176,8 +176,16 @@ object PolarIosSharedBridge {
         return PolarTypeUtils.requireSignedInt(hex.hexToBytes()).toInt()
     }
 
+    fun signedIntFromLittleEndianHex(hex: String, offset: Int, size: Int): Int {
+        return PolarTypeUtils.convertArrayToSignedInt(hex.hexToBytes(), offset, size).requireValue().toInt()
+    }
+
     fun unsignedLongFromLittleEndianHex(hex: String): String {
         return PolarTypeUtils.requireUnsignedLong(hex.hexToBytes())
+    }
+
+    fun unsignedLongFromLittleEndianHex(hex: String, offset: Int, size: Int): String {
+        return PolarTypeUtils.convertArrayToUnsignedLong(hex.hexToBytes(), offset, size).requireValue()
     }
 
     fun buildKvtxWriteAndCommitHex(kvKey: Long, dataHex: String): String {

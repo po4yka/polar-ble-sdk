@@ -8,6 +8,11 @@ import PolarBleSdkShared
 class TypeUtils {
     
     static func convertArrayToSignedInt(_ data: Data, offset: Int, size: Int) -> Int32 {
+        #if canImport(PolarBleSdkShared)
+        if !data.isEmpty && size <= 4 {
+            return PolarIosSharedBridge.shared.signedIntFromLittleEndianHex(hex: data.hexString(), offset: Int32(offset), size: Int32(size))
+        }
+        #endif
         return convertArrayToSignedInt(data.subdata(in: offset..<(offset+size)))
     }
     
@@ -43,6 +48,11 @@ class TypeUtils {
     }
 
     static func convertArrayToUnsignedInt64(_ data: Data, offset: Int, size: Int) -> UInt64 {
+        #if canImport(PolarBleSdkShared)
+        if !data.isEmpty && size <= 8, let value = UInt64(PolarIosSharedBridge.shared.unsignedLongFromLittleEndianHex(hex: data.hexString(), offset: Int32(offset), size: Int32(size))) {
+            return value
+        }
+        #endif
         return convertArrayToUnsignedInt64(data.subdata(in: offset..<(offset+size)))
     }
 
