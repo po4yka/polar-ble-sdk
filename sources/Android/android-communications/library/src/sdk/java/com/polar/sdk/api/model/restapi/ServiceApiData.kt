@@ -51,13 +51,13 @@ data class PolarDeviceRestApiServiceDescription (
  * properties.
  */
 val PolarDeviceRestApiServiceDescription.events: List<String>
-    get() = dictionary["events"].asStringList()
+    get() = sharedProjection.events
 
 /**
  * Endpoints that can be applied in **endpoint=** parameter in paths from `actions` and `actionPaths`
  */
 val PolarDeviceRestApiServiceDescription.endpoints: List<String>
-    get() = dictionary["endpoints"].asStringList()
+    get() = sharedProjection.endpoints
 
 /**
  * Actions/commands that can be sent, using put operation of corresponding path string
@@ -80,7 +80,7 @@ val PolarDeviceRestApiServiceDescription.endpoints: List<String>
  *
  */
 val PolarDeviceRestApiServiceDescription.actions: Map<String, String>
-    get() = dictionary["cmd"].asStringMap()
+    get() = sharedProjection.actions
 
 /**
  * Just the action names from `actions` property

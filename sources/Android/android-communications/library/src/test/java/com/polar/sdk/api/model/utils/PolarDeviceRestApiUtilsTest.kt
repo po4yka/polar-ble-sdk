@@ -268,6 +268,9 @@ class PolarDeviceRestApiUtilsTest {
         assertEquals("$caseId events", expected.getAsJsonArray("events").map { it.asString }, actual.events)
         assertEquals("$caseId endpoints", expected.getAsJsonArray("endpoints").map { it.asString }, actual.endpoints)
         assertEquals("$caseId actions", expectedActions, actual.actions)
+        assertEquals("$caseId shared projection events", actual.sharedProjection.events, actual.events)
+        assertEquals("$caseId shared projection endpoints", actual.sharedProjection.endpoints, actual.endpoints)
+        assertEquals("$caseId shared projection actions", actual.sharedProjection.actions, actual.actions)
         assertEquals("$caseId actionNames", expectedActions.keys, actual.actionNames.toSet())
         assertEquals("$caseId actionPaths", expectedActions.values.toSet(), actual.actionPaths.toSet())
         expected.getAsJsonObject("eventDetails").entrySet().forEach { entry ->
