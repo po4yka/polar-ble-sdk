@@ -134,12 +134,7 @@ internal class PolarTrainingSessionUtils {
                     let timeStr = String(path[Range(match.range(at: 2), in: path)!])
                     let dateTimeStr = dateStr + timeStr
                     let dateTime = dateTimeFormatter.date(from: dateTimeStr) ?? Date()
-                    let dateAtPath = Calendar.current.dateComponents([.year, .month, .day], from: dateFormatter.date(from: dateStr) ?? Date())
-                    let effectiveFrom = fromDate.map { Calendar.current.dateComponents([.year, .month, .day], from: $0) }
-                    let effectiveTo = toDate.map { Calendar.current.dateComponents([.year, .month, .day], from: $0) }
-                    let afterFrom = effectiveFrom.map { dateAtPath >= $0 } ?? true
-                    let beforeTo = effectiveTo.map { dateAtPath <= $0 } ?? true
-                    let dateMatches = afterFrom && beforeTo
+                    let dateMatches = trainingSessionDateMatches(date: dateFormatter.date(from: dateStr) ?? Date(), fromDate: fromDate, toDate: toDate)
                     if dateMatches {
                         trainingSessionSummaryPaths.insert(path)
                         if let index = updatedReferences.firstIndex(where: { $0.path.contains(dateStr) && $0.path.contains(timeStr) }) {
@@ -365,7 +360,7 @@ internal class PolarTrainingSessionUtils {
                       let fileSize = Int64(fields[4]) else {
                     return nil
                 }
-                guard dateMatches(date: date, fromDate: fromDate, toDate: toDate) else {
+                guard trainingSessionDateMatches(date: date, fromDate: fromDate, toDate: toDate) else {
                     references.append(PolarTrainingSessionReference(date: date, path: fields[3], trainingDataTypes: [], exercises: [], fileSize: -1))
                     continue
                 }
@@ -431,7 +426,9 @@ internal class PolarTrainingSessionUtils {
         return fileSizes
     }
 
-    private static func dateMatches(date: Date, fromDate: Date?, toDate: Date?) -> Bool {
+    #endif
+
+    private static func trainingSessionDateMatches(date: Date, fromDate: Date?, toDate: Date?) -> Bool {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -449,7 +446,6 @@ internal class PolarTrainingSessionUtils {
         let beforeTo = effectiveTo.map { dateAtPath <= $0 } ?? true
         return afterFrom && beforeTo
     }
-    #endif
 
     private static func fallbackTrainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference) -> [String] {
         return [reference.path] + reference.exercises.flatMap { exercise in
