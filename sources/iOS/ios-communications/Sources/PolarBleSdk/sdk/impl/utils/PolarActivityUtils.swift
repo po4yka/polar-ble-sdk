@@ -31,19 +31,11 @@ internal class PolarActivityUtils {
     }
 
     private static func activityDirectoryPath(day: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.activityDirectoryPath(day: day)
-        #else
-        return "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(ACTIVITY_DIRECTORY)"
-        #endif
+        return PolarActivityRuntimePlanner.activityDirectoryPath(day: day) ?? "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(ACTIVITY_DIRECTORY)"
     }
 
     private static func dailySummaryPath(day: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.dailySummaryPath(day: day)
-        #else
-        return "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(DAILY_SUMMARY_DIRECTORY)\(DAILY_SUMMARY_PROTO)"
-        #endif
+        return PolarActivityRuntimePlanner.dailySummaryPath(day: day) ?? "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(DAILY_SUMMARY_DIRECTORY)\(DAILY_SUMMARY_PROTO)"
     }
 
     private static func activityReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
@@ -231,5 +223,39 @@ internal class PolarActivityUtils {
             }
         }
         return results
+    }
+}
+
+enum PolarActivityRuntimePlanner {
+    static func activityDirectoryPath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.activityDirectoryPath(day: day)
+        #else
+        return nil
+        #endif
+    }
+
+    static func dailySummaryPath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.dailySummaryPath(day: day)
+        #else
+        return nil
+        #endif
+    }
+
+    static func automaticSamplesDirectoryPath() -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.automaticSamplesDirectoryPath()
+        #else
+        return nil
+        #endif
+    }
+
+    static func automaticSamplesFilePath(fileName: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.automaticSamplesFilePath(fileName: fileName)
+        #else
+        return nil
+        #endif
     }
 }

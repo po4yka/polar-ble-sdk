@@ -20,19 +20,11 @@ internal class PolarAutomaticSamplesUtils {
     }
 
     private static func automaticSamplesDirectoryPath() -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.automaticSamplesDirectoryPath()
-        #else
-        return "\(ARABICA_USER_ROOT_FOLDER)\(AUTOMATIC_SAMPLES_DIRECTORY)"
-        #endif
+        return PolarActivityRuntimePlanner.automaticSamplesDirectoryPath() ?? "\(ARABICA_USER_ROOT_FOLDER)\(AUTOMATIC_SAMPLES_DIRECTORY)"
     }
 
     private static func automaticSamplesFilePath(fileName: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.automaticSamplesFilePath(fileName: fileName)
-        #else
-        return "\(ARABICA_USER_ROOT_FOLDER)\(AUTOMATIC_SAMPLES_DIRECTORY)\(fileName)"
-        #endif
+        return PolarActivityRuntimePlanner.automaticSamplesFilePath(fileName: fileName) ?? "\(ARABICA_USER_ROOT_FOLDER)\(AUTOMATIC_SAMPLES_DIRECTORY)\(fileName)"
     }
 
     private static func automaticSamplesReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
