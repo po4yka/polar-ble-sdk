@@ -48,6 +48,7 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: mockClient.requestCalls[0])
         XCTAssertEqual(.get, requestOperation.command)
         XCTAssertEqual(PolarIosSharedBridge.shared.firmwareDeviceInfoPath(), PolarFirmwareUpdateUtils.DEVICE_FIRMWARE_INFO_PATH)
+        XCTAssertEqual(PolarRuntimePlanner.firmwareDeviceInfoPath(), PolarFirmwareUpdateUtils.DEVICE_FIRMWARE_INFO_PATH)
         XCTAssertEqual(PolarFirmwareUpdateUtils.DEVICE_FIRMWARE_INFO_PATH, requestOperation.path)
     }
     
@@ -143,13 +144,18 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
            XCTAssertEqual(files[2], f3, "Files should maintain initial order if already sorted")
        }
 
-    func testFirmwareUtilityUsesSharedBridgeWhenLinked() async throws {
+    func testFirmwareUtilityUsesSharedPlannerWhenLinked() async throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("1.2.0", PolarIosSharedBridge.shared.firmwareDeviceVersion(major: 1, minor: 2, patch: 0))
+        XCTAssertEqual("1.2.0", PolarRuntimePlanner.firmwareDeviceVersion(major: 1, minor: 2, patch: 0))
         XCTAssertTrue(PolarIosSharedBridge.shared.isFirmwareVersionHigher(currentVersion: "1.0.0", availableVersion: "1.0.1"))
+        XCTAssertTrue(PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: "1.0.0", availableVersion: "1.0.1"))
         XCTAssertFalse(PolarIosSharedBridge.shared.isFirmwareVersionHigher(currentVersion: "2.0.0", availableVersion: "1.0.0"))
+        XCTAssertFalse(PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: "2.0.0", availableVersion: "1.0.0"))
         XCTAssertEqual(0, PolarIosSharedBridge.shared.firmwareFilePriority(fileName: "BTUPDAT.BIN"))
+        XCTAssertEqual(0, PolarRuntimePlanner.firmwareFilePriority("BTUPDAT.BIN"))
         XCTAssertEqual(1, PolarIosSharedBridge.shared.firmwareFilePriority(fileName: "SYSUPDAT.IMG"))
+        XCTAssertEqual(1, PolarRuntimePlanner.firmwareFilePriority("SYSUPDAT.IMG"))
 
         let expectedDeviceId = "123456"
         let proto = Data_PbDeviceInfo.with {
@@ -298,14 +304,14 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(FIRMWARE_WORKFLOW_SCENARIOS, scenarioIds, "workflow-runtime-policy")
         XCTAssertEqual(expected["policy"] as? String, "firmware-update-workflow-runtime-matrix", "workflow-runtime-policy")
         XCTAssertEqual(expected["migrationRequirement"] as? String, FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT, "workflow-runtime-policy")
-        XCTAssertEqual(commonPrototype["status"] as? String, "executable shared commonTest plus Android-hosted prototype", "workflow-runtime-policy")
+        XCTAssertEqual(commonPrototype["status"] as? String, "executable shared commonTest", "workflow-runtime-policy")
         XCTAssertEqual(FIRMWARE_WORKFLOW_SCENARIOS, commonPrototypeCaseIds, "workflow-runtime-policy")
         XCTAssertEqual(execution["common"] as? String, "shared-common-test", "workflow-runtime-policy")
         XCTAssertEqual(commonDecision["workflowPolicy"] as? String, FIRMWARE_WORKFLOW_COMMON_DECISION, "workflow-runtime-policy")
         XCTAssertNotNil(vector["execution"], "workflow-runtime-policy")
-        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "workflow-runtime-policy"), ["com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest", "com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "workflow-runtime-policy"), ["com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "workflow-runtime-policy"), ["PolarFirmwareUpdateUtilsTest"])
-        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "workflow-runtime-policy"), ["com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest", "com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "workflow-runtime-policy"), ["com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"])
     }
 
     func testWorkflowRuntimeReadinessManifestIsPinnedBeforeWorkflowMigration() throws {

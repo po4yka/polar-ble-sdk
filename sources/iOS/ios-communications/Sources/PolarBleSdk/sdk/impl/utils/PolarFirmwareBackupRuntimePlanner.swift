@@ -40,6 +40,46 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwareDeviceInfoPath() -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firmwareDeviceInfoPath()
+        #else
+        return "/DEVICE.BPB"
+        #endif
+    }
+
+    static func firmwareFilePriority(_ fileName: String) -> Int {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.firmwareFilePriority(fileName: fileName))
+        #else
+        return fileName.contains("SYSUPDAT.IMG") ? 1 : 0
+        #endif
+    }
+
+    static func isFirmwareVersionHigher(currentVersion: String, availableVersion: String) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.isFirmwareVersionHigher(currentVersion: currentVersion, availableVersion: availableVersion)
+        #else
+        let current = currentVersion.split(separator: ".").map { Int($0)! }
+        let available = availableVersion.split(separator: ".").map { Int($0)! }
+        for index in 0..<current.count {
+            if available.count > index {
+                if current[index] < available[index] { return true }
+                if current[index] > available[index] { return false }
+            }
+        }
+        return available.count > current.count
+        #endif
+    }
+
+    static func firmwareDeviceVersion(major: Int, minor: Int, patch: Int) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firmwareDeviceVersion(major: Int32(major), minor: Int32(minor), patch: Int32(patch))
+        #else
+        return "\(major).\(minor).\(patch)"
+        #endif
+    }
+
     @discardableResult
     static func backupRestore(path: String, payloadHex: String, writeResult: String = "success") -> String {
         #if canImport(PolarBleSdkShared)

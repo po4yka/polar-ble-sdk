@@ -2,34 +2,18 @@
 
 import Foundation
 import Zip
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
 
 class PolarFirmwareUpdateUtils {
     static let FIRMWARE_UPDATE_FILE_PATH = "/SYSUPDAT.IMG"
-    #if canImport(PolarBleSdkShared)
-    static let DEVICE_FIRMWARE_INFO_PATH = PolarIosSharedBridge.shared.firmwareDeviceInfoPath()
-    #else
-    static let DEVICE_FIRMWARE_INFO_PATH = "/DEVICE.BPB"
-    #endif
+    static let DEVICE_FIRMWARE_INFO_PATH = PolarRuntimePlanner.firmwareDeviceInfoPath()
 
     public class FwFileComparator {
-        private static let SYSUPDAT_IMG = "SYSUPDAT.IMG"
-
         static func compare(_ file1: String, _ file2: String) -> ComparisonResult {
-            #if canImport(PolarBleSdkShared)
-            return PolarIosSharedBridge.shared.firmwareFilePriority(fileName: file1)
-                .compare(PolarIosSharedBridge.shared.firmwareFilePriority(fileName: file2))
-            #else
-            if file1.contains(SYSUPDAT_IMG) {
-                return .orderedDescending
-            } else if file2.contains(SYSUPDAT_IMG) {
-                return .orderedAscending
-            } else {
-                return .orderedSame
-            }
-            #endif
+            let firstPriority = PolarRuntimePlanner.firmwareFilePriority(file1)
+            let secondPriority = PolarRuntimePlanner.firmwareFilePriority(file2)
+            if firstPriority < secondPriority { return .orderedAscending }
+            if firstPriority > secondPriority { return .orderedDescending }
+            return .orderedSame
         }
     }
     
@@ -61,23 +45,7 @@ class PolarFirmwareUpdateUtils {
     }
 
     static func isAvailableFirmwareVersionHigher(currentVersion: String, availableVersion: String) -> Bool {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.isFirmwareVersionHigher(currentVersion: currentVersion, availableVersion: availableVersion)
-        #else
-        let current = currentVersion.split(separator: ".").map { Int($0)! }
-        let available = availableVersion.split(separator: ".").map { Int($0)! }
-
-        for i in 0..<current.count {
-            if available.count > i {
-                if current[i] < available[i] {
-                    return true
-                } else if current[i] > available[i] {
-                    return false
-                }
-            }
-        }
-        return available.count > current.count
-        #endif
+        return PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: currentVersion, availableVersion: availableVersion)
     }
 
     static func firmwarePackageEntryIsPayload(_ fileName: String) -> Bool {
@@ -123,18 +91,6 @@ class PolarFirmwareUpdateUtils {
     }
     
     private static func devicePbVersionToString(pbVersion: PbVersion) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.firmwareDeviceVersion(major: Int32(pbVersion.major), minor: Int32(pbVersion.minor), patch: Int32(pbVersion.patch))
-        #else
-        return "\(pbVersion.major).\(pbVersion.minor).\(pbVersion.patch)"
-        #endif
-    }
-}
-
-private extension Int32 {
-    func compare(_ other: Int32) -> ComparisonResult {
-        if self < other { return .orderedAscending }
-        if self > other { return .orderedDescending }
-        return .orderedSame
+        return PolarRuntimePlanner.firmwareDeviceVersion(major: Int(pbVersion.major), minor: Int(pbVersion.minor), patch: Int(pbVersion.patch))
     }
 }

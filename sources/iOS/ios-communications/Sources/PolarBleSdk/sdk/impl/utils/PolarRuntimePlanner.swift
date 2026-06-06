@@ -210,6 +210,22 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwareFileTriggersRebootWait(fileName)
     }
 
+    static func firmwareDeviceInfoPath() -> String {
+        return PolarFirmwareBackupRuntimePlanner.firmwareDeviceInfoPath()
+    }
+
+    static func firmwareFilePriority(_ fileName: String) -> Int {
+        return PolarFirmwareBackupRuntimePlanner.firmwareFilePriority(fileName)
+    }
+
+    static func isFirmwareVersionHigher(currentVersion: String, availableVersion: String) -> Bool {
+        return PolarFirmwareBackupRuntimePlanner.isFirmwareVersionHigher(currentVersion: currentVersion, availableVersion: availableVersion)
+    }
+
+    static func firmwareDeviceVersion(major: Int, minor: Int, patch: Int) -> String {
+        return PolarFirmwareBackupRuntimePlanner.firmwareDeviceVersion(major: major, minor: minor, patch: patch)
+    }
+
     static func backupRootPaths(_ entries: [String]) -> [String] {
         return PolarFirmwareBackupRuntimePlanner.backupRootPaths(entries)
     }
