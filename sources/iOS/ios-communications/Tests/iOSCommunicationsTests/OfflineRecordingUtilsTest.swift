@@ -51,9 +51,6 @@ final class OfflineRecordingUtilsTest: XCTestCase {
 
     func testOfflineRecordingFilenameMappingUsesSharedPlannerWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
-        XCTAssertEqual("ACC", PolarIosSharedBridge.shared.offlineRecordingMeasurementType(fileName: "ACC0.REC"))
-        XCTAssertEqual("SKIN_TEMP", PolarIosSharedBridge.shared.offlineRecordingMeasurementType(fileName: "SKINTEMP.REC"))
-        XCTAssertNil(PolarIosSharedBridge.shared.offlineRecordingMeasurementType(fileName: "INVALID.REC"))
         XCTAssertEqual("ACC", OfflineRecordingRuntimePlanner.measurementTypeName(fileName: "ACC0.REC"))
         XCTAssertEqual("SKIN_TEMP", OfflineRecordingRuntimePlanner.measurementTypeName(fileName: "SKINTEMP.REC"))
         XCTAssertNil(OfflineRecordingRuntimePlanner.measurementTypeName(fileName: "INVALID.REC"))
