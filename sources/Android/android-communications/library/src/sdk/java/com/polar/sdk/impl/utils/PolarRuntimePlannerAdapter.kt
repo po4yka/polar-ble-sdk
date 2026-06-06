@@ -285,6 +285,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNames)
     }
 
+    fun firmwarePackageEntryIsPayload(fileName: String): Boolean {
+        return PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload(fileName)
+    }
+
     fun planBackupRestore(path: String, payloadHex: String, writeResult: String = "success") {
         PolarWorkflowRuntimePlanning.planBackupRestore(
             listOf(

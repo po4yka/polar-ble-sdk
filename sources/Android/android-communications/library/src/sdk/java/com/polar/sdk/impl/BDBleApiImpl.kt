@@ -137,7 +137,6 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.TimeUnit
-import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import fi.polar.remote.representation.protobuf.Structures
 import com.polar.sdk.impl.utils.PolarFileUtils
@@ -2465,12 +2464,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     private fun parseFirmwareZip(bytes: ByteArray): List<Pair<String, ByteArray>> {
         val firmwareFiles = mutableListOf<Pair<String, ByteArray>>()
         val zipInputStream = ZipInputStream(ByteArrayInputStream(bytes))
-        var entry: ZipEntry?
         val buffer = ByteArray(PolarFirmwareUpdateUtils.BUFFER_SIZE)
-        while (zipInputStream.nextEntry.also { entry = it } != null) {
-            val entryFileName = entry!!.name
-            // Polar H10 FW package has this file
-            if (entryFileName.equals("readme.txt")) {
+        while (true) {
+            val entry = zipInputStream.nextEntry ?: break
+            val entryFileName = entry.name
+            if (!PolarRuntimePlannerAdapter.firmwarePackageEntryIsPayload(entryFileName)) {
                 BleLogger.d(TAG, "Skipping file $entryFileName")
                 zipInputStream.closeEntry()
                 continue
@@ -2481,7 +2479,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             while (zipInputStream.read(buffer).also { length = it } != -1) {
                 byteArrayOutputStream.write(buffer, 0, length)
             }
-            val fileName = entry!!.name
+            val fileName = entry.name
             BleLogger.d(TAG, "Extracted firmware file: $fileName")
             firmwareFiles.add(Pair(fileName, byteArrayOutputStream.toByteArray()))
             zipInputStream.closeEntry()

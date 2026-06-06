@@ -180,6 +180,10 @@ object PolarWorkflowRuntimePlanning {
         return PolarFirmwareUpdateModels.orderFirmwareFiles(fileNames)
     }
 
+    fun firmwarePackageEntryIsPayload(fileName: String): Boolean {
+        return fileName != "readme.txt"
+    }
+
     fun expandBackupEntries(backupText: String, availablePaths: List<String>): List<String> {
         return backupText.split("\n").filter { it.isNotEmpty() }.flatMap { path ->
             if (path.endsWith("/")) {

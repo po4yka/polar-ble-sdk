@@ -113,6 +113,14 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared firmware package entry filter preserves Android readme skip policy`() {
+        Assert.assertFalse(PolarRuntimePlannerAdapter.firmwarePackageEntryIsPayload("readme.txt"))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.firmwarePackageEntryIsPayload("README.TXT"))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.firmwarePackageEntryIsPayload("BTUPDAT.BIN"))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.firmwarePackageEntryIsPayload("SYSUPDAT.IMG"))
+    }
+
+    @Test
     fun `shared user device settings plans select Android protobuf read and write operations`() {
         val read = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("get-user-device-settings", "read", "/U/0/S/UDEVSET.BPB")
         val write = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("set-user-device-settings", "write", "/U/0/S/UDEVSET.BPB", listOf("protobufPayload=platform-built"))

@@ -82,6 +82,14 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
     }
 
     @Test
+    fun firmwarePackagePayloadSelectionKeepsAndroidReadmeSkipPolicyInSharedPlanning() {
+        assertEquals(false, PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload("readme.txt"))
+        assertEquals(true, PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload("README.TXT"))
+        assertEquals(true, PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload("BTUPDAT.BIN"))
+        assertEquals(true, PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload("SYSUPDAT.IMG"))
+    }
+
+    @Test
     fun firmwareWorkflowRuntimeVectorRunsThroughCommonFakeDependencies() {
         val vector = loadGoldenVectorText("sdk/firmware-update/workflow-runtime-policy.json")
         val scenarios = vector.objectValue("input").objectArray("scenarios")
