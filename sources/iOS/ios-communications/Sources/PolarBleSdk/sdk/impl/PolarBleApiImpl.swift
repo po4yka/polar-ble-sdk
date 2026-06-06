@@ -2056,11 +2056,15 @@ extension PolarBleApiImpl: PolarBleApi  {
         let readOperation = Self.sdLogConfigReadOperation()
         let request = try PolarRuntimePlanner.fileOperationBytes(readOperation)
         BleLogger.trace("Sensor datalog get. Device: \(identifier) Path: \(readOperation.path)")
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, parameters: nil)
+        PolarRuntimePlanner.commandSyncStart(id: "sync-start-success")
+        let initializeSessionNotification = PolarRuntimePlanner.commandSyncStartNotifications(id: "sync-start-success")?.first ?? Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue
+        try await client.sendNotification(initializeSessionNotification, parameters: nil)
         let data = try await client.request(request)
         let sensorDataLog = try Data_PbSensorDataLog(serializedBytes: data as Data)
         let logConfig = SDLogConfig.fromProto(proto: sensorDataLog)
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, parameters: nil)
+        PolarRuntimePlanner.commandSyncStop(id: "sync-stop-success")
+        let terminateSessionNotification = PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success")?.last ?? Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
+        try await client.sendNotification(terminateSessionNotification, parameters: nil)
         return logConfig
     }
 

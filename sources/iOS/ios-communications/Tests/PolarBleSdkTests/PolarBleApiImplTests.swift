@@ -1425,6 +1425,8 @@ final class PolarBleApiImplTests: XCTestCase {
     // MARK: - SD log configuration
 
     func test_getSDLogConfiguration_readsConfigAndWrapsSessionNotifications() throws {
+        let plannedStartNotifications = try XCTUnwrap(PolarRuntimePlanner.commandSyncStartNotifications(id: "sync-start-success"))
+        let plannedStopNotifications = try XCTUnwrap(PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success"))
         var proto = Data_PbSensorDataLog()
         proto.ohrLogEnabled = true
         proto.ppiLogEnabled = false
@@ -1437,8 +1439,10 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(false, result.ppiLogEnabled)
         XCTAssertEqual(Data_PbSensorDataLog.PbMagnetometerLogFrequency.magLog10Hz.rawValue, result.magnetometerFrequency)
         XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 2)
+        XCTAssertEqual(plannedStartNotifications.first, v2MockClient.sendNotificationCalls[0].notification)
         XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, v2MockClient.sendNotificationCalls[0].notification)
         XCTAssertNil(v2MockClient.sendNotificationCalls[0].parameters)
+        XCTAssertEqual(plannedStopNotifications.last, v2MockClient.sendNotificationCalls[1].notification)
         XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, v2MockClient.sendNotificationCalls[1].notification)
         XCTAssertNil(v2MockClient.sendNotificationCalls[1].parameters)
         XCTAssertEqual(v2MockClient.requestCalls.count, 1)
