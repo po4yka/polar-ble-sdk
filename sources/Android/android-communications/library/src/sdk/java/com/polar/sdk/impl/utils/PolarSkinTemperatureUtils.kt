@@ -26,14 +26,9 @@ internal object PolarSkinTemperatureUtils {
     suspend fun readSkinTemperatureDataFromDayDirectory(client: BlePsFtpClient, date: LocalDate): PolarSkinTemperatureResult? {
         BleLogger.d(TAG, "readSkinTemperatureDataFromDayDirectory: $date")
         val readOperation = skinTemperatureReadOperation(date)
-        val skinTempFilePath = readOperation.second
         return try {
             val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(readOperation.first)
-                    .setPath(skinTempFilePath)
-                    .build()
-                    .toByteArray()
+                PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
             )
             val proto = TemperatureMeasurementPeriod.parseFrom(response.toByteArray())
             sharedSkinTemperatureResult(

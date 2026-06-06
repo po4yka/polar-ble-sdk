@@ -84,6 +84,9 @@ class PolarRuntimePlannerAdapterTest {
         Assert.assertEquals("/U/0/CUSTOM.BIN", PolarRuntimePlannerAdapter.fileOperationPath(write))
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE, PolarRuntimePlannerAdapter.fileOperationCommand(remove))
         Assert.assertEquals("/U/0/CUSTOM.BIN", PolarRuntimePlannerAdapter.fileOperationPath(remove))
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(PolarRuntimePlannerAdapter.fileOperationBytes(write))
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/CUSTOM.BIN", writeOperation.path)
     }
 
     @Test

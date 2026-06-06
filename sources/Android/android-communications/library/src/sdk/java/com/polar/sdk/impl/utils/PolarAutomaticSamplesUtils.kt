@@ -34,13 +34,8 @@ internal object PolarAutomaticSamplesUtils {
     suspend fun read247HrSamples(client: BlePsFtpClient, fromDate: LocalDate, toDate: LocalDate): List<Polar247HrSamplesData> {
         BleLogger.d(TAG, "read247HrSamples: from $fromDate to $toDate")
         val autoSamplesOperation = automaticSamplesDirectoryReadOperation()
-        val autoSamplesPath = autoSamplesOperation.second
 
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(autoSamplesOperation.first)
-            .setPath(autoSamplesPath)
-
-        val response = client.request(builder.build().toByteArray())
+        val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(autoSamplesOperation))
         val dir = PbPFtpDirectory.parseFrom(response.toByteArray())
         val pattern = Pattern.compile(AUTOMATIC_SAMPLES_PATTERN)
         val filteredFiles = dir.entriesList
@@ -52,11 +47,8 @@ internal object PolarAutomaticSamplesUtils {
         for (fileName in filteredFiles) {
             val fileOperation = automaticSamplesFileReadOperation(fileName)
             val filePath = fileOperation.second
-            val fileBuilder = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(fileOperation.first)
-                .setPath(filePath)
             BleLogger.d(TAG, "Sending GET request for file: $filePath")
-            val fileResponse = client.request(fileBuilder.build().toByteArray())
+            val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
             val sampleSessions = PbAutomaticSampleSessions.parseFrom(fileResponse.toByteArray())
             val sampleDate = PolarTimeUtils.pbDateToLocalDate(sampleSessions.day)
             if (sampleDate in fromDate..toDate) {
@@ -72,13 +64,8 @@ internal object PolarAutomaticSamplesUtils {
     suspend fun read247PPiSamples(client: BlePsFtpClient, fromDate: LocalDate, toDate: LocalDate): List<Polar247PPiSamplesData> {
         BleLogger.d(TAG, "read247PPiSamples: from $fromDate to $toDate")
         val autoSamplesOperation = automaticSamplesDirectoryReadOperation()
-        val autoSamplesPath = autoSamplesOperation.second
 
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(autoSamplesOperation.first)
-            .setPath(autoSamplesPath)
-
-        val response = client.request(builder.build().toByteArray())
+        val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(autoSamplesOperation))
         val dir = PbPFtpDirectory.parseFrom(response.toByteArray())
         val pattern = Pattern.compile(AUTOMATIC_SAMPLES_PATTERN)
         val filteredFiles = dir.entriesList
@@ -90,11 +77,8 @@ internal object PolarAutomaticSamplesUtils {
         for (fileName in filteredFiles) {
             val fileOperation = automaticSamplesFileReadOperation(fileName)
             val filePath = fileOperation.second
-            val fileBuilder = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(fileOperation.first)
-                .setPath(filePath)
             BleLogger.d(TAG, "Sending GET request for file: $filePath")
-            val fileResponse = client.request(fileBuilder.build().toByteArray())
+            val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
             val sampleSessions = PbAutomaticSampleSessions.parseFrom(fileResponse.toByteArray())
             val sampleDateProto = sampleSessions.day
             val sampleDateForCheck = LocalDate.of(sampleDateProto.year, sampleDateProto.month, sampleDateProto.day)

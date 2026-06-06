@@ -24,14 +24,9 @@ internal object PolarNightlyRechargeUtils {
     suspend fun readNightlyRechargeData(client: BlePsFtpClient, date: LocalDate): PolarNightlyRechargeData? {
         BleLogger.d(TAG, "readNightlyRechargeData: $date")
         val readOperation = nightlyRechargeReadOperation(date)
-        val nightlyRecoveryFilePath = readOperation.second
         return try {
             val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(readOperation.first)
-                    .setPath(nightlyRecoveryFilePath)
-                    .build()
-                    .toByteArray()
+                PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
             )
             val recoveryStatus = PbNightlyRecoveryStatus.parseFrom(response.toByteArray())
             val recoveryDate = LocalDate.of(

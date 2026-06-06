@@ -6,7 +6,6 @@ import com.polar.sdk.api.model.PolarFirmwareVersionInfo
 import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import fi.polar.remote.representation.protobuf.Device
 import fi.polar.remote.representation.protobuf.Structures
-import protocol.PftpRequest
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -35,11 +34,7 @@ internal object PolarFirmwareUpdateUtils {
         BleLogger.d(TAG, "readDeviceFirmwareInfo: $deviceId")
         val plan = PolarRuntimePlannerAdapter.planFileFacade("firmware-read-device-info", "GET", DEVICE_FIRMWARE_INFO_PATH)
         val response = client.request(
-            PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(PolarRuntimePlannerAdapter.fileOperationCommand(plan))
-                .setPath(PolarRuntimePlannerAdapter.fileOperationPath(plan))
-                .build()
-                .toByteArray()
+            PolarRuntimePlannerAdapter.fileOperationBytes(plan)
         )
         val proto = Device.PbDeviceInfo.parseFrom(response.toByteArray())
         return PolarFirmwareVersionInfo(

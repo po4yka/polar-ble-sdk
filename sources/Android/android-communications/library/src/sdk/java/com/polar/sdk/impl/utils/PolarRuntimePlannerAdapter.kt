@@ -473,6 +473,18 @@ internal object PolarRuntimePlannerAdapter {
         return fileOperationToken(plan).substringAfter(':')
     }
 
+    fun fileOperationBytes(plan: PolarRuntimePlan): ByteArray {
+        return fileOperationBytes(fileOperationCommand(plan) to fileOperationPath(plan))
+    }
+
+    fun fileOperationBytes(operation: Pair<PftpRequest.PbPFtpOperation.Command, String>): ByteArray {
+        return PftpRequest.PbPFtpOperation.newBuilder()
+            .setCommand(operation.first)
+            .setPath(operation.second)
+            .build()
+            .toByteArray()
+    }
+
     private fun fileOperationCommandName(plan: PolarRuntimePlan): String {
         return fileOperationToken(plan).substringBefore(':')
     }

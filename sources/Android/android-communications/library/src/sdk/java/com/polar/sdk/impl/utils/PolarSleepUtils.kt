@@ -45,11 +45,7 @@ internal object PolarSleepUtils {
         return try {
             val readOperation = sleepDataReadOperation(date)
             val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(readOperation.first)
-                    .setPath(readOperation.second)
-                    .build()
-                    .toByteArray()
+                PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
             )
             val proto = SleepanalysisResult.PbSleepAnalysisResult.parseFrom(response.toByteArray())
             PolarSleepAnalysisResult(
@@ -99,11 +95,7 @@ internal object PolarSleepUtils {
             val result = sleepAnalysisResult
             val readOperation = sleepSkinTemperatureReadOperation(date)
             val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(readOperation.first)
-                    .setPath(readOperation.second)
-                    .build()
-                    .toByteArray()
+                PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
             )
             val proto = SleepSkinTemperatureResult.PbSleepSkinTemperatureResult.parseFrom(response.toByteArray())
             if (proto.hasSleepDate()) {
