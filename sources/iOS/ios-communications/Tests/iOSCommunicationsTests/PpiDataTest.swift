@@ -84,7 +84,7 @@ final class PpiDataTest: XCTestCase {
     func testPpiRawType0ParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "0100204aa9d1010000008080808080ff000100010000"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppiRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        let sharedRows = try XCTUnwrap(PpiDataRuntimePlanner.rawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
         XCTAssertFalse(sharedRows.isEmpty)
 
         let dataFrame = try PmdDataFrame(
