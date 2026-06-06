@@ -214,6 +214,21 @@ class PolarBackupManagerTest: XCTestCase {
         XCTAssertEqual("BTDEV.BPB", filePath.fileName)
     }
 
+    func testBackupRestoreWritesUseSharedBatchPlanningWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let writes = PolarFirmwareBackupRuntimePlanner.backupRestoreWrites([
+            (directory: "/U/0/S/", fileName: "UDEVSET.BPB", payloadHex: "0102"),
+            (directory: "/SYS/BT/", fileName: "BTDEV.BPB", payloadHex: "0304")
+        ])
+
+        XCTAssertEqual([.put, .put], writes.map { $0.command })
+        XCTAssertEqual(["/U/0/S/UDEVSET.BPB", "/SYS/BT/BTDEV.BPB"], writes.map { $0.path })
+        XCTAssertEqual(["0102", "0304"], writes.map { $0.payloadHex })
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func testBackupGoldenVectorsFollowNeutralKmpShape() throws {
         for id in ["backup-expansion-and-restore-writes", "restore-failure-platform-policy", "backup-workflow-readiness"] {
             let vector = try loadBackupVector(id: id)

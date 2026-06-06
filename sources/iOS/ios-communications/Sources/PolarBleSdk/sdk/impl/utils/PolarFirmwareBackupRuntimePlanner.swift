@@ -7,6 +7,12 @@ import PolarBleSdkShared
 #endif
 
 enum PolarFirmwareBackupRuntimePlanner {
+    struct BackupRestoreWrite {
+        let command: Protocol_PbPFtpOperation.Command
+        let path: String
+        let payloadHex: String
+    }
+
     @discardableResult
     static func firmwareWorkflow(id: String, statuses: [String] = [], firmwareFiles: [String] = []) -> String {
         #if canImport(PolarBleSdkShared)
@@ -156,6 +162,21 @@ enum PolarFirmwareBackupRuntimePlanner {
         return backupRestoreOperation(PolarIosSharedBridge.shared.planRuntimeBackupRestoreOperation(path: path, payloadHex: payloadHex, writeResult: writeResult))
         #else
         return nil
+        #endif
+    }
+
+    static func backupRestoreWrites(_ files: [(directory: String, fileName: String, payloadHex: String)]) -> [BackupRestoreWrite] {
+        #if canImport(PolarBleSdkShared)
+        let filesTsv = files.map { "\($0.directory)\t\($0.fileName)\t\($0.payloadHex)" }.joined(separator: "\n")
+        return PolarIosSharedBridge.shared.planRuntimeBackupRestoreOperations(filesTsv: filesTsv)
+            .split(separator: "\n")
+            .compactMap { row in
+                let parts = row.split(separator: "\t", maxSplits: 2).map(String.init)
+                guard parts.count == 3, parts[0] == "PUT" else { return nil }
+                return BackupRestoreWrite(command: .put, path: parts[1], payloadHex: parts[2])
+            }
+        #else
+        return files.map { BackupRestoreWrite(command: .put, path: $0.directory + $0.fileName, payloadHex: $0.payloadHex) }
         #endif
     }
 

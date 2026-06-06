@@ -79,14 +79,21 @@ public class PolarBackupManager {
     public func restoreBackup(backupFiles: [BackupFileData]) async throws {
         BleLogger.trace("Starting backup restoration for \(backupFiles.count) files")
         var failedFiles: [(fileName: String, error: Error)] = []
-        for backupFileData in backupFiles {
+        let restoreInputs = backupFiles.map { backupFileData in
+            (
+                directory: backupFileData.directory,
+                fileName: backupFileData.fileName,
+                payloadHex: backupFileData.data.map { String(format: "%02x", $0) }.joined()
+            )
+        }
+        let plannedWrites = PolarRuntimePlanner.backupRestoreWrites(restoreInputs)
+        for (backupFileData, plannedWrite) in zip(backupFiles, plannedWrites) {
             BleLogger.trace("Restoring: \(backupFileData.fileName)")
             do {
-                let restorePath = backupFileData.directory + backupFileData.fileName
-                let payloadHex = backupFileData.data.map { String(format: "%02x", $0) }.joined()
-                let plannedOperation = PolarRuntimePlanner.backupRestoreOperation(path: restorePath, payloadHex: payloadHex)
-                let operation = plannedOperation ?? (.put, restorePath)
-                PolarRuntimePlanner.backupRestore(path: restorePath, payloadHex: payloadHex)
+                let operation = (command: plannedWrite.command, path: plannedWrite.path)
+                if plannedWrite.payloadHex != backupFileData.data.map({ String(format: "%02x", $0) }).joined() {
+                    BleLogger.error("Shared backup restore payload plan differs for \(backupFileData.directory)\(backupFileData.fileName)")
+                }
                 let header = try PolarRuntimePlanner.fileOperationBytes(operation) as NSData
                 let dataStream = InputStream(data: backupFileData.data)
                 _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: backupFileData.data.count)

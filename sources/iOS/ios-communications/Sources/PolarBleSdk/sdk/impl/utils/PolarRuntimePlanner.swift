@@ -322,6 +322,10 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.backupRestoreOperation(path: path, payloadHex: payloadHex, writeResult: writeResult)
     }
 
+    static func backupRestoreWrites(_ files: [(directory: String, fileName: String, payloadHex: String)]) -> [PolarFirmwareBackupRuntimePlanner.BackupRestoreWrite] {
+        return PolarFirmwareBackupRuntimePlanner.backupRestoreWrites(files)
+    }
+
     static func psFtpWriteProgress(payloadSize: Int, platform: String = "ios") -> [Int] {
         return PolarFileRuntimePlanner.psFtpWriteProgress(payloadSize: payloadSize, platform: platform)
     }

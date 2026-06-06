@@ -1787,6 +1787,28 @@ object PolarIosSharedBridge {
         ).commands.firstOrNull { command -> command.startsWith("PUT:") }.orEmpty()
     }
 
+    fun planRuntimeBackupRestoreOperations(filesTsv: String): String {
+        val restoreFiles = if (filesTsv.isEmpty()) {
+            emptyList()
+        } else {
+            filesTsv.lineSequence().filter { line -> line.isNotEmpty() }.map { line ->
+                val parts = line.split("\t")
+                require(parts.size == 3) { "Backup restore file row must contain directory, fileName, and dataHex" }
+                PolarBackupRestoreFile(
+                    directory = parts[0],
+                    fileName = parts[1],
+                    dataHex = parts[2]
+                )
+            }.toList()
+        }
+        return PolarWorkflowRuntimePlanning.planBackupRestore(restoreFiles).commands
+            .filter { command -> command.startsWith("PUT:") }
+            .joinToString("\n") { command ->
+                val parts = command.split(":", limit = 3)
+                "${parts[0]}\t${parts[1]}\t${parts[2]}"
+            }
+    }
+
     fun defaultBackupPathsCsv(): String {
         return PolarWorkflowRuntimePlanning.defaultBackupPaths().joinToString(",")
     }
