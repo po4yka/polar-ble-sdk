@@ -260,9 +260,7 @@ internal object PolarActivityUtils {
         folderPath: String = "/",
         condition: PolarFileUtils.FetchRecursiveCondition
     ): Flow<String> {
-        var path = folderPath
-        if (path.firstOrNull() != '/') path = "/$path"
-        if (path.lastOrNull() != '/') path = "$path/"
+        val path = PolarRuntimePlannerAdapter.normalizeFileListFolderPath(folderPath)
 
         return fetchRecursively(client, path, condition)
             .map { it.first }
