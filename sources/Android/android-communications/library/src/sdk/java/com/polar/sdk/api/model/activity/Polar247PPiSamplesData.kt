@@ -103,25 +103,12 @@ data class PPiSampleStatus(val skinContact: SkinContact, val movement: Movement,
 
     companion object {
         fun from(value: Int): PPiSampleStatus? {
-            PolarPpiStatusNames.fromStatusByte(value)?.let { shared ->
-                return PPiSampleStatus(
+            return PolarPpiStatusNames.fromStatusByte(value)?.let { shared ->
+                PPiSampleStatus(
                     skinContact = SkinContact.valueOf(shared.skinContact),
                     movement = Movement.valueOf(shared.movement),
                     intervalStatus = IntervalStatus.valueOf(shared.intervalStatus)
                 )
-            }
-            val binary = Integer.toBinaryString((1 shl 3) or `value`).substring(1)
-            // Start reading the binary from LSB (from the right side end of the string)
-            return SkinContact.from(Integer.valueOf(binary[2].toString()))?.let {
-                Movement.from(Integer.valueOf(binary[1].toString()))?.let { it1 ->
-                    IntervalStatus.from(Integer.valueOf(binary[0].toString()))?.let { it2 ->
-                        PPiSampleStatus(
-                            it,
-                            it1,
-                            it2
-                        )
-                    }
-                }
             }
         }
     }

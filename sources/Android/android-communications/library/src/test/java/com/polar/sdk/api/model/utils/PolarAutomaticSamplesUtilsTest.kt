@@ -268,6 +268,18 @@ class PolarAutomaticSamplesUtilsTest {
     }
 
     @Test
+    fun `ppi sample status mapping ignores high bits through shared KMP policy`() {
+        Assert.assertEquals(
+            PPiSampleStatus(
+                skinContact = SkinContact.SKIN_CONTACT_DETECTED,
+                movement = Movement.MOVING_DETECTED,
+                intervalStatus = IntervalStatus.INTERVAL_DENOTES_OFFLINE_PERIOD
+            ),
+            PPiSampleStatus.from(0xFF)
+        )
+    }
+
+    @Test
     fun `read247ppiSamples() should filter out dates outside of range`() = runTest {
         // Arrange
         val fromDate = LocalDate.of(2024, 11, 10)
