@@ -2076,6 +2076,8 @@ final class PolarBleApiImplTests: XCTestCase {
             Protocol_PbPFtpHostToDevNotification.stopSync.rawValue,
             Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
         ], PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success"))
+        XCTAssertEqual("EXERCISE_STATUS", PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Protocol_PbPFtpDevToHostNotification.exerciseStatus.rawValue))
+        XCTAssertEqual("PbPftpDHExerciseStatus", PolarRuntimePlanner.d2hNotificationPlan(notificationId: Protocol_PbPFtpDevToHostNotification.exerciseStatus.rawValue, parametersHex: "0a020802")?.parsedProtoName)
         XCTAssertEqual("success", PolarRuntimePlanner.diskTimeQuery(id: "get-disk-space", query: "GET_DISK_SPACE"))
         XCTAssertEqual(Protocol_PbPFtpQuery.getDiskSpace.rawValue, PolarRuntimePlanner.diskTimeQueryValue(id: "get-disk-space", query: "GET_DISK_SPACE"))
         XCTAssertEqual("success", PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: 12, localTimeHour: 14))

@@ -1,5 +1,6 @@
 package com.polar.sdk.impl.utils
 
+import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import org.junit.Assert
 import org.junit.Test
 import protocol.PftpNotification
@@ -73,6 +74,20 @@ class PolarRuntimePlannerAdapterTest {
             ),
             PolarRuntimePlannerAdapter.notificationNames(syncStop).map(PolarRuntimePlannerAdapter::notificationValue)
         )
+    }
+
+    @Test
+    fun `shared D2H planner identifies exercise status notifications`() {
+        Assert.assertEquals(
+            "EXERCISE_STATUS",
+            PolarD2hRuntimePlanning.notificationTypeOrNull(PftpNotification.PbPFtpDevToHostNotification.EXERCISE_STATUS_VALUE)
+        )
+        val plan = PolarD2hRuntimePlanning.planNotificationEmission(
+            PftpNotification.PbPFtpDevToHostNotification.EXERCISE_STATUS_VALUE,
+            "0a020802"
+        )
+        Assert.assertEquals("EXERCISE_STATUS", plan?.notificationType)
+        Assert.assertEquals("PbPftpDHExerciseStatus", plan?.parsedProto)
     }
 
     @Test

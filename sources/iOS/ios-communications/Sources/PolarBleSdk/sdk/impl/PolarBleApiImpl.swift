@@ -2615,7 +2615,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                         return
                     }
                     for try await notification in client.waitNotification() {
-                        if notification.id == Protocol_PbPFtpDevToHostNotification.exerciseStatus.rawValue {
+                        if PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Int(notification.id)) == "EXERCISE_STATUS" {
                             do {
                                 let info = try PolarExerciseSession.ExerciseInfo.parse(from: notification.parameters as Data)
                                 BleLogger.trace("Exercise status changed: \(info)")

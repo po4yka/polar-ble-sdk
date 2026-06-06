@@ -1847,7 +1847,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             val client = (session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as? BlePsFtpClient)
                 ?: throw PolarServiceNotAvailable()
             client.waitForNotification()
-                .filter { notification -> notification.id == PftpNotification.PbPFtpDevToHostNotification.EXERCISE_STATUS_VALUE }
+                .filter { notification -> com.polar.shared.runtime.PolarD2hRuntimePlanning.notificationTypeOrNull(notification.id) == "EXERCISE_STATUS" }
                 .map { notification ->
                     val data = notification.byteArrayOutputStream.toByteArray()
                     parseExerciseStatus(data)
