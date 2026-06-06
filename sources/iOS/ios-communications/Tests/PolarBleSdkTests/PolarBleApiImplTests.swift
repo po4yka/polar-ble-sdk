@@ -3017,6 +3017,7 @@ final class PolarBleApiImplTests: XCTestCase {
     // MARK: - stopRecording
 
     func test_stopRecording_h10Device_sendsRequestStopRecordingQuery() throws {
+        try assertCommandRuntimePolicyVectorContains("h10-stop-recording")
         h10MockClient.queryReturnValue = .success(Data())
         try awaitVoidAsync { [self] in try await h10Api.stopRecording(deviceId) }
         XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.requestStopRecording.rawValue)
@@ -3047,6 +3048,7 @@ final class PolarBleApiImplTests: XCTestCase {
     // MARK: - requestRecordingStatus
 
     func test_requestRecordingStatus_h10Device_returnsDecodedStatus() throws {
+        try assertCommandRuntimePolicyVectorContains("h10-recording-status")
         var proto = Protocol_PbRequestRecordingStatusResult()
         proto.recordingOn = true; proto.sampleDataIdentifier = "exercise123"
         h10MockClient.queryReturnValue = .success(try proto.serializedData())

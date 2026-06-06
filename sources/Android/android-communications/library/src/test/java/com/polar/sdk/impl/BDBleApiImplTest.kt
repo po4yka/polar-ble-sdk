@@ -491,6 +491,7 @@ class BDBleApiImplTest {
 
     @Test
     fun `stopRecording sends request stop recording query`() = runTest {
+        assertCommandRuntimePolicyVectorContains("h10-stop-recording")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
         mockRecordingSupported()
@@ -529,6 +530,7 @@ class BDBleApiImplTest {
 
     @Test
     fun `requestRecordingStatus decodes fake query response`() = runTest {
+        assertCommandRuntimePolicyVectorContains("h10-recording-status")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
         mockRecordingSupported()
