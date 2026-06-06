@@ -214,6 +214,11 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared PSFTP write ack terminal preserves Android success policy`() {
+        Assert.assertEquals("success", PolarRuntimePlannerAdapter.planPsFtpWriteAck(payloadSize = 2))
+    }
+
+    @Test
     fun `shared user device settings plans select Android protobuf read and write operations`() {
         val read = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("get-user-device-settings", "read", "/U/0/S/UDEVSET.BPB")
         val write = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("set-user-device-settings", "write", "/U/0/S/UDEVSET.BPB", listOf("protobufPayload=platform-built"))

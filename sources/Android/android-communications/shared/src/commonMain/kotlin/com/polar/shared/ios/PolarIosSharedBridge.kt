@@ -1813,7 +1813,7 @@ object PolarIosSharedBridge {
     }
 
     fun planRuntimePsFtpWriteAck(payloadSize: Int, writeAck: String): String {
-        return PolarWorkflowRuntimePlanning.planPsFtpWrite(ByteArray(maxOf(payloadSize, 1)) { 0 }, writeAck = writeAck).terminal
+        return PolarWorkflowRuntimePlanning.psFtpWriteAckTerminal(payloadSize, writeAck)
     }
 
     fun psFtpWriteTimeoutSeconds(filePath: String, defaultTimeoutSeconds: Int, extendedTimeoutSeconds: Int): Int {

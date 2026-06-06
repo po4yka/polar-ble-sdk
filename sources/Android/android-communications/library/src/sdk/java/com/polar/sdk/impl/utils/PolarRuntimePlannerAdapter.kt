@@ -592,8 +592,8 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.planPsFtpWriteProgress(payloadSize, platform)
     }
 
-    fun planPsFtpWriteAck(payloadSize: Int, writeAck: String = "success") {
-        PolarWorkflowRuntimePlanning.planPsFtpWrite(ByteArray(maxOf(payloadSize, 1)) { 0 }, writeAck = writeAck)
+    fun planPsFtpWriteAck(payloadSize: Int, writeAck: String = "success"): String {
+        return PolarWorkflowRuntimePlanning.psFtpWriteAckTerminal(payloadSize, writeAck)
     }
 
     fun queryValue(plan: PolarRuntimePlan): Int {

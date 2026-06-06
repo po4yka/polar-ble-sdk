@@ -409,6 +409,10 @@ object PolarWorkflowRuntimePlanning {
         return PolarWorkflowPlan(commands = listOf("write:${payload.size}"), terminal = "success")
     }
 
+    fun psFtpWriteAckTerminal(payloadSize: Int, writeAck: String = "success"): String {
+        return planPsFtpWrite(ByteArray(maxOf(payloadSize, 1)) { 0 }, writeAck = writeAck).terminal
+    }
+
     fun planPsFtpWriteProgress(payloadSize: Int, platform: String): List<Int> {
         return when (platform) {
             "android" -> listOf(-14, payloadSize)

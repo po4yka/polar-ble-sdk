@@ -401,6 +401,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                         return@synchronized
                     }
                     // channel completes naturally on scope exit
+                    PolarWorkflowRuntimePlanning.psFtpWriteAckTerminal(payloadSize)
                 } else {
                     throw BleCharacteristicNotificationNotEnabled("PS-FTP MTU not enabled")
                 }

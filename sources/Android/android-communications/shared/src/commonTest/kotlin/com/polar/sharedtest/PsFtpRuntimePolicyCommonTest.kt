@@ -293,6 +293,7 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals(false, PolarWorkflowRuntimePlanning.shouldEmitPsFtpWriteProgress(-1, payloadSize, "android", timeSinceLastEmitMs = 4_999))
         assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitPsFtpWriteProgress(-1, payloadSize, "android", timeSinceLastEmitMs = 5_000))
         assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitPsFtpWriteProgress(payloadSize.toLong(), payloadSize, "android", timeSinceLastEmitMs = 1))
+        assertEquals("success", PolarWorkflowRuntimePlanning.psFtpWriteAckTerminal(payloadSize))
         assertEquals("success", expected.stringValue("completion"))
         assertEquals("android-currently-emits-negative-header-overhead-progress-before-payload-count-while-ios-emits-initial-zero-header-progress-and-final-payload-count", decision)
         assertCommonRuntimePrototype(expected)
@@ -306,9 +307,8 @@ class PsFtpRuntimePolicyCommonTest {
         val input = vector.objectValue("input")
         val failure = input.objectValue("failure")
         val thrown = assertFailsWith<PolarPsFtpWriteAckTimeout> {
-            PolarWorkflowRuntimePlanning.planPsFtpWrite(
-                payload = hexToBytes(input.stringValue("payloadHex")),
-                transportTransmit = failure.stringValue("transportTransmit"),
+            PolarWorkflowRuntimePlanning.psFtpWriteAckTerminal(
+                payloadSize = hexToBytes(input.stringValue("payloadHex")).size,
                 writeAck = failure.stringValue("writeAck")
             )
         }
