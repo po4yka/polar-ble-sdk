@@ -26,11 +26,7 @@ internal class PolarSkinTemperatureUtils {
     }
 
     private static func skinTemperaturePath(day: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.skinTemperaturePath(day: day)
-        #else
-        return "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(SKIN_TEMPERATURE_DIRECTORY)\(SKIN_TEMPERATURE_PROTO)"
-        #endif
+        return PolarSkinTemperatureRuntimePlanner.skinTemperaturePath(day: day) ?? "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(SKIN_TEMPERATURE_DIRECTORY)\(SKIN_TEMPERATURE_PROTO)"
     }
 
     static func readSkinTemperatureData(client: BlePsFtpClient, date: Date) async -> PolarSkinTemperatureData.PolarSkinTemperatureResult? {
@@ -54,7 +50,7 @@ internal class PolarSkinTemperatureUtils {
 
     private static func measurementType(from value: TemperatureMeasurementType) -> PolarSkinTemperatureData.SkinTemperatureMeasurementType? {
         #if canImport(PolarBleSdkShared)
-        switch PolarIosSharedBridge.shared.skinTemperatureMeasurementType(value: Int32(value.rawValue)) {
+        switch PolarSkinTemperatureRuntimePlanner.measurementType(value: value.rawValue) {
         case "TM_SKIN_TEMPERATURE": return .TM_SKIN_TEMPERATURE
         case "TM_CORE_TEMPERATURE": return .TM_CORE_TEMPERATURE
         default: return nil
@@ -66,13 +62,39 @@ internal class PolarSkinTemperatureUtils {
 
     private static func sensorLocation(from value: SensorLocation) -> PolarSkinTemperatureData.SkinTemperatureSensorLocation? {
         #if canImport(PolarBleSdkShared)
-        switch PolarIosSharedBridge.shared.skinTemperatureSensorLocation(value: Int32(value.rawValue)) {
+        switch PolarSkinTemperatureRuntimePlanner.sensorLocation(value: value.rawValue) {
         case "SL_DISTAL": return .SL_DISTAL
         case "SL_PROXIMAL": return .SL_PROXIMAL
         default: return nil
         }
         #else
         return PolarSkinTemperatureData.SkinTemperatureSensorLocation.getByValue(value: value)
+        #endif
+    }
+}
+
+enum PolarSkinTemperatureRuntimePlanner {
+    static func skinTemperaturePath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.skinTemperaturePath(day: day)
+        #else
+        return nil
+        #endif
+    }
+
+    static func measurementType(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.skinTemperatureMeasurementType(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func sensorLocation(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.skinTemperatureSensorLocation(value: Int32(value))
+        #else
+        return nil
         #endif
     }
 }
