@@ -2879,7 +2879,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             client.setProgressCallback(object : BlePsFtpClient.ProgressCallback {
                 override fun onProgressUpdate(bytesReceived: Long) {
                     val currentBytes = accumulatedBytes.addAndGet(bytesReceived)
-                    val percent = if (totalBytes > 0) ((currentBytes * 100L) / totalBytes).toInt().coerceIn(0, 100) else 0
+                    val percent = PolarRuntimePlannerAdapter.trainingSessionProgressPercent(currentBytes, totalBytes)
                     BleLogger.d(TAG, "Training session fetch progress: $currentBytes/$totalBytes ($percent%)")
                 }
             })

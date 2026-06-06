@@ -119,6 +119,13 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         )
     }
 
+    func testTrainingSessionProgressPercentUsesSharedClampPolicy() throws {
+        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: 0, totalBytes: 0), 0)
+        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: 25, totalBytes: 100), 25)
+        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: 125, totalBytes: 100), 100)
+        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: -5, totalBytes: 100), 0)
+    }
+
     // MARK: - Helpers
 
     private func awaitFirst<T>(_ publisher: AnyPublisher<T, Error>, timeout: TimeInterval = 5) throws -> T? {

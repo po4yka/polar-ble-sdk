@@ -538,6 +538,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarTrainingSessionModels.deleteRemovePath(referencePath, parentEntryCount)
     }
 
+    fun trainingSessionProgressPercent(completedBytes: Long, totalBytes: Long): Int {
+        return PolarTrainingSessionModels.progressPercent(completedBytes, totalBytes)
+    }
+
     fun firmwareDeviceInfoPath(): String {
         return PolarFirmwareUpdateModels.deviceInfoPath()
     }

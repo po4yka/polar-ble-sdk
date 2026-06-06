@@ -142,6 +142,14 @@ object PolarTrainingSessionModels {
         }
     }
 
+    fun progressPercent(completedBytes: Long, totalBytes: Long): Int {
+        return if (totalBytes <= 0L) {
+            0
+        } else {
+            ((completedBytes * 100L) / totalBytes).toInt().coerceIn(0, 100)
+        }
+    }
+
     fun assemblePayloadReadResult(reference: PolarTrainingSessionReference, responsesByPath: Map<String, PolarTrainingPayloadResponse>, fetchOrder: List<String> = payloadFetchOrder(reference)): PolarTrainingPayloadReadResult {
         val exercises = reference.exercises.associate { exercise ->
             exercise.index to MutableTrainingPayloadExercise(index = exercise.index)
@@ -177,11 +185,10 @@ object PolarTrainingSessionModels {
                 }
             }
         }
-        val progressPercent = if (result.totalBytes == 0) 0 else result.completedBytes * 100 / result.totalBytes
         return PolarTrainingPayloadReadResult(
             totalBytes = result.totalBytes,
             completedBytes = result.completedBytes,
-            progressPercent = progressPercent,
+            progressPercent = progressPercent(result.completedBytes.toLong(), result.totalBytes.toLong()),
             currentFileName = result.currentFileName,
             modelName = result.modelName,
             durationSeconds = result.durationSeconds,

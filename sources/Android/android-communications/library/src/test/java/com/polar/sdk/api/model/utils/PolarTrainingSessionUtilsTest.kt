@@ -129,6 +129,14 @@ class PolarTrainingSessionUtilsTest {
     }
 
     @Test
+    fun `training session progress percent uses shared clamp policy`() {
+        assertEquals(0, PolarRuntimePlannerAdapter.trainingSessionProgressPercent(0, 0))
+        assertEquals(25, PolarRuntimePlannerAdapter.trainingSessionProgressPercent(25, 100))
+        assertEquals(100, PolarRuntimePlannerAdapter.trainingSessionProgressPercent(125, 100))
+        assertEquals(0, PolarRuntimePlannerAdapter.trainingSessionProgressPercent(-5, 100))
+    }
+
+    @Test
     fun `getTrainingSessionReferences() should return all training session references`() = runTest {
         // Arrange
         val client = mockk<BlePsFtpClient>()

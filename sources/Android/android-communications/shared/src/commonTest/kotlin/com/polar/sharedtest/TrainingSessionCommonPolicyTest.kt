@@ -107,6 +107,14 @@ class TrainingSessionCommonPolicyTest {
     }
 
     @Test
+    fun trainingSessionProgressPercentUsesSharedClampPolicy() {
+        assertEquals(0, PolarTrainingSessionModels.progressPercent(0, 0))
+        assertEquals(25, PolarTrainingSessionModels.progressPercent(25, 100))
+        assertEquals(100, PolarTrainingSessionModels.progressPercent(125, 100))
+        assertEquals(0, PolarTrainingSessionModels.progressPercent(-5, 100))
+    }
+
+    @Test
     fun trainingSessionByteLevelPayloadParserMigrationRequiresExplicitCommonProtoAndGzipDependencies() {
         val vector = loadGoldenVectorText("sdk/training-session/payload-read-policy.json")
         val commonDecision = vector.objectValue("platformExpectations").objectValue("commonDecision")

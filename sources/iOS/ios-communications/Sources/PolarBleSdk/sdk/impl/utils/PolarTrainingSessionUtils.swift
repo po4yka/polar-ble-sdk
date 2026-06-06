@@ -218,8 +218,8 @@ internal class PolarTrainingSessionUtils {
             }
             func onProgressUpdate(bytesReceived: Int) {
                 lock.lock(); accumulatedBytes += Int64(bytesReceived); let cur = accumulatedBytes; lock.unlock()
-                let percent = totalBytes > 0 ? Int((cur * 100) / totalBytes) : 0
-                progressHandler(PolarTrainingSessionProgress(totalBytes: totalBytes, completedBytes: cur, progressPercent: min(percent, 100), currentFileName: nil))
+                let percent = PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: cur, totalBytes: totalBytes)
+                progressHandler(PolarTrainingSessionProgress(totalBytes: totalBytes, completedBytes: cur, progressPercent: percent, currentFileName: nil))
             }
         }
         let totalBytes = reference.fileSize
@@ -565,6 +565,14 @@ enum PolarTrainingSessionRuntimePlanner {
         #else
         let components = referencePath.split(separator: "/")
         return parentEntryCount <= 1 ? "/U/0/" + components[2] + "/E/" : "/U/0/" + components[2] + "/E/" + components[4] + "/"
+        #endif
+    }
+
+    static func progressPercent(completedBytes: Int64, totalBytes: Int64) -> Int {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.trainingSessionProgressPercent(completedBytes: completedBytes, totalBytes: totalBytes))
+        #else
+        return totalBytes > 0 ? max(0, min(Int((completedBytes * 100) / totalBytes), 100)) : 0
         #endif
     }
 

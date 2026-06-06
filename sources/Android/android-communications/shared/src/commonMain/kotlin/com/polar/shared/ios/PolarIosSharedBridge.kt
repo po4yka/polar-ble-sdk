@@ -350,6 +350,10 @@ object PolarIosSharedBridge {
         return PolarTrainingSessionModels.deleteRemovePath(referencePath, parentEntryCount)
     }
 
+    fun trainingSessionProgressPercent(completedBytes: Long, totalBytes: Long): Int {
+        return PolarTrainingSessionModels.progressPercent(completedBytes, totalBytes)
+    }
+
     fun ecgType0Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
         val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
         if (bytes.size < 10) return null
