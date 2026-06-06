@@ -88,6 +88,14 @@ enum PolarRuntimePlanner {
         return PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path, payloadHex: payloadHex)
     }
 
+    static func fileOperationBytes(_ operation: (command: Protocol_PbPFtpOperation.Command, path: String)) throws -> Data {
+        let request = Protocol_PbPFtpOperation.with {
+            $0.command = operation.command
+            $0.path = operation.path
+        }
+        return try request.serializedBytes()
+    }
+
     static func normalizeFileListFolderPath(_ folderPath: String) -> String {
         return PolarFileFacadeRuntimePlanner.normalizeFileListFolderPath(folderPath)
     }

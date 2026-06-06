@@ -280,11 +280,8 @@ internal enum PolarWatchFaceUtils {
             throw PolarErrors.serviceNotFound
         }
         let plannedOperation = watchFaceReadOperation()
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = plannedOperation.command
-        operation.path = plannedOperation.path
         BleLogger.trace("\(TAG): readWatchFaceConfigFields: GET \(KVTX_FILE_PATH)")
-        let requestData = try operation.serializedData()
+        let requestData = try PolarRuntimePlanner.fileOperationBytes(plannedOperation)
         let responseData = try await client.request(requestData)
         let bytes = [UInt8](responseData)
         BleLogger.trace("\(TAG): readWatchFaceConfigFields: received \(bytes.count) bytes")
@@ -311,10 +308,7 @@ internal enum PolarWatchFaceUtils {
         BleLogger.trace("\(TAG): writeWatchFaceComplicationInts: PUT \(kvtxScript.count) bytes to \(KVTX_FILE_PATH)")
 
         let plannedOperation = watchFaceWriteOperation()
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = plannedOperation.command
-        operation.path = plannedOperation.path
-        let proto = try operation.serializedData()
+        let proto = try PolarRuntimePlanner.fileOperationBytes(plannedOperation)
         let inputStream = InputStream(data: Data(kvtxScript))
         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: kvtxScript.count)
         PolarRuntimePlanner.psFtpWriteAck(payloadSize: kvtxScript.count)

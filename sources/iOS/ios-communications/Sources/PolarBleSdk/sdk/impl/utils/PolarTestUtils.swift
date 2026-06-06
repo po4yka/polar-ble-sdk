@@ -51,18 +51,16 @@ internal class PolarTestUtils {
                 BleLogger.trace(TAG, "readSpo2TestFromDayDirectory: \(date)")
                 let plannedListOperation = spo2TestDirectoryReadOperation(date: date)
                 let spo2TestDirPath = plannedListOperation.path
-                let listOperation = Protocol_PbPFtpOperation.with { $0.command = plannedListOperation.command; $0.path = plannedListOperation.path }
                 do {
-                    let response = try await client.request(try listOperation.serializedBytes())
+                    let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedListOperation))
                     let dir = try Protocol_PbPFtpDirectory(serializedBytes: Data(response))
                     let timeSubDirs = dir.entries.filter { $0.name.hasSuffix("/") }
                     for subDir in timeSubDirs {
                         let timeDirName = String(subDir.name.dropLast())
                         let plannedFileOperation = spo2TestFileReadOperation(directoryPath: spo2TestDirPath, subDirectoryName: subDir.name)
                         let filePath = plannedFileOperation.path
-                        let fileOperation = Protocol_PbPFtpOperation.with { $0.command = plannedFileOperation.command; $0.path = plannedFileOperation.path }
                         do {
-                            let fileResponse = try await client.request(try fileOperation.serializedBytes())
+                            let fileResponse = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedFileOperation))
                             let proto = try Data_PbSpo2TestResult(serializedBytes: Data(fileResponse))
                             continuation.yield(fromProto(proto: proto, date: date, timeDirName: timeDirName))
                         } catch {

@@ -59,9 +59,8 @@ internal class PolarSleepUtils {
         BleLogger.trace(TAG, "readSleepFromDayDirectory: \(date)")
         let plannedOperation = sleepDataReadOperation(date: date)
         let sleepDataFilePath = plannedOperation.path
-        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbSleepAnalysisResult(serializedBytes: Data(response))
             return PolarSleepData.PolarSleepAnalysisResult(
                 sleepStartTime: try PolarTimeUtils.pbLocalDateTimeToDate(pbLocalDateTime: proto.sleepStartTime),
@@ -96,9 +95,8 @@ internal class PolarSleepUtils {
         var result = sleepAnalysisResult
         let plannedOperation = sleepSkinTemperatureReadOperation(date: date)
         let filePath = plannedOperation.path
-        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbSleepSkinTemperatureResult(serializedBytes: Data(response))
             result.sleepSkinTemperatureResult = try PolarSleepData.fromPbSleepTemperatureResult(pbSleepTemperatureResult: proto)
         } catch {

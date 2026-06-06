@@ -10,12 +10,9 @@ internal class PolarUserDeviceSettingsUtils {
     static func getUserDeviceSettings(client: BlePsFtpClient, deviceSettingsPath: String) async throws -> PolarUserDeviceSettings.PolarUserDeviceSettingsResult {
         BleLogger.trace(TAG, "getUserDeviceSettings")
         let plannedOperation = PolarRuntimePlanner.userDeviceSettingsOperations(id: "get-user-device-settings", kind: "read", path: deviceSettingsPath)?.first
-        let operation = Protocol_PbPFtpOperation.with {
-            $0.command = plannedOperation?.command ?? .get
-            $0.path = plannedOperation?.path ?? deviceSettingsPath
-        }
+        let operation = plannedOperation ?? (.get, deviceSettingsPath)
         PolarRuntimePlanner.userDeviceSettings(id: "get-user-device-settings", kind: "read", path: deviceSettingsPath)
-        let response = try await client.request(try operation.serializedBytes())
+        let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(operation))
         let proto = try Data_PbUserDeviceSettings(serializedBytes: Data(response))
         return PolarUserDeviceSettings.fromProto(pbUserDeviceSettings: proto)
     }

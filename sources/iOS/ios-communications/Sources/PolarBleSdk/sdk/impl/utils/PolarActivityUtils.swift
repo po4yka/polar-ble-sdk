@@ -70,9 +70,8 @@ internal class PolarActivityUtils {
         var stepCount: UInt32 = 0
         for path in filePaths {
             let plannedOperation = activitySampleFileReadOperation(path: path)
-            let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
             do {
-                let response = try await client.request(try operation.serializedBytes())
+                let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
                 let proto = try Data_PbActivitySamples(serializedBytes: Data(response))
                 stepCount += proto.stepsSamples.reduce(0, +)
             } catch {
@@ -88,9 +87,8 @@ internal class PolarActivityUtils {
         BleLogger.trace(TAG, "readDistanceFromDayDirectory: \(date)")
         let plannedOperation = dailySummaryReadOperation(date: date)
         let dailySummaryFilePath = plannedOperation.path
-        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbDailySummary(serializedBytes: Data(response))
             return Float(proto.activityDistance)
         } catch {
@@ -104,9 +102,8 @@ internal class PolarActivityUtils {
         BleLogger.trace(TAG, "readActiveTimeFromDayDirectory: \(date)")
         let plannedOperation = dailySummaryReadOperation(date: date)
         let dailySummaryFilePath = plannedOperation.path
-        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbDailySummary(serializedBytes: Data(response))
             return PolarActiveTimeData(
                 date: date,
@@ -130,9 +127,8 @@ internal class PolarActivityUtils {
         BleLogger.trace(TAG, "readCaloriesFromDayDirectory: \(date), type: \(caloriesType)")
         let plannedOperation = dailySummaryReadOperation(date: date)
         let dailySummaryFilePath = plannedOperation.path
-        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbDailySummary(serializedBytes: Data(response))
             switch caloriesType {
             case .activity: return Int(proto.activityCalories)
@@ -168,8 +164,7 @@ internal class PolarActivityUtils {
         var polarActivityDataList: [PolarActivityData] = []
         for path in filePaths {
             let plannedOperation = activitySampleFileReadOperation(path: path)
-            let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbActivitySamples(serializedBytes: Data(response))
             let activitySamplesData = PolarActivityData.PolarActivitySamples(
                 startTime: try PolarTimeUtils.pbLocalDateTimeToDate(pbLocalDateTime: proto.startTime),
@@ -190,9 +185,8 @@ internal class PolarActivityUtils {
     static func readDailySummaryDataFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> PolarDailySummary? {
         BleLogger.trace(TAG, "readDailySummaryDataFromDayDirectory: \(date)")
         let plannedOperation = dailySummaryReadOperation(date: date)
-        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbDailySummary(serializedBytes: Data(response))
             return try PolarDailySummary.fromProto(proto: proto)
         } catch {
@@ -223,10 +217,7 @@ internal class PolarActivityUtils {
         condition: @escaping (_ p: String) -> Bool
     ) async throws -> [(name: String, size: UInt64)] {
         let plannedOperation = activityReadOperation(id: "activity-read-recursive-directory", path: path)
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = plannedOperation.command
-        operation.path = plannedOperation.path
-        let request = try operation.serializedData()
+        let request = try PolarRuntimePlanner.fileOperationBytes(plannedOperation)
         let data = try await client.request(request)
         let dir = try Protocol_PbPFtpDirectory(serializedBytes: data as Data)
         var results: [(name: String, size: UInt64)] = []

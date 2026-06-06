@@ -545,9 +545,9 @@ final class PolarFileUtilsTest: XCTestCase {
         XCTAssertNotNil(vector["execution"], "runtime-error-policy")
         XCTAssertEqual(expectedCaseIds, FILE_RUNTIME_ERROR_POLICY_CASE_IDS, "runtime-error-policy")
         XCTAssertEqual(expected["migrationRequirement"] as? String, FILE_RUNTIME_ERROR_MIGRATION_REQUIREMENT, "runtime-error-policy")
-        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "runtime-error-policy"), ["com.polar.sdk.api.model.utils.PolarFileUtilsTest", "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "runtime-error-policy"), ["com.polar.sdk.api.model.utils.PolarFileUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "runtime-error-policy"), ["PolarFileUtilsTest"])
-        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "runtime-error-policy"), ["com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "runtime-error-policy"), ["com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"])
     }
 
     func testRuntimeErrorReadinessManifestIsPinnedBeforeRuntimeMigration() throws {

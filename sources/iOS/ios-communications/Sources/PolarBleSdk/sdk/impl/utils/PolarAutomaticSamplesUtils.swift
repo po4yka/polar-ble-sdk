@@ -45,8 +45,7 @@ internal class PolarAutomaticSamplesUtils {
     static func read247HrSamples(client: BlePsFtpClient, fromDate: Date, toDate: Date) async throws -> [Polar247HrSamplesData] {
         BleLogger.trace(TAG, "read247HrSamples: from \(fromDate) to \(toDate)")
         let plannedListOperation = automaticSamplesDirectoryReadOperation()
-        let listOperation = Protocol_PbPFtpOperation.with { $0.command = plannedListOperation.command; $0.path = plannedListOperation.path }
-        let response = try await client.request(try listOperation.serializedBytes())
+        let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedListOperation))
         let dir = try Protocol_PbPFtpDirectory(serializedBytes: Data(response))
         let regex = try NSRegularExpression(pattern: AUTOMATIC_SAMPLES_PATTERN)
         let filteredFiles = dir.entries.compactMap { entry -> String? in
@@ -58,9 +57,8 @@ internal class PolarAutomaticSamplesUtils {
         var results = [Polar247HrSamplesData]()
         for fileName in filteredFiles {
             let plannedFileOperation = automaticSamplesFileReadOperation(fileName: fileName)
-            let fileOp = Protocol_PbPFtpOperation.with { $0.command = plannedFileOperation.command; $0.path = plannedFileOperation.path }
             do {
-                let fileResponse = try await client.request(try fileOp.serializedBytes())
+                let fileResponse = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedFileOperation))
                 let sampleSessions = try Data_PbAutomaticSampleSessions(serializedBytes: Data(fileResponse))
                 let sampleDateProto = sampleSessions.day
                 let sampleDate = DateComponents(year: Int(sampleDateProto.year), month: Int(sampleDateProto.month), day: Int(sampleDateProto.day))
@@ -78,8 +76,7 @@ internal class PolarAutomaticSamplesUtils {
     static func read247PPiSamples(client: BlePsFtpClient, fromDate: Date, toDate: Date) async throws -> [Polar247PPiSamplesData] {
         BleLogger.trace(TAG, "read247PPiSamples: from \(fromDate) to \(toDate)")
         let plannedListOperation = automaticSamplesDirectoryReadOperation()
-        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedListOperation.command; $0.path = plannedListOperation.path }
-        let response = try await client.request(try operation.serializedBytes())
+        let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedListOperation))
         let dir = try Protocol_PbPFtpDirectory(serializedBytes: Data(response))
         let regex = try NSRegularExpression(pattern: AUTOMATIC_SAMPLES_PATTERN)
         let filteredFiles = dir.entries.compactMap { entry -> String? in
@@ -91,9 +88,8 @@ internal class PolarAutomaticSamplesUtils {
         var results = [Polar247PPiSamplesData]()
         for fileName in filteredFiles {
             let plannedFileOperation = automaticSamplesFileReadOperation(fileName: fileName)
-            let fileOp = Protocol_PbPFtpOperation.with { $0.command = plannedFileOperation.command; $0.path = plannedFileOperation.path }
             do {
-                let fileResponse = try await client.request(try fileOp.serializedBytes())
+                let fileResponse = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedFileOperation))
                 let sampleSessions = try Data_PbAutomaticSampleSessions(serializedBytes: Data(fileResponse))
                 let sampleDateProto = sampleSessions.day
                 let sampleDate = DateComponents(year: Int(sampleDateProto.year), month: Int(sampleDateProto.month), day: Int(sampleDateProto.day))

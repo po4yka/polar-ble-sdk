@@ -35,13 +35,10 @@ class PolarFirmwareUpdateUtils {
     
     static func readDeviceFirmwareInfo(client: BlePsFtpClient, deviceId: String) async -> PolarFirmwareVersionInfo? {
         let plannedOperation = deviceFirmwareInfoOperation()
-        let request = Protocol_PbPFtpOperation.with {
-            $0.command = plannedOperation?.command ?? .get
-            $0.path = plannedOperation?.path ?? DEVICE_FIRMWARE_INFO_PATH
-        }
+        let request = plannedOperation ?? (.get, DEVICE_FIRMWARE_INFO_PATH)
         planDeviceFirmwareInfoRead()
         do {
-            let serializedBytes = try request.serializedData()
+            let serializedBytes = try PolarRuntimePlanner.fileOperationBytes(request)
             let response = try await client.request(serializedBytes)
             let proto = try Data_PbDeviceInfo(serializedBytes: response as Data)
             return PolarFirmwareVersionInfo(

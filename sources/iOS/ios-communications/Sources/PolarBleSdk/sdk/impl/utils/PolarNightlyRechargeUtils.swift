@@ -39,9 +39,8 @@ internal class PolarNightlyRechargeUtils {
         BleLogger.trace(TAG, "readNightlyRechargeData: \(date)")
         let plannedOperation = nightlyRechargeReadOperation(date: date)
         let filePath = plannedOperation.path
-        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let recoveryStatus = try Data_PbNightlyRecoveryStatus(serializedBytes: Data(response))
             guard let recoveryDate = try? PolarTimeUtils.pbDateToDateComponents(pbDate: recoveryStatus.sleepResultDate) else {
                 throw PolarNightlyRechargeError.missingOrInvalidRecoveryDate

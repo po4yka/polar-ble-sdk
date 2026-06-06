@@ -170,10 +170,7 @@ internal class PolarTrainingSessionUtils {
     static func readTrainingSession(client: BlePsFtpClient, reference: PolarTrainingSessionReference) async throws -> PolarTrainingSession {
         BleLogger.trace("readTrainingSession: Starting to read session from path: \(reference.path)")
         let summaryOperation = trainingSessionSummaryReadOperation(path: reference.path)
-        var tsessOp = Protocol_PbPFtpOperation()
-        tsessOp.command = summaryOperation.command
-        tsessOp.path = summaryOperation.path
-        let response = try await client.request(try tsessOp.serializedBytes())
+        let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(summaryOperation))
         let sessionSummary = try Data_PbTrainingSession(serializedBytes: response as Data)
         let payloadFetchOrder = trainingSessionPayloadFetchOrder(reference: reference)
         let exercises = try await withThrowingTaskGroup(of: PolarExercise.self) { group in
@@ -216,10 +213,7 @@ internal class PolarTrainingSessionUtils {
         progressHandler(PolarTrainingSessionProgress(totalBytes: totalBytes, completedBytes: 0, progressPercent: 0, currentFileName: nil))
         
         let summaryOperation = trainingSessionSummaryReadOperation(path: reference.path)
-        var tsessOp = Protocol_PbPFtpOperation()
-        tsessOp.command = summaryOperation.command
-        tsessOp.path = summaryOperation.path
-        let response = try await client.request(try tsessOp.serializedBytes())
+        let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(summaryOperation))
         let sessionSummary = try Data_PbTrainingSession(serializedBytes: response as Data)
         let payloadFetchOrder = trainingSessionPayloadFetchOrder(reference: reference)
         let exercises = try await withThrowingTaskGroup(of: PolarExercise.self) { group in
@@ -236,16 +230,10 @@ internal class PolarTrainingSessionUtils {
     
     static func deleteTrainingSession(client: BlePsFtpClient, reference: PolarTrainingSessionReference) async throws {
         let parentReadOperation = trainingSessionDeleteParentReadOperation(reference: reference)
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = parentReadOperation.command
-        operation.path = parentReadOperation.path
-        let content = try await client.request(try operation.serializedBytes())
+        let content = try await client.request(try PolarRuntimePlanner.fileOperationBytes(parentReadOperation))
         let dir = try Protocol_PbPFtpDirectory(serializedBytes: content as Data)
         let removePlan = trainingSessionDeleteRemoveOperation(reference: reference, parentEntryCount: dir.entries.count)
-        var removeOperation = Protocol_PbPFtpOperation()
-        removeOperation.command = removePlan.command
-        removeOperation.path = removePlan.path
-        _ = try await client.request(try removeOperation.serializedBytes())
+        _ = try await client.request(try PolarRuntimePlanner.fileOperationBytes(removePlan))
     }
     
     // MARK: - Private helpers
@@ -264,10 +252,7 @@ internal class PolarTrainingSessionUtils {
                 group.addTask {
                     let dataType = dataTypesByFileName[(filePath as NSString).lastPathComponent]!
                     let fileOperation = trainingSessionExerciseFileReadOperation(path: filePath)
-                    var op = Protocol_PbPFtpOperation()
-                    op.command = fileOperation.command
-                    op.path = fileOperation.path
-                    let response = try await client.request(try op.serializedBytes())
+                    let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(fileOperation))
                     let data: Data = filePath.hasSuffix(".GZB") ? try unzipGzip(response as Data) : response as Data
                     return (dataType, data)
                 }
@@ -327,10 +312,7 @@ internal class PolarTrainingSessionUtils {
         condition: @escaping (String) -> Bool
     ) async throws -> [(name: String, size: UInt64)] {
         let directoryOperation = trainingSessionDirectoryReadOperation(path: path)
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = directoryOperation.command
-        operation.path = directoryOperation.path
-        let data = try await client.request(try operation.serializedBytes())
+        let data = try await client.request(try PolarRuntimePlanner.fileOperationBytes(directoryOperation))
         let dir = try Protocol_PbPFtpDirectory(serializedBytes: data as Data)
         var results: [(name: String, size: UInt64)] = []
         for entry in dir.entries where condition(entry.name) {

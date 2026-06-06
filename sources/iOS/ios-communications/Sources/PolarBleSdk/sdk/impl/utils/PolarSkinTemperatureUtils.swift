@@ -37,9 +37,8 @@ internal class PolarSkinTemperatureUtils {
         BleLogger.trace(TAG, "readSkinTemperatureData: \(date)")
         let plannedOperation = skinTemperatureReadOperation(date: date)
         let filePath = plannedOperation.path
-        let operation = Protocol_PbPFtpOperation.with { $0.command = plannedOperation.command; $0.path = plannedOperation.path }
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let skinTemp = try Data_TemperatureMeasurementPeriod(serializedBytes: Data(response))
             return PolarSkinTemperatureData.PolarSkinTemperatureResult(
                 date: date,
