@@ -83,5 +83,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "RFC76 frame splitting uses MTU minus one payload bytes, next bit, status bits, and a wrapping sequence counter. Android keeps reading a raw payload stream while bytes remain. The current iOS utility stops this direct raw-stream helper loop from the generated RFC76 status and therefore emits one LAST frame for the direct raw-stream cases; production iOS write paths use the header/data overload and still need dedicated shared-runtime migration coverage before behavior is unified."
+  "notes": "RFC76 frame splitting uses MTU minus one payload bytes, next bit, status bits, and a wrapping sequence counter. Android keeps reading a raw payload stream while bytes remain. The current iOS utility stops this direct raw-stream helper loop from the generated RFC76 status and therefore emits one LAST frame for the direct raw-stream cases; production iOS write paths use the header/data overload, which is now pinned by the shared request-write frame-splitting policy."
 }

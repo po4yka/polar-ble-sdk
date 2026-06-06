@@ -25,6 +25,7 @@ private let PSFTP_BYTE_CODEC_READINESS_FAMILIES = [
     "rfc60-query-stream-encoding",
     "rfc60-notification-stream-encoding",
     "android-request-file-data-append-policy",
+    "ios-request-write-frame-splitting",
     "rfc76-mtu-frame-splitting",
     "rfc76-sequence-wrap",
     "platform-codec-vector-reference-gate",
@@ -46,7 +47,7 @@ private let RFC76_FRAME_SPLITTING_CASE_IDS = [
     "sequence-wraps-after-fifteen"
 ]
 
-private let PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
+private let PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
 
 class BlePsFtpUtilityTest: XCTestCase {
    
@@ -369,6 +370,22 @@ class BlePsFtpUtilityTest: XCTestCase {
             }
             XCTAssertEqual(frames.map { $0.hexString }, expectedFrames, id)
         }
+    }
+
+    func testRequestWriteFrameSplittingUsesSharedKmpBytePolicyWhenLinked() throws {
+        let header = InputStream(data: try Data(hex: "010203"))
+        let payload = InputStream(data: try Data(hex: "aabbccdd"))
+        let sequenceNumber = BlePsFtpUtility.BlePsFtpRfc76SequenceNumber()
+        header.open()
+        payload.open()
+        defer {
+            header.close()
+            payload.close()
+        }
+
+        let frames = BlePsFtpUtility.buildRfc76MessageFrameAll(header, data: payload, mtuSize: 4, sequenceNumber: sequenceNumber)
+
+        XCTAssertEqual(frames.map { $0.hexString }, ["06030001", "170203aa", "23bbccdd"])
     }
 
     func testMessageStreamGoldenVectorsFollowNeutralKmpShape() throws {

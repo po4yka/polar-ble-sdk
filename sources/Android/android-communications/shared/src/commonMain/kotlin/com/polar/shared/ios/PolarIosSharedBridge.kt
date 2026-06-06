@@ -1670,6 +1670,12 @@ object PolarIosSharedBridge {
         }
     }
 
+    fun psFtpSplitRfc76RequestWriteFramesHex(headerHex: String, dataHex: String, mtu: Int): String {
+        return PolarWorkflowRuntimePlanning.splitRfc76RequestWriteFrames(headerHex.hexToBytes(), dataHex.hexToBytes(), mtu).joinToString(separator = "|") { frame ->
+            frame.toHex()
+        }
+    }
+
     fun d2hNotificationType(notificationId: Int): String {
         return PolarD2hRuntimePlanning.notificationTypeOrNull(notificationId) ?: ""
     }

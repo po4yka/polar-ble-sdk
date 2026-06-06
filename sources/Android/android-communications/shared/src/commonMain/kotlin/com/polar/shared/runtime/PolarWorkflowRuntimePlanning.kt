@@ -304,6 +304,13 @@ object PolarWorkflowRuntimePlanning {
         return frames
     }
 
+    fun splitRfc76RequestWriteFrames(header: ByteArray, data: ByteArray, mtu: Int): List<ByteArray> {
+        return splitRfc76Frames(
+            encodeCompleteMessageStream(type = "request", header = header, idValue = 0, data = data),
+            mtu
+        )
+    }
+
     fun reassembleRequestResponse(responseFrames: List<ByteArray>): ByteArray {
         val payload = mutableListOf<Byte>()
         responseFrames.forEach { frame ->

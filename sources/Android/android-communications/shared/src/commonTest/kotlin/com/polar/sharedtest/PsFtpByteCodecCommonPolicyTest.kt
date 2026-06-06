@@ -90,6 +90,17 @@ class PsFtpByteCodecCommonPolicyTest {
     }
 
     @Test
+    fun psFtpRequestWriteFrameSplittingCombinesHeaderAndFilePayloadInSharedProductionPolicy() {
+        val frames = PolarWorkflowRuntimePlanning.splitRfc76RequestWriteFrames(
+            header = hexToBytes("010203"),
+            data = hexToBytes("aabbccdd"),
+            mtu = 4
+        )
+
+        assertEquals(listOf("06030001", "170203aa", "23bbccdd"), frames.map { frame -> frame.toHex() })
+    }
+
+    @Test
     fun psFtpWriteTimeoutPolicySelectsSharedExtendedPathPrefix() {
         assertEquals(900, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/SYNCPART.TGZ"))
         assertEquals(900, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/SYNCPART.TGZ/part0"))
@@ -142,6 +153,7 @@ class PsFtpByteCodecCommonPolicyTest {
         "rfc60-query-stream-encoding",
         "rfc60-notification-stream-encoding",
         "android-request-file-data-append-policy",
+        "ios-request-write-frame-splitting",
         "rfc76-mtu-frame-splitting",
         "rfc76-sequence-wrap",
         "platform-codec-vector-reference-gate",
@@ -262,6 +274,6 @@ class PsFtpByteCodecCommonPolicyTest {
             "complete_message_streams",
             "rfc76_frame_splitting"
         )
-        const val PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
+        const val PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
     }
 }

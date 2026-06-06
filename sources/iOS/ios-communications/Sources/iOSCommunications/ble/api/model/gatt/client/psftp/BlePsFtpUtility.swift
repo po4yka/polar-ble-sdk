@@ -245,6 +245,28 @@ public class BlePsFtpUtility {
         return packet
     }
 
+    public static func buildRfc76MessageFrameAll(_ header: InputStream, data: InputStream?, mtuSize: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> [Data] {
+        #if canImport(PolarBleSdkShared)
+        if sequenceNumber.getSeq() == 0,
+           let sharedFrames = SharedPsFtpByteCodec.splitRfc76RequestWriteFrames(header, data: data, mtuSize: mtuSize) {
+            for _ in sharedFrames {
+                sequenceNumber.increment()
+            }
+            return sharedFrames
+        }
+        #endif
+        var next = 0
+        var frames = [Data]()
+        var more = true
+        repeat {
+            let packet = buildRfc76MessageFrame(header, data: data, next: next, mtuSize: mtuSize, sequenceNumber: sequenceNumber)
+            more = (packet[0] & 0x06) == 0x06
+            frames.append(packet)
+            next = 1
+        } while more
+        return frames
+    }
+
     private static func makeRfc76Frame(chunk: Data, hasMore: Bool, next: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> Data {
         #if canImport(PolarBleSdkShared)
         if let sharedFrame = SharedPsFtpByteCodec.encodeRfc76FrameChunk(chunk: chunk, hasMore: hasMore, next: next, sequenceNumber: sequenceNumber.getSeq()) {
@@ -396,6 +418,14 @@ enum SharedPsFtpByteCodec {
     fileprivate static func splitRfc76Frames(_ stream: InputStream, mtuSize: Int) -> [Data]? {
         let payload = Data(readingRemaining: stream)
         let frameHexValues = PolarIosSharedBridge.shared.psFtpSplitRfc76FramesHex(payloadHex: payload.hexString, mtu: Int32(mtuSize)).split(separator: "|", omittingEmptySubsequences: false)
+        let frames = frameHexValues.compactMap { Data(hexBytes: String($0)) }
+        return frames.count == frameHexValues.count ? frames : nil
+    }
+
+    fileprivate static func splitRfc76RequestWriteFrames(_ header: InputStream, data: InputStream?, mtuSize: Int) -> [Data]? {
+        let headerData = Data(readingRemaining: header)
+        let dataBytes = data.map { Data(readingRemaining: $0) } ?? Data()
+        let frameHexValues = PolarIosSharedBridge.shared.psFtpSplitRfc76RequestWriteFramesHex(headerHex: headerData.hexString, dataHex: dataBytes.hexString, mtu: Int32(mtuSize)).split(separator: "|", omittingEmptySubsequences: false)
         let frames = frameHexValues.compactMap { Data(hexBytes: String($0)) }
         return frames.count == frameHexValues.count ? frames : nil
     }

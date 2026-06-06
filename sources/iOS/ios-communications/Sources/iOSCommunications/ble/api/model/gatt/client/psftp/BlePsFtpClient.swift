@@ -389,12 +389,11 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
                     var response = false
                     let sequenceNumber = BlePsFtpUtility.BlePsFtpRfc76SequenceNumber()
                     var totalTransmitted: Int64 = 0
-                    var more = true
-                    repeat {
+                    let frames = BlePsFtpUtility.buildRfc76MessageFrameAll(totalStream, data: localDataStream, mtuSize: self.mtuSize, sequenceNumber: sequenceNumber)
+                    for packet in frames {
                         do {
-                            let packet = BlePsFtpUtility.buildRfc76MessageFrame(totalStream, data: localDataStream, next: next, mtuSize: self.mtuSize, sequenceNumber: sequenceNumber)
                             pCounter += 1
-                            more = (packet[0] & 0x06) == 0x06
+                            let more = (packet[0] & 0x06) == 0x06
                             if !more { self.currentOperationWrite.set(false) }
                             if self.packetChunks.get() == 0 {
                                 response = false
@@ -446,7 +445,7 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
                             }
                             return
                         }
-                    } while more
+                    }
                     let output = NSMutableData()
                     do {
                         let error = try self.readResponse(output, inputQueue: self.mtuInputQueue, canceled: block ?? BlockOperation(), timeout: timeout)
