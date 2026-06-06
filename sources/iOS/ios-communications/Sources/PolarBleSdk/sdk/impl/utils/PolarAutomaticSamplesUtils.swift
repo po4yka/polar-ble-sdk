@@ -98,11 +98,3 @@ internal class PolarAutomaticSamplesUtils {
         return String(format: "%04d%02d%02d", Int(date.year), Int(date.month), Int(date.day))
     }
 }
-
-extension DateComponents: @retroactive Comparable {
-    public static func < (lhs: DateComponents, rhs: DateComponents) -> Bool {
-        let now = Date()
-        let calendar = Calendar.current
-        return calendar.date(byAdding: lhs, to: now)! < calendar.date(byAdding: rhs, to: now)!
-    }
-}

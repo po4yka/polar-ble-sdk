@@ -439,12 +439,11 @@ internal class PolarTrainingSessionUtils {
         ) {
             return sharedDecision
         }
-        let dateAtPath = Calendar.current.dateComponents([.year, .month, .day], from: date)
-        let effectiveFrom = fromDate.map { Calendar.current.dateComponents([.year, .month, .day], from: $0) }
-        let effectiveTo = toDate.map { Calendar.current.dateComponents([.year, .month, .day], from: $0) }
-        let afterFrom = effectiveFrom.map { dateAtPath >= $0 } ?? true
-        let beforeTo = effectiveTo.map { dateAtPath <= $0 } ?? true
-        return afterFrom && beforeTo
+        formatter.dateFormat = "yyyyMMdd"
+        let dateString = formatter.string(from: date)
+        let lowerBound = fromDate ?? date
+        let upperBound = toDate ?? date
+        return Set(PolarTimeUtils.basicDateRangeStrings(fromDate: lowerBound, toDate: upperBound)).contains(dateString)
     }
 
     private static func fallbackTrainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference) -> [String] {
