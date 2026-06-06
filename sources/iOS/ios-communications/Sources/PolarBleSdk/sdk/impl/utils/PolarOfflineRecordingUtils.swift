@@ -125,7 +125,7 @@ class PolarOfflineRecordingUtils {
 
     #if canImport(PolarBleSdkShared)
     private static func offlineRecordingEntriesFromSharedV2(fileListText: String) throws -> [PolarOfflineRecordingEntry] {
-        let shared = PolarIosSharedBridge.shared.offlineRecordingEntriesV2(fileListText: fileListText)
+        let shared = PolarOfflineRecordingRuntimePlanner.entriesV2(fileListText: fileListText)
         guard !shared.isEmpty else { return [] }
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
@@ -156,4 +156,14 @@ class PolarOfflineRecordingUtils {
         }
     }
     #endif
+}
+
+enum PolarOfflineRecordingRuntimePlanner {
+    static func entriesV2(fileListText: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.offlineRecordingEntriesV2(fileListText: fileListText)
+        #else
+        return ""
+        #endif
+    }
 }
