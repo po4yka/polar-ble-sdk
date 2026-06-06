@@ -42,6 +42,8 @@ class PolarTestUtilsTest {
 
         assertEquals("/U/0/20260413/SPO2TEST/", PolarRuntimePlannerAdapter.spo2TestDirectoryPath("20260413"))
         assertEquals("/U/0/20260413/SPO2TEST/142507/SPO2TRES.BPB", PolarRuntimePlannerAdapter.spo2TestResultPath("/U/0/20260413/SPO2TEST/", "142507/"))
+        assertEquals("2026-04-13 14:25:07", PolarRuntimePlannerAdapter.spo2TestTimeFromFolderNames("2026-04-13", "142507"))
+        assertNull(PolarRuntimePlannerAdapter.spo2TestTimeFromFolderNames("2026-04-13", "BADDIR"))
         assertEquals(
             PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260413/SPO2TEST/",
             PolarTestUtils.spo2TestDirectoryReadOperation(date)

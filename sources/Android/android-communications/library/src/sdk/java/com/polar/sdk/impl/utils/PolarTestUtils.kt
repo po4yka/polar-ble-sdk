@@ -11,7 +11,6 @@ import com.polar.services.datamodels.protobuf.Spo2TestResult
 import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
@@ -131,9 +130,7 @@ internal object PolarTestUtils {
     }
 
     internal fun dateTimeFromFolderNames(date: LocalDate, timeDirName: String): String? {
-        return PolarSpo2Models.testTimeDirectoryParts(timeDirName)?.let { parts ->
-            testTimeFormatter.format(LocalDateTime.of(date.year, date.monthValue, date.dayOfMonth, parts.hour, parts.minute, parts.second))
-        }
+        return PolarRuntimePlannerAdapter.spo2TestTimeFromFolderNames(date.toString(), timeDirName)
     }
 
     private fun String.toSpo2TestStatus(): Spo2TestStatus? {

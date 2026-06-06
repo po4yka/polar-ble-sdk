@@ -532,6 +532,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarSpo2Models.testResultPath(directoryPath, subDirectoryName)
     }
 
+    fun spo2TestTimeFromFolderNames(date: String, timeDirName: String): String? {
+        return PolarSpo2Models.testTimeFromFolderNames(date, timeDirName)
+    }
+
     fun trainingSessionDeleteParentPath(referencePath: String): String {
         return PolarTrainingSessionModels.deleteParentPath(referencePath)
     }
