@@ -1475,6 +1475,14 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `offline recording PMDFILES header uses shared file facade planning`() {
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/PMDFILES.TXT",
+            BDBleApiImpl.offlineRecordingPmdFilesReadOperation()
+        )
+    }
+
+    @Test
     fun `doFirstTimeUse terminates sync and propagates physical config write failure`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))

@@ -197,7 +197,6 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     private var callback: PolarBleApiCallbackProvider? = null
     private var logger: PolarBleApiLogger? = null
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ENGLISH)
-    private val PMDFilePath = "/PMDFILES.TXT"
     private lateinit var offlineExerciseV2Api: PolarOfflineExerciseV2ApiImpl
 
     init {
@@ -836,7 +835,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
                 ?: throw PolarServiceNotAvailable()
 
-            val data = deviceSupportsFasterOfflineRecordListing(identifier)
+            val data = deviceSupportsFasterOfflineRecordListing(client, session.polarDeviceType)
             if (data.isNotEmpty()) {
                 val entries = PolarOfflineRecordingUtils.listOfflineRecordingsV2(data)
                 for (entry in entries) emit(entry)
@@ -848,9 +847,13 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         }
     }
 
-    private suspend fun deviceSupportsFasterOfflineRecordListing(identifier: String): ByteArray {
+    private suspend fun deviceSupportsFasterOfflineRecordListing(client: BlePsFtpClient, polarDeviceType: String): ByteArray {
+        if (getFileSystemType(polarDeviceType) != FileSystemType.POLAR_FILE_SYSTEM_V2) {
+            return byteArrayOf()
+        }
         return try {
-            getFile(identifier, PMDFilePath)
+            val readOperation = offlineRecordingPmdFilesReadOperation()
+            client.request(PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)).toByteArray()
         } catch (e: Exception) {
             BleLogger.e(TAG, "Failed to check if device supports fast offline record listing: $e")
             byteArrayOf()
@@ -3717,6 +3720,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         internal fun offlineRecordingFileReadOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
             return facadeFileOperation("offline-recording-read-file", "GET", path)
+        }
+
+        internal fun offlineRecordingPmdFilesReadOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return facadeFileOperation("offline-recording-read-pmd-files", "GET", "/PMDFILES.TXT")
         }
 
         internal fun offlineRecordingDirectoryReadOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
