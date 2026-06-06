@@ -96,6 +96,9 @@ enum PolarCommandRuntimePlanner {
             case "REQUEST_START_RECORDING": return Protocol_PbPFtpQuery.requestStartRecording.rawValue
             case "REQUEST_STOP_RECORDING": return Protocol_PbPFtpQuery.requestStopRecording.rawValue
             case "REQUEST_RECORDING_STATUS": return Protocol_PbPFtpQuery.requestRecordingStatus.rawValue
+            case "START_DM_EXERCISE": return Protocol_PbPFtpQuery.startDmExercise.rawValue
+            case "STOP_EXERCISE": return Protocol_PbPFtpQuery.stopExercise.rawValue
+            case "GET_EXERCISE_STATUS": return Protocol_PbPFtpQuery.getExerciseStatus.rawValue
             case "REQUEST_SYNCHRONIZATION": return Protocol_PbPFtpQuery.requestSynchronization.rawValue
             case "SET_LOCAL_TIME": return Protocol_PbPFtpQuery.setLocalTime.rawValue
             case "SET_SYSTEM_TIME": return Protocol_PbPFtpQuery.setSystemTime.rawValue

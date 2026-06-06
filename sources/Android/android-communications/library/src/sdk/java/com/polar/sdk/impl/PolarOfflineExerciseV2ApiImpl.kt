@@ -80,10 +80,12 @@ class PolarOfflineExerciseV2ApiImpl(
             .setSportIdentifier(sportIdentifier)
             .build()
 
-        val outputStream = client.query(
-            PftpRequest.PbPFtpQuery.START_DM_EXERCISE_VALUE,
-            params.toByteArray()
+        val plan = PolarRuntimePlannerAdapter.planCommandQuery(
+            id = "offline-exercise-v2-start",
+            query = "START_DM_EXERCISE",
+            parameters = listOf("sportProfileId=${sportProfile.id}")
         )
+        val outputStream = client.query(PolarRuntimePlannerAdapter.queryValue(plan), params.toByteArray())
 
         val proto = PftpResponse.PbPftpStartDmExerciseResult.parseFrom(outputStream.toByteArray())
 
@@ -118,10 +120,12 @@ class PolarOfflineExerciseV2ApiImpl(
             .setSave(true)
             .build()
 
-        client.query(
-            PftpRequest.PbPFtpQuery.STOP_EXERCISE_VALUE,
-            params.toByteArray()
+        val plan = PolarRuntimePlannerAdapter.planCommandQuery(
+            id = "offline-exercise-v2-stop",
+            query = "STOP_EXERCISE",
+            parameters = listOf("save=true")
         )
+        client.query(PolarRuntimePlannerAdapter.queryValue(plan), params.toByteArray())
     }
 
     override suspend fun getOfflineExerciseStatusV2(identifier: String): Boolean {
@@ -129,10 +133,8 @@ class PolarOfflineExerciseV2ApiImpl(
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as? BlePsFtpClient
             ?: throw PolarServiceNotAvailable()
 
-        val bytes = client.query(
-            PftpRequest.PbPFtpQuery.GET_EXERCISE_STATUS_VALUE,
-            byteArrayOf()
-        )
+        val plan = PolarRuntimePlannerAdapter.planCommandQuery("offline-exercise-v2-status", "GET_EXERCISE_STATUS")
+        val bytes = client.query(PolarRuntimePlannerAdapter.queryValue(plan), byteArrayOf())
 
         val proto = PftpResponse.PbPftpGetExerciseStatusResult.parseFrom(bytes.toByteArray())
         return proto.exerciseType ==

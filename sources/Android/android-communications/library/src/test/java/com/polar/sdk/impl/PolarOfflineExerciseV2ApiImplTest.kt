@@ -11,6 +11,7 @@ import com.polar.sdk.api.errors.PolarDeviceNotFound
 import com.polar.sdk.api.errors.PolarServiceNotAvailable
 import com.polar.sdk.api.model.PolarExerciseEntry
 import com.polar.sdk.api.model.PolarExerciseSession
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import fi.polar.remote.representation.protobuf.ExerciseSamples.PbExerciseSamples
 import fi.polar.remote.representation.protobuf.Structures
 import fi.polar.remote.representation.protobuf.Types
@@ -419,6 +420,36 @@ class PolarOfflineExerciseV2ApiImplTest {
         Assert.assertEquals(
             PftpRequest.PbPFtpOperation.Command.GET to "/DEVICE.BPB",
             PolarOfflineExerciseV2ApiImpl.offlineExerciseDeviceInfoReadOperation()
+        )
+    }
+
+    @Test
+    fun `offline exercise command queries use shared command planning`() {
+        Assert.assertEquals(
+            PftpRequest.PbPFtpQuery.START_DM_EXERCISE_VALUE,
+            PolarRuntimePlannerAdapter.queryValue(
+                PolarRuntimePlannerAdapter.planCommandQuery(
+                    id = "offline-exercise-v2-start",
+                    query = "START_DM_EXERCISE",
+                    parameters = listOf("sportProfileId=${PolarExerciseSession.SportProfile.RUNNING.id}")
+                )
+            )
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpQuery.STOP_EXERCISE_VALUE,
+            PolarRuntimePlannerAdapter.queryValue(
+                PolarRuntimePlannerAdapter.planCommandQuery(
+                    id = "offline-exercise-v2-stop",
+                    query = "STOP_EXERCISE",
+                    parameters = listOf("save=true")
+                )
+            )
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpQuery.GET_EXERCISE_STATUS_VALUE,
+            PolarRuntimePlannerAdapter.queryValue(
+                PolarRuntimePlannerAdapter.planCommandQuery("offline-exercise-v2-status", "GET_EXERCISE_STATUS")
+            )
         )
     }
 

@@ -54,7 +54,8 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
             sportId.value = UInt64(sportProfile.rawValue)
             var params = Protocol_PbPFtpStartDmExerciseParams()
             params.sportIdentifier = sportId
-            let response = try await client.query(Protocol_PbPFtpQuery.startDmExercise.rawValue, parameters: try params.serializedData() as NSData)
+            let query = PolarRuntimePlanner.commandQueryValue(id: "offline-exercise-v2-start", query: "START_DM_EXERCISE", parameters: ["sportProfileId=\(sportProfile.rawValue)"]) ?? Protocol_PbPFtpQuery.startDmExercise.rawValue
+            let response = try await client.query(query, parameters: try params.serializedData() as NSData)
             let proto = try Protocol_PbPftpStartDmExerciseResult(serializedBytes: Data(response))
             let result: OfflineExerciseStartResultType
             switch proto.result {
@@ -79,7 +80,8 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
             }
             var params = Protocol_PbPFtpStopExerciseParams()
             params.save = true
-            _ = try await client.query(Protocol_PbPFtpQuery.stopExercise.rawValue, parameters: try params.serializedData() as NSData)
+            let query = PolarRuntimePlanner.commandQueryValue(id: "offline-exercise-v2-stop", query: "STOP_EXERCISE", parameters: ["save=true"]) ?? Protocol_PbPFtpQuery.stopExercise.rawValue
+            _ = try await client.query(query, parameters: try params.serializedData() as NSData)
         } catch {
             throw handleError(error)
         }
@@ -91,7 +93,8 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
             guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                 throw PolarErrors.serviceNotFound
             }
-            let response = try await client.query(Protocol_PbPFtpQuery.getExerciseStatus.rawValue, parameters: Data() as NSData)
+            let query = PolarRuntimePlanner.commandQueryValue(id: "offline-exercise-v2-status", query: "GET_EXERCISE_STATUS") ?? Protocol_PbPFtpQuery.getExerciseStatus.rawValue
+            let response = try await client.query(query, parameters: Data() as NSData)
             let proto = try Protocol_PbPftpGetExerciseStatusResult(serializedBytes: Data(response))
             return proto.exerciseType == .exerciseTypeDataMerge && proto.exerciseState == .exerciseStateRunning
         } catch {

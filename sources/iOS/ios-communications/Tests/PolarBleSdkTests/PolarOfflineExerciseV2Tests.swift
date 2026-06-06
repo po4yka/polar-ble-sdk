@@ -296,6 +296,16 @@ final class PolarOfflineExerciseV2Tests: XCTestCase {
         XCTAssertEqual(deviceInfoOperation.path, "/DEVICE.BPB")
     }
 
+    func testOfflineExerciseCommandQueriesUseSharedCommandPlanningWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(Protocol_PbPFtpQuery.startDmExercise.rawValue, PolarRuntimePlanner.commandQueryValue(id: "offline-exercise-v2-start", query: "START_DM_EXERCISE", parameters: ["sportProfileId=\(PolarExerciseSession.SportProfile.running.rawValue)"]))
+        XCTAssertEqual(Protocol_PbPFtpQuery.stopExercise.rawValue, PolarRuntimePlanner.commandQueryValue(id: "offline-exercise-v2-stop", query: "STOP_EXERCISE", parameters: ["save=true"]))
+        XCTAssertEqual(Protocol_PbPFtpQuery.getExerciseStatus.rawValue, PolarRuntimePlanner.commandQueryValue(id: "offline-exercise-v2-status", query: "GET_EXERCISE_STATUS"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func test_exerciseEntry_path_structure() throws {
         // Arrange
         let entryPath = "/U/0/20260225/SAMPLES.BPB"

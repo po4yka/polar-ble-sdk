@@ -438,6 +438,9 @@ internal object PolarRuntimePlannerAdapter {
             "REQUEST_START_RECORDING" -> PftpRequest.PbPFtpQuery.REQUEST_START_RECORDING_VALUE
             "REQUEST_STOP_RECORDING" -> PftpRequest.PbPFtpQuery.REQUEST_STOP_RECORDING_VALUE
             "REQUEST_RECORDING_STATUS" -> PftpRequest.PbPFtpQuery.REQUEST_RECORDING_STATUS_VALUE
+            "START_DM_EXERCISE" -> PftpRequest.PbPFtpQuery.START_DM_EXERCISE_VALUE
+            "STOP_EXERCISE" -> PftpRequest.PbPFtpQuery.STOP_EXERCISE_VALUE
+            "GET_EXERCISE_STATUS" -> PftpRequest.PbPFtpQuery.GET_EXERCISE_STATUS_VALUE
             "REQUEST_SYNCHRONIZATION" -> PftpRequest.PbPFtpQuery.REQUEST_SYNCHRONIZATION_VALUE
             "SET_LOCAL_TIME" -> PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE
             "SET_SYSTEM_TIME" -> PftpRequest.PbPFtpQuery.SET_SYSTEM_TIME_VALUE
