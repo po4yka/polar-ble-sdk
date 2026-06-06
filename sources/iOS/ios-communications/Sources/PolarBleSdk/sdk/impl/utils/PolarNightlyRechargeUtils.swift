@@ -28,11 +28,7 @@ internal class PolarNightlyRechargeUtils {
     }
 
     private static func nightlyRechargePath(day: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.nightlyRechargePath(day: day)
-        #else
-        return "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(NIGHTLY_RECOVERY_DIRECTORY)\(NIGHTLY_RECOVERY_PROTO)"
-        #endif
+        return PolarNightlyRechargeRuntimePlanner.nightlyRechargePath(day: day) ?? "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(NIGHTLY_RECOVERY_DIRECTORY)\(NIGHTLY_RECOVERY_PROTO)"
     }
 
     static func readNightlyRechargeData(client: BlePsFtpClient, date: Date) async -> PolarNightlyRechargeData? {
@@ -65,5 +61,15 @@ internal class PolarNightlyRechargeUtils {
             BleLogger.error("readNightlyRechargeData() failed for path: \(filePath), error: \(error)")
             return nil
         }
+    }
+}
+
+enum PolarNightlyRechargeRuntimePlanner {
+    static func nightlyRechargePath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.nightlyRechargePath(day: day)
+        #else
+        return nil
+        #endif
     }
 }
