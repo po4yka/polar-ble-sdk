@@ -1585,6 +1585,23 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNamesCsv.csvValues()).joinToString(",")
     }
 
+    fun planRuntimeFirmwareWritePaths(fileNamesCsv: String): String {
+        val fileNames = fileNamesCsv.csvValues()
+        return PolarWorkflowRuntimePlanning.planFirmwareWorkflow(
+            PolarFirmwareWorkflowScenario(
+                id = "write-package-success-with-system-update-last",
+                expectedStatusOrder = listOf(
+                    "preparingDeviceForFwUpdate",
+                    "fetchingFwUpdatePackage",
+                    "writingFwUpdatePackage",
+                    "finalizingFwUpdate",
+                    "fwUpdateCompletedSuccessfully"
+                ),
+                firmwareFiles = fileNames
+            )
+        ).writes.joinToString(",")
+    }
+
     fun firmwarePackageEntryIsPayload(fileName: String): Boolean {
         return PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload(fileName)
     }

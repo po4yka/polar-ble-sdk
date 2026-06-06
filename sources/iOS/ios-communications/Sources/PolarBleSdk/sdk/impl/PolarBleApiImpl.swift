@@ -2391,9 +2391,10 @@ extension PolarBleApiImpl: PolarBleApi  {
             Task {
                 do {
                     PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"], firmwareFiles: firmwareFiles.map { $0.0 })
-                    for firmwareFile in firmwareFiles {
+                    let plannedWritePaths = PolarRuntimePlanner.firmwareWritePaths(firmwareFiles.map { $0.0 })
+                    for (index, firmwareFile) in firmwareFiles.enumerated() {
                         var lastBytesWritten: Int = 0
-                        let firmwareFilePath = "/\(firmwareFile.0)"
+                        let firmwareFilePath = plannedWritePaths.indices.contains(index) ? plannedWritePaths[index] : "/\(firmwareFile.0)"
                         let firmwareFileBytes = firmwareFile.1
                         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: firmwareFileBytes.count)
                         for try await bytesWritten in self.writeFirmwareToDeviceAsync(identifier: identifier, firmwareFilePath: firmwareFilePath, firmwareBytes: firmwareFileBytes) {
