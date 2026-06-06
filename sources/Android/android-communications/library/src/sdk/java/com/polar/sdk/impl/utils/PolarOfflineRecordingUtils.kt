@@ -19,7 +19,6 @@ import java.util.*
 internal object PolarOfflineRecordingUtils {
 
     private const val TAG = "OfflineRecordingUtils"
-    private const val PMD_FILE_PATH = "/PMDFILES.TXT"
 
     private fun mapOfflineRecordingFileNameToMeasurementType(fileName: String): PmdMeasurementType {
         return when (PolarOfflineRecordingModels.measurementTypeFromFileName(fileName)) {
