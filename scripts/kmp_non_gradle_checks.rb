@@ -787,6 +787,7 @@ FAKE_TRANSPORT_COMMON_BACKUP_UTILITY_TEST_REQUIRED_TERMS = [
   "backupExpansionAndRestoreWritesGoldenVectorDefinesExecutableCommonPolicy",
   "backupWorkflowRunsThroughCommonFakeTraversalAndRestoreHarness",
   "CommonBackupFakeRuntime",
+  "backupTraversalRootPath",
   "directoryEntries",
   "readCommands",
   "restorePayloads",

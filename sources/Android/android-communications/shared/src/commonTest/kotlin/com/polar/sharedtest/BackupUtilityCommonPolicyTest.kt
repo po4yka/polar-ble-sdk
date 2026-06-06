@@ -120,6 +120,8 @@ class BackupUtilityCommonPolicyTest {
             PolarWorkflowRuntimePlanning.defaultBackupPaths(),
             PolarWorkflowRuntimePlanning.backupRootPaths(emptyList())
         )
+        assertEquals("/U/0/S/UDEVSET.BPB", PolarWorkflowRuntimePlanning.backupTraversalRootPath("/U/*/S/UDEVSET.BPB"))
+        assertEquals("/SYS/BT/", PolarWorkflowRuntimePlanning.backupTraversalRootPath("/SYS/BT/"))
     }
 
     @Test

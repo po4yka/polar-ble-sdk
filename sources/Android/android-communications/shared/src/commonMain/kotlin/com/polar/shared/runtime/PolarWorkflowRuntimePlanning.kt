@@ -207,6 +207,10 @@ object PolarWorkflowRuntimePlanning {
         return paths
     }
 
+    fun backupTraversalRootPath(path: String): String {
+        return path.replace("/U/*/", "/U/0/")
+    }
+
     fun readBackupFiles(paths: List<String>, filesByPath: Map<String, String>): List<PolarBackupFile> {
         return paths.map { path -> PolarBackupFile(path, filesByPath.getValue(path)) }
     }

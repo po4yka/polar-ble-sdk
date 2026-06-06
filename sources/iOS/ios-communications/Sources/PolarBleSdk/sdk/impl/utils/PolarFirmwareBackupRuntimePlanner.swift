@@ -63,6 +63,14 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func backupTraversalRootPath(_ path: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.backupTraversalRootPath(path: path)
+        #else
+        return path.replacingOccurrences(of: "/U/*/", with: "/U/0/")
+        #endif
+    }
+
     static func backupFilePath(_ path: String) -> (directory: String, fileName: String) {
         #if canImport(PolarBleSdkShared)
         let parts = PolarIosSharedBridge.shared.backupFilePathParts(path: path).split(separator: "\t", omittingEmptySubsequences: false).map(String.init)

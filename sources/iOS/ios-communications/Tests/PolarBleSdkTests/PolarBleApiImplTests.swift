@@ -2080,6 +2080,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("success", PolarRuntimePlanner.backupRestore(path: "/U/0/BACKUP.TXT", payloadHex: "0102"))
         XCTAssertEqual(.put, PolarRuntimePlanner.backupRestoreOperation(path: "/U/0/BACKUP.TXT", payloadHex: "0102")?.command)
         XCTAssertEqual("/U/0/BACKUP.TXT", PolarRuntimePlanner.backupRestoreOperation(path: "/U/0/BACKUP.TXT", payloadHex: "0102")?.path)
+        XCTAssertEqual("/U/0/S/UDEVSET.BPB", PolarFirmwareBackupRuntimePlanner.backupTraversalRootPath("/U/*/S/UDEVSET.BPB"))
         XCTAssertEqual("success", PolarRuntimePlanner.psFtpWriteAck(payloadSize: 2))
         XCTAssertEqual("gattDisconnected", PolarRuntimePlanner.streamSubscription(target: "stream", startConnected: false, checkConnection: true))
         XCTAssertEqual("stream", PolarRuntimePlanner.streamConsumerCancellation(target: "stream"))
@@ -2185,6 +2186,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(.put, operation?.command)
         XCTAssertEqual("/U/0/BACKUP.TXT", operation?.path)
         XCTAssertEqual(["/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB", "/U/0/USERID.BPB"], PolarFirmwareBackupRuntimePlanner.defaultBackupPaths())
+        XCTAssertEqual("/U/0/S/UDEVSET.BPB", PolarFirmwareBackupRuntimePlanner.backupTraversalRootPath("/U/*/S/UDEVSET.BPB"))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif

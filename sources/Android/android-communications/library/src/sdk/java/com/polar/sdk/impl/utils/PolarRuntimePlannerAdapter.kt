@@ -306,6 +306,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.backupRootPaths(entries.toList())
     }
 
+    fun backupTraversalRootPath(path: String): String {
+        return PolarWorkflowRuntimePlanning.backupTraversalRootPath(path)
+    }
+
     fun backupFilePath(path: String): Pair<String, String> {
         val filePath = PolarWorkflowRuntimePlanning.backupFilePath(path)
         return filePath.directory to filePath.fileName

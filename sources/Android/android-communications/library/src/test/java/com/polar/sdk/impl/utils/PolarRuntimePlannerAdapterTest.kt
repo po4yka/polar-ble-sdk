@@ -96,6 +96,7 @@ class PolarRuntimePlannerAdapterTest {
             listOf("/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB", "/U/0/USERID.BPB"),
             PolarRuntimePlannerAdapter.defaultBackupPaths()
         )
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", PolarRuntimePlannerAdapter.backupTraversalRootPath("/U/*/S/UDEVSET.BPB"))
     }
 
     @Test
