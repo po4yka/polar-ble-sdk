@@ -25,7 +25,7 @@ internal enum KvtxScriptUtils {
     /// Structure: WRITE_BYTES(key, data) + COMMIT
     static func buildWriteAndCommit(kvKey: UInt32, data: [UInt8]) -> [UInt8] {
         #if canImport(PolarBleSdkShared)
-        return bytes(fromHex: PolarIosSharedBridge.shared.buildKvtxWriteAndCommitHex(kvKey: Int64(kvKey), dataHex: data.hexString()))
+        return bytes(fromHex: KvtxScriptRuntimePlanner.writeAndCommitHex(kvKey: kvKey, data: data))
         #else
         var script = [UInt8]()
         script.append(CMD_WRITE_BYTES)
@@ -42,7 +42,7 @@ internal enum KvtxScriptUtils {
     /// Returns `nil` if the key is not present (or was removed) in the script.
     static func extractValueForKey(script: [UInt8], kvKey: UInt32) -> [UInt8]? {
         #if canImport(PolarBleSdkShared)
-        guard let valueHex = PolarIosSharedBridge.shared.extractKvtxValueForKeyHex(scriptHex: script.hexString(), kvKey: Int64(kvKey)) else {
+        guard let valueHex = KvtxScriptRuntimePlanner.extractValueHex(script: script, kvKey: kvKey) else {
             return nil
         }
         return bytes(fromHex: valueHex)
@@ -120,7 +120,7 @@ internal enum KvtxScriptUtils {
 
     static func u32Le(_ value: UInt32) -> [UInt8] {
         #if canImport(PolarBleSdkShared)
-        return bytes(fromHex: PolarIosSharedBridge.shared.kvtxU32LeHex(value: Int64(value)))
+        return bytes(fromHex: KvtxScriptRuntimePlanner.u32LeHex(value))
         #else
         return [
             UInt8(value & 0xFF),
@@ -128,6 +128,32 @@ internal enum KvtxScriptUtils {
             UInt8((value >> 16) & 0xFF),
             UInt8((value >> 24) & 0xFF)
         ]
+        #endif
+    }
+}
+
+enum KvtxScriptRuntimePlanner {
+    static func writeAndCommitHex(kvKey: UInt32, data: [UInt8]) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.buildKvtxWriteAndCommitHex(kvKey: Int64(kvKey), dataHex: data.hexString())
+        #else
+        return ""
+        #endif
+    }
+
+    static func extractValueHex(script: [UInt8], kvKey: UInt32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.extractKvtxValueForKeyHex(scriptHex: script.hexString(), kvKey: Int64(kvKey))
+        #else
+        return nil
+        #endif
+    }
+
+    static func u32LeHex(_ value: UInt32) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.kvtxU32LeHex(value: Int64(value))
+        #else
+        return ""
         #endif
     }
 }
