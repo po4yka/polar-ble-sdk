@@ -2726,20 +2726,23 @@ extension PolarBleApiImpl: PolarBleApi  {
         formatter.dateFormat = "yyyyMMdd"
         let entryPattern = dataType.rawValue
         var condition: (_ p: String) -> Bool
-        var folderPath: String = "/U/0"
+        let folderPath = PolarRuntimePlanner.storedDataCleanupRootPath(dataType: dataType.rawValue, defaultRoot: "/U/0/") ?? {
+            switch dataType {
+            case .AUTO_SAMPLE: return "/U/0/AUTOS"
+            case .SDLOGS: return "/SDLOGS"
+            default: return "/U/0/"
+            }
+        }()
         switch dataType {
         case .AUTO_SAMPLE:
-            folderPath = "/U/0/AUTOS"
             condition = { e in e.contains("^(\\d{8})(/)") || e == "\(entryPattern)/" || e.contains(".BPB") }
         case .SDLOGS:
-            folderPath = "/SDLOGS"
             condition = { e in
                 e.contains("^(\\d{8})(/)") ||
                 e == "\(entryPattern)/" ||
                 (PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includeSuffixes: [".SLG", ".TXT"]) ?? (e.contains(".SLG") || e.contains(".TXT")))
             }
         case .ACTIVITY, .DAILY_SUMMARY, .NIGHTLY_RECOVERY, .SLEEP, .SKIN_CONTACT_CHANGES, .SKINTEMP, .SLEEP_SCORE:
-            folderPath = "/U/0/"
             condition = { e in
                 (e.matches("^([0-9]{8})(\\/)") || e == "\(formatter.string(from: until!))" + "/" || e == "\(entryPattern)/" || e.contains(".BPB")) && !e.contains("USERID.BPB") && !e.contains("HIST")
             }

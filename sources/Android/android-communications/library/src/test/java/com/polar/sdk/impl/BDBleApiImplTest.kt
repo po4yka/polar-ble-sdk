@@ -3083,6 +3083,9 @@ class BDBleApiImplTest {
 
     @Test
     fun `stored data cleanup parent pruning uses shared path split policy`() {
+        Assert.assertEquals("/SDLOGS", PolarRuntimePlannerAdapter.storedDataCleanupRootPath(PolarBleApi.PolarStoredDataType.SDLOGS.type, "/U/0"))
+        Assert.assertEquals("/U/0/AUTOS", PolarRuntimePlannerAdapter.storedDataCleanupRootPath(PolarBleApi.PolarStoredDataType.AUTO_SAMPLE.type, "/U/0"))
+        Assert.assertEquals("/U/0", PolarRuntimePlannerAdapter.storedDataCleanupRootPath(PolarBleApi.PolarStoredDataType.ACTIVITY.type, "/U/0"))
         Assert.assertEquals(
             listOf("/U/0/20260530/ACT", "/U/0/20260530"),
             PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories("/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash = false)

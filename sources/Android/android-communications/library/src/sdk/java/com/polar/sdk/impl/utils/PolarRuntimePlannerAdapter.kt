@@ -246,6 +246,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents(dataType)
     }
 
+    fun storedDataCleanupRootPath(dataType: String, defaultRoot: String): String {
+        return PolarWorkflowRuntimePlanning.storedDataCleanupRootPath(dataType, defaultRoot)
+    }
+
     fun storedDataDateIsOnOrBefore(day: String, cutoffDate: String): Boolean {
         return PolarWorkflowRuntimePlanning.storedDataDateIsOnOrBefore(day, cutoffDate)
     }

@@ -2573,7 +2573,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     override suspend fun deleteStoredDeviceData(identifier: String, dataType: PolarStoredDataType, until: LocalDate?) {
-        var folderPath = "/U/0"
+        val folderPath = PolarRuntimePlannerAdapter.storedDataCleanupRootPath(dataType.type, "/U/0")
         val entryPattern = dataType.type
         val cond: PolarFileUtils.FetchRecursiveCondition
         val cutoffDate = until?.toString()
@@ -2585,7 +2585,6 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         when (dataType.type) {
             PolarStoredDataType.AUTO_SAMPLE.type -> {
-                folderPath = "/U/0/AUTOS"
                 cond = PolarFileUtils.FetchRecursiveCondition { entry: String ->
                     entry.matches(Regex("^(\\d{8})(/)")) ||
                             entry.contains(".BPB")
@@ -2593,7 +2592,6 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             }
 
             PolarStoredDataType.SDLOGS.type -> {
-                folderPath = "/SDLOGS"
                 cond = PolarFileUtils.FetchRecursiveCondition { entry: String ->
                     entry.matches(Regex("^(\\d{8})(/)")) ||
                             entry == "${entryPattern}/" ||

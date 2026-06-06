@@ -131,6 +131,14 @@ object PolarWorkflowRuntimePlanning {
         return dataType !in setOf("AUTOS", "SDLOGS", "UNDEFINED")
     }
 
+    fun storedDataCleanupRootPath(dataType: String, defaultRoot: String = "/U/0"): String {
+        return when (dataType) {
+            "AUTOS" -> "/U/0/AUTOS"
+            "SDLOGS" -> "/SDLOGS"
+            else -> defaultRoot
+        }
+    }
+
     fun storedDataDateIsOnOrBefore(day: String, cutoffDate: String): Boolean {
         return day <= cutoffDate
     }

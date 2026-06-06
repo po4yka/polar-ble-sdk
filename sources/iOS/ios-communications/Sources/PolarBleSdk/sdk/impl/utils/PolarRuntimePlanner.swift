@@ -167,6 +167,10 @@ enum PolarRuntimePlanner {
         return PolarStoredDataOfflineRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: dataType)
     }
 
+    static func storedDataCleanupRootPath(dataType: String, defaultRoot: String = "/U/0") -> String? {
+        return PolarStoredDataOfflineRuntimePlanner.storedDataCleanupRootPath(dataType: dataType, defaultRoot: defaultRoot)
+    }
+
     static func storedDataDateIsOnOrBefore(day: String, cutoffDate: String) -> Bool? {
         return PolarStoredDataOfflineRuntimePlanner.storedDataDateIsOnOrBefore(day: day, cutoffDate: cutoffDate)
     }

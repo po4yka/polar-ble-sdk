@@ -39,6 +39,14 @@ enum PolarStoredDataOfflineRuntimePlanner {
         #endif
     }
 
+    static func storedDataCleanupRootPath(dataType: String, defaultRoot: String = "/U/0") -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.storedDataCleanupRootPath(dataType: dataType, defaultRoot: defaultRoot)
+        #else
+        return nil
+        #endif
+    }
+
     static func storedDataDateIsOnOrBefore(day: String, cutoffDate: String) -> Bool? {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.storedDataDateIsOnOrBefore(day: day, cutoffDate: cutoffDate)
