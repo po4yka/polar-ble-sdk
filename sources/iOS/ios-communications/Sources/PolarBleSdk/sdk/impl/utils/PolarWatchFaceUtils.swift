@@ -272,6 +272,8 @@ internal enum PolarWatchFaceUtils {
         operation.path = plannedOperation.path
         let proto = try operation.serializedData()
         let inputStream = InputStream(data: Data(kvtxScript))
+        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: kvtxScript.count)
+        PolarRuntimePlanner.psFtpWriteAck(payloadSize: kvtxScript.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}
     }
 }

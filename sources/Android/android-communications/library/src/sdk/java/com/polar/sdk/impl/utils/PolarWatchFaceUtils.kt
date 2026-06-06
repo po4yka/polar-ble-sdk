@@ -246,6 +246,8 @@ internal object PolarWatchFaceUtils {
             command = writeOperation.first
             path = writeOperation.second
         }
+        PolarRuntimePlannerAdapter.planPsFtpWriteProgress(kvtxScript.size, "android")
+        PolarRuntimePlannerAdapter.planPsFtpWriteAck(kvtxScript.size)
         client.write(builder.build().toByteArray(), ByteArrayInputStream(kvtxScript)).collect {}
     }
 }
