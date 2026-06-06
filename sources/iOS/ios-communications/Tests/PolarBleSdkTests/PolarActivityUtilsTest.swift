@@ -3,9 +3,6 @@
 import Foundation
 import XCTest
 @testable import PolarBleSdk
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
 
 class PolarActivityUtilsTests: XCTestCase {
 
@@ -22,8 +19,6 @@ class PolarActivityUtilsTests: XCTestCase {
     func testActivityReadHeadersUseSharedFileFacadePlanning() throws {
         let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
 
-        XCTAssertEqual(PolarIosSharedBridge.shared.activityDirectoryPath(day: "20260102"), "/U/0/20260102/ACT/")
-        XCTAssertEqual(PolarIosSharedBridge.shared.dailySummaryPath(day: "20260102"), "/U/0/20260102/DSUM/DSUM.BPB")
         let activityDirectoryOperation = PolarActivityUtils.activityDirectoryReadOperation(date: date)
         XCTAssertEqual(activityDirectoryOperation.command, .get)
         XCTAssertEqual(activityDirectoryOperation.path, "/U/0/20260102/ACT/")

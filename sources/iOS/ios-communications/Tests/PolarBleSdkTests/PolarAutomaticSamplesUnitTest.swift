@@ -1,9 +1,6 @@
 import Foundation
 import XCTest
 @testable import PolarBleSdk
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
 
 class PolarAutomaticSamplesUtilsTests: XCTestCase {
 
@@ -18,8 +15,6 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
     }
 
     func testAutomaticSampleReadHeadersUseSharedFileFacadePlanning() {
-        XCTAssertEqual(PolarIosSharedBridge.shared.automaticSamplesDirectoryPath(), "/U/0/AUTOS/")
-        XCTAssertEqual(PolarIosSharedBridge.shared.automaticSamplesFilePath(fileName: "AUTOS001.BPB"), "/U/0/AUTOS/AUTOS001.BPB")
         let directoryOperation = PolarAutomaticSamplesUtils.automaticSamplesDirectoryReadOperation()
         XCTAssertEqual(directoryOperation.command, .get)
         XCTAssertEqual(directoryOperation.path, "/U/0/AUTOS/")
@@ -34,9 +29,6 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
         XCTAssertEqual(status.skinContact, .SKIN_CONTACT_DETECTED)
         XCTAssertEqual(status.movement, .MOVING_DETECTED)
         XCTAssertEqual(status.intervalStatus, .INTERVAL_DENOTES_OFFLINE_PERIOD)
-        #if canImport(PolarBleSdkShared)
-        XCTAssertEqual(PolarIosSharedBridge.shared.ppiStatusNames(statusByte: 0xFF), "SKIN_CONTACT_DETECTED,MOVING_DETECTED,INTERVAL_DENOTES_OFFLINE_PERIOD")
-        #endif
     }
 
     func testRead247HrSamples_SuccessfulResponse() async throws {

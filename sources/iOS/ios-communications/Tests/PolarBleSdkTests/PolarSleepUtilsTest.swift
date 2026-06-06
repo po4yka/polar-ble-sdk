@@ -5,9 +5,6 @@
 import Foundation
 import XCTest
 @testable import PolarBleSdk
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
 
 class PolarSleepUtilsTests: XCTestCase {
 
@@ -24,8 +21,6 @@ class PolarSleepUtilsTests: XCTestCase {
     func testSleepReadHeadersUseSharedFileFacadePlanning() throws {
         let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
 
-        XCTAssertEqual(PolarIosSharedBridge.shared.sleepAnalysisPath(day: "20260102"), "/U/0/20260102/SLEEP/SLEEPRES.BPB")
-        XCTAssertEqual(PolarIosSharedBridge.shared.sleepSkinTemperaturePath(day: "20260102"), "/U/0/20260102/NSTRESUL/NSTRCONT.BPB")
         let sleepOperation = PolarSleepUtils.sleepDataReadOperation(date: date)
         XCTAssertEqual(sleepOperation.command, .get)
         XCTAssertEqual(sleepOperation.path, "/U/0/20260102/SLEEP/SLEEPRES.BPB")

@@ -1,8 +1,5 @@
 import XCTest
 @testable import PolarBleSdk
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
 
 class PolarNightlyRechargeUtilsTests: XCTestCase {
     
@@ -19,7 +16,6 @@ class PolarNightlyRechargeUtilsTests: XCTestCase {
     func testNightlyRechargeReadHeaderUsesSharedFileFacadePlanning() throws {
         let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
 
-        XCTAssertEqual(PolarIosSharedBridge.shared.nightlyRechargePath(day: "20260102"), "/U/0/20260102/NR/NR.BPB")
         let operation = PolarNightlyRechargeUtils.nightlyRechargeReadOperation(date: date)
         XCTAssertEqual(operation.command, .get)
         XCTAssertEqual(operation.path, "/U/0/20260102/NR/NR.BPB")

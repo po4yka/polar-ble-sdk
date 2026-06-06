@@ -3,20 +3,27 @@
 import XCTest
 import CoreBluetooth
 @testable import PolarBleSdk
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
 
 class PolarTimeUtilsTests: XCTestCase {
-    func testProductionTimeUtilityCanUseSharedKmpBridgeWhenLinked() throws {
-        #if canImport(PolarBleSdkShared)
-        XCTAssertEqual(999, PolarIosSharedBridge.shared.nanosToMillis(nanoseconds: 999_000_000))
-        XCTAssertEqual(90_061_002, PolarIosSharedBridge.shared.durationToMillis(hours: 25, minutes: 1, seconds: 1, millis: 2))
-        XCTAssertEqual("01:02:03.04", PolarIosSharedBridge.shared.timeString(hour: 1, minute: 2, second: 3, millis: 4))
-        XCTAssertTrue(PolarIosSharedBridge.shared.isValidPlainDate(value: "2024-02-29"))
-        #else
-        throw XCTSkip("PolarBleSdkShared is not linked in this build")
-        #endif
+    func testProductionTimeUtilityUsesSharedKmpPolicyWhenLinked() throws {
+        XCTAssertEqual(999, PolarTimeUtils.nanosToMillis(nanoseconds: 999_000_000))
+        XCTAssertEqual(90_061_002, PolarTimeUtils.pbDurationToMillis(pbDuration: PbDuration.with {
+            $0.hours = 25
+            $0.minutes = 1
+            $0.seconds = 1
+            $0.millis = 2
+        }))
+        XCTAssertEqual("01:02:03.04", PolarTimeUtils.pbTimeToTimeString(PbTime.with {
+            $0.hour = 1
+            $0.minute = 2
+            $0.seconds = 3
+            $0.millis = 4
+        }))
+        XCTAssertNoThrow(try PolarTimeUtils.pbDateToDate(pbDate: PbDate.with {
+            $0.year = 2024
+            $0.month = 2
+            $0.day = 29
+        }))
     }
 
     func testConversionToPftpSystemTimeFromTimeZoneGMT() throws {
