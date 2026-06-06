@@ -54,6 +54,7 @@ import com.polar.sdk.api.model.restapi.actionPaths
 import com.polar.sdk.api.model.restapi.events
 import com.polar.sdk.impl.BDBleApiImpl
 import com.polar.sdk.impl.planSetLocalTimeV2ForCurrentZone
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import data.SensorDataLog.PbSensorDataLog
 import protocol.PftpError.PbPFtpError
 import com.polar.sdk.impl.utils.PolarServiceClientUtils
@@ -1556,6 +1557,25 @@ class BDBleApiImplTest {
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
         Assert.assertEquals("/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording", writeOperation.path)
         Assert.assertArrayEquals("{\"enabled\":true}".toByteArray(), writePayloads.single()!!.readBytes())
+    }
+
+    @Test
+    fun `stopSleepRecording uses shared sleep REST stop path`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.stopSleepRecording(deviceId)
+
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals(PolarRuntimePlannerAdapter.stopSleepRecordingPath(), writeOperation.path)
+        Assert.assertArrayEquals("{}".toByteArray(), writePayloads.single()!!.readBytes())
     }
 
     @Test
