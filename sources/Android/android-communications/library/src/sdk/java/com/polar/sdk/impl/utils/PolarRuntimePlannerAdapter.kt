@@ -543,6 +543,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarTrainingSessionModels.progressPercent(completedBytes, totalBytes)
     }
 
+    fun trainingSessionReferenceDateMatches(date: String, fromDate: String?, toDate: String?): Boolean {
+        return PolarTrainingSessionModels.referenceDateMatches(date, fromDate, toDate)
+    }
+
     fun basicDateRange(startInclusive: String, endInclusive: String): List<String> {
         return PolarTimeUtils.basicDateRange(startInclusive, endInclusive)
     }

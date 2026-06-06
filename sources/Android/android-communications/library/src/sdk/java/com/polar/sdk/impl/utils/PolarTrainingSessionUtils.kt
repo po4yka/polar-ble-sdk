@@ -23,16 +23,12 @@ import protocol.PftpRequest
 import protocol.PftpResponse
 import java.io.ByteArrayInputStream
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import java.util.zip.GZIPInputStream
 
 private const val ARABICA_USER_ROOT_FOLDER = PolarTrainingSessionModels.ROOT_PATH
 private const val TAG = "PolarTrainingSessionUtils"
 
 internal object PolarTrainingSessionUtils {
-
-    private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ENGLISH)
 
     internal fun trainingSessionSummaryReadOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
         return trainingSessionFileOperation("training-session-read-summary", "GET", path)
@@ -79,9 +75,6 @@ internal object PolarTrainingSessionUtils {
     ): Flow<PolarTrainingSessionReference> = flow {
         BleLogger.d(TAG, "getTrainingSessions: fromDate=$fromDate, toDate=$toDate")
 
-        val startDateInt = fromDate?.let { dateFormatter.format(it).toInt() } ?: Int.MIN_VALUE
-        val endDateInt = toDate?.let { dateFormatter.format(it).toInt() } ?: Int.MAX_VALUE
-
         val entries = mutableListOf<PolarTrainingSessionFileEntry>()
 
         PolarFileUtils.fetchRecursively(
@@ -103,7 +96,7 @@ internal object PolarTrainingSessionUtils {
         }
 
         val references = PolarTrainingSessionModels.buildReferences(entries)
-            .filter { reference -> reference.date.replace("-", "").toInt() in startDateInt..endDateInt }
+            .filter { reference -> PolarRuntimePlannerAdapter.trainingSessionReferenceDateMatches(reference.date, fromDate?.toString(), toDate?.toString()) }
             .map { reference ->
                 PolarTrainingSessionReference(
                     date = LocalDate.parse(reference.date),

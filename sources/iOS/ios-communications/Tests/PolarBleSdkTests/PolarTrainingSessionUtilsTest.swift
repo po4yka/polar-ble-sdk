@@ -124,6 +124,8 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         XCTAssertEqual(PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: 25, totalBytes: 100), 25)
         XCTAssertEqual(PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: 125, totalBytes: 100), 100)
         XCTAssertEqual(PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: -5, totalBytes: 100), 0)
+        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.referenceDateMatches(date: "2024-02-29", fromDate: "2024-02-28", toDate: "2024-03-01"), true)
+        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.referenceDateMatches(date: "2024-03-02", fromDate: "2024-02-28", toDate: "2024-03-01"), false)
     }
 
     // MARK: - Helpers

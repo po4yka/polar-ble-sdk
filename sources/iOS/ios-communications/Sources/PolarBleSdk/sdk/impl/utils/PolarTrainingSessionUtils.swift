@@ -432,6 +432,16 @@ internal class PolarTrainingSessionUtils {
     }
 
     private static func dateMatches(date: Date, fromDate: Date?, toDate: Date?) -> Bool {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        if let sharedDecision = PolarTrainingSessionRuntimePlanner.referenceDateMatches(
+            date: formatter.string(from: date),
+            fromDate: fromDate.map { formatter.string(from: $0) },
+            toDate: toDate.map { formatter.string(from: $0) }
+        ) {
+            return sharedDecision
+        }
         let dateAtPath = Calendar.current.dateComponents([.year, .month, .day], from: date)
         let effectiveFrom = fromDate.map { Calendar.current.dateComponents([.year, .month, .day], from: $0) }
         let effectiveTo = toDate.map { Calendar.current.dateComponents([.year, .month, .day], from: $0) }
@@ -573,6 +583,14 @@ enum PolarTrainingSessionRuntimePlanner {
         return Int(PolarIosSharedBridge.shared.trainingSessionProgressPercent(completedBytes: completedBytes, totalBytes: totalBytes))
         #else
         return totalBytes > 0 ? max(0, min(Int((completedBytes * 100) / totalBytes), 100)) : 0
+        #endif
+    }
+
+    static func referenceDateMatches(date: String, fromDate: String?, toDate: String?) -> Bool? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.trainingSessionReferenceDateMatches(date: date, fromDate: fromDate, toDate: toDate)
+        #else
+        return nil
         #endif
     }
 

@@ -112,6 +112,11 @@ class TrainingSessionCommonPolicyTest {
         assertEquals(25, PolarTrainingSessionModels.progressPercent(25, 100))
         assertEquals(100, PolarTrainingSessionModels.progressPercent(125, 100))
         assertEquals(0, PolarTrainingSessionModels.progressPercent(-5, 100))
+        assertEquals(true, PolarTrainingSessionModels.referenceDateMatches("2024-02-29", "2024-02-28", "2024-03-01"))
+        assertEquals(true, PolarTrainingSessionModels.referenceDateMatches("20240229", "20240229", null))
+        assertEquals(false, PolarTrainingSessionModels.referenceDateMatches("2024-03-02", "2024-02-28", "2024-03-01"))
+        assertEquals(false, PolarTrainingSessionModels.referenceDateMatches("2024-02-29", "2024-03-01", "2024-02-28"))
+        assertEquals(false, PolarTrainingSessionModels.referenceDateMatches("2023-02-29", null, null))
     }
 
     @Test

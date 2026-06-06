@@ -1,5 +1,7 @@
 package com.polar.shared.sdk
 
+import com.polar.shared.time.PolarTimeUtils
+
 object PolarTrainingSessionModels {
     const val ROOT_PATH: String = "/U/0/"
 
@@ -150,6 +152,15 @@ object PolarTrainingSessionModels {
         }
     }
 
+    fun referenceDateMatches(date: String, fromDate: String? = null, toDate: String? = null): Boolean {
+        val day = date.toBasicDateOrNull() ?: return false
+        val from = fromDate?.toBasicDateOrNull()
+        val to = toDate?.toBasicDateOrNull()
+        if (fromDate != null && from == null) return false
+        if (toDate != null && to == null) return false
+        return (from == null || day >= from) && (to == null || day <= to)
+    }
+
     fun assemblePayloadReadResult(reference: PolarTrainingSessionReference, responsesByPath: Map<String, PolarTrainingPayloadResponse>, fetchOrder: List<String> = payloadFetchOrder(reference)): PolarTrainingPayloadReadResult {
         val exercises = reference.exercises.associate { exercise ->
             exercise.index to MutableTrainingPayloadExercise(index = exercise.index)
@@ -215,6 +226,15 @@ object PolarTrainingSessionModels {
 
     private fun formatDate(date: String): String {
         return "${date.substring(0, 4)}-${date.substring(4, 6)}-${date.substring(6, 8)}"
+    }
+
+    private fun String.toBasicDateOrNull(): String? {
+        val value = when (length) {
+            8 -> this
+            10 -> if (this[4] == '-' && this[7] == '-') "${substring(0, 4)}${substring(5, 7)}${substring(8, 10)}" else return null
+            else -> return null
+        }
+        return value.takeIf { PolarTimeUtils.basicDateRange(it, it).isNotEmpty() }
     }
 
     private data class MutableTrainingSessionReference(

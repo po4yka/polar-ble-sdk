@@ -358,6 +358,10 @@ object PolarIosSharedBridge {
         return PolarTrainingSessionModels.progressPercent(completedBytes, totalBytes)
     }
 
+    fun trainingSessionReferenceDateMatches(date: String, fromDate: String?, toDate: String?): Boolean {
+        return PolarTrainingSessionModels.referenceDateMatches(date, fromDate, toDate)
+    }
+
     fun ecgType0Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
         val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
         if (bytes.size < 10) return null

@@ -62,6 +62,8 @@ class PolarRuntimePlannerAdapterTest {
         )
         Assert.assertEquals(emptyList<String>(), PolarRuntimePlannerAdapter.basicDateRange("20240302", "20240301"))
         Assert.assertEquals(emptyList<String>(), PolarRuntimePlannerAdapter.basicDateRange("20230229", "20230301"))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.trainingSessionReferenceDateMatches("2024-02-29", "2024-02-28", "2024-03-01"))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.trainingSessionReferenceDateMatches("2024-03-02", "2024-02-28", "2024-03-01"))
     }
 
     @Test
