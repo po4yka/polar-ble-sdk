@@ -81,7 +81,8 @@ enum PolarFirmwareBackupRuntimePlanner {
 
     static func parseBackupTextForIos(_ backupText: String) -> [String] {
         #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.parseBackupTextForIosCsv(backupText: backupText).split(separator: ",", omittingEmptySubsequences: false).map(String.init)
+        let csv = PolarIosSharedBridge.shared.parseBackupTextForIosCsv(backupText: backupText)
+        return csv.isEmpty ? [] : csv.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
         #else
         return backupText.split(separator: "\n", omittingEmptySubsequences: false).dropLast().map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         #endif

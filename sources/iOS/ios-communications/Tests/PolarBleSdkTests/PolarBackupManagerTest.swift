@@ -204,6 +204,7 @@ class PolarBackupManagerTest: XCTestCase {
             ["/SYS/BT/", "/TRIMMED/PATH.BPB", "/SYS/BT/"],
             PolarFirmwareBackupRuntimePlanner.parseBackupTextForIos("/SYS/BT/\n /TRIMMED/PATH.BPB \n/SYS/BT/\n/FINAL/NO_NEWLINE.BPB")
         )
+        XCTAssertEqual([], PolarFirmwareBackupRuntimePlanner.parseBackupTextForIos(""))
     }
 
     func testBackupFilePathPlanningUsesSharedPathSplit() throws {
