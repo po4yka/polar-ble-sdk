@@ -1,6 +1,7 @@
 package com.polar.sdk.impl.utils
 
 import com.polar.shared.runtime.PolarD2hRuntimePlanning
+import com.polar.shared.runtime.PolarBackupRestoreFile
 import org.junit.Assert
 import org.junit.Test
 import protocol.PftpNotification
@@ -157,6 +158,15 @@ class PolarRuntimePlannerAdapterTest {
 
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, operation?.first)
         Assert.assertEquals("/U/0/BACKUP.TXT", operation?.second)
+        val writes = PolarRuntimePlannerAdapter.planBackupRestoreWrites(
+            listOf(
+                PolarBackupRestoreFile(directory = "/U/0/S/", fileName = "UDEVSET.BPB", dataHex = "0102"),
+                PolarBackupRestoreFile(directory = "/SYS/BT/", fileName = "BTDEV.BPB", dataHex = "0304")
+            )
+        )
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpOperation.Command.PUT, PftpRequest.PbPFtpOperation.Command.PUT), writes.map { it.operation.first })
+        Assert.assertEquals(listOf("/U/0/S/UDEVSET.BPB", "/SYS/BT/BTDEV.BPB"), writes.map { it.operation.second })
+        Assert.assertEquals(listOf("0102", "0304"), writes.map { it.payloadHex })
         Assert.assertEquals(
             listOf("/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB", "/U/0/USERID.BPB"),
             PolarRuntimePlannerAdapter.defaultBackupPaths()

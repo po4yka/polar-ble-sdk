@@ -31,6 +31,11 @@ import protocol.PftpNotification
 import protocol.PftpRequest
 
 internal object PolarRuntimePlannerAdapter {
+    data class PlannedBackupRestoreWrite(
+        val operation: Pair<PftpRequest.PbPFtpOperation.Command, String>,
+        val payloadHex: String
+    )
+
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {
         return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(
@@ -461,6 +466,17 @@ internal object PolarRuntimePlannerAdapter {
                 )
             )
         )
+    }
+
+    fun planBackupRestoreWrites(files: List<PolarBackupRestoreFile>): List<PlannedBackupRestoreWrite> {
+        return PolarWorkflowRuntimePlanning.planBackupRestore(files).commands.mapNotNull { command ->
+            val parts = command.split(":", limit = 3)
+            if (parts.size != 3 || parts[0] != "PUT") return@mapNotNull null
+            PlannedBackupRestoreWrite(
+                operation = PftpRequest.PbPFtpOperation.Command.PUT to parts[1],
+                payloadHex = parts[2]
+            )
+        }
     }
 
     fun defaultBackupPaths(): List<String> {

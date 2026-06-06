@@ -2,9 +2,9 @@ package com.polar.sdk.impl.utils
 
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
+import com.polar.shared.runtime.PolarBackupRestoreFile
 import java.io.ByteArrayInputStream
 import java.io.File
-import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
 
 private const val TAG = "PolarDeviceBackup"
@@ -91,13 +91,22 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
         backupFiles.forEach {
             BleLogger.d(TAG, "Restoring backup file: ${it.directory} + ${it.fileName}")
         }
-        for (backupFileData in backupFiles) {
-            val restorePath = backupFileData.directory + backupFileData.fileName
-            val plannedOperation = PolarRuntimePlannerAdapter.planBackupRestoreOperation(restorePath, backupFileData.data.toHexString())
-            PolarRuntimePlannerAdapter.planBackupRestore(restorePath, backupFileData.data.toHexString())
-            val operation = plannedOperation ?: (PftpRequest.PbPFtpOperation.Command.PUT to restorePath)
+        val plannedWrites = PolarRuntimePlannerAdapter.planBackupRestoreWrites(
+            backupFiles.map { backupFileData ->
+                PolarBackupRestoreFile(
+                    directory = backupFileData.directory,
+                    fileName = backupFileData.fileName,
+                    dataHex = backupFileData.data.toHexString()
+                )
+            }
+        )
+        for ((backupFileData, plannedWrite) in backupFiles.zip(plannedWrites)) {
+            val operation = plannedWrite.operation
             val header = PolarRuntimePlannerAdapter.fileOperationBytes(operation)
             val dataStream = ByteArrayInputStream(backupFileData.data)
+            if (plannedWrite.payloadHex != backupFileData.data.toHexString()) {
+                BleLogger.w(TAG, "Shared backup restore payload plan differs for ${backupFileData.directory}${backupFileData.fileName}")
+            }
             BleLogger.d(TAG, "Sending PftpRequest: ${header.toString(Charsets.UTF_8)}")
             try {
                 PolarRuntimePlannerAdapter.planPsFtpWriteProgress(backupFileData.data.size, "android")
