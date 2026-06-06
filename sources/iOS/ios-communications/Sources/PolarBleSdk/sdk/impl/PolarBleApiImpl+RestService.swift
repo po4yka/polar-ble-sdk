@@ -18,20 +18,12 @@ public struct PolarDeviceRestApiServices: Decodable {
     
     /// Lists REST API service names
     var serviceNames: [String] {
-        #if canImport(PolarBleSdkShared)
-        return sharedList(PolarIosSharedBridge.shared.restServiceNames(entries: (pathsForServices ?? [:]).sharedLineMap))
-        #else
-        Array((pathsForServices ?? [:]).keys)
-        #endif
+        return PolarRestServiceProjectionPlanner.serviceNames(pathsForServices ?? [:])
     }
     
     /// Lists REST API service paths
     var servicePaths: [String] {
-        #if canImport(PolarBleSdkShared)
-        return sharedList(PolarIosSharedBridge.shared.restServicePaths(entries: (pathsForServices ?? [:]).sharedLineMap))
-        #else
-        Array((pathsForServices ?? [:]).values)
-        #endif
+        return PolarRestServiceProjectionPlanner.servicePaths(pathsForServices ?? [:])
     }
 }
 
@@ -84,20 +76,12 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     
     /// Events that can be acted upon using actions. Actions are returned in `actions` and `actionNames` properties.
     var events: [String] {
-        #if canImport(PolarBleSdkShared)
-        return sharedList(PolarIosSharedBridge.shared.restEvents(eventsCsv: (dictionary?["events"] as? [String] ?? []).joined(separator: ",")))
-        #else
-        return dictionary?["events"] as? [String] ?? []
-        #endif
+        return PolarRestServiceProjectionPlanner.events(dictionary?["events"] as? [String] ?? [])
     }
     
     /// Endpoints that can be applied in **endpoint=** parameter in paths from `actions` and `actionPaths`
     var endpoints: [String] {
-        #if canImport(PolarBleSdkShared)
-        return sharedList(PolarIosSharedBridge.shared.restEndpoints(endpointsCsv: (dictionary?["endpoints"] as? [String] ?? []).joined(separator: ",")))
-        #else
-        return dictionary?["endpoints"] as? [String] ?? []
-        #endif
+        return PolarRestServiceProjectionPlanner.endpoints(dictionary?["endpoints"] as? [String] ?? [])
     }
     
     /// Actions/commands that can be sent, using put operation of corresponding path string
@@ -109,29 +93,17 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     /// **triggers=[]**: list of triggers may follow equal sign in path, specifying triggering related to action. Triggers are listed using `eventTriggers`.
     /// **endpoint=**: endpoint, listed by `endpoints`, that is related to the action. This can be used in post action paths.
     var actions: [String: String] {
-        #if canImport(PolarBleSdkShared)
-        return sharedMap(PolarIosSharedBridge.shared.restActions(entries: (dictionary?["cmd"] as? [String: String] ?? [:]).sharedLineMap))
-        #else
-        return dictionary?["cmd"] as? [String: String] ?? [:]
-        #endif
+        return PolarRestServiceProjectionPlanner.actions(dictionary?["cmd"] as? [String: String] ?? [:])
     }
     
     /// Just the action names from `actions` property
     var actionNames: [String] {
-        #if canImport(PolarBleSdkShared)
-        return sharedList(PolarIosSharedBridge.shared.restActionNames(entries: actions.sharedLineMap))
-        #else
-        return Array(actions.keys)
-        #endif
+        return PolarRestServiceProjectionPlanner.actionNames(actions)
     }
     
     /// Just the action paths from `actions` property
     var actionPaths: [String] {
-        #if canImport(PolarBleSdkShared)
-        return sharedList(PolarIosSharedBridge.shared.restActionPaths(entries: actions.sharedLineMap))
-        #else
-        return Array(actions.values)
-        #endif
+        return PolarRestServiceProjectionPlanner.actionPaths(actions)
     }
     
     /// Lists event details that may be requested as returned event parameter values using action
@@ -140,12 +112,8 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     ///      - eventName: the REST API event to get details for
     /// - returns: detail names
     func eventDetails(for eventName: String) -> [String] {
-        #if canImport(PolarBleSdkShared)
         let eventDescription = dictionary?[eventName] as? [String: [String]] ?? [:]
-        return sharedList(PolarIosSharedBridge.shared.restEventDetails(detailsCsv: (eventDescription["details"] ?? []).joined(separator: ","), triggersCsv: (eventDescription["triggers"] ?? []).joined(separator: ",")))
-        #else
-        return (dictionary?[eventName] as? [String: [String]])?["details"] ?? []
-        #endif
+        return PolarRestServiceProjectionPlanner.eventDetails(details: eventDescription["details"] ?? [], triggers: eventDescription["triggers"] ?? [])
     }
     
     /// Lists triggers that may be used as trigger parameter list values when action path contains
@@ -154,16 +122,85 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     ///      - eventName: the REST API event to get triggers for
     /// - returns: triggers for the events
     func eventTriggers(for eventName: String) -> [String] {
-        #if canImport(PolarBleSdkShared)
         let eventDescription = dictionary?[eventName] as? [String: [String]] ?? [:]
-        return sharedList(PolarIosSharedBridge.shared.restEventTriggers(detailsCsv: (eventDescription["details"] ?? []).joined(separator: ","), triggersCsv: (eventDescription["triggers"] ?? []).joined(separator: ",")))
+        return PolarRestServiceProjectionPlanner.eventTriggers(details: eventDescription["details"] ?? [], triggers: eventDescription["triggers"] ?? [])
+    }
+}
+
+private enum PolarRestServiceProjectionPlanner {
+    static func serviceNames(_ pathsForServices: [String: String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restServiceNames(entries: pathsForServices.sharedLineMap))
         #else
-        return  (dictionary?[eventName] as? [String: [String]])?["triggers"] ?? []
+        return Array(pathsForServices.keys)
+        #endif
+    }
+
+    static func servicePaths(_ pathsForServices: [String: String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restServicePaths(entries: pathsForServices.sharedLineMap))
+        #else
+        return Array(pathsForServices.values)
+        #endif
+    }
+
+    static func events(_ events: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restEvents(eventsCsv: events.joined(separator: ",")))
+        #else
+        return events
+        #endif
+    }
+
+    static func endpoints(_ endpoints: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restEndpoints(endpointsCsv: endpoints.joined(separator: ",")))
+        #else
+        return endpoints
+        #endif
+    }
+
+    static func actions(_ actions: [String: String]) -> [String: String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedMap(PolarIosSharedBridge.shared.restActions(entries: actions.sharedLineMap))
+        #else
+        return actions
+        #endif
+    }
+
+    static func actionNames(_ actions: [String: String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restActionNames(entries: actions.sharedLineMap))
+        #else
+        return Array(actions.keys)
+        #endif
+    }
+
+    static func actionPaths(_ actions: [String: String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restActionPaths(entries: actions.sharedLineMap))
+        #else
+        return Array(actions.values)
+        #endif
+    }
+
+    static func eventDetails(details: [String], triggers: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restEventDetails(detailsCsv: details.joined(separator: ","), triggersCsv: triggers.joined(separator: ",")))
+        #else
+        return details
+        #endif
+    }
+
+    static func eventTriggers(details: [String], triggers: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restEventTriggers(detailsCsv: details.joined(separator: ","), triggersCsv: triggers.joined(separator: ",")))
+        #else
+        return triggers
         #endif
     }
 }
 
-#if canImport(PolarBleSdkShared)
 private func sharedList(_ value: String) -> [String] {
     if value.isEmpty { return [] }
     return value.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
@@ -183,7 +220,6 @@ private extension Dictionary where Key == String, Value == String {
         return map { key, value in "\(key)\t\(value)" }.joined(separator: "\n")
     }
 }
-#endif
 
 /// Methods related to working with services conforming to SAGRFC95 Service discovery over PFTP
 public protocol PolarRestServiceApi {
