@@ -68,9 +68,9 @@ final class PolarDiskSpaceDataTest: XCTestCase {
 
     func testDiskSpaceMappingUsesSharedBridgeWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
-        XCTAssertEqual(1048576, UInt64(PolarIosSharedBridge.shared.diskSpaceTotalSpace(fragmentSize: 512, totalFragments: 2048, freeFragments: 1024)))
-        XCTAssertEqual(524288, UInt64(PolarIosSharedBridge.shared.diskSpaceFreeSpace(fragmentSize: 512, totalFragments: 2048, freeFragments: 1024)))
-        XCTAssertEqual(8589934590, UInt64(PolarIosSharedBridge.shared.diskSpaceTotalSpace(fragmentSize: 4294967295, totalFragments: 2, freeFragments: 1)))
+        XCTAssertEqual(1048576, UInt64(PolarDiskSpaceRuntimePlanner.totalSpace(fragmentSize: 512, totalFragments: 2048, freeFragments: 1024)))
+        XCTAssertEqual(524288, UInt64(PolarDiskSpaceRuntimePlanner.freeSpace(fragmentSize: 512, totalFragments: 2048, freeFragments: 1024)))
+        XCTAssertEqual(8589934590, UInt64(PolarDiskSpaceRuntimePlanner.totalSpace(fragmentSize: 4294967295, totalFragments: 2, freeFragments: 1)))
 
         let proto = Protocol_PbPFtpDiskSpaceResult.with {
             $0.fragmentSize = UInt32.max
