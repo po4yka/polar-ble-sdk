@@ -11,7 +11,7 @@ public enum PmdRecordingType: UInt8, CaseIterable, Sendable {
     
     func asBitField() -> UInt8 {
         #if canImport(PolarBleSdkShared)
-        return UInt8(PolarIosSharedBridge.shared.pmdRecordingTypeBitField(name: sharedName))
+        return PmdControlPointRuntimePlanner.recordingTypeBitField(name: sharedName) ?? (self.rawValue << 7)
         #else
         return self.rawValue << 7
         #endif

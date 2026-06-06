@@ -15,7 +15,7 @@ public enum PmdActiveMeasurement: UInt8 {
     
     static func fromStatusResponse(responseByte: UInt8) -> PmdActiveMeasurement {
         #if canImport(PolarBleSdkShared)
-        switch PolarIosSharedBridge.shared.pmdActiveMeasurementIosState(responseByte: Int32(responseByte)) {
+        switch PmdControlPointRuntimePlanner.activeMeasurementIosState(responseByte: Int32(responseByte)) {
         case "online_measurement_active":
             return .online_measurement_active
         case "offline_measurement_active":

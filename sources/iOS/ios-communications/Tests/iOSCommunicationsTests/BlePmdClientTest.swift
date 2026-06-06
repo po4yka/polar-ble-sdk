@@ -26,9 +26,9 @@ class BlePmdClientTest: XCTestCase {
 
     func testPmdRecordingTypeBitfieldsDelegateToSharedKmpPolicyWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
-        XCTAssertEqual(0x00, PolarIosSharedBridge.shared.pmdRecordingTypeBitField(name: "ONLINE"))
-        XCTAssertEqual(0x80, PolarIosSharedBridge.shared.pmdRecordingTypeBitField(name: "OFFLINE"))
-        XCTAssertEqual(0x00, PolarIosSharedBridge.shared.pmdRecordingTypeBitField(name: "UNKNOWN"))
+        XCTAssertEqual(0x00, PmdControlPointRuntimePlanner.recordingTypeBitField(name: "ONLINE"))
+        XCTAssertEqual(0x80, PmdControlPointRuntimePlanner.recordingTypeBitField(name: "OFFLINE"))
+        XCTAssertEqual(0x00, PmdControlPointRuntimePlanner.recordingTypeBitField(name: "UNKNOWN"))
         #endif
         XCTAssertEqual(0x00, PmdRecordingType.online.asBitField())
         XCTAssertEqual(0x80, PmdRecordingType.offline.asBitField())

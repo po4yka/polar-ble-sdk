@@ -32,7 +32,7 @@ public enum PmdMeasurementType: UInt8, CaseIterable, Sendable {
     
     static func fromId(id: UInt8) -> PmdMeasurementType {
         #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.pmdMeasurementTypeName(id: Int32(id)),
+        if let sharedName = PmdControlPointRuntimePlanner.measurementTypeName(id: Int32(id)),
            let sharedType = PmdMeasurementType(sharedName: sharedName) {
             return sharedType
         }

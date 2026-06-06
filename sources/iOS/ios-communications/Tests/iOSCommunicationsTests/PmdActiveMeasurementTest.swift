@@ -9,8 +9,8 @@ import PolarBleSdkShared
 final class PmdActiveMeasurementTest: XCTestCase {
     func testPmdMeasurementTypeLookupDelegatesKnownIdsToSharedBridgeWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
-        XCTAssertEqual("ACC", PolarIosSharedBridge.shared.pmdMeasurementTypeName(id: 0xC2))
-        XCTAssertNil(PolarIosSharedBridge.shared.pmdMeasurementTypeName(id: 4))
+        XCTAssertEqual("ACC", PmdControlPointRuntimePlanner.measurementTypeName(id: 0xC2))
+        XCTAssertNil(PmdControlPointRuntimePlanner.measurementTypeName(id: 4))
         #endif
         XCTAssertEqual(.ecg, PmdMeasurementType.fromId(id: 0))
         XCTAssertEqual(.acc, PmdMeasurementType.fromId(id: 0xC2))

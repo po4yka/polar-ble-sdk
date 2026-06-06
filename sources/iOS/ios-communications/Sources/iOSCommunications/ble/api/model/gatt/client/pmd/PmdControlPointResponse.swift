@@ -67,6 +67,30 @@ enum PmdControlPointRuntimePlanner {
         return nil
         #endif
     }
+
+    static func activeMeasurementIosState(responseByte: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdActiveMeasurementIosState(responseByte: responseByte)
+        #else
+        return nil
+        #endif
+    }
+
+    static func measurementTypeName(id: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdMeasurementTypeName(id: id)
+        #else
+        return nil
+        #endif
+    }
+
+    static func recordingTypeBitField(name: String) -> UInt8? {
+        #if canImport(PolarBleSdkShared)
+        return UInt8(PolarIosSharedBridge.shared.pmdRecordingTypeBitField(name: name))
+        #else
+        return nil
+        #endif
+    }
 }
 
 public enum PmdResponseCode: Int {
