@@ -78,6 +78,7 @@ import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdClientSkinTemperatureDataTo
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdClientTemperatureDataToPolarTemperature
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdSettingsToPolarSettings
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdTriggerToPolarTrigger
+import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarFeatureToPmdClientMeasurementType
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarOfflineTriggerToPmdOfflineTrigger
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarSecretToPmdSecret
@@ -2735,9 +2736,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         } else {
             UserDeviceSettings.PbUserAutomaticMeasurementSettings.newBuilder()
         }
+        val automaticMeasurementState = UserDeviceSettings.PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.valueOf(
+            PolarUserDeviceSettingsModels.automaticMeasurementStateName(enabled)
+        )
         val autosBuilder = UserDeviceSettings.PbAutomaticMeasurementSettings.newBuilder()
-            .setState(if (enabled) UserDeviceSettings.PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.ALWAYS_ON
-            else UserDeviceSettings.PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF)
+            .setState(automaticMeasurementState)
         if (!enabled) {
             autosBuilder.clearTimedSettings()
             autosBuilder.clearIntelligentTimedSettings()

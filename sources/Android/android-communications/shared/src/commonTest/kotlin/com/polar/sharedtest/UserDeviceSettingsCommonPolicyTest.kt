@@ -118,6 +118,10 @@ class UserDeviceSettingsCommonPolicyTest {
         assertEquals(expected.optionalBooleanValue("hasTelemetryEnabled") ?: false, actual.hasTelemetryEnabled, "$caseId hasTelemetry")
         expected.optionalBooleanValue("telemetryEnabled")?.let { assertEquals(it, actual.telemetryEnabled, "$caseId telemetry") }
         expected.optionalBooleanValue("autosFilesEnabled")?.let { assertEquals(it, actual.autosFilesEnabled, "$caseId autos") }
+        actual.autosFilesEnabled?.let { enabled ->
+            val sharedState = PolarUserDeviceSettingsModels.automaticMeasurementStateName(enabled)
+            assertEquals(enabled, PolarUserDeviceSettingsModels.automaticMeasurementStateEnabled(sharedState), "$caseId shared automatic measurement")
+        }
     }
 
     private fun String.userDeviceSettingsUsbValue(): Int {

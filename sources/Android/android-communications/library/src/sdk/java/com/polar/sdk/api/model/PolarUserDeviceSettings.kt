@@ -97,12 +97,11 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
         }
 
         serialized.autosFilesEnabled?.let {
+            val sharedState = PolarUserDeviceSettingsModels.automaticMeasurementStateName(it)
+            val automaticMeasurementState = UserDeviceSettings.PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.valueOf(sharedState)
             pbUserAutomaticMeasurementSettings.setAutomaticOhrMeasurement(
                 PbAutomaticMeasurementSettings.newBuilder()
-                    .setState(
-                        if (it) PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.ALWAYS_ON
-                        else PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF
-                    )
+                    .setState(automaticMeasurementState)
             )
         }
 

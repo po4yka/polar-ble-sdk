@@ -177,11 +177,23 @@ public class PolarUserDeviceSettings {
         
         if let autosFilesEnabled = userDeviceSettings.autosFilesEnabled {
             var ohr = Data_PbAutomaticMeasurementSettings()
-            ohr.state = autosFilesEnabled ? .alwaysOn : .off
+            ohr.state = automaticMeasurementState(enabled: autosFilesEnabled)
             proto.automaticMeasurementSettings.automaticOhrMeasurement = ohr
         }
 
         return proto
+    }
+
+    static func automaticMeasurementState(enabled: Bool) -> Data_PbAutomaticMeasurementSettings.PbAutomaticMeasurementState {
+        #if canImport(PolarBleSdkShared)
+        let sharedName = PolarIosSharedBridge.shared.userDeviceSettingsAutomaticMeasurementStateName(enabled: enabled)
+        switch sharedName {
+        case "ALWAYS_ON": return .alwaysOn
+        case "OFF": return .off
+        default: break
+        }
+        #endif
+        return enabled ? .alwaysOn : .off
     }
 
     static func fromProto(pbUserDeviceSettings: Data_PbUserDeviceSettings) -> PolarUserDeviceSettingsResult {

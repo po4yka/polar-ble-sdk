@@ -133,6 +133,18 @@ object PolarUserDeviceSettingsModels {
         }
     }
 
+    fun automaticMeasurementStateName(enabled: Boolean): String {
+        return if (enabled) "ALWAYS_ON" else "OFF"
+    }
+
+    fun automaticMeasurementStateEnabled(name: String): Boolean? {
+        return when (name) {
+            "ALWAYS_ON" -> true
+            "OFF" -> false
+            else -> null
+        }
+    }
+
     private fun String.toOnOffBoolean(): Boolean {
         return when (this) {
             "ON" -> true

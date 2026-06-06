@@ -3094,7 +3094,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         let settingsPath = getDeviceSettingsPath(session)
         var autosSettings = Data_PbAutomaticMeasurementSettings()
-        autosSettings.state = enabled ? .alwaysOn : .off
+        autosSettings.state = PolarUserDeviceSettings.automaticMeasurementState(enabled: enabled)
         let payloadFields = ["automaticOhrMeasurement=\(autosSettings.state)"]
         let plannedOperations = PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-automatic-ohr-measurement", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         var updated = try await getUserDeviceSettingsProto(client: client, settingsPath: settingsPath, plannedOperation: plannedOperations?.first)

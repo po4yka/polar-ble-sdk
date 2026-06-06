@@ -1025,6 +1025,14 @@ object PolarIosSharedBridge {
         return PolarUserDeviceSettingsModels.automaticTrainingDetectionModeValue(name)
     }
 
+    fun userDeviceSettingsAutomaticMeasurementStateName(enabled: Boolean): String {
+        return PolarUserDeviceSettingsModels.automaticMeasurementStateName(enabled)
+    }
+
+    fun userDeviceSettingsAutomaticMeasurementStateEnabled(name: String): Boolean? {
+        return PolarUserDeviceSettingsModels.automaticMeasurementStateEnabled(name)
+    }
+
     fun firstTimeUseTrainingBackgroundName(value: Int): String? {
         return PolarFirstTimeUseTrainingBackgroundName.fromValue(value)?.name
     }

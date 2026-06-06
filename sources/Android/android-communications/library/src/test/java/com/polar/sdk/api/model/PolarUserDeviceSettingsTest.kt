@@ -2,6 +2,7 @@ package com.polar.sdk.api.model
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import fi.polar.remote.representation.protobuf.Types.PbDate
 import fi.polar.remote.representation.protobuf.Types.PbDeviceLocation
 import fi.polar.remote.representation.protobuf.Types.PbSystemDateTime
@@ -130,11 +131,8 @@ class PolarUserDeviceSettingsTest {
         }
         if (expected.has("autosFilesEnabled")) {
             assertTrue(caseId, actual.automaticMeasurementSettings.hasAutomaticOhrMeasurement())
-            val expectedState = if (expected.get("autosFilesEnabled").asBoolean) {
-                PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.ALWAYS_ON
-            } else {
-                PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF
-            }
+            val sharedState = PolarUserDeviceSettingsModels.automaticMeasurementStateName(expected.get("autosFilesEnabled").asBoolean)
+            val expectedState = PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.valueOf(sharedState)
             assertEquals(caseId, expectedState, actual.automaticMeasurementSettings.automaticOhrMeasurement.state)
         }
         if (expected.has("hasTelemetryEnabled")) {
@@ -182,11 +180,8 @@ class PolarUserDeviceSettingsTest {
                 automaticMeasurement.automaticTrainingDetectionSettings = trainingDetection.build()
             }
             if (has("autosFilesEnabled")) {
-                val ohrState = if (get("autosFilesEnabled").asBoolean) {
-                    PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.ALWAYS_ON
-                } else {
-                    PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF
-                }
+                val sharedState = PolarUserDeviceSettingsModels.automaticMeasurementStateName(get("autosFilesEnabled").asBoolean)
+                val ohrState = PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.valueOf(sharedState)
                 automaticMeasurement.automaticOhrMeasurement = PbAutomaticMeasurementSettings.newBuilder()
                     .setState(ohrState)
                     .build()
