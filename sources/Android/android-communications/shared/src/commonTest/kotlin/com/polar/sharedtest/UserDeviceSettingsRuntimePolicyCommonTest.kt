@@ -139,6 +139,7 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         "get-user-device-settings",
         "get-user-device-settings-read-failure",
         "set-user-device-settings",
+        "set-user-device-settings-write-failure",
         "set-telemetry-enabled",
         "set-telemetry-read-failure",
         "set-telemetry-write-failure",
@@ -158,6 +159,7 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         "settings-read-success",
         "settings-read-failure-no-write",
         "whole-settings-direct-write",
+        "whole-settings-write-failure-after-payload",
         "telemetry-read-then-write",
         "telemetry-write-failure-after-payload",
         "device-location-read-then-write",
@@ -192,9 +194,9 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
             }
             "transport-error" -> listOf(CommonFakeTransportOutcome.TransportError("settings-read-failed"))
             "transport-error-after-payload" -> listOf(
-                CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01)),
+                if (commands.any { it.startsWith("read:") }) CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01)) else null,
                 CommonFakeTransportOutcome.TransportError("settings-write-failed")
-            )
+            ).filterNotNull()
             else -> error("Unsupported settings runtime terminal $terminal")
         }
     }
@@ -243,6 +245,8 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         assertEquals("read", operationsById.getValue("get-user-device-settings").stringValue("kind"))
         assertEquals("readFailure", operationsById.getValue("get-user-device-settings-read-failure").stringValue("kind"))
         assertEquals(listOf("protobufPayload=platform-built"), operationsById.getValue("set-user-device-settings").stringArrayValue("payloadFields"))
+        assertEquals("writeFailure", operationsById.getValue("set-user-device-settings-write-failure").stringValue("kind"))
+        assertEquals(listOf("protobufPayload=platform-built"), operationsById.getValue("set-user-device-settings-write-failure").stringArrayValue("payloadFields"))
         assertEquals(listOf("telemetryEnabled=true", "preserve:deviceLocation=WRIST_LEFT"), operationsById.getValue("set-telemetry-enabled").stringArrayValue("payloadFields"))
         assertEquals("readFailure", operationsById.getValue("set-telemetry-read-failure").stringValue("kind"))
         assertEquals(listOf("telemetryEnabled=true"), operationsById.getValue("set-telemetry-write-failure").stringArrayValue("payloadFields"))

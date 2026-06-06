@@ -23,7 +23,7 @@ private let OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION = "Shared offline tri
 private let COMMAND_RUNTIME_POLICY_OPERATION_IDS = ["h10-start-recording", "h10-start-recording-query-failure", "h10-stop-recording", "h10-stop-recording-query-failure", "h10-recording-status", "h10-recording-status-query-failure", "factory-reset", "factory-reset-notification-failure", "factory-reset-preserve-pairing", "factory-reset-preserve-pairing-notification-failure", "restart", "restart-notification-failure", "warehouse-sleep", "warehouse-sleep-notification-failure", "turn-device-off", "turn-device-off-notification-failure", "sync-start-success", "sync-start-query-failure", "sync-stop-success", "sync-stop-notification-failure"]
 private let DISK_TIME_RUNTIME_POLICY_OPERATION_IDS = ["get-disk-space", "get-local-time", "get-local-time-with-zone", "set-local-time-v2", "set-local-time-h10", "set-local-time-failure", "get-local-time-failure", "get-local-time-with-zone-failure", "get-disk-space-failure"]
 private let STORED_DATA_CLEANUP_POLICY_SCENARIO_IDS = ["telemetry-root-trc-bin-filter", "sdlogs-extension-filter", "activity-prune-empty-parents", "automatic-sample-embedded-day-filter", "sdlogs-list-failure-platform-policy", "telemetry-list-failure-platform-policy"]
-private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS = ["get-user-device-settings", "get-user-device-settings-read-failure", "set-user-device-settings", "set-telemetry-enabled", "set-telemetry-read-failure", "set-telemetry-write-failure", "set-user-device-location", "set-user-device-location-write-failure", "set-usb-connection-mode", "set-usb-connection-mode-write-failure", "set-automatic-training-detection", "set-automatic-training-detection-write-failure", "set-automatic-ohr-measurement", "set-automatic-ohr-measurement-write-failure", "set-daylight-saving-time"]
+private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS = ["get-user-device-settings", "get-user-device-settings-read-failure", "set-user-device-settings", "set-user-device-settings-write-failure", "set-telemetry-enabled", "set-telemetry-read-failure", "set-telemetry-write-failure", "set-user-device-location", "set-user-device-location-write-failure", "set-usb-connection-mode", "set-usb-connection-mode-write-failure", "set-automatic-training-detection", "set-automatic-training-detection-write-failure", "set-automatic-ohr-measurement", "set-automatic-ohr-measurement-write-failure", "set-daylight-saving-time"]
 private let REST_FACADE_RUNTIME_POLICY_OPERATION_IDS = ["list-rest-api-services-success", "get-rest-api-description-success", "list-rest-api-services-request-failure", "get-rest-api-description-request-failure", "list-rest-api-services-response-error", "get-rest-api-description-response-error", "list-rest-api-services-empty-success", "list-rest-api-services-malformed-success", "get-rest-api-description-empty-success", "get-rest-api-description-malformed-success"]
 private let FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS = ["read-low-level-file-success", "read-low-level-file-empty-success", "read-low-level-file-request-failure", "read-low-level-file-response-error", "write-low-level-file-success", "write-low-level-file-progress-success", "write-low-level-file-stream-failure", "write-low-level-file-response-error", "delete-low-level-file-success", "delete-low-level-file-request-failure", "delete-low-level-file-response-error"]
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS = ["set-trigger-success-with-secret", "set-trigger-mode-error", "set-trigger-status-read-error", "set-trigger-setting-error", "get-trigger-success", "get-trigger-transport-error"]
@@ -452,6 +452,7 @@ final class PolarBleApiImplTests: XCTestCase {
                 "settings-read-success",
                 "settings-read-failure-no-write",
                 "whole-settings-direct-write",
+                "whole-settings-write-failure-after-payload",
                 "telemetry-read-then-write",
                 "telemetry-write-failure-after-payload",
                 "device-location-read-then-write",
@@ -1289,7 +1290,7 @@ final class PolarBleApiImplTests: XCTestCase {
     }
 
     func test_setPolarUserDeviceSettings_propagatesWriteFailureAfterWholeSettingsPayloadIsPrepared() throws {
-        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings")
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings-write-failure")
         let settings = PolarUserDeviceSettings()
         settings.deviceLocation = .WRIST_LEFT
         settings.telemetryEnabled = false

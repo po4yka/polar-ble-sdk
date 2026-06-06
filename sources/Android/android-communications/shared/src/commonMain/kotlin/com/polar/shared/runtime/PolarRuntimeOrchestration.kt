@@ -265,6 +265,7 @@ object PolarRuntimeOrchestration {
             "read" -> PolarRuntimePlan(operation.userDeviceSettingsReadCommands(), "success")
             "readFailure" -> PolarRuntimePlan(operation.userDeviceSettingsReadCommands(), "transport-error")
             "write" -> PolarRuntimePlan(operation.userDeviceSettingsWriteCommands(), "success")
+            "writeFailure" -> PolarRuntimePlan(operation.userDeviceSettingsWriteCommands(), "transport-error-after-payload")
             "readThenWrite" -> PolarRuntimePlan(operation.userDeviceSettingsReadWriteCommands(), "success")
             "readThenWriteFailure" -> PolarRuntimePlan(operation.userDeviceSettingsReadWriteCommands(), "transport-error-after-payload")
             else -> error("Unsupported user-device-settings operation ${operation.kind}")

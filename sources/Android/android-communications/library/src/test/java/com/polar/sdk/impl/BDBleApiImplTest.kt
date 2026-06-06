@@ -1146,7 +1146,7 @@ class BDBleApiImplTest {
     @Suppress("DEPRECATION")
     @Test
     fun `setUserDeviceSettings propagates write failure after whole settings payload is prepared`() = runTest {
-        assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings")
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings-write-failure")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
         val (client, _) = mockPsFtpConnection(deviceId)
@@ -3263,6 +3263,7 @@ class BDBleApiImplTest {
                 "settings-read-success",
                 "settings-read-failure-no-write",
                 "whole-settings-direct-write",
+                "whole-settings-write-failure-after-payload",
                 "telemetry-read-then-write",
                 "telemetry-write-failure-after-payload",
                 "device-location-read-then-write",
@@ -3774,6 +3775,7 @@ class BDBleApiImplTest {
             "get-user-device-settings",
             "get-user-device-settings-read-failure",
             "set-user-device-settings",
+            "set-user-device-settings-write-failure",
             "set-telemetry-enabled",
             "set-telemetry-read-failure",
             "set-telemetry-write-failure",

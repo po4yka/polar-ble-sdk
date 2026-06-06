@@ -31,6 +31,15 @@
         ]
       },
       {
+        "id": "set-user-device-settings-write-failure",
+        "kind": "writeFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "protobufPayload=platform-built"
+        ],
+        "error": "whole-settings-write-failed"
+      },
+      {
         "id": "set-telemetry-enabled",
         "kind": "readThenWrite",
         "path": "/U/0/S/UDEVSET.BPB",
@@ -167,6 +176,14 @@
             "field:protobufPayload=platform-built"
           ],
           "terminal": "success"
+        },
+        {
+          "id": "set-user-device-settings-write-failure",
+          "commands": [
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:protobufPayload=platform-built"
+          ],
+          "terminal": "transport-error-after-payload"
         },
         {
           "id": "set-telemetry-enabled",
