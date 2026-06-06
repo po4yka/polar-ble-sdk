@@ -20,13 +20,14 @@ public struct PolarPlainDate {
     /// - Returns: A date string, or `nil` if a valid date could not be created from `dateAsString`.
     public init?(from dateAsString: String, calendar: Calendar = .current) {
         #if canImport(PolarBleSdkShared)
-        guard PolarIosSharedBridge.shared.isValidPlainDate(value: dateAsString) else { return nil }
+        guard let sharedDateString = Self.sharedPlainDateString(from: dateAsString) else { return nil }
         #else
         guard dateAsString.count == 10 else { return nil }
+        let sharedDateString = dateAsString
         #endif
         let formatter = Self.createFormatter(timeZone: calendar.timeZone)
-        guard let date = formatter.date(from: dateAsString) else { return nil }
-        guard formatter.string(from: date) == dateAsString else { return nil }
+        guard let date = formatter.date(from: sharedDateString) else { return nil }
+        guard formatter.string(from: date) == sharedDateString else { return nil }
         self.init(date: date, calendar: calendar, formatter: formatter)
     }
 
@@ -54,12 +55,41 @@ public struct PolarPlainDate {
         formatter.timeZone = timeZone
         return formatter
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedPlainDateString(from value: String) -> String? {
+        guard let fieldsCsv = PolarIosSharedBridge.shared.plainDateFieldsCsv(value: value) else { return nil }
+        let fields = fieldsCsv.split(separator: ",", omittingEmptySubsequences: false)
+        guard fields.count == 3,
+              let year = Int32(fields[0]),
+              let month = Int32(fields[1]),
+              let day = Int32(fields[2]) else {
+            return nil
+        }
+        return PolarIosSharedBridge.shared.formatPlainDate(year: year, month: month, day: day)
+    }
+
+    private static func sharedPlainDateString(date: Date, calendar: Calendar) -> String? {
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        guard let year = components.year,
+              let month = components.month,
+              let day = components.day else {
+            return nil
+        }
+        return PolarIosSharedBridge.shared.formatPlainDate(year: Int32(year), month: Int32(month), day: Int32(day))
+    }
+    #endif
 }
 
 extension PolarPlainDate: CustomStringConvertible {
     /// A string description of the `PlainDate` in ISO 8601 format.
     public var description: String {
-        formatter.string(from: date)
+        #if canImport(PolarBleSdkShared)
+        if let sharedDateString = Self.sharedPlainDateString(date: date, calendar: calendar) {
+            return sharedDateString
+        }
+        #endif
+        return formatter.string(from: date)
     }
 }
 

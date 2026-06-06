@@ -85,6 +85,7 @@ import com.polar.shared.sdk.PolarTrainingReadinessName
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
 import com.polar.shared.sdk.PolarWatchFaceFields
+import com.polar.shared.time.PolarDateFields
 import com.polar.shared.time.PolarDurationFields
 import com.polar.shared.time.PolarTimeFields
 import com.polar.shared.time.PolarTimeUtils
@@ -156,6 +157,15 @@ object PolarIosSharedBridge {
 
     fun isValidPlainDate(value: String): Boolean {
         return PolarTimeUtils.isValidPlainDate(value)
+    }
+
+    fun plainDateFieldsCsv(value: String): String? {
+        val fields = PolarTimeUtils.parsePlainDate(value) ?: return null
+        return listOf(fields.year, fields.month, fields.day).joinToString(separator = ",")
+    }
+
+    fun formatPlainDate(year: Int, month: Int, day: Int): String? {
+        return runCatching { PolarTimeUtils.formatPlainDate(PolarDateFields(year, month, day)) }.getOrNull()
     }
 
     fun signedIntFromLittleEndianHex(hex: String): Int {
