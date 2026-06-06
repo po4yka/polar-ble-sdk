@@ -96,6 +96,9 @@ enum PolarCommandRuntimePlanner {
             case "REQUEST_START_RECORDING": return Protocol_PbPFtpQuery.requestStartRecording.rawValue
             case "REQUEST_STOP_RECORDING": return Protocol_PbPFtpQuery.requestStopRecording.rawValue
             case "REQUEST_RECORDING_STATUS": return Protocol_PbPFtpQuery.requestRecordingStatus.rawValue
+            case "START_EXERCISE": return Protocol_PbPFtpQuery.startExercise.rawValue
+            case "PAUSE_EXERCISE": return Protocol_PbPFtpQuery.pauseExercise.rawValue
+            case "RESUME_EXERCISE": return Protocol_PbPFtpQuery.resumeExercise.rawValue
             case "START_DM_EXERCISE": return Protocol_PbPFtpQuery.startDmExercise.rawValue
             case "STOP_EXERCISE": return Protocol_PbPFtpQuery.stopExercise.rawValue
             case "GET_EXERCISE_STATUS": return Protocol_PbPFtpQuery.getExerciseStatus.rawValue

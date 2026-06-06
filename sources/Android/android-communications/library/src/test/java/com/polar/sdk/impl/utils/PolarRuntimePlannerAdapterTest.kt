@@ -11,7 +11,12 @@ class PolarRuntimePlannerAdapterTest {
         val cases = listOf(
             "h10-start-recording" to ("REQUEST_START_RECORDING" to PftpRequest.PbPFtpQuery.REQUEST_START_RECORDING_VALUE),
             "h10-stop-recording" to ("REQUEST_STOP_RECORDING" to PftpRequest.PbPFtpQuery.REQUEST_STOP_RECORDING_VALUE),
-            "h10-recording-status" to ("REQUEST_RECORDING_STATUS" to PftpRequest.PbPFtpQuery.REQUEST_RECORDING_STATUS_VALUE)
+            "h10-recording-status" to ("REQUEST_RECORDING_STATUS" to PftpRequest.PbPFtpQuery.REQUEST_RECORDING_STATUS_VALUE),
+            "live-exercise-start" to ("START_EXERCISE" to PftpRequest.PbPFtpQuery.START_EXERCISE_VALUE),
+            "live-exercise-pause" to ("PAUSE_EXERCISE" to PftpRequest.PbPFtpQuery.PAUSE_EXERCISE_VALUE),
+            "live-exercise-resume" to ("RESUME_EXERCISE" to PftpRequest.PbPFtpQuery.RESUME_EXERCISE_VALUE),
+            "live-exercise-stop" to ("STOP_EXERCISE" to PftpRequest.PbPFtpQuery.STOP_EXERCISE_VALUE),
+            "live-exercise-status" to ("GET_EXERCISE_STATUS" to PftpRequest.PbPFtpQuery.GET_EXERCISE_STATUS_VALUE)
         )
 
         cases.forEach { (id, queryAndValue) ->

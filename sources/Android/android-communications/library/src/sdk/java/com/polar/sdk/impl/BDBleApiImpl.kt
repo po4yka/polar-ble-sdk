@@ -1760,7 +1760,12 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             val params = PftpRequest.PbPFtpStartExerciseParams.newBuilder()
                 .setSportIdentifier(Structures.PbSportIdentifier.newBuilder().setValue(profile.id.toLong()).build())
                 .build()
-            client.query(PftpRequest.PbPFtpQuery.START_EXERCISE_VALUE, params.toByteArray())
+            val plan = PolarRuntimePlannerAdapter.planCommandQuery(
+                id = "live-exercise-start",
+                query = "START_EXERCISE",
+                parameters = listOf("sportProfileId=${profile.id}")
+            )
+            client.query(PolarRuntimePlannerAdapter.queryValue(plan), params.toByteArray())
             BleLogger.d(TAG, "Start exercise succeeded for $identifier")
         } catch (t: Throwable) {
             BleLogger.e(TAG, "Start exercise failed for $identifier: ${t.message ?: "unknown error"}")
@@ -1774,7 +1779,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = (session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as? BlePsFtpClient)
             ?: throw PolarServiceNotAvailable()
         try {
-            client.query(PftpRequest.PbPFtpQuery.PAUSE_EXERCISE_VALUE, byteArrayOf())
+            val plan = PolarRuntimePlannerAdapter.planCommandQuery("live-exercise-pause", "PAUSE_EXERCISE")
+            client.query(PolarRuntimePlannerAdapter.queryValue(plan), byteArrayOf())
             BleLogger.d(TAG, "Pause exercise succeeded for $identifier")
         } catch (t: Throwable) {
             BleLogger.e(TAG, "Pause exercise failed for $identifier: ${t.message ?: "unknown error"}")
@@ -1788,7 +1794,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = (session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as? BlePsFtpClient)
             ?: throw PolarServiceNotAvailable()
         try {
-            client.query(PftpRequest.PbPFtpQuery.RESUME_EXERCISE_VALUE, byteArrayOf())
+            val plan = PolarRuntimePlannerAdapter.planCommandQuery("live-exercise-resume", "RESUME_EXERCISE")
+            client.query(PolarRuntimePlannerAdapter.queryValue(plan), byteArrayOf())
             BleLogger.d(TAG, "Resume exercise succeeded for $identifier")
         } catch (t: Throwable) {
             BleLogger.e(TAG, "Resume exercise failed for $identifier: ${t.message ?: "unknown error"}")
@@ -1803,7 +1810,12 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
         try {
             val params = PftpRequest.PbPFtpStopExerciseParams.newBuilder().setSave(true).build()
-            client.query(PftpRequest.PbPFtpQuery.STOP_EXERCISE_VALUE, params.toByteArray())
+            val plan = PolarRuntimePlannerAdapter.planCommandQuery(
+                id = "live-exercise-stop",
+                query = "STOP_EXERCISE",
+                parameters = listOf("save=true")
+            )
+            client.query(PolarRuntimePlannerAdapter.queryValue(plan), params.toByteArray())
             BleLogger.d(TAG, "Stop exercise succeeded for $identifier")
         } catch (t: Throwable) {
             BleLogger.e(TAG, "Stop exercise failed for $identifier: ${t.message ?: "unknown error"}")
@@ -1817,7 +1829,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = (session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as? BlePsFtpClient)
             ?: throw PolarServiceNotAvailable()
         return try {
-            val out = client.query(PftpRequest.PbPFtpQuery.GET_EXERCISE_STATUS_VALUE, byteArrayOf())
+            val plan = PolarRuntimePlannerAdapter.planCommandQuery("live-exercise-status", "GET_EXERCISE_STATUS")
+            val out = client.query(PolarRuntimePlannerAdapter.queryValue(plan), byteArrayOf())
             val info = parseExerciseStatus(out.toByteArray())
             BleLogger.d(TAG, "Get exercise status succeeded for $identifier: $info")
             info

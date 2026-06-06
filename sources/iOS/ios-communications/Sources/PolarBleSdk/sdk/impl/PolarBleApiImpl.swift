@@ -2553,7 +2553,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         var params = Protocol_PbPFtpStartExerciseParams()
         params.sportIdentifier = sportId
         let payloadData = try params.serializedData()
-        _ = try await client.query(Protocol_PbPFtpQuery.startExercise.rawValue, parameters: payloadData as NSData)
+        let query = plannedCommandQueryValue(id: "live-exercise-start", query: "START_EXERCISE", parameters: ["sportProfileId=\(profile.rawValue)"]) ?? Protocol_PbPFtpQuery.startExercise.rawValue
+        _ = try await client.query(query, parameters: payloadData as NSData)
         BleLogger.trace("Start exercise succeeded for \(identifier)")
     }
 
@@ -2562,7 +2563,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         BleLogger.trace("Pause exercise pressed for \(identifier)")
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        _ = try await client.query(Protocol_PbPFtpQuery.pauseExercise.rawValue, parameters: nil)
+        let query = plannedCommandQueryValue(id: "live-exercise-pause", query: "PAUSE_EXERCISE") ?? Protocol_PbPFtpQuery.pauseExercise.rawValue
+        _ = try await client.query(query, parameters: nil)
         BleLogger.trace("Pause exercise succeeded for \(identifier)")
     }
 
@@ -2571,7 +2573,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         BleLogger.trace("Resume exercise pressed for \(identifier)")
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        _ = try await client.query(Protocol_PbPFtpQuery.resumeExercise.rawValue, parameters: nil)
+        let query = plannedCommandQueryValue(id: "live-exercise-resume", query: "RESUME_EXERCISE") ?? Protocol_PbPFtpQuery.resumeExercise.rawValue
+        _ = try await client.query(query, parameters: nil)
         BleLogger.trace("Resume exercise succeeded for \(identifier)")
     }
 
@@ -2583,7 +2586,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         var params = Protocol_PbPFtpStopExerciseParams()
         params.save = true
         let payloadData = try params.serializedData()
-        _ = try await client.query(Protocol_PbPFtpQuery.stopExercise.rawValue, parameters: payloadData as NSData)
+        let query = plannedCommandQueryValue(id: "live-exercise-stop", query: "STOP_EXERCISE", parameters: ["save=true"]) ?? Protocol_PbPFtpQuery.stopExercise.rawValue
+        _ = try await client.query(query, parameters: payloadData as NSData)
         BleLogger.trace("Stop exercise succeeded for \(identifier)")
     }
 
@@ -2592,7 +2596,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         BleLogger.trace("Get exercise status pressed for \(identifier)")
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let data = try await client.query(Protocol_PbPFtpQuery.getExerciseStatus.rawValue, parameters: nil)
+        let query = plannedCommandQueryValue(id: "live-exercise-status", query: "GET_EXERCISE_STATUS") ?? Protocol_PbPFtpQuery.getExerciseStatus.rawValue
+        let data = try await client.query(query, parameters: nil)
         let info = try PolarExerciseSession.ExerciseInfo.parse(from: data as Data)
         BleLogger.trace("Get exercise status succeeded for \(identifier): \(info)")
         return info
