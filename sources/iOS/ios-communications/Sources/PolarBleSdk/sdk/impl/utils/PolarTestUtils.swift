@@ -23,19 +23,17 @@ internal class PolarTestUtils {
     }
 
     private static func spo2TestDirectoryPath(day: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.spo2TestDirectoryPath(day: day)
-        #else
+        if let plannedPath = PolarSpo2RuntimePlanner.testDirectoryPath(day: day) {
+            return plannedPath
+        }
         return "/U/0/\(day)/SPO2TEST/"
-        #endif
     }
 
     private static func spo2TestResultPath(directoryPath: String, subDirectoryName: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.spo2TestResultPath(directoryPath: directoryPath, subDirectoryName: subDirectoryName)
-        #else
+        if let plannedPath = PolarSpo2RuntimePlanner.testResultPath(directoryPath: directoryPath, subDirectoryName: subDirectoryName) {
+            return plannedPath
+        }
         return "\(directoryPath)\(subDirectoryName)SPO2TRES.BPB"
-        #endif
     }
 
     private static func spo2TestReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
@@ -128,18 +126,14 @@ internal class PolarTestUtils {
     }
 
     private static func sharedTimeDirectoryParts(timeDirName: String) -> (hour: Int, minute: Int, second: Int)? {
-        #if canImport(PolarBleSdkShared)
-        guard let csv = PolarIosSharedBridge.shared.spo2TestTimeDirectoryPartsCsv(timeDirName: timeDirName) else { return nil }
-        let parts = csv.split(separator: ",").compactMap { Int($0) }
-        guard parts.count == 3 else { return nil }
-        return (parts[0], parts[1], parts[2])
-        #else
+        if let parts = PolarSpo2RuntimePlanner.timeDirectoryParts(timeDirName: timeDirName) {
+            return parts
+        }
         guard timeDirName.count == 6,
               let hour = Int(timeDirName.prefix(2)),
               let minute = Int(timeDirName.dropFirst(2).prefix(2)),
               let second = Int(timeDirName.suffix(2)) else { return nil }
         return (hour, minute, second)
-        #endif
     }
 }
 
@@ -157,23 +151,7 @@ private struct Spo2SharedProjection {
     let triggerType: String?
 
     static func fromShared(proto: Data_PbSpo2TestResult, date: Date, timeDirName: String, timeZoneOffsetMinutes: Int?) -> Spo2SharedProjection? {
-        #if canImport(PolarBleSdkShared)
-        let fields = PolarIosSharedBridge.shared.spo2ProjectionFields(
-            date: dateFormat.string(from: date),
-            timeDirName: timeDirName,
-            recordingDevice: proto.recordingDevice,
-            timeZoneOffsetMinutes: Int32(timeZoneOffsetMinutes ?? 0),
-            testStatus: Int32(proto.testStatus.rawValue),
-            bloodOxygenPercent: proto.hasBloodOxygenPercent ? String(proto.bloodOxygenPercent) : "",
-            spo2Class: proto.hasSpo2Class ? String(proto.spo2Class.rawValue) : "",
-            spo2ValueDeviationFromBaseline: proto.hasSpo2ValueDeviationFromBaseline ? String(proto.spo2ValueDeviationFromBaseline.rawValue) : "",
-            spo2QualityAveragePercent: proto.hasSpo2QualityAveragePercent ? String(proto.spo2QualityAveragePercent) : "",
-            averageHeartRateBpm: proto.hasAverageHeartRateBpm ? String(proto.averageHeartRateBpm) : "",
-            heartRateVariabilityMs: proto.hasHeartRateVariabilityMs ? String(proto.heartRateVariabilityMs) : "",
-            spo2HrvDeviationFromBaseline: proto.hasSpo2HrvDeviationFromBaseline ? String(proto.spo2HrvDeviationFromBaseline.rawValue) : "",
-            altitudeMeters: proto.hasAltitudeMeters ? String(proto.altitudeMeters) : "",
-            triggerType: proto.hasTriggerType ? String(proto.triggerType.rawValue) : ""
-        ).split(separator: "\u{1F}", omittingEmptySubsequences: false).map(String.init)
+        guard let fields = PolarSpo2RuntimePlanner.projectionFields(proto: proto, date: date, timeDirName: timeDirName, timeZoneOffsetMinutes: timeZoneOffsetMinutes) else { return nil }
         guard fields.count == 11 else { return nil }
         return Spo2SharedProjection(
             recordingDevice: fields[0].nilIfEmpty,
@@ -188,9 +166,6 @@ private struct Spo2SharedProjection {
             altitudeMeters: fields[9].nilIfEmpty.flatMap(Float.init),
             triggerType: fields[10].nilIfEmpty
         )
-        #else
-        return nil
-        #endif
     }
 }
 
@@ -202,11 +177,9 @@ private extension String {
 
 private extension PolarSpo2TestData.Spo2TestStatus {
     static func fromSharedOrRaw(value: Int) -> PolarSpo2TestData.Spo2TestStatus? {
-        #if canImport(PolarBleSdkShared)
-        if let shared = PolarIosSharedBridge.shared.spo2TestStatus(value: Int32(value)) {
+        if let shared = PolarSpo2RuntimePlanner.testStatusName(value: value) {
             return fromSharedName(shared)
         }
-        #endif
         return PolarSpo2TestData.Spo2TestStatus(rawValue: value)
     }
 
@@ -223,11 +196,9 @@ private extension PolarSpo2TestData.Spo2TestStatus {
 
 private extension PolarSpo2TestData.Spo2Class {
     static func fromSharedOrRaw(value: Int) -> PolarSpo2TestData.Spo2Class? {
-        #if canImport(PolarBleSdkShared)
-        if let shared = PolarIosSharedBridge.shared.spo2Class(value: Int32(value)) {
+        if let shared = PolarSpo2RuntimePlanner.spo2ClassName(value: value) {
             return fromSharedName(shared)
         }
-        #endif
         return PolarSpo2TestData.Spo2Class(rawValue: value)
     }
 
@@ -244,11 +215,9 @@ private extension PolarSpo2TestData.Spo2Class {
 
 private extension PolarSpo2TestData.DeviationFromBaseline {
     static func fromSharedOrRaw(value: Int) -> PolarSpo2TestData.DeviationFromBaseline? {
-        #if canImport(PolarBleSdkShared)
-        if let shared = PolarIosSharedBridge.shared.spo2DeviationFromBaseline(value: Int32(value)) {
+        if let shared = PolarSpo2RuntimePlanner.deviationFromBaselineName(value: value) {
             return fromSharedName(shared)
         }
-        #endif
         return PolarSpo2TestData.DeviationFromBaseline(rawValue: value)
     }
 
@@ -265,11 +234,9 @@ private extension PolarSpo2TestData.DeviationFromBaseline {
 
 private extension PolarSpo2TestData.Spo2TestTriggerType {
     static func fromSharedOrRaw(value: Int) -> PolarSpo2TestData.Spo2TestTriggerType? {
-        #if canImport(PolarBleSdkShared)
-        if let shared = PolarIosSharedBridge.shared.spo2TriggerType(value: Int32(value)) {
+        if let shared = PolarSpo2RuntimePlanner.triggerTypeName(value: value) {
             return fromSharedName(shared)
         }
-        #endif
         return PolarSpo2TestData.Spo2TestTriggerType(rawValue: value)
     }
 
@@ -279,5 +246,89 @@ private extension PolarSpo2TestData.Spo2TestTriggerType {
         case "automatic": return .automatic
         default: return nil
         }
+    }
+}
+
+private enum PolarSpo2RuntimePlanner {
+    static func testDirectoryPath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2TestDirectoryPath(day: day)
+        #else
+        return nil
+        #endif
+    }
+
+    static func testResultPath(directoryPath: String, subDirectoryName: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2TestResultPath(directoryPath: directoryPath, subDirectoryName: subDirectoryName)
+        #else
+        return nil
+        #endif
+    }
+
+    static func timeDirectoryParts(timeDirName: String) -> (hour: Int, minute: Int, second: Int)? {
+        #if canImport(PolarBleSdkShared)
+        guard let csv = PolarIosSharedBridge.shared.spo2TestTimeDirectoryPartsCsv(timeDirName: timeDirName) else { return nil }
+        let parts = csv.split(separator: ",").compactMap { Int($0) }
+        guard parts.count == 3 else { return nil }
+        return (parts[0], parts[1], parts[2])
+        #else
+        return nil
+        #endif
+    }
+
+    static func projectionFields(proto: Data_PbSpo2TestResult, date: Date, timeDirName: String, timeZoneOffsetMinutes: Int?) -> [String]? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2ProjectionFields(
+            date: dateFormat.string(from: date),
+            timeDirName: timeDirName,
+            recordingDevice: proto.recordingDevice,
+            timeZoneOffsetMinutes: Int32(timeZoneOffsetMinutes ?? 0),
+            testStatus: Int32(proto.testStatus.rawValue),
+            bloodOxygenPercent: proto.hasBloodOxygenPercent ? String(proto.bloodOxygenPercent) : "",
+            spo2Class: proto.hasSpo2Class ? String(proto.spo2Class.rawValue) : "",
+            spo2ValueDeviationFromBaseline: proto.hasSpo2ValueDeviationFromBaseline ? String(proto.spo2ValueDeviationFromBaseline.rawValue) : "",
+            spo2QualityAveragePercent: proto.hasSpo2QualityAveragePercent ? String(proto.spo2QualityAveragePercent) : "",
+            averageHeartRateBpm: proto.hasAverageHeartRateBpm ? String(proto.averageHeartRateBpm) : "",
+            heartRateVariabilityMs: proto.hasHeartRateVariabilityMs ? String(proto.heartRateVariabilityMs) : "",
+            spo2HrvDeviationFromBaseline: proto.hasSpo2HrvDeviationFromBaseline ? String(proto.spo2HrvDeviationFromBaseline.rawValue) : "",
+            altitudeMeters: proto.hasAltitudeMeters ? String(proto.altitudeMeters) : "",
+            triggerType: proto.hasTriggerType ? String(proto.triggerType.rawValue) : ""
+        ).split(separator: "\u{1F}", omittingEmptySubsequences: false).map(String.init)
+        #else
+        return nil
+        #endif
+    }
+
+    static func testStatusName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2TestStatus(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func spo2ClassName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2Class(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func deviationFromBaselineName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2DeviationFromBaseline(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func triggerTypeName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2TriggerType(value: Int32(value))
+        #else
+        return nil
+        #endif
     }
 }
