@@ -4,7 +4,6 @@ import com.polar.androidcommunications.api.ble.exceptions.SecurityError
 import com.polar.shared.pmd.PolarPmdSecret
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
-import kotlin.experimental.xor
 
 class PmdSecret(val strategy: SecurityStrategy, val key: ByteArray) {
     constructor(strategy: SecurityStrategy, key: SecretKeySpec) : this(strategy, key.encoded)
@@ -37,10 +36,10 @@ class PmdSecret(val strategy: SecurityStrategy, val key: ByteArray) {
                 return cipher.doFinal(cipherArray)
             }
             SecurityStrategy.XOR -> {
-                return cipherArray.map { it xor this.key.first() }.toByteArray()
+                return PolarPmdSecret.from(strategy.name, key).decryptBytes(cipherArray) ?: error("Shared XOR decrypt returned null")
             }
             SecurityStrategy.NONE -> {
-                return cipherArray
+                return PolarPmdSecret.from(strategy.name, key).decryptBytes(cipherArray) ?: error("Shared NONE decrypt returned null")
             }
         }
     }

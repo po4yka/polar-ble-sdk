@@ -904,6 +904,10 @@ object PolarIosSharedBridge {
         return runCatching { PolarPmdSecret.from(strategy, keyHex.hexToBytes()).serializeHex() }.getOrNull()
     }
 
+    fun pmdSecretDecryptHex(strategy: String, keyHex: String, cipherHex: String): String? {
+        return runCatching { PolarPmdSecret.from(strategy, keyHex.hexToBytes()).decryptHex(cipherHex.hexToBytes()) }.getOrNull()
+    }
+
     fun pmdSecretStrategyName(strategyByte: Int): String? {
         return PolarPmdSecret.strategyNameFromByte(strategyByte)
     }

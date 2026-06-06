@@ -38,8 +38,7 @@ class PmdSecretCommonPolicyTest {
                     val secret = PolarPmdSecret.from(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
                     val cipherHex = input.stringValue("cipherHex")
                     val decryptedHex = when (secret.strategy) {
-                        "NONE" -> cipherHex
-                        "XOR" -> xorDecrypt(cipherHex, secret.key)
+                        "NONE", "XOR" -> secret.decryptHex(hexToBytes(cipherHex))
                         "AES128", "AES256" -> expected.stringValue("decryptedHex")
                         else -> error("Unexpected strategy ${secret.strategy}")
                     }
@@ -79,22 +78,6 @@ class PmdSecretCommonPolicyTest {
         return PolarPmdSecret.strategyNameFromByte(hexToBytes(hex).firstOrNull()?.toInt() ?: -1) ?: "unknownSecurityStrategy"
     }
 
-    private fun xorDecrypt(cipherHex: String, key: ByteArray): String {
-        val keyByte = key.first().toInt() and 0xFF
-        return hexToBytes(cipherHex).joinToString(separator = "") { byte ->
-            ((byte.toInt() and 0xFF) xor keyByte).toHexByte()
-        }
-    }
-
-    private fun Int.toHexByte(): String {
-        val value = this and 0xFF
-        return "${(value / 16).toHexDigit()}${(value % 16).toHexDigit()}"
-    }
-
-    private fun Int.toHexDigit(): Char {
-        return if (this < 10) '0' + this else 'a' + (this - 10)
-    }
-
     private fun String.stringArrayValue(field: String): List<String> {
         val match = Regex("\"$field\"\\s*:\\s*\\[(.*?)\\]", RegexOption.DOT_MATCHES_ALL).find(this) ?: error("Missing array field $field")
         return Regex("\"([^\"]+)\"").findAll(match.groupValues[1]).map { item -> item.groupValues[1] }.toList()
@@ -127,6 +110,7 @@ class PmdSecretCommonPolicyTest {
             "aes256-key-validation",
             "none-decryption-policy",
             "xor-decryption-policy",
+            "shared-none-xor-production-decryption",
             "aes-fixture-pinning",
             "aes-block-alignment-gate",
             "platform-pmd-secret-vector-reference-gate",
@@ -139,6 +123,6 @@ class PmdSecretCommonPolicyTest {
             "pmd-secret-invalid-xor-empty-key" to "XOR must reject an empty key because decrypt reads the first key byte.",
             "pmd-secret-strategy-from-byte-unknown" to "Unknown strategy bytes must be rejected deterministically."
         )
-        const val PMD_SECRET_READINESS_DECISION = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, NONE and XOR decryption, AES fixture pinning, AES block-alignment gating, and compile verification remain explicit before production secret strategy code moves."
+        const val PMD_SECRET_READINESS_DECISION = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, shared production NONE/XOR decryption, AES fixture pinning, AES block-alignment gating, and compile verification remain explicit before AES ownership or remaining fallback removal moves."
     }
 }

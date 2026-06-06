@@ -75,6 +75,12 @@ public struct PmdSecret: @unchecked Sendable {
     }
     
     func decryptArray(cipherArray: Data) throws -> Data {
+        #if canImport(PolarBleSdkShared)
+        if let sharedHex = PolarIosSharedBridge.shared.pmdSecretDecryptHex(strategy: strategy.sharedName, keyHex: key.hexString, cipherHex: cipherArray.hexString),
+           let shared = Data(hexBytes: sharedHex) {
+            return shared
+        }
+        #endif
         switch(self.strategy) {
         case .none:
             return cipherArray

@@ -12,6 +12,19 @@ data class PolarPmdSecret(
         return serializeBytes().toHexString()
     }
 
+    fun decryptBytes(cipherBytes: ByteArray): ByteArray? {
+        return when (strategy) {
+            "NONE" -> cipherBytes
+            "XOR" -> cipherBytes.map { byte -> ((byte.toInt() and 0xFF) xor (key.first().toInt() and 0xFF)).toByte() }.toByteArray()
+            "AES128", "AES256" -> null
+            else -> error("Unexpected strategy $strategy")
+        }
+    }
+
+    fun decryptHex(cipherBytes: ByteArray): String? {
+        return decryptBytes(cipherBytes)?.toHexString()
+    }
+
     private fun strategyByte(): Int {
         return when (strategy) {
             "NONE" -> 0
