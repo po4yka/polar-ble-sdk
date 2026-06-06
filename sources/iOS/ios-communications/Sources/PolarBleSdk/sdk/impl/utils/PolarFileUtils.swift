@@ -20,7 +20,7 @@ class PolarFileUtils {
                         continuation.finish(throwing: PolarErrors.serviceNotFound)
                         return
                     }
-                    let path = PolarRuntimePlanner.normalizeFileListFolderPath(folderPath) ?? Self.fallbackNormalizedFileListFolderPath(folderPath)
+                    let path = PolarRuntimePlanner.normalizeFileListFolderPath(folderPath)
                     let entries = try await fetchRecursive(path, client: client, condition: condition, recurseDeep: recurseDeep)
                     for entry in entries { continuation.yield(entry.name) }
                     continuation.finish()
@@ -29,13 +29,6 @@ class PolarFileUtils {
                 }
             }
         }
-    }
-
-    private static func fallbackNormalizedFileListFolderPath(_ folderPath: String) -> String {
-        var path = folderPath.isEmpty ? "/" : folderPath
-        if path.first != "/" { path.insert("/", at: path.startIndex) }
-        if path.last != "/" { path.insert("/", at: path.endIndex) }
-        return path
     }
 
     func checkAutoSampleFile(identifier: String, filePath: String, until: Date) async throws -> Bool {
@@ -81,7 +74,7 @@ class PolarFileUtils {
     }
 
     func checkIfDirectoryIsEmpty(directoryPath: String, client: BlePsFtpClient) async throws -> Bool {
-        let path = PolarRuntimePlanner.normalizeFileListFolderPath(directoryPath) ?? Self.fallbackNormalizedFileListFolderPath(directoryPath)
+        let path = PolarRuntimePlanner.normalizeFileListFolderPath(directoryPath)
         var operation = Protocol_PbPFtpOperation()
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "list-low-level-directory-success", command: "GET", path: path)
         operation.command = plannedOperation?.command ?? .get

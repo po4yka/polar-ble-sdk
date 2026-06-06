@@ -24,11 +24,14 @@ enum PolarFileFacadeRuntimePlanner {
         #endif
     }
 
-    static func normalizeFileListFolderPath(_ folderPath: String) -> String? {
+    static func normalizeFileListFolderPath(_ folderPath: String) -> String {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.normalizeFileListFolderPath(folderPath: folderPath)
         #else
-        return nil
+        var path = folderPath.isEmpty ? "/" : folderPath
+        if path.first != "/" { path.insert("/", at: path.startIndex) }
+        if path.last != "/" { path.insert("/", at: path.endIndex) }
+        return path
         #endif
     }
 

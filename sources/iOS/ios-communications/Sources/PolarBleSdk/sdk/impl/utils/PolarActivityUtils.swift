@@ -212,16 +212,9 @@ internal class PolarActivityUtils {
         folderPath: String = "/",
         condition: @escaping (_ p: String) -> Bool
     ) async throws -> [String] {
-        let path = PolarRuntimePlanner.normalizeFileListFolderPath(folderPath) ?? fallbackNormalizedFileListFolderPath(folderPath)
+        let path = PolarRuntimePlanner.normalizeFileListFolderPath(folderPath)
         let entries = try await fetchRecursive(path, client: client, condition: condition)
         return entries.map { $0.name }
-    }
-
-    private static func fallbackNormalizedFileListFolderPath(_ folderPath: String) -> String {
-        var path = folderPath.isEmpty ? "/" : folderPath
-        if path.first != "/" { path.insert("/", at: path.startIndex) }
-        if path.last != "/" { path.insert("/", at: path.endIndex) }
-        return path
     }
 
     private static func fetchRecursive(

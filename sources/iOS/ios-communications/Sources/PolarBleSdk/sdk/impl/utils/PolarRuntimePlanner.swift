@@ -88,7 +88,7 @@ enum PolarRuntimePlanner {
         return PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: id, command: command, path: path, payloadHex: payloadHex)
     }
 
-    static func normalizeFileListFolderPath(_ folderPath: String) -> String? {
+    static func normalizeFileListFolderPath(_ folderPath: String) -> String {
         return PolarFileFacadeRuntimePlanner.normalizeFileListFolderPath(folderPath)
     }
 
