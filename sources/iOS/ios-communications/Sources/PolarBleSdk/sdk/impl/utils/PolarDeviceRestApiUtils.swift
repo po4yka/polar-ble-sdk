@@ -17,7 +17,7 @@ extension BlePsFtpClient {
                         guard let params = try? Protocol_PbPftpDHRestApiEvent(serializedBytes: notification.parameters as Data) else { continue }
                         let events: [Data]
                         if params.hasUncompressed && params.uncompressed {
-                            events = RestEventSharedProjection.uncompressedPayloads(params.event) ?? params.event
+                            events = PolarRestEventRuntimePlanner.uncompressedPayloads(params.event) ?? params.event
                         } else {
                             events = params.event.compactMap { data in
                                 guard let uncompressedData = data.inflated() else {
@@ -57,16 +57,24 @@ extension BlePsFtpClient {
     }
 }
 
-private enum RestEventSharedProjection {
+private enum PolarRestEventRuntimePlanner {
     static func uncompressedPayloads(_ payloads: [Data]) -> [Data]? {
         #if canImport(PolarBleSdkShared)
         let encoded = payloads.map { $0.map { String(format: "%02x", $0) }.joined() }.joined(separator: ",")
-        let sharedHex = PolarIosSharedBridge.shared.restUncompressedEventPayloadsHex(payloadsHex: encoded)
+        let sharedHex = uncompressedPayloadsHex(payloadsHex: encoded)
         return sharedHex.isEmpty ? [] : sharedHex
             .split(separator: "|", omittingEmptySubsequences: false)
             .map { Data(hexString: String($0)) }
         #else
         return nil
+        #endif
+    }
+
+    private static func uncompressedPayloadsHex(payloadsHex: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.restUncompressedEventPayloadsHex(payloadsHex: payloadsHex)
+        #else
+        return ""
         #endif
     }
 }
