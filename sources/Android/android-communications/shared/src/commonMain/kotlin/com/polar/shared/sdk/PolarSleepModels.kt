@@ -30,6 +30,14 @@ enum class PolarSleepRatingName(val value: Int) {
 }
 
 object PolarSleepModels {
+    fun sleepStartOffsetSeconds(sleepStartOffsetSeconds: Int): Int {
+        return sleepStartOffsetSeconds
+    }
+
+    fun sleepEndOffsetSeconds(sleepEndOffsetSeconds: Int): Int {
+        return sleepEndOffsetSeconds
+    }
+
     fun sleepAnalysisPath(day: String): String {
         return "/U/0/$day/SLEEP/SLEEPRES.BPB"
     }

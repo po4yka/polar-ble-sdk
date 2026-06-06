@@ -3,6 +3,7 @@ package com.polar.sdk.impl.utils
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.sleep.*
+import com.polar.shared.sdk.PolarSleepModels
 import com.polar.services.datamodels.protobuf.SleepSkinTemperatureResult
 import fi.polar.remote.representation.protobuf.SleepanalysisResult
 import protocol.PftpRequest
@@ -58,8 +59,8 @@ internal object PolarSleepUtils {
                 if (proto.hasAlarmTime()) {
                     PolarTimeUtils.pbLocalDateTimeToZonedDateTime(proto.alarmTime)
                 } else null,
-                proto.sleepStartOffsetSeconds,
-                proto.sleepEndOffsetSeconds,
+                PolarSleepModels.sleepStartOffsetSeconds(proto.sleepStartOffsetSeconds),
+                PolarSleepModels.sleepEndOffsetSeconds(proto.sleepEndOffsetSeconds),
                 if (proto.hasUserSleepRating()) {
                     SleepRating.from(proto.userSleepRating.number)
                 } else null,

@@ -70,8 +70,8 @@ internal class PolarSleepUtils {
                 sleepWakePhases: PolarSleepData.fromPbSleepwakePhasesListProto(pbSleepwakePhasesList: proto.sleepwakePhases),
                 snoozeTime: try PolarSleepData.convertSnoozeTimeListToLocalTime(snoozeTimeList: proto.snoozeTime),
                 alarmTime: proto.hasAlarmTime ? try PolarTimeUtils.pbLocalDateTimeToDate(pbLocalDateTime: proto.alarmTime) : nil,
-                sleepStartOffsetSeconds: proto.sleepStartOffsetSeconds,
-                sleepEndOffsetSeconds: proto.sleepStartOffsetSeconds,
+                sleepStartOffsetSeconds: sharedSleepStartOffsetSeconds(proto.sleepStartOffsetSeconds),
+                sleepEndOffsetSeconds: sharedSleepEndOffsetSeconds(startOffsetSeconds: proto.sleepStartOffsetSeconds, endOffsetSeconds: proto.sleepEndOffsetSeconds),
                 userSleepRating: proto.hasUserSleepRating ? PolarSleepData.SleepRating.optionalFromProtoValue(value: proto.userSleepRating.rawValue) : nil,
                 deviceId: proto.hasRecordingDevice ? proto.recordingDevice.deviceID : nil,
                 batteryRanOut: proto.hasBatteryRanOut ? proto.batteryRanOut : nil,
@@ -88,6 +88,22 @@ internal class PolarSleepUtils {
                 sleepCycles: nil, sleepResultDate: nil, originalSleepRange: nil
             )
         }
+    }
+
+    private static func sharedSleepStartOffsetSeconds(_ value: Int32) -> Int32 {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepStartOffsetSeconds(value: value)
+        #else
+        return value
+        #endif
+    }
+
+    private static func sharedSleepEndOffsetSeconds(startOffsetSeconds: Int32, endOffsetSeconds: Int32) -> Int32 {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepEndOffsetSeconds(value: endOffsetSeconds)
+        #else
+        return startOffsetSeconds
+        #endif
     }
 
     static func readSleepSkinTemperatureResult(client: BlePsFtpClient, date: Date, sleepAnalysisResult: PolarSleepData.PolarSleepAnalysisResult) async throws -> PolarSleepData.PolarSleepAnalysisResult {

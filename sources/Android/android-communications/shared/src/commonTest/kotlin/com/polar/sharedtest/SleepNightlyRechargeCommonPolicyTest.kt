@@ -77,6 +77,16 @@ class SleepNightlyRechargeCommonPolicyTest {
     }
 
     @Test
+    fun sleepOffsetProjectionUsesSharedStartAndEndFields() {
+        val vector = loadGoldenVectorText("sdk/sleep/sleep-offset-platform-policy.json")
+        val input = vector.objectValue("input")
+        val expected = vector.objectValue("expected").objectValue("android")
+
+        assertEquals(expected.intValue("sleepStartOffsetSeconds"), PolarSleepModels.sleepStartOffsetSeconds(input.intValue("sleepStartOffsetSeconds")))
+        assertEquals(expected.intValue("sleepEndOffsetSeconds"), PolarSleepModels.sleepEndOffsetSeconds(input.intValue("sleepEndOffsetSeconds")))
+    }
+
+    @Test
     fun sleepFilePathPlanningUsesSharedDayPathPolicy() {
         assertEquals("/U/0/20260102/SLEEP/SLEEPRES.BPB", PolarSleepModels.sleepAnalysisPath("20260102"))
         assertEquals("/U/0/20260102/NSTRES" + "U" + "L/NSTRCONT.BPB", PolarSleepModels.sleepSkinTemperaturePath("20260102"))
@@ -308,7 +318,7 @@ class SleepNightlyRechargeCommonPolicyTest {
             "compile-verification-gate"
         )
         const val SLEEP_PARTIAL_NIGHT_COMMON_DECISION = "Shared sleep mapping should preserve empty repeated fields as empty lists, absent optional scalar defaults as explicit zero only when that is the existing public contract, and should choose one cross-platform policy for absent recording device, battery flag, and original sleep range before migration."
-        const val SLEEP_OFFSET_PLATFORM_COMMON_DECISION = "Map sleepEndOffsetSeconds from the protobuf sleepEndOffsetSeconds field and treat the current iOS start-offset copy as a legacy bug to fix during shared-model migration."
+        const val SLEEP_OFFSET_PLATFORM_COMMON_DECISION = "Map sleepEndOffsetSeconds from the protobuf sleepEndOffsetSeconds field; linked iOS production code uses the shared KMP policy while non-shared SwiftPM/watchOS fallback preserves the legacy start-offset copy."
         const val SLEEP_NIGHTLY_READINESS_COMMON_DECISION = "Sleep and nightly recharge model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified."
     }
 }

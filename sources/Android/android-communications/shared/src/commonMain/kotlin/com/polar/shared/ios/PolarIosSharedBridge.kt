@@ -949,6 +949,14 @@ object PolarIosSharedBridge {
         return PolarSleepRatingName.fromValue(value)?.name
     }
 
+    fun sleepStartOffsetSeconds(value: Int): Int {
+        return PolarSleepModels.sleepStartOffsetSeconds(value)
+    }
+
+    fun sleepEndOffsetSeconds(value: Int): Int {
+        return PolarSleepModels.sleepEndOffsetSeconds(value)
+    }
+
     fun sleepAnalysisPath(day: String): String {
         return PolarSleepModels.sleepAnalysisPath(day)
     }

@@ -145,7 +145,7 @@ class PolarSleepUtilsTests: XCTestCase {
         XCTAssertNil(PolarSleepData.SleepRating.optionalFromProtoValue(value: 99))
     }
 
-    func testSleepOffsetGoldenVectorsPreserveIOSPolicy() async throws {
+    func testSleepOffsetGoldenVectorsUseSharedLinkedIOSPolicy() async throws {
         let vector = try loadSleepGoldenVector(id: "sleep-offset-platform-policy")
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expectedByPlatform = try XCTUnwrap(vector["expected"] as? [String: Any])
