@@ -774,6 +774,12 @@ FAKE_TRANSPORT_COMMON_REST_EVENT_COMPRESSION_TEST_REQUIRED_TERMS = [
 ].freeze
 FAKE_TRANSPORT_COMMON_BACKUP_UTILITY_TEST_REQUIRED_TERMS = [
   "backupExpansionAndRestoreWritesGoldenVectorDefinesExecutableCommonPolicy",
+  "backupWorkflowRunsThroughCommonFakeTraversalAndRestoreHarness",
+  "CommonBackupFakeRuntime",
+  "directoryEntries",
+  "readCommands",
+  "restorePayloads",
+  "GET:/SYS/BACKUP.TXT",
   "restoreFailureGoldenVectorPinsPlatformSplitBeforeCommonWorkflowMigration",
   "backupWorkflowReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/backup-utils/backup-expansion-and-restore-writes.json",

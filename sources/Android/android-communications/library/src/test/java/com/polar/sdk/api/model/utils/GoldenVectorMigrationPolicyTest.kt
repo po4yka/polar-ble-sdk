@@ -4320,6 +4320,12 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_BACKUP_UTILITY_TEST_REQUIRED_TERMS = listOf(
             "backupExpansionAndRestoreWritesGoldenVectorDefinesExecutableCommonPolicy",
+            "backupWorkflowRunsThroughCommonFakeTraversalAndRestoreHarness",
+            "CommonBackupFakeRuntime",
+            "directoryEntries",
+            "readCommands",
+            "restorePayloads",
+            "GET:/SYS/BACKUP.TXT",
             "restoreFailureGoldenVectorPinsPlatformSplitBeforeCommonWorkflowMigration",
             "backupWorkflowReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/backup-utils/backup-expansion-and-restore-writes.json",

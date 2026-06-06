@@ -26,6 +26,40 @@ class BackupUtilityCommonPolicyTest {
     }
 
     @Test
+    fun backupWorkflowRunsThroughCommonFakeTraversalAndRestoreHarness() {
+        val vector = loadGoldenVectorText("sdk/backup-utils/backup-expansion-and-restore-writes.json")
+        val input = vector.objectValue("input")
+        val expected = vector.objectValue("expected")
+        val fakeRuntime = CommonBackupFakeRuntime(
+            directories = input.objectValue("directories").directoryEntries(),
+            files = input.objectValue("files").objectEntries()
+        )
+
+        val backupFiles = fakeRuntime.backupDevice()
+        val restoreCommands = fakeRuntime.restoreBackup(input.objectArray("restoreFiles").map { restoreFile -> restoreFile.toBackupRestoreFile() })
+
+        assertEquals(expected.objectArray("backupFiles").map { file -> file.stringValue("path") }, backupFiles.map { file -> file.path })
+        assertEquals(expected.objectArray("backupFiles").map { file -> file.stringValue("dataHex") }, backupFiles.map { file -> file.dataHex })
+        assertEquals(
+            listOf(
+                "GET:/SYS/",
+                "GET:/SYS/BACKUP.TXT",
+                "GET:/SYS/BT/",
+                "GET:/SYS/BT/BTDEV.BPB",
+                "GET:/SYS/BT/SVSTATUS.BPB",
+                "GET:/RANDOM/FILE.TXT",
+                "GET:/U/0/S/PHYSDATA.BPB",
+                "GET:/U/0/S/UDEVSET.BPB",
+                "GET:/U/0/S/PREFS.BPB",
+                "GET:/U/0/USERID.BPB"
+            ),
+            fakeRuntime.readCommands
+        )
+        assertEquals(expected.objectArray("restoreWrites").map { expectedWrite -> "PUT:${expectedWrite.stringValue("path")}:${expectedWrite.stringValue("dataHex")}" }, restoreCommands)
+        assertEquals(expected.objectArray("restoreWrites").map { expectedWrite -> expectedWrite.stringValue("dataHex") }, fakeRuntime.restorePayloads)
+    }
+
+    @Test
     fun restoreFailureGoldenVectorPinsPlatformSplitBeforeCommonWorkflowMigration() {
         val vector = loadGoldenVectorText("sdk/backup-utils/restore-failure-platform-policy.json")
         val input = vector.objectValue("input")
@@ -144,4 +178,70 @@ class BackupUtilityCommonPolicyTest {
             match.groupValues[1] to match.groupValues[2]
         }
     }
+
+    private fun String.directoryEntries(): Map<String, List<String>> {
+        return Regex("\"([^\"]+)\"\\s*:\\s*\\[(.*?)\\]", RegexOption.DOT_MATCHES_ALL).findAll(this).associate { match ->
+            val path = match.groupValues[1]
+            val entries = Regex("\"name\"\\s*:\\s*\"([^\"]+)\"").findAll(match.groupValues[2]).map { entry -> entry.groupValues[1] }.toList()
+            path to entries
+        }
+    }
+
+    private class CommonBackupFakeRuntime(
+        private val directories: Map<String, List<String>>,
+        private val files: Map<String, String>
+    ) {
+        private val capturedReadCommands = mutableListOf<String>()
+        private val capturedRestorePayloads = mutableListOf<String>()
+
+        val readCommands: List<String>
+            get() = capturedReadCommands.toList()
+        val restorePayloads: List<String>
+            get() = capturedRestorePayloads.toList()
+
+        fun backupDevice(): List<PolarBackupFileCapture> {
+            val sysEntries = listDirectory("/SYS/")
+            val backupText = if (sysEntries.any { entry -> entry == "BACKUP.TXT" }) {
+                decodeAsciiHex(readFile("/SYS/BACKUP.TXT"))
+            } else {
+                ""
+            }
+            return PolarWorkflowRuntimePlanning.backupRootPaths(backupText.split("\n").filter { path -> path.isNotEmpty() })
+                .flatMap { root -> backupPath(root.replace("/U/*/", "/U/0/")) }
+        }
+
+        fun restoreBackup(restoreFiles: List<PolarBackupRestoreFile>): List<String> {
+            val plan = PolarWorkflowRuntimePlanning.planBackupRestore(restoreFiles)
+            capturedRestorePayloads += restoreFiles.map { file -> file.dataHex }
+            return plan.commands
+        }
+
+        private fun backupPath(path: String): List<PolarBackupFileCapture> {
+            return if (path.endsWith("/")) {
+                listDirectory(path).flatMap { entry -> backupPath(path + entry) }
+            } else {
+                listOf(PolarBackupFileCapture(path, readFile(path)))
+            }
+        }
+
+        private fun listDirectory(path: String): List<String> {
+            capturedReadCommands += "GET:$path"
+            return directories[path] ?: emptyList()
+        }
+
+        private fun readFile(path: String): String {
+            capturedReadCommands += "GET:$path"
+            return files.getValue(path)
+        }
+
+        private fun decodeAsciiHex(value: String): String {
+            return value.chunked(2).joinToString(separator = "") { byte -> byte.toInt(16).toChar().toString() }
+        }
+    }
+
+    private data class PolarBackupFileCapture(
+        val path: String,
+        val dataHex: String
+    )
+
 }
