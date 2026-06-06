@@ -231,12 +231,8 @@ internal object PolarWatchFaceUtils {
             ?: throw PolarServiceNotAvailable()
         BleLogger.d(TAG, "readWatchFaceConfigFields: GET /SYS/KVTX")
         val readOperation = watchFaceReadOperation()
-        val requestBuilder = PftpRequest.PbPFtpOperation.newBuilder().apply {
-            command = readOperation.first
-            path = readOperation.second
-        }
         val kvtxScript = try {
-            client.request(requestBuilder.build().toByteArray()).toByteArray()
+            client.request(PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)).toByteArray()
         } catch (throwable: Throwable) {
             BleLogger.e(TAG, "readWatchFaceConfigFields: GET failed: ${throwable.message}")
             throw handleError(throwable)
@@ -269,12 +265,9 @@ internal object PolarWatchFaceUtils {
         val kvtxScript = buildKvtxScript(mergedFields)
         BleLogger.d(TAG, "writeWatchFaceComplicationInts: PUT ${kvtxScript.size} bytes to $KVTX_FILE_PATH")
         val writeOperation = watchFaceWriteOperation()
-        val builder = PftpRequest.PbPFtpOperation.newBuilder().apply {
-            command = writeOperation.first
-            path = writeOperation.second
-        }
+        val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(writeOperation)
         PolarRuntimePlannerAdapter.planPsFtpWriteProgress(kvtxScript.size, "android")
         PolarRuntimePlannerAdapter.planPsFtpWriteAck(kvtxScript.size)
-        client.write(builder.build().toByteArray(), ByteArrayInputStream(kvtxScript)).collect {}
+        client.write(requestBytes, ByteArrayInputStream(kvtxScript)).collect {}
     }
 }

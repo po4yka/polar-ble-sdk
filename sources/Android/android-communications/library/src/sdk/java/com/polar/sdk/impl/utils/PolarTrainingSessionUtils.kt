@@ -145,12 +145,8 @@ internal object PolarTrainingSessionUtils {
         reference: PolarTrainingSessionReference
     ): PolarTrainingSession {
         val summaryOperation = trainingSessionSummaryReadOperation(reference.path)
-        val tsessOp = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(summaryOperation.first)
-            .setPath(summaryOperation.second)
-            .build()
 
-        val response = client.request(tsessOp.toByteArray())
+        val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(summaryOperation))
         val sessionSummary = TrainingSession.PbTrainingSession.parseFrom(response.toByteArray())
         BleLogger.d(TAG, "Session summary received, processing ${reference.exercises.size} exercises")
 
@@ -179,12 +175,8 @@ internal object PolarTrainingSessionUtils {
             val dataType = dataTypesByFileName.getValue(filePath.substringAfterLast("/"))
             BleLogger.d(TAG, "  Fetching file: $filePath")
             val readOperation = trainingSessionExerciseFileReadOperation(filePath)
-            val operation = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(readOperation.first)
-                .setPath(readOperation.second)
-                .build()
             val data = try {
-                val fileResponse = client.request(operation.toByteArray())
+                val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(readOperation))
                 val raw = fileResponse.toByteArray()
                 if (filePath.endsWith(".GZB")) {
                     BleLogger.d(TAG, "Unzipping: ${dataType.deviceFileName}")
@@ -259,21 +251,12 @@ internal object PolarTrainingSessionUtils {
     suspend fun deleteTrainingSession(client: BlePsFtpClient, reference: PolarTrainingSessionReference) {
         val parentReadOperation = trainingSessionDeleteParentReadOperation(reference)
 
-        val listOp = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(parentReadOperation.first)
-            .setPath(parentReadOperation.second)
-            .build()
-
         try {
-            val listResponse = client.request(listOp.toByteArray())
+            val listResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(parentReadOperation))
             val directory = PftpResponse.PbPFtpDirectory.parseFrom(listResponse.toByteArray())
             val removeOperation = trainingSessionDeleteRemoveOperation(reference, directory.entriesCount)
             val removePath = removeOperation.second
-            val removeOp = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(removeOperation.first)
-                .setPath(removePath)
-                .build()
-            client.request(removeOp.toByteArray())
+            client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
             BleLogger.d(TAG, "Deleted training session at $removePath")
         } catch (throwable: Throwable) {
             BleLogger.e(TAG, "Failed to delete: ${throwable.message}")

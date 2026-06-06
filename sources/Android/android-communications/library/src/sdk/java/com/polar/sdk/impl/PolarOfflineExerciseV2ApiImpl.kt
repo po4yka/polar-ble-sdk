@@ -189,12 +189,9 @@ class PolarOfflineExerciseV2ApiImpl(
             ?: throw PolarServiceNotAvailable()
 
         val fetchOperation = offlineExerciseFetchOperation(entry.path)
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(fetchOperation.first)
-            .setPath(fetchOperation.second)
 
         return try {
-            val byteArrayOutputStream = client.request(builder.build().toByteArray())
+            val byteArrayOutputStream = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fetchOperation))
             val samples = PbExerciseSamples.parseFrom(byteArrayOutputStream.toByteArray())
             if (samples.hasRrSamples()) {
                 PolarExerciseData(samples.recordingInterval.seconds, samples.rrSamples.rrIntervalsList)
@@ -220,12 +217,9 @@ class PolarOfflineExerciseV2ApiImpl(
             ?: throw PolarServiceNotAvailable()
 
         val removeOperation = offlineExerciseRemoveOperation(entry.path)
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(removeOperation.first)
-            .setPath(removeOperation.second)
 
         try {
-            client.request(builder.build().toByteArray())
+            client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
         } catch (throwable: Throwable) {
             throw handleError(throwable)
         }
@@ -265,12 +259,9 @@ class PolarOfflineExerciseV2ApiImpl(
      */
     private suspend fun checkDmExerciseSupport(client: BlePsFtpClient): Boolean {
         val deviceInfoOperation = offlineExerciseDeviceInfoReadOperation()
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(deviceInfoOperation.first)
-            .setPath(deviceInfoOperation.second)
 
         return try {
-            val byteArrayOutputStream = client.request(builder.build().toByteArray())
+            val byteArrayOutputStream = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(deviceInfoOperation))
             val deviceInfo = Device.PbDeviceInfo.parseFrom(byteArrayOutputStream.toByteArray())
             deviceInfo.capabilitiesList.contains(DM_EXERCISE_CAPABILITY)
         } catch (error: Throwable) {

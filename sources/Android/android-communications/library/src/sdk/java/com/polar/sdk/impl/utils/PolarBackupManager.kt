@@ -40,11 +40,8 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
         BleLogger.d(TAG, "Requesting backup content")
 
         val rootPlan = PolarRuntimePlannerAdapter.planFileFacade("backup-read-root-directory", "GET", ARABICA_SYS_FOLDER)
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PolarRuntimePlannerAdapter.fileOperationCommand(rootPlan))
-            .setPath(PolarRuntimePlannerAdapter.fileOperationPath(rootPlan))
 
-        val response = client.request(builder.build().toByteArray())
+        val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(rootPlan))
         BleLogger.d(TAG, "Received response from client request")
         val dir = PbPFtpDirectory.parseFrom(response.toByteArray())
         val entries = dir.entriesList.map { entry ->
@@ -98,10 +95,8 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
             val restorePath = backupFileData.directory + backupFileData.fileName
             val plannedOperation = PolarRuntimePlannerAdapter.planBackupRestoreOperation(restorePath, backupFileData.data.toHexString())
             PolarRuntimePlannerAdapter.planBackupRestore(restorePath, backupFileData.data.toHexString())
-            val header = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(plannedOperation?.first ?: PftpRequest.PbPFtpOperation.Command.PUT)
-                .setPath(plannedOperation?.second ?: restorePath)
-                .build().toByteArray()
+            val operation = plannedOperation ?: (PftpRequest.PbPFtpOperation.Command.PUT to restorePath)
+            val header = PolarRuntimePlannerAdapter.fileOperationBytes(operation)
             val dataStream = ByteArrayInputStream(backupFileData.data)
             BleLogger.d(TAG, "Sending PftpRequest: ${header.toString(Charsets.UTF_8)}")
             try {
@@ -119,12 +114,7 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
     private suspend fun loadFile(path: String): ByteArray {
         return try {
             val plan = PolarRuntimePlannerAdapter.planFileFacade("backup-read-file", "GET", path)
-            client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PolarRuntimePlannerAdapter.fileOperationCommand(plan))
-                    .setPath(PolarRuntimePlannerAdapter.fileOperationPath(plan))
-                    .build().toByteArray()
-            ).toByteArray()
+            client.request(PolarRuntimePlannerAdapter.fileOperationBytes(plan)).toByteArray()
         } catch (error: Throwable) {
             BleLogger.i(TAG, "Failed to load file: $path, error: $error")
             throw error
@@ -197,10 +187,7 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
 
     private suspend fun fetchRecursively(path: String): List<Pair<String, Long>> {
         val plan = PolarRuntimePlannerAdapter.planFileFacade("backup-read-directory", "GET", path)
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PolarRuntimePlannerAdapter.fileOperationCommand(plan))
-            .setPath(PolarRuntimePlannerAdapter.fileOperationPath(plan))
-        val response = client.request(builder.build().toByteArray())
+        val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(plan))
         val dir = PbPFtpDirectory.parseFrom(response.toByteArray())
         val entries = dir.entriesList.associate { path + it.name to it.size }
 

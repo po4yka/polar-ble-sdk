@@ -51,13 +51,7 @@ internal object PolarTestUtils {
         val spo2TestDirPath = directoryOperation.second
 
         return try {
-            val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(directoryOperation.first)
-                    .setPath(spo2TestDirPath)
-                    .build()
-                    .toByteArray()
-            )
+            val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(directoryOperation))
 
             val dir = PbPFtpDirectory.parseFrom(response.toByteArray())
             val timeSubDirs = dir.entriesList.filter { it.name.endsWith("/") }
@@ -73,13 +67,7 @@ internal object PolarTestUtils {
                 val fileOperation = spo2TestFileReadOperation(spo2TestDirPath, subDir.name)
                 val filePath = fileOperation.second
                 try {
-                    val fileResponse = client.request(
-                        PftpRequest.PbPFtpOperation.newBuilder()
-                            .setCommand(fileOperation.first)
-                            .setPath(filePath)
-                            .build()
-                            .toByteArray()
-                    )
+                    val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
                     results.add(Spo2TestEntry(date = date, timeDirName = timeDirName, protoBytes = fileResponse.toByteArray()))
                 } catch (error: Throwable) {
                     BleLogger.w(TAG, "No SPO2 test proto at $filePath: $error")
