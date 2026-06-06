@@ -16,6 +16,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpU
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils.PftpRfc76ResponseHeader
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils.Rfc76SequenceNumber
 import com.polar.androidcommunications.api.ble.model.proto.CommunicationsPftpRequest
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -46,8 +47,6 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
     private val notificationWaiting = AtomicBoolean(false)
     private val notificationPacketsWritten = AtomicInteger(0)
     private val packetsCount = AtomicInteger(5) // default every 5th packet is written with response
-    private val extendedWriteTimeoutFilePaths = listOf("/SYNCPART.TGZ")
-
     /**
      * true  = uses attribute operation WRITE
      * false = uses attribute operation WRITE_NO_RESPONSE
@@ -414,12 +413,11 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
     }.flowOn(Dispatchers.IO)
 
     private fun getWriteTimeoutForFilePath(filePath: String): Long {
-        for (path in extendedWriteTimeoutFilePaths) {
-            if (filePath.startsWith(path)) {
-                return PROTOCOL_TIMEOUT_EXTENDED_SECONDS.toLong()
-            }
-        }
-        return PROTOCOL_TIMEOUT_SECONDS.toLong()
+        return PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds(
+            filePath = filePath,
+            defaultTimeoutSeconds = PROTOCOL_TIMEOUT_SECONDS,
+            extendedTimeoutSeconds = PROTOCOL_TIMEOUT_EXTENDED_SECONDS
+        ).toLong()
     }
 
     private fun handleMtuInterrupted(dataAvailable: Boolean, lastRequest: Int) {

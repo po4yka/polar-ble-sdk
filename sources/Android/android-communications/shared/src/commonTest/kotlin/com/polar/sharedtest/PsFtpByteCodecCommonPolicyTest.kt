@@ -90,6 +90,15 @@ class PsFtpByteCodecCommonPolicyTest {
     }
 
     @Test
+    fun psFtpWriteTimeoutPolicySelectsSharedExtendedPathPrefix() {
+        assertEquals(900, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/SYNCPART.TGZ"))
+        assertEquals(900, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/SYNCPART.TGZ/part0"))
+        assertEquals(90, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/U/0/S/UDEVSET.BPB"))
+        assertEquals(30, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/SYNCPART.TGZ", defaultTimeoutSeconds = 30, extendedTimeoutSeconds = 120, extendedPathPrefixes = listOf("/FW/")))
+        assertEquals(120, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/FW/PACKAGE.BIN", defaultTimeoutSeconds = 30, extendedTimeoutSeconds = 120, extendedPathPrefixes = listOf("/FW/")))
+    }
+
+    @Test
     fun psFtpByteCodecReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/psftp-message-stream/byte-codec-readiness.json")
         val input = manifest.objectValue("input")

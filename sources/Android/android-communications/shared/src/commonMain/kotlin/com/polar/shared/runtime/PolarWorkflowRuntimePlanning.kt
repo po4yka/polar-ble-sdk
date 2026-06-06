@@ -365,6 +365,19 @@ object PolarWorkflowRuntimePlanning {
         }
     }
 
+    fun psFtpWriteTimeoutSeconds(
+        filePath: String,
+        defaultTimeoutSeconds: Int = 90,
+        extendedTimeoutSeconds: Int = 900,
+        extendedPathPrefixes: List<String> = listOf("/SYNCPART.TGZ")
+    ): Int {
+        return if (extendedPathPrefixes.any { prefix -> filePath.startsWith(prefix) }) {
+            extendedTimeoutSeconds
+        } else {
+            defaultTimeoutSeconds
+        }
+    }
+
     fun planConsumerTimeoutObserverCleanup(timeoutMs: Int, advanceMs: Int): PolarWorkflowPlan {
         return if (advanceMs >= timeoutMs) {
             PolarWorkflowPlan(commands = listOf("consumer-timeout:$timeoutMs", "cleanup-observer"), terminal = "timeout")

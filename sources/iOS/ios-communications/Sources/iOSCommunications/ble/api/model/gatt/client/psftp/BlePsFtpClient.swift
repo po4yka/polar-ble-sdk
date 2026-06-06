@@ -2,6 +2,9 @@ import Foundation
 import CoreBluetooth
 import Combine
 
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public protocol BlePsFtpProgressCallback: AnyObject {
     func onProgressUpdate(bytesReceived: Int)
@@ -463,6 +466,9 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
     }
     
     private func writeTimeout(for filePath: String) -> TimeInterval {
+        #if canImport(PolarBleSdkShared)
+        return TimeInterval(PolarIosSharedBridge.shared.psFtpWriteTimeoutSeconds(filePath: filePath, defaultTimeoutSeconds: Int32(Int(PROTOCOL_TIMEOUT)), extendedTimeoutSeconds: Int32(Int(PROTOCOL_TIMEOUT_EXTENDED))))
+        #endif
         for path in extendedWriteTimeoutFilePaths {
             if filePath.hasPrefix(path) { return PROTOCOL_TIMEOUT_EXTENDED }
         }
