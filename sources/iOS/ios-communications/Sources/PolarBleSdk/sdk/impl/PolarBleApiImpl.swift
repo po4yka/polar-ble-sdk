@@ -2401,18 +2401,22 @@ extension PolarBleApiImpl: PolarBleApi  {
                     let plannedWritePaths = PolarRuntimePlanner.firmwareWritePaths(firmwareFiles.map { $0.0 })
                     for (index, firmwareFile) in firmwareFiles.enumerated() {
                         var lastBytesWritten: Int = 0
+                        var lastProgressEmitDate = Date()
                         let firmwareFilePath = plannedWritePaths.indices.contains(index) ? plannedWritePaths[index] : "/\(firmwareFile.0)"
                         let firmwareFileBytes = firmwareFile.1
                         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: firmwareFileBytes.count)
                         for try await bytesWritten in self.writeFirmwareToDeviceAsync(identifier: identifier, firmwareFilePath: firmwareFilePath, firmwareBytes: firmwareFileBytes) {
                             let bw = Int(bytesWritten)
+                            let timeSinceLastEmitMs = Int(Date().timeIntervalSince(lastProgressEmitDate) * 1_000)
                             if PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(
                                 lastBytesWritten: lastBytesWritten,
                                 bytesWritten: bw,
                                 payloadSize: firmwareFileBytes.count,
-                                minPercentageIncrement: minPercentageIncrement
+                                minPercentageIncrement: minPercentageIncrement,
+                                timeSinceLastEmitMs: timeSinceLastEmitMs
                             ) {
                                 lastBytesWritten = bw
+                                lastProgressEmitDate = Date()
                                 let percentage = PolarRuntimePlanner.firmwareWriteProgressPercent(
                                     bytesWritten: bw,
                                     payloadSize: firmwareFileBytes.count
