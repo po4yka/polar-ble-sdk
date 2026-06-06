@@ -78,12 +78,10 @@ public enum PolarWatchFaceComplication: CaseIterable {
 
     /// Resolve a complication by its integer id (Java `String.hashCode()`).
     public static func fromId(_ id: Int32) -> PolarWatchFaceComplication? {
-        #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.watchFaceComplicationName(id: id),
+        if let sharedName = PolarWatchFaceRuntimePlanner.complicationName(id: id),
            let sharedComplication = PolarWatchFaceComplication(sharedName: sharedName) {
             return sharedComplication
         }
-        #endif
         return allCases.first { $0.id == id }
     }
 }
@@ -98,7 +96,16 @@ public struct PolarWatchFaceConfig {
     }
 }
 
-#if canImport(PolarBleSdkShared)
+enum PolarWatchFaceRuntimePlanner {
+    static func complicationName(id: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.watchFaceComplicationName(id: id)
+        #else
+        return nil
+        #endif
+    }
+}
+
 private extension PolarWatchFaceComplication {
     init?(sharedName: String) {
         switch sharedName {
@@ -132,4 +139,3 @@ private extension PolarWatchFaceComplication {
         }
     }
 }
-#endif

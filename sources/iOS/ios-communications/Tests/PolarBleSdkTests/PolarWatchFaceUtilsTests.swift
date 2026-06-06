@@ -148,6 +148,9 @@ final class PolarWatchFaceUtilsTests: XCTestCase {
             let resolved = PolarWatchFaceComplication.fromId(complication.id)
             XCTAssertEqual(resolved, complication, "fromId should resolve \(complication)")
         }
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("HEART_RATE", PolarWatchFaceRuntimePlanner.complicationName(id: PolarWatchFaceComplication.heartRate.id))
+        #endif
     }
 
     func testWatchFaceKvtxHeadersUseSharedFileFacadePlanning() {
