@@ -72,8 +72,8 @@ class ChannelUtils private constructor() {
         ): Flow<T> {
             return callbackFlow {
                 val connected = !checkConnection || transport.isConnected()
-                PolarStreamRuntimePlanning.planCheckedSubscription("stream", connected, checkConnection)
-                if (connected) {
+                val subscriptionPlan = PolarStreamRuntimePlanning.planCheckedSubscription("stream", connected, checkConnection)
+                if (subscriptionPlan.activeObserverCount > 0) {
                     val observer = Channel<T>(Channel.BUFFERED)
                     observers.add(observer)
 
