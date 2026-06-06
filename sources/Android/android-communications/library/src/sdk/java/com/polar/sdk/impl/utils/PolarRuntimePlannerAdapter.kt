@@ -15,6 +15,7 @@ import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
 import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
+import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepModels
 import protocol.PftpNotification
 import protocol.PftpRequest
@@ -338,6 +339,10 @@ internal object PolarRuntimePlannerAdapter {
 
     fun nightlyRechargePath(day: String): String {
         return PolarSleepModels.nightlyRechargePath(day)
+    }
+
+    fun skinTemperaturePath(day: String): String {
+        return PolarSdkModelMappers.skinTemperaturePath(day)
     }
 
     fun planBackupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success"): Pair<PftpRequest.PbPFtpOperation.Command, String>? {

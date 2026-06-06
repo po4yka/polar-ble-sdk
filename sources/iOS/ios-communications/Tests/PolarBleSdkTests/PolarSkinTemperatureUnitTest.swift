@@ -23,6 +23,7 @@ class PolarSkinTemperatureUtilsTests: XCTestCase {
     func testSkinTemperatureReadHeaderUsesSharedFileFacadePlanning() throws {
         let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
 
+        XCTAssertEqual(PolarIosSharedBridge.shared.skinTemperaturePath(day: "20260102"), "/U/0/20260102/SKINTEMP/TEMPCONT.BPB")
         let operation = PolarSkinTemperatureUtils.skinTemperatureReadOperation(date: date)
         XCTAssertEqual(operation.command, .get)
         XCTAssertEqual(operation.path, "/U/0/20260102/SKINTEMP/TEMPCONT.BPB")

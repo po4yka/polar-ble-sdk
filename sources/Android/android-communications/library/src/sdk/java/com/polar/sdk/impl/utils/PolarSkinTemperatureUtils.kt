@@ -10,15 +10,12 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private const val ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private const val SKIN_TEMPERATURE_DIRECTORY = "SKINTEMP/"
-private const val SKIN_TEMPERATURE_PROTO = "TEMPCONT.BPB"
 private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ENGLISH)
 private const val TAG = "PolarSkinTemperatureUtils"
 
 internal object PolarSkinTemperatureUtils {
     internal fun skinTemperatureReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        val path = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$SKIN_TEMPERATURE_DIRECTORY$SKIN_TEMPERATURE_PROTO"
+        val path = PolarRuntimePlannerAdapter.skinTemperaturePath(date.format(dateFormatter))
         val plan = PolarRuntimePlannerAdapter.planFileFacade("skin-temperature-read", "GET", path)
         return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
     }

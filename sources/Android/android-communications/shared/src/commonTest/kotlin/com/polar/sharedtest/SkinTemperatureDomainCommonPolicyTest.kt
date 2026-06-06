@@ -25,6 +25,11 @@ class SkinTemperatureDomainCommonPolicyTest {
     }
 
     @Test
+    fun skinTemperatureFilePathPlanningUsesSharedDayPathPolicy() {
+        assertEquals("/U/0/20260102/SKINTEMP/TEMPCONT.BPB", PolarSdkModelMappers.skinTemperaturePath("20260102"))
+    }
+
+    @Test
     fun skinTemperatureDomainGoldenVectorsDefineExecutableCommonSourceDeviceAndUnknownEnumPolicy() {
         SKIN_TEMPERATURE_DOMAIN_VECTORS.forEach { relativePath ->
             val vector = loadGoldenVectorText(relativePath)

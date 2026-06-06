@@ -50,6 +50,10 @@ enum class PolarSkinTemperatureSensorLocation {
 object PolarSdkModelMappers {
     private const val UINT32_MASK = 0xFFFF_FFFFL
 
+    fun skinTemperaturePath(day: String): String {
+        return "/U/0/$day/SKINTEMP/TEMPCONT.BPB"
+    }
+
     fun diskSpace(fragmentSize: Long, totalFragments: Long, freeFragments: Long): PolarDiskSpaceModel {
         val unsignedFragmentSize = fragmentSize and UINT32_MASK
         return PolarDiskSpaceModel(

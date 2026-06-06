@@ -7,6 +7,7 @@ import com.polar.sdk.api.model.PolarSkinTemperatureDataSample
 import com.polar.sdk.api.model.PolarSkinTemperatureResult
 import com.polar.sdk.api.model.SkinTemperatureMeasurementType
 import com.polar.sdk.api.model.SkinTemperatureSensorLocation
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarSkinTemperatureUtils
 import com.polar.services.datamodels.protobuf.TemperatureMeasurement
 import com.polar.services.datamodels.protobuf.TemperatureMeasurement.TemperatureMeasurementSample
@@ -32,6 +33,7 @@ class PolarSkinTemperatureUtilsTest {
     fun `skin temperature read header uses shared file facade planning`() {
         val date = LocalDate.of(2026, 1, 2)
 
+        assertEquals("/U/0/20260102/SKINTEMP/TEMPCONT.BPB", PolarRuntimePlannerAdapter.skinTemperaturePath("20260102"))
         assertEquals(
             PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/SKINTEMP/TEMPCONT.BPB",
             PolarSkinTemperatureUtils.skinTemperatureReadOperation(date)

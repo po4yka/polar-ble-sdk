@@ -202,6 +202,10 @@ object PolarIosSharedBridge {
         ).sensorLocation?.name
     }
 
+    fun skinTemperaturePath(day: String): String {
+        return PolarSdkModelMappers.skinTemperaturePath(day)
+    }
+
     fun firmwareDeviceVersion(major: Int, minor: Int, patch: Int): String {
         return PolarFirmwareUpdateModels.deviceVersionToString(major, minor, patch)
     }
