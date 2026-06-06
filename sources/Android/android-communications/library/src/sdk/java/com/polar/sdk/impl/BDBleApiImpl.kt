@@ -2513,6 +2513,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             builder.command = plannedWriteOperation.first
             builder.path = plannedWriteOperation.second
             try {
+                PolarRuntimePlannerAdapter.planPsFtpWriteAck(firmwareFile.second.size)
                 var lastEmitTime = 0L
                 client.write(builder.build().toByteArray(), ByteArrayInputStream(firmwareFile.second))
                     .collect { bytesWritten: Long ->
