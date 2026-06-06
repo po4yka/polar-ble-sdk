@@ -2,6 +2,7 @@ package com.polar.sharedtest
 
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
+import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -63,6 +64,20 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         assertEquals("/U/0/S/UDEVSET.BPB", PolarRuntimeOrchestration.userDeviceSettingsPath("UNKNOWN_FILE_SYSTEM", unknownSettingsPath = "/U/0/S/UDEVSET.BPB"))
         assertEquals("/UDEVSET.BPB", PolarRuntimeOrchestration.userDeviceSettingsPath("unknownFileSystem", unknownSettingsPath = "/UDEVSET.BPB"))
         assertEquals(null, PolarRuntimeOrchestration.userDeviceSettingsPath("UNKNOWN_FILE_SYSTEM", unknownSettingsPath = null))
+    }
+
+    @Test
+    fun userDeviceSettingsPayloadFieldPlanningMatchesFacadePolicyTokens() {
+        assertEquals(listOf("protobufPayload=platform-built"), PolarUserDeviceSettingsModels.protobufPayloadFields())
+        assertEquals(listOf("telemetryEnabled=true"), PolarUserDeviceSettingsModels.telemetryPayloadFields(true))
+        assertEquals(listOf("deviceLocation=WRIST_RIGHT"), PolarUserDeviceSettingsModels.deviceLocationPayloadFields(3))
+        assertEquals(listOf("usbConnectionMode=ON"), PolarUserDeviceSettingsModels.usbConnectionModePayloadFields(true))
+        assertEquals(
+            listOf("automaticTrainingDetectionMode=ON", "automaticTrainingDetectionSensitivity=77", "minimumTrainingDurationSeconds=300"),
+            PolarUserDeviceSettingsModels.automaticTrainingDetectionPayloadFields(true, 77, 300)
+        )
+        assertEquals(listOf("automaticOhrMeasurement=ALWAYS_ON"), PolarUserDeviceSettingsModels.automaticOhrPayloadFields(true))
+        assertEquals(listOf("daylightSaving.nextDaylightSavingTime=present", "daylightSaving.offset=nonzero"), PolarUserDeviceSettingsModels.daylightSavingPayloadFields())
     }
 
     @Test

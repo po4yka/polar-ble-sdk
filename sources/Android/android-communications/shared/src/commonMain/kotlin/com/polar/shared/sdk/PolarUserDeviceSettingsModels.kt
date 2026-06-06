@@ -145,6 +145,38 @@ object PolarUserDeviceSettingsModels {
         }
     }
 
+    fun protobufPayloadFields(): List<String> {
+        return listOf("protobufPayload=platform-built")
+    }
+
+    fun telemetryPayloadFields(enabled: Boolean): List<String> {
+        return listOf("telemetryEnabled=$enabled")
+    }
+
+    fun deviceLocationPayloadFields(value: Int): List<String> {
+        return listOf("deviceLocation=${deviceLocationName(value) ?: value}")
+    }
+
+    fun usbConnectionModePayloadFields(enabled: Boolean): List<String> {
+        return listOf("usbConnectionMode=${usbConnectionModeName(if (enabled) 2 else 1) ?: if (enabled) "ON" else "OFF"}")
+    }
+
+    fun automaticTrainingDetectionPayloadFields(enabled: Boolean, sensitivity: Int, minimumDurationSeconds: Int): List<String> {
+        return listOf(
+            "automaticTrainingDetectionMode=${automaticTrainingDetectionModeName(if (enabled) 1 else 0) ?: if (enabled) "ON" else "OFF"}",
+            "automaticTrainingDetectionSensitivity=$sensitivity",
+            "minimumTrainingDurationSeconds=$minimumDurationSeconds"
+        )
+    }
+
+    fun automaticOhrPayloadFields(enabled: Boolean): List<String> {
+        return listOf("automaticOhrMeasurement=${automaticMeasurementStateName(enabled)}")
+    }
+
+    fun daylightSavingPayloadFields(): List<String> {
+        return listOf("daylightSaving.nextDaylightSavingTime=present", "daylightSaving.offset=nonzero")
+    }
+
     private fun String.toOnOffBoolean(): Boolean {
         return when (this) {
             "ON" -> true

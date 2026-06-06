@@ -2219,6 +2219,13 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("WRIST_RIGHT", PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: PbDeviceLocation.deviceLocationWristRight.rawValue))
         XCTAssertEqual("ON", PolarUserDeviceSettingsRuntimePlanner.usbConnectionModeName(enabled: true))
         XCTAssertEqual("OFF", PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionModeName(enabled: false))
+        XCTAssertEqual(["protobufPayload=platform-built"], PolarUserDeviceSettingsRuntimePlanner.protobufPayloadFields())
+        XCTAssertEqual(["telemetryEnabled=true"], PolarUserDeviceSettingsRuntimePlanner.telemetryPayloadFields(enabled: true))
+        XCTAssertEqual(["deviceLocation=WRIST_RIGHT"], PolarUserDeviceSettingsRuntimePlanner.deviceLocationPayloadFields(value: PbDeviceLocation.deviceLocationWristRight.rawValue))
+        XCTAssertEqual(["usbConnectionMode=ON"], PolarUserDeviceSettingsRuntimePlanner.usbConnectionModePayloadFields(enabled: true))
+        XCTAssertEqual(["automaticTrainingDetectionMode=ON", "automaticTrainingDetectionSensitivity=77", "minimumTrainingDurationSeconds=300"], PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionPayloadFields(enabled: true, sensitivity: 77, minimumDurationSeconds: 300))
+        XCTAssertEqual(["automaticOhrMeasurement=ALWAYS_ON"], PolarUserDeviceSettingsRuntimePlanner.automaticOhrPayloadFields(enabled: true))
+        XCTAssertEqual(["daylightSaving.nextDaylightSavingTime=present", "daylightSaving.offset=nonzero"], PolarUserDeviceSettingsRuntimePlanner.daylightSavingPayloadFields())
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif

@@ -197,6 +197,20 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared user device settings payload fields match Android facade planning tokens`() {
+        Assert.assertEquals(listOf("protobufPayload=platform-built"), PolarRuntimePlannerAdapter.userDeviceSettingsProtobufPayloadFields())
+        Assert.assertEquals(listOf("telemetryEnabled=true"), PolarRuntimePlannerAdapter.userDeviceSettingsTelemetryPayloadFields(true))
+        Assert.assertEquals(listOf("deviceLocation=WRIST_RIGHT"), PolarRuntimePlannerAdapter.userDeviceSettingsDeviceLocationPayloadFields(3))
+        Assert.assertEquals(listOf("usbConnectionMode=ON"), PolarRuntimePlannerAdapter.userDeviceSettingsUsbConnectionModePayloadFields(true))
+        Assert.assertEquals(
+            listOf("automaticTrainingDetectionMode=ON", "automaticTrainingDetectionSensitivity=77", "minimumTrainingDurationSeconds=300"),
+            PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticTrainingDetectionPayloadFields(true, 77, 300)
+        )
+        Assert.assertEquals(listOf("automaticOhrMeasurement=ALWAYS_ON"), PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticOhrPayloadFields(true))
+        Assert.assertEquals(listOf("daylightSaving.nextDaylightSavingTime=present", "daylightSaving.offset=nonzero"), PolarRuntimePlannerAdapter.userDeviceSettingsDaylightSavingPayloadFields())
+    }
+
+    @Test
     fun `shared stored data helpers preserve Android facade filters and empty parent cleanup`() {
         Assert.assertTrue(PolarRuntimePlannerAdapter.storedDataEntryMatchesFilter("TRC001.BIN", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
         Assert.assertTrue(PolarRuntimePlannerAdapter.storedDataEntryMatchesFilter("20260530.SLG", includeSuffixes = listOf(".SLG", ".TXT")))

@@ -158,6 +158,34 @@ enum PolarRuntimePlanner {
         return PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionModeName(enabled: enabled)
     }
 
+    static func userDeviceSettingsProtobufPayloadFields() -> [String] {
+        return PolarUserDeviceSettingsRuntimePlanner.protobufPayloadFields()
+    }
+
+    static func userDeviceSettingsTelemetryPayloadFields(enabled: Bool) -> [String] {
+        return PolarUserDeviceSettingsRuntimePlanner.telemetryPayloadFields(enabled: enabled)
+    }
+
+    static func userDeviceSettingsDeviceLocationPayloadFields(value: Int) -> [String] {
+        return PolarUserDeviceSettingsRuntimePlanner.deviceLocationPayloadFields(value: value)
+    }
+
+    static func userDeviceSettingsUsbConnectionModePayloadFields(enabled: Bool) -> [String] {
+        return PolarUserDeviceSettingsRuntimePlanner.usbConnectionModePayloadFields(enabled: enabled)
+    }
+
+    static func userDeviceSettingsAutomaticTrainingDetectionPayloadFields(enabled: Bool, sensitivity: Int, minimumDurationSeconds: Int) -> [String] {
+        return PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionPayloadFields(enabled: enabled, sensitivity: sensitivity, minimumDurationSeconds: minimumDurationSeconds)
+    }
+
+    static func userDeviceSettingsAutomaticOhrPayloadFields(enabled: Bool) -> [String] {
+        return PolarUserDeviceSettingsRuntimePlanner.automaticOhrPayloadFields(enabled: enabled)
+    }
+
+    static func userDeviceSettingsDaylightSavingPayloadFields() -> [String] {
+        return PolarUserDeviceSettingsRuntimePlanner.daylightSavingPayloadFields()
+    }
+
     @discardableResult
     static func storedDataCleanup(kind: String, rootPath: String, cutoffDate: String? = nil) -> String {
         return PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: kind, rootPath: rootPath, cutoffDate: cutoffDate)

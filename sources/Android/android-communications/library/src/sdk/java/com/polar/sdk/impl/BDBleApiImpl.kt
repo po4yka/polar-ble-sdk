@@ -2769,7 +2769,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
             "set-automatic-ohr-measurement",
             userDeviceSettingsPathFor(session.polarDeviceType),
-            listOf("automaticOhrMeasurement=${autosBuilder.state.name}")
+            PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticOhrPayloadFields(enabled)
         )
         setUserDeviceSettingsProto(identifier, builder.build())
         BleLogger.d(TAG, "AUTOS files enabled = $enabled written for $identifier")
@@ -2984,9 +2984,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             id = "set-user-device-settings",
             kind = "write",
             path = settingsPath,
-            payloadFields = listOf("protobufPayload=platform-built")
+            payloadFields = PolarRuntimePlannerAdapter.userDeviceSettingsProtobufPayloadFields()
         ).firstOrNull()
-        PolarRuntimePlannerAdapter.planUserDeviceSettingsWrite(settingsPath, listOf("protobufPayload=platform-built"))
+        PolarRuntimePlannerAdapter.planUserDeviceSettingsWrite(settingsPath, PolarRuntimePlannerAdapter.userDeviceSettingsProtobufPayloadFields())
         val operation = plannedOperation ?: (PftpRequest.PbPFtpOperation.Command.PUT to settingsPath)
         val deviceSettingsData = ByteArrayOutputStream().use { baos ->
             deviceUserSetting.writeTo(baos)
@@ -3142,7 +3142,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
             "set-user-device-location",
             userDeviceSettingsPathFor(session.polarDeviceType),
-            listOf("deviceLocation=${generalSettings.deviceLocation.name}")
+            PolarRuntimePlannerAdapter.userDeviceSettingsDeviceLocationPayloadFields(location)
         )
         setUserDeviceSettingsProto(identifier, updated)
         BleLogger.d(TAG, "Device location set to $location for $identifier")
@@ -3168,7 +3168,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
             "set-usb-connection-mode",
             userDeviceSettingsPathFor(session.polarDeviceType),
-            listOf("usbConnectionMode=${usbSettings.mode.name}")
+            PolarRuntimePlannerAdapter.userDeviceSettingsUsbConnectionModePayloadFields(enabled)
         )
         setUserDeviceSettingsProto(identifier, updated)
         BleLogger.d(TAG, "USB connection mode set to $enabled for $identifier")
@@ -3210,10 +3210,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
             "set-automatic-training-detection",
             userDeviceSettingsPathFor(session.polarDeviceType),
-            listOf(
-                "automaticTrainingDetectionMode=${atdSettings.state.name}",
-                "automaticTrainingDetectionSensitivity=$automaticTrainingDetectionSensitivity",
-                "minimumTrainingDurationSeconds=$minimumTrainingDurationSeconds"
+            PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticTrainingDetectionPayloadFields(
+                automaticTrainingDetectionMode,
+                automaticTrainingDetectionSensitivity,
+                minimumTrainingDurationSeconds
             )
         )
         setUserDeviceSettingsProto(identifier, updated)
@@ -3243,7 +3243,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
             "set-telemetry-enabled",
             userDeviceSettingsPathFor(session.polarDeviceType),
-            listOf("telemetryEnabled=$enabled")
+            PolarRuntimePlannerAdapter.userDeviceSettingsTelemetryPayloadFields(enabled)
         )
         setUserDeviceSettingsProto(deviceId, updated)
         BleLogger.d(TAG, "Telemetry enabled=$enabled for $deviceId")

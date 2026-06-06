@@ -1066,6 +1066,34 @@ object PolarIosSharedBridge {
         return PolarUserDeviceSettingsModels.automaticMeasurementStateEnabled(name)
     }
 
+    fun userDeviceSettingsProtobufPayloadFields(): String {
+        return PolarUserDeviceSettingsModels.protobufPayloadFields().joinToString(separator = ",")
+    }
+
+    fun userDeviceSettingsTelemetryPayloadFields(enabled: Boolean): String {
+        return PolarUserDeviceSettingsModels.telemetryPayloadFields(enabled).joinToString(separator = ",")
+    }
+
+    fun userDeviceSettingsDeviceLocationPayloadFields(value: Int): String {
+        return PolarUserDeviceSettingsModels.deviceLocationPayloadFields(value).joinToString(separator = ",")
+    }
+
+    fun userDeviceSettingsUsbConnectionModePayloadFields(enabled: Boolean): String {
+        return PolarUserDeviceSettingsModels.usbConnectionModePayloadFields(enabled).joinToString(separator = ",")
+    }
+
+    fun userDeviceSettingsAutomaticTrainingDetectionPayloadFields(enabled: Boolean, sensitivity: Int, minimumDurationSeconds: Int): String {
+        return PolarUserDeviceSettingsModels.automaticTrainingDetectionPayloadFields(enabled, sensitivity, minimumDurationSeconds).joinToString(separator = ",")
+    }
+
+    fun userDeviceSettingsAutomaticOhrPayloadFields(enabled: Boolean): String {
+        return PolarUserDeviceSettingsModels.automaticOhrPayloadFields(enabled).joinToString(separator = ",")
+    }
+
+    fun userDeviceSettingsDaylightSavingPayloadFields(): String {
+        return PolarUserDeviceSettingsModels.daylightSavingPayloadFields().joinToString(separator = ",")
+    }
+
     fun firstTimeUseTrainingBackgroundName(value: Int): String? {
         return PolarFirstTimeUseTrainingBackgroundName.fromValue(value)?.name
     }

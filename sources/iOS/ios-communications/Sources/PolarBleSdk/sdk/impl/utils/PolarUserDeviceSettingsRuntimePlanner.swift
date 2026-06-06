@@ -108,6 +108,62 @@ enum PolarUserDeviceSettingsRuntimePlanner {
         #endif
     }
 
+    static func protobufPayloadFields() -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return csvValues(PolarIosSharedBridge.shared.userDeviceSettingsProtobufPayloadFields())
+        #else
+        return ["protobufPayload=platform-built"]
+        #endif
+    }
+
+    static func telemetryPayloadFields(enabled: Bool) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return csvValues(PolarIosSharedBridge.shared.userDeviceSettingsTelemetryPayloadFields(enabled: enabled))
+        #else
+        return ["telemetryEnabled=\(enabled)"]
+        #endif
+    }
+
+    static func deviceLocationPayloadFields(value: Int) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return csvValues(PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationPayloadFields(value: Int32(value)))
+        #else
+        return ["deviceLocation=\(value)"]
+        #endif
+    }
+
+    static func usbConnectionModePayloadFields(enabled: Bool) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return csvValues(PolarIosSharedBridge.shared.userDeviceSettingsUsbConnectionModePayloadFields(enabled: enabled))
+        #else
+        return ["usbConnectionMode=\(enabled ? "ON" : "OFF")"]
+        #endif
+    }
+
+    static func automaticTrainingDetectionPayloadFields(enabled: Bool, sensitivity: Int, minimumDurationSeconds: Int) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return csvValues(PolarIosSharedBridge.shared.userDeviceSettingsAutomaticTrainingDetectionPayloadFields(enabled: enabled, sensitivity: Int32(sensitivity), minimumDurationSeconds: Int32(minimumDurationSeconds)))
+        #else
+        return ["automaticTrainingDetectionMode=\(enabled ? "ON" : "OFF")", "automaticTrainingDetectionSensitivity=\(sensitivity)", "minimumTrainingDurationSeconds=\(minimumDurationSeconds)"]
+        #endif
+    }
+
+    static func automaticOhrPayloadFields(enabled: Bool) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return csvValues(PolarIosSharedBridge.shared.userDeviceSettingsAutomaticOhrPayloadFields(enabled: enabled))
+        #else
+        return ["automaticOhrMeasurement=\(enabled ? "ALWAYS_ON" : "OFF")"]
+        #endif
+    }
+
+    static func daylightSavingPayloadFields() -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return csvValues(PolarIosSharedBridge.shared.userDeviceSettingsDaylightSavingPayloadFields())
+        #else
+        return ["daylightSaving.nextDaylightSavingTime=present", "daylightSaving.offset=nonzero"]
+        #endif
+    }
+
     private static func operations(_ csv: String) -> [(command: Protocol_PbPFtpOperation.Command, path: String)] {
         return csv.split(separator: ",").compactMap { plannedOperation in
             let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
@@ -118,5 +174,9 @@ enum PolarUserDeviceSettingsRuntimePlanner {
             default: return nil
             }
         }
+    }
+
+    private static func csvValues(_ csv: String) -> [String] {
+        return csv.split(separator: ",").map(String.init)
     }
 }
