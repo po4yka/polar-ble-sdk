@@ -524,6 +524,24 @@ object PolarIosSharedBridge {
         }.getOrNull()
     }
 
+    fun ppgCompressedType0Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
+        val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
+        if (bytes.size < 10) return null
+        val frameType = bytes[9].toInt() and 0xFF
+        if ((frameType and 0x80) == 0 || (frameType and 0x7F) != 0) return null
+        return runCatching {
+            PolarSensorDataParser.parsePpg(
+                PolarPmdDataFrame.fromByteArray(
+                    data = bytes,
+                    previousTimeStamp = previousTimeStamp,
+                    factor = factor,
+                    sampleRate = sampleRate
+                )
+            ).filterIsInstance<PolarPpgType0Sample>()
+                .joinToString(separator = "|") { sample -> "${sample.timeStamp},${sample.ppgDataSamples.joinToString(separator = ";")},${sample.ambientSample}" }
+        }.getOrNull()
+    }
+
     fun ppgCompressedType7Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
         val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
         if (bytes.size < 10) return null

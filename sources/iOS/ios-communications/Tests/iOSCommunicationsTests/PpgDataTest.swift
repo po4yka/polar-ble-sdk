@@ -722,13 +722,30 @@ final class PpgDataTest: XCTestCase {
             { _,_ in previousTimeStamp }  ,
             { _ in factor },
             { _ in 22 })
+        let sharedDataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
+        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgCompressedType0Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 22))
         
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
         let sample0 = result.samples[0] as! PpgData.PpgDataFrameType0
         let sample1 = result.samples[1] as! PpgData.PpgDataFrameType0
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt64, [Int32], Int32) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt64(try XCTUnwrap(fields.first))),
+                try XCTUnwrap(fields.dropFirst().first).split(separator: ";").compactMap { Int32($0) },
+                try XCTUnwrap(Int32(try XCTUnwrap(fields.last)))
+            )
+        }
         
         // Assert
+        XCTAssertEqual(result.samples.count, sharedSamples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            let sample = try XCTUnwrap(result.samples[index] as? PpgData.PpgDataFrameType0)
+            XCTAssertEqual(sample.timeStamp, sharedSample.0)
+            XCTAssertEqual(sample.ppgDataSamples, sharedSample.1)
+            XCTAssertEqual(sample.ambientSample, sharedSample.2)
+        }
         XCTAssertEqual(amountOfSamples, result.samples.count)
         XCTAssertEqual(3, sample0.ppgDataSamples.count)
         XCTAssertEqual(refSample0Channel0, sample0 .ppgDataSamples[0])
