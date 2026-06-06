@@ -2642,7 +2642,13 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                             deletedFiles.add(filename)
                         }
                     } else if (dataType.type == PolarStoredDataType.SDLOGS.type) {
-                        PolarFileUtils.removeSingleFile(identifier, filename, listener, TAG)
+                        val removeOperation = PolarRuntimePlannerAdapter.planStoredDataCleanupOperations(
+                            kind = "filterDirectoryEntries",
+                            rootPath = folderPath,
+                            entries = listOf(filename.substringAfter("$folderPath/")),
+                            includeSuffixes = listOf(".SLG", ".TXT")
+                        ).last()
+                        client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
                     }
                 }
 
@@ -2674,8 +2680,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
             for (date in dates) {
                 val path = "/U/0/${dateFormatter.format(date).plus("/")}"
-                val removeOperation = storedDataDateFolderRemoveOperation(path.trimEnd('/'))
-                PolarRuntimePlannerAdapter.planStoredDataCleanup("emptyDayFolderRemoval", path)
+                val removeOperation = PolarRuntimePlannerAdapter.planStoredDataCleanupOperations("emptyDayFolderRemoval", path).last()
                 try {
                     client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
                 } catch (throwable: Throwable) {
@@ -2702,7 +2707,17 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         try {
             PolarFileUtils.listFiles(identifier, "/", condition = cond, listener, TAG)
                 .collect { filename ->
-                    PolarFileUtils.removeSingleFile(identifier, filename, listener, TAG)
+                    val removeOperation = PolarRuntimePlannerAdapter.planStoredDataCleanupOperations(
+                        kind = "filterDirectoryEntries",
+                        rootPath = "/",
+                        entries = listOf(filename.removePrefix("/")),
+                        includePrefixes = listOf("TRC"),
+                        includeSuffixes = listOf(".BIN")
+                    ).last()
+                    val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
+                    val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
+                        ?: throw PolarServiceNotAvailable()
+                    client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
                 }
         } catch (error: Throwable) {
             BleLogger.e(TAG, "Error while trying to delete telemetry files from device $identifier, error: $error")

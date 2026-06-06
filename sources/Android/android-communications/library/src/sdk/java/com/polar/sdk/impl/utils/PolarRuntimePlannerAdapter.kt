@@ -242,6 +242,27 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun planStoredDataCleanupOperations(
+        kind: String,
+        rootPath: String,
+        cutoffDate: String? = null,
+        entries: List<String> = emptyList(),
+        includePrefixes: List<String> = emptyList(),
+        includeSuffixes: List<String> = emptyList()
+    ): List<Pair<PftpRequest.PbPFtpOperation.Command, String>> {
+        return PolarWorkflowRuntimePlanning.planStoredDataCleanup(
+            PolarStoredDataCleanupScenario(
+                id = "platform-stored-data-cleanup",
+                kind = kind,
+                rootPath = rootPath,
+                cutoffDate = cutoffDate,
+                entries = entries,
+                includePrefixes = includePrefixes,
+                includeSuffixes = includeSuffixes
+            )
+        ).commands.mapNotNull(::cleanupCommandOperation)
+    }
+
     fun storedDataEntryMatchesFilter(entry: String, includePrefixes: List<String> = emptyList(), includeSuffixes: List<String> = emptyList()): Boolean {
         return PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter(entry, includePrefixes, includeSuffixes)
     }
@@ -542,6 +563,16 @@ internal object PolarRuntimePlannerAdapter {
             command.startsWith("GET:") ||
                 command.startsWith("PUT:") ||
                 command.startsWith("REMOVE:")
+        }
+    }
+
+    private fun cleanupCommandOperation(command: String): Pair<PftpRequest.PbPFtpOperation.Command, String>? {
+        val parts = command.split(":", limit = 2)
+        if (parts.size != 2) return null
+        return when (parts[0]) {
+            "GET" -> PftpRequest.PbPFtpOperation.Command.GET to parts[1]
+            "REMOVE" -> PftpRequest.PbPFtpOperation.Command.REMOVE to parts[1]
+            else -> null
         }
     }
 }

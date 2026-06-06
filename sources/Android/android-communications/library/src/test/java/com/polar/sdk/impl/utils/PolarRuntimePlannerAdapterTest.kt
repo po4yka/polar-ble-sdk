@@ -209,4 +209,45 @@ class PolarRuntimePlannerAdapterTest {
         PolarRuntimePlannerAdapter.planStoredDataCleanup("activityPrune", "/U/0")
         PolarRuntimePlannerAdapter.planStoredDataCleanup("automaticSamplePrune", "/U/0/AUTOS", cutoffDate = "2026-05-31")
     }
+
+    @Test
+    fun `shared stored data cleanup plans select Android protobuf remove operations`() {
+        val telemetryOperations = PolarRuntimePlannerAdapter.planStoredDataCleanupOperations(
+            kind = "filterDirectoryEntries",
+            rootPath = "/",
+            entries = listOf("TRC001.BIN", "ABC001.BIN", "TRC001.TXT"),
+            includePrefixes = listOf("TRC"),
+            includeSuffixes = listOf(".BIN")
+        )
+        val sdLogOperations = PolarRuntimePlannerAdapter.planStoredDataCleanupOperations(
+            kind = "filterDirectoryEntries",
+            rootPath = "/SDLOGS",
+            entries = listOf("A.SLG", "B.TXT", "C.BPB"),
+            includeSuffixes = listOf(".SLG", ".TXT")
+        )
+        val dateFolderOperations = PolarRuntimePlannerAdapter.planStoredDataCleanupOperations(
+            kind = "emptyDayFolderRemoval",
+            rootPath = "/U/0/20260530/"
+        )
+
+        Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpOperation.Command.GET to "/",
+                PftpRequest.PbPFtpOperation.Command.REMOVE to "/TRC001.BIN"
+            ),
+            telemetryOperations
+        )
+        Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpOperation.Command.GET to "/SDLOGS",
+                PftpRequest.PbPFtpOperation.Command.REMOVE to "/SDLOGS/A.SLG",
+                PftpRequest.PbPFtpOperation.Command.REMOVE to "/SDLOGS/B.TXT"
+            ),
+            sdLogOperations
+        )
+        Assert.assertEquals(
+            listOf(PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/20260530"),
+            dateFolderOperations
+        )
+    }
 }
