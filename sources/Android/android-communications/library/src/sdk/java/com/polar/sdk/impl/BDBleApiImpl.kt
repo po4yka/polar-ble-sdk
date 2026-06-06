@@ -2597,6 +2597,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         var folderPath = "/U/0"
         val entryPattern = dataType.type
         val cond: PolarFileUtils.FetchRecursiveCondition
+        val cutoffDate = until?.toString()
+        val cutoffFolder = until?.let { dateFormatter.format(it).toString().replace("-", "") }
 
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
@@ -2623,7 +2625,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             else -> {
                 cond = PolarFileUtils.FetchRecursiveCondition { entry: String ->
                     entry.matches(Regex("^(\\d{8})(/)")) ||
-                            entry == "${dateFormatter.format(until).toString().replace("-", "")}/" ||
+                            (cutoffFolder != null && entry == "${cutoffFolder}/") ||
                             entry == "${entryPattern}/" ||
                             entry.contains(".BPB") &&
                             !entry.contains("USERID.BPB") &&
@@ -2634,8 +2636,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         PolarRuntimePlannerAdapter.planStoredDataCleanup("filterDirectoryEntries", folderPath)
         when (dataType.type) {
             PolarStoredDataType.ACTIVITY.type -> PolarRuntimePlannerAdapter.planStoredDataCleanup("activityPrune", "/U/0")
-            PolarStoredDataType.AUTO_SAMPLE.type -> if (until != null) {
-                PolarRuntimePlannerAdapter.planStoredDataCleanup("automaticSamplePrune", folderPath, cutoffDate = until.toString())
+            PolarStoredDataType.AUTO_SAMPLE.type -> if (cutoffDate != null) {
+                PolarRuntimePlannerAdapter.planStoredDataCleanup("automaticSamplePrune", folderPath, cutoffDate = cutoffDate)
             }
         }
 
@@ -2645,19 +2647,17 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 .collect { filename ->
                     if (dataType.type != PolarStoredDataType.AUTO_SAMPLE.type && dataType.type != PolarStoredDataType.SDLOGS.type) {
                         val dateFromFileName = LocalDate.parse(filename.split("/")[3], dateFormatter)
-                        if (until != null && PolarRuntimePlannerAdapter.storedDataDateIsOnOrBefore(dateFromFileName.toString(), until.toString())) {
+                        if (cutoffDate != null && PolarRuntimePlannerAdapter.storedDataDateIsOnOrBefore(dateFromFileName.toString(), cutoffDate)) {
                             PolarFileUtils.removeSingleFile(identifier, filename, listener, TAG)
                             deletedFiles.add(filename)
                         }
                     } else if (dataType.type == PolarStoredDataType.AUTO_SAMPLE.type) {
                         val byteArray = getFile(identifier, filename)
-                        if (byteArray != null) {
-                            val proto = PbAutomaticSampleSessions.parseFrom(byteArray)
-                            val date = PolarTimeUtils.pbDateToLocalDate(proto.day)
-                            if (until != null && PolarRuntimePlannerAdapter.storedDataDateIsOnOrBefore(date.toString(), until.toString())) {
-                                PolarFileUtils.removeSingleFile(identifier, filename, listener, TAG)
-                                deletedFiles.add(filename)
-                            }
+                        val proto = PbAutomaticSampleSessions.parseFrom(byteArray)
+                        val date = PolarTimeUtils.pbDateToLocalDate(proto.day)
+                        if (cutoffDate != null && PolarRuntimePlannerAdapter.storedDataDateIsOnOrBefore(date.toString(), cutoffDate)) {
+                            PolarFileUtils.removeSingleFile(identifier, filename, listener, TAG)
+                            deletedFiles.add(filename)
                         }
                     } else if (dataType.type == PolarStoredDataType.SDLOGS.type) {
                         PolarFileUtils.removeSingleFile(identifier, filename, listener, TAG)
