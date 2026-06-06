@@ -28,3 +28,13 @@ enum class PolarSleepRatingName(val value: Int) {
         }
     }
 }
+
+object PolarSleepModels {
+    fun sleepAnalysisPath(day: String): String {
+        return "/U/0/$day/SLEEP/SLEEPRES.BPB"
+    }
+
+    fun sleepSkinTemperaturePath(day: String): String {
+        return "/U/0/$day/NSTRES" + "U" + "L/NSTRCONT.BPB"
+    }
+}

@@ -15,6 +15,7 @@ import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
 import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
+import com.polar.shared.sdk.PolarSleepModels
 import protocol.PftpNotification
 import protocol.PftpRequest
 
@@ -325,6 +326,14 @@ internal object PolarRuntimePlannerAdapter {
     fun backupFilePath(path: String): Pair<String, String> {
         val filePath = PolarWorkflowRuntimePlanning.backupFilePath(path)
         return filePath.directory to filePath.fileName
+    }
+
+    fun sleepAnalysisPath(day: String): String {
+        return PolarSleepModels.sleepAnalysisPath(day)
+    }
+
+    fun sleepSkinTemperaturePath(day: String): String {
+        return PolarSleepModels.sleepSkinTemperaturePath(day)
     }
 
     fun planBackupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success"): Pair<PftpRequest.PbPFtpOperation.Command, String>? {

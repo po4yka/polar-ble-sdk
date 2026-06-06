@@ -10,23 +10,18 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private const val ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private const val SLEEP_DIRECTORY = "SLEEP/"
-private const val SLEEP_PROTO = "SLEEPRES.BPB"
-private const val NRST_DIRECTORY = "NSTRESUL/"
-private const val NRST_PROTO = "NSTRCONT.BPB"
 private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ENGLISH)
 private const val TAG = "PolarSleepUtils"
 
 internal object PolarSleepUtils {
     internal fun sleepDataReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        val path = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/${SLEEP_DIRECTORY}${SLEEP_PROTO}"
+        val path = PolarRuntimePlannerAdapter.sleepAnalysisPath(date.format(dateFormatter))
         val plan = PolarRuntimePlannerAdapter.planFileFacade("sleep-read-analysis", "GET", path)
         return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
     }
 
     internal fun sleepSkinTemperatureReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        val path = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/${NRST_DIRECTORY}${NRST_PROTO}"
+        val path = PolarRuntimePlannerAdapter.sleepSkinTemperaturePath(date.format(dateFormatter))
         val plan = PolarRuntimePlannerAdapter.planFileFacade("sleep-read-skin-temperature", "GET", path)
         return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
     }
@@ -67,15 +62,15 @@ internal object PolarSleepUtils {
                 if (proto.hasAlarmTime()) {
                     PolarTimeUtils.pbLocalDateTimeToZonedDateTime(proto.alarmTime)
                 } else null,
-                proto.sleepStartOffsetSeconds ?: null,
-                proto.sleepEndOffsetSeconds ?: null,
+                proto.sleepStartOffsetSeconds,
+                proto.sleepEndOffsetSeconds,
                 if (proto.hasUserSleepRating()) {
                     SleepRating.from(proto.userSleepRating.number)
                 } else null,
-                proto.recordingDevice.deviceId ?: null,
-                proto.batteryRanOut ?: null,
+                proto.recordingDevice.deviceId,
+                proto.batteryRanOut,
                 fromPbSleepCyclesList(proto.sleepCyclesList),
-                PolarTimeUtils.pbDateToLocalDate(proto.sleepResultDate) ?: null,
+                PolarTimeUtils.pbDateToLocalDate(proto.sleepResultDate),
                 if (proto.hasOriginalSleepRange()) {
                     fromPbOriginalSleepRange(proto.originalSleepRange)
                 } else null,

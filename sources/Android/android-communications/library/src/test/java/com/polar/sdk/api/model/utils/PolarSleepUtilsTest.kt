@@ -10,6 +10,7 @@ import com.polar.sdk.api.model.sleep.SleepRating
 import com.polar.sdk.api.model.sleep.SleepSkinTemperatureResult
 import com.polar.sdk.api.model.sleep.SleepWakePhase
 import com.polar.sdk.api.model.sleep.SleepWakeState
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarSleepUtils
 import com.polar.services.datamodels.protobuf.SleepSkinTemperatureResult.PbSleepSkinTemperatureResult
 import com.polar.services.datamodels.protobuf.Types.PbDateProto3
@@ -46,6 +47,8 @@ class PolarSleepUtilsTest {
     fun `sleep read headers use shared file facade planning`() {
         val date = LocalDate.of(2026, 1, 2)
 
+        assertEquals("/U/0/20260102/SLEEP/SLEEPRES.BPB", PolarRuntimePlannerAdapter.sleepAnalysisPath("20260102"))
+        assertEquals("/U/0/20260102/NSTRESUL/NSTRCONT.BPB", PolarRuntimePlannerAdapter.sleepSkinTemperaturePath("20260102"))
         assertEquals(
             PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/SLEEP/SLEEPRES.BPB",
             PolarSleepUtils.sleepDataReadOperation(date)

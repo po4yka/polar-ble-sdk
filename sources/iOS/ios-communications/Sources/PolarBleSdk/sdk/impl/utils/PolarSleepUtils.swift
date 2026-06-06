@@ -20,17 +20,33 @@ private let TAG = "PolarSleepUtils"
 
 internal class PolarSleepUtils {
     static func sleepDataReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        let path = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(SLEEP_DIRECTORY)\(SLEEP_PROTO)"
+        let path = sleepAnalysisPath(day: dateFormat.string(from: date))
         return fileReadOperation(id: "sleep-read-analysis", path: path) ?? (.get, path)
     }
 
     static func sleepSkinTemperatureReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        let path = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(NRST_DIRECTORY)\(NRST_PROTO)"
+        let path = sleepSkinTemperaturePath(day: dateFormat.string(from: date))
         return fileReadOperation(id: "sleep-read-skin-temperature", path: path) ?? (.get, path)
     }
 
     private static func fileReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
         return PolarRuntimePlanner.fileFacadeOperation(id: id, command: "GET", path: path)
+    }
+
+    private static func sleepAnalysisPath(day: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepAnalysisPath(day: day)
+        #else
+        return "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(SLEEP_DIRECTORY)\(SLEEP_PROTO)"
+        #endif
+    }
+
+    private static func sleepSkinTemperaturePath(day: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepSkinTemperaturePath(day: day)
+        #else
+        return "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(NRST_DIRECTORY)\(NRST_PROTO)"
+        #endif
     }
 
     static func readSleepFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> PolarSleepData.PolarSleepAnalysisResult {

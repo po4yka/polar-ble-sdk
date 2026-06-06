@@ -65,6 +65,7 @@ import com.polar.shared.sdk.PolarRestServiceModels
 import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
 import com.polar.shared.sdk.PolarSdLogTriggerName
 import com.polar.shared.sdk.PolarSdkModelMappers
+import com.polar.shared.sdk.PolarSleepModels
 import com.polar.shared.sdk.PolarSleepRatingName
 import com.polar.shared.sdk.PolarSleepWakeStateName
 import com.polar.shared.sdk.PolarSpo2Models
@@ -716,6 +717,14 @@ object PolarIosSharedBridge {
 
     fun sleepRatingName(value: Int): String? {
         return PolarSleepRatingName.fromValue(value)?.name
+    }
+
+    fun sleepAnalysisPath(day: String): String {
+        return PolarSleepModels.sleepAnalysisPath(day)
+    }
+
+    fun sleepSkinTemperaturePath(day: String): String {
+        return PolarSleepModels.sleepSkinTemperaturePath(day)
     }
 
     fun automaticHrTriggerName(value: Int): String? {

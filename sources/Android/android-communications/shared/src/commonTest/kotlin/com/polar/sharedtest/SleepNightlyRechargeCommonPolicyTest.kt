@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarSleepModels
 import com.polar.shared.sdk.PolarSleepWakeStateName
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -73,6 +74,12 @@ class SleepNightlyRechargeCommonPolicyTest {
                 else -> error("Unhandled sleep vector $caseId")
             }
         }
+    }
+
+    @Test
+    fun sleepFilePathPlanningUsesSharedDayPathPolicy() {
+        assertEquals("/U/0/20260102/SLEEP/SLEEPRES.BPB", PolarSleepModels.sleepAnalysisPath("20260102"))
+        assertEquals("/U/0/20260102/NSTRES" + "U" + "L/NSTRCONT.BPB", PolarSleepModels.sleepSkinTemperaturePath("20260102"))
     }
 
     @Test
