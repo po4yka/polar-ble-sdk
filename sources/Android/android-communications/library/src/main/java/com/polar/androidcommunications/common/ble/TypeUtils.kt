@@ -10,7 +10,7 @@ object TypeUtils {
     }
 
     fun convertArrayToUnsignedInt(data: ByteArray, offset: Int, length: Int): UInt {
-        return convertArrayToUnsignedInt(data.copyOfRange(offset, offset + length))
+        return PolarTypeUtils.convertArrayToUnsignedInt(data, offset, length).requireValue().toUInt()
     }
 
     fun convertArrayToUnsignedInt(data: ByteArray): UInt {
@@ -19,7 +19,7 @@ object TypeUtils {
     }
 
     fun convertArrayToUnsignedLong(data: ByteArray, offset: Int, length: Int): ULong {
-        return convertArrayToUnsignedLong(data.copyOfRange(offset, offset + length))
+        return PolarTypeUtils.convertArrayToUnsignedLong(data, offset, length).requireValue().toULong()
     }
 
     fun convertArrayToUnsignedLong(data: ByteArray): ULong {
