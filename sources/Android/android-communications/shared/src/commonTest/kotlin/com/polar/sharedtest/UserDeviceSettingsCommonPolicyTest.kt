@@ -1,6 +1,8 @@
 package com.polar.sharedtest
 
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
+import com.polar.shared.sdk.PolarUserDeviceSettingsFields
+import com.polar.shared.sdk.PolarSerializedUserDeviceSettingsFields
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -56,11 +58,11 @@ class UserDeviceSettingsCommonPolicyTest {
         assertEquals(listOf("com.polar.sharedtest.UserDeviceSettingsCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
-    private fun parseSettings(proto: String): UserDeviceSettings {
-        return UserDeviceSettings(
+    private fun parseSettings(proto: String): PolarUserDeviceSettingsFields {
+        return PolarUserDeviceSettingsModels.parsePresencePreservingFields(
             deviceLocation = proto.optionalIntValue("deviceLocation"),
-            usbConnectionMode = proto.optionalOnOffBoolean("usbConnectionMode"),
-            automaticTrainingDetectionMode = proto.optionalOnOffBoolean("automaticTrainingDetectionMode"),
+            usbConnectionMode = proto.optionalStringValue("usbConnectionMode"),
+            automaticTrainingDetectionMode = proto.optionalStringValue("automaticTrainingDetectionMode"),
             automaticTrainingDetectionSensitivity = proto.optionalIntValue("automaticTrainingDetectionSensitivity"),
             minimumTrainingDurationSeconds = proto.optionalIntValue("minimumTrainingDurationSeconds"),
             telemetryEnabled = proto.optionalBooleanValue("telemetryEnabled"),
@@ -68,8 +70,8 @@ class UserDeviceSettingsCommonPolicyTest {
         )
     }
 
-    private fun parseModel(model: String): UserDeviceSettings {
-        return UserDeviceSettings(
+    private fun parseModel(model: String): PolarUserDeviceSettingsFields {
+        return PolarUserDeviceSettingsFields(
             deviceLocation = model.optionalIntValue("deviceLocation"),
             usbConnectionMode = model.optionalBooleanValue("usbConnectionMode"),
             automaticTrainingDetectionMode = model.optionalBooleanValue("automaticTrainingDetectionMode"),
@@ -80,22 +82,11 @@ class UserDeviceSettingsCommonPolicyTest {
         )
     }
 
-    private fun serializeSettings(model: UserDeviceSettings): SerializedSettings {
-        return SerializedSettings(
-            deviceLocation = model.deviceLocation,
-            hasLastModified = true,
-            lastModifiedTrusted = true,
-            usbConnectionMode = model.usbConnectionMode?.toOnOff(),
-            automaticTrainingDetectionMode = model.automaticTrainingDetectionMode?.toOnOff(),
-            automaticTrainingDetectionSensitivity = model.automaticTrainingDetectionSensitivity,
-            minimumTrainingDurationSeconds = model.minimumTrainingDurationSeconds,
-            hasTelemetryEnabled = model.telemetryEnabled != null,
-            telemetryEnabled = model.telemetryEnabled,
-            autosFilesEnabled = model.autosFilesEnabled
-        )
+    private fun serializeSettings(model: PolarUserDeviceSettingsFields): PolarSerializedUserDeviceSettingsFields {
+        return PolarUserDeviceSettingsModels.serializePresencePreservingFields(model)
     }
 
-    private fun assertModel(expected: String, actual: UserDeviceSettings, caseId: String) {
+    private fun assertModel(expected: String, actual: PolarUserDeviceSettingsFields, caseId: String) {
         assertEquals(expected.optionalIntValue("deviceLocation"), actual.deviceLocation, "$caseId deviceLocation")
         expected.optionalIntValue("deviceLocation")?.let { deviceLocation ->
             assertEquals(deviceLocation, PolarUserDeviceSettingsModels.deviceLocationName(deviceLocation)?.let(PolarUserDeviceSettingsModels::deviceLocationValue), "$caseId shared deviceLocation")
@@ -108,7 +99,7 @@ class UserDeviceSettingsCommonPolicyTest {
         assertEquals(expected.optionalBooleanOrNull("autosFilesEnabled"), actual.autosFilesEnabled, "$caseId autos")
     }
 
-    private fun assertProto(expected: String, actual: SerializedSettings, caseId: String) {
+    private fun assertProto(expected: String, actual: PolarSerializedUserDeviceSettingsFields, caseId: String) {
         assertEquals(expected.optionalIntValue("deviceLocation"), actual.deviceLocation, "$caseId deviceLocation")
         assertEquals(expected.booleanValue("hasLastModified"), actual.hasLastModified, "$caseId hasLastModified")
         assertEquals(expected.booleanValue("lastModifiedTrusted"), actual.lastModifiedTrusted, "$caseId trusted")
@@ -127,10 +118,6 @@ class UserDeviceSettingsCommonPolicyTest {
         assertEquals(expected.optionalBooleanValue("hasTelemetryEnabled") ?: false, actual.hasTelemetryEnabled, "$caseId hasTelemetry")
         expected.optionalBooleanValue("telemetryEnabled")?.let { assertEquals(it, actual.telemetryEnabled, "$caseId telemetry") }
         expected.optionalBooleanValue("autosFilesEnabled")?.let { assertEquals(it, actual.autosFilesEnabled, "$caseId autos") }
-    }
-
-    private fun Boolean.toOnOff(): String {
-        return if (this) "ON" else "OFF"
     }
 
     private fun String.userDeviceSettingsUsbValue(): Int {
@@ -186,16 +173,6 @@ class UserDeviceSettingsCommonPolicyTest {
         return Regex("\"([^\"]+)\"").findAll(values).map { match -> match.groupValues[1] }.toList()
     }
 
-    private fun String.optionalOnOffBoolean(field: String): Boolean? {
-        return optionalStringValue(field)?.let { value ->
-            when (value) {
-                "ON" -> true
-                "OFF" -> false
-                else -> error("Unexpected ON/OFF value $value")
-            }
-        }
-    }
-
     private fun String.hasNull(field: String): Boolean {
         return Regex("\"$field\"\\s*:\\s*null").containsMatchIn(this)
     }
@@ -226,29 +203,6 @@ class UserDeviceSettingsCommonPolicyTest {
         }
         error("Unbalanced $open$close block")
     }
-
-    private data class UserDeviceSettings(
-        val deviceLocation: Int?,
-        val usbConnectionMode: Boolean?,
-        val automaticTrainingDetectionMode: Boolean?,
-        val automaticTrainingDetectionSensitivity: Int?,
-        val minimumTrainingDurationSeconds: Int?,
-        val telemetryEnabled: Boolean?,
-        val autosFilesEnabled: Boolean?
-    )
-
-    private data class SerializedSettings(
-        val deviceLocation: Int?,
-        val hasLastModified: Boolean,
-        val lastModifiedTrusted: Boolean,
-        val usbConnectionMode: String?,
-        val automaticTrainingDetectionMode: String?,
-        val automaticTrainingDetectionSensitivity: Int?,
-        val minimumTrainingDurationSeconds: Int?,
-        val hasTelemetryEnabled: Boolean,
-        val telemetryEnabled: Boolean?,
-        val autosFilesEnabled: Boolean?
-    )
 
     private companion object {
         val REQUIRED_USER_DEVICE_SETTINGS_MODEL_FAMILIES = listOf(

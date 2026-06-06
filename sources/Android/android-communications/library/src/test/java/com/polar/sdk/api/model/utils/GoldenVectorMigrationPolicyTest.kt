@@ -3562,6 +3562,10 @@ class GoldenVectorMigrationPolicyTest {
         )
         val USER_DEVICE_SETTINGS_COMMON_POLICY_REQUIRED_TERMS = listOf(
             "userDeviceSettingsGoldenVectorsDefineExecutableCommonPresenceAndWritePolicy",
+            "PolarUserDeviceSettingsFields",
+            "PolarSerializedUserDeviceSettingsFields",
+            "PolarUserDeviceSettingsModels.parsePresencePreservingFields",
+            "PolarUserDeviceSettingsModels.serializePresencePreservingFields",
             "userDeviceSettingsModelReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/user-device-settings/settings-model-readiness.json",
             "user-device-settings-model-readiness",

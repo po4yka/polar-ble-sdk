@@ -1,6 +1,66 @@
 package com.polar.shared.sdk
 
+data class PolarUserDeviceSettingsFields(
+    val deviceLocation: Int? = null,
+    val usbConnectionMode: Boolean? = null,
+    val automaticTrainingDetectionMode: Boolean? = null,
+    val automaticTrainingDetectionSensitivity: Int? = null,
+    val minimumTrainingDurationSeconds: Int? = null,
+    val telemetryEnabled: Boolean? = null,
+    val autosFilesEnabled: Boolean? = null
+)
+
+data class PolarSerializedUserDeviceSettingsFields(
+    val deviceLocation: Int?,
+    val hasLastModified: Boolean,
+    val lastModifiedTrusted: Boolean,
+    val usbConnectionMode: String?,
+    val automaticTrainingDetectionMode: String?,
+    val automaticTrainingDetectionSensitivity: Int?,
+    val minimumTrainingDurationSeconds: Int?,
+    val hasTelemetryEnabled: Boolean,
+    val telemetryEnabled: Boolean?,
+    val autosFilesEnabled: Boolean?,
+    val omittedOptionalPolicy: String = "preserve-protobuf-presence",
+    val telemetryWritePolicy: String = "write-explicit-telemetry"
+)
+
 object PolarUserDeviceSettingsModels {
+    fun parsePresencePreservingFields(
+        deviceLocation: Int? = null,
+        usbConnectionMode: String? = null,
+        automaticTrainingDetectionMode: String? = null,
+        automaticTrainingDetectionSensitivity: Int? = null,
+        minimumTrainingDurationSeconds: Int? = null,
+        telemetryEnabled: Boolean? = null,
+        autosFilesEnabled: Boolean? = null
+    ): PolarUserDeviceSettingsFields {
+        return PolarUserDeviceSettingsFields(
+            deviceLocation = deviceLocation,
+            usbConnectionMode = usbConnectionMode?.toOnOffBoolean(),
+            automaticTrainingDetectionMode = automaticTrainingDetectionMode?.toOnOffBoolean(),
+            automaticTrainingDetectionSensitivity = automaticTrainingDetectionSensitivity,
+            minimumTrainingDurationSeconds = minimumTrainingDurationSeconds,
+            telemetryEnabled = telemetryEnabled,
+            autosFilesEnabled = autosFilesEnabled
+        )
+    }
+
+    fun serializePresencePreservingFields(model: PolarUserDeviceSettingsFields): PolarSerializedUserDeviceSettingsFields {
+        return PolarSerializedUserDeviceSettingsFields(
+            deviceLocation = model.deviceLocation,
+            hasLastModified = true,
+            lastModifiedTrusted = true,
+            usbConnectionMode = model.usbConnectionMode?.toOnOffName(),
+            automaticTrainingDetectionMode = model.automaticTrainingDetectionMode?.toOnOffName(),
+            automaticTrainingDetectionSensitivity = model.automaticTrainingDetectionSensitivity,
+            minimumTrainingDurationSeconds = model.minimumTrainingDurationSeconds,
+            hasTelemetryEnabled = model.telemetryEnabled != null,
+            telemetryEnabled = model.telemetryEnabled,
+            autosFilesEnabled = model.autosFilesEnabled
+        )
+    }
+
     fun deviceLocationName(value: Int): String? {
         return when (value) {
             0 -> "UNDEFINED"
@@ -71,5 +131,17 @@ object PolarUserDeviceSettingsModels {
             "ON" -> 1
             else -> null
         }
+    }
+
+    private fun String.toOnOffBoolean(): Boolean {
+        return when (this) {
+            "ON" -> true
+            "OFF" -> false
+            else -> error("Unexpected ON/OFF value $this")
+        }
+    }
+
+    private fun Boolean.toOnOffName(): String {
+        return if (this) "ON" else "OFF"
     }
 }
