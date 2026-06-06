@@ -1104,7 +1104,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
         XCTAssertTrue(writtenSettings.hasUsbConnectionSettings)
-        XCTAssertEqual(.on, writtenSettings.usbConnectionSettings.mode)
+        XCTAssertEqual(PolarUserDeviceSettings.UsbConnectionMode.ON.toProto(), writtenSettings.usbConnectionSettings.mode)
         XCTAssertEqual(.deviceLocationWristLeft, writtenSettings.generalSettings.deviceLocation)
         XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
     }
@@ -1130,7 +1130,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(.put, writeOperation.command)
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
-        XCTAssertEqual(.off, writtenSettings.usbConnectionSettings.mode)
+        XCTAssertEqual(PolarUserDeviceSettings.UsbConnectionMode.OFF.toProto(), writtenSettings.usbConnectionSettings.mode)
     }
 
     // MARK: - setAutomaticTrainingDetectionSettings

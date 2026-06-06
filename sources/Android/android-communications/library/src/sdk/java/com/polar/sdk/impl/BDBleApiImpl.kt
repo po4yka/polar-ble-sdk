@@ -3129,11 +3129,17 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
         val currentProto = getUserDeviceSettingsProto(client, session.polarDeviceType)
+        val usbConnectionModeName = PolarUserDeviceSettingsModels.usbConnectionModeName(if (enabled) 2 else 1)
+        val usbConnectionMode = usbConnectionModeName
+            ?.let(UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode::valueOf)
+            ?: if (enabled) {
+                UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.ON
+            } else {
+                UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.OFF
+            }
         val usbSettings = UserDeviceSettings.PbUsbConnectionSettings.newBuilder()
-            .setMode(
-                if (enabled) UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.ON
-                else UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.OFF
-            ).build()
+            .setMode(usbConnectionMode)
+            .build()
         val updated = currentProto.toBuilder().setUsbConnectionSettings(usbSettings).build()
         PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
             "set-usb-connection-mode",

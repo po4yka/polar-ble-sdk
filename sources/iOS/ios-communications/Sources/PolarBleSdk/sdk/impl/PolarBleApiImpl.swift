@@ -2938,7 +2938,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let fsType = BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType)
         let settingsPath = PolarRuntimePlanner.userDeviceSettingsPath(fileSystemType: "\(fsType)", unknownSettingsPath: SENSOR_SETTINGS_FILE_PATH) ?? SENSOR_SETTINGS_FILE_PATH
         var usbSettings = Data_PbUsbConnectionSettings()
-        usbSettings.mode = enabled ? .on : .off
+        usbSettings.mode = (enabled ? PolarUserDeviceSettings.UsbConnectionMode.ON : PolarUserDeviceSettings.UsbConnectionMode.OFF).toProto()
         let payloadFields = ["usbConnectionMode=\(PolarRuntimePlanner.userDeviceSettingsUsbConnectionModeName(enabled: enabled) ?? "\(usbSettings.mode)")"]
         let plannedOperations = PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-usb-connection-mode", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         var currentSettings = try await getUserDeviceSettingsProto(client: client, settingsPath: settingsPath, plannedOperation: plannedOperations?.first)

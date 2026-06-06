@@ -798,7 +798,7 @@ class BDBleApiImplTest {
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
         Assert.assertTrue(writtenSettings.hasUsbConnectionSettings())
-        Assert.assertEquals(PbUsbConnectionSettings.PbUsbConnectionMode.ON, writtenSettings.usbConnectionSettings.mode)
+        Assert.assertEquals(sharedUsbConnectionMode(true), writtenSettings.usbConnectionSettings.mode)
         Assert.assertEquals(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT, writtenSettings.generalSettings.deviceLocation)
         Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
     }
@@ -840,7 +840,7 @@ class BDBleApiImplTest {
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
-        Assert.assertEquals(PbUsbConnectionSettings.PbUsbConnectionMode.OFF, writtenSettings.usbConnectionSettings.mode)
+        Assert.assertEquals(sharedUsbConnectionMode(false), writtenSettings.usbConnectionSettings.mode)
     }
 
     @Test
@@ -3616,6 +3616,12 @@ class BDBleApiImplTest {
         val sharedName = PolarUserDeviceSettingsModels.automaticTrainingDetectionModeName(if (enabled) 1 else 0)
             ?: error("Missing shared automatic training detection state for $enabled")
         return PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.valueOf(sharedName)
+    }
+
+    private fun sharedUsbConnectionMode(enabled: Boolean): PbUsbConnectionSettings.PbUsbConnectionMode {
+        val sharedName = PolarUserDeviceSettingsModels.usbConnectionModeName(if (enabled) 2 else 1)
+            ?: error("Missing shared USB connection mode for $enabled")
+        return PbUsbConnectionSettings.PbUsbConnectionMode.valueOf(sharedName)
     }
 
     private companion object {
