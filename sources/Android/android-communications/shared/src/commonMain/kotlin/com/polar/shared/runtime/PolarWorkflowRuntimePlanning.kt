@@ -413,6 +413,16 @@ object PolarWorkflowRuntimePlanning {
         }
     }
 
+    fun shouldEmitPsFtpWriteProgress(
+        bytesWritten: Long,
+        payloadSize: Int,
+        platform: String,
+        timeSinceLastEmitMs: Long,
+        throttleMs: Long = 5_000L
+    ): Boolean {
+        return planPsFtpWriteProgress(payloadSize, platform).contains(bytesWritten.toInt()) || timeSinceLastEmitMs >= throttleMs
+    }
+
     fun psFtpWriteTimeoutSeconds(
         filePath: String,
         defaultTimeoutSeconds: Int = 90,

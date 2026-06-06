@@ -336,6 +336,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                     )
                     var next = 0
                     val totalPayload = totalStream.available().toLong()
+                    val payloadSize = (totalPayload - headerSize - 2).toInt()
                     val sequenceNumber = Rfc76SequenceNumber()
                     val timeoutSeconds = getWriteTimeoutForFilePath(
                         CommunicationsPftpRequest.PbPFtpOperation.parseFrom(header).path
@@ -379,10 +380,8 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                             }
                             val bytesWritten = totalPayload - totalStream.available() - headerSize - 2
                             val now = System.currentTimeMillis()
-                            val isFirst = lastEmitTime == 0L
-                            val isDone = totalStream.available() == 0
-                            val isTimeToEmit = (now - lastEmitTime) >= 5000L
-                            if (isFirst || isDone || isTimeToEmit) {
+                            val timeSinceLastEmit = if (lastEmitTime == 0L) 0L else now - lastEmitTime
+                            if (PolarWorkflowRuntimePlanning.shouldEmitPsFtpWriteProgress(bytesWritten, payloadSize, "android", timeSinceLastEmit)) {
                                 lastEmitTime = now
                                 trySend(bytesWritten)
                             }
