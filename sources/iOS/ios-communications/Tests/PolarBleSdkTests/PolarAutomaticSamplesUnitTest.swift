@@ -29,6 +29,16 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
         XCTAssertEqual(fileOperation.path, "/U/0/AUTOS/AUTOS001.BPB")
     }
 
+    func testPpiSampleStatusMappingIgnoresHighBitsThroughSharedKmpPolicy() {
+        let status = Polar247PPiSamplesData.PPiSampleStatus.fromStatusByte(byte: 0xFF)
+        XCTAssertEqual(status.skinContact, .SKIN_CONTACT_DETECTED)
+        XCTAssertEqual(status.movement, .MOVING_DETECTED)
+        XCTAssertEqual(status.intervalStatus, .INTERVAL_DENOTES_OFFLINE_PERIOD)
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(PolarIosSharedBridge.shared.ppiStatusNames(statusByte: 0xFF), "SKIN_CONTACT_DETECTED,MOVING_DETECTED,INTERVAL_DENOTES_OFFLINE_PERIOD")
+        #endif
+    }
+
     func testRead247HrSamples_SuccessfulResponse() async throws {
         // Arrange
         let calendar = Calendar(identifier: .gregorian)
