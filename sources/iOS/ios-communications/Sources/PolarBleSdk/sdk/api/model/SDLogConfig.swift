@@ -137,7 +137,7 @@ public struct SDLogConfig {
         guard value >= Int(Int32.min) && value <= Int(Int32.max) else {
             return Data_PbSensorDataLog.PbLogTrigger(rawValue: value)!
         }
-        if let sharedValue = PolarIosSharedBridge.shared.sdLogTriggerValue(value: Int32(value)),
+        if let sharedValue = SDLogConfigRuntimePlanner.logTriggerValue(value: value),
            let proto = Data_PbSensorDataLog.PbLogTrigger(rawValue: Int(truncating: sharedValue)) {
             return proto
         }
@@ -150,11 +150,29 @@ public struct SDLogConfig {
         guard value >= Int(Int32.min) && value <= Int(Int32.max) else {
             return Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: value)!
         }
-        if let sharedValue = PolarIosSharedBridge.shared.sdLogMagnetometerFrequencyValue(value: Int32(value)),
+        if let sharedValue = SDLogConfigRuntimePlanner.magnetometerFrequencyValue(value: value),
            let proto = Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: Int(truncating: sharedValue)) {
             return proto
         }
         #endif
         return Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: value)!
+    }
+}
+
+enum SDLogConfigRuntimePlanner {
+    static func logTriggerValue(value: Int) -> NSNumber? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sdLogTriggerValue(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func magnetometerFrequencyValue(value: Int) -> NSNumber? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sdLogMagnetometerFrequencyValue(value: Int32(value))
+        #else
+        return nil
+        #endif
     }
 }
