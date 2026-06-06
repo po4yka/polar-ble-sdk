@@ -85,6 +85,41 @@ class CommandRuntimePolicyCommonTest {
     }
 
     @Test
+    fun resetNotificationFieldProjectionMatchesSharedCommandFlags() {
+        val factoryResetFields = PolarRuntimeOrchestration.resetNotificationFields(
+            PolarFacadeCommandOperation(
+                id = "factory-reset",
+                kind = "resetNotification",
+                query = null,
+                parameters = emptyList(),
+                notifications = emptyList(),
+                sleep = false,
+                factoryDefaults = true,
+                otaFirmwareUpdate = false
+            )
+        )
+        val warehouseSleepFields = PolarRuntimeOrchestration.resetNotificationFields(
+            PolarFacadeCommandOperation(
+                id = "warehouse-sleep",
+                kind = "resetNotification",
+                query = null,
+                parameters = emptyList(),
+                notifications = emptyList(),
+                sleep = true,
+                factoryDefaults = true,
+                otaFirmwareUpdate = false
+            )
+        )
+
+        assertEquals(false, factoryResetFields.sleep)
+        assertEquals(true, factoryResetFields.factoryDefaults)
+        assertEquals(false, factoryResetFields.otaFirmwareUpdate)
+        assertEquals(true, warehouseSleepFields.sleep)
+        assertEquals(true, warehouseSleepFields.factoryDefaults)
+        assertEquals(false, warehouseSleepFields.otaFirmwareUpdate)
+    }
+
+    @Test
     fun resetSyncH10CommandVectorRunsThroughCommonFakeTransportFacadeShape() {
         val vector = loadGoldenVectorText("sdk/command-runtime/reset-sync-h10-command-policy.json")
         val input = vector.objectValue("input")

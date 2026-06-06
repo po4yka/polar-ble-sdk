@@ -1991,9 +1991,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func doFactoryReset(_ identifier: String, preservePairingInformation: Bool) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        var builder = Protocol_PbPFtpFactoryResetParams()
-        builder.sleep = false
-        builder.otaFwupdate = preservePairingInformation
+        let builder = plannedResetParams(id: "factory-reset-preserve-pairing", sleep: false, factoryDefaults: true, otaFirmwareUpdate: preservePairingInformation)
         let notification = plannedResetNotification(id: "factory-reset-preserve-pairing", sleep: false, factoryDefaults: true, otaFirmwareUpdate: preservePairingInformation)
         BleLogger.trace("Send do factory reset to device: \(identifier)")
         try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)
@@ -2003,8 +2001,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func doFactoryReset(_ identifier: String) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        var builder = Protocol_PbPFtpFactoryResetParams()
-        builder.sleep = false
+        let builder = plannedResetParams(id: "factory-reset", sleep: false, factoryDefaults: true, otaFirmwareUpdate: false)
         let notification = plannedResetNotification(id: "factory-reset", sleep: false, factoryDefaults: true, otaFirmwareUpdate: false)
         BleLogger.trace("Send do factory reset to device: \(identifier)")
         try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)
@@ -2014,10 +2011,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func doRestart(_ identifier: String, preservePairingInformation: Bool) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        var builder = Protocol_PbPFtpFactoryResetParams()
-        builder.sleep = false
-        builder.doFactoryDefaults = false
-        builder.otaFwupdate = preservePairingInformation
+        let builder = plannedResetParams(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: preservePairingInformation)
         let notification = plannedResetNotification(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: preservePairingInformation)
         BleLogger.trace("Send do restart to device: \(identifier)")
         do {
@@ -2031,9 +2025,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func doRestart(_ identifier: String) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        var builder = Protocol_PbPFtpFactoryResetParams()
-        builder.sleep = false
-        builder.doFactoryDefaults = false
+        let builder = plannedResetParams(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false)
         let notification = plannedResetNotification(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false)
         BleLogger.trace("Send do restart to device: \(identifier)")
         do {
@@ -2046,6 +2038,15 @@ extension PolarBleApiImpl: PolarBleApi  {
     private func plannedResetNotification(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) -> Int {
         PolarRuntimePlanner.commandReset(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
         return PolarRuntimePlanner.commandResetNotification(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate) ?? Protocol_PbPFtpHostToDevNotification.reset.rawValue
+    }
+
+    private func plannedResetParams(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) -> Protocol_PbPFtpFactoryResetParams {
+        let fields = PolarRuntimePlanner.commandResetFields(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
+        var builder = Protocol_PbPFtpFactoryResetParams()
+        builder.sleep = fields.sleep
+        builder.doFactoryDefaults = fields.factoryDefaults
+        builder.otaFwupdate = fields.otaFirmwareUpdate
+        return builder
     }
 
 
@@ -2648,9 +2649,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func setWarehouseSleep(_ identifier: String, enableWarehouseSleep: Bool?) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        var builder = Protocol_PbPFtpFactoryResetParams()
-        builder.sleep = enableWarehouseSleep ?? false
-        builder.otaFwupdate = true
+        let builder = plannedResetParams(id: "factory-reset-preserve-pairing", sleep: enableWarehouseSleep ?? false, factoryDefaults: true, otaFirmwareUpdate: true)
         let notification = plannedResetNotification(id: "factory-reset-preserve-pairing", sleep: enableWarehouseSleep ?? false, factoryDefaults: true, otaFirmwareUpdate: true)
         BleLogger.trace("Setting warehouse sleep, device: \(identifier).")
         try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)
@@ -2660,9 +2659,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func setWarehouseSleep(_ identifier: String) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        var builder = Protocol_PbPFtpFactoryResetParams()
-        builder.sleep = true
-        builder.doFactoryDefaults = true
+        let builder = plannedResetParams(id: "warehouse-sleep", sleep: true, factoryDefaults: true, otaFirmwareUpdate: false)
         let notification = plannedResetNotification(id: "warehouse-sleep", sleep: true, factoryDefaults: true, otaFirmwareUpdate: false)
         BleLogger.trace("Setting warehouse sleep to true, device: \(identifier).")
         try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)
@@ -2672,9 +2669,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func turnDeviceOff(_ identifier: String) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        var builder = Protocol_PbPFtpFactoryResetParams()
-        builder.sleep = true
-        builder.doFactoryDefaults = false
+        let builder = plannedResetParams(id: "turn-device-off", sleep: true, factoryDefaults: false, otaFirmwareUpdate: false)
         let notification = plannedResetNotification(id: "turn-device-off", sleep: true, factoryDefaults: false, otaFirmwareUpdate: false)
         BleLogger.trace("Turn off device \(identifier).")
         try await client.sendNotification(notification, parameters: try builder.serializedData() as NSData)

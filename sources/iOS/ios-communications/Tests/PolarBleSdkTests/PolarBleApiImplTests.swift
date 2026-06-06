@@ -2166,6 +2166,10 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(Protocol_PbPFtpQuery.requestRecordingStatus.rawValue, PolarCommandRuntimePlanner.queryValue(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS"))
         XCTAssertEqual("success", PolarCommandRuntimePlanner.reset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
         XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, PolarCommandRuntimePlanner.resetNotification(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
+        let resetFields = PolarCommandRuntimePlanner.resetFields(id: "warehouse-sleep", sleep: true, factoryDefaults: true, otaFirmwareUpdate: false)
+        XCTAssertTrue(resetFields.sleep)
+        XCTAssertTrue(resetFields.factoryDefaults)
+        XCTAssertFalse(resetFields.otaFirmwareUpdate)
         XCTAssertEqual([
             Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue,
             Protocol_PbPFtpHostToDevNotification.startSync.rawValue

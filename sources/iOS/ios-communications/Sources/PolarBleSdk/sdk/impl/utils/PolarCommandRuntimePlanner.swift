@@ -41,6 +41,14 @@ enum PolarCommandRuntimePlanner {
         #endif
     }
 
+    static func resetFields(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) -> (sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) {
+        #if canImport(PolarBleSdkShared)
+        return resetFieldValues(PolarIosSharedBridge.shared.planRuntimeCommandResetFields(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)) ?? (sleep, factoryDefaults, otaFirmwareUpdate)
+        #else
+        return (sleep, factoryDefaults, otaFirmwareUpdate)
+        #endif
+    }
+
     @discardableResult
     static func syncStart(id: String) -> String {
         #if canImport(PolarBleSdkShared)
@@ -118,5 +126,16 @@ enum PolarCommandRuntimePlanner {
             default: return nil
             }
         }
+    }
+
+    private static func resetFieldValues(_ csv: String) -> (sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool)? {
+        var values = [String: Bool]()
+        for plannedField in csv.split(separator: ",") {
+            let parts = plannedField.split(separator: "=", maxSplits: 1).map(String.init)
+            guard parts.count == 2, let value = Bool(parts[1]) else { return nil }
+            values[parts[0]] = value
+        }
+        guard let sleep = values["sleep"], let factoryDefaults = values["factoryDefaults"], let otaFirmwareUpdate = values["otaFirmwareUpdate"] else { return nil }
+        return (sleep, factoryDefaults, otaFirmwareUpdate)
     }
 }

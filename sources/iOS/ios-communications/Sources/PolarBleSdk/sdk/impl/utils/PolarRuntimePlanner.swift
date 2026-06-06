@@ -25,6 +25,10 @@ enum PolarRuntimePlanner {
         return PolarCommandRuntimePlanner.resetNotification(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
     }
 
+    static func commandResetFields(id: String, sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) -> (sleep: Bool, factoryDefaults: Bool, otaFirmwareUpdate: Bool) {
+        return PolarCommandRuntimePlanner.resetFields(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
+    }
+
     @discardableResult
     static func commandSyncStart(id: String) -> String {
         return PolarCommandRuntimePlanner.syncStart(id: id)

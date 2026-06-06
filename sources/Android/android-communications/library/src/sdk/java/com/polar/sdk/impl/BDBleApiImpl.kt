@@ -1643,12 +1643,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val params = PftpNotification.PbPFtpFactoryResetParams.newBuilder()
-        params.sleep = false
-        params.otaFwupdate = preservePairingInformation
         val plan = PolarRuntimePlannerAdapter.planCommandReset("factory-reset-preserve-pairing", sleep = false, factoryDefaults = true, otaFirmwareUpdate = preservePairingInformation)
+        val params = resetNotificationParams("factory-reset-preserve-pairing", sleep = false, factoryDefaults = true, otaFirmwareUpdate = preservePairingInformation)
         BleLogger.d(TAG, "send factory reset notification to device $identifier")
-        client.sendNotification(PolarRuntimePlannerAdapter.notificationValue(PolarRuntimePlannerAdapter.notificationNames(plan).single()), params.build().toByteArray())
+        client.sendNotification(PolarRuntimePlannerAdapter.notificationValue(PolarRuntimePlannerAdapter.notificationNames(plan).single()), params.toByteArray())
     }
 
     @Suppress("DEPRECATION")
@@ -1656,27 +1654,33 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         doFactoryReset(identifier, preservePairingInformation = true)
     }
 
+    private fun resetNotificationParams(id: String, sleep: Boolean, factoryDefaults: Boolean, otaFirmwareUpdate: Boolean): PftpNotification.PbPFtpFactoryResetParams {
+        val fields = PolarRuntimePlannerAdapter.resetNotificationFields(id, sleep, factoryDefaults, otaFirmwareUpdate)
+        return PftpNotification.PbPFtpFactoryResetParams.newBuilder()
+            .setSleep(fields.sleep)
+            .setDoFactoryDefaults(fields.factoryDefaults)
+            .setOtaFwupdate(fields.otaFirmwareUpdate)
+            .build()
+    }
+
     override suspend fun doFactoryReset(identifier: String) {
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val params = PftpNotification.PbPFtpFactoryResetParams.newBuilder()
-        params.sleep = false
         val plan = PolarRuntimePlannerAdapter.planCommandReset("factory-reset", sleep = false, factoryDefaults = true, otaFirmwareUpdate = false)
+        val params = resetNotificationParams("factory-reset", sleep = false, factoryDefaults = true, otaFirmwareUpdate = false)
         BleLogger.d(TAG, "send factory reset notification to device $identifier")
-        client.sendNotification(PolarRuntimePlannerAdapter.notificationValue(PolarRuntimePlannerAdapter.notificationNames(plan).single()), params.build().toByteArray())
+        client.sendNotification(PolarRuntimePlannerAdapter.notificationValue(PolarRuntimePlannerAdapter.notificationNames(plan).single()), params.toByteArray())
     }
 
     override suspend fun doRestart(identifier: String) {
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val params = PftpNotification.PbPFtpFactoryResetParams.newBuilder()
-        params.sleep = false
-        params.doFactoryDefaults = false
         val plan = PolarRuntimePlannerAdapter.planCommandReset("restart", sleep = false, factoryDefaults = false, otaFirmwareUpdate = false)
+        val params = resetNotificationParams("restart", sleep = false, factoryDefaults = false, otaFirmwareUpdate = false)
         BleLogger.d(TAG, "send restart notification to device $identifier")
-        client.sendNotification(PolarRuntimePlannerAdapter.notificationValue(PolarRuntimePlannerAdapter.notificationNames(plan).single()), params.build().toByteArray())
+        client.sendNotification(PolarRuntimePlannerAdapter.notificationValue(PolarRuntimePlannerAdapter.notificationNames(plan).single()), params.toByteArray())
     }
 
     override suspend fun doFirstTimeUse(identifier: String, ftuConfig: PolarFirstTimeUseConfig) {
@@ -1914,24 +1918,20 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val params = PftpNotification.PbPFtpFactoryResetParams.newBuilder()
-        params.sleep = true
-        params.doFactoryDefaults = true
         val plan = PolarRuntimePlannerAdapter.planCommandReset("warehouse-sleep", sleep = true, factoryDefaults = true, otaFirmwareUpdate = false)
+        val params = resetNotificationParams("warehouse-sleep", sleep = true, factoryDefaults = true, otaFirmwareUpdate = false)
         BleLogger.d(TAG, "send factory reset notification to device $identifier and set warehouse sleep setting to true")
-        client.sendNotification(PolarRuntimePlannerAdapter.notificationValue(PolarRuntimePlannerAdapter.notificationNames(plan).single()), params.build().toByteArray())
+        client.sendNotification(PolarRuntimePlannerAdapter.notificationValue(PolarRuntimePlannerAdapter.notificationNames(plan).single()), params.toByteArray())
     }
 
     override suspend fun turnDeviceOff(identifier: String) {
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val params = PftpNotification.PbPFtpFactoryResetParams.newBuilder()
-        params.sleep = true
-        params.doFactoryDefaults = false
         val plan = PolarRuntimePlannerAdapter.planCommandReset("turn-device-off", sleep = true, factoryDefaults = false, otaFirmwareUpdate = false)
+        val params = resetNotificationParams("turn-device-off", sleep = true, factoryDefaults = false, otaFirmwareUpdate = false)
         BleLogger.d(TAG, "turn off device device $identifier by setting sleep setting to true and disconnecting from device.")
-        client.sendNotification(PolarRuntimePlannerAdapter.notificationValue(PolarRuntimePlannerAdapter.notificationNames(plan).single()), params.build().toByteArray())
+        client.sendNotification(PolarRuntimePlannerAdapter.notificationValue(PolarRuntimePlannerAdapter.notificationNames(plan).single()), params.toByteArray())
     }
 
     private fun <T : Any> startStreaming(identifier: String, type: PmdMeasurementType, setting: PolarSensorSetting, observer: (BlePMDClient) -> Flow<T>): Flow<T> {

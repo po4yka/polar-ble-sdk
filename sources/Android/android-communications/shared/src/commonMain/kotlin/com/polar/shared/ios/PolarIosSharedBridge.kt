@@ -1261,6 +1261,26 @@ object PolarIosSharedBridge {
         ).notificationCommandsCsv()
     }
 
+    fun planRuntimeCommandResetFields(id: String, sleep: Boolean, factoryDefaults: Boolean, otaFirmwareUpdate: Boolean): String {
+        val fields = PolarRuntimeOrchestration.resetNotificationFields(
+            PolarFacadeCommandOperation(
+                id = id,
+                kind = "resetNotification",
+                query = null,
+                parameters = emptyList(),
+                notifications = emptyList(),
+                sleep = sleep,
+                factoryDefaults = factoryDefaults,
+                otaFirmwareUpdate = otaFirmwareUpdate
+            )
+        )
+        return listOf(
+            "sleep=${fields.sleep}",
+            "factoryDefaults=${fields.factoryDefaults}",
+            "otaFirmwareUpdate=${fields.otaFirmwareUpdate}"
+        ).joinToString(separator = ",")
+    }
+
     fun planRuntimeCommandSyncStart(id: String): String {
         return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(

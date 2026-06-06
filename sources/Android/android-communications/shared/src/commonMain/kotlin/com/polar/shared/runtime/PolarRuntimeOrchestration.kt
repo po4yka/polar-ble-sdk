@@ -86,6 +86,12 @@ data class PolarUserDeviceSettingsOperation(
     val payloadFields: List<String>
 )
 
+data class PolarResetNotificationFields(
+    val sleep: Boolean,
+    val factoryDefaults: Boolean,
+    val otaFirmwareUpdate: Boolean
+)
+
 object PolarRuntimeOrchestration {
     fun userDeviceSettingsPath(
         fileSystemType: String,
@@ -118,6 +124,16 @@ object PolarRuntimeOrchestration {
             "syncStopFailure" -> PolarRuntimePlan(operation.syncStopCommands(), "platform-split")
             else -> error("Unsupported public facade command operation ${operation.kind}")
         }
+    }
+
+    fun resetNotificationFields(operation: PolarFacadeCommandOperation): PolarResetNotificationFields {
+        require(operation.kind == "resetNotification" || operation.kind == "resetNotificationFailure")
+        val commands = operation.resetCommands()
+        return PolarResetNotificationFields(
+            sleep = commands.flagValue("sleep"),
+            factoryDefaults = commands.flagValue("factoryDefaults"),
+            otaFirmwareUpdate = commands.flagValue("otaFirmwareUpdate")
+        )
     }
 
     fun planDiskTime(operation: PolarDiskTimeOperation): PolarRuntimePlan {
@@ -244,6 +260,12 @@ object PolarRuntimeOrchestration {
             "flag:factoryDefaults=${requireNotNull(factoryDefaults)}",
             "flag:otaFirmwareUpdate=${requireNotNull(otaFirmwareUpdate)}"
         )
+    }
+
+    private fun List<String>.flagValue(name: String): Boolean {
+        return first { command -> command.startsWith("flag:$name=") }
+            .substringAfter("=")
+            .toBooleanStrict()
     }
 
     private fun PolarFacadeCommandOperation.syncStartCommands(): List<String> {

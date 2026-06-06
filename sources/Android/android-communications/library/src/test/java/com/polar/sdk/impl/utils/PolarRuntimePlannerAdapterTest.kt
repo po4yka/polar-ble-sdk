@@ -60,6 +60,10 @@ class PolarRuntimePlannerAdapterTest {
             listOf(PftpNotification.PbPFtpHostToDevNotification.RESET_VALUE),
             PolarRuntimePlannerAdapter.notificationNames(reset).map(PolarRuntimePlannerAdapter::notificationValue)
         )
+        val resetFields = PolarRuntimePlannerAdapter.resetNotificationFields("factory-reset", sleep = false, factoryDefaults = true, otaFirmwareUpdate = false)
+        Assert.assertFalse(resetFields.sleep)
+        Assert.assertTrue(resetFields.factoryDefaults)
+        Assert.assertFalse(resetFields.otaFirmwareUpdate)
         Assert.assertEquals(
             listOf(
                 PftpNotification.PbPFtpHostToDevNotification.INITIALIZE_SESSION_VALUE,

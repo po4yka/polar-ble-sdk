@@ -5,6 +5,7 @@ import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
 import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
 import com.polar.shared.runtime.PolarRestFacadeOperation
+import com.polar.shared.runtime.PolarResetNotificationFields
 import com.polar.shared.runtime.PolarRuntimePlan
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
@@ -43,6 +44,21 @@ internal object PolarRuntimePlannerAdapter {
 
     fun planCommandReset(id: String, sleep: Boolean, factoryDefaults: Boolean, otaFirmwareUpdate: Boolean): PolarRuntimePlan {
         return PolarRuntimeOrchestration.planCommand(
+            PolarFacadeCommandOperation(
+                id = id,
+                kind = "resetNotification",
+                query = null,
+                parameters = emptyList(),
+                notifications = emptyList(),
+                sleep = sleep,
+                factoryDefaults = factoryDefaults,
+                otaFirmwareUpdate = otaFirmwareUpdate
+            )
+        )
+    }
+
+    fun resetNotificationFields(id: String, sleep: Boolean, factoryDefaults: Boolean, otaFirmwareUpdate: Boolean): PolarResetNotificationFields {
+        return PolarRuntimeOrchestration.resetNotificationFields(
             PolarFacadeCommandOperation(
                 id = id,
                 kind = "resetNotification",
