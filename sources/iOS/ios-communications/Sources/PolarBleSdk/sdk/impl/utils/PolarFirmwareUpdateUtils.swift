@@ -8,7 +8,11 @@ import PolarBleSdkShared
 
 class PolarFirmwareUpdateUtils {
     static let FIRMWARE_UPDATE_FILE_PATH = "/SYSUPDAT.IMG"
+    #if canImport(PolarBleSdkShared)
+    static let DEVICE_FIRMWARE_INFO_PATH = PolarIosSharedBridge.shared.firmwareDeviceInfoPath()
+    #else
     static let DEVICE_FIRMWARE_INFO_PATH = "/DEVICE.BPB"
+    #endif
 
     public class FwFileComparator {
         private static let SYSUPDAT_IMG = "SYSUPDAT.IMG"

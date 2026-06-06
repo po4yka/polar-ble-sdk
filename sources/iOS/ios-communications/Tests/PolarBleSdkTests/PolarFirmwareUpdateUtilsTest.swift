@@ -47,6 +47,7 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(mockClient.requestCalls.count, 1)
         let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: mockClient.requestCalls[0])
         XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(PolarIosSharedBridge.shared.firmwareDeviceInfoPath(), PolarFirmwareUpdateUtils.DEVICE_FIRMWARE_INFO_PATH)
         XCTAssertEqual(PolarFirmwareUpdateUtils.DEVICE_FIRMWARE_INFO_PATH, requestOperation.path)
     }
     

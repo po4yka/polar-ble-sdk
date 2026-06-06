@@ -16,6 +16,7 @@ import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.sdk.PolarActivityModels
+import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepModels
 import com.polar.shared.sdk.PolarSpo2Models
@@ -378,6 +379,10 @@ internal object PolarRuntimePlannerAdapter {
 
     fun trainingSessionDeleteRemovePath(referencePath: String, parentEntryCount: Int): String {
         return PolarTrainingSessionModels.deleteRemovePath(referencePath, parentEntryCount)
+    }
+
+    fun firmwareDeviceInfoPath(): String {
+        return PolarFirmwareUpdateModels.deviceInfoPath()
     }
 
     fun planBackupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success"): Pair<PftpRequest.PbPFtpOperation.Command, String>? {

@@ -27,7 +27,8 @@ internal object PolarFirmwareUpdateUtils {
     const val FIRMWARE_UPDATE_FILE_PATH = "/SYSUPDAT.IMG"
     const val BUFFER_SIZE = 8192
 
-    private const val DEVICE_FIRMWARE_INFO_PATH = "/DEVICE.BPB"
+    private val DEVICE_FIRMWARE_INFO_PATH: String
+        get() = PolarRuntimePlannerAdapter.firmwareDeviceInfoPath()
     private const val TAG = "PolarFirmwareUpdateUtils"
 
     suspend fun readDeviceFirmwareInfo(client: BlePsFtpClient, deviceId: String): PolarFirmwareVersionInfo {

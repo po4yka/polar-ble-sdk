@@ -4,6 +4,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpC
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarFirmwareUpdateUtils
 import com.polar.sdk.impl.utils.PolarFirmwareUpdateUtils.FwFileComparator
 import fi.polar.remote.representation.protobuf.Device
@@ -29,6 +30,7 @@ class PolarFirmwareUpdateUtilsTest {
     @Test
     fun `readDeviceFirmwareInfo() should return firmware info`() = runTest {
         // Arrange
+        Assert.assertEquals(firmwareFilePath, PolarRuntimePlannerAdapter.firmwareDeviceInfoPath())
         val deviceId = "123456"
         val firmwareVersion = "1.2.0"
         val modelName = "Model"

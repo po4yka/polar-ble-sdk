@@ -3,6 +3,10 @@ package com.polar.shared.sdk
 object PolarFirmwareUpdateModels {
     const val SYSTEM_UPDATE_FILE: String = "SYSUPDAT.IMG"
 
+    fun deviceInfoPath(): String {
+        return "/DEVICE.BPB"
+    }
+
     fun deviceVersionToString(major: Int, minor: Int, patch: Int): String {
         return "$major.$minor.$patch"
     }

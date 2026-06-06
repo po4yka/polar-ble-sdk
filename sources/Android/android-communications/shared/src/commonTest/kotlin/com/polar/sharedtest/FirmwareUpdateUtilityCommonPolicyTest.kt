@@ -9,6 +9,7 @@ import kotlin.test.assertFailsWith
 class FirmwareUpdateUtilityCommonPolicyTest {
     @Test
     fun firmwareDeviceInfoGoldenVectorsDefineExecutableCommonMappingPolicy() {
+        assertEquals("/DEVICE.BPB", PolarFirmwareUpdateModels.deviceInfoPath())
         listOf(
             "sdk/firmware-update/device-info-basic.json",
             "sdk/firmware-update/device-info-zero-version.json"
