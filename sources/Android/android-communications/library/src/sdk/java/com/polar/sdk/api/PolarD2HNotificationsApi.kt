@@ -71,7 +71,7 @@ enum class PolarDeviceToHostNotification(val value: Int) {
         fun fromValue(value: Int): PolarDeviceToHostNotification? {
             return PolarD2hRuntimePlanning.notificationTypeOrNull(value)?.let { sharedName ->
                 entries.firstOrNull { notification -> notification.name == sharedName }
-            } ?: entries.firstOrNull { it.value == value }
+            }
         }
     }
 }

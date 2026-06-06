@@ -67,7 +67,7 @@ enum class AutomaticSampleTriggerType(val value: Int) {
         infix fun fromProto(value: Int): AutomaticSampleTriggerType {
             return PolarAutomaticHrTriggerName.fromValue(value)?.let { sharedName ->
                 entries.first { trigger -> trigger.name == sharedName.name }
-            } ?: entries.first { it.value == value }
+            } ?: error("Unknown automatic sample trigger type $value")
         }
     }
 }

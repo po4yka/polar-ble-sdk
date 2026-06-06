@@ -65,7 +65,7 @@ enum class PolarDailyBalanceFeedBack(val numVal: Int) {
         infix fun from(value: Int): PolarDailyBalanceFeedBack? {
             return PolarDailyBalanceFeedbackName.fromValue(value)?.let { sharedName ->
                 entries.firstOrNull { feedback -> feedback.name == sharedName.name }
-            } ?: entries.firstOrNull { it.numVal == value }
+            }
         }
     }
 }
@@ -90,7 +90,7 @@ enum class PolarReadinessForSpeedAndStrengthTraining(val numVal: Int) {
         infix fun from(value: Int): PolarReadinessForSpeedAndStrengthTraining? {
             return PolarTrainingReadinessName.fromValue(value)?.let { sharedName ->
                 entries.firstOrNull { readiness -> readiness.name == sharedName.name }
-            } ?: entries.firstOrNull { it.numVal == value }
+            }
         }
     }
 }
