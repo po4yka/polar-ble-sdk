@@ -49,8 +49,13 @@ public class BleAdvertisementContent {
                 polarDeviceType = PolarAdvDataUtility.getDeviceNameFromAdvLocalName(advLocalName: name, withPrefixToTrim: advertisingDeviceNamePrefix)
                 if let devId = name.split(separator: " ").map(String.init).last {
                     polarDeviceIdUntouched = devId
-                    if let deviceId = UInt32(devId, radix: 16) {
-                        polarDeviceId = BlePolarDeviceIdUtility.assemblyFullPolarDeviceId(deviceId, width: devId.count)
+                    #if canImport(PolarBleSdkShared)
+                    let sharedDeviceId = polarDeviceType.isEmpty ? devId : PolarIosSharedBridge.shared.advertisementLocalNameDeviceId(localName: name, deviceNamePrefix: advertisingDeviceNamePrefix)
+                    #else
+                    let sharedDeviceId = devId
+                    #endif
+                    if let deviceId = UInt32(sharedDeviceId, radix: 16) {
+                        polarDeviceId = BlePolarDeviceIdUtility.assemblyFullPolarDeviceId(deviceId, width: sharedDeviceId.count)
                         polarDeviceIdInt = BlePolarDeviceIdUtility.polarDeviceIdToInt(polarDeviceId)
                         polarDeviceIdIntUntouched = BlePolarDeviceIdUtility.polarDeviceIdToInt(polarDeviceIdUntouched)
                     }

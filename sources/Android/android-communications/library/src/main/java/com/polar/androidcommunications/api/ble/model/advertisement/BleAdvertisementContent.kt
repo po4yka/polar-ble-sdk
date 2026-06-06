@@ -1,8 +1,6 @@
 package com.polar.androidcommunications.api.ble.model.advertisement
 
 import androidx.annotation.VisibleForTesting
-import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceIdUtility
-import com.polar.androidcommunications.api.ble.model.polar.PolarAdvDataUtility.getDeviceModelNameFromAdvLocalName
 import com.polar.androidcommunications.api.ble.model.polar.PolarAdvDataUtility.isValidDevice
 import com.polar.androidcommunications.common.ble.BleUtils.AD_TYPE
 import com.polar.androidcommunications.common.ble.BleUtils.EVENT_TYPE
@@ -161,11 +159,11 @@ class BleAdvertisementContent {
         if (name.isNotEmpty() && this.name != name) {
             this.name = name
             if (isValidDevice(name, advertisementDeviceNamePrefix)) {
-                polarDeviceType = getDeviceModelNameFromAdvLocalName(name, advertisementDeviceNamePrefix)
                 val nameSplit = name.split(" ").toTypedArray()
-                polarDeviceId = nameSplit[nameSplit.size - 1]
-                if (polarDeviceId.length == 7) {
-                    polarDeviceId = BlePolarDeviceIdUtility.assemblyFullPolarDeviceId(nameSplit[nameSplit.size - 1])
+                val parsed = PolarAdvertisementModels.parseLocalName(name, advertisementDeviceNamePrefix)
+                polarDeviceType = parsed.deviceType
+                polarDeviceId = parsed.deviceId
+                if (nameSplit[nameSplit.size - 1].length == 7) {
                     this.name = "Polar $polarDeviceType $polarDeviceId"
                 }
                 polarDeviceIdInt = try {

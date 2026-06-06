@@ -99,6 +99,10 @@ object PolarIosSharedBridge {
         return PolarAdvertisementModels.isValidDeviceLocalName(localName, requiredPrefix)
     }
 
+    fun advertisementLocalNameDeviceId(localName: String, deviceNamePrefix: String): String {
+        return PolarAdvertisementModels.parseLocalName(localName, deviceNamePrefix).deviceId
+    }
+
     fun polarHrAdvertisementPayloadsHex(manufacturerDataHex: String): String {
         return PolarAdvertisementModels.polarManufacturerHrPayloads(manufacturerDataHex.hexToBytes()).joinToString(separator = "|") { payload ->
             payload.toHex()
