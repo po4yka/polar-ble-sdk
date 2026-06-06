@@ -265,7 +265,7 @@ final class AccDataTest: XCTestCase {
     func testAccParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "02660000000000000081f1ff1400f00306017b0f08"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.accSamples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        let sharedRows = try XCTUnwrap(AccDataRuntimePlanner.samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
         XCTAssertFalse(sharedRows.isEmpty)
 
         let dataFrame = try PmdDataFrame(

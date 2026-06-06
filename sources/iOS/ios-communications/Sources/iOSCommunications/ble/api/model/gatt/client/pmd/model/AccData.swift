@@ -164,7 +164,7 @@ public class AccData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.accSamples(
+        guard let sharedRows = AccDataRuntimePlanner.samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -200,4 +200,14 @@ public class AccData {
         return data.map { String(format: "%02x", $0) }.joined()
     }
     #endif
+}
+
+enum AccDataRuntimePlanner {
+    static func samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.accSamples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
 }
