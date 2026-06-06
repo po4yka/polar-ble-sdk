@@ -153,6 +153,24 @@ final class PolarWatchFaceUtilsTests: XCTestCase {
         #endif
     }
 
+    func testWatchFaceRuntimePlannerMapsSemanticFieldsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let fields = try XCTUnwrap(PolarWatchFaceRuntimePlanner.fieldsCsv(
+            timeStyleId: 3,
+            complicationLayoutId: 7,
+            backgroundStyleId: 2,
+            accentColor: 0xFF_CC_88_00,
+            complicationIds: [
+                PolarWatchFaceComplication.heartRate.id,
+                PolarWatchFaceComplication.spo2.id,
+                PolarWatchFaceComplication.activity.id
+            ],
+            fontfaceId: 1
+        ))
+        XCTAssertEqual("3,7,2,4291594240,\(PolarWatchFaceComplication.heartRate.id);\(PolarWatchFaceComplication.spo2.id);\(PolarWatchFaceComplication.activity.id),1", fields)
+        #endif
+    }
+
     func testWatchFaceKvtxHeadersUseSharedFileFacadePlanning() {
         let readOperation = PolarWatchFaceUtils.watchFaceReadOperation()
         XCTAssertEqual(readOperation.command, .get)
