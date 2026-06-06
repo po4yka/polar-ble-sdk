@@ -64,6 +64,22 @@ enum PolarStoredDataOfflineRuntimePlanner {
         #endif
     }
 
+    static func storedDataTypeName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.iosStoredDataTypeName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func storedDataTypeValue(name: String) -> NSNumber? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.iosStoredDataTypeValue(name: name)
+        #else
+        return nil
+        #endif
+    }
+
     @discardableResult
     static func offlineTriggerSet(currentTypes: [String], desiredTypes: [String], secretPresent: Bool) -> String {
         #if canImport(PolarBleSdkShared)

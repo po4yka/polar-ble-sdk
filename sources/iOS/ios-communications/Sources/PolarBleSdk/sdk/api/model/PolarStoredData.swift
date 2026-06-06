@@ -24,7 +24,7 @@ public class PolarStoredDataType {
         
         public func toInt() -> Int {
             #if canImport(PolarBleSdkShared)
-            if let sharedValue = PolarIosSharedBridge.shared.iosStoredDataTypeValue(name: String(describing: self)) {
+            if let sharedValue = PolarStoredDataOfflineRuntimePlanner.storedDataTypeValue(name: String(describing: self)) {
                 return Int(truncating: sharedValue)
             }
             #endif
@@ -51,7 +51,7 @@ public class PolarStoredDataType {
     
     public static func getStringValue(dataTypeLocationIndex: Int) -> String {
         #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.iosStoredDataTypeName(value: Int32(dataTypeLocationIndex)) {
+        if let sharedName = PolarStoredDataOfflineRuntimePlanner.storedDataTypeName(value: dataTypeLocationIndex) {
             return sharedName
         }
         #endif
@@ -70,7 +70,7 @@ public class PolarStoredDataType {
     
     public static func getValue(name: String) -> StoredDataType {
         #if canImport(PolarBleSdkShared)
-        if let sharedValue = PolarIosSharedBridge.shared.iosStoredDataTypeValue(name: name) {
+        if let sharedValue = PolarStoredDataOfflineRuntimePlanner.storedDataTypeValue(name: name) {
             let sharedIndex = Int(truncating: sharedValue)
             if StoredDataType.allCases.indices.contains(sharedIndex) {
                 return StoredDataType.allCases[sharedIndex]
