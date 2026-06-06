@@ -180,7 +180,7 @@ public class PpgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ppgRawType0Samples(
+        guard let sharedRows = PpgDataRuntimePlanner.rawType0Samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -271,7 +271,7 @@ public class PpgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ppgRawType4Samples(
+        guard let sharedRows = PpgDataRuntimePlanner.rawType4Samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -352,7 +352,7 @@ public class PpgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ppgRawType5Samples(
+        guard let sharedRows = PpgDataRuntimePlanner.rawType5Samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -383,7 +383,7 @@ public class PpgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ppgRawType6Samples(
+        guard let sharedRows = PpgDataRuntimePlanner.rawType6Samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -461,7 +461,7 @@ public class PpgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ppgRawType9Samples(
+        guard let sharedRows = PpgDataRuntimePlanner.rawType9Samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -548,7 +548,7 @@ public class PpgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ppgRawType14Samples(
+        guard let sharedRows = PpgDataRuntimePlanner.rawType14Samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -608,7 +608,7 @@ public class PpgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ppgCompressedType0Samples(
+        guard let sharedRows = PpgDataRuntimePlanner.compressedType0Samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -671,7 +671,7 @@ public class PpgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ppgCompressedType7Samples(
+        guard let sharedRows = PpgDataRuntimePlanner.compressedType7Samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -734,7 +734,7 @@ public class PpgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ppgCompressedType8Samples(
+        guard let sharedRows = PpgDataRuntimePlanner.compressedType8Samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -833,7 +833,7 @@ public class PpgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ppgCompressedType10IosSamples(
+        guard let sharedRows = PpgDataRuntimePlanner.compressedType10IosSamples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -909,7 +909,7 @@ public class PpgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ppgCompressedType13Samples(
+        guard let sharedRows = PpgDataRuntimePlanner.compressedType13Samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -940,4 +940,91 @@ public class PpgData {
         return PpgData(timeStamp: frame.timeStamp, samples: samples)
     }
     #endif
+}
+
+enum PpgDataRuntimePlanner {
+    static func rawType0Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func rawType4Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType4Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func rawType5Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType5Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func rawType6Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType6Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func rawType9Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        // Raw type 9 currently has platform-specific timestamp semantics in the golden vectors.
+        return nil
+    }
+
+    static func rawType14Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType14Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedType0Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgCompressedType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedType7Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgCompressedType7Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedType8Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgCompressedType8Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedType10IosSamples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgCompressedType10IosSamples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedType13Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgCompressedType13Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
 }

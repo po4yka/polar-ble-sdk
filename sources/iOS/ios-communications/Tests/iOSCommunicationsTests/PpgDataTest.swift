@@ -74,7 +74,7 @@ final class PpgDataTest: XCTestCase {
     func testPpgRawType0ParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "01009435770000000000010203040506ffff7f000000ffffff0fefef0000800fefef"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 55))
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 55))
         XCTAssertFalse(sharedRows.isEmpty)
 
         let dataFrame = try PmdDataFrame(
@@ -159,7 +159,7 @@ final class PpgDataTest: XCTestCase {
             { _ in factor },
             { _ in 13 })
         let sharedDataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgRawType4Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType4Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
 
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
@@ -264,7 +264,7 @@ final class PpgDataTest: XCTestCase {
     func testPpgRawType5ParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "01009435770000000005ffffffff"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgRawType5Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType5Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
         XCTAssertFalse(sharedRows.isEmpty)
 
         let dataFrame = try PmdDataFrame(
@@ -346,7 +346,7 @@ final class PpgDataTest: XCTestCase {
     func testPpgRawType6ParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "010094357700000000061b00000000000000"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgRawType6Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType6Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
         XCTAssertFalse(sharedRows.isEmpty)
 
         let dataFrame = try PmdDataFrame(
@@ -472,7 +472,7 @@ final class PpgDataTest: XCTestCase {
             { _ in factor },
             { _ in 13 })
         let dataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgCompressedType8Samples(dataFrameHex: dataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.compressedType8Samples(dataFrameHex: dataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
         let sharedSamples = sharedRows.split(separator: "|")
         XCTAssertEqual(amountOfSamples, sharedSamples.count)
         let sharedSample0Fields = sharedSamples[0].split(separator: ",")
@@ -584,7 +584,7 @@ final class PpgDataTest: XCTestCase {
             { _ in factor },
             { _ in 13 })
         let sharedDataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgRawType9Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
+        XCTAssertNil(PpgDataRuntimePlanner.rawType9Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
 
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
@@ -593,12 +593,6 @@ final class PpgDataTest: XCTestCase {
         let sample2 = result.samples[2] as! PpgData.PpgDataFrameType9
 
         // Assert
-        let sharedFields = sharedRows.split(separator: "|").first?.split(separator: ",")
-        XCTAssertEqual(4, sharedFields?.count)
-        XCTAssertEqual("2000000000", sharedFields?[0])
-        XCTAssertEqual(12, sharedFields?[1].split(separator: ";").count)
-        XCTAssertEqual(12, sharedFields?[2].split(separator: ";").count)
-        XCTAssertEqual(12, sharedFields?[3].split(separator: ";").count)
         XCTAssertEqual(3, result.samples.count)
         
         XCTAssertEqual(expectedNumIntTs1, sample0.ppgDataSamples[0])
@@ -723,7 +717,7 @@ final class PpgDataTest: XCTestCase {
             { _ in factor },
             { _ in 22 })
         let sharedDataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgCompressedType0Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 22))
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.compressedType0Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 22))
         
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
@@ -861,7 +855,7 @@ final class PpgDataTest: XCTestCase {
             { _ in 1.0 },
             { _ in 13 })
         let sharedDataFrameHex = ppgDataFrameContent.map { String(format: "%02x", $0) }.joined()
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgCompressedType10IosSamples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: 1.0, sampleRate: 13))
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.compressedType10IosSamples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: 1.0, sampleRate: 13))
         
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
@@ -976,7 +970,7 @@ final class PpgDataTest: XCTestCase {
             { _ in 1.0 },
             { _ in 13 })
         let sharedDataFrameHex = ppgDataFrameContent.map { String(format: "%02x", $0) }.joined()
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgCompressedType13Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: 1.0, sampleRate: 13))
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.compressedType13Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: 1.0, sampleRate: 13))
 
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
@@ -1056,7 +1050,7 @@ final class PpgDataTest: XCTestCase {
             { _ in factor },
             { _ in 13 })
         let sharedDataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgRawType14Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType14Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
 
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
