@@ -132,6 +132,8 @@ import java.io.File
 import java.net.URI
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -166,6 +168,13 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+@JvmSynthetic
+fun planSetLocalTimeV2ForCurrentZone(localTime: LocalDateTime) =
+    PolarRuntimePlannerAdapter.planSetLocalTimeV2(
+        systemTimeHour = localTime.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneOffset.UTC).hour,
+        localTimeHour = localTime.hour
+    )
 
 /**
  * The default implementation of the Polar API
@@ -453,7 +462,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         return listener?.getAutomaticReconnection();
     }
 
-    override suspend fun setLocalTime(identifier: String, localTime: LocalDateTime) {
+    override suspend fun setLocalTime(identifier: String, dateAndTime: LocalDateTime) {
+        val localTime = dateAndTime
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
@@ -461,7 +471,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         BleLogger.d(TAG, "set local time to $localTime device $identifier")
         val pbLocalTime = javaLocalDateTimeToPbPftpSetLocalTime(localTime)
         val plan = when (getFileSystemType(session.polarDeviceType)) {
-            FileSystemType.POLAR_FILE_SYSTEM_V2 -> PolarRuntimePlannerAdapter.planSetLocalTimeV2(localTime.hour, localTime.hour)
+            FileSystemType.POLAR_FILE_SYSTEM_V2 -> planSetLocalTimeV2ForCurrentZone(localTime)
             FileSystemType.H10_FILE_SYSTEM -> PolarRuntimePlannerAdapter.planSetLocalTimeH10(localTime.hour)
             else -> null
         }

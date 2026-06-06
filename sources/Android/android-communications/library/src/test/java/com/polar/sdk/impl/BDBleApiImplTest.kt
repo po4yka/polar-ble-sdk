@@ -53,6 +53,7 @@ import com.polar.sdk.api.model.toProto
 import com.polar.sdk.api.model.restapi.actionPaths
 import com.polar.sdk.api.model.restapi.events
 import com.polar.sdk.impl.BDBleApiImpl
+import com.polar.sdk.impl.planSetLocalTimeV2ForCurrentZone
 import data.SensorDataLog.PbSensorDataLog
 import protocol.PftpError.PbPFtpError
 import com.polar.sdk.impl.utils.PolarServiceClientUtils
@@ -199,11 +200,13 @@ class BDBleApiImplTest {
 
         val capturedQueryIds = mutableListOf<Int>()
         val capturedQueryParams = mutableListOf<ByteArray?>()
+        var plannedCommands: List<String> = emptyList()
         coEvery { client.query(capture(capturedQueryIds), captureNullable(capturedQueryParams)) } returns ByteArrayOutputStream()
 
         try {
             // Act
             api.setLocalTime(deviceId, localDateTime)
+            plannedCommands = planSetLocalTimeV2ForCurrentZone(localDateTime).commands
         } finally {
             TimeZone.setDefault(originalTz)
             unmockkObject(PolarServiceClientUtils)
@@ -225,6 +228,16 @@ class BDBleApiImplTest {
             "Local time and UTC system time must differ for a non-UTC timezone",
             localTimeParams.time.hour,
             systemTimeParams.time.hour
+        )
+        Assert.assertEquals(
+            listOf(
+                "query:SET_SYSTEM_TIME",
+                "field:systemTimeHour=10",
+                "field:systemTimeTrusted=true",
+                "query:SET_LOCAL_TIME",
+                "field:localTimeHour=12"
+            ),
+            plannedCommands
         )
         Assert.assertTrue("System time must be marked as trusted", systemTimeParams.trusted)
     }
