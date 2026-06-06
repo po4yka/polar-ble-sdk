@@ -158,6 +158,8 @@ final class PpgDataTest: XCTestCase {
             { _,_ in previousTimeStamp },
             { _ in factor },
             { _ in 13 })
+        let sharedDataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
+        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ppgRawType4Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
 
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
@@ -166,6 +168,12 @@ final class PpgDataTest: XCTestCase {
         let sample2 = result.samples[2] as! PpgData.PpgDataFrameType4
 
         // Assert
+        let sharedFields = try XCTUnwrap(sharedRows.split(separator: "|").first?.split(separator: ",").map(String.init))
+        XCTAssertEqual(4, sharedFields.count)
+        XCTAssertEqual(String(timeStamp), sharedFields[0])
+        XCTAssertEqual(12, sharedFields[1].split(separator: ";").count)
+        XCTAssertEqual(12, sharedFields[2].split(separator: ";").count)
+        XCTAssertEqual(12, sharedFields[3].split(separator: ";").count)
         XCTAssertEqual(3, result.samples.count)
         
         XCTAssertEqual(expectedNumIntTs1, sample0.ppgDataSamples[0])
