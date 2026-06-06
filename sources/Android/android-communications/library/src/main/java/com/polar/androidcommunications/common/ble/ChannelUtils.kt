@@ -40,6 +40,9 @@ class ChannelUtils private constructor() {
 
         fun <T : Any> emitNext(list: AtomicSet<T>, emitter: (T) -> Unit) {
             val objects = list.objects()
+            if (objects.isEmpty()) {
+                PolarStreamRuntimePlanning.planPostCompletionEmissionSuppression("stream", "value")
+            }
             for (e: T in objects) {
                 emitter(e)
             }
