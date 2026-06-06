@@ -122,10 +122,7 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
                 throw PolarErrors.serviceNotFound
             }
             let fetchOperation = Self.offlineExerciseFetchOperation(path: entry.path)
-            var operation = Protocol_PbPFtpOperation()
-            operation.command = fetchOperation.command
-            operation.path = fetchOperation.path
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(fetchOperation))
             let samples = try Data_PbExerciseSamples(serializedBytes: Data(response))
             if samples.hasRrSamples {
                 return PolarExerciseData(interval: samples.recordingInterval.seconds, samples: samples.rrSamples.rrIntervals)
@@ -144,10 +141,7 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
                 throw PolarErrors.serviceNotFound
             }
             let removeOperation = Self.offlineExerciseRemoveOperation(path: entry.path)
-            var operation = Protocol_PbPFtpOperation()
-            operation.command = removeOperation.command
-            operation.path = removeOperation.path
-            _ = try await client.request(try operation.serializedBytes())
+            _ = try await client.request(try PolarRuntimePlanner.fileOperationBytes(removeOperation))
         } catch {
             throw handleError(error)
         }
@@ -172,11 +166,8 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
 
     private func checkDmExerciseSupport(_ client: BlePsFtpClient) async throws -> Bool {
         let deviceInfoOperation = Self.offlineExerciseDeviceInfoReadOperation()
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = deviceInfoOperation.command
-        operation.path = deviceInfoOperation.path
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(deviceInfoOperation))
             let deviceInfo = try Data_PbDeviceInfo(serializedBytes: Data(response))
             return deviceInfo.capabilities.contains("dm_exercise")
         } catch {

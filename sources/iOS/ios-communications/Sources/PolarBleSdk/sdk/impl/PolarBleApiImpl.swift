@@ -448,11 +448,8 @@ import UIKit
         return Future<FeatureState, Never> { promise in
             Task {
                 let readOperation = Self.offlineExerciseDeviceInfoReadOperation()
-                var operation = Protocol_PbPFtpOperation()
-                operation.command = readOperation.command
-                operation.path = readOperation.path
                 do {
-                    let request = try operation.serializedData()
+                    let request = try PolarRuntimePlanner.fileOperationBytes(readOperation)
                     let response = try await client.request(request)
                     let deviceInfo = try Data_PbDeviceInfo(serializedBytes: Data(response))
                     promise(.success(deviceInfo.capabilities.contains("dm_exercise") ? .ready : .notAvailable))
@@ -1213,15 +1210,12 @@ extension PolarBleApiImpl: PolarBleApi  {
     func removeExercise(_ identifier: String, entry: PolarExerciseEntry) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
-        var operation = Protocol_PbPFtpOperation()
         switch BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) {
         case .polarFileSystemV2:
             throw PolarErrors.polarBleSdkInternalException(description: "Other than H10 sensor is not supported by removeExercise API method. For other than H10 sensor use API deleteTrainingSession API method instead.")
         case .h10FileSystem:
             let removeOperation = Self.h10ExerciseRemoveOperation(path: entry.path)
-            operation.command = removeOperation.command
-            operation.path = removeOperation.path
-            let request = try operation.serializedData()
+            let request = try PolarRuntimePlanner.fileOperationBytes(removeOperation)
             _ = try await client.request(request)
         default:
             throw PolarErrors.operationNotSupported
@@ -1400,11 +1394,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let readOperation = Self.offlineRecordingPmdFilesReadOperation()
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = readOperation.command
-        operation.path = readOperation.path
         do {
-            let request = try operation.serializedData()
+            let request = try PolarRuntimePlanner.fileOperationBytes(readOperation)
             let data = try await client.request(request)
             return data.isEmpty ? [] : [UInt8](data)
         } catch {
@@ -1415,10 +1406,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     
     private func loadFileorEmpty(path: String, client: BlePsFtpClient) async throws -> [UInt8] {
         let readOperation = Self.offlineRecordingFileReadOperation(path: path)
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = readOperation.command
-        operation.path = readOperation.path
-        let requestData = try operation.serializedData()
+        let requestData = try PolarRuntimePlanner.fileOperationBytes(readOperation)
         do {
             let data = try await client.request(requestData)
             return [UInt8](data)
@@ -1463,10 +1451,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                 subRecordingPath = entry.path
             }
             let readOperation = Self.offlineRecordingFileReadOperation(path: subRecordingPath.isEmpty ? entry.path : subRecordingPath)
-            var operation = Protocol_PbPFtpOperation()
-            operation.command = readOperation.command
-            operation.path = readOperation.path
-            let request = try operation.serializedData()
+            let request = try PolarRuntimePlanner.fileOperationBytes(readOperation)
             BleLogger.trace("Offline record get. Device: \(identifier) Path: \(subRecordingPath) Secret used: \(secret != nil)")
 
             let dataResult = try await client.request(request)
@@ -1605,11 +1590,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         let directoryPath = entry.path.components(separatedBy: "/").dropLast().joined(separator: "/") + "/"
         let fileType = try mapDeviceDataTypeToOfflineRecordingFileName(type: entry.type)
         let readOperation = Self.offlineRecordingDirectoryReadOperation(path: directoryPath)
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = readOperation.command
-        operation.path = readOperation.path
         do {
-            let data = try await client.request(try operation.serializedData())
+            let data = try await client.request(try PolarRuntimePlanner.fileOperationBytes(readOperation))
             let directory = try Protocol_PbPFtpDirectory(serializedBytes: data as Data)
             return directory.entries.filter { $0.name.hasPrefix(fileType) }.count
         } catch {
@@ -1625,15 +1607,12 @@ extension PolarBleApiImpl: PolarBleApi  {
         let directoryPath = entry.path.components(separatedBy: "/").dropLast().joined(separator: "/") + "/"
         let type = entry.path.components(separatedBy: "/").last?.replacingOccurrences(of: "[0-9]+.REC", with: "", options: .regularExpression).replacingOccurrences(of: " ", with: "")
         let readOperation = Self.offlineRecordingDirectoryReadOperation(path: directoryPath)
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = readOperation.command
-        operation.path = readOperation.path
         var parentDir = ""
         if let lastSlashIndex = entry.path.dropLast().lastIndex(of: "/") {
             parentDir = String(entry.path[...lastSlashIndex])
         }
         do {
-            let data = try await client.request(try operation.serializedData())
+            let data = try await client.request(try PolarRuntimePlanner.fileOperationBytes(readOperation))
             let directory = try Protocol_PbPFtpDirectory(serializedBytes: data as Data)
             return directory.entries.compactMap { e in e.name.contains(type ?? "") ? parentDir + e.name : nil }
         } catch {
@@ -1689,10 +1668,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         guard .polarFileSystemV2 == BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
         let readOperation = Self.offlineRecordingFileReadOperation(path: entry.path)
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = readOperation.command
-        operation.path = readOperation.path
-        let request = try operation.serializedData()
+        let request = try PolarRuntimePlanner.fileOperationBytes(readOperation)
         BleLogger.trace("Offline record get. Device: \(identifier) Path: \(entry.path) Secret used: \(secret != nil)")
         let data = try await client.request(request)
         var pmdSecret: PmdSecret? = nil
@@ -1936,10 +1912,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.operationNotSupported }
         let fetchOperation = Self.h10ExerciseFetchOperation(path: entry.path)
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = fetchOperation.command
-        operation.path = fetchOperation.path
-        let request = try operation.serializedData()
+        let request = try PolarRuntimePlanner.fileOperationBytes(fetchOperation)
         let data = try await client.request(request)
         let samples = try Data_PbExerciseSamples(serializedBytes: data as Data)
         var exSamples = [UInt32]()
@@ -2004,10 +1977,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let writeOperation = Self.ledConfigWriteOperation()
-        var builder = Protocol_PbPFtpOperation()
-        builder.command = writeOperation.command
-        builder.path = writeOperation.path
-        let proto = try builder.serializedData()
+        let proto = try PolarRuntimePlanner.fileOperationBytes(writeOperation)
         let sdkModeLedByte: UInt8 = ledConfig.sdkModeLedEnabled ? LedConfig.LED_ANIMATION_ENABLE_BYTE : LedConfig.LED_ANIMATION_DISABLE_BYTE
         let ppiModeLedByte: UInt8 = ledConfig.ppiModeLedEnabled ? LedConfig.LED_ANIMATION_ENABLE_BYTE : LedConfig.LED_ANIMATION_DISABLE_BYTE
         let data = Data([sdkModeLedByte, ppiModeLedByte])
@@ -2084,11 +2054,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         guard .polarFileSystemV2 == BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
         let readOperation = Self.sdLogConfigReadOperation()
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = readOperation.command
-        operation.path = readOperation.path
-        let request = try operation.serializedData()
-        BleLogger.trace("Sensor datalog get. Device: \(identifier) Path: \(operation.path)")
+        let request = try PolarRuntimePlanner.fileOperationBytes(readOperation)
+        BleLogger.trace("Sensor datalog get. Device: \(identifier) Path: \(readOperation.path)")
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, parameters: nil)
         let data = try await client.request(request)
         let sensorDataLog = try Data_PbSensorDataLog(serializedBytes: data as Data)
@@ -2103,11 +2070,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let sdLogConfigProto = try SDLogConfig.toProto(sdLogConfig: logConfiguration).serializedData()
         let writeOperation = Self.sdLogConfigWriteOperation()
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = writeOperation.command
-        operation.path = writeOperation.path
-        let proto = try operation.serializedData()
-        BleLogger.trace("Sensor datalog set. Device: \(identifier) Path: \(operation.path)")
+        let proto = try PolarRuntimePlanner.fileOperationBytes(writeOperation)
+        BleLogger.trace("Sensor datalog set. Device: \(identifier) Path: \(writeOperation.path)")
         let inputStream = InputStream(data: Data(sdLogConfigProto))
         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: sdLogConfigProto.count)
         PolarRuntimePlanner.psFtpWriteAck(payloadSize: sdLogConfigProto.count)
@@ -2126,12 +2090,9 @@ extension PolarBleApiImpl: PolarBleApi  {
         try await setLocalTime(identifier, time: date, zone: TimeZone.current)
         // Write user ID
         let userIdWriteOperation = Self.firstTimeUseUserIdWriteOperation()
-        var userIdOperation = Protocol_PbPFtpOperation()
-        userIdOperation.command = userIdWriteOperation.command
-        userIdOperation.path = userIdWriteOperation.path
         let userIdentifier = UserIdentifierType.create()
         let userIdProto = try userIdentifier.toProto().serializedData()
-        let userIdHeader = try userIdOperation.serializedData()
+        let userIdHeader = try PolarRuntimePlanner.fileOperationBytes(userIdWriteOperation)
         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: userIdProto.count)
         PolarRuntimePlanner.psFtpWriteAck(payloadSize: userIdProto.count)
         for try await _ in client.write(userIdHeader as NSData, data: InputStream(data: userIdProto)) {}
@@ -2139,10 +2100,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         // Write FTU config
         let ftuConfigProto = try ftuConfig.toProto()?.serializedData() ?? { throw PolarErrors.deviceError(description: "Serialization of FTU Config failed.") }()
         let physicalConfigWriteOperation = Self.firstTimeUsePhysicalConfigWriteOperation()
-        var physDataOp = Protocol_PbPFtpOperation()
-        physDataOp.command = physicalConfigWriteOperation.command
-        physDataOp.path = physicalConfigWriteOperation.path
-        let physDataHeader = try physDataOp.serializedData()
+        let physDataHeader = try PolarRuntimePlanner.fileOperationBytes(physicalConfigWriteOperation)
         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: ftuConfigProto.count)
         PolarRuntimePlanner.psFtpWriteAck(payloadSize: ftuConfigProto.count)
         for try await _ in client.write(physDataHeader as NSData, data: InputStream(data: ftuConfigProto)) {}
@@ -2158,10 +2116,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         guard .polarFileSystemV2 == BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
         let readOperation = Self.firstTimeUseUserIdReadOperation()
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = readOperation.command
-        operation.path = readOperation.path
-        let request = try operation.serializedData()
+        let request = try PolarRuntimePlanner.fileOperationBytes(readOperation)
         logMessage("Check if FTU has been done to device \(identifier)")
         let data = try await client.request(request)
         return try Data_PbUserIdentifier(serializedBytes: data as Data).hasMasterIdentifier
@@ -2172,10 +2127,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.deviceError(description: "Failed to fetch GATT client.") }
         let readOperation = Self.firstTimeUsePhysicalConfigReadOperation()
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = readOperation.command
-        operation.path = readOperation.path
-        let requestData = try operation.serializedData()
+        let requestData = try PolarRuntimePlanner.fileOperationBytes(readOperation)
         do {
             let nsData = try await client.request(requestData)
             let pbUserPhysData = try Data_PbUserPhysData(serializedBytes: nsData as Data)
@@ -2738,12 +2690,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let settingsPath = BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) == .polarFileSystemV2 ? DEVICE_SETTINGS_FILE_PATH : SENSOR_SETTINGS_FILE_PATH
         let userDeviceSettingsData = try PolarUserDeviceSettings.toProto(userDeviceSettings: polarUserDeviceSettings).serializedData()
-        var operation = Protocol_PbPFtpOperation()
         let plannedOperation = PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-user-device-settings", kind: "write", path: settingsPath, payloadFields: ["protobufPayload=platform-built"])?.first
-        operation.command = plannedOperation?.command ?? .put
-        operation.path = plannedOperation?.path ?? settingsPath
+        let operation = plannedOperation ?? (command: .put, path: settingsPath)
         PolarRuntimePlanner.userDeviceSettings(id: "set-user-device-settings", kind: "write", path: settingsPath, payloadFields: ["protobufPayload=platform-built"])
-        let proto = try operation.serializedData()
+        let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
         BleLogger.trace("Polar user device settings set. Device: \(identifier) Path: \(settingsPath)")
         let inputStream = InputStream(data: userDeviceSettingsData)
         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: userDeviceSettingsData.count)
@@ -3106,20 +3056,16 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
     private func getUserDeviceSettingsProto(client: BlePsFtpClient, settingsPath: String = DEVICE_SETTINGS_FILE_PATH, plannedOperation: (command: Protocol_PbPFtpOperation.Command, path: String)? = nil) async throws -> Data_PbUserDeviceSettings {
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = plannedOperation?.command ?? .get
-        operation.path = plannedOperation?.path ?? settingsPath
-        let request = try operation.serializedData()
+        let operation = plannedOperation ?? (command: .get, path: settingsPath)
+        let request = try PolarRuntimePlanner.fileOperationBytes(operation)
         let responseData = try await client.request(request)
         return try Data_PbUserDeviceSettings(serializedBytes: Data(responseData))
     }
 
 
     private func setUserDeviceSettingsProto(client: BlePsFtpClient, polarUserDeviceSettings: Data_PbUserDeviceSettings, settingsPath: String = DEVICE_SETTINGS_FILE_PATH, plannedOperation: (command: Protocol_PbPFtpOperation.Command, path: String)? = nil) async throws {
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = plannedOperation?.command ?? .put
-        operation.path = plannedOperation?.path ?? settingsPath
-        let proto = try operation.serializedData()
+        let operation = plannedOperation ?? (command: .put, path: settingsPath)
+        let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
         let settingsData = try polarUserDeviceSettings.serializedData()
         let inputStream = InputStream(data: settingsData)
         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: settingsData.count)
@@ -3198,11 +3144,8 @@ extension PolarBleApiImpl: PolarBleApi  {
                     _ = try await client.query(Protocol_PbPFtpQuery.prepareFirmwareUpdate.rawValue, parameters: nil)
                     BleLogger.trace("Start \(firmwareFilePath) write")
                     let writeOperation = Self.firmwareFileWriteOperation(path: firmwareFilePath)
-                    var builder = Protocol_PbPFtpOperation()
-                    builder.command = writeOperation.command
-                    builder.path = writeOperation.path
                     PolarRuntimePlanner.psFtpWriteAck(payloadSize: firmwareBytes.count)
-                    let proto = try builder.serializedData()
+                    let proto = try PolarRuntimePlanner.fileOperationBytes(writeOperation)
                     for try await bytesWritten in client.write(proto as NSData, data: InputStream(data: firmwareBytes)) {
                         BleLogger.trace("Writing firmware update file, bytes written: \(bytesWritten)/\(firmwareBytes.count)")
                         continuation.yield(bytesWritten)
@@ -3528,10 +3471,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     
     private func fetchRecursive(_ path: String, client: BlePsFtpClient, condition: @escaping (_ p: String) -> Bool) async throws -> [(name: String, size: UInt64)] {
         let readOperation = Self.genericDirectoryReadOperation(path: path)
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = readOperation.command
-        operation.path = readOperation.path
-        let request = try operation.serializedData()
+        let request = try PolarRuntimePlanner.fileOperationBytes(readOperation)
         do {
             let data = try await client.request(request)
             let dir = try Protocol_PbPFtpDirectory(serializedBytes: data as Data)

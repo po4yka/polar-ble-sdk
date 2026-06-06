@@ -218,12 +218,10 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
-        var operation = Protocol_PbPFtpOperation()
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
-        operation.command = plannedOperation?.command ?? .get
-        operation.path = plannedOperation?.path ?? path
+        let operation = plannedOperation ?? (command: .get, path: path)
         PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
-        let requestData = try operation.serializedData()
+        let requestData = try PolarRuntimePlanner.fileOperationBytes(operation)
         let responseData = try await client.request(requestData)
         return responseData as Data
     }
@@ -241,15 +239,13 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
-        var operation = Protocol_PbPFtpOperation()
         let payloadHex = data.map { String(format: "%02x", $0) }.joined()
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
-        operation.command = plannedOperation?.command ?? command
-        operation.path = plannedOperation?.path ?? path
+        let operation = plannedOperation ?? (command: command, path: path)
         PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: data.count)
         PolarRuntimePlanner.psFtpWriteAck(payloadSize: data.count)
-        let proto = try operation.serializedData()
+        let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
         let inputStream = InputStream(data: data)
         // Consume the write stream to completion (ignore progress values)
         do {
