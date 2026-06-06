@@ -264,6 +264,10 @@ object PolarIosSharedBridge {
         return PolarTrainingSessionModels.exerciseDataTypeOrNull(fileName)
     }
 
+    fun trainingSessionExerciseDataTypeFileName(typeName: String): String? {
+        return PolarTrainingSessionModels.exerciseDataTypeFileName(typeName)
+    }
+
     fun trainingSessionReferences(entriesText: String): String {
         val entries = entriesText.lines().mapNotNull { line ->
             val path = line.substringBefore('|', missingDelimiterValue = "")

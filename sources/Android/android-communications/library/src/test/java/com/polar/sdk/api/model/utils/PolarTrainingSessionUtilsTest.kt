@@ -8,6 +8,7 @@ import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionDataTypes
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionReference
 import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarTrainingSessionUtils
+import com.polar.shared.sdk.PolarTrainingSessionModels
 import fi.polar.remote.representation.protobuf.Structures
 import fi.polar.remote.representation.protobuf.Training
 import fi.polar.remote.representation.protobuf.TrainingSession
@@ -76,6 +77,16 @@ class PolarTrainingSessionUtilsTest {
             PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/20260102/E/123456/",
             PolarTrainingSessionUtils.trainingSessionDeleteRemoveOperation(reference, parentEntryCount = 2)
         )
+    }
+
+    @Test
+    fun `training session exercise filenames are delegated to shared mapping`() {
+        PolarExerciseDataTypes.entries.forEach { dataType ->
+            assertEquals(
+                PolarTrainingSessionModels.exerciseDataTypeFileName(dataType.name),
+                dataType.deviceFileName
+            )
+        }
     }
 
     @Test

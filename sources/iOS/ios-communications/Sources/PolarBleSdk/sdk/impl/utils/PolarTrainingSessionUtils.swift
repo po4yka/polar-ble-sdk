@@ -43,6 +43,10 @@ internal class PolarTrainingSessionUtils {
         return fallbackTrainingSessionPayloadFetchOrder(reference: reference)
     }
 
+    static func trainingSessionExerciseDataTypeFileName(dataType: PolarExerciseDataTypes) -> String {
+        return dataType.deviceFileName
+    }
+
     static func trainingSessionDirectoryReadOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         return trainingSessionFileOperation(id: "training-session-read-directory", command: "GET", path: path)
     }
@@ -249,12 +253,12 @@ internal class PolarTrainingSessionUtils {
     private static func readExercise(client: BlePsFtpClient, exercise: PolarExercise, payloadFetchOrder: [String]) async throws -> PolarExercise {
         let basePath = exercise.path
         let dataResults = try await withThrowingTaskGroup(of: (PolarExerciseDataTypes, Data).self) { group in
-            let dataTypesByFileName = Dictionary(uniqueKeysWithValues: exercise.exerciseDataTypes.map { ($0.rawValue, $0) })
+            let dataTypesByFileName = Dictionary(uniqueKeysWithValues: exercise.exerciseDataTypes.map { ($0.deviceFileName, $0) })
             let plannedFilePaths = payloadFetchOrder
                 .filter { $0.hasPrefix(basePath + "/") }
                 .filter { dataTypesByFileName[($0 as NSString).lastPathComponent] != nil }
             let fallbackFilePaths = exercise.exerciseDataTypes
-                .map { "\(basePath)/\($0.rawValue)" }
+                .map { "\(basePath)/\($0.deviceFileName)" }
                 .filter { !plannedFilePaths.contains($0) }
             for filePath in plannedFilePaths + fallbackFilePaths {
                 group.addTask {
@@ -443,7 +447,7 @@ internal class PolarTrainingSessionUtils {
 
     private static func fallbackTrainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference) -> [String] {
         return [reference.path] + reference.exercises.flatMap { exercise in
-            exercise.exerciseDataTypes.map { "\(exercise.path)/\($0.rawValue)" }
+            exercise.exerciseDataTypes.map { "\(exercise.path)/\($0.deviceFileName)" }
         }
     }
 }
@@ -473,6 +477,14 @@ private extension PolarTrainingSessionDataTypes {
 }
 
 private extension PolarExerciseDataTypes {
+    var deviceFileName: String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.trainingSessionExerciseDataTypeFileName(typeName: sharedTypeName) ?? rawValue
+        #else
+        return rawValue
+        #endif
+    }
+
     static func fromSharedOrRaw(fileName: String) -> PolarExerciseDataTypes? {
         #if canImport(PolarBleSdkShared)
         if let sharedType = PolarIosSharedBridge.shared.trainingSessionExerciseDataType(fileName: fileName) {

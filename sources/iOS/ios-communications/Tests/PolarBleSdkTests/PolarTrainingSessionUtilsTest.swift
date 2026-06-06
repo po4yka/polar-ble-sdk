@@ -79,6 +79,13 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         XCTAssertEqual(references.first?.exercises.first?.exerciseDataTypes, [.exerciseSummary, .samplesAdvancedFormatGzip])
     }
 
+    func testTrainingSessionExerciseFilenamesUseSharedBridgeWhenLinked() throws {
+        XCTAssertEqual(PolarExerciseDataTypes.exerciseSummary.rawValue, "BASE.BPB")
+        XCTAssertEqual(PolarExerciseDataTypes.samplesAdvancedFormatGzip.rawValue, "SAMPLES2.GZB")
+        XCTAssertEqual(PolarTrainingSessionUtils.trainingSessionExerciseDataTypeFileName(dataType: .exerciseSummary), PolarExerciseDataTypes.exerciseSummary.rawValue)
+        XCTAssertEqual(PolarTrainingSessionUtils.trainingSessionExerciseDataTypeFileName(dataType: .samplesAdvancedFormatGzip), PolarExerciseDataTypes.samplesAdvancedFormatGzip.rawValue)
+    }
+
     func testTrainingSessionPayloadFetchOrderUsesSharedPlanner() throws {
         let reference = PolarTrainingSessionReference(
             date: try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2, hour: 12, minute: 34, second: 56).date),
