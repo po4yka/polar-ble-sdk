@@ -104,6 +104,28 @@ enum PolarWatchFaceRuntimePlanner {
         return nil
         #endif
     }
+
+    static func fieldsCsv(
+        timeStyleId: UInt16,
+        complicationLayoutId: UInt16,
+        backgroundStyleId: UInt16,
+        accentColor: UInt32,
+        complicationIds: [Int32],
+        fontfaceId: UInt8
+    ) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.watchFaceFieldsCsv(
+            timeStyleId: Int32(timeStyleId),
+            complicationLayoutId: Int32(complicationLayoutId),
+            backgroundStyleId: Int32(backgroundStyleId),
+            accentColor: Int64(accentColor),
+            complicationIdsCsv: complicationIds.map(String.init).joined(separator: ","),
+            fontfaceId: Int32(fontfaceId)
+        )
+        #else
+        return nil
+        #endif
+    }
 }
 
 private extension PolarWatchFaceComplication {
