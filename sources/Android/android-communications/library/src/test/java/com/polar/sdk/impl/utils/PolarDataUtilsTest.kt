@@ -10,6 +10,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdOfflineT
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSetting
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GnssLocationData
 import com.polar.sdk.api.PolarBleApi
+import com.polar.sdk.api.errors.PolarBleSdkInternalException
 import com.polar.sdk.api.model.GpsCoordinatesSample
 import com.polar.sdk.api.model.GpsNMEASample
 import com.polar.sdk.api.model.GpsSatelliteDilutionSample
@@ -25,6 +26,30 @@ import java.io.File
 import java.io.FileReader
 
 class PolarDataUtilsTest {
+
+    @Test
+    fun `PMD client feature mapping uses shared neutral measurement type names`() {
+        val cases = mapOf(
+            PmdMeasurementType.ECG to PolarBleApi.PolarDeviceDataType.ECG,
+            PmdMeasurementType.PPG to PolarBleApi.PolarDeviceDataType.PPG,
+            PmdMeasurementType.ACC to PolarBleApi.PolarDeviceDataType.ACC,
+            PmdMeasurementType.PPI to PolarBleApi.PolarDeviceDataType.PPI,
+            PmdMeasurementType.GYRO to PolarBleApi.PolarDeviceDataType.GYRO,
+            PmdMeasurementType.MAGNETOMETER to PolarBleApi.PolarDeviceDataType.MAGNETOMETER,
+            PmdMeasurementType.LOCATION to PolarBleApi.PolarDeviceDataType.LOCATION,
+            PmdMeasurementType.PRESSURE to PolarBleApi.PolarDeviceDataType.PRESSURE,
+            PmdMeasurementType.TEMPERATURE to PolarBleApi.PolarDeviceDataType.TEMPERATURE,
+            PmdMeasurementType.OFFLINE_HR to PolarBleApi.PolarDeviceDataType.HR,
+            PmdMeasurementType.SKIN_TEMP to PolarBleApi.PolarDeviceDataType.SKIN_TEMPERATURE
+        )
+
+        cases.forEach { (pmdType, polarType) ->
+            Assert.assertEquals(pmdType.name, polarType, PolarDataUtils.mapPmdClientFeatureToPolarFeature(pmdType))
+        }
+        Assert.assertThrows(PolarBleSdkInternalException::class.java) {
+            PolarDataUtils.mapPmdClientFeatureToPolarFeature(PmdMeasurementType.UNKNOWN_TYPE)
+        }
+    }
 
     @Test
     fun `offline recording trigger golden vectors map polar trigger to pmd trigger`() {

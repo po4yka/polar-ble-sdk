@@ -20,6 +20,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.Tempe
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.errors.PolarBleSdkInternalException
 import com.polar.sdk.api.model.*
+import com.polar.shared.pmd.PolarPmdMeasurementTypeName
 import com.polar.shared.pmd.sensors.PolarGnssCoordinateSample
 import com.polar.shared.pmd.sensors.PolarGnssLocationSample
 import com.polar.shared.pmd.sensors.PolarGnssNmeaSample
@@ -348,18 +349,18 @@ internal object PolarDataUtils {
     }
 
     fun mapPmdClientFeatureToPolarFeature(pmdMeasurementType: PmdMeasurementType): PolarBleApi.PolarDeviceDataType {
-        return when (pmdMeasurementType) {
-            PmdMeasurementType.ECG -> PolarBleApi.PolarDeviceDataType.ECG
-            PmdMeasurementType.PPG -> PolarBleApi.PolarDeviceDataType.PPG
-            PmdMeasurementType.ACC -> PolarBleApi.PolarDeviceDataType.ACC
-            PmdMeasurementType.PPI -> PolarBleApi.PolarDeviceDataType.PPI
-            PmdMeasurementType.GYRO -> PolarBleApi.PolarDeviceDataType.GYRO
-            PmdMeasurementType.MAGNETOMETER -> PolarBleApi.PolarDeviceDataType.MAGNETOMETER
-            PmdMeasurementType.LOCATION -> PolarBleApi.PolarDeviceDataType.LOCATION
-            PmdMeasurementType.PRESSURE -> PolarBleApi.PolarDeviceDataType.PRESSURE
-            PmdMeasurementType.TEMPERATURE -> PolarBleApi.PolarDeviceDataType.TEMPERATURE
-            PmdMeasurementType.OFFLINE_HR -> PolarBleApi.PolarDeviceDataType.HR
-            PmdMeasurementType.SKIN_TEMP -> PolarBleApi.PolarDeviceDataType.SKIN_TEMPERATURE
+        return when (PolarPmdMeasurementTypeName.fromRawValue(pmdMeasurementType.numVal.toInt())?.name) {
+            "ECG" -> PolarBleApi.PolarDeviceDataType.ECG
+            "PPG" -> PolarBleApi.PolarDeviceDataType.PPG
+            "ACC" -> PolarBleApi.PolarDeviceDataType.ACC
+            "PPI" -> PolarBleApi.PolarDeviceDataType.PPI
+            "GYRO" -> PolarBleApi.PolarDeviceDataType.GYRO
+            "MAG" -> PolarBleApi.PolarDeviceDataType.MAGNETOMETER
+            "LOCATION" -> PolarBleApi.PolarDeviceDataType.LOCATION
+            "PRESSURE" -> PolarBleApi.PolarDeviceDataType.PRESSURE
+            "TEMPERATURE" -> PolarBleApi.PolarDeviceDataType.TEMPERATURE
+            "OFFLINE_HR" -> PolarBleApi.PolarDeviceDataType.HR
+            "SKIN_TEMP" -> PolarBleApi.PolarDeviceDataType.SKIN_TEMPERATURE
             else -> throw PolarBleSdkInternalException("Error when map measurement type $pmdMeasurementType to Polar feature")
         }
     }
