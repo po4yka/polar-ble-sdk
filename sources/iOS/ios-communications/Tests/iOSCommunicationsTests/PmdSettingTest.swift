@@ -132,7 +132,7 @@ final class PmdSettingTest: XCTestCase {
         XCTAssertTrue(setting.settings[PmdSetting.PmdSettingType.rangeMilliUnit]!.contains(0xff))
         XCTAssertTrue(setting.settings[PmdSetting.PmdSettingType.resolution]!.contains(0x0E))
         #if canImport(PolarBleSdkShared)
-        XCTAssertEqual(PolarIosSharedBridge.shared.pmdParsedSettingsCsv(settingsHex: "0302ffffffffff00000001010e00"), "3=4294967295,255;1=14")
+        XCTAssertEqual(PmdSettingRuntimePlanner.parsedSettingsCsv(settingsHex: "0302ffffffffff00000001010e00"), "3=4294967295,255;1=14")
         #endif
         
         let serialized = setting.serialize()

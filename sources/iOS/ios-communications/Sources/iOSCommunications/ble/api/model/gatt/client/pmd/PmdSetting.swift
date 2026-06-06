@@ -91,7 +91,7 @@ public struct PmdSetting: @unchecked Sendable {
 
     #if canImport(PolarBleSdkShared)
     private static func sharedParsedSettings(_ data: Data) -> [PmdSettingType : Set<UInt32>]? {
-        guard let encoded = PolarIosSharedBridge.shared.pmdParsedSettingsCsv(settingsHex: data.pmdHexString) else { return nil }
+        guard let encoded = PmdSettingRuntimePlanner.parsedSettingsCsv(settingsHex: data.pmdHexString) else { return nil }
         var settings = [PmdSettingType : Set<UInt32>]()
         for group in encoded.split(separator: ";", omittingEmptySubsequences: false) where !group.isEmpty {
             let fields = group.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
@@ -121,9 +121,43 @@ public struct PmdSetting: @unchecked Sendable {
             .sorted()
             .joined(separator: ",")
         guard selectedCsv.split(separator: ",").count == selected.count else { return nil }
-        return Data(hexBytes: PolarIosSharedBridge.shared.pmdSelectedSettingsHex(selectedCsv: selectedCsv))
+        return Data(hexBytes: PmdSettingRuntimePlanner.selectedSettingsHex(selectedCsv: selectedCsv))
     }
     #endif
+}
+
+enum PmdSettingRuntimePlanner {
+    static func parsedSettingsCsv(settingsHex: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdParsedSettingsCsv(settingsHex: settingsHex)
+        #else
+        return nil
+        #endif
+    }
+
+    static func selectedSettingsHex(selectedCsv: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdSelectedSettingsHex(selectedCsv: selectedCsv)
+        #else
+        return ""
+        #endif
+    }
+
+    static func settingTypeName(code: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdSettingTypeName(code: code)
+        #else
+        return nil
+        #endif
+    }
+
+    static func settingTypeCode(name: String) -> NSNumber? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdSettingTypeCode(name: name)
+        #else
+        return nil
+        #endif
+    }
 }
 
 #if canImport(PolarBleSdkShared)
@@ -149,7 +183,7 @@ private extension Data {
 
 private extension PmdSetting.PmdSettingType {
     init?(sharedCode: UInt8) {
-        guard let sharedName = PolarIosSharedBridge.shared.pmdSettingTypeName(code: Int32(sharedCode)) else {
+        guard let sharedName = PmdSettingRuntimePlanner.settingTypeName(code: Int32(sharedCode)) else {
             self.init(rawValue: sharedCode)
             return
         }
@@ -177,7 +211,7 @@ private extension PmdSetting.PmdSettingType {
         case .security: sharedName = "SECURITY"
         case .unknown: return rawValue
         }
-        guard let code = PolarIosSharedBridge.shared.pmdSettingTypeCode(name: sharedName) else { return rawValue }
+        guard let code = PmdSettingRuntimePlanner.settingTypeCode(name: sharedName) else { return rawValue }
         return UInt8(truncating: code)
     }
 }
