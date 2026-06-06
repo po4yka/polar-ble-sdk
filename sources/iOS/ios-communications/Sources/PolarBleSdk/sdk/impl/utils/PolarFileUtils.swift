@@ -41,9 +41,14 @@ class PolarFileUtils {
         dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
         let fileData = try Data_PbAutomaticSampleSessions(serializedBytes: file as Data)
         let proto = AutomaticSamples.fromProto(proto: fileData)
+        let sampleDay = dateFormatter.string(from: proto.day!)
+        let cutoffDate = dateFormatter.string(from: until)
+        if let sharedDecision = PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: sampleDay, cutoffDate: cutoffDate) {
+            return sharedDecision
+        }
         let result = calendar.compare(
-            dateFromStringWOTime(dateFrom: dateFormatter.string(from: proto.day!)),
-            to: dateFromStringWOTime(dateFrom: dateFormatter.string(from: until)),
+            dateFromStringWOTime(dateFrom: sampleDay),
+            to: dateFromStringWOTime(dateFrom: cutoffDate),
             toGranularity: .day)
         return result == .orderedSame || result == .orderedAscending
     }

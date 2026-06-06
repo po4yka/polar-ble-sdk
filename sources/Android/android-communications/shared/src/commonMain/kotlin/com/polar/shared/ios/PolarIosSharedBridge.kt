@@ -1179,6 +1179,10 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents(dataType)
     }
 
+    fun storedDataDateIsOnOrBefore(day: String, cutoffDate: String): Boolean {
+        return PolarWorkflowRuntimePlanning.storedDataDateIsOnOrBefore(day, cutoffDate)
+    }
+
     fun storedDataEmptyParentDirectories(filePath: String, rootPath: String, trailingSlash: Boolean): String {
         return PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories(filePath, rootPath, trailingSlash).joinToString(separator = ",")
     }

@@ -2789,7 +2789,10 @@ extension PolarBleApiImpl: PolarBleApi  {
                 _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: file)
                 deletedFiles.append(file)
             case .ACTIVITY, .DAILY_SUMMARY, .NIGHTLY_RECOVERY, .SLEEP, .SKIN_CONTACT_CHANGES, .SKINTEMP, .SLEEP_SCORE:
-                if formatter.string(from: until!) >= String(file.split(separator: "/")[2]) {
+                let day = String(file.split(separator: "/")[2])
+                let cutoffDate = formatter.string(from: until!)
+                let isOnOrBeforeCutoff = PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: day, cutoffDate: cutoffDate) ?? (cutoffDate >= day)
+                if isOnOrBeforeCutoff {
                     _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: file)
                     deletedFiles.append(file)
                 }

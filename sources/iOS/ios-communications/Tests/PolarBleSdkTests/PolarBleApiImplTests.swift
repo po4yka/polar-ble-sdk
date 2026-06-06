@@ -2024,6 +2024,9 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(true, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue))
         XCTAssertEqual(false, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.AUTO_SAMPLE.rawValue))
         XCTAssertEqual(false, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.SDLOGS.rawValue))
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260530", cutoffDate: "20260531"))
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260531", cutoffDate: "20260531"))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260601", cutoffDate: "20260531"))
         XCTAssertEqual(["/U/0/20260530/ACT/", "/U/0/20260530/"], PolarRuntimePlanner.storedDataEmptyParentDirectories(filePath: "/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash: true))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
@@ -2187,6 +2190,8 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(true, PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: "TRC10.BIN", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
         XCTAssertEqual(false, PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: "TRC10.TXT", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
         XCTAssertEqual(true, PolarStoredDataOfflineRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue))
+        XCTAssertEqual(true, PolarStoredDataOfflineRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260531", cutoffDate: "20260531"))
+        XCTAssertEqual(false, PolarStoredDataOfflineRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260601", cutoffDate: "20260531"))
         XCTAssertEqual(["/U/0/20260530/ACT/", "/U/0/20260530/"], PolarStoredDataOfflineRuntimePlanner.storedDataEmptyParentDirectories(filePath: "/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash: true))
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: ["acc"]))

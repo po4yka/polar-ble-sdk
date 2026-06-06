@@ -115,6 +115,10 @@ enum PolarRuntimePlanner {
         return PolarStoredDataOfflineRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: dataType)
     }
 
+    static func storedDataDateIsOnOrBefore(day: String, cutoffDate: String) -> Bool? {
+        return PolarStoredDataOfflineRuntimePlanner.storedDataDateIsOnOrBefore(day: day, cutoffDate: cutoffDate)
+    }
+
     static func storedDataEmptyParentDirectories(filePath: String, rootPath: String = "/U/0", trailingSlash: Bool = true) -> [String]? {
         return PolarStoredDataOfflineRuntimePlanner.storedDataEmptyParentDirectories(filePath: filePath, rootPath: rootPath, trailingSlash: trailingSlash)
     }

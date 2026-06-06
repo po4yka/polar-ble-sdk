@@ -36,6 +36,14 @@ enum PolarStoredDataOfflineRuntimePlanner {
         #endif
     }
 
+    static func storedDataDateIsOnOrBefore(day: String, cutoffDate: String) -> Bool? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.storedDataDateIsOnOrBefore(day: day, cutoffDate: cutoffDate)
+        #else
+        return nil
+        #endif
+    }
+
     static func storedDataEmptyParentDirectories(filePath: String, rootPath: String = "/U/0", trailingSlash: Bool = true) -> [String]? {
         #if canImport(PolarBleSdkShared)
         let csv = PolarIosSharedBridge.shared.storedDataEmptyParentDirectories(filePath: filePath, rootPath: rootPath, trailingSlash: trailingSlash)
