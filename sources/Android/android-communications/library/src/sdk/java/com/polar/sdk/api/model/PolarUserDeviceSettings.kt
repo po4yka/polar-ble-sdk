@@ -8,6 +8,7 @@ import fi.polar.remote.representation.protobuf.UserDeviceSettings
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbAutomaticMeasurementSettings
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceGeneralSettings
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceSettings
+import com.polar.shared.sdk.PolarUserDeviceSettingsFields
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import java.time.ZonedDateTime
 import java.time.ZoneId
@@ -20,6 +21,16 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
                                    val minimumTrainingDurationSeconds: Int? = null,
                                    val autosFilesEnabled: Boolean? = null
 ) {
+    private val sharedFields: PolarUserDeviceSettingsFields
+        get() = PolarUserDeviceSettingsFields(
+            deviceLocation = deviceLocation,
+            usbConnectionMode = usbConnectionMode,
+            automaticTrainingDetectionMode = automaticTrainingDetectionMode,
+            automaticTrainingDetectionSensitivity = automaticTrainingDetectionSensitivity,
+            minimumTrainingDurationSeconds = minimumTrainingDurationSeconds,
+            telemetryEnabled = telemetryEnabled,
+            autosFilesEnabled = autosFilesEnabled
+        )
 
     enum class DeviceLocation(val value: Int) {
         UNDEFINED(0),
@@ -47,14 +58,15 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
     }
 
     fun toProto(): PbUserDeviceSettings {
+        val serialized = PolarUserDeviceSettingsModels.serializePresencePreservingFields(sharedFields)
         val pbSettingsWithDeviceLocation = PbUserDeviceGeneralSettings.newBuilder()
-            .setDeviceLocation(deviceLocation?.let { PbDeviceLocation.forNumber(it) })
+            .setDeviceLocation(serialized.deviceLocation?.let { PbDeviceLocation.forNumber(it) })
 
         val pbUsbConnectionSettings = UserDeviceSettings.PbUsbConnectionSettings.newBuilder()
-        usbConnectionMode?.let {
-            val sharedMode = PolarUserDeviceSettingsModels.usbConnectionModeValue(if (it) "ON" else "OFF")
+        serialized.usbConnectionMode?.let {
+            val sharedMode = PolarUserDeviceSettingsModels.usbConnectionModeValue(it)
                 ?.let(UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode::forNumber)
-            val fallbackMode = if (it) {
+            val fallbackMode = if (it == "ON") {
                 UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.ON
             } else {
                 UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.OFF
@@ -65,10 +77,10 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
         val pbAutomaticTrainingDetectionSettings = UserDeviceSettings.PbAutomaticTrainingDetectionSettings.newBuilder()
         val pbUserAutomaticMeasurementSettings = UserDeviceSettings.PbUserAutomaticMeasurementSettings.newBuilder()
 
-        automaticTrainingDetectionMode?.let {
-            val sharedState = PolarUserDeviceSettingsModels.automaticTrainingDetectionModeValue(if (it) "ON" else "OFF")
+        serialized.automaticTrainingDetectionMode?.let {
+            val sharedState = PolarUserDeviceSettingsModels.automaticTrainingDetectionModeValue(it)
                 ?.let(UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState::forNumber)
-            val fallbackState = if (it) {
+            val fallbackState = if (it == "ON") {
                 UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.ON
             } else {
                 UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.OFF
@@ -76,19 +88,19 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
             pbAutomaticTrainingDetectionSettings.setState(sharedState ?: fallbackState)
         }
 
-        automaticTrainingDetectionSensitivity?.let {
-            pbAutomaticTrainingDetectionSettings.setSensitivity(automaticTrainingDetectionSensitivity)
+        serialized.automaticTrainingDetectionSensitivity?.let {
+            pbAutomaticTrainingDetectionSettings.setSensitivity(it)
         }
 
-        minimumTrainingDurationSeconds?.let {
-            pbAutomaticTrainingDetectionSettings.setMinimumTrainingDurationSeconds(minimumTrainingDurationSeconds)
+        serialized.minimumTrainingDurationSeconds?.let {
+            pbAutomaticTrainingDetectionSettings.setMinimumTrainingDurationSeconds(it)
         }
 
-        autosFilesEnabled?.let {
+        serialized.autosFilesEnabled?.let {
             pbUserAutomaticMeasurementSettings.setAutomaticOhrMeasurement(
                 PbAutomaticMeasurementSettings.newBuilder()
                     .setState(
-                        if (autosFilesEnabled) PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.ALWAYS_ON
+                        if (it) PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.ALWAYS_ON
                         else PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF
                     )
             )
@@ -106,61 +118,56 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
 
     fun fromBytes(bytes: ByteArray): PolarUserDeviceSettings {
         val proto = PbUserDeviceSettings.parseFrom(bytes)
-        val deviceLocation = if (proto.hasGeneralSettings() && proto.generalSettings.hasDeviceLocation()) {
-            proto.generalSettings.deviceLocation.number
+        val automaticTrainingDetectionSettings = if (proto.hasAutomaticMeasurementSettings() && proto.automaticMeasurementSettings.hasAutomaticTrainingDetectionSettings()) {
+            proto.automaticMeasurementSettings.automaticTrainingDetectionSettings
         } else {
             null
         }
-        val usbConnectionMode = if (proto.hasUsbConnectionSettings() && proto.usbConnectionSettings.hasMode()) {
-            proto.usbConnectionSettings.mode == UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.ON
-        } else {
-            null
-        }
-
-        val automaticTrainingDetectionMode = if (proto.hasAutomaticMeasurementSettings() && proto.automaticMeasurementSettings.hasAutomaticTrainingDetectionSettings()) {
-            proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.state == UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.ON
-        } else {
-            null
-        }
-
-        val automaticTrainingDetectionSensitivity = if (proto.hasAutomaticMeasurementSettings() &&
-            proto.automaticMeasurementSettings.hasAutomaticTrainingDetectionSettings() &&
-            proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.hasSensitivity()) {
-            proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.sensitivity
-        } else {
-            0
-        }
-
-        val minimumTrainingDurationSeconds = if (proto.hasAutomaticMeasurementSettings() &&
-            proto.automaticMeasurementSettings.hasAutomaticTrainingDetectionSettings() &&
-            proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.hasMinimumTrainingDurationSeconds()) {
-            proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.minimumTrainingDurationSeconds
-        } else {
-            0
-        }
-
-        val telemetryEnabled = if (proto.hasTelemetrySettings() && proto.telemetrySettings.hasTelemetryEnabled()) {
-            proto.telemetrySettings.telemetryEnabled
-        } else {
-            null
-        }
-
-        val autosFilesEnabled = if (proto.hasAutomaticMeasurementSettings() &&
-            proto.automaticMeasurementSettings.hasAutomaticOhrMeasurement() &&
-            proto.automaticMeasurementSettings.automaticOhrMeasurement.hasState()) {
-            proto.automaticMeasurementSettings.automaticOhrMeasurement.state != PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF
-        } else {
-            true
-        }
+        val shared = PolarUserDeviceSettingsModels.parsePresencePreservingFields(
+            deviceLocation = if (proto.hasGeneralSettings() && proto.generalSettings.hasDeviceLocation()) {
+                proto.generalSettings.deviceLocation.number
+            } else {
+                null
+            },
+            usbConnectionMode = if (proto.hasUsbConnectionSettings() && proto.usbConnectionSettings.hasMode()) {
+                proto.usbConnectionSettings.mode.name
+            } else {
+                null
+            },
+            automaticTrainingDetectionMode = automaticTrainingDetectionSettings?.state?.name,
+            automaticTrainingDetectionSensitivity = if (automaticTrainingDetectionSettings?.hasSensitivity() == true) {
+                automaticTrainingDetectionSettings.sensitivity
+            } else {
+                null
+            },
+            minimumTrainingDurationSeconds = if (automaticTrainingDetectionSettings?.hasMinimumTrainingDurationSeconds() == true) {
+                automaticTrainingDetectionSettings.minimumTrainingDurationSeconds
+            } else {
+                null
+            },
+            telemetryEnabled = if (proto.hasTelemetrySettings() && proto.telemetrySettings.hasTelemetryEnabled()) {
+                proto.telemetrySettings.telemetryEnabled
+            } else {
+                null
+            },
+            autosFilesEnabled = if (proto.hasAutomaticMeasurementSettings() &&
+                proto.automaticMeasurementSettings.hasAutomaticOhrMeasurement() &&
+                proto.automaticMeasurementSettings.automaticOhrMeasurement.hasState()
+            ) {
+                proto.automaticMeasurementSettings.automaticOhrMeasurement.state != PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF
+            } else {
+                null
+            }
+        )
 
         return PolarUserDeviceSettings(
-            deviceLocation,
-            usbConnectionMode,
-            automaticTrainingDetectionMode = automaticTrainingDetectionMode,
-            automaticTrainingDetectionSensitivity = automaticTrainingDetectionSensitivity,
-            telemetryEnabled = telemetryEnabled,
-            minimumTrainingDurationSeconds = minimumTrainingDurationSeconds,
-            autosFilesEnabled = autosFilesEnabled
+            deviceLocation = shared.deviceLocation,
+            usbConnectionMode = shared.usbConnectionMode,
+            automaticTrainingDetectionMode = shared.automaticTrainingDetectionMode,
+            automaticTrainingDetectionSensitivity = shared.automaticTrainingDetectionSensitivity ?: 0,
+            telemetryEnabled = shared.telemetryEnabled,
+            minimumTrainingDurationSeconds = shared.minimumTrainingDurationSeconds ?: 0,
+            autosFilesEnabled = shared.autosFilesEnabled ?: true
         )
     }
 }
