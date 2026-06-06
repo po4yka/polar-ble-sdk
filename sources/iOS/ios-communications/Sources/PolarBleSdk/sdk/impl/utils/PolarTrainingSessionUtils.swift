@@ -261,10 +261,7 @@ internal class PolarTrainingSessionUtils {
             let plannedFilePaths = payloadFetchOrder
                 .filter { $0.hasPrefix(basePath + "/") }
                 .filter { dataTypesByFileName[($0 as NSString).lastPathComponent] != nil }
-            let fallbackFilePaths = exercise.exerciseDataTypes
-                .map { "\(basePath)/\($0.deviceFileName)" }
-                .filter { !plannedFilePaths.contains($0) }
-            for filePath in plannedFilePaths + fallbackFilePaths {
+            for filePath in plannedFilePaths {
                 group.addTask {
                     let dataType = dataTypesByFileName[(filePath as NSString).lastPathComponent]!
                     let fileOperation = trainingSessionExerciseFileReadOperation(path: filePath)

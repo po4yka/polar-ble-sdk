@@ -171,11 +171,8 @@ internal object PolarTrainingSessionUtils {
         val plannedFilePaths = payloadFetchOrder
             .filter { path -> path.startsWith("$basePath/") }
             .filter { path -> dataTypesByFileName.containsKey(path.substringAfterLast("/")) }
-        val fallbackFilePaths = exercise.exerciseDataTypes
-            .map { dataType -> "$basePath/${dataType.deviceFileName}" }
-            .filterNot { path -> plannedFilePaths.contains(path) }
 
-        val results = (plannedFilePaths + fallbackFilePaths).map { filePath ->
+        val results = plannedFilePaths.map { filePath ->
             val dataType = dataTypesByFileName.getValue(filePath.substringAfterLast("/"))
             BleLogger.d(TAG, "  Fetching file: $filePath")
             val readOperation = trainingSessionExerciseFileReadOperation(filePath)
