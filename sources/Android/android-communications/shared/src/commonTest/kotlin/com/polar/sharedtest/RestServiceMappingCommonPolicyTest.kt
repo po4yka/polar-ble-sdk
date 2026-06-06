@@ -1,6 +1,8 @@
 package com.polar.sharedtest
 
 import com.polar.shared.sdk.PolarRestServiceModels
+import com.polar.shared.sdk.PolarRestServiceDescription
+import com.polar.shared.sdk.PolarRestServiceList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -110,20 +112,18 @@ class RestServiceMappingCommonPolicyTest {
         assertEquals(listOf("com.polar.sharedtest.RestServiceMappingCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
-    private fun parseServiceList(json: String): RestServiceList {
-        val services = json.optionalObjectValue("services") ?: return RestServiceList(emptyMap())
-        return RestServiceList(services.objectEntries().associate { entry -> entry.key to entry.value })
+    private fun parseServiceList(json: String): PolarRestServiceList {
+        val services = json.optionalObjectValue("services")?.objectEntries()?.associate { entry -> entry.key to entry.value }
+        return PolarRestServiceModels.serviceList(services)
     }
 
-    private fun parseServiceDescription(json: String): RestServiceDescription {
+    private fun parseServiceDescription(json: String): PolarRestServiceDescription {
         val events = json.optionalStringArrayValue("events") ?: emptyList()
         val endpoints = json.optionalStringArrayValue("endpoints") ?: emptyList()
         val actions = json.optionalObjectValue("cmd")?.objectEntries()?.associate { action -> action.key to action.value } ?: emptyMap()
         val topLevelObjects = json.objectEntries().associate { entry -> entry.key to entry.value }
         val eventDescriptions = events.associateWith { event -> topLevelObjects[event]?.stringArrayMapValue() ?: emptyMap() }
-        val details = events.associateWith { event -> PolarRestServiceModels.eventDetails(eventDescriptions.getValue(event)) }
-        val triggers = events.associateWith { event -> PolarRestServiceModels.eventTriggers(eventDescriptions.getValue(event)) }
-        return RestServiceDescription(events, endpoints, actions, details, triggers)
+        return PolarRestServiceModels.serviceDescription(events, endpoints, actions, eventDescriptions)
     }
 
     private fun String.optionalObjectValue(field: String): String? {
@@ -199,30 +199,6 @@ class RestServiceMappingCommonPolicyTest {
             }
         }
         error("Unbalanced $open$close block")
-    }
-
-    private data class RestServiceList(
-        val pathsForServices: Map<String, String>
-    ) {
-        val names: List<String>
-            get() = PolarRestServiceModels.serviceNames(pathsForServices)
-
-        val paths: List<String>
-            get() = PolarRestServiceModels.servicePaths(pathsForServices)
-    }
-
-    private data class RestServiceDescription(
-        val events: List<String>,
-        val endpoints: List<String>,
-        val actions: Map<String, String>,
-        val details: Map<String, List<String>>,
-        val triggers: Map<String, List<String>>
-    ) {
-        val actionNames: List<String>
-            get() = PolarRestServiceModels.actionNames(actions)
-
-        val actionPaths: List<String>
-            get() = PolarRestServiceModels.actionPaths(actions)
     }
 
     private data class JsonEntry(

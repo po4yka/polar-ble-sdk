@@ -1,6 +1,45 @@
 package com.polar.shared.sdk
 
+data class PolarRestServiceList(
+    val pathsForServices: Map<String, String>
+) {
+    val names: List<String>
+        get() = PolarRestServiceModels.serviceNames(pathsForServices)
+
+    val paths: List<String>
+        get() = PolarRestServiceModels.servicePaths(pathsForServices)
+}
+
+data class PolarRestServiceDescription(
+    val events: List<String>,
+    val endpoints: List<String>,
+    val actions: Map<String, String>,
+    val details: Map<String, List<String>>,
+    val triggers: Map<String, List<String>>
+) {
+    val actionNames: List<String>
+        get() = PolarRestServiceModels.actionNames(actions)
+
+    val actionPaths: List<String>
+        get() = PolarRestServiceModels.actionPaths(actions)
+}
+
 object PolarRestServiceModels {
+    fun serviceList(pathsForServices: Map<String, String>?): PolarRestServiceList {
+        return PolarRestServiceList(pathsForServices ?: emptyMap())
+    }
+
+    fun serviceDescription(events: List<String>?, endpoints: List<String>?, actions: Map<String, String>?, eventDescriptions: Map<String, Map<String, List<String>>>): PolarRestServiceDescription {
+        val eventNames = events ?: emptyList()
+        return PolarRestServiceDescription(
+            events = eventNames,
+            endpoints = endpoints ?: emptyList(),
+            actions = actions ?: emptyMap(),
+            details = eventNames.associateWith { event -> eventDetails(eventDescriptions[event] ?: emptyMap()) },
+            triggers = eventNames.associateWith { event -> eventTriggers(eventDescriptions[event] ?: emptyMap()) }
+        )
+    }
+
     fun serviceNames(pathsForServices: Map<String, String>): List<String> {
         return pathsForServices.keys.toList()
     }
