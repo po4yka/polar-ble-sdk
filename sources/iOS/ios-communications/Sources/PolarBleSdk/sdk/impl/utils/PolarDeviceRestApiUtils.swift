@@ -61,7 +61,8 @@ private enum RestEventSharedProjection {
     static func uncompressedPayloads(_ payloads: [Data]) -> [Data]? {
         #if canImport(PolarBleSdkShared)
         let encoded = payloads.map { $0.map { String(format: "%02x", $0) }.joined() }.joined(separator: ",")
-        return PolarIosSharedBridge.shared.restUncompressedEventPayloadsHex(payloadsHex: encoded)
+        let sharedHex = PolarIosSharedBridge.shared.restUncompressedEventPayloadsHex(payloadsHex: encoded)
+        return sharedHex.isEmpty ? [] : sharedHex
             .split(separator: "|", omittingEmptySubsequences: false)
             .map { Data(hexString: String($0)) }
         #else
