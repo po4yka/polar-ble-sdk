@@ -44,6 +44,30 @@ enum PolarUserDeviceSettingsRuntimePlanner {
         #endif
     }
 
+    static func deviceLocationValue(name: String) -> NSNumber? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationValue(name: name)
+        #else
+        return nil
+        #endif
+    }
+
+    static func usbConnectionModeName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.userDeviceSettingsUsbModeName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func usbConnectionModeValue(name: String) -> NSNumber? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.userDeviceSettingsUsbModeValue(name: name)
+        #else
+        return nil
+        #endif
+    }
+
     static func usbConnectionModeName(enabled: Bool) -> String? {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.userDeviceSettingsUsbModeName(value: enabled ? 2 : 1)
@@ -52,9 +76,33 @@ enum PolarUserDeviceSettingsRuntimePlanner {
         #endif
     }
 
+    static func automaticTrainingDetectionModeName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.userDeviceSettingsAutomaticTrainingDetectionModeName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func automaticTrainingDetectionModeValue(name: String) -> NSNumber? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.userDeviceSettingsAutomaticTrainingDetectionModeValue(name: name)
+        #else
+        return nil
+        #endif
+    }
+
     static func automaticTrainingDetectionModeName(enabled: Bool) -> String? {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.userDeviceSettingsAutomaticTrainingDetectionModeName(value: enabled ? 1 : 0)
+        #else
+        return nil
+        #endif
+    }
+
+    static func automaticMeasurementStateName(enabled: Bool) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.userDeviceSettingsAutomaticMeasurementStateName(enabled: enabled)
         #else
         return nil
         #endif

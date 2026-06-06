@@ -32,7 +32,7 @@ public class PolarUserDeviceSettings {
 
         public func toInt() -> Int {
             #if canImport(PolarBleSdkShared)
-            if let sharedValue = PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationValue(name: rawValue) {
+            if let sharedValue = PolarUserDeviceSettingsRuntimePlanner.deviceLocationValue(name: rawValue) {
                 return Int(truncating: sharedValue)
             }
             #endif
@@ -49,7 +49,7 @@ public class PolarUserDeviceSettings {
 
         func toProto() -> Data_PbUsbConnectionSettings.PbUsbConnectionMode {
             #if canImport(PolarBleSdkShared)
-            if let sharedValue = PolarIosSharedBridge.shared.userDeviceSettingsUsbModeValue(name: rawValue),
+            if let sharedValue = PolarUserDeviceSettingsRuntimePlanner.usbConnectionModeValue(name: rawValue),
                let proto = Data_PbUsbConnectionSettings.PbUsbConnectionMode(rawValue: Int(truncating: sharedValue)) {
                 return proto
             }
@@ -65,7 +65,7 @@ public class PolarUserDeviceSettings {
 
         static func fromProto(proto: Data_PbUsbConnectionSettings.PbUsbConnectionMode) -> UsbConnectionMode? {
             #if canImport(PolarBleSdkShared)
-            if let sharedName = PolarIosSharedBridge.shared.userDeviceSettingsUsbModeName(value: Int32(proto.rawValue)) {
+            if let sharedName = PolarUserDeviceSettingsRuntimePlanner.usbConnectionModeName(value: proto.rawValue) {
                 return UsbConnectionMode(rawValue: sharedName)
             }
             #endif
@@ -87,7 +87,7 @@ public class PolarUserDeviceSettings {
 
         func toProto() -> Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState {
             #if canImport(PolarBleSdkShared)
-            if let sharedValue = PolarIosSharedBridge.shared.userDeviceSettingsAutomaticTrainingDetectionModeValue(name: rawValue),
+            if let sharedValue = PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionModeValue(name: rawValue),
                let proto = Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState(rawValue: Int(truncating: sharedValue)) {
                 return proto
             }
@@ -103,7 +103,7 @@ public class PolarUserDeviceSettings {
 
         static func fromProto(proto: Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState) -> AutomaticTrainingDetectionMode {
             #if canImport(PolarBleSdkShared)
-            if let sharedName = PolarIosSharedBridge.shared.userDeviceSettingsAutomaticTrainingDetectionModeName(value: Int32(proto.rawValue)),
+            if let sharedName = PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionModeName(value: proto.rawValue),
                let sharedMode = AutomaticTrainingDetectionMode(rawValue: sharedName) {
                 return sharedMode
             }
@@ -186,11 +186,12 @@ public class PolarUserDeviceSettings {
 
     static func automaticMeasurementState(enabled: Bool) -> Data_PbAutomaticMeasurementSettings.PbAutomaticMeasurementState {
         #if canImport(PolarBleSdkShared)
-        let sharedName = PolarIosSharedBridge.shared.userDeviceSettingsAutomaticMeasurementStateName(enabled: enabled)
-        switch sharedName {
-        case "ALWAYS_ON": return .alwaysOn
-        case "OFF": return .off
-        default: break
+        if let sharedName = PolarUserDeviceSettingsRuntimePlanner.automaticMeasurementStateName(enabled: enabled) {
+            switch sharedName {
+            case "ALWAYS_ON": return .alwaysOn
+            case "OFF": return .off
+            default: break
+            }
         }
         #endif
         return enabled ? .alwaysOn : .off
@@ -199,7 +200,7 @@ public class PolarUserDeviceSettings {
     static func fromProto(pbUserDeviceSettings: Data_PbUserDeviceSettings) -> PolarUserDeviceSettingsResult {
         var result = PolarUserDeviceSettingsResult()
         #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationName(value: Int32(pbUserDeviceSettings.generalSettings.deviceLocation.rawValue)),
+        if let sharedName = PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: pbUserDeviceSettings.generalSettings.deviceLocation.rawValue),
            let sharedLocation = PolarUserDeviceSettings.DeviceLocation(rawValue: sharedName) {
             result.deviceLocation = sharedLocation
         } else {
@@ -239,7 +240,7 @@ public class PolarUserDeviceSettings {
     
     public static func getStringValue(deviceLocationIndex: Int) -> String {
         #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationName(value: Int32(deviceLocationIndex)) {
+        if let sharedName = PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: deviceLocationIndex) {
             return sharedName
         }
         #endif
@@ -249,7 +250,7 @@ public class PolarUserDeviceSettings {
     
     public static func getDeviceLocation(deviceLocation: String) -> DeviceLocation {
         #if canImport(PolarBleSdkShared)
-        if let sharedValue = PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationValue(name: deviceLocation) {
+        if let sharedValue = PolarUserDeviceSettingsRuntimePlanner.deviceLocationValue(name: deviceLocation) {
             let sharedIndex = Int(truncating: sharedValue)
             if DeviceLocation.allCases.indices.contains(sharedIndex) {
                 return DeviceLocation.allCases[sharedIndex]
