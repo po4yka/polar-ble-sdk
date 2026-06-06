@@ -89,7 +89,7 @@ public class PressureData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.pressureRawType0Samples(
+        guard let sharedRows = PressureDataRuntimePlanner.rawType0Samples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -123,4 +123,14 @@ public class PressureData {
         return data.map { String(format: "%02x", $0) }.joined()
     }
     #endif
+}
+
+enum PressureDataRuntimePlanner {
+    static func rawType0Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pressureRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
 }

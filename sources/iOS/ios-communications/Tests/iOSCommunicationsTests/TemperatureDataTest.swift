@@ -63,7 +63,7 @@ final class TemperatureDataTest: XCTestCase {
     func testTemperatureRawType0ParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "0c009435770000000000f628c041"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.temperatureRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 120, factor: 1.0, sampleRate: 0))
+        let sharedRows = try XCTUnwrap(TemperatureDataRuntimePlanner.rawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 120, factor: 1.0, sampleRate: 0))
         XCTAssertFalse(sharedRows.isEmpty)
 
         let dataFrame = try PmdDataFrame(
@@ -93,7 +93,7 @@ final class TemperatureDataTest: XCTestCase {
     func testPressureRawType0ParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "0b009435770000000000ae277b44"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.pressureRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        let sharedRows = try XCTUnwrap(PressureDataRuntimePlanner.rawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
         XCTAssertFalse(sharedRows.isEmpty)
 
         let dataFrame = try PmdDataFrame(
