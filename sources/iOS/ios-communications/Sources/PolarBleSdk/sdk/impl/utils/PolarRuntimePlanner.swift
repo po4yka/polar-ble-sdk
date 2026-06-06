@@ -166,6 +166,10 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.backupRootPaths(entries)
     }
 
+    static func parseBackupTextForIos(_ backupText: String) -> [String] {
+        return PolarFirmwareBackupRuntimePlanner.parseBackupTextForIos(backupText)
+    }
+
     static func backupFilePath(_ path: String) -> (directory: String, fileName: String) {
         return PolarFirmwareBackupRuntimePlanner.backupFilePath(path)
     }

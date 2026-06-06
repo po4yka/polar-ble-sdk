@@ -314,6 +314,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.backupRootPaths(entries.toList())
     }
 
+    fun parseBackupTextForAndroid(backupText: String): List<String> {
+        return PolarWorkflowRuntimePlanning.parseBackupTextForAndroid(backupText)
+    }
+
     fun backupTraversalRootPath(path: String): String {
         return PolarWorkflowRuntimePlanning.backupTraversalRootPath(path)
     }

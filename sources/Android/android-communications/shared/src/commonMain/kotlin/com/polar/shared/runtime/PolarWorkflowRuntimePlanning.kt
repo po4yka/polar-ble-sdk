@@ -198,6 +198,14 @@ object PolarWorkflowRuntimePlanning {
         }
     }
 
+    fun parseBackupTextForAndroid(backupText: String): List<String> {
+        return backupText.lineSequence().toMutableSet().toList()
+    }
+
+    fun parseBackupTextForIos(backupText: String): List<String> {
+        return backupText.split("\n").dropLast(1).map { line -> line.trim() }
+    }
+
     fun defaultBackupPaths(): List<String> = listOf(
         "/U/0/S/PHYSDATA.BPB",
         "/U/0/S/UDEVSET.BPB",

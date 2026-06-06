@@ -125,6 +125,20 @@ class BackupUtilityCommonPolicyTest {
     }
 
     @Test
+    fun backupTextParsingPinsCurrentAndroidAndIosCompatibilitySplit() {
+        val backupText = "/SYS/BT/\n /TRIMMED/PATH.BPB \n/SYS/BT/\n/FINAL/NO_NEWLINE.BPB"
+
+        assertEquals(
+            listOf("/SYS/BT/", " /TRIMMED/PATH.BPB ", "/FINAL/NO_NEWLINE.BPB"),
+            PolarWorkflowRuntimePlanning.parseBackupTextForAndroid(backupText)
+        )
+        assertEquals(
+            listOf("/SYS/BT/", "/TRIMMED/PATH.BPB", "/SYS/BT/"),
+            PolarWorkflowRuntimePlanning.parseBackupTextForIos(backupText)
+        )
+    }
+
+    @Test
     fun backupFilePathPlanningSplitsDirectoryAndFileName() {
         val filePath = PolarWorkflowRuntimePlanning.backupFilePath("/SYS/BT/BTDEV.BPB")
 

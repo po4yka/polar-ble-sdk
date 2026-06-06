@@ -57,13 +57,9 @@ public class PolarBackupManager {
                     let bytesRead = stream.read(buffer, maxLength: bufferSize)
                     if bytesRead > 0, let chunk = String(bytesNoCopy: buffer, length: bytesRead, encoding: .utf8, freeWhenDone: false) {
                         accumulatedString += chunk
-                        while let range = accumulatedString.range(of: "\n") {
-                            let line = String(accumulatedString[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
-                            backupDirectories.append(line)
-                            accumulatedString.removeSubrange(..<range.upperBound)
-                        }
                     }
                 }
+                backupDirectories.append(contentsOf: PolarRuntimePlanner.parseBackupTextForIos(accumulatedString))
             } else {
                 BleLogger.error("No BACKUP.TXT found, using default backup directories")
             }

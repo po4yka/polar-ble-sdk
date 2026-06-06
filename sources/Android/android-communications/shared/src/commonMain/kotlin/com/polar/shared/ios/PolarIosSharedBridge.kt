@@ -1268,6 +1268,10 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.backupRootPaths(entriesCsv.csvValues()).joinToString(",")
     }
 
+    fun parseBackupTextForIosCsv(backupText: String): String {
+        return PolarWorkflowRuntimePlanning.parseBackupTextForIos(backupText).joinToString(",")
+    }
+
     fun backupTraversalRootPath(path: String): String {
         return PolarWorkflowRuntimePlanning.backupTraversalRootPath(path)
     }

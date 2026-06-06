@@ -60,19 +60,8 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
             BleLogger.d(TAG, "Backup Entry: ${backupEntry.first}, Size: ${backupEntry.second}")
             val data = loadFile(backupEntry.first)
             BleLogger.d(TAG, "Data loaded for backup entry, size: ${data.size}")
-            val stream = ByteArrayInputStream(data)
-            val reader = stream.bufferedReader()
-            val readLines = reader.useLines { seq ->
-                seq.mapNotNull { line ->
-                    try {
-                        BleLogger.d(TAG, "Reading line: $line")
-                        line
-                    } catch (e: Exception) {
-                        BleLogger.e(TAG, "Failed to read line: $line, error: $e")
-                        null
-                    }
-                }.toMutableSet()
-            }
+            val readLines = PolarRuntimePlannerAdapter.parseBackupTextForAndroid(data.toString(Charsets.UTF_8))
+            readLines.forEach { line -> BleLogger.d(TAG, "Reading line: $line") }
             val plannedRoots = PolarRuntimePlannerAdapter.backupRootPaths(readLines)
             BleLogger.d(TAG, "Lines read from backup entry plus defaults: ${plannedRoots.size}")
             plannedRoots
