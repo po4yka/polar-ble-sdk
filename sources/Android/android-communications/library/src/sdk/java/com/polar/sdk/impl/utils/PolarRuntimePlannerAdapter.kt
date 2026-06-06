@@ -226,12 +226,13 @@ internal object PolarRuntimePlannerAdapter {
         }
     }
 
-    fun planStoredDataCleanup(kind: String, rootPath: String) {
+    fun planStoredDataCleanup(kind: String, rootPath: String, cutoffDate: String? = null) {
         PolarWorkflowRuntimePlanning.planStoredDataCleanup(
             PolarStoredDataCleanupScenario(
                 id = "platform-stored-data-cleanup",
                 kind = kind,
-                rootPath = rootPath
+                rootPath = rootPath,
+                cutoffDate = cutoffDate
             )
         )
     }

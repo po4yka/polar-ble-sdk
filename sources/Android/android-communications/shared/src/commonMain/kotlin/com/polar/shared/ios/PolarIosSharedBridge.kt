@@ -1237,6 +1237,17 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun planRuntimeStoredDataCleanupWithCutoff(kind: String, rootPath: String, cutoffDate: String): String {
+        return PolarWorkflowRuntimePlanning.planStoredDataCleanup(
+            PolarStoredDataCleanupScenario(
+                id = "platform-stored-data-cleanup",
+                kind = kind,
+                rootPath = rootPath,
+                cutoffDate = cutoffDate
+            )
+        ).terminal
+    }
+
     fun storedDataEntryMatchesFilter(entry: String, includePrefixesCsv: String, includeSuffixesCsv: String): Boolean {
         return PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter(
             entry = entry,

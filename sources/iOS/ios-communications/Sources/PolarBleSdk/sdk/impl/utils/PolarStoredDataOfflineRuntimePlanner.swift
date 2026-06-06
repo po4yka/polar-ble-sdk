@@ -8,8 +8,11 @@ import PolarBleSdkShared
 
 enum PolarStoredDataOfflineRuntimePlanner {
     @discardableResult
-    static func storedDataCleanup(kind: String, rootPath: String) -> String {
+    static func storedDataCleanup(kind: String, rootPath: String, cutoffDate: String? = nil) -> String {
         #if canImport(PolarBleSdkShared)
+        if let cutoffDate = cutoffDate {
+            return PolarIosSharedBridge.shared.planRuntimeStoredDataCleanupWithCutoff(kind: kind, rootPath: rootPath, cutoffDate: cutoffDate)
+        }
         return PolarIosSharedBridge.shared.planRuntimeStoredDataCleanup(kind: kind, rootPath: rootPath)
         #else
         return "platform-owned"

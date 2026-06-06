@@ -2787,6 +2787,14 @@ extension PolarBleApiImpl: PolarBleApi  {
         case .UNDEFINED: return
         }
         PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: folderPath)
+        switch dataType {
+        case .ACTIVITY:
+            PolarRuntimePlanner.storedDataCleanup(kind: "activityPrune", rootPath: "/U/0")
+        case .AUTO_SAMPLE:
+            PolarRuntimePlanner.storedDataCleanup(kind: "automaticSamplePrune", rootPath: folderPath, cutoffDate: formatter.string(from: until!))
+        default:
+            break
+        }
         var deletedFiles = [String]()
         for try await file in fileUtils.listFiles(identifier: identifier, folderPath: folderPath, condition: condition) {
             switch dataType {

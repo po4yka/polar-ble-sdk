@@ -119,8 +119,8 @@ enum PolarRuntimePlanner {
     }
 
     @discardableResult
-    static func storedDataCleanup(kind: String, rootPath: String) -> String {
-        return PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: kind, rootPath: rootPath)
+    static func storedDataCleanup(kind: String, rootPath: String, cutoffDate: String? = nil) -> String {
+        return PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: kind, rootPath: rootPath, cutoffDate: cutoffDate)
     }
 
     static func storedDataEntryMatchesFilter(entry: String, includePrefixes: [String] = [], includeSuffixes: [String] = []) -> Bool? {

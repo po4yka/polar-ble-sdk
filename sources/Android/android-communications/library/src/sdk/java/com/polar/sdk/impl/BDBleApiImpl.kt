@@ -2622,6 +2622,12 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             }
         }
         PolarRuntimePlannerAdapter.planStoredDataCleanup("filterDirectoryEntries", folderPath)
+        when (dataType.type) {
+            PolarStoredDataType.ACTIVITY.type -> PolarRuntimePlannerAdapter.planStoredDataCleanup("activityPrune", "/U/0")
+            PolarStoredDataType.AUTO_SAMPLE.type -> if (until != null) {
+                PolarRuntimePlannerAdapter.planStoredDataCleanup("automaticSamplePrune", folderPath, cutoffDate = until.toString())
+            }
+        }
 
         try {
             val deletedFiles = mutableListOf<String>()

@@ -2074,6 +2074,8 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("ON", PolarRuntimePlanner.userDeviceSettingsUsbConnectionModeName(enabled: true))
         XCTAssertEqual("OFF", PolarRuntimePlanner.userDeviceSettingsAutomaticTrainingDetectionModeName(enabled: false))
         XCTAssertEqual("success", PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
+        XCTAssertEqual("platform-path-split", PolarRuntimePlanner.storedDataCleanup(kind: "activityPrune", rootPath: "/U/0"))
+        XCTAssertEqual("success", PolarRuntimePlanner.storedDataCleanup(kind: "automaticSamplePrune", rootPath: "/U/0/AUTOS", cutoffDate: "20260531"))
         XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
         XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["acc"]))
         XCTAssertEqual("success", PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "completed"], firmwareFiles: ["BTUPDAT.BIN", "SYSUPDAT.IMG"]))
@@ -2201,6 +2203,8 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(true, PolarStoredDataOfflineRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260531", cutoffDate: "20260531"))
         XCTAssertEqual(false, PolarStoredDataOfflineRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260601", cutoffDate: "20260531"))
         XCTAssertEqual(["/U/0/20260530/ACT/", "/U/0/20260530/"], PolarStoredDataOfflineRuntimePlanner.storedDataEmptyParentDirectories(filePath: "/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash: true))
+        XCTAssertEqual("platform-path-split", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "activityPrune", rootPath: "/U/0"))
+        XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "automaticSamplePrune", rootPath: "/U/0/AUTOS", cutoffDate: "20260531"))
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: ["acc"]))
         #else
