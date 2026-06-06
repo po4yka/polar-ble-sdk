@@ -37,7 +37,7 @@ enum class PolarWatchFaceComplication(val complicationId: String) {
         fun fromId(id: Int): PolarWatchFaceComplication? {
             return PolarWatchFaceComplicationName.fromId(id)?.let { sharedName ->
                 entries.firstOrNull { complication -> complication.name == sharedName.name }
-            } ?: entries.firstOrNull { it.id == id }
+            }
         }
     }
 }
