@@ -29,6 +29,14 @@ enum PolarRuntimePlanner {
         return PolarCommandRuntimePlanner.resetFields(id: id, sleep: sleep, factoryDefaults: factoryDefaults, otaFirmwareUpdate: otaFirmwareUpdate)
     }
 
+    static func h10StartRecordingFields(id: String, sampleDataIdentifier: String, sampleType: String, recordingIntervalSeconds: Int) -> (sampleDataIdentifier: String, sampleType: String, recordingIntervalSeconds: Int) {
+        return PolarCommandRuntimePlanner.h10StartRecordingFields(id: id, sampleDataIdentifier: sampleDataIdentifier, sampleType: sampleType, recordingIntervalSeconds: recordingIntervalSeconds)
+    }
+
+    static func syncStopNotificationCompleted(id: String) -> Bool {
+        return PolarCommandRuntimePlanner.syncStopNotificationCompleted(id: id)
+    }
+
     @discardableResult
     static func commandSyncStart(id: String) -> String {
         return PolarCommandRuntimePlanner.syncStart(id: id)

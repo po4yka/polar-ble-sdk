@@ -120,6 +120,39 @@ class CommandRuntimePolicyCommonTest {
     }
 
     @Test
+    fun h10AndSyncStopFieldProjectionMatchesSharedCommandParameters() {
+        val h10Fields = PolarRuntimeOrchestration.h10StartRecordingFields(
+            PolarFacadeCommandOperation(
+                id = "h10-start-recording",
+                kind = "query",
+                query = "REQUEST_START_RECORDING",
+                parameters = listOf("sampleDataIdentifier=myExercise", "sampleType=SAMPLE_TYPE_HEART_RATE", "recordingIntervalSeconds=1"),
+                notifications = emptyList(),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
+            )
+        )
+        val syncStopFields = PolarRuntimeOrchestration.syncStopNotificationFields(
+            PolarFacadeCommandOperation(
+                id = "sync-stop-success",
+                kind = "syncStop",
+                query = null,
+                parameters = emptyList(),
+                notifications = listOf("STOP_SYNC:completed=true", "TERMINATE_SESSION"),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
+            )
+        )
+
+        assertEquals("myExercise", h10Fields.sampleDataIdentifier)
+        assertEquals("SAMPLE_TYPE_HEART_RATE", h10Fields.sampleType)
+        assertEquals(1, h10Fields.recordingIntervalSeconds)
+        assertEquals(true, syncStopFields.completed)
+    }
+
+    @Test
     fun resetSyncH10CommandVectorRunsThroughCommonFakeTransportFacadeShape() {
         val vector = loadGoldenVectorText("sdk/command-runtime/reset-sync-h10-command-policy.json")
         val input = vector.objectValue("input")

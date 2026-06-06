@@ -4,10 +4,12 @@ import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
 import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
+import com.polar.shared.runtime.PolarH10StartRecordingFields
 import com.polar.shared.runtime.PolarRestFacadeOperation
 import com.polar.shared.runtime.PolarResetNotificationFields
 import com.polar.shared.runtime.PolarRuntimePlan
 import com.polar.shared.runtime.PolarRuntimeOrchestration
+import com.polar.shared.runtime.PolarSyncStopNotificationFields
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import com.polar.shared.runtime.PolarBackupRestoreFile
 import com.polar.shared.runtime.PolarFirmwareWorkflowScenario
@@ -68,6 +70,40 @@ internal object PolarRuntimePlannerAdapter {
                 sleep = sleep,
                 factoryDefaults = factoryDefaults,
                 otaFirmwareUpdate = otaFirmwareUpdate
+            )
+        )
+    }
+
+    fun h10StartRecordingFields(id: String, sampleDataIdentifier: String, sampleType: String, recordingIntervalSeconds: Int): PolarH10StartRecordingFields {
+        return PolarRuntimeOrchestration.h10StartRecordingFields(
+            PolarFacadeCommandOperation(
+                id = id,
+                kind = "query",
+                query = "REQUEST_START_RECORDING",
+                parameters = listOf(
+                    "sampleDataIdentifier=$sampleDataIdentifier",
+                    "sampleType=$sampleType",
+                    "recordingIntervalSeconds=$recordingIntervalSeconds"
+                ),
+                notifications = emptyList(),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
+            )
+        )
+    }
+
+    fun syncStopNotificationFields(id: String): PolarSyncStopNotificationFields {
+        return PolarRuntimeOrchestration.syncStopNotificationFields(
+            PolarFacadeCommandOperation(
+                id = id,
+                kind = "syncStop",
+                query = null,
+                parameters = emptyList(),
+                notifications = listOf("STOP_SYNC:completed=true", "TERMINATE_SESSION"),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
             )
         )
     }

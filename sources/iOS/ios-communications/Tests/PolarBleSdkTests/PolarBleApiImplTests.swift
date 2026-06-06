@@ -2170,6 +2170,11 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(resetFields.sleep)
         XCTAssertTrue(resetFields.factoryDefaults)
         XCTAssertFalse(resetFields.otaFirmwareUpdate)
+        let h10Fields = PolarCommandRuntimePlanner.h10StartRecordingFields(id: "h10-start-recording", sampleDataIdentifier: "myExercise", sampleType: "SAMPLE_TYPE_HEART_RATE", recordingIntervalSeconds: 1)
+        XCTAssertEqual("myExercise", h10Fields.sampleDataIdentifier)
+        XCTAssertEqual("SAMPLE_TYPE_HEART_RATE", h10Fields.sampleType)
+        XCTAssertEqual(1, h10Fields.recordingIntervalSeconds)
+        XCTAssertTrue(PolarCommandRuntimePlanner.syncStopNotificationCompleted(id: "sync-stop-success"))
         XCTAssertEqual([
             Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue,
             Protocol_PbPFtpHostToDevNotification.startSync.rawValue

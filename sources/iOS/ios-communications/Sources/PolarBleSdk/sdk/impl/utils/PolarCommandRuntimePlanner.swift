@@ -49,6 +49,22 @@ enum PolarCommandRuntimePlanner {
         #endif
     }
 
+    static func h10StartRecordingFields(id: String, sampleDataIdentifier: String, sampleType: String, recordingIntervalSeconds: Int) -> (sampleDataIdentifier: String, sampleType: String, recordingIntervalSeconds: Int) {
+        #if canImport(PolarBleSdkShared)
+        return h10StartRecordingFieldValues(PolarIosSharedBridge.shared.planRuntimeH10StartRecordingFields(id: id, sampleDataIdentifier: sampleDataIdentifier, sampleType: sampleType, recordingIntervalSeconds: Int32(recordingIntervalSeconds))) ?? (sampleDataIdentifier, sampleType, recordingIntervalSeconds)
+        #else
+        return (sampleDataIdentifier, sampleType, recordingIntervalSeconds)
+        #endif
+    }
+
+    static func syncStopNotificationCompleted(id: String) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return syncStopFieldValue(PolarIosSharedBridge.shared.planRuntimeSyncStopNotificationFields(id: id)) ?? true
+        #else
+        return true
+        #endif
+    }
+
     @discardableResult
     static func syncStart(id: String) -> String {
         #if canImport(PolarBleSdkShared)
@@ -137,5 +153,22 @@ enum PolarCommandRuntimePlanner {
         }
         guard let sleep = values["sleep"], let factoryDefaults = values["factoryDefaults"], let otaFirmwareUpdate = values["otaFirmwareUpdate"] else { return nil }
         return (sleep, factoryDefaults, otaFirmwareUpdate)
+    }
+
+    private static func h10StartRecordingFieldValues(_ csv: String) -> (sampleDataIdentifier: String, sampleType: String, recordingIntervalSeconds: Int)? {
+        var values = [String: String]()
+        for plannedField in csv.split(separator: ",") {
+            let parts = plannedField.split(separator: "=", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else { return nil }
+            values[parts[0]] = parts[1]
+        }
+        guard let sampleDataIdentifier = values["sampleDataIdentifier"], let sampleType = values["sampleType"], let recordingInterval = values["recordingIntervalSeconds"].flatMap(Int.init) else { return nil }
+        return (sampleDataIdentifier, sampleType, recordingInterval)
+    }
+
+    private static func syncStopFieldValue(_ csv: String) -> Bool? {
+        let parts = csv.split(separator: "=", maxSplits: 1).map(String.init)
+        guard parts.count == 2, parts[0] == "completed", let completed = Bool(parts[1]) else { return nil }
+        return completed
     }
 }

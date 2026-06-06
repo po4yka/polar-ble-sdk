@@ -1170,14 +1170,20 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         guard BlePolarDeviceCapabilitiesUtility.isRecordingSupported(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
+        let plannedFields = PolarRuntimePlanner.h10StartRecordingFields(
+            id: "h10-start-recording",
+            sampleDataIdentifier: exerciseId,
+            sampleType: sampleType == .hr ? "SAMPLE_TYPE_HEART_RATE" : "SAMPLE_TYPE_RR_INTERVAL",
+            recordingIntervalSeconds: interval.rawValue
+        )
         var duration = PbDuration()
-        duration.seconds = UInt32(interval.rawValue)
+        duration.seconds = UInt32(plannedFields.recordingIntervalSeconds)
         var params = Protocol_PbPFtpRequestStartRecordingParams()
         params.recordingInterval = duration
-        params.sampleDataIdentifier = exerciseId
-        params.sampleType = sampleType == .hr ? PbSampleType.sampleTypeHeartRate : PbSampleType.sampleTypeRrInterval
+        params.sampleDataIdentifier = plannedFields.sampleDataIdentifier
+        params.sampleType = plannedFields.sampleType == "SAMPLE_TYPE_HEART_RATE" ? PbSampleType.sampleTypeHeartRate : PbSampleType.sampleTypeRrInterval
         let queryParams = try params.serializedData()
-        let query = plannedCommandQueryValue(id: "h10-start-recording", query: "REQUEST_START_RECORDING", parameters: ["sampleDataIdentifier=\(exerciseId)", "sampleType=\(params.sampleType)", "recordingIntervalSeconds=\(interval.rawValue)"]) ?? Protocol_PbPFtpQuery.requestStartRecording.rawValue
+        let query = plannedCommandQueryValue(id: "h10-start-recording", query: "REQUEST_START_RECORDING", parameters: ["sampleDataIdentifier=\(plannedFields.sampleDataIdentifier)", "sampleType=\(plannedFields.sampleType)", "recordingIntervalSeconds=\(plannedFields.recordingIntervalSeconds)"]) ?? Protocol_PbPFtpQuery.requestStartRecording.rawValue
         _ = try await client.query(query, parameters: queryParams as NSData)
     }
 
@@ -3044,7 +3050,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         var params = Protocol_PbPFtpStopSyncParams()
-        params.completed = true
+        params.completed = PolarRuntimePlanner.syncStopNotificationCompleted(id: "sync-stop-success")
         let parameters = try params.serializedData() as NSData
         PolarRuntimePlanner.commandSyncStop(id: "sync-stop-success")
         let plannedNotifications = PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success") ?? [
@@ -3069,7 +3075,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         var params = Protocol_PbPFtpStopSyncParams()
-        params.completed = true
+        params.completed = PolarRuntimePlanner.syncStopNotificationCompleted(id: "sync-stop-success")
         let parameters = try params.serializedData() as NSData
         PolarRuntimePlanner.commandSyncStop(id: "sync-stop-success")
         let notification = PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success")?.first ?? Protocol_PbPFtpHostToDevNotification.stopSync.rawValue

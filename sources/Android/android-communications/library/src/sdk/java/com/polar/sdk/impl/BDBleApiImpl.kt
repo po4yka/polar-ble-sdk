@@ -774,19 +774,25 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             if (type == PolarH10OfflineExerciseApi.SampleType.HR) PbSampleType.SAMPLE_TYPE_HEART_RATE else PbSampleType.SAMPLE_TYPE_RR_INTERVAL
         val recordingInterval =
             interval?.value ?: PolarH10OfflineExerciseApi.RecordingInterval.INTERVAL_1S.value
-        val duration = PbDuration.newBuilder().setSeconds(recordingInterval).build()
+        val fields = PolarRuntimePlannerAdapter.h10StartRecordingFields(
+            id = "h10-start-recording",
+            sampleDataIdentifier = exerciseId,
+            sampleType = pbSampleType.name,
+            recordingIntervalSeconds = recordingInterval
+        )
+        val duration = PbDuration.newBuilder().setSeconds(fields.recordingIntervalSeconds).build()
         val params = PftpRequest.PbPFtpRequestStartRecordingParams.newBuilder()
-            .setSampleDataIdentifier(exerciseId)
-            .setSampleType(pbSampleType)
+            .setSampleDataIdentifier(fields.sampleDataIdentifier)
+            .setSampleType(PbSampleType.valueOf(fields.sampleType))
             .setRecordingInterval(duration)
             .build()
         val plan = PolarRuntimePlannerAdapter.planCommandQuery(
             id = "h10-start-recording",
             query = "REQUEST_START_RECORDING",
             parameters = listOf(
-                "sampleDataIdentifier=$exerciseId",
-                "sampleType=${pbSampleType.name}",
-                "recordingIntervalSeconds=$recordingInterval"
+                "sampleDataIdentifier=${fields.sampleDataIdentifier}",
+                "sampleType=${fields.sampleType}",
+                "recordingIntervalSeconds=${fields.recordingIntervalSeconds}"
             )
         )
         try {
@@ -2930,9 +2936,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 ?: return
             val plan = PolarRuntimePlannerAdapter.planCommandSyncStop("sync-stop-success")
             val notifications = PolarRuntimePlannerAdapter.notificationNames(plan)
+            val stopSyncFields = PolarRuntimePlannerAdapter.syncStopNotificationFields("sync-stop-success")
             client.sendNotification(
                 PolarRuntimePlannerAdapter.notificationValue(notifications[0]),
-                PftpNotification.PbPFtpStopSyncParams.newBuilder().setCompleted(true).build().toByteArray()
+                PftpNotification.PbPFtpStopSyncParams.newBuilder().setCompleted(stopSyncFields.completed).build().toByteArray()
             )
             client.sendNotification(
                 PolarRuntimePlannerAdapter.notificationValue(notifications[1]),

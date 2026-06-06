@@ -92,6 +92,16 @@ data class PolarResetNotificationFields(
     val otaFirmwareUpdate: Boolean
 )
 
+data class PolarH10StartRecordingFields(
+    val sampleDataIdentifier: String,
+    val sampleType: String,
+    val recordingIntervalSeconds: Int
+)
+
+data class PolarSyncStopNotificationFields(
+    val completed: Boolean
+)
+
 object PolarRuntimeOrchestration {
     fun userDeviceSettingsPath(
         fileSystemType: String,
@@ -133,6 +143,24 @@ object PolarRuntimeOrchestration {
             sleep = commands.flagValue("sleep"),
             factoryDefaults = commands.flagValue("factoryDefaults"),
             otaFirmwareUpdate = commands.flagValue("otaFirmwareUpdate")
+        )
+    }
+
+    fun h10StartRecordingFields(operation: PolarFacadeCommandOperation): PolarH10StartRecordingFields {
+        require(operation.query == "REQUEST_START_RECORDING")
+        val commands = operation.queryCommands()
+        return PolarH10StartRecordingFields(
+            sampleDataIdentifier = commands.parameterValue("sampleDataIdentifier"),
+            sampleType = commands.parameterValue("sampleType"),
+            recordingIntervalSeconds = commands.parameterValue("recordingIntervalSeconds").toInt()
+        )
+    }
+
+    fun syncStopNotificationFields(operation: PolarFacadeCommandOperation): PolarSyncStopNotificationFields {
+        require(operation.kind == "syncStop" || operation.kind == "syncStopFailure")
+        val stopSyncCommand = operation.syncStopCommands().first { command -> command.startsWith("notification:STOP_SYNC") }
+        return PolarSyncStopNotificationFields(
+            completed = stopSyncCommand.substringAfter("completed=").toBooleanStrict()
         )
     }
 
@@ -266,6 +294,11 @@ object PolarRuntimeOrchestration {
         return first { command -> command.startsWith("flag:$name=") }
             .substringAfter("=")
             .toBooleanStrict()
+    }
+
+    private fun List<String>.parameterValue(name: String): String {
+        return first { command -> command.startsWith("parameter:$name=") }
+            .substringAfter("=")
     }
 
     private fun PolarFacadeCommandOperation.syncStartCommands(): List<String> {

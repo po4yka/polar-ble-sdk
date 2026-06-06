@@ -64,6 +64,11 @@ class PolarRuntimePlannerAdapterTest {
         Assert.assertFalse(resetFields.sleep)
         Assert.assertTrue(resetFields.factoryDefaults)
         Assert.assertFalse(resetFields.otaFirmwareUpdate)
+        val h10Fields = PolarRuntimePlannerAdapter.h10StartRecordingFields("h10-start-recording", "myExercise", "SAMPLE_TYPE_HEART_RATE", 1)
+        Assert.assertEquals("myExercise", h10Fields.sampleDataIdentifier)
+        Assert.assertEquals("SAMPLE_TYPE_HEART_RATE", h10Fields.sampleType)
+        Assert.assertEquals(1, h10Fields.recordingIntervalSeconds)
+        Assert.assertTrue(PolarRuntimePlannerAdapter.syncStopNotificationFields("sync-stop-success").completed)
         Assert.assertEquals(
             listOf(
                 PftpNotification.PbPFtpHostToDevNotification.INITIALIZE_SESSION_VALUE,

@@ -1281,6 +1281,46 @@ object PolarIosSharedBridge {
         ).joinToString(separator = ",")
     }
 
+    fun planRuntimeH10StartRecordingFields(id: String, sampleDataIdentifier: String, sampleType: String, recordingIntervalSeconds: Int): String {
+        val fields = PolarRuntimeOrchestration.h10StartRecordingFields(
+            PolarFacadeCommandOperation(
+                id = id,
+                kind = "query",
+                query = "REQUEST_START_RECORDING",
+                parameters = listOf(
+                    "sampleDataIdentifier=$sampleDataIdentifier",
+                    "sampleType=$sampleType",
+                    "recordingIntervalSeconds=$recordingIntervalSeconds"
+                ),
+                notifications = emptyList(),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
+            )
+        )
+        return listOf(
+            "sampleDataIdentifier=${fields.sampleDataIdentifier}",
+            "sampleType=${fields.sampleType}",
+            "recordingIntervalSeconds=${fields.recordingIntervalSeconds}"
+        ).joinToString(separator = ",")
+    }
+
+    fun planRuntimeSyncStopNotificationFields(id: String): String {
+        val fields = PolarRuntimeOrchestration.syncStopNotificationFields(
+            PolarFacadeCommandOperation(
+                id = id,
+                kind = "syncStop",
+                query = null,
+                parameters = emptyList(),
+                notifications = listOf("STOP_SYNC:completed=true", "TERMINATE_SESSION"),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
+            )
+        )
+        return "completed=${fields.completed}"
+    }
+
     fun planRuntimeCommandSyncStart(id: String): String {
         return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(
