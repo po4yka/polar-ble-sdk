@@ -64,28 +64,26 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
 
         val pbUsbConnectionSettings = UserDeviceSettings.PbUsbConnectionSettings.newBuilder()
         serialized.usbConnectionMode?.let {
-            val sharedMode = PolarUserDeviceSettingsModels.usbConnectionModeValue(it)
-                ?.let(UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode::forNumber)
-            val fallbackMode = if (it == "ON") {
-                UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.ON
-            } else {
-                UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.OFF
+            val sharedModeValue = requireNotNull(PolarUserDeviceSettingsModels.usbConnectionModeValue(it)) {
+                "Unknown USB connection mode $it"
             }
-            pbUsbConnectionSettings.setMode(sharedMode ?: fallbackMode)
+            val sharedMode = requireNotNull(UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.forNumber(sharedModeValue)) {
+                "Unknown USB connection mode value $sharedModeValue"
+            }
+            pbUsbConnectionSettings.setMode(sharedMode)
         }
 
         val pbAutomaticTrainingDetectionSettings = UserDeviceSettings.PbAutomaticTrainingDetectionSettings.newBuilder()
         val pbUserAutomaticMeasurementSettings = UserDeviceSettings.PbUserAutomaticMeasurementSettings.newBuilder()
 
         serialized.automaticTrainingDetectionMode?.let {
-            val sharedState = PolarUserDeviceSettingsModels.automaticTrainingDetectionModeValue(it)
-                ?.let(UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState::forNumber)
-            val fallbackState = if (it == "ON") {
-                UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.ON
-            } else {
-                UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.OFF
+            val sharedStateValue = requireNotNull(PolarUserDeviceSettingsModels.automaticTrainingDetectionModeValue(it)) {
+                "Unknown automatic training detection mode $it"
             }
-            pbAutomaticTrainingDetectionSettings.setState(sharedState ?: fallbackState)
+            val sharedState = requireNotNull(UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.forNumber(sharedStateValue)) {
+                "Unknown automatic training detection mode value $sharedStateValue"
+            }
+            pbAutomaticTrainingDetectionSettings.setState(sharedState)
         }
 
         serialized.automaticTrainingDetectionSensitivity?.let {
