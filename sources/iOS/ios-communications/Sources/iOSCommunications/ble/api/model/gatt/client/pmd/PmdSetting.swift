@@ -97,7 +97,7 @@ public struct PmdSetting: @unchecked Sendable {
             let fields = group.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
             guard fields.count == 2,
                   let code = UInt8(fields[0]),
-                  let type = PmdSettingType(rawValue: code) else {
+                  let type = PmdSettingType(sharedCode: code) else {
                 return nil
             }
             let values = fields[1].split(separator: ",", omittingEmptySubsequences: false).reduce(into: Set<UInt32>()) { result, value in
@@ -114,9 +114,13 @@ public struct PmdSetting: @unchecked Sendable {
         let supportedTypes: Set<PmdSettingType> = [.sampleRate, .resolution, .range, .rangeMilliUnit, .channels, .factor]
         guard Set(selected.keys).isSubset(of: supportedTypes) else { return nil }
         let selectedCsv = selected
-            .map { "\($0.key.rawValue)=\($0.value)" }
+            .compactMap { entry -> String? in
+                guard let code = entry.key.sharedCode else { return nil }
+                return "\(code)=\(entry.value)"
+            }
             .sorted()
             .joined(separator: ",")
+        guard selectedCsv.split(separator: ",").count == selected.count else { return nil }
         return Data(hexBytes: PolarIosSharedBridge.shared.pmdSelectedSettingsHex(selectedCsv: selectedCsv))
     }
     #endif
@@ -140,6 +144,41 @@ private extension Data {
 
     var pmdHexString: String {
         map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+private extension PmdSetting.PmdSettingType {
+    init?(sharedCode: UInt8) {
+        guard let sharedName = PolarIosSharedBridge.shared.pmdSettingTypeName(code: Int32(sharedCode)) else {
+            self.init(rawValue: sharedCode)
+            return
+        }
+        switch sharedName {
+        case "SAMPLE_RATE": self = .sampleRate
+        case "RESOLUTION": self = .resolution
+        case "RANGE": self = .range
+        case "RANGE_MILLIUNIT": self = .rangeMilliUnit
+        case "CHANNELS": self = .channels
+        case "FACTOR": self = .factor
+        case "SECURITY": self = .security
+        default: return nil
+        }
+    }
+
+    var sharedCode: UInt8? {
+        let sharedName: String
+        switch self {
+        case .sampleRate: sharedName = "SAMPLE_RATE"
+        case .resolution: sharedName = "RESOLUTION"
+        case .range: sharedName = "RANGE"
+        case .rangeMilliUnit: sharedName = "RANGE_MILLIUNIT"
+        case .channels: sharedName = "CHANNELS"
+        case .factor: sharedName = "FACTOR"
+        case .security: sharedName = "SECURITY"
+        case .unknown: return rawValue
+        }
+        guard let code = PolarIosSharedBridge.shared.pmdSettingTypeCode(name: sharedName) else { return rawValue }
+        return UInt8(truncating: code)
     }
 }
 #endif
