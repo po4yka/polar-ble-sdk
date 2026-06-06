@@ -94,6 +94,8 @@ public class PolarBackupManager {
                 PolarRuntimePlanner.backupRestore(path: restorePath, payloadHex: payloadHex)
                 let header = try operation.serializedData() as NSData
                 let dataStream = InputStream(data: backupFileData.data)
+                _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: backupFileData.data.count)
+                PolarRuntimePlanner.psFtpWriteAck(payloadSize: backupFileData.data.count)
                 for try await bytes in client.write(header, data: dataStream) {
                     BleLogger.trace("Writing firmware update file: \(backupFileData.directory)\(backupFileData.fileName), bytes to write: \(bytes)")
                 }

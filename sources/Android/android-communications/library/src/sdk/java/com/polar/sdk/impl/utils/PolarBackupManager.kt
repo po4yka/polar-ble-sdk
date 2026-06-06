@@ -105,6 +105,8 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
             val dataStream = ByteArrayInputStream(backupFileData.data)
             BleLogger.d(TAG, "Sending PftpRequest: ${header.toString(Charsets.UTF_8)}")
             try {
+                PolarRuntimePlannerAdapter.planPsFtpWriteProgress(backupFileData.data.size, "android")
+                PolarRuntimePlannerAdapter.planPsFtpWriteAck(backupFileData.data.size)
                 client.write(header, dataStream).collect { }
                 BleLogger.d(TAG, "Successfully restored backup file: ${backupFileData.fileName}")
             } catch (error: Throwable) {
