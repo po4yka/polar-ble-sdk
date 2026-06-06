@@ -35,6 +35,7 @@ import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
 import com.polar.shared.sdk.PolarSdLogTriggerName
+import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.PolarH10OfflineExerciseApi
 import com.polar.sdk.api.errors.PolarBleSdkInstanceException
@@ -890,7 +891,7 @@ class BDBleApiImplTest {
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
         Assert.assertTrue(writtenSettings.hasAutomaticMeasurementSettings())
         val atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
-        Assert.assertEquals(PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.ON, atdSettings.state)
+        Assert.assertEquals(sharedAutomaticTrainingDetectionState(true), atdSettings.state)
         Assert.assertEquals(77, atdSettings.sensitivity)
         Assert.assertEquals(300, atdSettings.minimumTrainingDurationSeconds)
         Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
@@ -933,7 +934,7 @@ class BDBleApiImplTest {
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
         val atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
-        Assert.assertEquals(PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.OFF, atdSettings.state)
+        Assert.assertEquals(sharedAutomaticTrainingDetectionState(false), atdSettings.state)
         Assert.assertEquals(11, atdSettings.sensitivity)
         Assert.assertEquals(120, atdSettings.minimumTrainingDurationSeconds)
     }
@@ -3609,6 +3610,12 @@ class BDBleApiImplTest {
             .setTime(PbTime.newBuilder().setHour(12).setMinute(0).setSeconds(0).setMillis(0))
             .setTrusted(true)
             .build()
+    }
+
+    private fun sharedAutomaticTrainingDetectionState(enabled: Boolean): PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState {
+        val sharedName = PolarUserDeviceSettingsModels.automaticTrainingDetectionModeName(if (enabled) 1 else 0)
+            ?: error("Missing shared automatic training detection state for $enabled")
+        return PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.valueOf(sharedName)
     }
 
     private companion object {

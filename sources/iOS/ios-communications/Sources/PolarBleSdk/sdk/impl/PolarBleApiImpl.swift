@@ -2953,7 +2953,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let settingsPath = getDeviceSettingsPath(session)
         var atdSettings = Data_PbAutomaticTrainingDetectionSettings()
-        atdSettings.state = mode ? .on : .off
+        atdSettings.state = (mode ? PolarUserDeviceSettings.AutomaticTrainingDetectionMode.ON : PolarUserDeviceSettings.AutomaticTrainingDetectionMode.OFF).toProto()
         atdSettings.sensitivity = UInt32(sensitivity)
         atdSettings.minimumTrainingDurationSeconds = UInt32(minimumDuration)
         let payloadFields = ["automaticTrainingDetectionMode=\(PolarRuntimePlanner.userDeviceSettingsAutomaticTrainingDetectionModeName(enabled: mode) ?? "\(atdSettings.state)")", "automaticTrainingDetectionSensitivity=\(sensitivity)", "minimumTrainingDurationSeconds=\(minimumDuration)"]

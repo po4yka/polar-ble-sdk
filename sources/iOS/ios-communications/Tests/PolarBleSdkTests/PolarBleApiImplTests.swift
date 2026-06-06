@@ -1162,7 +1162,7 @@ final class PolarBleApiImplTests: XCTestCase {
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
         XCTAssertTrue(writtenSettings.hasAutomaticMeasurementSettings)
         let atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
-        XCTAssertEqual(.on, atdSettings.state)
+        XCTAssertEqual(PolarUserDeviceSettings.AutomaticTrainingDetectionMode.ON.toProto(), atdSettings.state)
         XCTAssertEqual(77, atdSettings.sensitivity)
         XCTAssertEqual(300, atdSettings.minimumTrainingDurationSeconds)
         XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
@@ -1190,7 +1190,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
         let atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
-        XCTAssertEqual(.off, atdSettings.state)
+        XCTAssertEqual(PolarUserDeviceSettings.AutomaticTrainingDetectionMode.OFF.toProto(), atdSettings.state)
         XCTAssertEqual(11, atdSettings.sensitivity)
         XCTAssertEqual(120, atdSettings.minimumTrainingDurationSeconds)
     }

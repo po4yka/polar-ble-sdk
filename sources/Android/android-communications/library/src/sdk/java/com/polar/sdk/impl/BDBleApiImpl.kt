@@ -3154,13 +3154,18 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
         val currentProto = getUserDeviceSettingsProto(client, session.polarDeviceType)
+        val automaticTrainingDetectionStateName = PolarUserDeviceSettingsModels.automaticTrainingDetectionModeName(
+            if (automaticTrainingDetectionMode) 1 else 0
+        )
+        val automaticTrainingDetectionState = automaticTrainingDetectionStateName
+            ?.let(UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState::valueOf)
+            ?: if (automaticTrainingDetectionMode) {
+                UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.ON
+            } else {
+                UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.OFF
+            }
         val atdSettings = UserDeviceSettings.PbAutomaticTrainingDetectionSettings.newBuilder()
-            .setState(
-                if (automaticTrainingDetectionMode)
-                    UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.ON
-                else
-                    UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.OFF
-            )
+            .setState(automaticTrainingDetectionState)
             .setSensitivity(automaticTrainingDetectionSensitivity)
             .setMinimumTrainingDurationSeconds(minimumTrainingDurationSeconds)
             .build()
