@@ -689,6 +689,11 @@ public class PpgData {
     }
     
     private static func dataFromCompressedType13(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedCompressedType13Data(frame: frame) {
+            return sharedData
+        }
+        #endif
 
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_13_CHANNELS_IN_SAMPLE, resolution: TYPE_13_SAMPLE_SIZE_IN_BITS)
 
@@ -716,4 +721,44 @@ public class PpgData {
         }
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamplesFrameType13)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedCompressedType13Data(frame: PmdDataFrame) -> PpgData? {
+        guard frame.isCompressedFrame,
+              frame.frameType == .type_13,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PolarIosSharedBridge.shared.ppgCompressedType13Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 4,
+                  let timeStamp = UInt64(fields[0]) else {
+                return nil
+            }
+            let channel0 = fields[1].split(separator: ";").compactMap { Int32($0) }
+            let channel1 = fields[2].split(separator: ";").compactMap { Int32($0) }
+            let statusBits = fields[3].split(separator: ";").compactMap { Int8($0) }
+            guard !channel0.isEmpty,
+                  !channel1.isEmpty,
+                  !statusBits.isEmpty else {
+                return nil
+            }
+            return PpgDataFrameType13(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: channel0 + channel1, statusBits: statusBits)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
 }
