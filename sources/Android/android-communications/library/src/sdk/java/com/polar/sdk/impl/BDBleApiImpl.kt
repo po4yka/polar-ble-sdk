@@ -921,12 +921,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
 
         val fetchOperation = h10ExerciseFetchOperation(entry.path)
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = fetchOperation.first
-        builder.path = fetchOperation.second
+        val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(fetchOperation)
 
         return try {
-            val byteArrayOutputStream = client.request(builder.build().toByteArray())
+            val byteArrayOutputStream = client.request(requestBytes)
             val samples = PbExerciseSamples.parseFrom(byteArrayOutputStream.toByteArray())
             if (samples.hasRrSamples()) {
                 PolarExerciseData(
@@ -1033,10 +1031,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
     private fun buildPftpGetRequest(path: String): ByteArray {
         val readOperation = offlineRecordingFileReadOperation(path)
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = readOperation.first
-        builder.path = readOperation.second
-        return builder.build().toByteArray()
+        return PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
     }
 
     private fun parseOfflineRecordingData(
@@ -1253,11 +1248,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         return try {
             val directoryPath = entry.path.substring(0, entry.path.lastIndexOf("/") + 1)
             val readOperation = offlineRecordingDirectoryReadOperation(directoryPath)
-            val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            builder.command = readOperation.first
-            builder.path = readOperation.second
+            val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
 
-            val byteArrayOutputStream = client.request(builder.build().toByteArray())
+            val byteArrayOutputStream = client.request(requestBytes)
             val directory = PbPFtpDirectory.parseFrom(byteArrayOutputStream.toByteArray())
             val prefix = entry.path.substringAfterLast("/").substringBefore(".REC")
             val matchingEntries = directory.entriesList.filter {
@@ -1337,13 +1330,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         if (fsType != FileSystemType.POLAR_FILE_SYSTEM_V2) throw PolarOperationNotSupported()
 
         val readOperation = offlineRecordingFileReadOperation(entry.path)
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = readOperation.first
-        builder.path = readOperation.second
+        val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
 
         BleLogger.d(TAG, "Split offline record get. Device: $identifier Path: ${entry.path} Secret used: ${secret != null}")
         return try {
-            val byteArrayOutputStream = client.request(builder.build().toByteArray())
+            val byteArrayOutputStream = client.request(requestBytes)
             val pmdSecret = secret?.let { mapPolarSecretToPmdSecret(it) }
             val offlineRecData = OfflineRecordingData.parseDataFromOfflineFile(
                 byteArrayOutputStream.toByteArray(),
@@ -1389,11 +1380,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             FileSystemType.POLAR_FILE_SYSTEM_V2 -> throw PolarBleSdkInternalException("Other than H10 sensor is not supported by removeExercise API method. For other than H10 sensor use API deleteTrainingSession API method instead.")
             FileSystemType.H10_FILE_SYSTEM -> {
                 val removeOperation = h10ExerciseRemoveOperation(entry.path)
-                val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                builder.command = removeOperation.first
-                builder.path = removeOperation.second
                 try {
-                    client.request(builder.build().toByteArray())
+                    client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
                 } catch (throwable: Throwable) {
                     throw handleError(throwable)
                 }
@@ -1432,24 +1420,15 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                     entry.path.dropLastWhile { it != '/' }
                 }
                 val removeOperation = offlineRecordingRemoveOperation(parentDir)
-                val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                builder.command = removeOperation.first
-                builder.path = removeOperation.second
-                client.request(builder.build().toByteArray())
+                client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
             } else if (count == 0 || entry.path.contains(Regex("""(\D+)(\d+)\.REC"""))) {
                 val removeOperation = offlineRecordingRemoveOperation(entry.path)
-                val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                builder.command = removeOperation.first
-                builder.path = removeOperation.second
-                client.request(builder.build().toByteArray())
+                client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
             } else {
                 for (subRecordingIndex in 0 until count) {
                     val recordingPath = entry.path.replace(Regex("(\\d*.REC)$"), "$subRecordingIndex.REC")
                     val removeOperation = offlineRecordingRemoveOperation(recordingPath)
-                    val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                    builder.command = removeOperation.first
-                    builder.path = removeOperation.second
-                    client.request(builder.build().toByteArray())
+                    client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
                 }
             }
 
@@ -1465,10 +1444,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                     val isEmpty = checkIfDirectoryIsEmpty(dir, client)
                     if (isEmpty) {
                         val removeOperation = offlineRecordingRemoveOperation(dir)
-                        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                        builder.command = removeOperation.first
-                        builder.path = removeOperation.second
-                        client.request(builder.build().toByteArray())
+                        client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
                     }
                 } catch (throwable: Throwable) {
                     throw handleError(throwable)
@@ -1482,12 +1458,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     private suspend fun checkIfDirectoryIsEmpty(directoryPath: String, client: BlePsFtpClient): Boolean {
         val path = PolarRuntimePlannerAdapter.normalizeFileListFolderPath(directoryPath)
         val readOperation = offlineRecordingDirectoryReadOperation(path)
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = readOperation.first
-        builder.path = readOperation.second
+        val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
 
         return try {
-            val byteArrayOutputStream = client.request(builder.build().toByteArray())
+            val byteArrayOutputStream = client.request(requestBytes)
             val directory = PbPFtpDirectory.parseFrom(byteArrayOutputStream.toByteArray())
             directory.entriesList.size == 0
         } catch (throwable: Throwable) {
@@ -1577,16 +1551,14 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
         val writeOperation = ledConfigWriteOperation()
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = writeOperation.first
-        builder.path = writeOperation.second
+        val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(writeOperation)
         val sdkModeLedByte = if (ledConfig.sdkModeLedEnabled) LedConfig.LED_ANIMATION_ENABLE_BYTE else LedConfig.LED_ANIMATION_DISABLE_BYTE
         val ppiModeLedByte = if (ledConfig.ppiModeLedEnabled) LedConfig.LED_ANIMATION_ENABLE_BYTE else LedConfig.LED_ANIMATION_DISABLE_BYTE
         val payload = byteArrayOf(sdkModeLedByte, ppiModeLedByte)
         val data = ByteArrayInputStream(payload)
         PolarRuntimePlannerAdapter.planPsFtpWriteProgress(payload.size, "android")
         PolarRuntimePlannerAdapter.planPsFtpWriteAck(payload.size)
-        client.write(builder.build().toByteArray(), data).collect {}
+        client.write(requestBytes, data).collect {}
     }
 
     override suspend fun listRestApiServices(identifier: String): PolarDeviceRestApiServices {
@@ -1624,11 +1596,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         return when (getFileSystemType(session.polarDeviceType)) {
             FileSystemType.POLAR_FILE_SYSTEM_V2 -> {
                 val plan = PolarRuntimePlannerAdapter.planFileFacade("read-low-level-file-success", "GET", path)
-                val builder = PftpRequest.PbPFtpOperation.newBuilder()
-                builder.command = PolarRuntimePlannerAdapter.fileOperationCommand(plan)
-                builder.path = PolarRuntimePlannerAdapter.fileOperationPath(plan)
                 try {
-                    client.request(builder.build().toByteArray()).toByteArray()
+                    client.request(PolarRuntimePlannerAdapter.fileOperationBytes(plan)).toByteArray()
                 } catch (throwable: Throwable) {
                     throw handleError(throwable)
                 }
@@ -1717,20 +1686,14 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             baos.toByteArray()
         }
         val ftuOperation = firstTimeUsePhysicalConfigWriteOperation()
-        val ftuBuilder = PftpRequest.PbPFtpOperation.newBuilder().apply {
-            command = ftuOperation.first
-            path = ftuOperation.second
-        }
+        val ftuRequestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(ftuOperation)
         val userIdentifier = UserIdentifierType.create().toProto()
         val userIdData = ByteArrayOutputStream().use { baos ->
             userIdentifier.writeTo(baos)
             baos.toByteArray()
         }
         val userIdOperation = firstTimeUseUserIdWriteOperation()
-        val userIdBuilder = PftpRequest.PbPFtpOperation.newBuilder().apply {
-            command = userIdOperation.first
-            path = userIdOperation.second
-        }
+        val userIdRequestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(userIdOperation)
         val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ENGLISH)
         val localTime = LocalDateTime.parse(ftuConfig.deviceTime, dateTimeFormatter)
 
@@ -1740,10 +1703,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             setLocalTime(identifier, localTime)
             PolarRuntimePlannerAdapter.planPsFtpWriteProgress(ftuData.size, "android")
             PolarRuntimePlannerAdapter.planPsFtpWriteAck(ftuData.size)
-            client.write(ftuBuilder.build().toByteArray(), ByteArrayInputStream(ftuData)).collect {}
+            client.write(ftuRequestBytes, ByteArrayInputStream(ftuData)).collect {}
             PolarRuntimePlannerAdapter.planPsFtpWriteProgress(userIdData.size, "android")
             PolarRuntimePlannerAdapter.planPsFtpWriteAck(userIdData.size)
-            client.write(userIdBuilder.build().toByteArray(), ByteArrayInputStream(userIdData)).collect {}
+            client.write(userIdRequestBytes, ByteArrayInputStream(userIdData)).collect {}
             BleLogger.d(TAG, "doFirstTimeUse(identifier: $identifier): completed")
             sendTerminateAndStopSyncNotifications(identifier)
         } catch (error: Throwable) {
@@ -1770,13 +1733,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
         return try {
             val readOperation = firstTimeUsePhysicalConfigReadOperation()
-            val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(readOperation.first)
-                    .setPath(readOperation.second)
-                    .build()
-                    .toByteArray()
-            )
+            val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(readOperation))
             val pbUserPhysData = PhysData.PbUserPhysData.parseFrom(response.toByteArray())
             pbUserPhysData.toPolarPhysicalConfiguration()
         } catch (throwable: Throwable) {
@@ -2302,14 +2259,12 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
         val writeOperation = sdLogConfigWriteOperation()
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-        builder.command = writeOperation.first
-        builder.path = writeOperation.second
+        val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(writeOperation)
         val payload = logConfig.toProto().toByteArray()
         val data = ByteArrayInputStream(payload)
         PolarRuntimePlannerAdapter.planPsFtpWriteProgress(payload.size, "android")
         PolarRuntimePlannerAdapter.planPsFtpWriteAck(payload.size)
-        client.write(builder.build().toByteArray(), data).collect {}
+        client.write(requestBytes, data).collect {}
     }
 
     override fun updateFirmware(identifier: String, firmwareUrl: String): Flow<FirmwareUpdateStatus> = flow {
@@ -2534,13 +2489,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             client.query(PftpRequest.PbPFtpQuery.PREPARE_FIRMWARE_UPDATE_VALUE, null)
             BleLogger.d(TAG, "Start ${firmwareFile.first} write")
             val plannedWriteOperation = plannedWriteOperations.getValue("/${firmwareFile.first}")
-            val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            builder.command = plannedWriteOperation.first
-            builder.path = plannedWriteOperation.second
+            val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(plannedWriteOperation)
             try {
                 PolarRuntimePlannerAdapter.planPsFtpWriteAck(firmwareFile.second.size)
                 var lastEmitTime = 0L
-                client.write(builder.build().toByteArray(), ByteArrayInputStream(firmwareFile.second))
+                client.write(requestBytes, ByteArrayInputStream(firmwareFile.second))
                     .collect { bytesWritten: Long ->
                         val now = System.currentTimeMillis()
                         val delta = bytesWritten - lastBytesWritten
@@ -2697,13 +2650,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             val dates = generateSequence(fromDate) { it.plusDays(1) }.takeWhile { !it.isAfter(toDate) }.toList()
             for (date in dates) {
                 val path = "/U/0/${dateFormatter.format(date).plus("/")}"
-                val builder = PftpRequest.PbPFtpOperation.newBuilder()
                 val removeOperation = storedDataDateFolderRemoveOperation(path.trimEnd('/'))
-                builder.command = removeOperation.first
-                builder.path = removeOperation.second
                 PolarRuntimePlannerAdapter.planStoredDataCleanup("emptyDayFolderRemoval", path)
                 try {
-                    client.request(builder.build().toByteArray())
+                    client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
                 } catch (throwable: Throwable) {
                     if (throwable.message?.contains("PFTP error") == true &&
                         throwable.message?.contains(PbPFtpError.NO_SUCH_FILE_OR_DIRECTORY.number.toString()) == true) {
@@ -2960,12 +2910,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             path = path
         ).firstOrNull()
         PolarRuntimePlannerAdapter.planUserDeviceSettingsRead(path)
-        val builder = PftpRequest.PbPFtpOperation.newBuilder().apply {
-            command = plannedOperation?.first ?: PftpRequest.PbPFtpOperation.Command.GET
-            this.path = plannedOperation?.second ?: path
-        }
+        val operation = plannedOperation ?: (PftpRequest.PbPFtpOperation.Command.GET to path)
         return try {
-            val byteArray = client.request(builder.build().toByteArray()).toByteArray()
+            val byteArray = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(operation)).toByteArray()
             PbUserDeviceSettings.parseFrom(byteArray)
         } catch (e: Throwable) {
             BleLogger.e(TAG, "Failed to get device user settings: $e")
@@ -2996,17 +2943,14 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             payloadFields = listOf("protobufPayload=platform-built")
         ).firstOrNull()
         PolarRuntimePlannerAdapter.planUserDeviceSettingsWrite(settingsPath, listOf("protobufPayload=platform-built"))
-        val deviceSettingsBuilder = PftpRequest.PbPFtpOperation.newBuilder().apply {
-            command = plannedOperation?.first ?: PftpRequest.PbPFtpOperation.Command.PUT
-            path = plannedOperation?.second ?: settingsPath
-        }
+        val operation = plannedOperation ?: (PftpRequest.PbPFtpOperation.Command.PUT to settingsPath)
         val deviceSettingsData = ByteArrayOutputStream().use { baos ->
             deviceUserSetting.writeTo(baos)
             baos.toByteArray()
         }
         PolarRuntimePlannerAdapter.planPsFtpWriteProgress(deviceSettingsData.size, "android")
         PolarRuntimePlannerAdapter.planPsFtpWriteAck(deviceSettingsData.size)
-        client.write(deviceSettingsBuilder.build().toByteArray(), ByteArrayInputStream(deviceSettingsData)).collect {}
+        client.write(PolarRuntimePlannerAdapter.fileOperationBytes(operation), ByteArrayInputStream(deviceSettingsData)).collect {}
     }
 
     override suspend fun getSteps(identifier: String, fromDate: LocalDate, toDate: LocalDate): List<PolarStepsData> {
