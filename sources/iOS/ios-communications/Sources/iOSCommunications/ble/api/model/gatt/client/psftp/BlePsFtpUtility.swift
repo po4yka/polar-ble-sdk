@@ -180,27 +180,16 @@ public class BlePsFtpUtility {
     ///   - sequenceNumber: RFC76 ring counter
     /// - Returns: air packet
     public static func buildRfc76MessageFrame(_ data: InputStream, next: Int, mtuSize: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> Data {
-        var packet = Data()
-        //
+        let packet: Data
         if data.hasBytesAvailable {
-            //
             var frameData = [UInt8](repeating: 0, count: mtuSize)
             let bytesRead = frameData.withUnsafeMutableBufferPointer{ (ptr: inout  UnsafeMutableBufferPointer<UInt8>) -> Int in
                 return data.read(ptr.baseAddress!+1, maxLength: mtuSize-1)
             }
-            if data.hasBytesAvailable && bytesRead == (mtuSize-1) {
-                // more
-                frameData[0] = 0x06 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            }else{
-                // last
-                frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            }
-            packet = Data(bytes: &frameData, count: bytesRead + 1)
+            let hasMore = data.hasBytesAvailable && bytesRead == (mtuSize-1)
+            packet = makeRfc76Frame(chunk: Data(frameData[1..<(bytesRead + 1)]), hasMore: hasMore, next: next, sequenceNumber: sequenceNumber)
         } else {
-            // 0 payload
-            var frameData = [UInt8](repeating: 0, count: 1)
-            frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            packet = Data(bytes: &frameData, count: 1)
+            packet = makeRfc76Frame(chunk: Data(), hasMore: false, next: next, sequenceNumber: sequenceNumber)
         }
         sequenceNumber.increment()
         return packet
@@ -217,16 +206,15 @@ public class BlePsFtpUtility {
     /// - Returns: air packet
     public static func buildRfc76MessageFrame(_ header: InputStream, data: InputStream?, next: Int, mtuSize: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> Data {
         // sorry as swift(stupids) does not support bit fields, needed have this verbose style
-        var packet = Data()
+        let packet: Data
         if header.hasBytesAvailable {
-            //
             var frameData = [UInt8](repeating: 0, count: mtuSize)
             var bytesRead = frameData.withUnsafeMutableBufferPointer{ (ptr: inout  UnsafeMutableBufferPointer<UInt8>) -> Int in
                 return header.read(ptr.baseAddress!+1, maxLength: mtuSize-1)
             }
+            var hasMore = false
             if header.hasBytesAvailable {
-                // more header payload
-                frameData[0] = 0x06 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
+                hasMore = true
             }else{
                 // last header payload
                 if data != nil && data!.hasBytesAvailable {
@@ -237,38 +225,38 @@ public class BlePsFtpUtility {
                         }
                     }
                     if data!.hasBytesAvailable && bytesRead == (mtuSize-1) {
-                        // more data payload
-                        frameData[0] = 0x06 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-                    } else {
-                        frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
+                        hasMore = true
                     }
-                } else {
-                    frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
                 }
             }
-            packet = Data.init(bytes: &frameData, count: bytesRead + 1)
+            packet = makeRfc76Frame(chunk: Data(frameData[1..<(bytesRead + 1)]), hasMore: hasMore, next: next, sequenceNumber: sequenceNumber)
         } else if data != nil && data!.hasBytesAvailable {
             var frameData = [UInt8](repeating: 0, count: mtuSize)
             let bytesRead = frameData.withUnsafeMutableBufferPointer{ (ptr: inout  UnsafeMutableBufferPointer<UInt8>) -> Int in
                 return data!.read(ptr.baseAddress!+1, maxLength: mtuSize-1)
             }
             // note added failsafe check for bytes actually read
-            if data!.hasBytesAvailable && bytesRead == (mtuSize-1) {
-                // more data payload
-                frameData[0] = 0x06 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            }else{
-                // last data payload
-                frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            }
-            packet = Data(bytes: &frameData, count: bytesRead + 1)
+            let hasMore = data!.hasBytesAvailable && bytesRead == (mtuSize-1)
+            packet = makeRfc76Frame(chunk: Data(frameData[1..<(bytesRead + 1)]), hasMore: hasMore, next: next, sequenceNumber: sequenceNumber)
         } else {
-            // 0 payload
-            var frameData = [UInt8](repeating: 0, count: 1)
-            frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            packet = Data(bytes: &frameData, count: 1)
+            packet = makeRfc76Frame(chunk: Data(), hasMore: false, next: next, sequenceNumber: sequenceNumber)
         }
         sequenceNumber.increment()
         return packet
+    }
+
+    private static func makeRfc76Frame(chunk: Data, hasMore: Bool, next: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> Data {
+        #if canImport(PolarBleSdkShared)
+        if let sharedFrame = SharedPsFtpByteCodec.encodeRfc76FrameChunk(chunk: chunk, hasMore: hasMore, next: next, sequenceNumber: sequenceNumber.getSeq()) {
+            return sharedFrame
+        }
+        #endif
+        var frameData = [UInt8](repeating: 0, count: chunk.count + 1)
+        frameData[0] = (hasMore ? 0x06 : 0x02) | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
+        if !chunk.isEmpty {
+            frameData.replaceSubrange(1..<frameData.count, with: chunk)
+        }
+        return Data(frameData)
     }
     
     /// Generate list of air packets from data stream
@@ -399,6 +387,10 @@ private enum SharedPsFtpByteCodec {
             error: fields[3].isEmpty ? nil : Int(fields[3]),
             payload: payload
         )
+    }
+
+    static func encodeRfc76FrameChunk(chunk: Data, hasMore: Bool, next: Int, sequenceNumber: Int) -> Data? {
+        return Data(hexBytes: PolarIosSharedBridge.shared.psFtpEncodeRfc76FrameChunkHex(chunkHex: chunk.hexString, hasMore: hasMore, next: Int32(next), sequenceNumber: Int32(sequenceNumber)))
     }
 
     static func splitRfc76Frames(_ stream: InputStream, mtuSize: Int) -> [Data]? {

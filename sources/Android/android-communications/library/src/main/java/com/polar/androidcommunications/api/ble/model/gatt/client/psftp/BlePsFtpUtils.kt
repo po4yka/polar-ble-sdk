@@ -73,22 +73,32 @@ object BlePsFtpUtils {
         mtuSize: Int,
         sequenceNumber: Rfc76SequenceNumber
     ): ByteArray {
-        val offset = RFC76_HEADER_SIZE
-        val packet: ByteArray
-        if (data.available() > (mtuSize - RFC76_HEADER_SIZE)) {
-            packet = ByteArray(mtuSize)
-            packet[0] =
-                ((packet[0].toInt() or next or 0x06).toLong() or (sequenceNumber.seq shl 4)).toByte() // 0x06 == MORE
-            data.read(packet, offset, mtuSize - offset)
+        val payloadSize = mtuSize - RFC76_HEADER_SIZE
+        val packet: ByteArray = if (data.available() > payloadSize) {
+            val chunk = ByteArray(payloadSize)
+            data.read(chunk, 0, chunk.size)
+            SharedPsFtpByteCodec.encodeRfc76FrameChunk(
+                chunk = chunk,
+                hasMore = true,
+                next = next,
+                sequenceNumber = sequenceNumber.seq.toInt()
+            )
         } else if (data.available() > 0) {
-            packet = ByteArray(data.available() + RFC76_HEADER_SIZE)
-            packet[0] =
-                ((packet[0].toInt() or next or 0x02).toLong() or (sequenceNumber.seq shl 4)).toByte() // 0x02 == LAST
-            data.read(packet, offset, data.available())
+            val chunk = ByteArray(data.available())
+            data.read(chunk, 0, chunk.size)
+            SharedPsFtpByteCodec.encodeRfc76FrameChunk(
+                chunk = chunk,
+                hasMore = false,
+                next = next,
+                sequenceNumber = sequenceNumber.seq.toInt()
+            )
         } else {
-            packet = ByteArray(RFC76_HEADER_SIZE)
-            packet[0] =
-                ((packet[0].toInt() or next or 0x02).toLong() or (sequenceNumber.seq shl 4)).toByte()
+            SharedPsFtpByteCodec.encodeRfc76FrameChunk(
+                chunk = ByteArray(0),
+                hasMore = false,
+                next = next,
+                sequenceNumber = sequenceNumber.seq.toInt()
+            )
         }
         sequenceNumber.increment()
         return packet
@@ -246,6 +256,10 @@ private object SharedPsFtpByteCodec {
 
     fun splitRfc76Frames(payload: ByteArray, mtuSize: Int): List<ByteArray> {
         return PolarWorkflowRuntimePlanning.splitRfc76Frames(payload, mtuSize)
+    }
+
+    fun encodeRfc76FrameChunk(chunk: ByteArray, hasMore: Boolean, next: Int, sequenceNumber: Int): ByteArray {
+        return PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(chunk, hasMore, next, sequenceNumber)
     }
 
     fun decodeRfc76Frame(packet: ByteArray): PolarPsFtpFrame {

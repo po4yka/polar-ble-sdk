@@ -82,6 +82,14 @@ class PsFtpByteCodecCommonPolicyTest {
     }
 
     @Test
+    fun psFtpRfc76FrameChunkEncoderDefinesSharedProductionHeaderPolicy() {
+        assertEquals("060a0b0c", PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(hexToBytes("0a0b0c"), hasMore = true, next = 0, sequenceNumber = 0).toHex())
+        assertEquals("97010203", PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(hexToBytes("010203"), hasMore = true, next = 1, sequenceNumber = 9).toHex())
+        assertEquals("c3", PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(ByteArray(0), hasMore = false, next = 1, sequenceNumber = 12).toHex())
+        assertEquals("03", PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(ByteArray(0), hasMore = false, next = 1, sequenceNumber = 16).toHex())
+    }
+
+    @Test
     fun psFtpByteCodecReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/psftp-message-stream/byte-codec-readiness.json")
         val input = manifest.objectValue("input")

@@ -280,6 +280,12 @@ object PolarWorkflowRuntimePlanning {
         }
     }
 
+    fun encodeRfc76FrameChunk(chunk: ByteArray, hasMore: Boolean, next: Int, sequenceNumber: Int): ByteArray {
+        val status = if (hasMore) RFC76_STATUS_MORE else RFC76_STATUS_LAST
+        val header = ((sequenceNumber and 0x0f) shl 4) or ((status and 0x03) shl 1) or (next and 0x01)
+        return byteArrayOf(header.toByte()) + chunk
+    }
+
     fun splitRfc76Frames(payload: ByteArray, mtu: Int): List<ByteArray> {
         require(mtu > 1) { "MTU must leave room for an RFC76 header byte" }
         val payloadSize = mtu - 1
@@ -291,9 +297,7 @@ object PolarWorkflowRuntimePlanning {
             val chunk = payload.copyOfRange(offset, end)
             val hasMore = end < payload.size
             val next = if (sequenceNumber == 0) 0 else 1
-            val status = if (hasMore) RFC76_STATUS_MORE else RFC76_STATUS_LAST
-            val header = (sequenceNumber shl 4) or (status shl 1) or next
-            frames += byteArrayOf(header.toByte()) + chunk
+            frames += encodeRfc76FrameChunk(chunk, hasMore, next, sequenceNumber)
             offset = end
             sequenceNumber = (sequenceNumber + 1) and 0x0f
         } while (offset < payload.size || frames.isEmpty())

@@ -1606,6 +1606,15 @@ object PolarIosSharedBridge {
         ).joinToString(separator = ",")
     }
 
+    fun psFtpEncodeRfc76FrameChunkHex(chunkHex: String, hasMore: Boolean, next: Int, sequenceNumber: Int): String {
+        return PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(
+            chunk = chunkHex.hexToBytes(),
+            hasMore = hasMore,
+            next = next,
+            sequenceNumber = sequenceNumber
+        ).toHex()
+    }
+
     fun psFtpSplitRfc76FramesHex(payloadHex: String, mtu: Int): String {
         return PolarWorkflowRuntimePlanning.splitRfc76Frames(payloadHex.hexToBytes(), mtu).joinToString(separator = "|") { frame ->
             frame.toHex()
