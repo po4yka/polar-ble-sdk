@@ -6,6 +6,7 @@ import XCTest
 
 private enum D2HNotificationTestError: Error {
     case lateFailure
+    case serviceMissing
 }
 
 private let D2H_STREAM_RUNTIME_POLICY_SCENARIO_IDS = [
@@ -369,6 +370,23 @@ class PolarDeviceToHostNotificationsApiTests: XCTestCase {
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results[0].notificationType, .stopGpsMeasurement)
         XCTAssertEqual(results[0].parameters.count, 0)
+    }
+
+    func testFailedD2HSubscribePropagatesErrorWithoutEmittedValues() async throws {
+        try assertD2HStreamRuntimePolicyVectorContains("failed-subscribe-does-not-register-observer")
+        mockClient.receiveNotificationError = D2HNotificationTestError.serviceMissing
+
+        var results: [PolarD2HNotificationData] = []
+        do {
+            for try await value in api.observeDeviceToHostNotifications(identifier: deviceId) {
+                results.append(value)
+            }
+            XCTFail("Expected failed D2H subscription")
+        } catch D2HNotificationTestError.serviceMissing {
+            XCTAssertTrue(results.isEmpty, "Failed D2H subscribe must not emit stale values")
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
     }
 
     func testD2HNotificationGoldenVectorsMatchIOSBehavior() async throws {

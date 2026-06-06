@@ -421,6 +421,25 @@ class PolarD2HNotificationsUtilsTest {
     }
 
     @Test
+    fun `test failed notification subscribe propagates error without emitted values`() = runTest {
+        assertD2HStreamRuntimePolicyVectorContains("failed-subscribe-does-not-register-observer")
+        val subscribeError = IllegalStateException("service missing")
+        every { mockClient.waitForNotification() } returns flow { throw subscribeError }
+
+        val results = mutableListOf<PolarD2HNotificationData>()
+        val thrown = try {
+            mockClient.observeDeviceToHostNotifications("test-device-id").collect { results.add(it) }
+            fail("Expected failed D2H subscription")
+            null
+        } catch (error: IllegalStateException) {
+            error
+        }
+
+        assertEquals(subscribeError, thrown)
+        assertTrue("Failed D2H subscribe must not emit stale values", results.isEmpty())
+    }
+
+    @Test
     fun d2hNotificationGoldenVectors_matchAndroidBehavior() = runTest {
         val vectors = loadD2HNotificationVectors()
         assertTrue("Expected D2H notification golden vectors", vectors.isNotEmpty())
