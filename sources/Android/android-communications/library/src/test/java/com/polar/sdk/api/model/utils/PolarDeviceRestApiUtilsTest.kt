@@ -17,6 +17,7 @@ import com.polar.sdk.api.model.restapi.eventDetailsFor
 import com.polar.sdk.api.model.restapi.eventTriggersFor
 import com.polar.sdk.api.model.restapi.events
 import com.polar.sdk.impl.utils.receiveRestApiEventData
+import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -75,6 +76,25 @@ class PolarDeviceRestApiUtilsTest {
         payloads.forEachIndexed { index, payload ->
             assertArrayEquals(payload, result[index])
         }
+    }
+
+    @Test
+    fun receiveRestApiEventData_usesSharedD2hPlannerToSelectRestEvents() = runTest {
+        val payload = """{"path":"/v1/users","operation":"created"}""".toByteArray()
+        assertEquals("REST_API_EVENT", PolarD2hRuntimePlanning.notificationTypeOrNull(PbPFtpDevToHostNotification.REST_API_EVENT_VALUE))
+        assertEquals(
+            "FILESYSTEM_MODIFIED",
+            PolarD2hRuntimePlanning.notificationTypeOrNull(PbPFtpDevToHostNotification.FILESYSTEM_MODIFIED_VALUE)
+        )
+        every { mockClient.waitForNotification() } returns flowOf(
+            d2hNotification(PbPFtpDevToHostNotification.FILESYSTEM_MODIFIED_VALUE, byteArrayOf(0x0a, 0x02, 0x08, 0x02)),
+            restApiNotification(listOf(payload), uncompressed = true)
+        )
+
+        val result = mockClient.receiveRestApiEventData("device-id").first()
+
+        assertEquals(1, result.size)
+        assertArrayEquals(payload, result.first())
     }
 
     @Test
@@ -240,10 +260,14 @@ class PolarDeviceRestApiUtilsTest {
             .setUncompressed(uncompressed)
             .addAllEvent(payloads.map { ByteString.copyFrom(it) })
             .build()
+        return d2hNotification(PbPFtpDevToHostNotification.REST_API_EVENT_VALUE, event.toByteArray())
+    }
+
+    private fun d2hNotification(notificationId: Int, parameters: ByteArray): BlePsFtpUtils.PftpNotificationMessage {
         return BlePsFtpUtils.PftpNotificationMessage().apply {
-            id = PbPFtpDevToHostNotification.REST_API_EVENT_VALUE
+            id = notificationId
             byteArrayOutputStream = ByteArrayOutputStream().apply {
-                write(event.toByteArray())
+                write(parameters)
             }
         }
     }
