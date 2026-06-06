@@ -2107,6 +2107,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         let proto = try operation.serializedData()
         BleLogger.trace("Sensor datalog set. Device: \(identifier) Path: \(operation.path)")
         let inputStream = InputStream(data: Data(sdLogConfigProto))
+        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: sdLogConfigProto.count)
+        PolarRuntimePlanner.psFtpWriteAck(payloadSize: sdLogConfigProto.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}
     }
 

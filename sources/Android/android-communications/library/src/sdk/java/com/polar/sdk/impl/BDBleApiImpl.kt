@@ -2283,7 +2283,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
         builder.command = writeOperation.first
         builder.path = writeOperation.second
-        val data = ByteArrayInputStream(logConfig.toProto().toByteArray())
+        val payload = logConfig.toProto().toByteArray()
+        val data = ByteArrayInputStream(payload)
+        PolarRuntimePlannerAdapter.planPsFtpWriteProgress(payload.size, "android")
+        PolarRuntimePlannerAdapter.planPsFtpWriteAck(payload.size)
         client.write(builder.build().toByteArray(), data).collect {}
     }
 
