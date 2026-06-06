@@ -105,6 +105,8 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(lastBytesWritten = 0, bytesWritten = 0, payloadSize = 0, minPercentageIncrement = 25))
         assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 4, payloadSize = 4, minPercentageIncrement = 75))
         assertEquals(false, PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 3, payloadSize = 100, minPercentageIncrement = 25))
+        assertEquals(false, PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 3, payloadSize = 100, minPercentageIncrement = 25, timeSinceLastEmitMs = 4_999L))
+        assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 3, payloadSize = 100, minPercentageIncrement = 25, timeSinceLastEmitMs = 5_000L))
         assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 52, payloadSize = 100, minPercentageIncrement = 25))
     }
 

@@ -204,11 +204,16 @@ object PolarWorkflowRuntimePlanning {
         lastBytesWritten: Int,
         bytesWritten: Int,
         payloadSize: Int,
-        minPercentageIncrement: Int
+        minPercentageIncrement: Int,
+        timeSinceLastEmitMs: Long? = null,
+        maxEmitIntervalMs: Long = 5_000L
     ): Boolean {
         val delta = bytesWritten - lastBytesWritten
         val deltaPercentage = firmwareWriteProgressPercent(delta, payloadSize)
-        return lastBytesWritten == 0 || bytesWritten >= payloadSize || deltaPercentage >= minPercentageIncrement
+        return lastBytesWritten == 0 ||
+            bytesWritten >= payloadSize ||
+            deltaPercentage >= minPercentageIncrement ||
+            (timeSinceLastEmitMs != null && timeSinceLastEmitMs >= maxEmitIntervalMs)
     }
 
     fun expandBackupEntries(backupText: String, availablePaths: List<String>): List<String> {

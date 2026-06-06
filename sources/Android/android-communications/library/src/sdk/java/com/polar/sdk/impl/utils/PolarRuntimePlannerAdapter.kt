@@ -430,8 +430,10 @@ internal object PolarRuntimePlannerAdapter {
             lastBytesWritten = lastBytesWritten.toInt(),
             bytesWritten = bytesWritten.toInt(),
             payloadSize = payloadSize,
-            minPercentageIncrement = minPercentageIncrement.toInt()
-        ) || timeSinceLastEmitMs >= maxEmitIntervalMs
+            minPercentageIncrement = minPercentageIncrement.toInt(),
+            timeSinceLastEmitMs = timeSinceLastEmitMs,
+            maxEmitIntervalMs = maxEmitIntervalMs
+        )
     }
 
     fun planBackupRestore(path: String, payloadHex: String, writeResult: String = "success") {
