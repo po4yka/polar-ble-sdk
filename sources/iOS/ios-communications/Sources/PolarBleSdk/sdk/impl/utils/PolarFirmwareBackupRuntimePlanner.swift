@@ -32,6 +32,14 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwareFileTriggersRebootWait(_ fileName: String) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firmwareFileTriggersRebootWait(fileName: fileName)
+        #else
+        return fileName.contains("SYSUPDAT.IMG")
+        #endif
+    }
+
     @discardableResult
     static func backupRestore(path: String, payloadHex: String, writeResult: String = "success") -> String {
         #if canImport(PolarBleSdkShared)

@@ -158,6 +158,10 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwarePackageEntryIsPayload(fileName)
     }
 
+    static func firmwareFileTriggersRebootWait(_ fileName: String) -> Bool {
+        return PolarFirmwareBackupRuntimePlanner.firmwareFileTriggersRebootWait(fileName)
+    }
+
     static func backupRootPaths(_ entries: [String]) -> [String] {
         return PolarFirmwareBackupRuntimePlanner.backupRootPaths(entries)
     }

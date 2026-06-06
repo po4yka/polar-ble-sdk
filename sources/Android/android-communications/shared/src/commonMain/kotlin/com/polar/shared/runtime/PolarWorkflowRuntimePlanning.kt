@@ -184,6 +184,10 @@ object PolarWorkflowRuntimePlanning {
         return fileName != "readme.txt"
     }
 
+    fun firmwareFileTriggersRebootWait(fileName: String): Boolean {
+        return fileName.contains("SYSUPDAT.IMG")
+    }
+
     fun expandBackupEntries(backupText: String, availablePaths: List<String>): List<String> {
         return backupText.split("\n").filter { it.isNotEmpty() }.flatMap { path ->
             if (path.endsWith("/")) {

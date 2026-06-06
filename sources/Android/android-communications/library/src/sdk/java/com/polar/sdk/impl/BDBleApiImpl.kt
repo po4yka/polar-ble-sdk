@@ -2541,7 +2541,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                     throw error
                 }
             }
-            if (firmwareFile.first.contains("SYSUPDAT.IMG")) {
+            if (PolarRuntimePlannerAdapter.firmwareFileTriggersRebootWait(firmwareFile.first)) {
                 BleLogger.d(TAG, "Firmware file is SYSUPDAT.IMG, waiting for reboot")
             }
         }

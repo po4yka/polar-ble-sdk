@@ -3187,7 +3187,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                         BleLogger.trace("Writing firmware update file, bytes written: \(bytesWritten)/\(firmwareBytes.count)")
                         continuation.yield(bytesWritten)
                     }
-                    if firmwareFilePath.contains("SYSUPDAT.IMG") {
+                    if PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait(firmwareFilePath) {
                         BleLogger.trace("Firmware file is SYSUPDAT.IMG, waiting for reboot")
                     }
                     continuation.finish()
@@ -3195,7 +3195,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                     if let pftpError = Protocol_PbPFtpError(rawValue: (error as NSError)._code) {
                         if pftpError == .batteryTooLow {
                             continuation.finish(throwing: PolarErrors.deviceError(description: "Battery too low to perform firmware update"))
-                        } else if pftpError == .rebooting && firmwareFilePath.contains("SYSUPDAT.IMG") {
+                        } else if pftpError == .rebooting && PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait(firmwareFilePath) {
                             BleLogger.trace("PFTP firmware file write success - device is rebooting")
                             continuation.finish()
                         } else {

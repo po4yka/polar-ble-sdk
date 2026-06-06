@@ -1218,6 +1218,10 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload(fileName)
     }
 
+    fun firmwareFileTriggersRebootWait(fileName: String): Boolean {
+        return PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait(fileName)
+    }
+
     fun planRuntimeBackupRestore(path: String, payloadHex: String, writeResult: String): String {
         return PolarWorkflowRuntimePlanning.planBackupRestore(
             listOf(

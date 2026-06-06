@@ -90,6 +90,14 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
     }
 
     @Test
+    fun firmwareRebootWaitSelectionUsesSharedSystemUpdateFilePolicy() {
+        assertEquals(true, PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait("SYSUPDAT.IMG"))
+        assertEquals(true, PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait("/SYSUPDAT.IMG"))
+        assertEquals(false, PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait("BTUPDAT.BIN"))
+        assertEquals(false, PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait("sysupdat.img"))
+    }
+
+    @Test
     fun firmwareWorkflowRuntimeVectorRunsThroughCommonFakeDependencies() {
         val vector = loadGoldenVectorText("sdk/firmware-update/workflow-runtime-policy.json")
         val scenarios = vector.objectValue("input").objectArray("scenarios")

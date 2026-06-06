@@ -250,6 +250,18 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         #endif
     }
 
+    func testFirmwareRebootWaitFilterUsesSharedPolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertTrue(PolarIosSharedBridge.shared.firmwareFileTriggersRebootWait(fileName: "SYSUPDAT.IMG"))
+        XCTAssertTrue(PolarRuntimePlanner.firmwareFileTriggersRebootWait("/SYSUPDAT.IMG"))
+        XCTAssertTrue(PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait("/SYSUPDAT.IMG"))
+        XCTAssertFalse(PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait("BTUPDAT.BIN"))
+        XCTAssertFalse(PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait("sysupdat.img"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func testFirmwareGoldenVectorsFollowNeutralKmpShape() throws {
         for vector in try loadFirmwareUpdateGoldenVectors() {
             let id = try XCTUnwrap(vector["id"] as? String)

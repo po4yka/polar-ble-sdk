@@ -121,6 +121,14 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared firmware reboot wait filter preserves Android system update policy`() {
+        Assert.assertTrue(PolarRuntimePlannerAdapter.firmwareFileTriggersRebootWait("SYSUPDAT.IMG"))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.firmwareFileTriggersRebootWait("/SYSUPDAT.IMG"))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.firmwareFileTriggersRebootWait("BTUPDAT.BIN"))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.firmwareFileTriggersRebootWait("sysupdat.img"))
+    }
+
+    @Test
     fun `shared user device settings plans select Android protobuf read and write operations`() {
         val read = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("get-user-device-settings", "read", "/U/0/S/UDEVSET.BPB")
         val write = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations("set-user-device-settings", "write", "/U/0/S/UDEVSET.BPB", listOf("protobufPayload=platform-built"))
