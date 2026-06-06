@@ -2130,6 +2130,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         let userIdentifier = UserIdentifierType.create()
         let userIdProto = try userIdentifier.toProto().serializedData()
         let userIdHeader = try userIdOperation.serializedData()
+        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: userIdProto.count)
+        PolarRuntimePlanner.psFtpWriteAck(payloadSize: userIdProto.count)
         for try await _ in client.write(userIdHeader as NSData, data: InputStream(data: userIdProto)) {}
         BleLogger.trace("User data written to device: \(identifier)")
         // Write FTU config
@@ -2139,6 +2141,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         physDataOp.command = physicalConfigWriteOperation.command
         physDataOp.path = physicalConfigWriteOperation.path
         let physDataHeader = try physDataOp.serializedData()
+        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: ftuConfigProto.count)
+        PolarRuntimePlanner.psFtpWriteAck(payloadSize: ftuConfigProto.count)
         for try await _ in client.write(physDataHeader as NSData, data: InputStream(data: ftuConfigProto)) {}
         BleLogger.trace("User physical data written to device: \(identifier)")
         // Send initialization and stop sync (acknowledge FTU completion)

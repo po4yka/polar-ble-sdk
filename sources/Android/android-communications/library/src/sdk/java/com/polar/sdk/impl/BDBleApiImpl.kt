@@ -1720,7 +1720,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             sendInitializationAndStartSyncNotifications(identifier)
             BleLogger.d(TAG, "doFirstTimeUse(identifier: $identifier): set local time")
             setLocalTime(identifier, localTime)
+            PolarRuntimePlannerAdapter.planPsFtpWriteProgress(ftuData.size, "android")
+            PolarRuntimePlannerAdapter.planPsFtpWriteAck(ftuData.size)
             client.write(ftuBuilder.build().toByteArray(), ByteArrayInputStream(ftuData)).collect {}
+            PolarRuntimePlannerAdapter.planPsFtpWriteProgress(userIdData.size, "android")
+            PolarRuntimePlannerAdapter.planPsFtpWriteAck(userIdData.size)
             client.write(userIdBuilder.build().toByteArray(), ByteArrayInputStream(userIdData)).collect {}
             BleLogger.d(TAG, "doFirstTimeUse(identifier: $identifier): completed")
             sendTerminateAndStopSyncNotifications(identifier)
