@@ -1,7 +1,7 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
-import com.polar.androidcommunications.common.ble.TypeUtils.convertUnsignedByteToInt
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 
 /**
  * Offline hr data
@@ -22,35 +22,23 @@ internal class OfflineHrData {
                 throw java.lang.Exception("Compressed FrameType: ${frame.frameType} is not supported by Offline HR data parser")
             } else {
                 when (frame.frameType) {
-                    PmdDataFrame.PmdDataFrameType.TYPE_0 -> dataFromType0(frame)
-                    PmdDataFrame.PmdDataFrameType.TYPE_1 -> dataFromType1(frame)
+                    PmdDataFrame.PmdDataFrameType.TYPE_0,
+                    PmdDataFrame.PmdDataFrameType.TYPE_1 -> dataFromSharedParser(frame)
                     else -> throw java.lang.Exception("Raw FrameType: ${frame.frameType} is not supported by Offline HR data parser")
                 }
             }
         }
 
-        private fun dataFromType0(frame: PmdDataFrame): OfflineHrData {
-            var offlineHrData = OfflineHrData()
-            var offset = 0
-            while (offset < frame.dataContent.size) {
-                val hr = convertUnsignedByteToInt(frame.dataContent[offset])
-                offlineHrData.hrSamples.add(OfflineHrSample(hr, 0, 0))
-                offset += 1
-            }
-            return offlineHrData
-        }
-
-        private fun dataFromType1(frame: PmdDataFrame): OfflineHrData {
+        private fun dataFromSharedParser(frame: PmdDataFrame): OfflineHrData {
             val offlineHrData = OfflineHrData()
-            var offset = 0
-            while (offset < frame.dataContent.size) {
-                val hr = convertUnsignedByteToInt(frame.dataContent[offset])
-                offset += 1
-                val ppgQual = convertUnsignedByteToInt(frame.dataContent[offset])
-                offset += 1
-                val correctedHr = convertUnsignedByteToInt(frame.dataContent[offset])
-                offlineHrData.hrSamples.add(OfflineHrSample(hr, ppgQual, correctedHr))
-                offset += 1
+            PolarSensorDataParser.parseOfflineHr(frame.toPolarSharedFrame()).forEach { sample ->
+                offlineHrData.hrSamples.add(
+                    OfflineHrSample(
+                        hr = sample.hr,
+                        ppgQuality = sample.ppgQuality,
+                        correctedHr = sample.correctedHr
+                    )
+                )
             }
             return offlineHrData
         }

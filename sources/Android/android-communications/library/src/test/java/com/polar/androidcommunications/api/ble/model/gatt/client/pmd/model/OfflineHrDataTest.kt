@@ -7,6 +7,7 @@ import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
 import com.polar.androidcommunications.testrules.BleLoggerTestRule
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 import org.hamcrest.Matchers
 import org.junit.Assert
 import org.junit.Rule
@@ -121,6 +122,26 @@ internal class OfflineHrDataTest {
         Assert.assertEquals(81, offlineHrData.hrSamples.last().hr)
         Assert.assertEquals(64, offlineHrData.hrSamples.last().ppgQuality)
         Assert.assertEquals(82, offlineHrData.hrSamples.last().correctedHr)
+    }
+
+    @Test
+    fun `offline HR raw parsing uses shared KMP parser`() {
+        val dataFrame = PmdDataFrame(
+            data = "0e000000000000000001485647514052".hexToByteArray(),
+            getPreviousTimeStamp = { _, _ -> 0uL },
+            getFactor = { 1.0f },
+            getSampleRate = { 0 }
+        )
+
+        val offlineHrData = OfflineHrData.parseDataFromDataFrame(dataFrame)
+        val sharedSamples = PolarSensorDataParser.parseOfflineHr(dataFrame.toPolarSharedFrame())
+
+        Assert.assertEquals(sharedSamples.size, offlineHrData.hrSamples.size)
+        sharedSamples.zip(offlineHrData.hrSamples).forEach { (shared, platform) ->
+            Assert.assertEquals(shared.hr, platform.hr)
+            Assert.assertEquals(shared.ppgQuality, platform.ppgQuality)
+            Assert.assertEquals(shared.correctedHr, platform.correctedHr)
+        }
     }
 
     @Test
