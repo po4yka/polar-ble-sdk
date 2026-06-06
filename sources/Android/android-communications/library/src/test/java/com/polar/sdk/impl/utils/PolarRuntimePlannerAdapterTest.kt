@@ -104,6 +104,10 @@ class PolarRuntimePlannerAdapterTest {
         val operations = PolarRuntimePlannerAdapter.planFirmwareWriteOperations(listOf("SYSUPDAT.IMG", "BTUPDAT.BIN"))
 
         Assert.assertEquals(
+            listOf("TCHUPDAT.BIN", "APPUPDAT.BIN", "BTUPDAT.BIN", "SYSUPDAT.IMG"),
+            PolarRuntimePlannerAdapter.orderFirmwareFiles(listOf("TCHUPDAT.BIN", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN"))
+        )
+        Assert.assertEquals(
             listOf(
                 PftpRequest.PbPFtpOperation.Command.PUT to "/BTUPDAT.BIN",
                 PftpRequest.PbPFtpOperation.Command.PUT to "/SYSUPDAT.IMG"
