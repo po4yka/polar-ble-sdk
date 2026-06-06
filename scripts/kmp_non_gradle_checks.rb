@@ -442,6 +442,12 @@ FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS = [
 FAKE_TRANSPORT_COMMON_STORED_DATA_CLEANUP_RUNTIME_TEST_REQUIRED_TERMS = [
   "cleanupWorkflowPolicyVectorDefinesExecutableCommonTraversalAndPlatformSplits",
   "cleanupWorkflowVectorRunsThroughCommonFakeTransportFacadeShape",
+  "cleanupWorkflowVectorRunsThroughCommonFakeTraversalRuntime",
+  "CommonStoredDataCleanupFakeTraversalRuntime",
+  "CleanupExecution",
+  "readCommands",
+  "removeCommands",
+  "REMOVE_EMPTY_DIRECTORY:/U/0/20260530/ACT",
   "cleanupWorkflowReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/stored-data-cleanup/cleanup-workflow-policy.json",
   "sdk/stored-data-cleanup/cleanup-workflow-readiness.json",

@@ -121,6 +121,37 @@ class StoredDataCleanupRuntimePolicyCommonTest {
     }
 
     @Test
+    fun cleanupWorkflowVectorRunsThroughCommonFakeTraversalRuntime() {
+        val vector = loadGoldenVectorText("sdk/stored-data-cleanup/cleanup-workflow-policy.json")
+        val expectedCases = vector.objectValue("expected").objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
+        val fakeRuntime = CommonStoredDataCleanupFakeTraversalRuntime()
+
+        vector.objectValue("input").objectArray("scenarios").forEach { scenarioJson ->
+            val scenario = CleanupScenario(
+                id = scenarioJson.stringValue("id"),
+                kind = scenarioJson.stringValue("kind"),
+                rootPath = scenarioJson.optionalStringValue("rootPath"),
+                includePrefixes = scenarioJson.optionalStringArrayValue("includePrefixes") ?: emptyList(),
+                includeSuffixes = scenarioJson.optionalStringArrayValue("includeSuffixes") ?: emptyList(),
+                entries = scenarioJson.optionalStringArrayValue("entries") ?: emptyList(),
+                cutoffDate = scenarioJson.optionalStringValue("cutoffDate"),
+                dateFolders = scenarioJson.optionalObjectArray("dateFolders"),
+                sampleFiles = scenarioJson.optionalObjectArray("sampleFiles")
+            )
+            val expected = expectedCases.getValue(scenario.id)
+            val execution = fakeRuntime.execute(scenario)
+
+            assertEquals(expected.stringArrayValue("commands"), execution.commands, scenario.id)
+            assertEquals(expected.stringValue("terminal"), execution.terminal, scenario.id)
+            assertEquals(expected.stringArrayValue("commands").filter { command -> command.startsWith("GET:") }, execution.readCommands, scenario.id)
+            assertEquals(expected.stringArrayValue("commands").filter { command -> command.startsWith("REMOVE") }, execution.removeCommands, scenario.id)
+            if (scenario.id == "activity-prune-empty-parents") {
+                assertEquals(true, execution.removeCommands.contains("REMOVE_EMPTY_DIRECTORY:/U/0/20260530/ACT"))
+            }
+        }
+    }
+
+    @Test
     fun cleanupFilterHelpersExposeProductionSharedPolicy() {
         assertEquals(true, PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter("TRC10.BIN", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
         assertEquals(false, PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter("ABC10.BIN", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
@@ -287,6 +318,93 @@ class StoredDataCleanupRuntimePolicyCommonTest {
             )
         }
     }
+
+    private class CommonStoredDataCleanupFakeTraversalRuntime {
+        fun execute(scenario: CleanupScenario): CleanupExecution {
+            val commands = mutableListOf<String>()
+            val terminal = when (scenario.kind) {
+                "filterDirectoryEntries" -> {
+                    val root = requireNotNull(scenario.rootPath)
+                    listDirectory(commands, root)
+                    scenario.entries
+                        .filter { entry -> PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter(entry, scenario.includePrefixes, scenario.includeSuffixes) }
+                        .forEach { entry -> remove(commands, root.withTrailingSlash() + entry) }
+                    "success"
+                }
+                "activityPrune" -> {
+                    listDirectory(commands, "/U/0/")
+                    scenario.toSharedScenario().dateFolders
+                        .filter { folder -> folder.beforeCutoff }
+                        .forEach { folder ->
+                            val activityPath = folder.path + "ACT/"
+                            listDirectory(commands, folder.path)
+                            listDirectory(commands, activityPath)
+                            folder.removeFiles.forEach { fileName -> remove(commands, activityPath + fileName) }
+                            if (folder.pruneEmptyParents) {
+                                listDirectory(commands, activityPath)
+                                PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories(activityPath + folder.removeFiles.first(), trailingSlash = false).forEach { emptyParent ->
+                                    removeEmptyDirectory(commands, emptyParent)
+                                    val parent = emptyParent.substringBeforeLast('/', missingDelimiterValue = "")
+                                    listDirectory(commands, (if (parent.isEmpty()) "/" else parent).withTrailingSlash())
+                                }
+                                commands.removeLast()
+                            }
+                        }
+                    "platform-path-split"
+                }
+                "automaticSamplePrune" -> {
+                    listDirectory(commands, "/U/0/AUTOS/")
+                    scenario.toSharedScenario().sampleFiles.forEach { sample ->
+                        val parent = sample.path.substringBeforeLast('/') + "/"
+                        listDirectory(commands, parent)
+                        readFile(commands, sample.path)
+                        if (sample.embeddedDay < requireNotNull(scenario.cutoffDate)) {
+                            remove(commands, sample.path)
+                        }
+                    }
+                    "success"
+                }
+                "listFailure" -> {
+                    listDirectory(commands, requireNotNull(scenario.rootPath))
+                    "platform-split"
+                }
+                else -> error("Unsupported cleanup scenario ${scenario.kind}")
+            }
+            return CleanupExecution(
+                commands = commands,
+                terminal = terminal,
+                readCommands = commands.filter { command -> command.startsWith("GET:") },
+                removeCommands = commands.filter { command -> command.startsWith("REMOVE") }
+            )
+        }
+
+        private fun listDirectory(commands: MutableList<String>, path: String) {
+            commands += "GET:$path"
+        }
+
+        private fun readFile(commands: MutableList<String>, path: String) {
+            commands += "GET:$path"
+        }
+
+        private fun remove(commands: MutableList<String>, path: String) {
+            commands += "REMOVE:$path"
+        }
+
+        private fun removeEmptyDirectory(commands: MutableList<String>, path: String) {
+            commands += "REMOVE_EMPTY_DIRECTORY:$path"
+        }
+
+        private fun String.withTrailingSlash(): String {
+            return if (endsWith("/")) this else "$this/"
+        }
+    }
+
+    private data class CleanupExecution(
+        val commands: List<String>,
+        val terminal: String,
+        val readCommands: List<String>,
+        val removeCommands: List<String>
+    )
 
     private fun String.optionalObjectArray(field: String): List<String> {
         return if (contains("\"$field\"")) objectArray(field) else emptyList()
