@@ -467,12 +467,13 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
     
     private func writeTimeout(for filePath: String) -> TimeInterval {
         #if canImport(PolarBleSdkShared)
-        return TimeInterval(PolarIosSharedBridge.shared.psFtpWriteTimeoutSeconds(filePath: filePath, defaultTimeoutSeconds: Int32(Int(PROTOCOL_TIMEOUT)), extendedTimeoutSeconds: Int32(Int(PROTOCOL_TIMEOUT_EXTENDED))))
-        #endif
+        return TimeInterval(SharedPsFtpByteCodec.writeTimeoutSeconds(filePath: filePath, defaultTimeoutSeconds: Int(PROTOCOL_TIMEOUT), extendedTimeoutSeconds: Int(PROTOCOL_TIMEOUT_EXTENDED)))
+        #else
         for path in extendedWriteTimeoutFilePaths {
             if filePath.hasPrefix(path) { return PROTOCOL_TIMEOUT_EXTENDED }
         }
         return PROTOCOL_TIMEOUT
+        #endif
     }
     
     fileprivate func sendMtuCancelPacket() throws {

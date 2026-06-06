@@ -366,12 +366,12 @@ private struct SharedRfc76Frame {
     let payload: Data
 }
 
-private enum SharedPsFtpByteCodec {
-    static func completeMessageStream(type: BlePsFtpUtility.MessageType, header: Data?, id: Int) -> Data? {
+enum SharedPsFtpByteCodec {
+    fileprivate static func completeMessageStream(type: BlePsFtpUtility.MessageType, header: Data?, id: Int) -> Data? {
         return Data(hexBytes: PolarIosSharedBridge.shared.psFtpCompleteMessageStreamHex(type: type.sharedName, headerHex: (header ?? Data()).hexString, dataHex: "", idValue: Int32(id)))
     }
 
-    static func decodedRfc76Frame(_ packet: Data) -> SharedRfc76Frame? {
+    fileprivate static func decodedRfc76Frame(_ packet: Data) -> SharedRfc76Frame? {
         let fields = PolarIosSharedBridge.shared.psFtpDecodedRfc76Frame(frameHex: packet.hexString).split(separator: ",", omittingEmptySubsequences: false)
         guard fields.count == 5,
               let next = Int(fields[0]),
@@ -389,15 +389,19 @@ private enum SharedPsFtpByteCodec {
         )
     }
 
-    static func encodeRfc76FrameChunk(chunk: Data, hasMore: Bool, next: Int, sequenceNumber: Int) -> Data? {
+    fileprivate static func encodeRfc76FrameChunk(chunk: Data, hasMore: Bool, next: Int, sequenceNumber: Int) -> Data? {
         return Data(hexBytes: PolarIosSharedBridge.shared.psFtpEncodeRfc76FrameChunkHex(chunkHex: chunk.hexString, hasMore: hasMore, next: Int32(next), sequenceNumber: Int32(sequenceNumber)))
     }
 
-    static func splitRfc76Frames(_ stream: InputStream, mtuSize: Int) -> [Data]? {
+    fileprivate static func splitRfc76Frames(_ stream: InputStream, mtuSize: Int) -> [Data]? {
         let payload = Data(readingRemaining: stream)
         let frameHexValues = PolarIosSharedBridge.shared.psFtpSplitRfc76FramesHex(payloadHex: payload.hexString, mtu: Int32(mtuSize)).split(separator: "|", omittingEmptySubsequences: false)
         let frames = frameHexValues.compactMap { Data(hexBytes: String($0)) }
         return frames.count == frameHexValues.count ? frames : nil
+    }
+
+    static func writeTimeoutSeconds(filePath: String, defaultTimeoutSeconds: Int, extendedTimeoutSeconds: Int) -> Int {
+        return Int(PolarIosSharedBridge.shared.psFtpWriteTimeoutSeconds(filePath: filePath, defaultTimeoutSeconds: Int32(defaultTimeoutSeconds), extendedTimeoutSeconds: Int32(extendedTimeoutSeconds)))
     }
 }
 
