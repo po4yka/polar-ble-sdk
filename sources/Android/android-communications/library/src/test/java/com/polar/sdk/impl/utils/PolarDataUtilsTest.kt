@@ -8,10 +8,16 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdOfflineR
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdOfflineRecTriggerStatus
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdOfflineTrigger
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSetting
+import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GnssLocationData
 import com.polar.sdk.api.PolarBleApi
+import com.polar.sdk.api.model.GpsCoordinatesSample
+import com.polar.sdk.api.model.GpsNMEASample
+import com.polar.sdk.api.model.GpsSatelliteDilutionSample
+import com.polar.sdk.api.model.GpsSatelliteSummarySample
 import com.polar.sdk.api.model.PolarOfflineRecordingTrigger
 import com.polar.sdk.api.model.PolarOfflineRecordingTriggerMode
 import com.polar.sdk.api.model.PolarSensorSetting
+import com.polar.sdk.api.model.SatelliteSummary
 import org.junit.Assert
 import org.junit.Test
 import java.io.ByteArrayOutputStream
@@ -168,6 +174,56 @@ class PolarDataUtilsTest {
         Assert.assertEquals(listOf("com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
     }
 
+    @Test
+    fun `GNSS location public model projection is delegated through shared KMP`() {
+        val seenBand1 = GnssLocationData.GnssSatelliteSummary(1u, 2u, 3u, 4u, 5u, 6u, 7u, 8u, 9u, 10u)
+        val usedBand1 = GnssLocationData.GnssSatelliteSummary(11u, 12u, 13u, 14u, 15u, 16u, 17u, 18u, 19u, 20u)
+        val seenBand2 = GnssLocationData.GnssSatelliteSummary(21u, 22u, 23u, 24u, 25u, 26u, 27u, 28u, 29u, 30u)
+        val usedBand2 = GnssLocationData.GnssSatelliteSummary(31u, 32u, 33u, 34u, 35u, 36u, 37u, 38u, 39u, 40u)
+        val location = GnssLocationData().apply {
+            gnssLocationDataSamples += GnssLocationData.GnssCoordinateSample(101uL, 60.123, 24.456, "2026-06-06T10:11:12.123", 12.3, 4.5f, 5.6f, 6.7f, 7.8f, 8.9f, 9.1f, true, -1, 255u)
+            gnssLocationDataSamples += GnssLocationData.GnssSatelliteDilutionSample(202uL, 1.25f, -42, 7u, false)
+            gnssLocationDataSamples += GnssLocationData.GnssSatelliteSummarySample(303uL, seenBand1, usedBand1, seenBand2, usedBand2, 99u)
+            gnssLocationDataSamples += GnssLocationData.GnssGpsNMEASample(404uL, 1000u, 12u, 3u, "GPGGA")
+        }
+
+        val actual = PolarDataUtils.mapPMDClientLocationDataToPolarLocationData(location).samples
+
+        val coordinates = actual[0] as GpsCoordinatesSample
+        Assert.assertEquals(101L, coordinates.timeStamp)
+        Assert.assertEquals(60.123, coordinates.latitude, 0.00001)
+        Assert.assertEquals(24.456, coordinates.longitude, 0.00001)
+        Assert.assertEquals("2026-06-06T10:11:12.123", coordinates.time)
+        Assert.assertEquals(12.3, coordinates.cumulativeDistance, 0.00001)
+        Assert.assertEquals(4.5f, coordinates.speed)
+        Assert.assertEquals(5.6f, coordinates.usedAccelerationSpeed)
+        Assert.assertEquals(6.7f, coordinates.coordinateSpeed)
+        Assert.assertEquals(7.8f, coordinates.accelerationSpeedFactor)
+        Assert.assertEquals(8.9f, coordinates.course)
+        Assert.assertEquals(9.1f, coordinates.gpsChipSpeed)
+        Assert.assertTrue(coordinates.fix)
+        Assert.assertEquals(-1, coordinates.speedFlag)
+        Assert.assertEquals(255u, coordinates.fusionState)
+        val dilution = actual[1] as GpsSatelliteDilutionSample
+        Assert.assertEquals(202L, dilution.timeStamp)
+        Assert.assertEquals(1.25f, dilution.dilution)
+        Assert.assertEquals(-42, dilution.altitude)
+        Assert.assertEquals(7u, dilution.numberOfSatellites)
+        Assert.assertFalse(dilution.fix)
+        val summary = actual[2] as GpsSatelliteSummarySample
+        Assert.assertEquals(303L, summary.timeStamp)
+        Assert.assertEquals(seenBand1.toPolarSummary(), summary.seenSatelliteSummaryBand1)
+        Assert.assertEquals(usedBand1.toPolarSummary(), summary.usedSatelliteSummaryBand1)
+        Assert.assertEquals(seenBand2.toPolarSummary(), summary.seenSatelliteSummaryBand2)
+        Assert.assertEquals(usedBand2.toPolarSummary(), summary.usedSatelliteSummaryBand2)
+        Assert.assertEquals(99u, summary.maxSnr)
+        val nmea = actual[3] as GpsNMEASample
+        Assert.assertEquals(404L, nmea.timeStamp)
+        Assert.assertEquals(1000u, nmea.measurementPeriod)
+        Assert.assertEquals(3u.toUByte(), nmea.statusFlags)
+        Assert.assertEquals("GPGGA", nmea.nmeaMessage)
+    }
+
     private fun assertNeutralKmpVectorShape(vector: JsonObject, id: String) {
         Assert.assertTrue(id, vector.has("area"))
         Assert.assertTrue(id, vector.has("case"))
@@ -205,6 +261,21 @@ class PolarDataUtilsTest {
             Assert.assertEquals(expectedValues, actualSettings[settingType])
         }
         Assert.assertEquals(expected.entrySet().size, actualSettings.size)
+    }
+
+    private fun GnssLocationData.GnssSatelliteSummary.toPolarSummary(): SatelliteSummary {
+        return SatelliteSummary(
+            gpsNbrOfSat = gpsNbrOfSat,
+            gpsMaxSnr = gpsMaxSnr,
+            glonassNbrOfSat = glonassNbrOfSat,
+            glonassMaxSnr = glonassMaxSnr,
+            galileoNbrOfSat = galileoNbrOfSat,
+            galileoMaxSnr = galileoMaxSnr,
+            beidouNbrOfSat = beidouNbrOfSat,
+            beidouMaxSnr = beidouMaxSnr,
+            nbrOfSat = nbrOfSat,
+            snrTop5Avg = snrTop5Avg
+        )
     }
 
     private fun polarSensorSetting(settings: JsonObject?): PolarSensorSetting? {

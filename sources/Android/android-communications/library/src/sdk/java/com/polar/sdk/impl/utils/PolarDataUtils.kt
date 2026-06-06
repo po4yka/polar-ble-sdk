@@ -20,6 +20,19 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.Tempe
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.errors.PolarBleSdkInternalException
 import com.polar.sdk.api.model.*
+import com.polar.shared.pmd.sensors.PolarGnssCoordinateSample
+import com.polar.shared.pmd.sensors.PolarGnssLocationSample
+import com.polar.shared.pmd.sensors.PolarGnssNmeaSample
+import com.polar.shared.pmd.sensors.PolarGnssSatelliteDilutionSample
+import com.polar.shared.pmd.sensors.PolarGnssSatelliteSummary
+import com.polar.shared.pmd.sensors.PolarGnssSatelliteSummarySample
+import com.polar.shared.pmd.sensors.PolarLocationCoordinatesProjectionSample
+import com.polar.shared.pmd.sensors.PolarLocationDataProjection
+import com.polar.shared.pmd.sensors.PolarLocationDataProjectionSample
+import com.polar.shared.pmd.sensors.PolarLocationNmeaProjectionSample
+import com.polar.shared.pmd.sensors.PolarLocationSatelliteDilutionProjectionSample
+import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjection
+import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjectionSample
 import java.util.Collections
 
 internal object PolarDataUtils {
@@ -149,102 +162,124 @@ internal object PolarDataUtils {
     }
 
     fun mapPMDClientLocationDataToPolarLocationData(location: GnssLocationData): PolarLocationData {
-        val locationDataSamples = ArrayList<PolarLocationDataSample>()
-        for (sample in location.gnssLocationDataSamples) {
+        return PolarLocationData(samples = PolarLocationDataProjection.fromGnssSamples(location.toSharedGnssSamples()).map { it.toPolarLocationDataSample() })
+    }
+
+    private fun GnssLocationData.toSharedGnssSamples(): List<PolarGnssLocationSample> {
+        return gnssLocationDataSamples.map { sample ->
             when (sample) {
-                is GnssLocationData.GnssCoordinateSample -> {
-                    val gpsCoordinatesSample = GpsCoordinatesSample(
-                        timeStamp = sample.timeStamp.toLong(),
-                        latitude = sample.latitude,
-                        longitude = sample.longitude,
-                        time = sample.date,
-                        cumulativeDistance = sample.cumulativeDistance,
-                        speed = sample.speed,
-                        usedAccelerationSpeed = sample.usedAccelerationSpeed,
-                        coordinateSpeed = sample.coordinateSpeed,
-                        accelerationSpeedFactor = sample.accelerationSpeedFactor,
-                        course = sample.course,
-                        gpsChipSpeed = sample.gpsChipSpeed,
-                        fix = sample.fix,
-                        speedFlag = sample.speedFlag,
-                        fusionState = sample.fusionState
-                    )
-                    locationDataSamples.add(gpsCoordinatesSample)
-                }
-                is GnssLocationData.GnssGpsNMEASample -> {
-                    val gpsNMEASample = GpsNMEASample(
-                        timeStamp = sample.timeStamp.toLong(),
-                        measurementPeriod = sample.measurementPeriod,
-                        statusFlags = sample.statusFlags,
-                        nmeaMessage = sample.nmeaMessage
-                    )
-                    locationDataSamples.add(gpsNMEASample)
-                }
-                is GnssLocationData.GnssSatelliteDilutionSample -> {
-                    val gpsCoordinatesSample = GpsSatelliteDilutionSample(
-                        timeStamp = sample.timeStamp.toLong(),
-                        dilution = sample.dilution, altitude = sample.altitude,
-                        numberOfSatellites = sample.numberOfSatellites, fix = sample.fix
-                    )
-                    locationDataSamples.add(gpsCoordinatesSample)
-                }
-                is GnssLocationData.GnssSatelliteSummarySample -> {
-                    val gpsSatelliteSummarySample = GpsSatelliteSummarySample(
-                        timeStamp = sample.timeStamp.toLong(),
-                        seenSatelliteSummaryBand1 = SatelliteSummary(
-                            gpsNbrOfSat = sample.seenGnssSatelliteSummaryBand1.gpsNbrOfSat,
-                            gpsMaxSnr = sample.seenGnssSatelliteSummaryBand1.gpsMaxSnr,
-                            glonassNbrOfSat = sample.seenGnssSatelliteSummaryBand1.glonassNbrOfSat,
-                            glonassMaxSnr = sample.seenGnssSatelliteSummaryBand1.glonassMaxSnr,
-                            galileoNbrOfSat = sample.seenGnssSatelliteSummaryBand1.galileoNbrOfSat,
-                            galileoMaxSnr = sample.seenGnssSatelliteSummaryBand1.galileoMaxSnr,
-                            beidouNbrOfSat = sample.seenGnssSatelliteSummaryBand1.beidouNbrOfSat,
-                            beidouMaxSnr = sample.seenGnssSatelliteSummaryBand1.beidouMaxSnr,
-                            nbrOfSat = sample.seenGnssSatelliteSummaryBand1.nbrOfSat,
-                            snrTop5Avg = sample.seenGnssSatelliteSummaryBand1.snrTop5Avg,
-                        ),
-                        usedSatelliteSummaryBand1 = SatelliteSummary(
-                            gpsNbrOfSat = sample.usedGnssSatelliteSummaryBand1.gpsNbrOfSat,
-                            gpsMaxSnr = sample.usedGnssSatelliteSummaryBand1.gpsMaxSnr,
-                            glonassNbrOfSat = sample.usedGnssSatelliteSummaryBand1.glonassNbrOfSat,
-                            glonassMaxSnr = sample.usedGnssSatelliteSummaryBand1.glonassMaxSnr,
-                            galileoNbrOfSat = sample.usedGnssSatelliteSummaryBand1.galileoNbrOfSat,
-                            galileoMaxSnr = sample.usedGnssSatelliteSummaryBand1.galileoMaxSnr,
-                            beidouNbrOfSat = sample.usedGnssSatelliteSummaryBand1.beidouNbrOfSat,
-                            beidouMaxSnr = sample.usedGnssSatelliteSummaryBand1.beidouMaxSnr,
-                            nbrOfSat = sample.usedGnssSatelliteSummaryBand1.nbrOfSat,
-                            snrTop5Avg = sample.usedGnssSatelliteSummaryBand1.snrTop5Avg,
-                        ),
-                        seenSatelliteSummaryBand2 = SatelliteSummary(
-                            gpsNbrOfSat = sample.seenGnssSatelliteSummaryBand2.gpsNbrOfSat,
-                            gpsMaxSnr = sample.seenGnssSatelliteSummaryBand2.gpsMaxSnr,
-                            glonassNbrOfSat = sample.seenGnssSatelliteSummaryBand2.glonassNbrOfSat,
-                            glonassMaxSnr = sample.seenGnssSatelliteSummaryBand2.glonassMaxSnr,
-                            galileoNbrOfSat = sample.seenGnssSatelliteSummaryBand2.galileoNbrOfSat,
-                            galileoMaxSnr = sample.seenGnssSatelliteSummaryBand2.galileoMaxSnr,
-                            beidouNbrOfSat = sample.seenGnssSatelliteSummaryBand2.beidouNbrOfSat,
-                            beidouMaxSnr = sample.seenGnssSatelliteSummaryBand2.beidouMaxSnr,
-                            nbrOfSat = sample.seenGnssSatelliteSummaryBand2.nbrOfSat,
-                            snrTop5Avg = sample.seenGnssSatelliteSummaryBand2.snrTop5Avg,
-                        ),
-                        usedSatelliteSummaryBand2 = SatelliteSummary(
-                            gpsNbrOfSat = sample.usedGnssSatelliteSummaryBand2.gpsNbrOfSat,
-                            gpsMaxSnr = sample.usedGnssSatelliteSummaryBand2.gpsMaxSnr,
-                            glonassNbrOfSat = sample.usedGnssSatelliteSummaryBand2.glonassNbrOfSat,
-                            glonassMaxSnr = sample.usedGnssSatelliteSummaryBand2.glonassMaxSnr,
-                            galileoNbrOfSat = sample.usedGnssSatelliteSummaryBand2.galileoNbrOfSat,
-                            galileoMaxSnr = sample.usedGnssSatelliteSummaryBand2.galileoMaxSnr,
-                            beidouNbrOfSat = sample.usedGnssSatelliteSummaryBand2.beidouNbrOfSat,
-                            beidouMaxSnr = sample.usedGnssSatelliteSummaryBand2.beidouMaxSnr,
-                            nbrOfSat = sample.usedGnssSatelliteSummaryBand2.nbrOfSat,
-                            snrTop5Avg = sample.usedGnssSatelliteSummaryBand2.snrTop5Avg,
-                        ), maxSnr = sample.maxSnr
-                    )
-                    locationDataSamples.add(gpsSatelliteSummarySample)
-                }
+                is GnssLocationData.GnssCoordinateSample -> PolarGnssCoordinateSample(
+                    timeStamp = sample.timeStamp,
+                    latitude = sample.latitude,
+                    longitude = sample.longitude,
+                    date = sample.date,
+                    cumulativeDistance = sample.cumulativeDistance,
+                    speed = sample.speed,
+                    usedAccelerationSpeed = sample.usedAccelerationSpeed,
+                    coordinateSpeed = sample.coordinateSpeed,
+                    accelerationSpeedFactor = sample.accelerationSpeedFactor,
+                    course = sample.course,
+                    gpsChipSpeed = sample.gpsChipSpeed,
+                    fix = sample.fix,
+                    speedFlag = sample.speedFlag,
+                    fusionState = sample.fusionState
+                )
+                is GnssLocationData.GnssGpsNMEASample -> PolarGnssNmeaSample(
+                    timeStamp = sample.timeStamp,
+                    measurementPeriod = sample.measurementPeriod,
+                    messageLength = sample.messageLength,
+                    statusFlags = sample.statusFlags,
+                    nmeaMessage = sample.nmeaMessage
+                )
+                is GnssLocationData.GnssSatelliteDilutionSample -> PolarGnssSatelliteDilutionSample(
+                    timeStamp = sample.timeStamp,
+                    dilution = sample.dilution,
+                    altitude = sample.altitude,
+                    numberOfSatellites = sample.numberOfSatellites,
+                    fix = sample.fix
+                )
+                is GnssLocationData.GnssSatelliteSummarySample -> PolarGnssSatelliteSummarySample(
+                    timeStamp = sample.timeStamp,
+                    seenGnssSatelliteSummaryBand1 = sample.seenGnssSatelliteSummaryBand1.toSharedGnssSatelliteSummary(),
+                    usedGnssSatelliteSummaryBand1 = sample.usedGnssSatelliteSummaryBand1.toSharedGnssSatelliteSummary(),
+                    seenGnssSatelliteSummaryBand2 = sample.seenGnssSatelliteSummaryBand2.toSharedGnssSatelliteSummary(),
+                    usedGnssSatelliteSummaryBand2 = sample.usedGnssSatelliteSummaryBand2.toSharedGnssSatelliteSummary(),
+                    maxSnr = sample.maxSnr
+                )
             }
         }
-        return PolarLocationData(samples = locationDataSamples)
+    }
+
+    private fun GnssLocationData.GnssSatelliteSummary.toSharedGnssSatelliteSummary(): PolarGnssSatelliteSummary {
+        return PolarGnssSatelliteSummary(
+            gpsNbrOfSat = gpsNbrOfSat,
+            gpsMaxSnr = gpsMaxSnr,
+            glonassNbrOfSat = glonassNbrOfSat,
+            glonassMaxSnr = glonassMaxSnr,
+            galileoNbrOfSat = galileoNbrOfSat,
+            galileoMaxSnr = galileoMaxSnr,
+            beidouNbrOfSat = beidouNbrOfSat,
+            beidouMaxSnr = beidouMaxSnr,
+            nbrOfSat = nbrOfSat,
+            snrTop5Avg = snrTop5Avg
+        )
+    }
+
+    private fun PolarLocationDataProjectionSample.toPolarLocationDataSample(): PolarLocationDataSample {
+        return when (this) {
+            is PolarLocationCoordinatesProjectionSample -> GpsCoordinatesSample(
+                timeStamp = timeStamp,
+                latitude = latitude,
+                longitude = longitude,
+                time = time,
+                cumulativeDistance = cumulativeDistance,
+                speed = speed,
+                usedAccelerationSpeed = usedAccelerationSpeed,
+                coordinateSpeed = coordinateSpeed,
+                accelerationSpeedFactor = accelerationSpeedFactor,
+                course = course,
+                gpsChipSpeed = gpsChipSpeed,
+                fix = fix,
+                speedFlag = speedFlag,
+                fusionState = fusionState
+            )
+            is PolarLocationNmeaProjectionSample -> GpsNMEASample(
+                timeStamp = timeStamp,
+                measurementPeriod = measurementPeriod,
+                statusFlags = statusFlags,
+                nmeaMessage = nmeaMessage
+            )
+            is PolarLocationSatelliteDilutionProjectionSample -> GpsSatelliteDilutionSample(
+                timeStamp = timeStamp,
+                dilution = dilution,
+                altitude = altitude,
+                numberOfSatellites = numberOfSatellites,
+                fix = fix
+            )
+            is PolarLocationSatelliteSummaryProjectionSample -> GpsSatelliteSummarySample(
+                timeStamp = timeStamp,
+                seenSatelliteSummaryBand1 = seenSatelliteSummaryBand1.toPolarSatelliteSummary(),
+                usedSatelliteSummaryBand1 = usedSatelliteSummaryBand1.toPolarSatelliteSummary(),
+                seenSatelliteSummaryBand2 = seenSatelliteSummaryBand2.toPolarSatelliteSummary(),
+                usedSatelliteSummaryBand2 = usedSatelliteSummaryBand2.toPolarSatelliteSummary(),
+                maxSnr = maxSnr
+            )
+        }
+    }
+
+    private fun PolarLocationSatelliteSummaryProjection.toPolarSatelliteSummary(): SatelliteSummary {
+        return SatelliteSummary(
+            gpsNbrOfSat = gpsNbrOfSat,
+            gpsMaxSnr = gpsMaxSnr,
+            glonassNbrOfSat = glonassNbrOfSat,
+            glonassMaxSnr = glonassMaxSnr,
+            galileoNbrOfSat = galileoNbrOfSat,
+            galileoMaxSnr = galileoMaxSnr,
+            beidouNbrOfSat = beidouNbrOfSat,
+            beidouMaxSnr = beidouMaxSnr,
+            nbrOfSat = nbrOfSat,
+            snrTop5Avg = snrTop5Avg
+        )
     }
 
     fun mapPmdClientEcgDataToPolarEcg(ecgData: EcgData): PolarEcgData {
@@ -468,4 +503,3 @@ internal object PolarDataUtils {
         return PolarTemperatureData(samples)
     }
 }
-

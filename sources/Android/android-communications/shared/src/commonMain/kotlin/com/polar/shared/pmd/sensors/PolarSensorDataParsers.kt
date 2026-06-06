@@ -121,6 +121,118 @@ data class PolarGnssNmeaSample(
     val nmeaMessage: String
 ) : PolarGnssLocationSample()
 
+sealed class PolarLocationDataProjectionSample
+data class PolarLocationCoordinatesProjectionSample(
+    val timeStamp: Long,
+    val latitude: Double,
+    val longitude: Double,
+    val time: String,
+    val cumulativeDistance: Double,
+    val speed: Float,
+    val usedAccelerationSpeed: Float,
+    val coordinateSpeed: Float,
+    val accelerationSpeedFactor: Float,
+    val course: Float,
+    val gpsChipSpeed: Float,
+    val fix: Boolean,
+    val speedFlag: Int,
+    val fusionState: UInt
+) : PolarLocationDataProjectionSample()
+data class PolarLocationSatelliteDilutionProjectionSample(
+    val timeStamp: Long,
+    val dilution: Float,
+    val altitude: Int,
+    val numberOfSatellites: UInt,
+    val fix: Boolean
+) : PolarLocationDataProjectionSample()
+data class PolarLocationSatelliteSummaryProjection(
+    val gpsNbrOfSat: UByte,
+    val gpsMaxSnr: UByte,
+    val glonassNbrOfSat: UByte,
+    val glonassMaxSnr: UByte,
+    val galileoNbrOfSat: UByte,
+    val galileoMaxSnr: UByte,
+    val beidouNbrOfSat: UByte,
+    val beidouMaxSnr: UByte,
+    val nbrOfSat: UByte,
+    val snrTop5Avg: UByte
+)
+data class PolarLocationSatelliteSummaryProjectionSample(
+    val timeStamp: Long,
+    val seenSatelliteSummaryBand1: PolarLocationSatelliteSummaryProjection,
+    val usedSatelliteSummaryBand1: PolarLocationSatelliteSummaryProjection,
+    val seenSatelliteSummaryBand2: PolarLocationSatelliteSummaryProjection,
+    val usedSatelliteSummaryBand2: PolarLocationSatelliteSummaryProjection,
+    val maxSnr: UInt
+) : PolarLocationDataProjectionSample()
+data class PolarLocationNmeaProjectionSample(
+    val timeStamp: Long,
+    val measurementPeriod: UInt,
+    val statusFlags: UByte,
+    val nmeaMessage: String
+) : PolarLocationDataProjectionSample()
+
+object PolarLocationDataProjection {
+    fun fromGnssSamples(samples: List<PolarGnssLocationSample>): List<PolarLocationDataProjectionSample> {
+        return samples.map { sample ->
+            when (sample) {
+                is PolarGnssCoordinateSample -> PolarLocationCoordinatesProjectionSample(
+                    timeStamp = sample.timeStamp.toLong(),
+                    latitude = sample.latitude,
+                    longitude = sample.longitude,
+                    time = sample.date,
+                    cumulativeDistance = sample.cumulativeDistance,
+                    speed = sample.speed,
+                    usedAccelerationSpeed = sample.usedAccelerationSpeed,
+                    coordinateSpeed = sample.coordinateSpeed,
+                    accelerationSpeedFactor = sample.accelerationSpeedFactor,
+                    course = sample.course,
+                    gpsChipSpeed = sample.gpsChipSpeed,
+                    fix = sample.fix,
+                    speedFlag = sample.speedFlag,
+                    fusionState = sample.fusionState
+                )
+                is PolarGnssSatelliteDilutionSample -> PolarLocationSatelliteDilutionProjectionSample(
+                    timeStamp = sample.timeStamp.toLong(),
+                    dilution = sample.dilution,
+                    altitude = sample.altitude,
+                    numberOfSatellites = sample.numberOfSatellites,
+                    fix = sample.fix
+                )
+                is PolarGnssSatelliteSummarySample -> PolarLocationSatelliteSummaryProjectionSample(
+                    timeStamp = sample.timeStamp.toLong(),
+                    seenSatelliteSummaryBand1 = sample.seenGnssSatelliteSummaryBand1.toLocationProjection(),
+                    usedSatelliteSummaryBand1 = sample.usedGnssSatelliteSummaryBand1.toLocationProjection(),
+                    seenSatelliteSummaryBand2 = sample.seenGnssSatelliteSummaryBand2.toLocationProjection(),
+                    usedSatelliteSummaryBand2 = sample.usedGnssSatelliteSummaryBand2.toLocationProjection(),
+                    maxSnr = sample.maxSnr
+                )
+                is PolarGnssNmeaSample -> PolarLocationNmeaProjectionSample(
+                    timeStamp = sample.timeStamp.toLong(),
+                    measurementPeriod = sample.measurementPeriod,
+                    statusFlags = sample.statusFlags,
+                    nmeaMessage = sample.nmeaMessage
+                )
+            }
+        }
+    }
+
+    private fun PolarGnssSatelliteSummary.toLocationProjection(): PolarLocationSatelliteSummaryProjection {
+        return PolarLocationSatelliteSummaryProjection(
+            gpsNbrOfSat = gpsNbrOfSat,
+            gpsMaxSnr = gpsMaxSnr,
+            glonassNbrOfSat = glonassNbrOfSat,
+            glonassMaxSnr = glonassMaxSnr,
+            galileoNbrOfSat = galileoNbrOfSat,
+            galileoMaxSnr = galileoMaxSnr,
+            beidouNbrOfSat = beidouNbrOfSat,
+            beidouMaxSnr = beidouMaxSnr,
+            nbrOfSat = nbrOfSat,
+            snrTop5Avg = snrTop5Avg
+        )
+    }
+}
+
 enum class PolarMagCalibrationStatus(val id: Int) {
     NOT_AVAILABLE(-1),
     UNKNOWN(0),

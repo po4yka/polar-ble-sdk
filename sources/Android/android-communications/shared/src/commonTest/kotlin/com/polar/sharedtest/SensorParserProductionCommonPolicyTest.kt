@@ -7,6 +7,12 @@ import com.polar.shared.pmd.sensors.PolarGnssNmeaSample
 import com.polar.shared.pmd.sensors.PolarGnssSatelliteDilutionSample
 import com.polar.shared.pmd.sensors.PolarGnssSatelliteSummary
 import com.polar.shared.pmd.sensors.PolarGnssSatelliteSummarySample
+import com.polar.shared.pmd.sensors.PolarLocationCoordinatesProjectionSample
+import com.polar.shared.pmd.sensors.PolarLocationDataProjection
+import com.polar.shared.pmd.sensors.PolarLocationNmeaProjectionSample
+import com.polar.shared.pmd.sensors.PolarLocationSatelliteDilutionProjectionSample
+import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjection
+import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjectionSample
 import com.polar.shared.pmd.sensors.PolarPmdDataFrame
 import com.polar.shared.pmd.sensors.PolarPpgType0Sample
 import com.polar.shared.pmd.sensors.PolarPpgType5Sample
@@ -48,6 +54,14 @@ class SensorParserProductionCommonPolicyTest {
     }
 
     @Test
+    fun productionSharedProjectionCoversGnssLocationPublicModelPolicy() {
+        assertGnssCoordinateProjection("protocol/sensors/gnss-location-raw-type0-coordinate.json")
+        assertGnssSatelliteDilutionProjection("protocol/sensors/gnss-location-raw-type1-satellite-dilution.json")
+        assertGnssSatelliteSummaryProjection("protocol/sensors/gnss-location-raw-type2-satellite-summary.json")
+        assertGnssNmeaProjection("protocol/sensors/gnss-location-raw-type3-nmea.json")
+    }
+
+    @Test
     fun productionSharedParserKeepsMalformedAndUnsupportedPolicyExecutable() {
         assertFailsWith<IllegalArgumentException> {
             PolarSensorDataParser.parseAcc(frame("protocol/sensors/acc-raw-type0-truncated-sample-android-error.json"))
@@ -83,9 +97,40 @@ class SensorParserProductionCommonPolicyTest {
         assertEquals(expected.jsonNumberString("fusionState"), actual.fusionState.toString())
     }
 
+    private fun assertGnssCoordinateProjection(path: String) {
+        val vector = loadGoldenVectorText(path)
+        val actual = PolarLocationDataProjection.fromGnssSamples(PolarSensorDataParser.parseGnssLocation(frameFromVector(vector))).filterIsInstance<PolarLocationCoordinatesProjectionSample>().single()
+        val expected = vector.expectedSamples().single()
+        assertEquals(expected.jsonNumberString("timeStamp"), actual.timeStamp.toString())
+        assertDouble(expected.numericValue("latitude"), actual.latitude)
+        assertDouble(expected.numericValue("longitude"), actual.longitude)
+        assertEquals(expected.stringValue("date"), actual.time)
+        assertDouble(expected.numericValue("cumulativeDistance"), actual.cumulativeDistance)
+        assertFloat(expected.numericValue("speed"), actual.speed)
+        assertFloat(expected.numericValue("usedAccelerationSpeed"), actual.usedAccelerationSpeed)
+        assertFloat(expected.numericValue("coordinateSpeed"), actual.coordinateSpeed)
+        assertFloat(expected.numericValue("accelerationSpeedFactor"), actual.accelerationSpeedFactor)
+        assertFloat(expected.numericValue("course"), actual.course)
+        assertFloat(expected.numericValue("gpsChipSpeed"), actual.gpsChipSpeed)
+        assertEquals(expected.booleanValue("fix"), actual.fix)
+        assertEquals(expected.intValue("speedFlag"), actual.speedFlag)
+        assertEquals(expected.jsonNumberString("fusionState"), actual.fusionState.toString())
+    }
+
     private fun assertGnssSatelliteDilution(path: String) {
         val vector = loadGoldenVectorText(path)
         val actual = PolarSensorDataParser.parseGnssLocation(frameFromVector(vector)).filterIsInstance<PolarGnssSatelliteDilutionSample>().single()
+        val expected = vector.expectedSamples().single()
+        assertEquals(expected.jsonNumberString("timeStamp"), actual.timeStamp.toString())
+        assertFloat(expected.numericValue("dilution"), actual.dilution)
+        assertEquals(expected.intValue("altitude"), actual.altitude)
+        assertEquals(expected.jsonNumberString("numberOfSatellites"), actual.numberOfSatellites.toString())
+        assertEquals(expected.booleanValue("fix"), actual.fix)
+    }
+
+    private fun assertGnssSatelliteDilutionProjection(path: String) {
+        val vector = loadGoldenVectorText(path)
+        val actual = PolarLocationDataProjection.fromGnssSamples(PolarSensorDataParser.parseGnssLocation(frameFromVector(vector))).filterIsInstance<PolarLocationSatelliteDilutionProjectionSample>().single()
         val expected = vector.expectedSamples().single()
         assertEquals(expected.jsonNumberString("timeStamp"), actual.timeStamp.toString())
         assertFloat(expected.numericValue("dilution"), actual.dilution)
@@ -106,6 +151,18 @@ class SensorParserProductionCommonPolicyTest {
         assertEquals(expected.jsonNumberString("maxSnr"), actual.maxSnr.toString())
     }
 
+    private fun assertGnssSatelliteSummaryProjection(path: String) {
+        val vector = loadGoldenVectorText(path)
+        val actual = PolarLocationDataProjection.fromGnssSamples(PolarSensorDataParser.parseGnssLocation(frameFromVector(vector))).filterIsInstance<PolarLocationSatelliteSummaryProjectionSample>().single()
+        val expected = vector.expectedSamples().single()
+        assertEquals(expected.jsonNumberString("timeStamp"), actual.timeStamp.toString())
+        assertGnssSatelliteSummaryProjection(expected.objectValue("seenBand1"), actual.seenSatelliteSummaryBand1)
+        assertGnssSatelliteSummaryProjection(expected.objectValue("usedBand1"), actual.usedSatelliteSummaryBand1)
+        assertGnssSatelliteSummaryProjection(expected.objectValue("seenBand2"), actual.seenSatelliteSummaryBand2)
+        assertGnssSatelliteSummaryProjection(expected.objectValue("usedBand2"), actual.usedSatelliteSummaryBand2)
+        assertEquals(expected.jsonNumberString("maxSnr"), actual.maxSnr.toString())
+    }
+
     private fun assertGnssNmea(path: String) {
         val vector = loadGoldenVectorText(path)
         val actual = PolarSensorDataParser.parseGnssLocation(frameFromVector(vector)).filterIsInstance<PolarGnssNmeaSample>().single()
@@ -113,6 +170,16 @@ class SensorParserProductionCommonPolicyTest {
         assertEquals(expected.jsonNumberString("timeStamp"), actual.timeStamp.toString())
         assertEquals(expected.jsonNumberString("measurementPeriod"), actual.measurementPeriod.toString())
         assertEquals(expected.jsonNumberString("messageLength"), actual.messageLength.toString())
+        assertEquals(expected.jsonNumberString("statusFlags"), actual.statusFlags.toString())
+        assertEquals(expected.stringValue("nmeaMessage"), actual.nmeaMessage)
+    }
+
+    private fun assertGnssNmeaProjection(path: String) {
+        val vector = loadGoldenVectorText(path)
+        val actual = PolarLocationDataProjection.fromGnssSamples(PolarSensorDataParser.parseGnssLocation(frameFromVector(vector))).filterIsInstance<PolarLocationNmeaProjectionSample>().single()
+        val expected = vector.expectedSamples().single()
+        assertEquals(expected.jsonNumberString("timeStamp"), actual.timeStamp.toString())
+        assertEquals(expected.jsonNumberString("measurementPeriod"), actual.measurementPeriod.toString())
         assertEquals(expected.jsonNumberString("statusFlags"), actual.statusFlags.toString())
         assertEquals(expected.stringValue("nmeaMessage"), actual.nmeaMessage)
     }
@@ -280,6 +347,19 @@ class SensorParserProductionCommonPolicyTest {
     }
 
     private fun assertGnssSatelliteSummary(expected: String, actual: PolarGnssSatelliteSummary) {
+        assertEquals(expected.jsonNumberString("gpsNbrOfSat"), actual.gpsNbrOfSat.toString())
+        assertEquals(expected.jsonNumberString("gpsMaxSnr"), actual.gpsMaxSnr.toString())
+        assertEquals(expected.jsonNumberString("glonassNbrOfSat"), actual.glonassNbrOfSat.toString())
+        assertEquals(expected.jsonNumberString("glonassMaxSnr"), actual.glonassMaxSnr.toString())
+        assertEquals(expected.jsonNumberString("galileoNbrOfSat"), actual.galileoNbrOfSat.toString())
+        assertEquals(expected.jsonNumberString("galileoMaxSnr"), actual.galileoMaxSnr.toString())
+        assertEquals(expected.jsonNumberString("beidouNbrOfSat"), actual.beidouNbrOfSat.toString())
+        assertEquals(expected.jsonNumberString("beidouMaxSnr"), actual.beidouMaxSnr.toString())
+        assertEquals(expected.jsonNumberString("nbrOfSat"), actual.nbrOfSat.toString())
+        assertEquals(expected.jsonNumberString("snrTop5Avg"), actual.snrTop5Avg.toString())
+    }
+
+    private fun assertGnssSatelliteSummaryProjection(expected: String, actual: PolarLocationSatelliteSummaryProjection) {
         assertEquals(expected.jsonNumberString("gpsNbrOfSat"), actual.gpsNbrOfSat.toString())
         assertEquals(expected.jsonNumberString("gpsMaxSnr"), actual.gpsMaxSnr.toString())
         assertEquals(expected.jsonNumberString("glonassNbrOfSat"), actual.glonassNbrOfSat.toString())
