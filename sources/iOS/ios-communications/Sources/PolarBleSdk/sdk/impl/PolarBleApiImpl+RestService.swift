@@ -84,12 +84,20 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     
     /// Events that can be acted upon using actions. Actions are returned in `actions` and `actionNames` properties.
     var events: [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restEvents(eventsCsv: (dictionary?["events"] as? [String] ?? []).joined(separator: ",")))
+        #else
         return dictionary?["events"] as? [String] ?? []
+        #endif
     }
     
     /// Endpoints that can be applied in **endpoint=** parameter in paths from `actions` and `actionPaths`
     var endpoints: [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restEndpoints(endpointsCsv: (dictionary?["endpoints"] as? [String] ?? []).joined(separator: ",")))
+        #else
         return dictionary?["endpoints"] as? [String] ?? []
+        #endif
     }
     
     /// Actions/commands that can be sent, using put operation of corresponding path string
@@ -101,7 +109,11 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     /// **triggers=[]**: list of triggers may follow equal sign in path, specifying triggering related to action. Triggers are listed using `eventTriggers`.
     /// **endpoint=**: endpoint, listed by `endpoints`, that is related to the action. This can be used in post action paths.
     var actions: [String: String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedMap(PolarIosSharedBridge.shared.restActions(entries: (dictionary?["cmd"] as? [String: String] ?? [:]).sharedLineMap))
+        #else
         return dictionary?["cmd"] as? [String: String] ?? [:]
+        #endif
     }
     
     /// Just the action names from `actions` property
@@ -155,6 +167,15 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
 private func sharedList(_ value: String) -> [String] {
     if value.isEmpty { return [] }
     return value.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+}
+
+private func sharedMap(_ value: String) -> [String: String] {
+    if value.isEmpty { return [:] }
+    return Dictionary(uniqueKeysWithValues: value.split(separator: "\n", omittingEmptySubsequences: false).compactMap { line in
+        let parts = line.split(separator: "\t", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
+        guard parts.count == 2 else { return nil }
+        return (parts[0], parts[1])
+    })
 }
 
 private extension Dictionary where Key == String, Value == String {

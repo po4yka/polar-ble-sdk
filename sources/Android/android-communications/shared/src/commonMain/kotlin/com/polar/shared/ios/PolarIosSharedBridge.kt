@@ -610,6 +610,18 @@ object PolarIosSharedBridge {
         return PolarRestServiceModels.actionPaths(entries.lineMap()).joinToString("|")
     }
 
+    fun restEvents(eventsCsv: String): String {
+        return PolarRestServiceModels.serviceDescription(eventsCsv.csvFields(), null, null, emptyMap()).events.joinToString("|")
+    }
+
+    fun restEndpoints(endpointsCsv: String): String {
+        return PolarRestServiceModels.serviceDescription(null, endpointsCsv.csvFields(), null, emptyMap()).endpoints.joinToString("|")
+    }
+
+    fun restActions(entries: String): String {
+        return PolarRestServiceModels.serviceDescription(null, null, entries.lineMap(), emptyMap()).actions.lineString()
+    }
+
     fun restEventDetails(detailsCsv: String, triggersCsv: String): String {
         return PolarRestServiceModels.eventDetails(mapOf("details" to detailsCsv.csvFields(), "triggers" to triggersCsv.csvFields())).joinToString("|")
     }
@@ -1395,6 +1407,10 @@ object PolarIosSharedBridge {
                 require(separator >= 0) { "Missing tab separator in line-map entry" }
                 line.substring(0, separator) to line.substring(separator + 1)
             }
+    }
+
+    private fun Map<String, String>.lineString(): String {
+        return entries.joinToString("\n") { (key, value) -> "$key\t$value" }
     }
 
     private fun List<String>.optionalField(index: Int): String? {

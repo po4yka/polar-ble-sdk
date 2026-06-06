@@ -66,6 +66,11 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         XCTAssertEqual(["./REST/TRAINING.API?cmd=subscribe&event="], description.actionPaths)
         XCTAssertEqual(["sport", "duration"], description.eventDetails(for: "lap_data"))
         XCTAssertEqual(["manual"], description.eventTriggers(for: "lap_data"))
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(["lap_data"], sharedListForTest(PolarIosSharedBridge.shared.restEvents(eventsCsv: description.events.joined(separator: ","))))
+        XCTAssertEqual([], sharedListForTest(PolarIosSharedBridge.shared.restEndpoints(endpointsCsv: description.endpoints.joined(separator: ","))))
+        XCTAssertEqual(description.actions, sharedMapForTest(PolarIosSharedBridge.shared.restActions(entries: description.actions.sharedLineMapForTest)))
+        #endif
     }
     
     func testConvertsLapSummaryExampleJson() throws {
@@ -563,6 +568,26 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
             }
     }
 
+}
+
+private func sharedListForTest(_ value: String) -> [String] {
+    if value.isEmpty { return [] }
+    return value.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+}
+
+private func sharedMapForTest(_ value: String) -> [String: String] {
+    if value.isEmpty { return [:] }
+    return Dictionary(uniqueKeysWithValues: value.split(separator: "\n", omittingEmptySubsequences: false).compactMap { line in
+        let parts = line.split(separator: "\t", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
+        guard parts.count == 2 else { return nil }
+        return (parts[0], parts[1])
+    })
+}
+
+private extension Dictionary where Key == String, Value == String {
+    var sharedLineMapForTest: String {
+        return map { key, value in "\(key)\t\(value)" }.joined(separator: "\n")
+    }
 }
 
 private let REST_SERVICE_MAPPING_READINESS_POLICY_VECTOR_PATHS = [
