@@ -360,6 +360,11 @@ public class PpgData {
     #endif
     
     private static func dataFromRawType9(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let shared = sharedRawType9Data(frame: frame) {
+            return shared
+        }
+        #endif
         
         let step = TYPE_0_SAMPLE_SIZE_IN_BYTES
         let samplesSize = Int(Double(frame.dataContent.count) / Double(step * TYPE_0_CHANNELS_IN_SAMPLE))
@@ -398,6 +403,50 @@ public class PpgData {
         
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamples)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedRawType9Data(frame: PmdDataFrame) -> PpgData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_9,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PolarIosSharedBridge.shared.ppgRawType9Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.flatMap { row -> [PpgSample] in
+            let fields = row.split(separator: ",")
+            guard fields.count == 4,
+                  let timeStamp = UInt64(fields[0]) else {
+                return []
+            }
+            let numIntTs = fields[1].split(separator: ";").compactMap { Int32($0) }
+            let channel1GainTs = fields[2].split(separator: ";").compactMap { Int32($0) }
+            let channel2GainTs = fields[3].split(separator: ";").compactMap { Int32($0) }
+            guard numIntTs.count == 12,
+                  channel1GainTs.count == 12,
+                  channel2GainTs.count == 12 else {
+                return []
+            }
+            return [
+                PpgDataFrameType9(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: numIntTs),
+                PpgDataFrameType9(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: channel1GainTs),
+                PpgDataFrameType9(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: channel2GainTs)
+            ]
+        }
+        guard samples.count == rowValues.count * 3 else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
 
     private static func dataFromRawType14(frame: PmdDataFrame) throws -> PpgData {
 
