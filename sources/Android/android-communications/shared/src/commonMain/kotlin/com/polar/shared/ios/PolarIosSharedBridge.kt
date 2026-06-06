@@ -329,6 +329,11 @@ object PolarIosSharedBridge {
         return PolarTrainingSessionModels.payloadFetchOrder(reference).joinToString("\n")
     }
 
+    fun trainingSessionPayloadParserCase(fileName: String): String? {
+        val parserCase = PolarTrainingSessionModels.payloadParserCase(fileName) ?: return null
+        return "${parserCase.parser}|${parserCase.encoding}"
+    }
+
     fun trainingSessionDeleteParentPath(referencePath: String): String {
         return PolarTrainingSessionModels.deleteParentPath(referencePath)
     }

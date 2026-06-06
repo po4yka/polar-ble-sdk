@@ -43,6 +43,18 @@ internal class PolarTrainingSessionUtils {
         return fallbackTrainingSessionPayloadFetchOrder(reference: reference)
     }
 
+    static func trainingSessionPayloadParserCase(fileName: String) -> (parser: String, encoding: String)? {
+        #if canImport(PolarBleSdkShared)
+        if let shared = PolarIosSharedBridge.shared.trainingSessionPayloadParserCase(fileName: fileName) {
+            let fields = shared.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+            if fields.count == 2 {
+                return (parser: fields[0], encoding: fields[1])
+            }
+        }
+        #endif
+        return fallbackTrainingSessionPayloadParserCase(fileName: fileName)
+    }
+
     static func trainingSessionExerciseDataTypeFileName(dataType: PolarExerciseDataTypes) -> String {
         return dataType.deviceFileName
     }
@@ -267,12 +279,13 @@ internal class PolarTrainingSessionUtils {
         var samples: Data_PbExerciseSamples?
         var samples2: Data_PbExerciseSamples2?
         for (type, data) in dataResults {
-            switch type {
-            case .exerciseSummary:            summary  = try? Data_PbExerciseBase(serializedBytes: data)
-            case .route, .routeGzip:          route    = try? Data_PbExerciseRouteSamples(serializedBytes: data)
-            case .routeAdvancedFormat, .routeAdvancedFormatGzip: route2 = try? Data_PbExerciseRouteSamples2(serializedBytes: data)
-            case .samples, .samplesGzip:      samples  = try? Data_PbExerciseSamples(serializedBytes: data)
-            case .samplesAdvancedFormatGzip:  samples2 = try? Data_PbExerciseSamples2(serializedBytes: data)
+            switch trainingSessionPayloadParserCase(fileName: type.deviceFileName)?.parser {
+            case "PbExerciseBase": summary = try? Data_PbExerciseBase(serializedBytes: data)
+            case "PbExerciseRouteSamples": route = try? Data_PbExerciseRouteSamples(serializedBytes: data)
+            case "PbExerciseRouteSamples2": route2 = try? Data_PbExerciseRouteSamples2(serializedBytes: data)
+            case "PbExerciseSamples": samples = try? Data_PbExerciseSamples(serializedBytes: data)
+            case "PbExerciseSamples2": samples2 = try? Data_PbExerciseSamples2(serializedBytes: data)
+            default: continue
             }
         }
         return PolarExercise(index: exercise.index, path: basePath, exerciseDataTypes: exercise.exerciseDataTypes,
@@ -430,6 +443,21 @@ internal class PolarTrainingSessionUtils {
     private static func fallbackTrainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference) -> [String] {
         return [reference.path] + reference.exercises.flatMap { exercise in
             exercise.exerciseDataTypes.map { "\(exercise.path)/\($0.deviceFileName)" }
+        }
+    }
+
+    private static func fallbackTrainingSessionPayloadParserCase(fileName: String) -> (parser: String, encoding: String)? {
+        switch fileName {
+        case "TSESS.BPB": return (parser: "PbTrainingSession", encoding: "protobuf")
+        case "BASE.BPB": return (parser: "PbExerciseBase", encoding: "protobuf")
+        case "ROUTE.BPB": return (parser: "PbExerciseRouteSamples", encoding: "protobuf")
+        case "ROUTE.GZB": return (parser: "PbExerciseRouteSamples", encoding: "gzip-protobuf")
+        case "ROUTE2.BPB": return (parser: "PbExerciseRouteSamples2", encoding: "protobuf")
+        case "ROUTE2.GZB": return (parser: "PbExerciseRouteSamples2", encoding: "gzip-protobuf")
+        case "SAMPLES.BPB": return (parser: "PbExerciseSamples", encoding: "protobuf")
+        case "SAMPLES.GZB": return (parser: "PbExerciseSamples", encoding: "gzip-protobuf")
+        case "SAMPLES2.GZB": return (parser: "PbExerciseSamples2", encoding: "gzip-protobuf")
+        default: return nil
         }
     }
 }
