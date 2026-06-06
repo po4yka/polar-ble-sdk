@@ -38,7 +38,7 @@ public class PolarActivityData: Codable {
 
         static func getByValue(value: Data_PbActivityInfo.ActivityClass) -> PolarActivityClass {
             #if canImport(PolarBleSdkShared)
-            if let sharedName = PolarIosSharedBridge.shared.activityClassName(value: Int32(value.rawValue)),
+            if let sharedName = PolarActivityRuntimePlanner.activityClassName(value: Int(value.rawValue)),
                let sharedClass = PolarActivityClass(rawValue: sharedName) {
                 return sharedClass
             }

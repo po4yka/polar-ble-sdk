@@ -44,7 +44,7 @@ public struct Polar247HrSamplesData: Codable {
 
         static func getByValue(value: Data_PbMeasTriggerType) -> AutomaticSampleTriggerType {
             #if canImport(PolarBleSdkShared)
-            if let sharedName = PolarIosSharedBridge.shared.automaticHrTriggerName(value: Int32(value.rawValue)),
+            if let sharedName = PolarActivityRuntimePlanner.automaticHrTriggerName(value: Int(value.rawValue)),
                let sharedTrigger = AutomaticSampleTriggerType(sharedName: sharedName) {
                 return sharedTrigger
             }

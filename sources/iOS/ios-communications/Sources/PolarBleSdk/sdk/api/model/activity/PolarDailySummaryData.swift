@@ -91,7 +91,7 @@ public enum PolarDailyBalanceFeedBack: String, Codable {
     
     static func getByValue(value: Data_PbDailySummary) -> PolarDailyBalanceFeedBack {
         #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.dailyBalanceFeedbackName(value: Int32(value.dailyBalanceFeedback.rawValue)),
+        if let sharedName = PolarActivityRuntimePlanner.dailyBalanceFeedbackName(value: Int(value.dailyBalanceFeedback.rawValue)),
            let sharedFeedback = PolarDailyBalanceFeedBack(rawValue: sharedName) {
             return sharedFeedback
         }
@@ -143,7 +143,7 @@ public enum PolarReadinessForSpeedAndStrengthTraining: String, Codable {
     
     static func getByValue(value: Data_PbDailySummary) -> PolarReadinessForSpeedAndStrengthTraining {
         #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.trainingReadinessName(value: Int32(value.readinessForSpeedAndStrengthTraining.rawValue)),
+        if let sharedName = PolarActivityRuntimePlanner.trainingReadinessName(value: Int(value.readinessForSpeedAndStrengthTraining.rawValue)),
            let sharedReadiness = PolarReadinessForSpeedAndStrengthTraining(rawValue: sharedName) {
             return sharedReadiness
         }

@@ -35,7 +35,7 @@ public struct Polar247PPiSamplesData: Codable {
 
         static func getByValue(value: Data_PbPpIntervalAutoSamples.PbPpIntervalRecordingTriggerType) -> PPiSampleTriggerType {
             #if canImport(PolarBleSdkShared)
-            if let sharedName = PolarIosSharedBridge.shared.ppiSampleTriggerName(value: Int32(value.rawValue)),
+            if let sharedName = PolarActivityRuntimePlanner.ppiSampleTriggerName(value: Int(value.rawValue)),
                let sharedTrigger = PPiSampleTriggerType(sharedName: sharedName) {
                 return sharedTrigger
             }
@@ -55,7 +55,7 @@ public struct Polar247PPiSamplesData: Codable {
 
         static func getByValue(value: Int) -> SkinContact? {
             #if canImport(PolarBleSdkShared)
-            if let sharedName = PolarIosSharedBridge.shared.ppiSkinContactName(value: Int32(value)),
+            if let sharedName = PolarActivityRuntimePlanner.ppiSkinContactName(value: value),
                let sharedValue = SkinContact(rawValue: sharedName) {
                 return sharedValue
             }
@@ -76,7 +76,7 @@ public struct Polar247PPiSamplesData: Codable {
 
         static func getByValue(value: Int) -> Movement? {
             #if canImport(PolarBleSdkShared)
-            if let sharedName = PolarIosSharedBridge.shared.ppiMovementName(value: Int32(value)),
+            if let sharedName = PolarActivityRuntimePlanner.ppiMovementName(value: value),
                let sharedValue = Movement(rawValue: sharedName) {
                 return sharedValue
             }
@@ -97,7 +97,7 @@ public struct Polar247PPiSamplesData: Codable {
         
         static func getByValue(value: Int) -> IntervalStatus? {
             #if canImport(PolarBleSdkShared)
-            if let sharedName = PolarIosSharedBridge.shared.ppiIntervalStatusName(value: Int32(value)),
+            if let sharedName = PolarActivityRuntimePlanner.ppiIntervalStatusName(value: value),
                let sharedValue = IntervalStatus(rawValue: sharedName) {
                 return sharedValue
             }
@@ -119,7 +119,7 @@ public struct Polar247PPiSamplesData: Codable {
 
         static func fromStatusByte(byte: UInt32) -> PPiSampleStatus {
             #if canImport(PolarBleSdkShared)
-            if let sharedNames = PolarIosSharedBridge.shared.ppiStatusNames(statusByte: Int32(byte)),
+            if let sharedNames = PolarActivityRuntimePlanner.ppiStatusNames(statusByte: byte),
                let sharedStatus = PPiSampleStatus(sharedNames: sharedNames) {
                 return sharedStatus
             }

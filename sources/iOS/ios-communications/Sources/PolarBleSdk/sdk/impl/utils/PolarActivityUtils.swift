@@ -258,4 +258,76 @@ enum PolarActivityRuntimePlanner {
         return nil
         #endif
     }
+
+    static func automaticHrTriggerName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.automaticHrTriggerName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func activityClassName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.activityClassName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func dailyBalanceFeedbackName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.dailyBalanceFeedbackName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func trainingReadinessName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.trainingReadinessName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func ppiSampleTriggerName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppiSampleTriggerName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func ppiSkinContactName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppiSkinContactName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func ppiMovementName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppiMovementName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func ppiIntervalStatusName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppiIntervalStatusName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func ppiStatusNames(statusByte: UInt32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppiStatusNames(statusByte: Int32(statusByte))
+        #else
+        return nil
+        #endif
+    }
 }
