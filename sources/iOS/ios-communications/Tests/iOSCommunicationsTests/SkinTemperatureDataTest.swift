@@ -63,7 +63,7 @@ final class SkinTemperatureDataTest: XCTestCase {
     func testSkinTemperatureRawType0ParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "0740ae21ae31b2ee0a00f628c041"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.skinTemperatureRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 787762910281000000, factor: 1.0, sampleRate: 4))
+        let sharedRows = try XCTUnwrap(SkinTemperatureDataRuntimePlanner.rawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 787762910281000000, factor: 1.0, sampleRate: 4))
         XCTAssertFalse(sharedRows.isEmpty)
 
         let dataFrame = try PmdDataFrame(
