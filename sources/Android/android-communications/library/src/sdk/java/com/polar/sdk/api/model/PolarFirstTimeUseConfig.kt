@@ -90,7 +90,12 @@ data class PolarFirstTimeUseConfig(
         }.build()
 
         val gender = PhysData.PbUserGender.newBuilder().apply {
-            setValue(PhysData.PbUserGender.Gender.forNumber(PolarFirstTimeUseGenderName.fromName(gender.name)?.value ?: gender.protoFallbackValue()))
+            val sharedGenderValue = requireNotNull(PolarFirstTimeUseGenderName.fromName(gender.name)?.value) {
+                "Unknown first-time-use gender $gender"
+            }
+            setValue(requireNotNull(PhysData.PbUserGender.Gender.forNumber(sharedGenderValue)) {
+                "Unknown first-time-use gender value $sharedGenderValue"
+            })
             setLastModified(lastModified)
         }.build()
 
@@ -115,7 +120,12 @@ data class PolarFirstTimeUseConfig(
         }.build()
 
         val trainingBackgroundBuilder = PhysData.PbUserTrainingBackground.newBuilder().apply {
-            setValue(PhysData.PbUserTrainingBackground.TrainingBackground.forNumber(PolarFirstTimeUseTrainingBackgroundName.fromValue(trainingBackground)?.value ?: trainingBackground))
+            val sharedTrainingBackgroundValue = requireNotNull(PolarFirstTimeUseTrainingBackgroundName.fromValue(trainingBackground)?.value) {
+                "Unknown first-time-use training background $trainingBackground"
+            }
+            setValue(requireNotNull(PhysData.PbUserTrainingBackground.TrainingBackground.forNumber(sharedTrainingBackgroundValue)) {
+                "Unknown first-time-use training background value $sharedTrainingBackgroundValue"
+            })
             setLastModified(lastModified)
         }.build()
 
@@ -124,8 +134,13 @@ data class PolarFirstTimeUseConfig(
             setLastModified(lastModified)
         }.build()
 
+        val sharedTypicalDayValue = requireNotNull(PolarFirstTimeUseTypicalDayName.fromValue(typicalDay.index)?.value) {
+            "Unknown first-time-use typical day ${typicalDay.index}"
+        }
         val typicalDay = PhysData.PbUserTypicalDay.newBuilder()
-                .setValue(PbTypicalDay.forNumber(PolarFirstTimeUseTypicalDayName.fromValue(typicalDay.index)?.value ?: typicalDay.index))
+                .setValue(requireNotNull(PbTypicalDay.forNumber(sharedTypicalDayValue)) {
+                    "Unknown first-time-use typical day value $sharedTypicalDayValue"
+                })
                 .setLastModified(lastModified)
                 .build()
 
@@ -191,13 +206,6 @@ fun PhysData.PbUserPhysData.toPolarPhysicalConfiguration(): PolarPhysicalConfigu
         typicalDay = typicalDay,
         sleepGoalMinutes = sleepGoal.sleepGoalMinutes
     )
-}
-
-private fun Gender.protoFallbackValue(): Int {
-    return when (this) {
-        Gender.MALE -> PhysData.PbUserGender.Gender.MALE.number
-        Gender.FEMALE -> PhysData.PbUserGender.Gender.FEMALE.number
-    }
 }
 
 data class PolarPhysicalConfiguration(
