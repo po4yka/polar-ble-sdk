@@ -210,6 +210,19 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwareFileTriggersRebootWait(fileName)
     }
 
+    static func firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int) -> Int {
+        return PolarFirmwareBackupRuntimePlanner.firmwareWriteProgressPercent(bytesWritten: bytesWritten, payloadSize: payloadSize)
+    }
+
+    static func shouldEmitFirmwareWriteProgress(lastBytesWritten: Int, bytesWritten: Int, payloadSize: Int, minPercentageIncrement: Int) -> Bool {
+        return PolarFirmwareBackupRuntimePlanner.shouldEmitFirmwareWriteProgress(
+            lastBytesWritten: lastBytesWritten,
+            bytesWritten: bytesWritten,
+            payloadSize: payloadSize,
+            minPercentageIncrement: minPercentageIncrement
+        )
+    }
+
     static func firmwareDeviceInfoPath() -> String {
         return PolarFirmwareBackupRuntimePlanner.firmwareDeviceInfoPath()
     }

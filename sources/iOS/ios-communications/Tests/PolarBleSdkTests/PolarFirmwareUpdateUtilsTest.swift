@@ -258,6 +258,20 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         #endif
     }
 
+    func testFirmwareWriteProgressPolicyUsesSharedZeroSafeThresholdsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(0, PolarRuntimePlanner.firmwareWriteProgressPercent(bytesWritten: 0, payloadSize: 0))
+        XCTAssertEqual(0, PolarRuntimePlanner.firmwareWriteProgressPercent(bytesWritten: 12, payloadSize: 0))
+        XCTAssertEqual(50, PolarRuntimePlanner.firmwareWriteProgressPercent(bytesWritten: 2, payloadSize: 4))
+        XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 0, bytesWritten: 0, payloadSize: 0, minPercentageIncrement: 25))
+        XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 4, payloadSize: 4, minPercentageIncrement: 75))
+        XCTAssertFalse(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 3, payloadSize: 100, minPercentageIncrement: 25))
+        XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 52, payloadSize: 100, minPercentageIncrement: 25))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func testFirmwareGoldenVectorsFollowNeutralKmpShape() throws {
         for vector in try loadFirmwareUpdateGoldenVectors() {
             let id = try XCTUnwrap(vector["id"] as? String)

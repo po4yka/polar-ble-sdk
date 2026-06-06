@@ -98,6 +98,17 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
     }
 
     @Test
+    fun firmwareWriteProgressPolicyIsZeroSafeAndThresholdBased() {
+        assertEquals(0, PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten = 0, payloadSize = 0))
+        assertEquals(0, PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten = 12, payloadSize = 0))
+        assertEquals(50, PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten = 2, payloadSize = 4))
+        assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(lastBytesWritten = 0, bytesWritten = 0, payloadSize = 0, minPercentageIncrement = 25))
+        assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 4, payloadSize = 4, minPercentageIncrement = 75))
+        assertEquals(false, PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 3, payloadSize = 100, minPercentageIncrement = 25))
+        assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(lastBytesWritten = 2, bytesWritten = 52, payloadSize = 100, minPercentageIncrement = 25))
+    }
+
+    @Test
     fun firmwareWorkflowRuntimeVectorRunsThroughCommonFakeDependencies() {
         val vector = loadGoldenVectorText("sdk/firmware-update/workflow-runtime-policy.json")
         val scenarios = vector.objectValue("input").objectArray("scenarios")

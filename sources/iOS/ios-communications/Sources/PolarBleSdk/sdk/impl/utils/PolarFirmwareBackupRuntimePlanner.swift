@@ -40,6 +40,29 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int) -> Int {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.firmwareWriteProgressPercent(bytesWritten: Int32(bytesWritten), payloadSize: Int32(payloadSize)))
+        #else
+        return payloadSize <= 0 ? 0 : bytesWritten * 100 / payloadSize
+        #endif
+    }
+
+    static func shouldEmitFirmwareWriteProgress(lastBytesWritten: Int, bytesWritten: Int, payloadSize: Int, minPercentageIncrement: Int) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.shouldEmitFirmwareWriteProgress(
+            lastBytesWritten: Int32(lastBytesWritten),
+            bytesWritten: Int32(bytesWritten),
+            payloadSize: Int32(payloadSize),
+            minPercentageIncrement: Int32(minPercentageIncrement)
+        )
+        #else
+        let delta = bytesWritten - lastBytesWritten
+        let deltaPercentage = firmwareWriteProgressPercent(bytesWritten: delta, payloadSize: payloadSize)
+        return lastBytesWritten == 0 || bytesWritten >= payloadSize || deltaPercentage >= minPercentageIncrement
+        #endif
+    }
+
     static func firmwareDeviceInfoPath() -> String {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.firmwareDeviceInfoPath()

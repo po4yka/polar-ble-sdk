@@ -196,6 +196,21 @@ object PolarWorkflowRuntimePlanning {
         return fileName.contains("SYSUPDAT.IMG")
     }
 
+    fun firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int): Int {
+        return if (payloadSize <= 0) 0 else bytesWritten * 100 / payloadSize
+    }
+
+    fun shouldEmitFirmwareWriteProgress(
+        lastBytesWritten: Int,
+        bytesWritten: Int,
+        payloadSize: Int,
+        minPercentageIncrement: Int
+    ): Boolean {
+        val delta = bytesWritten - lastBytesWritten
+        val deltaPercentage = firmwareWriteProgressPercent(delta, payloadSize)
+        return lastBytesWritten == 0 || bytesWritten >= payloadSize || deltaPercentage >= minPercentageIncrement
+    }
+
     fun expandBackupEntries(backupText: String, availablePaths: List<String>): List<String> {
         return backupText.split("\n").filter { it.isNotEmpty() }.flatMap { path ->
             if (path.endsWith("/")) {

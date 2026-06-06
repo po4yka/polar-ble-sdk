@@ -1572,6 +1572,19 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait(fileName)
     }
 
+    fun firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int): Int {
+        return PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten, payloadSize)
+    }
+
+    fun shouldEmitFirmwareWriteProgress(lastBytesWritten: Int, bytesWritten: Int, payloadSize: Int, minPercentageIncrement: Int): Boolean {
+        return PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(
+            lastBytesWritten = lastBytesWritten,
+            bytesWritten = bytesWritten,
+            payloadSize = payloadSize,
+            minPercentageIncrement = minPercentageIncrement
+        )
+    }
+
     fun planRuntimeBackupRestore(path: String, payloadHex: String, writeResult: String): String {
         return PolarWorkflowRuntimePlanning.planBackupRestore(
             listOf(
