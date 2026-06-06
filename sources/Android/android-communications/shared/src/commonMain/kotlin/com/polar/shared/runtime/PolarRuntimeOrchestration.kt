@@ -87,6 +87,19 @@ data class PolarUserDeviceSettingsOperation(
 )
 
 object PolarRuntimeOrchestration {
+    fun userDeviceSettingsPath(
+        fileSystemType: String,
+        deviceSettingsPath: String = "/U/0/S/UDEVSET.BPB",
+        sensorSettingsPath: String = "/UDEVSET.BPB",
+        unknownSettingsPath: String? = deviceSettingsPath
+    ): String? {
+        return when (fileSystemType) {
+            "POLAR_FILE_SYSTEM_V2", "polarFileSystemV2" -> deviceSettingsPath
+            "H10_FILE_SYSTEM", "h10FileSystem" -> sensorSettingsPath
+            else -> unknownSettingsPath
+        }
+    }
+
     fun normalizeFileListFolderPath(folderPath: String): String {
         val nonEmpty = folderPath.ifEmpty { "/" }
         val withLeadingSlash = if (nonEmpty.first() == '/') nonEmpty else "/$nonEmpty"

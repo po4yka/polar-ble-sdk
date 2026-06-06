@@ -227,6 +227,10 @@ internal object PolarRuntimePlannerAdapter {
         }
     }
 
+    fun userDeviceSettingsPath(fileSystemType: String, deviceSettingsPath: String, sensorSettingsPath: String, unknownSettingsPath: String?): String? {
+        return PolarRuntimeOrchestration.userDeviceSettingsPath(fileSystemType, deviceSettingsPath, sensorSettingsPath, unknownSettingsPath)
+    }
+
     fun planStoredDataCleanup(kind: String, rootPath: String, cutoffDate: String? = null) {
         PolarWorkflowRuntimePlanning.planStoredDataCleanup(
             PolarStoredDataCleanupScenario(

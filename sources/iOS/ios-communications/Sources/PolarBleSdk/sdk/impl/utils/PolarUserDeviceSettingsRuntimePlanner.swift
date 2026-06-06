@@ -24,6 +24,18 @@ enum PolarUserDeviceSettingsRuntimePlanner {
         #endif
     }
 
+    static func settingsPath(fileSystemType: String, deviceSettingsPath: String = "/U/0/S/UDEVSET.BPB", sensorSettingsPath: String = "/UDEVSET.BPB", unknownSettingsPath: String? = "/U/0/S/UDEVSET.BPB") -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.userDeviceSettingsPath(fileSystemType: fileSystemType, deviceSettingsPath: deviceSettingsPath, sensorSettingsPath: sensorSettingsPath, unknownSettingsPath: unknownSettingsPath)
+        #else
+        switch fileSystemType {
+        case "polarFileSystemV2": return deviceSettingsPath
+        case "h10FileSystem": return sensorSettingsPath
+        default: return unknownSettingsPath
+        }
+        #endif
+    }
+
     static func deviceLocationName(value: Int) -> String? {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.userDeviceSettingsDeviceLocationName(value: Int32(value))

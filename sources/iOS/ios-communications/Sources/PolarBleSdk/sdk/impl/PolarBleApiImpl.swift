@@ -2697,7 +2697,8 @@ extension PolarBleApiImpl: PolarBleApi  {
     func setPolarUserDeviceSettings(_ identifier: String, polarUserDeviceSettings: PolarUserDeviceSettings) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let settingsPath = BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) == .polarFileSystemV2 ? DEVICE_SETTINGS_FILE_PATH : SENSOR_SETTINGS_FILE_PATH
+        let fsType = BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType)
+        let settingsPath = PolarRuntimePlanner.userDeviceSettingsPath(fileSystemType: "\(fsType)", unknownSettingsPath: SENSOR_SETTINGS_FILE_PATH) ?? SENSOR_SETTINGS_FILE_PATH
         let userDeviceSettingsData = try PolarUserDeviceSettings.toProto(userDeviceSettings: polarUserDeviceSettings).serializedData()
         let plannedOperation = PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-user-device-settings", kind: "write", path: settingsPath, payloadFields: ["protobufPayload=platform-built"])?.first
         let operation = plannedOperation ?? (command: .put, path: settingsPath)
@@ -2714,7 +2715,8 @@ extension PolarBleApiImpl: PolarBleApi  {
     func getPolarUserDeviceSettings(identifier: String) async throws -> PolarUserDeviceSettings.PolarUserDeviceSettingsResult {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let settingsPath = BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) == .polarFileSystemV2 ? DEVICE_SETTINGS_FILE_PATH : SENSOR_SETTINGS_FILE_PATH
+        let fsType = BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType)
+        let settingsPath = PolarRuntimePlanner.userDeviceSettingsPath(fileSystemType: "\(fsType)", unknownSettingsPath: SENSOR_SETTINGS_FILE_PATH) ?? SENSOR_SETTINGS_FILE_PATH
         let plannedOperation = PolarRuntimePlanner.userDeviceSettingsOperations(id: "get-user-device-settings", kind: "read", path: settingsPath)?.first
         PolarRuntimePlanner.userDeviceSettings(id: "get-user-device-settings", kind: "read", path: settingsPath)
         return try await PolarUserDeviceSettingsUtils.getUserDeviceSettings(client: client, deviceSettingsPath: plannedOperation?.path ?? settingsPath)
@@ -2933,7 +2935,8 @@ extension PolarBleApiImpl: PolarBleApi  {
     func setUsbConnectionMode(_ identifier: String, enabled: Bool) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let settingsPath = BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) == .polarFileSystemV2 ? DEVICE_SETTINGS_FILE_PATH : SENSOR_SETTINGS_FILE_PATH
+        let fsType = BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType)
+        let settingsPath = PolarRuntimePlanner.userDeviceSettingsPath(fileSystemType: "\(fsType)", unknownSettingsPath: SENSOR_SETTINGS_FILE_PATH) ?? SENSOR_SETTINGS_FILE_PATH
         var usbSettings = Data_PbUsbConnectionSettings()
         usbSettings.mode = enabled ? .on : .off
         let payloadFields = ["usbConnectionMode=\(PolarRuntimePlanner.userDeviceSettingsUsbConnectionModeName(enabled: enabled) ?? "\(usbSettings.mode)")"]
@@ -3064,12 +3067,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     
     private func getDeviceSettingsPath(_ session: BleDeviceSession) -> String {
         let fsType = BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType)
-        switch fsType {
-        case .h10FileSystem:
-            return SENSOR_SETTINGS_FILE_PATH
-        default:
-            return DEVICE_SETTINGS_FILE_PATH
-        }
+        return PolarRuntimePlanner.userDeviceSettingsPath(fileSystemType: "\(fsType)", unknownSettingsPath: DEVICE_SETTINGS_FILE_PATH) ?? DEVICE_SETTINGS_FILE_PATH
     }
 
     private func getUserDeviceSettingsProto(client: BlePsFtpClient, settingsPath: String = DEVICE_SETTINGS_FILE_PATH, plannedOperation: (command: Protocol_PbPFtpOperation.Command, path: String)? = nil) async throws -> Data_PbUserDeviceSettings {

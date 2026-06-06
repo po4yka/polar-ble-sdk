@@ -58,6 +58,11 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
 
         assertEquals(listOf("write:/U/0/S/UDEVSET.BPB", "field:protobufPayload=platform-built"), outcome.commands)
         assertEquals("success", outcome.terminal)
+        assertEquals("/U/0/S/UDEVSET.BPB", PolarRuntimeOrchestration.userDeviceSettingsPath("POLAR_FILE_SYSTEM_V2"))
+        assertEquals("/UDEVSET.BPB", PolarRuntimeOrchestration.userDeviceSettingsPath("H10_FILE_SYSTEM"))
+        assertEquals("/U/0/S/UDEVSET.BPB", PolarRuntimeOrchestration.userDeviceSettingsPath("UNKNOWN_FILE_SYSTEM", unknownSettingsPath = "/U/0/S/UDEVSET.BPB"))
+        assertEquals("/UDEVSET.BPB", PolarRuntimeOrchestration.userDeviceSettingsPath("unknownFileSystem", unknownSettingsPath = "/UDEVSET.BPB"))
+        assertEquals(null, PolarRuntimeOrchestration.userDeviceSettingsPath("UNKNOWN_FILE_SYSTEM", unknownSettingsPath = null))
     }
 
     @Test

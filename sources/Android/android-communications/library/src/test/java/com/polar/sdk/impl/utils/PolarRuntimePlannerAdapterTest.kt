@@ -178,6 +178,10 @@ class PolarRuntimePlannerAdapterTest {
             ),
             readThenWrite
         )
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", PolarRuntimePlannerAdapter.userDeviceSettingsPath("POLAR_FILE_SYSTEM_V2", "/U/0/S/UDEVSET.BPB", "/UDEVSET.BPB", null))
+        Assert.assertEquals("/UDEVSET.BPB", PolarRuntimePlannerAdapter.userDeviceSettingsPath("H10_FILE_SYSTEM", "/U/0/S/UDEVSET.BPB", "/UDEVSET.BPB", null))
+        Assert.assertNull(PolarRuntimePlannerAdapter.userDeviceSettingsPath("UNKNOWN_FILE_SYSTEM", "/U/0/S/UDEVSET.BPB", "/UDEVSET.BPB", null))
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", PolarRuntimePlannerAdapter.userDeviceSettingsPath("UNKNOWN_FILE_SYSTEM", "/U/0/S/UDEVSET.BPB", "/UDEVSET.BPB", "/U/0/S/UDEVSET.BPB"))
     }
 
     @Test

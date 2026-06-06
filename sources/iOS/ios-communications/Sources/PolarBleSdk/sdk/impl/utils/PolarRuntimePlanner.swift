@@ -142,6 +142,10 @@ enum PolarRuntimePlanner {
         return PolarUserDeviceSettingsRuntimePlanner.operations(id: id, kind: kind, path: path, payloadFields: payloadFields)
     }
 
+    static func userDeviceSettingsPath(fileSystemType: String, deviceSettingsPath: String = "/U/0/S/UDEVSET.BPB", sensorSettingsPath: String = "/UDEVSET.BPB", unknownSettingsPath: String? = "/U/0/S/UDEVSET.BPB") -> String? {
+        return PolarUserDeviceSettingsRuntimePlanner.settingsPath(fileSystemType: fileSystemType, deviceSettingsPath: deviceSettingsPath, sensorSettingsPath: sensorSettingsPath, unknownSettingsPath: unknownSettingsPath)
+    }
+
     static func userDeviceSettingsDeviceLocationName(value: Int) -> String? {
         return PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: value)
     }

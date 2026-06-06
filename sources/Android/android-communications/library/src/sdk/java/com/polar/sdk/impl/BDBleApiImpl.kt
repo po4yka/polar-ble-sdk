@@ -2940,21 +2940,24 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     private fun userDeviceSettingsPathFor(polarDeviceType: String): String {
-        return when (getFileSystemType(polarDeviceType)) {
-            FileSystemType.POLAR_FILE_SYSTEM_V2 -> PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME
-            FileSystemType.H10_FILE_SYSTEM -> PolarUserDeviceSettings.SENSOR_SETTINGS_FILENAME
-            else -> throw PolarOperationNotSupported()
-        }
+        return PolarRuntimePlannerAdapter.userDeviceSettingsPath(
+            fileSystemType = getFileSystemType(polarDeviceType).name,
+            deviceSettingsPath = PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME,
+            sensorSettingsPath = PolarUserDeviceSettings.SENSOR_SETTINGS_FILENAME,
+            unknownSettingsPath = null
+        ) ?: throw PolarOperationNotSupported()
     }
 
     private suspend fun setUserDeviceSettingsProto(identifier: String, deviceUserSetting: PbUserDeviceSettings) {
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val settingsPath = when (getFileSystemType(session.polarDeviceType)) {
-            FileSystemType.H10_FILE_SYSTEM -> PolarUserDeviceSettings.SENSOR_SETTINGS_FILENAME
-            else -> PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME
-        }
+        val settingsPath = PolarRuntimePlannerAdapter.userDeviceSettingsPath(
+            fileSystemType = getFileSystemType(session.polarDeviceType).name,
+            deviceSettingsPath = PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME,
+            sensorSettingsPath = PolarUserDeviceSettings.SENSOR_SETTINGS_FILENAME,
+            unknownSettingsPath = PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME
+        ) ?: PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME
         val plannedOperation = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations(
             id = "set-user-device-settings",
             kind = "write",
