@@ -26,6 +26,23 @@ class PolarTimeUtilsTests: XCTestCase {
         }))
     }
 
+    func testBasicDateRangeUsesSharedInclusivePolicyForIosFacadeLoops() throws {
+        let range = PolarTimeUtils.basicDateRange(
+            fromDate: try makeDate(year: 2024, month: 2, day: 28, hour: 10, minute: 15),
+            toDate: try makeDate(year: 2024, month: 3, day: 1, hour: 10, minute: 15)
+        )
+        XCTAssertEqual(["20240228 10:15:00", "20240229 10:15:00", "20240301 10:15:00"], range.map(formatBasicDateTime))
+        XCTAssertEqual([], PolarTimeUtils.basicDateRange(
+            fromDate: try makeDate(year: 2024, month: 3, day: 2, hour: 10, minute: 15),
+            toDate: try makeDate(year: 2024, month: 3, day: 1, hour: 10, minute: 15)
+        ))
+        let clippedRange = PolarTimeUtils.basicDateRange(
+            fromDate: try makeDate(year: 2024, month: 2, day: 28, hour: 10, minute: 15),
+            toDate: try makeDate(year: 2024, month: 2, day: 29, hour: 9, minute: 15)
+        )
+        XCTAssertEqual(["20240228 10:15:00"], clippedRange.map(formatBasicDateTime))
+    }
+
     func testConversionToPftpSystemTimeFromTimeZoneGMT() throws {
         // Arrange
         let localTime = "2022-01-01T11:59:01.999+00:00"
@@ -624,6 +641,26 @@ class PolarTimeUtilsTests: XCTestCase {
             throw TestError.dateConversionFromISO8601Error
         }
         return date
+    }
+
+    private func makeDate(year: Int, month: Int, day: Int, hour: Int, minute: Int) throws -> Date {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        components.hour = hour
+        components.minute = minute
+        components.second = 0
+        components.nanosecond = 0
+        return try XCTUnwrap(Calendar.current.date(from: components))
+    }
+
+    private func formatBasicDateTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar.current
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyyMMdd HH:mm:ss"
+        return formatter.string(from: date)
     }
 
     private func objectValue(_ object: [String: Any], _ field: String) throws -> [String: Any] {

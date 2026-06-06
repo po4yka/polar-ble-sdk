@@ -172,6 +172,10 @@ object PolarIosSharedBridge {
         return runCatching { PolarTimeUtils.formatPlainDate(PolarDateFields(year, month, day)) }.getOrNull()
     }
 
+    fun basicDateRangeCsv(startInclusive: String, endInclusive: String): String {
+        return PolarTimeUtils.basicDateRange(startInclusive, endInclusive).joinToString(separator = ",")
+    }
+
     fun signedIntFromLittleEndianHex(hex: String): Int {
         return PolarTypeUtils.requireSignedInt(hex.hexToBytes()).toInt()
     }

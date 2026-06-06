@@ -14,14 +14,10 @@ extension PolarBleApiImpl: PolarTestApi {
             throw PolarErrors.serviceNotFound
         }
         var results: [PolarSpo2TestData] = []
-        let calendar = Calendar.current
-        var currentDate = fromDate
-        while currentDate <= toDate {
-            for try await item in PolarTestUtils.readSpo2TestFromDayDirectory(client: client, date: currentDate) {
+        for date in PolarTimeUtils.basicDateRange(fromDate: fromDate, toDate: toDate) {
+            for try await item in PolarTestUtils.readSpo2TestFromDayDirectory(client: client, date: date) {
                 results.append(item)
             }
-            guard let next = calendar.date(byAdding: .day, value: 1, to: currentDate) else { break }
-            currentDate = next
         }
         return results
     }

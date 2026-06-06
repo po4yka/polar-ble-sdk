@@ -300,6 +300,37 @@ internal class PolarTimeUtils {
         return PolarTimeRuntimePlanner.timeString(hour: Int(pbTime.hour), minute: Int(pbTime.minute), second: Int(pbTime.seconds), millis: Int(pbTime.millis)) ?? String(format: "%02d:%02d:%02d.%02d", pbTime.hour, pbTime.minute, pbTime.seconds, pbTime.millis)
     }
 
+    static func basicDateRange(fromDate: Date, toDate: Date) -> [Date] {
+        guard fromDate <= toDate else { return [] }
+        let calendar = Calendar.current
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyyMMdd"
+        let start = formatter.string(from: fromDate)
+        let end = formatter.string(from: toDate)
+        if let sharedDays = PolarTimeRuntimePlanner.basicDateRange(startInclusive: start, endInclusive: end) {
+            let timeComponents = calendar.dateComponents([.hour, .minute, .second, .nanosecond], from: fromDate)
+            return sharedDays.compactMap { day in
+                guard let baseDate = formatter.date(from: day) else { return nil }
+                var components = calendar.dateComponents([.year, .month, .day], from: baseDate)
+                components.hour = timeComponents.hour
+                components.minute = timeComponents.minute
+                components.second = timeComponents.second
+                components.nanosecond = timeComponents.nanosecond
+                return calendar.date(from: components)
+            }.filter { $0 <= toDate }
+        }
+        var datesList = [Date]()
+        var currentDate = fromDate
+        while currentDate <= toDate {
+            datesList.append(currentDate)
+            guard let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate) else { break }
+            currentDate = nextDate
+        }
+        return datesList
+    }
+
     private static func millisToNanos(milliseconds: Int) -> Int {
         return PolarTimeRuntimePlanner.millisToNanos(milliseconds: milliseconds) ?? milliseconds * nanoToMillisMultiplier
     }
@@ -410,6 +441,15 @@ enum PolarTimeRuntimePlanner {
     static func minutesToSeconds(minutes: Int) -> Int? {
         #if canImport(PolarBleSdkShared)
         return Int(PolarIosSharedBridge.shared.minutesToSeconds(minutes: Int32(minutes)))
+        #else
+        return nil
+        #endif
+    }
+
+    static func basicDateRange(startInclusive: String, endInclusive: String) -> [String]? {
+        #if canImport(PolarBleSdkShared)
+        let csv = PolarIosSharedBridge.shared.basicDateRangeCsv(startInclusive: startInclusive, endInclusive: endInclusive)
+        return csv.isEmpty ? [] : csv.split(separator: ",").map(String.init)
         #else
         return nil
         #endif

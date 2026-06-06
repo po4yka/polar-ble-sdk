@@ -88,18 +88,7 @@ extension PolarBleApiImpl: PolarSleepApi {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
-        var datesList = [Date]()
-        let calendar = Calendar.current
-        var currentDate = fromDate
-        if fromDate == toDate {
-            datesList.append(fromDate)
-        } else {
-            while currentDate <= toDate {
-                datesList.append(currentDate)
-                guard let next = calendar.date(byAdding: .day, value: 1, to: currentDate) else { break }
-                currentDate = next
-            }
-        }
+        let datesList = PolarTimeUtils.basicDateRange(fromDate: fromDate, toDate: toDate)
         var sleepDataList: [PolarSleepData.PolarSleepAnalysisResult] = []
         for date in datesList {
             let result = try await PolarSleepUtils.readSleepFromDayDirectory(client: client, date: date)

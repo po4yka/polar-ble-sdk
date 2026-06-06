@@ -2438,13 +2438,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func getSteps(identifier: String, fromDate: Date, toDate: Date) async throws -> [PolarStepsData] {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let calendar = Calendar.current
-        var datesList = [Date]()
-        var currentDate = fromDate
-        while currentDate <= toDate {
-            datesList.append(currentDate)
-            if let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate) { currentDate = nextDate } else { break }
-        }
+        let datesList = PolarTimeUtils.basicDateRange(fromDate: fromDate, toDate: toDate)
         var results = [PolarStepsData]()
         for date in datesList {
             let result = try await PolarActivityUtils.readStepsFromDayDirectory(client: client, date: date)
@@ -2457,13 +2451,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func getDistance(identifier: String, fromDate: Date, toDate: Date) async throws -> [PolarDistanceData] {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let calendar = Calendar.current
-        var datesList = [Date]()
-        var currentDate = fromDate
-        while currentDate <= toDate {
-            datesList.append(currentDate)
-            if let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate) { currentDate = nextDate } else { break }
-        }
+        let datesList = PolarTimeUtils.basicDateRange(fromDate: fromDate, toDate: toDate)
         var results = [PolarDistanceData]()
         for date in datesList {
             let result = try await PolarActivityUtils.readDistanceFromDayDirectory(client: client, date: date)
@@ -2490,13 +2478,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func getNightlyRecharge(identifier: String, fromDate: Date, toDate: Date) async throws -> [PolarNightlyRechargeData] {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let calendar = Calendar.current
-        var datesList = [Date]()
-        var currentDate = fromDate
-        while currentDate <= toDate {
-            datesList.append(currentDate)
-            if let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate) { currentDate = nextDate } else { break }
-        }
+        let datesList = PolarTimeUtils.basicDateRange(fromDate: fromDate, toDate: toDate)
         var results = [PolarNightlyRechargeData]()
         for date in datesList {
             if let result = await PolarNightlyRechargeUtils.readNightlyRechargeData(client: client, date: date) {
@@ -2510,13 +2492,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func getCalories(identifier: String, fromDate: Date, toDate: Date, caloriesType: CaloriesType) async throws -> [PolarCaloriesData] {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let calendar = Calendar.current
-        var datesList = [Date]()
-        var currentDate = fromDate
-        while currentDate <= toDate {
-            datesList.append(currentDate)
-            if let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate) { currentDate = nextDate } else { break }
-        }
+        let datesList = PolarTimeUtils.basicDateRange(fromDate: fromDate, toDate: toDate)
         var results = [PolarCaloriesData]()
         for date in datesList {
             let result = try await PolarActivityUtils.readCaloriesFromDayDirectory(client: client, date: date, caloriesType: caloriesType)
@@ -2529,13 +2505,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func getActivitySampleData(identifier: String, fromDate: Date, toDate: Date) async throws -> [PolarActivityDayData] {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let calendar = Calendar.current
-        var datesList = [Date]()
-        var currentDate = fromDate
-        while currentDate <= toDate {
-            datesList.append(currentDate)
-            if let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate) { currentDate = nextDate } else { break }
-        }
+        let datesList = PolarTimeUtils.basicDateRange(fromDate: fromDate, toDate: toDate)
         var results = [PolarActivityDayData]()
         for date in datesList {
             let result = try await PolarActivityUtils.readActivitySamplesDataFromDayDirectory(client: client, date: date)
@@ -2548,13 +2518,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func getDailySummaryData(identifier: String, fromDate: Date, toDate: Date) async throws -> [PolarDailySummary] {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let calendar = Calendar.current
-        var datesList = [Date]()
-        var currentDate = fromDate
-        while currentDate <= toDate {
-            datesList.append(currentDate)
-            if let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate) { currentDate = nextDate } else { break }
-        }
+        let datesList = PolarTimeUtils.basicDateRange(fromDate: fromDate, toDate: toDate)
         var results = [PolarDailySummary]()
         for date in datesList {
             if let result = try await PolarActivityUtils.readDailySummaryDataFromDayDirectory(client: client, date: date) {
@@ -2689,13 +2653,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func getActiveTime(identifier: String, fromDate: Date, toDate: Date) async throws -> [PolarActiveTimeData] {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let calendar = Calendar.current
-        var datesList = [Date]()
-        var currentDate = fromDate
-        while currentDate <= toDate {
-            datesList.append(currentDate)
-            if let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate) { currentDate = nextDate } else { break }
-        }
+        let datesList = PolarTimeUtils.basicDateRange(fromDate: fromDate, toDate: toDate)
         var results = [PolarActiveTimeData]()
         for date in datesList {
             let activeTime = try await PolarActivityUtils.readActiveTimeFromDayDirectory(client: client, date: date)
@@ -2837,18 +2795,11 @@ extension PolarBleApiImpl: PolarBleApi  {
     
     func deleteDeviceDateFolders(_ identifier: String, fromDate: Date?, toDate: Date?) async throws {
         let path = "/U/0/"
-        let calendar = Calendar.current
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd"
         dateFormatter.timeZone = TimeZone.current
         guard let to = toDate, let from = fromDate else { throw PolarErrors.dateTimeFormatFailed(description: "Invalid from and/or to date") }
-        var validDates = Set<Date>()
-        var currentDate = try from.localDate()
-        let toLocalDate = try to.localDate()
-        while currentDate <= toLocalDate {
-            validDates.insert(currentDate)
-            if let next = calendar.date(byAdding: .day, value: 1, to: currentDate) { currentDate = next } else { break }
-        }
+        let validDates = Set(PolarTimeUtils.basicDateRange(fromDate: try from.localDate(), toDate: try to.localDate()))
         let condition: (_ p: String) -> Bool = { entry in
             if entry.hasSuffix("/") {
                 if let d = dateFormatter.date(from: String(entry.dropLast())) { return validDates.contains(d) }
