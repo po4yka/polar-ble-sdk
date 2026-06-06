@@ -1,6 +1,9 @@
 import Foundation
 import XCTest
 @testable import PolarBleSdk
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 class PolarAutomaticSamplesUtilsTests: XCTestCase {
 
@@ -15,6 +18,8 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
     }
 
     func testAutomaticSampleReadHeadersUseSharedFileFacadePlanning() {
+        XCTAssertEqual(PolarIosSharedBridge.shared.automaticSamplesDirectoryPath(), "/U/0/AUTOS/")
+        XCTAssertEqual(PolarIosSharedBridge.shared.automaticSamplesFilePath(fileName: "AUTOS001.BPB"), "/U/0/AUTOS/AUTOS001.BPB")
         let directoryOperation = PolarAutomaticSamplesUtils.automaticSamplesDirectoryReadOperation()
         XCTAssertEqual(directoryOperation.command, .get)
         XCTAssertEqual(directoryOperation.path, "/U/0/AUTOS/")

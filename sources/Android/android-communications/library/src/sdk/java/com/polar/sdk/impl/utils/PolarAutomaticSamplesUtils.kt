@@ -11,19 +11,16 @@ import protocol.PftpResponse.PbPFtpDirectory
 import java.time.LocalDate
 import java.util.regex.Pattern
 
-private const val ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private const val AUTOMATIC_SAMPLES_DIRECTORY = "AUTOS/"
 private const val AUTOMATIC_SAMPLES_PATTERN = "AUTOS\\d{3}\\.BPB"
 private const val TAG = "PolarAutomaticSamplesUtils"
 
 internal object PolarAutomaticSamplesUtils {
     internal fun automaticSamplesDirectoryReadOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        return automaticSamplesReadOperation("automatic-samples-read-directory", "$ARABICA_USER_ROOT_FOLDER$AUTOMATIC_SAMPLES_DIRECTORY")
+        return automaticSamplesReadOperation("automatic-samples-read-directory", PolarRuntimePlannerAdapter.automaticSamplesDirectoryPath())
     }
 
     internal fun automaticSamplesFileReadOperation(fileName: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        val directoryPath = "$ARABICA_USER_ROOT_FOLDER$AUTOMATIC_SAMPLES_DIRECTORY"
-        return automaticSamplesReadOperation("automatic-samples-read-file", "$directoryPath$fileName")
+        return automaticSamplesReadOperation("automatic-samples-read-file", PolarRuntimePlannerAdapter.automaticSamplesFilePath(fileName))
     }
 
     private fun automaticSamplesReadOperation(id: String, path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {

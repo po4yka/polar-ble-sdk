@@ -1,6 +1,9 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
 private let AUTOMATIC_SAMPLES_DIRECTORY = "AUTOS/"
@@ -9,11 +12,27 @@ private let TAG = "PolarAutomaticSamplesUtils"
 
 internal class PolarAutomaticSamplesUtils {
     static func automaticSamplesDirectoryReadOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        return automaticSamplesReadOperation(id: "automatic-samples-read-directory", path: "\(ARABICA_USER_ROOT_FOLDER)\(AUTOMATIC_SAMPLES_DIRECTORY)")
+        return automaticSamplesReadOperation(id: "automatic-samples-read-directory", path: automaticSamplesDirectoryPath())
     }
 
     static func automaticSamplesFileReadOperation(fileName: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        return automaticSamplesReadOperation(id: "automatic-samples-read-file", path: "\(ARABICA_USER_ROOT_FOLDER)\(AUTOMATIC_SAMPLES_DIRECTORY)\(fileName)")
+        return automaticSamplesReadOperation(id: "automatic-samples-read-file", path: automaticSamplesFilePath(fileName: fileName))
+    }
+
+    private static func automaticSamplesDirectoryPath() -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.automaticSamplesDirectoryPath()
+        #else
+        return "\(ARABICA_USER_ROOT_FOLDER)\(AUTOMATIC_SAMPLES_DIRECTORY)"
+        #endif
+    }
+
+    private static func automaticSamplesFilePath(fileName: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.automaticSamplesFilePath(fileName: fileName)
+        #else
+        return "\(ARABICA_USER_ROOT_FOLDER)\(AUTOMATIC_SAMPLES_DIRECTORY)\(fileName)"
+        #endif
     }
 
     private static func automaticSamplesReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {

@@ -25,6 +25,14 @@ object PolarActivityModels {
     fun dailySummaryPath(day: String): String {
         return "/U/0/$day/DSUM/DSUM.BPB"
     }
+
+    fun automaticSamplesDirectoryPath(): String {
+        return "/U/0/AUTOS/"
+    }
+
+    fun automaticSamplesFilePath(fileName: String): String {
+        return "${automaticSamplesDirectoryPath()}$fileName"
+    }
 }
 
 enum class PolarAutomaticHrTriggerName(val value: Int) {

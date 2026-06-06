@@ -64,6 +64,8 @@ class ActivitySummaryCommonPolicyTest {
     @Test
     fun automaticSampleGoldenVectorsDefineExecutableCommonTriggerDeltaAndStatusPolicy() {
         val hr = loadGoldenVectorText("sdk/automatic-samples/hr-all-trigger-types.json")
+        assertEquals("/U/0/AUTOS/", PolarActivityModels.automaticSamplesDirectoryPath(), hr.stringValue("id"))
+        assertEquals("/U/0/AUTOS/AUTOS001.BPB", PolarActivityModels.automaticSamplesFilePath("AUTOS001.BPB"), hr.stringValue("id"))
         val hrSamples = hr.objectValue("input").objectValue("proto").objectArray("samples")
         val hrExpectation = hr.objectValue("platformExpectations").objectValue("android").objectArray("samples")
         val triggerMappings = hrSamples.map { sample -> hrTriggerName(sample.intValue("triggerType")) }

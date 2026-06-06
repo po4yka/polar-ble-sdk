@@ -752,6 +752,14 @@ object PolarIosSharedBridge {
         return PolarActivityModels.dailySummaryPath(day)
     }
 
+    fun automaticSamplesDirectoryPath(): String {
+        return PolarActivityModels.automaticSamplesDirectoryPath()
+    }
+
+    fun automaticSamplesFilePath(fileName: String): String {
+        return PolarActivityModels.automaticSamplesFilePath(fileName)
+    }
+
     fun dailyBalanceFeedbackName(value: Int): String? {
         return PolarDailyBalanceFeedbackName.fromValue(value)?.name
     }

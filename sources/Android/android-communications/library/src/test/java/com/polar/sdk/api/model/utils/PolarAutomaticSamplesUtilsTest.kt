@@ -10,6 +10,7 @@ import com.polar.sdk.api.model.activity.PPiSampleStatus
 import com.polar.sdk.api.model.activity.PPiSampleTriggerType
 import com.polar.sdk.api.model.activity.SkinContact
 import com.polar.sdk.impl.utils.PolarAutomaticSamplesUtils
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import fi.polar.remote.representation.protobuf.AutomaticSamples.PbAutomaticHeartRateSamples
 import fi.polar.remote.representation.protobuf.AutomaticSamples.PbAutomaticSampleSessions
 import fi.polar.remote.representation.protobuf.AutomaticSamples.PbMeasTriggerType
@@ -40,6 +41,8 @@ class PolarAutomaticSamplesUtilsTest {
 
     @Test
     fun `automatic sample read headers use shared file facade planning`() {
+        Assert.assertEquals("/U/0/AUTOS/", PolarRuntimePlannerAdapter.automaticSamplesDirectoryPath())
+        Assert.assertEquals("/U/0/AUTOS/AUTOS001.BPB", PolarRuntimePlannerAdapter.automaticSamplesFilePath("AUTOS001.BPB"))
         Assert.assertEquals(
             PftpRequest.PbPFtpOperation.Command.GET to "/U/0/AUTOS/",
             PolarAutomaticSamplesUtils.automaticSamplesDirectoryReadOperation()

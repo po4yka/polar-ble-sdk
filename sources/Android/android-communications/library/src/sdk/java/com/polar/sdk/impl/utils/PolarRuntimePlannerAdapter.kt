@@ -354,6 +354,14 @@ internal object PolarRuntimePlannerAdapter {
         return PolarActivityModels.dailySummaryPath(day)
     }
 
+    fun automaticSamplesDirectoryPath(): String {
+        return PolarActivityModels.automaticSamplesDirectoryPath()
+    }
+
+    fun automaticSamplesFilePath(fileName: String): String {
+        return PolarActivityModels.automaticSamplesFilePath(fileName)
+    }
+
     fun planBackupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success"): Pair<PftpRequest.PbPFtpOperation.Command, String>? {
         val command = PolarWorkflowRuntimePlanning.planBackupRestore(
             listOf(
