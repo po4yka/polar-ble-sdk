@@ -20,7 +20,7 @@ public enum PolarExerciseSession {
             guard id >= Int(Int32.min) && id <= Int(Int32.max) else {
                 return .unknown
             }
-            switch PolarIosSharedBridge.shared.exerciseSportProfileName(id: Int32(id)) {
+            switch PolarExerciseSessionRuntimePlanner.sportProfileName(id: id) {
             case "RUNNING":
                 return .running
             case "CYCLING":
@@ -74,4 +74,14 @@ public enum PolarExerciseSession {
 
 extension PolarExerciseSession.SportProfile: CaseIterable {
     public static var allCases: [Self] { [.running, .cycling, .otherOutdoor] }
+}
+
+enum PolarExerciseSessionRuntimePlanner {
+    static func sportProfileName(id: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.exerciseSportProfileName(id: Int32(id))
+        #else
+        return nil
+        #endif
+    }
 }
