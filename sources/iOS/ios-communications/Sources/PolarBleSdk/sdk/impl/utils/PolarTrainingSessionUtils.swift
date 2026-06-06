@@ -55,6 +55,10 @@ internal class PolarTrainingSessionUtils {
         return fallbackTrainingSessionPayloadParserCase(fileName: fileName)
     }
 
+    static func trainingSessionPayloadEncoding(fileName: String) -> String? {
+        return trainingSessionPayloadParserCase(fileName: fileName)?.encoding
+    }
+
     static func trainingSessionExerciseDataTypeFileName(dataType: PolarExerciseDataTypes) -> String {
         return dataType.deviceFileName
     }
@@ -265,7 +269,7 @@ internal class PolarTrainingSessionUtils {
                     let dataType = dataTypesByFileName[(filePath as NSString).lastPathComponent]!
                     let fileOperation = trainingSessionExerciseFileReadOperation(path: filePath)
                     let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(fileOperation))
-                    let data: Data = filePath.hasSuffix(".GZB") ? try unzipGzip(response as Data) : response as Data
+                    let data: Data = trainingSessionPayloadEncoding(fileName: dataType.deviceFileName) == "gzip-protobuf" ? try unzipGzip(response as Data) : response as Data
                     return (dataType, data)
                 }
             }

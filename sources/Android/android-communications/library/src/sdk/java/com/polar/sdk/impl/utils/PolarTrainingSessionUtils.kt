@@ -46,6 +46,10 @@ internal object PolarTrainingSessionUtils {
         return PolarTrainingSessionModels.payloadFetchOrder(reference.toSharedReference())
     }
 
+    internal fun trainingSessionPayloadEncoding(fileName: String): String? {
+        return PolarTrainingSessionModels.payloadParserCase(fileName)?.encoding
+    }
+
     internal fun trainingSessionDeleteParentReadOperation(reference: PolarTrainingSessionReference): Pair<PftpRequest.PbPFtpOperation.Command, String> {
         val exerciseParent = PolarRuntimePlannerAdapter.trainingSessionDeleteParentPath(reference.path)
         return trainingSessionFileOperation("training-session-delete-read-parent", "GET", exerciseParent)
@@ -178,7 +182,7 @@ internal object PolarTrainingSessionUtils {
             val data = try {
                 val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(readOperation))
                 val raw = fileResponse.toByteArray()
-                if (filePath.endsWith(".GZB")) {
+                if (trainingSessionPayloadEncoding(dataType.deviceFileName) == "gzip-protobuf") {
                     BleLogger.d(TAG, "Unzipping: ${dataType.deviceFileName}")
                     unzipData(raw)
                 } else raw

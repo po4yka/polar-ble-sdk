@@ -368,6 +368,7 @@ class PolarTrainingSessionUtilsTest {
             val id = inputCase.get("id").asString
             assertEquals(id, inputCase.get("parser").asString, prototypeCase.get("parser").asString)
             assertEquals(id, inputCase.get("encoding").asString, prototypeCase.get("encoding").asString)
+            assertEquals(id, inputCase.get("encoding").asString, PolarTrainingSessionUtils.trainingSessionPayloadEncoding(inputCase.get("fileName").asString))
             assertEquals(id, inputCase.getAsJsonArray("expectedFields").map { it.asString }, prototypeCase.getAsJsonArray("fields").map { it.asString })
         }
         assertEquals(4, cases.count { it.get("encoding").asString == "gzip-protobuf" })

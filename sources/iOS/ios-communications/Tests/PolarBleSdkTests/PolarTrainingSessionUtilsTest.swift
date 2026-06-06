@@ -332,6 +332,7 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             XCTAssertEqual(inputCase["expectedFields"] as? [String], prototypeCase["fields"] as? [String], id)
             XCTAssertEqual(planned.parser, inputCase["parser"] as? String, id)
             XCTAssertEqual(planned.encoding, inputCase["encoding"] as? String, id)
+            XCTAssertEqual(PolarTrainingSessionUtils.trainingSessionPayloadEncoding(fileName: fileName), inputCase["encoding"] as? String, id)
         }
         XCTAssertEqual(cases.filter { ($0["encoding"] as? String) == "gzip-protobuf" }.count, 4, "payload-parser-policy")
         XCTAssertEqual(commonParserPrototype["status"] as? String, "executable shared parser-policy coverage; byte decoding remains gated on common protobuf and gzip dependencies", "payload-parser-policy")
