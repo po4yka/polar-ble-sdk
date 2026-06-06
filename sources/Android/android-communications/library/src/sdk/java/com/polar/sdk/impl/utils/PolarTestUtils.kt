@@ -131,11 +131,9 @@ internal object PolarTestUtils {
     }
 
     internal fun dateTimeFromFolderNames(date: LocalDate, timeDirName: String): String? {
-        if (timeDirName.length != 6) return null
-        val hh = timeDirName.substring(0, 2).toIntOrNull() ?: return null
-        val mm = timeDirName.substring(2, 4).toIntOrNull() ?: return null
-        val ss = timeDirName.substring(4, 6).toIntOrNull() ?: return null
-        return testTimeFormatter.format(LocalDateTime.of(date.year, date.monthValue, date.dayOfMonth, hh, mm, ss))
+        return PolarSpo2Models.testTimeDirectoryParts(timeDirName)?.let { parts ->
+            testTimeFormatter.format(LocalDateTime.of(date.year, date.monthValue, date.dayOfMonth, parts.hour, parts.minute, parts.second))
+        }
     }
 
     private fun String.toSpo2TestStatus(): Spo2TestStatus? {

@@ -17,6 +17,12 @@ data class PolarSpo2TestProjection(
     val triggerType: String?
 )
 
+data class PolarSpo2TimeDirectoryParts(
+    val hour: Int,
+    val minute: Int,
+    val second: Int
+)
+
 object PolarSpo2Models {
     fun testDirectoryPath(day: String): String {
         return "/U/0/$day/SPO2TEST/"
@@ -24,6 +30,19 @@ object PolarSpo2Models {
 
     fun testResultPath(directoryPath: String, subDirectoryName: String): String {
         return "$directoryPath${subDirectoryName}SPO2TRES.BPB"
+    }
+
+    fun testTimeDirectoryParts(timeDirName: String): PolarSpo2TimeDirectoryParts? {
+        if (timeDirName.length != 6) return null
+        val hour = timeDirName.substring(0, 2).toIntOrNull() ?: return null
+        val minute = timeDirName.substring(2, 4).toIntOrNull() ?: return null
+        val second = timeDirName.substring(4, 6).toIntOrNull() ?: return null
+        return PolarSpo2TimeDirectoryParts(hour, minute, second)
+    }
+
+    fun testTimeFromFolderNames(date: String, timeDirName: String): String? {
+        val parts = testTimeDirectoryParts(timeDirName) ?: return null
+        return "$date ${parts.hour.padded()}:${parts.minute.padded()}:${parts.second.padded()}"
     }
 
     fun projectTestData(
@@ -101,5 +120,9 @@ object PolarSpo2Models {
             1 -> "automatic"
             else -> null
         }
+    }
+
+    private fun Int.padded(): String {
+        return toString().padStart(2, '0')
     }
 }

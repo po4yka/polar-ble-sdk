@@ -740,6 +740,11 @@ object PolarIosSharedBridge {
         return PolarSpo2Models.testResultPath(directoryPath, subDirectoryName)
     }
 
+    fun spo2TestTimeDirectoryPartsCsv(timeDirName: String): String? {
+        val parts = PolarSpo2Models.testTimeDirectoryParts(timeDirName) ?: return null
+        return listOf(parts.hour, parts.minute, parts.second).joinToString(separator = ",")
+    }
+
     fun spo2ProjectionFields(
         date: String,
         timeDirName: String,

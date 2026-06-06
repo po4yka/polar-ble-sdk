@@ -9,6 +9,10 @@ class Spo2CommonPolicyTest {
     fun spo2GoldenVectorsDefineExecutableCommonOptionalTriggerAndUnknownEnumPolicy() {
         assertEquals("/U/0/20260413/SPO2TEST/", PolarSpo2Models.testDirectoryPath("20260413"))
         assertEquals("/U/0/20260413/SPO2TEST/142507/SPO2TRES.BPB", PolarSpo2Models.testResultPath("/U/0/20260413/SPO2TEST/", "142507/"))
+        assertEquals("2026-04-08 08:39:06", PolarSpo2Models.testTimeFromFolderNames("2026-04-08", "083906"))
+        assertEquals("2026-04-08 01:02:03", PolarSpo2Models.testTimeFromFolderNames("2026-04-08", "010203"))
+        assertEquals(null, PolarSpo2Models.testTimeDirectoryParts("0839"))
+        assertEquals(null, PolarSpo2Models.testTimeDirectoryParts("AB3906"))
         SPO2_VECTORS.forEach { relativePath ->
             val vector = loadGoldenVectorText(relativePath)
             val caseId = vector.stringValue("id")
@@ -144,6 +148,7 @@ class Spo2CommonPolicyTest {
             "full-passed-normal-field-mapping",
             "optional-protobuf-presence-preservation",
             "empty-recording-device-normalization",
+            "time-directory-name-parsing",
             "nullable-trigger-type-policy",
             "android-no-trigger-field-platform-reference",
             "ios-trigger-field-platform-reference",
@@ -151,6 +156,6 @@ class Spo2CommonPolicyTest {
             "platform-spo2-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val SPO2_READINESS_COMMON_DECISION = "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
+        const val SPO2_READINESS_COMMON_DECISION = "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, time-directory parsing remains shared and compile-verified, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
     }
 }

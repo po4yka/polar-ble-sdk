@@ -119,15 +119,27 @@ internal class PolarTestUtils {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = deviceTz
         let dayComponents = cal.dateComponents([.year, .month, .day], from: dayDate)
-        guard timeDirName.count == 6,
-              let hh = Int(timeDirName.prefix(2)),
-              let mm = Int(timeDirName.dropFirst(2).prefix(2)),
-              let ss = Int(timeDirName.suffix(2)) else { return nil }
+        guard let parts = sharedTimeDirectoryParts(timeDirName: timeDirName) else { return nil }
         var components = DateComponents()
         components.timeZone = deviceTz
         components.year = dayComponents.year; components.month = dayComponents.month; components.day = dayComponents.day
-        components.hour = hh; components.minute = mm; components.second = ss
+        components.hour = parts.hour; components.minute = parts.minute; components.second = parts.second
         return cal.date(from: components)
+    }
+
+    private static func sharedTimeDirectoryParts(timeDirName: String) -> (hour: Int, minute: Int, second: Int)? {
+        #if canImport(PolarBleSdkShared)
+        guard let csv = PolarIosSharedBridge.shared.spo2TestTimeDirectoryPartsCsv(timeDirName: timeDirName) else { return nil }
+        let parts = csv.split(separator: ",").compactMap { Int($0) }
+        guard parts.count == 3 else { return nil }
+        return (parts[0], parts[1], parts[2])
+        #else
+        guard timeDirName.count == 6,
+              let hour = Int(timeDirName.prefix(2)),
+              let minute = Int(timeDirName.dropFirst(2).prefix(2)),
+              let second = Int(timeDirName.suffix(2)) else { return nil }
+        return (hour, minute, second)
+        #endif
     }
 }
 
