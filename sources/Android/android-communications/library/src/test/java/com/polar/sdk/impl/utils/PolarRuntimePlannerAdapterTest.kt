@@ -67,6 +67,15 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared identifier classification preserves neutral routing categories`() {
+        Assert.assertEquals("deviceId", PolarRuntimePlannerAdapter.identifierClassification("E123456F"))
+        Assert.assertEquals("deviceId", PolarRuntimePlannerAdapter.identifierClassification("123456"))
+        Assert.assertEquals("platformSpecific", PolarRuntimePlannerAdapter.identifierClassification("00:11:22:33:44:55"))
+        Assert.assertEquals("platformSpecific", PolarRuntimePlannerAdapter.identifierClassification("123E4567-E89B-12D3-A456-426614174000"))
+        Assert.assertEquals("invalid", PolarRuntimePlannerAdapter.identifierClassification("not_a_valid_id"))
+    }
+
+    @Test
     fun `shared reset and sync plans select Android protobuf notification ids`() {
         val reset = PolarRuntimePlannerAdapter.planCommandReset("factory-reset", sleep = false, factoryDefaults = true, otaFirmwareUpdate = false)
         val syncStart = PolarRuntimePlannerAdapter.planCommandSyncStart("sync-start-success")

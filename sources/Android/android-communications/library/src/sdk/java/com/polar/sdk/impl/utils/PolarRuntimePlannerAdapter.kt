@@ -18,6 +18,7 @@ import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
 import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
+import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import com.polar.shared.sdk.PolarRestServiceModels
@@ -549,6 +550,14 @@ internal object PolarRuntimePlannerAdapter {
 
     fun basicDateRange(startInclusive: String, endInclusive: String): List<String> {
         return PolarTimeUtils.basicDateRange(startInclusive, endInclusive)
+    }
+
+    fun identifierClassification(identifier: String): String {
+        return when (PolarDeviceId.classifyIdentifier(identifier)) {
+            PolarDeviceId.IdentifierClassification.DeviceId -> "deviceId"
+            PolarDeviceId.IdentifierClassification.PlatformSpecific -> "platformSpecific"
+            PolarDeviceId.IdentifierClassification.Invalid -> "invalid"
+        }
     }
 
     fun firmwareDeviceInfoPath(): String {
