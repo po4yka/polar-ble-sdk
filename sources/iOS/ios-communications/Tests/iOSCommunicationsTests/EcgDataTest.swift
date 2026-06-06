@@ -54,7 +54,7 @@ final class EcgDataTest: XCTestCase {
     func testEcgRawType0ParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "000094357700000000000280ff028000"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.ecgType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        let sharedRows = try XCTUnwrap(EcgDataRuntimePlanner.type0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
         XCTAssertEqual("1000000050,-32766|2000000000,32770", sharedRows)
 
         let frame = try PmdDataFrame(

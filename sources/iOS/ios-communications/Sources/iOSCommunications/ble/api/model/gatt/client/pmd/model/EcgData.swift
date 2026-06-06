@@ -63,7 +63,7 @@ public class EcgData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.ecgType0Samples(
+        guard let sharedRows = EcgDataRuntimePlanner.type0Samples(
             dataFrameHex: frame.sharedDataFrameHex,
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -86,6 +86,16 @@ public class EcgData {
         return EcgData(timeStamp: frame.timeStamp, samples: samples)
     }
     #endif
+}
+
+enum EcgDataRuntimePlanner {
+    static func type0Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ecgType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
 }
 
 #if canImport(PolarBleSdkShared)
