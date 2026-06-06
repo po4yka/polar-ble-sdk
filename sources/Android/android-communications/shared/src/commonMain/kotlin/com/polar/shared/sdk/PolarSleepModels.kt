@@ -38,6 +38,14 @@ object PolarSleepModels {
         return sleepEndOffsetSeconds
     }
 
+    fun shouldIncludeOriginalSleepRange(hasOriginalSleepRange: Boolean): Boolean {
+        return hasOriginalSleepRange
+    }
+
+    fun shouldIncludeSleepSkinTemperatureResult(hasSleepDate: Boolean): Boolean {
+        return hasSleepDate
+    }
+
     fun sleepAnalysisPath(day: String): String {
         return "/U/0/$day/SLEEP/SLEEPRES.BPB"
     }

@@ -45,6 +45,10 @@ class SleepNightlyRechargeCommonPolicyTest {
                     assertEquals(input.objectValue("sleepResultDate").dateString(), common.stringValue("sleepResultDate"), caseId)
                     assertEquals(0, common.intValue("sleepWakePhaseCount"), "$caseId wake phases")
                     assertEquals(0, common.intValue("sleepCycleCount"), "$caseId cycles")
+                    assertEquals(false, PolarSleepModels.shouldIncludeOriginalSleepRange(false), "$caseId original range absent")
+                    assertEquals(false, PolarSleepModels.shouldIncludeSleepSkinTemperatureResult(false), "$caseId skin temperature absent")
+                    assertEquals(true, PolarSleepModels.shouldIncludeOriginalSleepRange(true), "$caseId original range present")
+                    assertEquals(true, PolarSleepModels.shouldIncludeSleepSkinTemperatureResult(true), "$caseId skin temperature present")
                     assertEquals(SLEEP_PARTIAL_NIGHT_COMMON_DECISION, commonDecision, caseId)
                 }
                 "sleep-offset-platform-policy" -> {
@@ -317,7 +321,7 @@ class SleepNightlyRechargeCommonPolicyTest {
             "platform-sleep-nightly-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val SLEEP_PARTIAL_NIGHT_COMMON_DECISION = "Shared sleep mapping should preserve empty repeated fields as empty lists, absent optional scalar defaults as explicit zero only when that is the existing public contract, and should choose one cross-platform policy for absent recording device, battery flag, and original sleep range before migration."
+        const val SLEEP_PARTIAL_NIGHT_COMMON_DECISION = "Shared sleep mapping preserves empty repeated fields as empty lists, absent optional scalar defaults as explicit zero only when that is the existing public contract, and maps absent original sleep range plus absent sleep skin-temperature date to absent public submodels in shared-backed production code."
         const val SLEEP_OFFSET_PLATFORM_COMMON_DECISION = "Map sleepEndOffsetSeconds from the protobuf sleepEndOffsetSeconds field; linked iOS production code uses the shared KMP policy while non-shared SwiftPM/watchOS fallback preserves the legacy start-offset copy."
         const val SLEEP_NIGHTLY_READINESS_COMMON_DECISION = "Sleep and nightly recharge model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified."
     }

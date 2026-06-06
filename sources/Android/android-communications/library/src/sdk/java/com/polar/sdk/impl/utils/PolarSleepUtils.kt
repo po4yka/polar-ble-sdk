@@ -68,7 +68,7 @@ internal object PolarSleepUtils {
                 proto.batteryRanOut,
                 fromPbSleepCyclesList(proto.sleepCyclesList),
                 PolarTimeUtils.pbDateToLocalDate(proto.sleepResultDate),
-                if (proto.hasOriginalSleepRange()) {
+                if (PolarSleepModels.shouldIncludeOriginalSleepRange(proto.hasOriginalSleepRange())) {
                     fromPbOriginalSleepRange(proto.originalSleepRange)
                 } else null,
                 null
@@ -99,7 +99,7 @@ internal object PolarSleepUtils {
                 PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
             )
             val proto = SleepSkinTemperatureResult.PbSleepSkinTemperatureResult.parseFrom(response.toByteArray())
-            if (proto.hasSleepDate()) {
+            if (PolarSleepModels.shouldIncludeSleepSkinTemperatureResult(proto.hasSleepDate())) {
                 result.sleepSkinTemperatureResult = fromPbSleepSkinTemperatureResult(proto)
             }
             result

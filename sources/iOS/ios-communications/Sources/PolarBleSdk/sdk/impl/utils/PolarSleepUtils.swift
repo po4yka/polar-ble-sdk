@@ -77,7 +77,7 @@ internal class PolarSleepUtils {
                 batteryRanOut: proto.hasBatteryRanOut ? proto.batteryRanOut : nil,
                 sleepCycles: PolarSleepData.fromPbSleepCyclesList(pbSleepCyclesList: proto.sleepCycles),
                 sleepResultDate: try PolarTimeUtils.pbDateToDateComponents(pbDate: proto.sleepResultDate),
-                originalSleepRange: try PolarSleepData.fromPbOriginalSleepRange(pbOriginalSleepRange: proto.originalSleepRange)
+                originalSleepRange: sharedShouldIncludeOriginalSleepRange(proto.hasOriginalSleepRange) ? try PolarSleepData.fromPbOriginalSleepRange(pbOriginalSleepRange: proto.originalSleepRange) : nil
             )
         } catch {
             BleLogger.trace("readSleepFromDayDirectory() failed for path: \(sleepDataFilePath), error: \(error). No sleep data?")
@@ -106,6 +106,22 @@ internal class PolarSleepUtils {
         #endif
     }
 
+    private static func sharedShouldIncludeOriginalSleepRange(_ hasOriginalSleepRange: Bool) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.shouldIncludeOriginalSleepRange(hasOriginalSleepRange: hasOriginalSleepRange)
+        #else
+        return true
+        #endif
+    }
+
+    private static func sharedShouldIncludeSleepSkinTemperatureResult(_ hasSleepDate: Bool) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.shouldIncludeSleepSkinTemperatureResult(hasSleepDate: hasSleepDate)
+        #else
+        return true
+        #endif
+    }
+
     static func readSleepSkinTemperatureResult(client: BlePsFtpClient, date: Date, sleepAnalysisResult: PolarSleepData.PolarSleepAnalysisResult) async throws -> PolarSleepData.PolarSleepAnalysisResult {
         BleLogger.trace(TAG, "readSleepSkinTemperature: \(date)")
         var result = sleepAnalysisResult
@@ -114,7 +130,9 @@ internal class PolarSleepUtils {
         do {
             let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbSleepSkinTemperatureResult(serializedBytes: Data(response))
-            result.sleepSkinTemperatureResult = try PolarSleepData.fromPbSleepTemperatureResult(pbSleepTemperatureResult: proto)
+            if sharedShouldIncludeSleepSkinTemperatureResult(proto.hasSleepDate) {
+                result.sleepSkinTemperatureResult = try PolarSleepData.fromPbSleepTemperatureResult(pbSleepTemperatureResult: proto)
+            }
         } catch {
             BleLogger.trace("readSleepSkinTemperature() failed for path: \(filePath), error: \(error). No sleep skin temperature data?")
         }

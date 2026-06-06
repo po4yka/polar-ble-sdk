@@ -33,15 +33,8 @@
     "ios": {
       "deviceId": null,
       "batteryRanOut": null,
-      "sleepSkinTemperatureResult": {
-        "sleepResultDate": null,
-        "sleepSkinTemperatureCelsius": 0.0,
-        "deviationFromBaseLine": 0.0
-      },
-      "originalSleepRange": {
-        "startTime": null,
-        "endTime": null
-      }
+      "sleepSkinTemperatureResult": null,
+      "originalSleepRange": null
     }
   },
   "consumerTests": {
@@ -62,8 +55,8 @@
   },
   "platformExpectations": {
     "commonDecision": {
-      "recommendedKmpPolicy": "Shared sleep mapping should preserve empty repeated fields as empty lists, absent optional scalar defaults as explicit zero only when that is the existing public contract, and should choose one cross-platform policy for absent recording device, battery flag, and original sleep range before migration."
+      "recommendedKmpPolicy": "Shared sleep mapping preserves empty repeated fields as empty lists, absent optional scalar defaults as explicit zero only when that is the existing public contract, and maps absent original sleep range plus absent sleep skin-temperature date to absent public submodels in shared-backed production code."
     }
   },
-  "notes": "Partial sleep result with only required fields and result date present, omitting optional alarm, snooze, rating, device, battery, cycles, original range, offsets, and sleep skin-temperature date."
+  "notes": "Partial sleep result with only required fields and result date present, omitting optional alarm, snooze, rating, device, battery, cycles, original range, offsets, and sleep skin-temperature date. Linked shared-backed production code maps absent original range and absent skin-temperature date to absent public submodels; non-shared SwiftPM/watchOS fallback keeps the legacy empty-submodel behavior."
 }

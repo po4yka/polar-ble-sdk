@@ -957,6 +957,14 @@ object PolarIosSharedBridge {
         return PolarSleepModels.sleepEndOffsetSeconds(value)
     }
 
+    fun shouldIncludeOriginalSleepRange(hasOriginalSleepRange: Boolean): Boolean {
+        return PolarSleepModels.shouldIncludeOriginalSleepRange(hasOriginalSleepRange)
+    }
+
+    fun shouldIncludeSleepSkinTemperatureResult(hasSleepDate: Boolean): Boolean {
+        return PolarSleepModels.shouldIncludeSleepSkinTemperatureResult(hasSleepDate)
+    }
+
     fun sleepAnalysisPath(day: String): String {
         return PolarSleepModels.sleepAnalysisPath(day)
     }
