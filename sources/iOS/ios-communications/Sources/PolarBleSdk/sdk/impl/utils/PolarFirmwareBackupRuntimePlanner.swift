@@ -57,8 +57,18 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
-    static func shouldEmitFirmwareWriteProgress(lastBytesWritten: Int, bytesWritten: Int, payloadSize: Int, minPercentageIncrement: Int) -> Bool {
+    static func shouldEmitFirmwareWriteProgress(lastBytesWritten: Int, bytesWritten: Int, payloadSize: Int, minPercentageIncrement: Int, timeSinceLastEmitMs: Int? = nil, maxEmitIntervalMs: Int = 5_000) -> Bool {
         #if canImport(PolarBleSdkShared)
+        if let timeSinceLastEmitMs {
+            return PolarIosSharedBridge.shared.shouldEmitFirmwareWriteProgressWithTime(
+                lastBytesWritten: Int32(lastBytesWritten),
+                bytesWritten: Int32(bytesWritten),
+                payloadSize: Int32(payloadSize),
+                minPercentageIncrement: Int32(minPercentageIncrement),
+                timeSinceLastEmitMs: Int64(timeSinceLastEmitMs),
+                maxEmitIntervalMs: Int64(maxEmitIntervalMs)
+            )
+        }
         return PolarIosSharedBridge.shared.shouldEmitFirmwareWriteProgress(
             lastBytesWritten: Int32(lastBytesWritten),
             bytesWritten: Int32(bytesWritten),
@@ -68,7 +78,8 @@ enum PolarFirmwareBackupRuntimePlanner {
         #else
         let delta = bytesWritten - lastBytesWritten
         let deltaPercentage = firmwareWriteProgressPercent(bytesWritten: delta, payloadSize: payloadSize)
-        return lastBytesWritten == 0 || bytesWritten >= payloadSize || deltaPercentage >= minPercentageIncrement
+        let timeGateReached = timeSinceLastEmitMs.map { $0 >= maxEmitIntervalMs } ?? false
+        return lastBytesWritten == 0 || bytesWritten >= payloadSize || deltaPercentage >= minPercentageIncrement || timeGateReached
         #endif
     }
 

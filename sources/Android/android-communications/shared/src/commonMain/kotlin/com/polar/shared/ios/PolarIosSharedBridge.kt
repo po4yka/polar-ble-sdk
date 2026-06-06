@@ -1711,6 +1711,24 @@ object PolarIosSharedBridge {
         )
     }
 
+    fun shouldEmitFirmwareWriteProgressWithTime(
+        lastBytesWritten: Int,
+        bytesWritten: Int,
+        payloadSize: Int,
+        minPercentageIncrement: Int,
+        timeSinceLastEmitMs: Long,
+        maxEmitIntervalMs: Long
+    ): Boolean {
+        return PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(
+            lastBytesWritten = lastBytesWritten,
+            bytesWritten = bytesWritten,
+            payloadSize = payloadSize,
+            minPercentageIncrement = minPercentageIncrement,
+            timeSinceLastEmitMs = timeSinceLastEmitMs,
+            maxEmitIntervalMs = maxEmitIntervalMs
+        )
+    }
+
     fun planRuntimeBackupRestore(path: String, payloadHex: String, writeResult: String): String {
         return PolarWorkflowRuntimePlanning.planBackupRestore(
             listOf(

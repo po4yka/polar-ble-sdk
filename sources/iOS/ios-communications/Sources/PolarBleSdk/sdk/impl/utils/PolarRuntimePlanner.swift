@@ -262,12 +262,14 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwareWriteProgressPercent(bytesWritten: bytesWritten, payloadSize: payloadSize)
     }
 
-    static func shouldEmitFirmwareWriteProgress(lastBytesWritten: Int, bytesWritten: Int, payloadSize: Int, minPercentageIncrement: Int) -> Bool {
+    static func shouldEmitFirmwareWriteProgress(lastBytesWritten: Int, bytesWritten: Int, payloadSize: Int, minPercentageIncrement: Int, timeSinceLastEmitMs: Int? = nil, maxEmitIntervalMs: Int = 5_000) -> Bool {
         return PolarFirmwareBackupRuntimePlanner.shouldEmitFirmwareWriteProgress(
             lastBytesWritten: lastBytesWritten,
             bytesWritten: bytesWritten,
             payloadSize: payloadSize,
-            minPercentageIncrement: minPercentageIncrement
+            minPercentageIncrement: minPercentageIncrement,
+            timeSinceLastEmitMs: timeSinceLastEmitMs,
+            maxEmitIntervalMs: maxEmitIntervalMs
         )
     }
 

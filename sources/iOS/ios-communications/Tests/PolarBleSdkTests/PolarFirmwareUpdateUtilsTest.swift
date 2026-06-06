@@ -266,6 +266,8 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 0, bytesWritten: 0, payloadSize: 0, minPercentageIncrement: 25))
         XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 4, payloadSize: 4, minPercentageIncrement: 75))
         XCTAssertFalse(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 3, payloadSize: 100, minPercentageIncrement: 25))
+        XCTAssertFalse(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 3, payloadSize: 100, minPercentageIncrement: 25, timeSinceLastEmitMs: 4_999))
+        XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 3, payloadSize: 100, minPercentageIncrement: 25, timeSinceLastEmitMs: 5_000))
         XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 52, payloadSize: 100, minPercentageIncrement: 25))
         XCTAssertEqual(["/BTUPDAT.BIN", "/SYSUPDAT.IMG"], PolarRuntimePlanner.firmwareWritePaths(["SYSUPDAT.IMG", "BTUPDAT.BIN"]))
         #else
