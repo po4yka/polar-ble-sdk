@@ -31,12 +31,13 @@ object PolarRestServiceModels {
 
     fun serviceDescription(events: List<String>?, endpoints: List<String>?, actions: Map<String, String>?, eventDescriptions: Map<String, Map<String, List<String>>>): PolarRestServiceDescription {
         val eventNames = events ?: emptyList()
+        val detailKeys = (eventNames + eventDescriptions.keys).distinct()
         return PolarRestServiceDescription(
             events = eventNames,
             endpoints = endpoints ?: emptyList(),
             actions = actions ?: emptyMap(),
-            details = eventNames.associateWith { event -> eventDetails(eventDescriptions[event] ?: emptyMap()) },
-            triggers = eventNames.associateWith { event -> eventTriggers(eventDescriptions[event] ?: emptyMap()) }
+            details = detailKeys.associateWith { event -> eventDetails(eventDescriptions[event] ?: emptyMap()) },
+            triggers = detailKeys.associateWith { event -> eventTriggers(eventDescriptions[event] ?: emptyMap()) }
         )
     }
 

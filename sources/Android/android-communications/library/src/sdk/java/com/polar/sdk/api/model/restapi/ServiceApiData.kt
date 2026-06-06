@@ -6,6 +6,9 @@ import com.polar.shared.sdk.PolarRestServiceModels
  * Lists REST API services and corresponding paths
  */
 data class PolarDeviceRestApiServices(val dictionary: Map<String, Any>) {
+    private val sharedProjection
+        get() = PolarRestServiceModels.serviceList(pathsForServices)
+
     /**
      * Maps available REST API service names to corresponding paths
       */
@@ -16,13 +19,13 @@ data class PolarDeviceRestApiServices(val dictionary: Map<String, Any>) {
      * Lists REST API service names
      */
     val serviceNames: List<String>
-        get() = PolarRestServiceModels.serviceNames(pathsForServices)
+        get() = sharedProjection.names
 
     /**
      * Lists REST API service paths
      */
     val servicePaths: List<String>
-        get() = PolarRestServiceModels.servicePaths(pathsForServices)
+        get() = sharedProjection.paths
 }
 
 /**
@@ -30,7 +33,18 @@ data class PolarDeviceRestApiServices(val dictionary: Map<String, Any>) {
  */
 data class PolarDeviceRestApiServiceDescription (
     val dictionary: Map<String, Any>
-)
+) {
+    internal val sharedProjection
+        get() = PolarRestServiceModels.serviceDescription(
+            events = dictionary["events"].asStringList(),
+            endpoints = dictionary["endpoints"].asStringList(),
+            actions = dictionary["cmd"].asStringMap(),
+            eventDescriptions = dictionary.entries.associateNotNull { entry ->
+                val description = entry.value.asStringListMap().takeIf { it.isNotEmpty() }
+                if (description == null) null else entry.key to description
+            }
+        )
+}
 
 /**
  * Events that can be acted upon using actions. Actions are returned in `actions` and `actionNames`
@@ -72,13 +86,13 @@ val PolarDeviceRestApiServiceDescription.actions: Map<String, String>
  * Just the action names from `actions` property
  */
 val PolarDeviceRestApiServiceDescription.actionNames: List<String>
-    get() = PolarRestServiceModels.actionNames(actions)
+    get() = sharedProjection.actionNames
 
 /**
  * Just the action paths from `actions` property
  */
 val PolarDeviceRestApiServiceDescription.actionPaths: List<String>
-    get() = PolarRestServiceModels.actionPaths(actions)
+    get() = sharedProjection.actionPaths
 
 /**
  * Lists event details that may be requested as returned event parameter values using action
@@ -87,8 +101,7 @@ val PolarDeviceRestApiServiceDescription.actionPaths: List<String>
  * @return detail names
  */
 fun PolarDeviceRestApiServiceDescription.eventDetailsFor(eventName: String): List<String> {
-    val eventMap = dictionary[eventName].asStringListMap()
-    return PolarRestServiceModels.eventDetails(eventMap)
+    return sharedProjection.details[eventName] ?: emptyList()
 }
 
 /**
@@ -98,8 +111,16 @@ fun PolarDeviceRestApiServiceDescription.eventDetailsFor(eventName: String): Lis
  * @return triggers for the events
  */
 fun PolarDeviceRestApiServiceDescription.eventTriggersFor(eventName: String): List<String> {
-    val eventMap = dictionary[eventName].asStringListMap()
-    return PolarRestServiceModels.eventTriggers(eventMap)
+    return sharedProjection.triggers[eventName] ?: emptyList()
+}
+
+private inline fun <K, V> Iterable<Map.Entry<K, V>>.associateNotNull(transform: (Map.Entry<K, V>) -> Pair<K, Map<String, List<String>>>?): Map<K, Map<String, List<String>>> {
+    val destination = linkedMapOf<K, Map<String, List<String>>>()
+    for (entry in this) {
+        val pair = transform(entry)
+        if (pair != null) destination[pair.first] = pair.second
+    }
+    return destination
 }
 
 private fun Any?.asStringList(): List<String> {
