@@ -7,6 +7,7 @@ import com.polar.sdk.api.model.DeviationFromBaseline
 import com.polar.sdk.api.model.PolarSpo2TestData
 import com.polar.sdk.api.model.Spo2Class
 import com.polar.sdk.api.model.Spo2TestStatus
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarTestUtils
 import com.polar.sdk.impl.utils.Spo2TestEntry
 import com.polar.services.datamodels.protobuf.Spo2TestResult.PbDeviationFromBaseline
@@ -39,6 +40,8 @@ class PolarTestUtilsTest {
     fun `spo2 test read headers use shared file facade planning`() {
         val date = LocalDate.of(2026, 4, 13)
 
+        assertEquals("/U/0/20260413/SPO2TEST/", PolarRuntimePlannerAdapter.spo2TestDirectoryPath("20260413"))
+        assertEquals("/U/0/20260413/SPO2TEST/142507/SPO2TRES.BPB", PolarRuntimePlannerAdapter.spo2TestResultPath("/U/0/20260413/SPO2TEST/", "142507/"))
         assertEquals(
             PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260413/SPO2TEST/",
             PolarTestUtils.spo2TestDirectoryReadOperation(date)

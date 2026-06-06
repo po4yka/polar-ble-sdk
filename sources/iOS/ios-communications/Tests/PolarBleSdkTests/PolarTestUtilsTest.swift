@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import PolarBleSdk
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 class PolarTestUtilsTests: XCTestCase {
 
@@ -114,6 +117,8 @@ class PolarTestUtilsTests: XCTestCase {
     func testSpo2TestReadHeadersUseSharedFileFacadePlanning() throws {
         let date = makeDate(year: 2026, month: 4, day: 13)
 
+        XCTAssertEqual(PolarIosSharedBridge.shared.spo2TestDirectoryPath(day: "20260413"), "/U/0/20260413/SPO2TEST/")
+        XCTAssertEqual(PolarIosSharedBridge.shared.spo2TestResultPath(directoryPath: "/U/0/20260413/SPO2TEST/", subDirectoryName: "142507/"), "/U/0/20260413/SPO2TEST/142507/SPO2TRES.BPB")
         let directoryOperation = PolarTestUtils.spo2TestDirectoryReadOperation(date: date)
         XCTAssertEqual(directoryOperation.command, .get)
         XCTAssertEqual(directoryOperation.path, "/U/0/20260413/SPO2TEST/")

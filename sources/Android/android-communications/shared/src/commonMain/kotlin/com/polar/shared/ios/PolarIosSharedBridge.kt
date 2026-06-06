@@ -553,6 +553,14 @@ object PolarIosSharedBridge {
         return PolarSpo2Models.triggerTypeName(value)
     }
 
+    fun spo2TestDirectoryPath(day: String): String {
+        return PolarSpo2Models.testDirectoryPath(day)
+    }
+
+    fun spo2TestResultPath(directoryPath: String, subDirectoryName: String): String {
+        return PolarSpo2Models.testResultPath(directoryPath, subDirectoryName)
+    }
+
     fun spo2ProjectionFields(
         date: String,
         timeDirName: String,

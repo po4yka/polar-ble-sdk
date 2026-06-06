@@ -7,6 +7,8 @@ import kotlin.test.assertEquals
 class Spo2CommonPolicyTest {
     @Test
     fun spo2GoldenVectorsDefineExecutableCommonOptionalTriggerAndUnknownEnumPolicy() {
+        assertEquals("/U/0/20260413/SPO2TEST/", PolarSpo2Models.testDirectoryPath("20260413"))
+        assertEquals("/U/0/20260413/SPO2TEST/142507/SPO2TRES.BPB", PolarSpo2Models.testResultPath("/U/0/20260413/SPO2TEST/", "142507/"))
         SPO2_VECTORS.forEach { relativePath ->
             val vector = loadGoldenVectorText(relativePath)
             val caseId = vector.stringValue("id")

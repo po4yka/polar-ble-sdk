@@ -15,9 +15,6 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-private const val ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private const val SPO2_TEST_DIRECTORY = "SPO2TEST/"
-private const val SPO2_TEST_PROTO = "SPO2TRES.BPB"
 private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 private val testTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 private const val TAG = "PolarTestUtils"
@@ -30,11 +27,11 @@ data class Spo2TestEntry(val date: LocalDate, val timeDirName: String, val proto
 
 internal object PolarTestUtils {
     internal fun spo2TestDirectoryReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        return spo2TestReadOperation("spo2-test-read-directory", "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$SPO2_TEST_DIRECTORY")
+        return spo2TestReadOperation("spo2-test-read-directory", PolarRuntimePlannerAdapter.spo2TestDirectoryPath(date.format(dateFormatter)))
     }
 
     internal fun spo2TestFileReadOperation(directoryPath: String, subDirectoryName: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        return spo2TestReadOperation("spo2-test-read-file", "$directoryPath$subDirectoryName$SPO2_TEST_PROTO")
+        return spo2TestReadOperation("spo2-test-read-file", PolarRuntimePlannerAdapter.spo2TestResultPath(directoryPath, subDirectoryName))
     }
 
     private fun spo2TestReadOperation(id: String, path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {

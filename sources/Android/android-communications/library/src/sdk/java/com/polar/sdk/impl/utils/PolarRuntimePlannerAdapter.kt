@@ -18,6 +18,7 @@ import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepModels
+import com.polar.shared.sdk.PolarSpo2Models
 import protocol.PftpNotification
 import protocol.PftpRequest
 
@@ -360,6 +361,14 @@ internal object PolarRuntimePlannerAdapter {
 
     fun automaticSamplesFilePath(fileName: String): String {
         return PolarActivityModels.automaticSamplesFilePath(fileName)
+    }
+
+    fun spo2TestDirectoryPath(day: String): String {
+        return PolarSpo2Models.testDirectoryPath(day)
+    }
+
+    fun spo2TestResultPath(directoryPath: String, subDirectoryName: String): String {
+        return PolarSpo2Models.testResultPath(directoryPath, subDirectoryName)
     }
 
     fun planBackupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success"): Pair<PftpRequest.PbPFtpOperation.Command, String>? {

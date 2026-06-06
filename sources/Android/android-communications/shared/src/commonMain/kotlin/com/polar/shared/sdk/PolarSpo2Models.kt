@@ -18,6 +18,14 @@ data class PolarSpo2TestProjection(
 )
 
 object PolarSpo2Models {
+    fun testDirectoryPath(day: String): String {
+        return "/U/0/$day/SPO2TEST/"
+    }
+
+    fun testResultPath(directoryPath: String, subDirectoryName: String): String {
+        return "$directoryPath${subDirectoryName}SPO2TRES.BPB"
+    }
+
     fun projectTestData(
         date: String,
         timeDirName: String,

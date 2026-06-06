@@ -5,9 +5,6 @@ import Foundation
 import PolarBleSdkShared
 #endif
 
-private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private let SPO2_TEST_DIRECTORY = "SPO2TEST/"
-private let SPO2_TEST_PROTO = "SPO2TRES.BPB"
 private let dateFormat: DateFormatter = {
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyyMMdd"
@@ -18,11 +15,27 @@ private let TAG = "PolarTestUtils"
 
 internal class PolarTestUtils {
     static func spo2TestDirectoryReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        return spo2TestReadOperation(id: "spo2-test-read-directory", path: "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(SPO2_TEST_DIRECTORY)")
+        return spo2TestReadOperation(id: "spo2-test-read-directory", path: spo2TestDirectoryPath(day: dateFormat.string(from: date)))
     }
 
     static func spo2TestFileReadOperation(directoryPath: String, subDirectoryName: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        return spo2TestReadOperation(id: "spo2-test-read-file", path: "\(directoryPath)\(subDirectoryName)\(SPO2_TEST_PROTO)")
+        return spo2TestReadOperation(id: "spo2-test-read-file", path: spo2TestResultPath(directoryPath: directoryPath, subDirectoryName: subDirectoryName))
+    }
+
+    private static func spo2TestDirectoryPath(day: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2TestDirectoryPath(day: day)
+        #else
+        return "/U/0/\(day)/SPO2TEST/"
+        #endif
+    }
+
+    private static func spo2TestResultPath(directoryPath: String, subDirectoryName: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2TestResultPath(directoryPath: directoryPath, subDirectoryName: subDirectoryName)
+        #else
+        return "\(directoryPath)\(subDirectoryName)SPO2TRES.BPB"
+        #endif
     }
 
     private static func spo2TestReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
