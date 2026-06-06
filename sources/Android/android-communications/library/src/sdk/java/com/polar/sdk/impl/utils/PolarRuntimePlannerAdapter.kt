@@ -347,6 +347,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter(entry, includePrefixes, includeSuffixes)
     }
 
+    fun storedDataCleanupDirectoryEntryMatches(dataType: String, entry: String, cutoffFolder: String? = null): Boolean {
+        return PolarWorkflowRuntimePlanning.storedDataCleanupDirectoryEntryMatches(dataType, entry, cutoffFolder)
+    }
+
     fun shouldPruneStoredDataEmptyParents(dataType: String): Boolean {
         return PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents(dataType)
     }

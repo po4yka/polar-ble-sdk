@@ -2749,16 +2749,21 @@ extension PolarBleApiImpl: PolarBleApi  {
         }()
         switch dataType {
         case .AUTO_SAMPLE:
-            condition = { e in e.contains("^(\\d{8})(/)") || e == "\(entryPattern)/" || e.contains(".BPB") }
+            condition = { e in
+                PolarRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: dataType.rawValue, entry: e) ??
+                (e.contains("^(\\d{8})(/)") || e == "\(entryPattern)/" || e.contains(".BPB"))
+            }
         case .SDLOGS:
             condition = { e in
-                e.contains("^(\\d{8})(/)") ||
-                e == "\(entryPattern)/" ||
-                (PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includeSuffixes: [".SLG", ".TXT"]) ?? (e.contains(".SLG") || e.contains(".TXT")))
+                PolarRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: dataType.rawValue, entry: e) ??
+                (e.contains("^(\\d{8})(/)") ||
+                 e == "\(entryPattern)/" ||
+                 (PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includeSuffixes: [".SLG", ".TXT"]) ?? (e.contains(".SLG") || e.contains(".TXT"))))
             }
         case .ACTIVITY, .DAILY_SUMMARY, .NIGHTLY_RECOVERY, .SLEEP, .SKIN_CONTACT_CHANGES, .SKINTEMP, .SLEEP_SCORE:
             condition = { e in
-                (e.matches("^([0-9]{8})(\\/)") || e == "\(formatter.string(from: until!))" + "/" || e == "\(entryPattern)/" || e.contains(".BPB")) && !e.contains("USERID.BPB") && !e.contains("HIST")
+                PolarRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: dataType.rawValue, entry: e, cutoffFolder: formatter.string(from: until!)) ??
+                ((e.matches("^([0-9]{8})(\\/)") || e == "\(formatter.string(from: until!))" + "/" || e == "\(entryPattern)/" || e.contains(".BPB")) && !e.contains("USERID.BPB") && !e.contains("HIST"))
             }
         case .UNDEFINED: return
         }

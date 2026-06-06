@@ -207,6 +207,10 @@ enum PolarRuntimePlanner {
         return PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: entry, includePrefixes: includePrefixes, includeSuffixes: includeSuffixes)
     }
 
+    static func storedDataCleanupDirectoryEntryMatches(dataType: String, entry: String, cutoffFolder: String? = nil) -> Bool? {
+        return PolarStoredDataOfflineRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: dataType, entry: entry, cutoffFolder: cutoffFolder)
+    }
+
     static func shouldPruneStoredDataEmptyParents(dataType: String) -> Bool? {
         return PolarStoredDataOfflineRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: dataType)
     }

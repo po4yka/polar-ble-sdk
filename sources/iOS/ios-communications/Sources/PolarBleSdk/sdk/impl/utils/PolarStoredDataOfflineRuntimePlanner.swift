@@ -31,6 +31,14 @@ enum PolarStoredDataOfflineRuntimePlanner {
         #endif
     }
 
+    static func storedDataCleanupDirectoryEntryMatches(dataType: String, entry: String, cutoffFolder: String? = nil) -> Bool? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.storedDataCleanupDirectoryEntryMatches(dataType: dataType, entry: entry, cutoffFolder: cutoffFolder)
+        #else
+        return nil
+        #endif
+    }
+
     static func shouldPruneStoredDataEmptyParents(dataType: String) -> Bool? {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.shouldPruneStoredDataEmptyParents(dataType: dataType)

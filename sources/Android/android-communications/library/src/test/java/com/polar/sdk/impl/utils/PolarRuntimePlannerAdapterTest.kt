@@ -224,6 +224,14 @@ class PolarRuntimePlannerAdapterTest {
         Assert.assertTrue(PolarRuntimePlannerAdapter.storedDataEntryMatchesFilter("TRC001.BIN", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
         Assert.assertTrue(PolarRuntimePlannerAdapter.storedDataEntryMatchesFilter("20260530.SLG", includeSuffixes = listOf(".SLG", ".TXT")))
         Assert.assertFalse(PolarRuntimePlannerAdapter.storedDataEntryMatchesFilter("USERID.BPB", includePrefixes = listOf("TRC"), includeSuffixes = listOf(".BIN")))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.storedDataCleanupDirectoryEntryMatches("ACT", "20260530/", cutoffFolder = "20260531"))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.storedDataCleanupDirectoryEntryMatches("ACT", "ACTIVITY.BPB"))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.storedDataCleanupDirectoryEntryMatches("ACT", "USERID.BPB"))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.storedDataCleanupDirectoryEntryMatches("ACT", "HIST.BPB"))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.storedDataCleanupDirectoryEntryMatches("AUTOS", "AUTOS001.BPB"))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.storedDataCleanupDirectoryEntryMatches("SDLOGS", "A.SLG"))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.storedDataCleanupDirectoryEntryMatches("SDLOGS", "C.BPB"))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.storedDataCleanupDirectoryEntryMatches("UNDEFINED", "20260530/"))
         Assert.assertTrue(PolarRuntimePlannerAdapter.shouldPruneStoredDataEmptyParents("ACT"))
         Assert.assertEquals(
             listOf("/U/0/20260530/ACT", "/U/0/20260530"),

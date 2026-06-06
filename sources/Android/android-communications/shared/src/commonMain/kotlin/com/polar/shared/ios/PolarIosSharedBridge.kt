@@ -1630,6 +1630,10 @@ object PolarIosSharedBridge {
         )
     }
 
+    fun storedDataCleanupDirectoryEntryMatches(dataType: String, entry: String, cutoffFolder: String?): Boolean {
+        return PolarWorkflowRuntimePlanning.storedDataCleanupDirectoryEntryMatches(dataType, entry, cutoffFolder)
+    }
+
     fun shouldPruneStoredDataEmptyParents(dataType: String): Boolean {
         return PolarWorkflowRuntimePlanning.shouldPruneStoredDataEmptyParents(dataType)
     }

@@ -127,6 +127,19 @@ object PolarWorkflowRuntimePlanning {
             (includeSuffixes.isEmpty() || includeSuffixes.any { suffix -> entry.endsWith(suffix) })
     }
 
+    fun storedDataCleanupDirectoryEntryMatches(dataType: String, entry: String, cutoffFolder: String? = null): Boolean {
+        val isDateFolder = entry.matches(Regex("^(\\d{8})(/)"))
+        return when (dataType) {
+            "AUTOS" -> isDateFolder || entry.contains(".BPB")
+            "SDLOGS" -> isDateFolder || entry == "$dataType/" || storedDataEntryMatchesFilter(entry, includeSuffixes = listOf(".SLG", ".TXT"))
+            "UNDEFINED" -> false
+            else -> {
+                val matchesDataEntry = isDateFolder || (cutoffFolder != null && entry == "$cutoffFolder/") || entry == "$dataType/" || entry.contains(".BPB")
+                matchesDataEntry && !entry.contains("USERID.BPB") && !entry.contains("HIST")
+            }
+        }
+    }
+
     fun shouldPruneStoredDataEmptyParents(dataType: String): Boolean {
         return dataType !in setOf("AUTOS", "SDLOGS", "UNDEFINED")
     }

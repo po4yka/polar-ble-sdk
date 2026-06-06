@@ -2585,7 +2585,6 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
     override suspend fun deleteStoredDeviceData(identifier: String, dataType: PolarStoredDataType, until: LocalDate?) {
         val folderPath = PolarRuntimePlannerAdapter.storedDataCleanupRootPath(dataType.type, "/U/0")
-        val entryPattern = dataType.type
         val cond: PolarFileUtils.FetchRecursiveCondition
         val cutoffDate = until?.toString()
         val cutoffFolder = until?.let { dateFormatter.format(it).toString().replace("-", "") }
@@ -2597,27 +2596,19 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         when (dataType.type) {
             PolarStoredDataType.AUTO_SAMPLE.type -> {
                 cond = PolarFileUtils.FetchRecursiveCondition { entry: String ->
-                    entry.matches(Regex("^(\\d{8})(/)")) ||
-                            entry.contains(".BPB")
+                    PolarRuntimePlannerAdapter.storedDataCleanupDirectoryEntryMatches(dataType.type, entry)
                 }
             }
 
             PolarStoredDataType.SDLOGS.type -> {
                 cond = PolarFileUtils.FetchRecursiveCondition { entry: String ->
-                    entry.matches(Regex("^(\\d{8})(/)")) ||
-                            entry == "${entryPattern}/" ||
-                            PolarRuntimePlannerAdapter.storedDataEntryMatchesFilter(entry, includeSuffixes = listOf(".SLG", ".TXT"))
+                    PolarRuntimePlannerAdapter.storedDataCleanupDirectoryEntryMatches(dataType.type, entry)
                 }
             }
 
             else -> {
                 cond = PolarFileUtils.FetchRecursiveCondition { entry: String ->
-                    entry.matches(Regex("^(\\d{8})(/)")) ||
-                            (cutoffFolder != null && entry == "${cutoffFolder}/") ||
-                            entry == "${entryPattern}/" ||
-                            entry.contains(".BPB") &&
-                            !entry.contains("USERID.BPB") &&
-                            !entry.contains("HIST")
+                    PolarRuntimePlannerAdapter.storedDataCleanupDirectoryEntryMatches(dataType.type, entry, cutoffFolder)
                 }
             }
         }
