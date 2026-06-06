@@ -22,6 +22,7 @@ import com.polar.shared.pmd.sensors.PolarPmdDataFrame
 import com.polar.shared.pmd.sensors.PolarPpiSample
 import com.polar.shared.pmd.sensors.PolarPressureSample
 import com.polar.shared.pmd.sensors.PolarPpgType0Sample
+import com.polar.shared.pmd.sensors.PolarPpgType14Sample
 import com.polar.shared.pmd.sensors.PolarPpgType5Sample
 import com.polar.shared.pmd.sensors.PolarPpgType8Sample
 import com.polar.shared.pmd.sensors.PolarPpgType9Sample
@@ -475,6 +476,26 @@ object PolarIosSharedBridge {
             ).filterIsInstance<PolarPpgType9Sample>()
                 .joinToString(separator = "|") { sample ->
                     "${sample.timeStamp},${sample.numIntTs.joinToString(separator = ";")},${sample.channel1GainTs.joinToString(separator = ";")},${sample.channel2GainTs.joinToString(separator = ";")}"
+                }
+        }.getOrNull()
+    }
+
+    fun ppgRawType14Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
+        val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
+        if (bytes.size < 10) return null
+        val frameType = bytes[9].toInt() and 0xFF
+        if ((frameType and 0x80) != 0 || (frameType and 0x7F) != 14) return null
+        return runCatching {
+            PolarSensorDataParser.parsePpg(
+                PolarPmdDataFrame.fromByteArray(
+                    data = bytes,
+                    previousTimeStamp = previousTimeStamp,
+                    factor = factor,
+                    sampleRate = sampleRate
+                )
+            ).filterIsInstance<PolarPpgType14Sample>()
+                .joinToString(separator = "|") { sample ->
+                    "${sample.timeStamp},${sample.numIntTs1.joinToString(separator = ";")},${sample.channel1GainTs1.joinToString(separator = ";")},${sample.channel2GainTs1.joinToString(separator = ";")}"
                 }
         }.getOrNull()
     }

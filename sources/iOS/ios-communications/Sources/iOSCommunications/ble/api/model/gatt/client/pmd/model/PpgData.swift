@@ -449,6 +449,11 @@ public class PpgData {
     #endif
 
     private static func dataFromRawType14(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawType14Data(frame: frame) {
+            return sharedData
+        }
+        #endif
 
         let samplesSize = Int(Double(frame.dataContent.count) / Double(TYPE_14_SAMPLE_SIZE_IN_BYTES))
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samplesSize), sampleRate: frame.sampleRate)
@@ -485,6 +490,46 @@ public class PpgData {
 
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamples)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedRawType14Data(frame: PmdDataFrame) -> PpgData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_14,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PolarIosSharedBridge.shared.ppgRawType14Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 4,
+                  let timeStamp = UInt64(fields[0]) else {
+                return nil
+            }
+            let numIntTs = fields[1].split(separator: ";").compactMap { Int32($0) }
+            let channel1GainTs = fields[2].split(separator: ";").compactMap { Int32($0) }
+            let channel2GainTs = fields[3].split(separator: ";").compactMap { Int32($0) }
+            guard !numIntTs.isEmpty,
+                  !channel1GainTs.isEmpty,
+                  !channel2GainTs.isEmpty else {
+                return nil
+            }
+            return PpgDataFrameType14(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: numIntTs + channel1GainTs + channel2GainTs)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
 
     private static func dataFromCompressedType0(frame: PmdDataFrame) throws -> PpgData {
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_0_CHANNELS_IN_SAMPLE, resolution: TYPE_0_SAMPLE_SIZE_IN_BITS)
