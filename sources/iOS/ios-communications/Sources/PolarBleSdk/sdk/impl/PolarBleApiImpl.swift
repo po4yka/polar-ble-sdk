@@ -2922,7 +2922,13 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let settingsPath = getDeviceSettingsPath(session)
-        guard let deviceLocation = PbDeviceLocation(rawValue: location) else { throw PolarErrors.invalidArgument(description: "Invalid device location: \(location)") }
+        let sharedLocationValue: Int
+        if let sharedName = PolarRuntimePlanner.userDeviceSettingsDeviceLocationName(value: location) {
+            sharedLocationValue = PolarUserDeviceSettings.getDeviceLocation(deviceLocation: sharedName).toInt()
+        } else {
+            sharedLocationValue = location
+        }
+        guard let deviceLocation = PbDeviceLocation(rawValue: sharedLocationValue) else { throw PolarErrors.invalidArgument(description: "Invalid device location: \(location)") }
         let payloadFields = ["deviceLocation=\(PolarRuntimePlanner.userDeviceSettingsDeviceLocationName(value: location) ?? "\(deviceLocation)")"]
         let plannedOperations = PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-user-device-location", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         var currentSettings = try await getUserDeviceSettingsProto(client: client, settingsPath: settingsPath, plannedOperation: plannedOperations?.first)

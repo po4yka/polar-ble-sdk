@@ -1042,7 +1042,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(.put, writeOperation.command)
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
-        XCTAssertEqual(.deviceLocationWristRight, writtenSettings.generalSettings.deviceLocation)
+        XCTAssertEqual(sharedDeviceLocation(PbDeviceLocation.deviceLocationWristRight.rawValue), writtenSettings.generalSettings.deviceLocation)
         XCTAssertTrue(writtenSettings.hasTelemetrySettings)
         XCTAssertTrue(writtenSettings.telemetrySettings.hasTelemetryEnabled)
         XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
@@ -1072,7 +1072,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(.put, writeOperation.command)
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
-        XCTAssertEqual(.deviceLocationWristLeft, writtenSettings.generalSettings.deviceLocation)
+        XCTAssertEqual(sharedDeviceLocation(PbDeviceLocation.deviceLocationWristLeft.rawValue), writtenSettings.generalSettings.deviceLocation)
         XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
     }
 
@@ -4346,5 +4346,12 @@ final class PolarBleApiImplTests: XCTestCase {
         let removeOperation = PolarBleApiImpl.h10ExerciseRemoveOperation(path: path)
         XCTAssertEqual(removeOperation.command, .remove)
         XCTAssertEqual(removeOperation.path, path)
+    }
+
+    private func sharedDeviceLocation(_ value: Int) -> PbDeviceLocation {
+        if let sharedName = PolarRuntimePlanner.userDeviceSettingsDeviceLocationName(value: value) {
+            return PbDeviceLocation(rawValue: PolarUserDeviceSettings.getDeviceLocation(deviceLocation: sharedName).toInt())!
+        }
+        return PbDeviceLocation(rawValue: value)!
     }
 }

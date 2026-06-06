@@ -704,7 +704,7 @@ class BDBleApiImplTest {
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
-        Assert.assertEquals(PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT, writtenSettings.generalSettings.deviceLocation)
+        Assert.assertEquals(sharedDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT.number), writtenSettings.generalSettings.deviceLocation)
         Assert.assertTrue(writtenSettings.hasTelemetrySettings())
         Assert.assertTrue(writtenSettings.telemetrySettings.hasTelemetryEnabled())
         Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
@@ -751,7 +751,7 @@ class BDBleApiImplTest {
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
-        Assert.assertEquals(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT, writtenSettings.generalSettings.deviceLocation)
+        Assert.assertEquals(sharedDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT.number), writtenSettings.generalSettings.deviceLocation)
         Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
     }
 
@@ -3622,6 +3622,13 @@ class BDBleApiImplTest {
         val sharedName = PolarUserDeviceSettingsModels.usbConnectionModeName(if (enabled) 2 else 1)
             ?: error("Missing shared USB connection mode for $enabled")
         return PbUsbConnectionSettings.PbUsbConnectionMode.valueOf(sharedName)
+    }
+
+    private fun sharedDeviceLocation(value: Int): PbDeviceLocation {
+        val sharedValue = PolarUserDeviceSettingsModels.deviceLocationName(value)
+            ?.let(PolarUserDeviceSettingsModels::deviceLocationValue)
+            ?: error("Missing shared device location for $value")
+        return PbDeviceLocation.forNumber(sharedValue)
     }
 
     private companion object {

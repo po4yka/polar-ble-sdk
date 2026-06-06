@@ -3111,8 +3111,13 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
         val currentProto = getUserDeviceSettingsProto(client, session.polarDeviceType)
+        val sharedDeviceLocation = PolarUserDeviceSettingsModels.deviceLocationName(location)
+            ?.let(PolarUserDeviceSettingsModels::deviceLocationValue)
+            ?.let(fi.polar.remote.representation.protobuf.Types.PbDeviceLocation::forNumber)
+        val deviceLocation = sharedDeviceLocation
+            ?: fi.polar.remote.representation.protobuf.Types.PbDeviceLocation.forNumber(location)
         val generalSettings = currentProto.generalSettings.toBuilder()
-            .setDeviceLocation(fi.polar.remote.representation.protobuf.Types.PbDeviceLocation.forNumber(location))
+            .setDeviceLocation(deviceLocation)
             .build()
         val updated = currentProto.toBuilder().setGeneralSettings(generalSettings).build()
         PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
