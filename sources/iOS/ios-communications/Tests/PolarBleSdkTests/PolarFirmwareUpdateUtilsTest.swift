@@ -2,9 +2,6 @@
 
 import XCTest
 @testable import PolarBleSdk
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
 
 class PolarFirmwareUpdateUtilsTest: XCTestCase {
 
@@ -47,7 +44,6 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(mockClient.requestCalls.count, 1)
         let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: mockClient.requestCalls[0])
         XCTAssertEqual(.get, requestOperation.command)
-        XCTAssertEqual(PolarIosSharedBridge.shared.firmwareDeviceInfoPath(), PolarFirmwareUpdateUtils.DEVICE_FIRMWARE_INFO_PATH)
         XCTAssertEqual(PolarRuntimePlanner.firmwareDeviceInfoPath(), PolarFirmwareUpdateUtils.DEVICE_FIRMWARE_INFO_PATH)
         XCTAssertEqual(PolarFirmwareUpdateUtils.DEVICE_FIRMWARE_INFO_PATH, requestOperation.path)
     }
@@ -146,15 +142,10 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
 
     func testFirmwareUtilityUsesSharedPlannerWhenLinked() async throws {
         #if canImport(PolarBleSdkShared)
-        XCTAssertEqual("1.2.0", PolarIosSharedBridge.shared.firmwareDeviceVersion(major: 1, minor: 2, patch: 0))
         XCTAssertEqual("1.2.0", PolarRuntimePlanner.firmwareDeviceVersion(major: 1, minor: 2, patch: 0))
-        XCTAssertTrue(PolarIosSharedBridge.shared.isFirmwareVersionHigher(currentVersion: "1.0.0", availableVersion: "1.0.1"))
         XCTAssertTrue(PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: "1.0.0", availableVersion: "1.0.1"))
-        XCTAssertFalse(PolarIosSharedBridge.shared.isFirmwareVersionHigher(currentVersion: "2.0.0", availableVersion: "1.0.0"))
         XCTAssertFalse(PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: "2.0.0", availableVersion: "1.0.0"))
-        XCTAssertEqual(0, PolarIosSharedBridge.shared.firmwareFilePriority(fileName: "BTUPDAT.BIN"))
         XCTAssertEqual(0, PolarRuntimePlanner.firmwareFilePriority("BTUPDAT.BIN"))
-        XCTAssertEqual(1, PolarIosSharedBridge.shared.firmwareFilePriority(fileName: "SYSUPDAT.IMG"))
         XCTAssertEqual(1, PolarRuntimePlanner.firmwareFilePriority("SYSUPDAT.IMG"))
 
         let expectedDeviceId = "123456"
@@ -246,7 +237,6 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
 
     func testFirmwarePackageEntryFilterUsesSharedPolicyWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
-        XCTAssertFalse(PolarIosSharedBridge.shared.firmwarePackageEntryIsPayload(fileName: "readme.txt"))
         XCTAssertFalse(PolarRuntimePlanner.firmwarePackageEntryIsPayload("readme.txt"))
         XCTAssertFalse(PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload("readme.txt"))
         XCTAssertTrue(PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload("README.TXT"))
@@ -259,7 +249,6 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
 
     func testFirmwareRebootWaitFilterUsesSharedPolicyWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
-        XCTAssertTrue(PolarIosSharedBridge.shared.firmwareFileTriggersRebootWait(fileName: "SYSUPDAT.IMG"))
         XCTAssertTrue(PolarRuntimePlanner.firmwareFileTriggersRebootWait("/SYSUPDAT.IMG"))
         XCTAssertTrue(PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait("/SYSUPDAT.IMG"))
         XCTAssertFalse(PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait("BTUPDAT.BIN"))

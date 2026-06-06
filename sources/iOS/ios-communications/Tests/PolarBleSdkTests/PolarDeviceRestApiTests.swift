@@ -4,9 +4,6 @@
 import XCTest
 
 @testable import PolarBleSdk
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
 
 class PolarDeviceRestApiServiceTests: XCTestCase {
     
@@ -51,12 +48,6 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         let serviceJson = #"{"services":{"ui_states":"/REST/UISTATES.API","training":"/REST/TRAINING.API"}}"#
         let serviceList = try JSONDecoder().decode(PolarDeviceRestApiServices.self, from: try XCTUnwrap(serviceJson.data(using: .utf8)))
 
-        #if canImport(PolarBleSdkShared)
-        let entries = "ui_states\t/REST/UISTATES.API\ntraining\t/REST/TRAINING.API"
-        XCTAssertEqual(Set(["ui_states", "training"]), Set(PolarIosSharedBridge.shared.restServiceNames(entries: entries).split(separator: "|").map(String.init)))
-        XCTAssertEqual(Set(["/REST/UISTATES.API", "/REST/TRAINING.API"]), Set(PolarIosSharedBridge.shared.restServicePaths(entries: entries).split(separator: "|").map(String.init)))
-        #endif
-
         XCTAssertEqual(Set(["ui_states", "training"]), Set(serviceList.serviceNames))
         XCTAssertEqual(Set(["/REST/UISTATES.API", "/REST/TRAINING.API"]), Set(serviceList.servicePaths))
 
@@ -66,11 +57,6 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         XCTAssertEqual(["./REST/TRAINING.API?cmd=subscribe&event="], description.actionPaths)
         XCTAssertEqual(["sport", "duration"], description.eventDetails(for: "lap_data"))
         XCTAssertEqual(["manual"], description.eventTriggers(for: "lap_data"))
-        #if canImport(PolarBleSdkShared)
-        XCTAssertEqual(["lap_data"], sharedListForTest(PolarIosSharedBridge.shared.restEvents(eventsCsv: description.events.joined(separator: ","))))
-        XCTAssertEqual([], sharedListForTest(PolarIosSharedBridge.shared.restEndpoints(endpointsCsv: description.endpoints.joined(separator: ","))))
-        XCTAssertEqual(description.actions, sharedMapForTest(PolarIosSharedBridge.shared.restActions(entries: description.actions.sharedLineMapForTest)))
-        #endif
     }
     
     func testConvertsLapSummaryExampleJson() throws {
@@ -290,7 +276,7 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
     func testReceivesRestApiEventWhenUncompressed() async throws {
         
         // Arrange
-        let notificationParameters = self.testNotificationParameters(compressed: false).map { [$0] }
+        let notificationParameters = self.testNotificationParameters(compressed: false).map { $0.isEmpty ? [] : [$0] }
         let notifications = self.testNotificationParameters(compressed: false).map {
             (self.restApiEventNotifiationId, [$0], false)
         }
@@ -473,9 +459,9 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         XCTAssertEqual(requestIds, REST_REQUEST_TRANSPORT_POLICY_CASE_IDS, "rest-request-transport-policy")
         XCTAssertEqual(expectedCaseIds, REST_REQUEST_TRANSPORT_POLICY_CASE_IDS, "rest-request-transport-policy")
         XCTAssertEqual(expected["migrationRequirement"] as? String, REST_REQUEST_TRANSPORT_MIGRATION_REQUIREMENT, "rest-request-transport-policy")
-        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "rest-request-transport-policy"), ["com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest", "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "rest-request-transport-policy"), ["com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "rest-request-transport-policy"), ["PolarDeviceRestApiTests"])
-        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "rest-request-transport-policy"), ["com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.RestRequestTransportPolicyCommonTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "rest-request-transport-policy"), ["com.polar.sharedtest.RestRequestTransportPolicyCommonTest"])
     }
 
     func testRestRequestTransportReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
@@ -583,26 +569,6 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
             }
     }
 
-}
-
-private func sharedListForTest(_ value: String) -> [String] {
-    if value.isEmpty { return [] }
-    return value.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
-}
-
-private func sharedMapForTest(_ value: String) -> [String: String] {
-    if value.isEmpty { return [:] }
-    return Dictionary(uniqueKeysWithValues: value.split(separator: "\n", omittingEmptySubsequences: false).compactMap { line in
-        let parts = line.split(separator: "\t", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
-        guard parts.count == 2 else { return nil }
-        return (parts[0], parts[1])
-    })
-}
-
-private extension Dictionary where Key == String, Value == String {
-    var sharedLineMapForTest: String {
-        return map { key, value in "\(key)\t\(value)" }.joined(separator: "\n")
-    }
 }
 
 private let REST_SERVICE_MAPPING_READINESS_POLICY_VECTOR_PATHS = [
