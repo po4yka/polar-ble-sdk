@@ -1,6 +1,9 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
 private let ACTIVITY_DIRECTORY = "ACT/"
@@ -16,7 +19,7 @@ private let TAG = "PolarActivityUtils"
 
 internal class PolarActivityUtils {
     static func activityDirectoryReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        return activityReadOperation(id: "activity-read-directory", path: "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(ACTIVITY_DIRECTORY)")
+        return activityReadOperation(id: "activity-read-directory", path: activityDirectoryPath(day: dateFormat.string(from: date)))
     }
 
     static func activitySampleFileReadOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
@@ -24,7 +27,23 @@ internal class PolarActivityUtils {
     }
 
     static func dailySummaryReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        return activityReadOperation(id: "daily-summary-read", path: "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(DAILY_SUMMARY_DIRECTORY)\(DAILY_SUMMARY_PROTO)")
+        return activityReadOperation(id: "daily-summary-read", path: dailySummaryPath(day: dateFormat.string(from: date)))
+    }
+
+    private static func activityDirectoryPath(day: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.activityDirectoryPath(day: day)
+        #else
+        return "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(ACTIVITY_DIRECTORY)"
+        #endif
+    }
+
+    private static func dailySummaryPath(day: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.dailySummaryPath(day: day)
+        #else
+        return "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(DAILY_SUMMARY_DIRECTORY)\(DAILY_SUMMARY_PROTO)"
+        #endif
     }
 
     private static func activityReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {

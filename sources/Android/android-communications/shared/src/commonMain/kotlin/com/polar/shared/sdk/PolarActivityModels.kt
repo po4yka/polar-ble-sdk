@@ -17,6 +17,16 @@ enum class PolarActivityClassName(val value: Int) {
     }
 }
 
+object PolarActivityModels {
+    fun activityDirectoryPath(day: String): String {
+        return "/U/0/$day/ACT/"
+    }
+
+    fun dailySummaryPath(day: String): String {
+        return "/U/0/$day/DSUM/DSUM.BPB"
+    }
+}
+
 enum class PolarAutomaticHrTriggerName(val value: Int) {
     TRIGGER_TYPE_HIGH_ACTIVITY(1),
     TRIGGER_TYPE_LOW_ACTIVITY(2),

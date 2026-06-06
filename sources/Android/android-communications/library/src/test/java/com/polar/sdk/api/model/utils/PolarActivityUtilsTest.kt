@@ -12,6 +12,7 @@ import com.polar.sdk.api.model.activity.PolarDailyBalanceFeedBack
 import com.polar.sdk.api.model.activity.PolarReadinessForSpeedAndStrengthTraining
 import com.polar.sdk.impl.utils.CaloriesType
 import com.polar.sdk.impl.utils.PolarActivityUtils
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import fi.polar.remote.representation.protobuf.ActivitySamples.PbActivityInfo
 import fi.polar.remote.representation.protobuf.ActivitySamples.PbActivitySamples
 import fi.polar.remote.representation.protobuf.DailySummary
@@ -51,6 +52,8 @@ class PolarActivityUtilsTest {
     fun `activity read headers use shared file facade planning`() {
         val date = LocalDate.of(2026, 1, 2)
 
+        Assert.assertEquals("/U/0/20260102/ACT/", PolarRuntimePlannerAdapter.activityDirectoryPath("20260102"))
+        Assert.assertEquals("/U/0/20260102/DSUM/DSUM.BPB", PolarRuntimePlannerAdapter.dailySummaryPath("20260102"))
         Assert.assertEquals(
             PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/ACT/",
             PolarActivityUtils.activityDirectoryReadOperation(date)

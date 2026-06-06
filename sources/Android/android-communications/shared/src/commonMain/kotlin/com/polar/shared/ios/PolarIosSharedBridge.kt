@@ -54,6 +54,7 @@ import com.polar.shared.sdk.PolarKvtxMalformedScriptException
 import com.polar.shared.sdk.PolarKvtxScriptCodec
 import com.polar.shared.sdk.PolarOfflineRecordingModels
 import com.polar.shared.sdk.PolarActivityClassName
+import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarAutomaticHrTriggerName
 import com.polar.shared.sdk.PolarDailyBalanceFeedbackName
 import com.polar.shared.sdk.PolarPpiIntervalStatusName
@@ -741,6 +742,14 @@ object PolarIosSharedBridge {
 
     fun activityClassName(value: Int): String? {
         return PolarActivityClassName.fromValue(value)?.name
+    }
+
+    fun activityDirectoryPath(day: String): String {
+        return PolarActivityModels.activityDirectoryPath(day)
+    }
+
+    fun dailySummaryPath(day: String): String {
+        return PolarActivityModels.dailySummaryPath(day)
     }
 
     fun dailyBalanceFeedbackName(value: Int): String? {

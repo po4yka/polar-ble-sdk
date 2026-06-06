@@ -2,6 +2,7 @@ package com.polar.sharedtest
 
 import com.polar.shared.sdk.PolarAutomaticHrTriggerName
 import com.polar.shared.sdk.PolarActivityClassName
+import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarDailyBalanceFeedbackName
 import com.polar.shared.sdk.PolarPpiIntervalStatusName
 import com.polar.shared.sdk.PolarPpiMovementName
@@ -107,7 +108,9 @@ class ActivitySummaryCommonPolicyTest {
         val proto = input.objectValue("proto")
         val expected = vector.objectValue("expected")
 
-        assertEquals(input.stringValue("expectedPath"), dsumPath(input.stringValue("requestDate")), vector.stringValue("id"))
+        assertEquals(input.stringValue("expectedPath"), PolarActivityModels.dailySummaryPath(input.stringValue("requestDate").replace("-", "")), vector.stringValue("id"))
+        assertEquals("/U/0/20260102/ACT/", PolarActivityModels.activityDirectoryPath("20260102"), vector.stringValue("id"))
+        assertEquals("/U/0/20260102/DSUM/DSUM.BPB", PolarActivityModels.dailySummaryPath("20260102"), vector.stringValue("id"))
         assertEquals(expected.stringValue("date"), dateString(proto.objectValue("date")), vector.stringValue("id"))
         assertEquals(expected.intValue("activityCalories"), proto.intValue("activityCalories"), vector.stringValue("id"))
         assertEquals(expected.intValue("trainingCalories"), proto.intValue("trainingCalories"), vector.stringValue("id"))
@@ -208,10 +211,6 @@ class ActivitySummaryCommonPolicyTest {
     private fun decodePpiStatus(value: Int): PpiStatus {
         val status = PolarPpiStatusNames.fromStatusByte(value) ?: error("Unexpected PPI status $value")
         return PpiStatus(status.skinContact, status.movement, status.intervalStatus)
-    }
-
-    private fun dsumPath(requestDate: String): String {
-        return "/U/0/${requestDate.replace("-", "")}/DSUM/DSUM.BPB"
     }
 
     private fun localDateTimeString(dateTime: String): String {

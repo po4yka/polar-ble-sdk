@@ -25,10 +25,6 @@ import java.io.ByteArrayOutputStream
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-private const val ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private const val ACTIVITY_DIRECTORY = "ACT/"
-private const val DAILY_SUMMARY_DIRECTORY = "DSUM/"
-private const val DAILY_SUMMARY_PROTO = "DSUM.BPB"
 private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 private const val TAG = "PolarActivityUtils"
 
@@ -38,7 +34,7 @@ enum class CaloriesType {
 
 internal object PolarActivityUtils {
     internal fun activityDirectoryReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        return activityReadOperation("activity-read-directory", "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$ACTIVITY_DIRECTORY")
+        return activityReadOperation("activity-read-directory", PolarRuntimePlannerAdapter.activityDirectoryPath(date.format(dateFormatter)))
     }
 
     internal fun activitySampleFileReadOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
@@ -46,7 +42,7 @@ internal object PolarActivityUtils {
     }
 
     internal fun dailySummaryReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        return activityReadOperation("daily-summary-read", "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$DAILY_SUMMARY_DIRECTORY$DAILY_SUMMARY_PROTO")
+        return activityReadOperation("daily-summary-read", PolarRuntimePlannerAdapter.dailySummaryPath(date.format(dateFormatter)))
     }
 
     private fun activityReadOperation(id: String, path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
