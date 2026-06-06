@@ -34,7 +34,7 @@ enum class PolarActivityClass(val value: Int) {
         infix fun from(value: Int): PolarActivityClass? {
             return PolarActivityClassName.fromValue(value)?.let { sharedName ->
                 entries.firstOrNull { activityClass -> activityClass.name == sharedName.name }
-            } ?: entries.firstOrNull { it.value == value }
+            }
         }
     }
 }

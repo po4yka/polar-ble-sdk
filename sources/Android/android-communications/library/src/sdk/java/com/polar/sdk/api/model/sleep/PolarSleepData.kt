@@ -23,7 +23,7 @@ enum class SleepWakeState(val value: Int) {
         infix fun from(value: Int): SleepWakeState? {
             return PolarSleepWakeStateName.fromValue(value)?.let { sharedName ->
                 entries.firstOrNull { state -> state.name == sharedName.name }
-            } ?: entries.firstOrNull { it.value == value }
+            }
         }
     }
 }
@@ -40,7 +40,7 @@ enum class SleepRating(val value: Int) {
         infix fun from(value: Int): SleepRating? {
             return PolarSleepRatingName.fromValue(value)?.let { sharedName ->
                 entries.firstOrNull { rating -> rating.name == sharedName.name }
-            } ?: entries.firstOrNull { it.value == value }
+            }
         }
     }
 }

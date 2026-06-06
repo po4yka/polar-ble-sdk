@@ -122,7 +122,7 @@ enum class SkinContact(val value: Int) {
         infix fun from(value: Int): SkinContact? =
             PolarPpiSkinContactName.fromValue(value)?.let { sharedName ->
                 entries.firstOrNull { status -> status.name == sharedName.name }
-            } ?: entries.firstOrNull { it.value == value }
+            }
     }
 }
 
@@ -134,7 +134,7 @@ enum class Movement(val value: Int) {
         infix fun from(value: Int): Movement? =
             PolarPpiMovementName.fromValue(value)?.let { sharedName ->
                 entries.firstOrNull { status -> status.name == sharedName.name }
-            } ?: entries.firstOrNull { it.value == value }
+            }
     }
 }
 
@@ -146,6 +146,6 @@ enum class IntervalStatus(val value: Int) {
         infix fun from(value: Int): IntervalStatus? =
             PolarPpiIntervalStatusName.fromValue(value)?.let { sharedName ->
                 entries.firstOrNull { status -> status.name == sharedName.name }
-            } ?: entries.firstOrNull { it.value == value }
+            }
     }
 }
