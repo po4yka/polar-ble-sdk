@@ -336,6 +336,21 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         XCTAssertEqual(result, notificationParameters)
     }
 
+    func testReceivesRestApiEventUsesSharedD2hPlannerToSelectRestEvents() async throws {
+        let payload = #"{"path":"/v1/users","operation":"created"}"#.data(using: .utf8)!
+        XCTAssertEqual("REST_API_EVENT", PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Protocol_PbPFtpDevToHostNotification.restApiEvent.rawValue))
+        XCTAssertEqual("FILESYSTEM_MODIFIED", PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Protocol_PbPFtpDevToHostNotification.filesystemModified.rawValue))
+        mockClient.receiveNotificationCalls.append((Protocol_PbPFtpDevToHostNotification.filesystemModified.rawValue, [Data([0x0a, 0x02, 0x08, 0x02])], false))
+        mockClient.receiveNotificationCalls.append((restApiEventNotifiationId, [payload], false))
+
+        var result: [[Data]] = []
+        for try await batch in mockClient.receiveRestApiEventData(identifier: UUID().uuidString) {
+            result.append(batch)
+        }
+
+        XCTAssertEqual([[payload]], result)
+    }
+
     func testRestServiceGoldenVectorsMapJsonToPublicModels() throws {
         let vectors = try loadRestServiceGoldenVectors()
         XCTAssertFalse(vectors.isEmpty, "Expected REST service golden vectors")

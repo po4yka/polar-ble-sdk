@@ -13,7 +13,7 @@ extension BlePsFtpClient {
             Task {
                 do {
                     for try await notification in self.waitNotification() {
-                        guard notification.id == Protocol_PbPFtpDevToHostNotification.restApiEvent.rawValue else { continue }
+                        guard PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Int(notification.id)) == "REST_API_EVENT" else { continue }
                         guard let params = try? Protocol_PbPftpDHRestApiEvent(serializedBytes: notification.parameters as Data) else { continue }
                         let events: [Data]
                         if params.hasUncompressed && params.uncompressed {
