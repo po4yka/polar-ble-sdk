@@ -1678,6 +1678,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         client.sendNotification(PolarRuntimePlannerAdapter.notificationValue(PolarRuntimePlannerAdapter.notificationNames(plan).single()), params.build().toByteArray())
     }
 
+    @Suppress("DEPRECATION")
+    private suspend fun doFirmwareUpdateFactoryReset(identifier: String) {
+        doFactoryReset(identifier, preservePairingInformation = true)
+    }
+
     override suspend fun doFactoryReset(identifier: String) {
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
@@ -2356,7 +2361,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 backupList = backupManager.backupDevice()
             }
             emit(FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Performing factory reset"))
-            doFactoryReset(identifier, true)
+            doFirmwareUpdateFactoryReset(identifier)
             emit(FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Reconnecting after factory reset"))
             waitDeviceSessionWithPftpToOpen(identifier, 6 * 60L, waitForDeviceDownSeconds = 10L)
             sendInitializationAndStartSyncNotifications(identifier)
