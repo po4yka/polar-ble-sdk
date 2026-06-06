@@ -47,6 +47,24 @@ enum PolarStoredDataOfflineRuntimePlanner {
         #endif
     }
 
+    static func storedDataCleanupRemovePaths(kind: String, rootPath: String, cutoffDate: String? = nil, entries: [String] = [], includePrefixes: [String] = [], includeSuffixes: [String] = []) -> [String]? {
+        #if canImport(PolarBleSdkShared)
+        let commandsCsv = PolarIosSharedBridge.shared.planRuntimeStoredDataCleanupOperations(
+            kind: kind,
+            rootPath: rootPath,
+            cutoffDate: cutoffDate ?? "",
+            entriesCsv: entries.joined(separator: ","),
+            includePrefixesCsv: includePrefixes.joined(separator: ","),
+            includeSuffixesCsv: includeSuffixes.joined(separator: ",")
+        )
+        return commandsCsv.split(separator: ",").compactMap { command in
+            command.hasPrefix("REMOVE:") ? String(command.dropFirst("REMOVE:".count)) : nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
     static func storedDataDateIsOnOrBefore(day: String, cutoffDate: String) -> Bool? {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.storedDataDateIsOnOrBefore(day: day, cutoffDate: cutoffDate)

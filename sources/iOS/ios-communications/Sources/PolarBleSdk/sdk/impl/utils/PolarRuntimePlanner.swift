@@ -175,6 +175,10 @@ enum PolarRuntimePlanner {
         return PolarStoredDataOfflineRuntimePlanner.storedDataCleanupRootPath(dataType: dataType, defaultRoot: defaultRoot)
     }
 
+    static func storedDataCleanupRemovePaths(kind: String, rootPath: String, cutoffDate: String? = nil, entries: [String] = [], includePrefixes: [String] = [], includeSuffixes: [String] = []) -> [String]? {
+        return PolarStoredDataOfflineRuntimePlanner.storedDataCleanupRemovePaths(kind: kind, rootPath: rootPath, cutoffDate: cutoffDate, entries: entries, includePrefixes: includePrefixes, includeSuffixes: includeSuffixes)
+    }
+
     static func storedDataDateIsOnOrBefore(day: String, cutoffDate: String) -> Bool? {
         return PolarStoredDataOfflineRuntimePlanner.storedDataDateIsOnOrBefore(day: day, cutoffDate: cutoffDate)
     }

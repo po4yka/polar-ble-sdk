@@ -2055,6 +2055,8 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(true, PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260531", cutoffDate: "20260531"))
         XCTAssertEqual(false, PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260601", cutoffDate: "20260531"))
         XCTAssertEqual(["/U/0/20260530/ACT/", "/U/0/20260530/"], PolarRuntimePlanner.storedDataEmptyParentDirectories(filePath: "/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash: true))
+        XCTAssertEqual(["/TRC10.BIN"], PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/", entries: ["TRC10.BIN", "ABC10.BIN", "TRC10.TXT"], includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(["/SDLOGS/A.SLG", "/SDLOGS/B.TXT"], PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/SDLOGS", entries: ["A.SLG", "B.TXT", "C.BPB"], includeSuffixes: [".SLG", ".TXT"]))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif

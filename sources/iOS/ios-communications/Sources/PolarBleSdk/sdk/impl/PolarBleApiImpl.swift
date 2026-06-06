@@ -2773,7 +2773,9 @@ extension PolarBleApiImpl: PolarBleApi  {
                     deletedFiles.append(file)
                 }
             case .SDLOGS:
-                _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: file)
+                let entry = file.hasPrefix("\(folderPath)/") ? String(file.dropFirst(folderPath.count + 1)) : file
+                let plannedFile = PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: folderPath, entries: [entry], includeSuffixes: [".SLG", ".TXT"])?.last ?? file
+                _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: plannedFile)
                 deletedFiles.append(file)
             case .ACTIVITY, .DAILY_SUMMARY, .NIGHTLY_RECOVERY, .SLEEP, .SKIN_CONTACT_CHANGES, .SKINTEMP, .SLEEP_SCORE:
                 let day = String(file.split(separator: "/")[2])
@@ -2855,8 +2857,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         }
         PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/")
         for try await file in fileUtils.listFiles(identifier: identifier, folderPath: "/", condition: condition) {
-            _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: file)
-            BleLogger.trace("Successfully deleted telemetry data \(file) from device \(identifier).")
+            let entry = file.hasPrefix("/") ? String(file.dropFirst()) : file
+            let plannedFile = PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/", entries: [entry], includePrefixes: ["TRC"], includeSuffixes: [".BIN"])?.last ?? file
+            _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: plannedFile)
+            BleLogger.trace("Successfully deleted telemetry data \(plannedFile) from device \(identifier).")
         }
     }
 
