@@ -81,8 +81,7 @@ class PolarFileUtils {
     }
 
     func checkIfDirectoryIsEmpty(directoryPath: String, client: BlePsFtpClient) async throws -> Bool {
-        var path = directoryPath
-        if !path.hasSuffix("/") { path = path + "/" }
+        let path = PolarRuntimePlanner.normalizeFileListFolderPath(directoryPath) ?? Self.fallbackNormalizedFileListFolderPath(directoryPath)
         var operation = Protocol_PbPFtpOperation()
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "list-low-level-directory-success", command: "GET", path: path)
         operation.command = plannedOperation?.command ?? .get

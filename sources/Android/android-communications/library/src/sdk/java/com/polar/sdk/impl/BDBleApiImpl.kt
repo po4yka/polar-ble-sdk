@@ -1470,10 +1470,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     private suspend fun checkIfDirectoryIsEmpty(directoryPath: String, client: BlePsFtpClient): Boolean {
-        var path = directoryPath
-        if (!path.endsWith("/")) {
-            path = path.plus("/")
-        }
+        val path = PolarRuntimePlannerAdapter.normalizeFileListFolderPath(directoryPath)
         val readOperation = offlineRecordingDirectoryReadOperation(path)
         val builder = PftpRequest.PbPFtpOperation.newBuilder()
         builder.command = readOperation.first

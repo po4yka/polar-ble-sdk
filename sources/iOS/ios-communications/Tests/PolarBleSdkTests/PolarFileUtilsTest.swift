@@ -115,6 +115,7 @@ final class PolarFileUtilsTest: XCTestCase {
         mockClient.requestReturnValueClosure = { header in
             let op = try Protocol_PbPFtpOperation(serializedBytes: header)
             XCTAssertEqual(op.command, .get)
+            XCTAssertEqual(op.path, "/U/0/20260101/")
             let dir = Protocol_PbPFtpDirectory.with { $0.entries = responses[op.path, default: []] }
             return try dir.serializedData()
         }
