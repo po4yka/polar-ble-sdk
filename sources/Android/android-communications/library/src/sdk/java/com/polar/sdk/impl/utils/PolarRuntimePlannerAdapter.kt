@@ -19,6 +19,7 @@ import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepModels
 import com.polar.shared.sdk.PolarSpo2Models
+import com.polar.shared.sdk.PolarTrainingSessionModels
 import protocol.PftpNotification
 import protocol.PftpRequest
 
@@ -369,6 +370,14 @@ internal object PolarRuntimePlannerAdapter {
 
     fun spo2TestResultPath(directoryPath: String, subDirectoryName: String): String {
         return PolarSpo2Models.testResultPath(directoryPath, subDirectoryName)
+    }
+
+    fun trainingSessionDeleteParentPath(referencePath: String): String {
+        return PolarTrainingSessionModels.deleteParentPath(referencePath)
+    }
+
+    fun trainingSessionDeleteRemovePath(referencePath: String, parentEntryCount: Int): String {
+        return PolarTrainingSessionModels.deleteRemovePath(referencePath, parentEntryCount)
     }
 
     fun planBackupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success"): Pair<PftpRequest.PbPFtpOperation.Command, String>? {

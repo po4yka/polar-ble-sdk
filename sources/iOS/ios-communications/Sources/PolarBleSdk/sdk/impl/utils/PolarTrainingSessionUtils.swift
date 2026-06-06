@@ -48,14 +48,30 @@ internal class PolarTrainingSessionUtils {
     }
 
     static func trainingSessionDeleteParentReadOperation(reference: PolarTrainingSessionReference) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        let components = reference.path.split(separator: "/")
-        return trainingSessionFileOperation(id: "training-session-delete-read-parent", command: "GET", path: "/U/0/" + components[2] + "/E/")
+        return trainingSessionFileOperation(id: "training-session-delete-read-parent", command: "GET", path: trainingSessionDeleteParentPath(referencePath: reference.path))
     }
 
     static func trainingSessionDeleteRemoveOperation(reference: PolarTrainingSessionReference, parentEntryCount: Int) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
-        let components = reference.path.split(separator: "/")
-        let removePath = parentEntryCount <= 1 ? "/U/0/" + components[2] + "/E/" : "/U/0/" + components[2] + "/E/" + components[4] + "/"
+        let removePath = trainingSessionDeleteRemovePath(referencePath: reference.path, parentEntryCount: parentEntryCount)
         return trainingSessionFileOperation(id: "training-session-delete-remove", command: "REMOVE", path: removePath)
+    }
+
+    private static func trainingSessionDeleteParentPath(referencePath: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.trainingSessionDeleteParentPath(referencePath: referencePath)
+        #else
+        let components = referencePath.split(separator: "/")
+        return "/U/0/" + components[2] + "/E/"
+        #endif
+    }
+
+    private static func trainingSessionDeleteRemovePath(referencePath: String, parentEntryCount: Int) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.trainingSessionDeleteRemovePath(referencePath: referencePath, parentEntryCount: Int32(parentEntryCount))
+        #else
+        let components = referencePath.split(separator: "/")
+        return parentEntryCount <= 1 ? "/U/0/" + components[2] + "/E/" : "/U/0/" + components[2] + "/E/" + components[4] + "/"
+        #endif
     }
 
     private static func trainingSessionFileOperation(id: String, command: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {

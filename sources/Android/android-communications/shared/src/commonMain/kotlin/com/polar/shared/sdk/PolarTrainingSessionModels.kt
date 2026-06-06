@@ -128,6 +128,20 @@ object PolarTrainingSessionModels {
         }
     }
 
+    fun deleteParentPath(referencePath: String): String {
+        val components = referencePath.split("/")
+        return "$ROOT_PATH${components[3]}/E/"
+    }
+
+    fun deleteRemovePath(referencePath: String, parentEntryCount: Int): String {
+        val components = referencePath.split("/")
+        return if (parentEntryCount <= 1) {
+            "$ROOT_PATH${components[3]}/E/"
+        } else {
+            "$ROOT_PATH${components[3]}/E/${components[5]}/"
+        }
+    }
+
     fun assemblePayloadReadResult(reference: PolarTrainingSessionReference, responsesByPath: Map<String, PolarTrainingPayloadResponse>, fetchOrder: List<String> = payloadFetchOrder(reference)): PolarTrainingPayloadReadResult {
         val exercises = reference.exercises.associate { exercise ->
             exercise.index to MutableTrainingPayloadExercise(index = exercise.index)

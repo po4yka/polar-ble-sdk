@@ -76,6 +76,9 @@ class TrainingSessionCommonPolicyTest {
         val result = PolarTrainingSessionModels.assemblePayloadReadResult(sharedReference, sharedResponses, fetchOrder)
 
         assertEquals(expected.stringArrayValue("fetchOrder"), fetchOrder, vector.stringValue("id"))
+        assertEquals("/U/0/20250101/E/", PolarTrainingSessionModels.deleteParentPath(sharedReference.path), vector.stringValue("id"))
+        assertEquals("/U/0/20250101/E/", PolarTrainingSessionModels.deleteRemovePath(sharedReference.path, parentEntryCount = 1), vector.stringValue("id"))
+        assertEquals("/U/0/20250101/E/101200/", PolarTrainingSessionModels.deleteRemovePath(sharedReference.path, parentEntryCount = 2), vector.stringValue("id"))
         val expectedProgress = expected.objectValue("progress")
         assertEquals(expectedProgress.intValue("totalBytes"), result.totalBytes, vector.stringValue("id"))
         assertEquals(expectedProgress.intValue("completedBytes"), result.completedBytes, vector.stringValue("id"))

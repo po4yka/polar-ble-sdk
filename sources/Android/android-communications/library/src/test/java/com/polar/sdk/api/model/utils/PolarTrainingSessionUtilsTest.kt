@@ -6,6 +6,7 @@ import com.google.protobuf.ByteString
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionDataTypes
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionReference
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarTrainingSessionUtils
 import fi.polar.remote.representation.protobuf.Structures
 import fi.polar.remote.representation.protobuf.Training
@@ -60,6 +61,9 @@ class PolarTrainingSessionUtilsTest {
             PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/E/123456/00/BASE.BPB",
             PolarTrainingSessionUtils.trainingSessionExerciseFileReadOperation("/U/0/20260102/E/123456/00/BASE.BPB")
         )
+        assertEquals("/U/0/20260102/E/", PolarRuntimePlannerAdapter.trainingSessionDeleteParentPath(reference.path))
+        assertEquals("/U/0/20260102/E/", PolarRuntimePlannerAdapter.trainingSessionDeleteRemovePath(reference.path, parentEntryCount = 1))
+        assertEquals("/U/0/20260102/E/123456/", PolarRuntimePlannerAdapter.trainingSessionDeleteRemovePath(reference.path, parentEntryCount = 2))
         assertEquals(
             PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/E/",
             PolarTrainingSessionUtils.trainingSessionDeleteParentReadOperation(reference)

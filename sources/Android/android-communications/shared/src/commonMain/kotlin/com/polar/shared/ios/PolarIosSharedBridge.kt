@@ -300,6 +300,14 @@ object PolarIosSharedBridge {
         return PolarTrainingSessionModels.payloadFetchOrder(reference).joinToString("\n")
     }
 
+    fun trainingSessionDeleteParentPath(referencePath: String): String {
+        return PolarTrainingSessionModels.deleteParentPath(referencePath)
+    }
+
+    fun trainingSessionDeleteRemovePath(referencePath: String, parentEntryCount: Int): String {
+        return PolarTrainingSessionModels.deleteRemovePath(referencePath, parentEntryCount)
+    }
+
     fun ecgType0Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
         val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
         if (bytes.size < 10) return null

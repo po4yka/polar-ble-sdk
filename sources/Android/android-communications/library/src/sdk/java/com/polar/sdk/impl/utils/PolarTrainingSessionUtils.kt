@@ -27,7 +27,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.zip.GZIPInputStream
 
-private const val ARABICA_USER_ROOT_FOLDER = "/U/0/"
+private const val ARABICA_USER_ROOT_FOLDER = PolarTrainingSessionModels.ROOT_PATH
 private const val TAG = "PolarTrainingSessionUtils"
 
 internal object PolarTrainingSessionUtils {
@@ -47,8 +47,7 @@ internal object PolarTrainingSessionUtils {
     }
 
     internal fun trainingSessionDeleteParentReadOperation(reference: PolarTrainingSessionReference): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        val components = reference.path.split("/").toTypedArray()
-        val exerciseParent = ARABICA_USER_ROOT_FOLDER + components[3] + "/E/"
+        val exerciseParent = PolarRuntimePlannerAdapter.trainingSessionDeleteParentPath(reference.path)
         return trainingSessionFileOperation("training-session-delete-read-parent", "GET", exerciseParent)
     }
 
@@ -56,12 +55,7 @@ internal object PolarTrainingSessionUtils {
         reference: PolarTrainingSessionReference,
         parentEntryCount: Int
     ): Pair<PftpRequest.PbPFtpOperation.Command, String> {
-        val components = reference.path.split("/").toTypedArray()
-        val removePath = if (parentEntryCount <= 1) {
-            "/U/0/${components[3]}/E/"
-        } else {
-            "/U/0/${components[3]}/E/${components[5]}/"
-        }
+        val removePath = PolarRuntimePlannerAdapter.trainingSessionDeleteRemovePath(reference.path, parentEntryCount)
         return trainingSessionFileOperation("training-session-delete-remove", "REMOVE", removePath)
     }
 
