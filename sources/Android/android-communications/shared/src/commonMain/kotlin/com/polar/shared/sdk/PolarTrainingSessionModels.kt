@@ -106,6 +106,21 @@ object PolarTrainingSessionModels {
         }
     }
 
+    fun payloadParserCase(fileName: String): PolarTrainingPayloadParserCase? {
+        return when (fileName) {
+            "TSESS.BPB" -> PolarTrainingPayloadParserCase(fileName, "PbTrainingSession", "protobuf")
+            "BASE.BPB" -> PolarTrainingPayloadParserCase(fileName, "PbExerciseBase", "protobuf")
+            "ROUTE.BPB" -> PolarTrainingPayloadParserCase(fileName, "PbExerciseRouteSamples", "protobuf")
+            "ROUTE.GZB" -> PolarTrainingPayloadParserCase(fileName, "PbExerciseRouteSamples", "gzip-protobuf")
+            "ROUTE2.BPB" -> PolarTrainingPayloadParserCase(fileName, "PbExerciseRouteSamples2", "protobuf")
+            "ROUTE2.GZB" -> PolarTrainingPayloadParserCase(fileName, "PbExerciseRouteSamples2", "gzip-protobuf")
+            "SAMPLES.BPB" -> PolarTrainingPayloadParserCase(fileName, "PbExerciseSamples", "protobuf")
+            "SAMPLES.GZB" -> PolarTrainingPayloadParserCase(fileName, "PbExerciseSamples", "gzip-protobuf")
+            "SAMPLES2.GZB" -> PolarTrainingPayloadParserCase(fileName, "PbExerciseSamples2", "gzip-protobuf")
+            else -> null
+        }
+    }
+
     fun payloadFetchOrder(reference: PolarTrainingSessionReference): List<String> {
         return listOf(reference.path) + reference.exercises.flatMap { exercise ->
             val basePath = exercise.androidPath.substringBeforeLast("/")
@@ -244,6 +259,12 @@ data class PolarTrainingPayloadFields(
     val calories: Int? = null,
     val heartRateSamples: List<Int> = emptyList(),
     val intervalledSampleLists: List<PolarTrainingIntervalledSampleList> = emptyList()
+)
+
+data class PolarTrainingPayloadParserCase(
+    val fileName: String,
+    val parser: String,
+    val encoding: String
 )
 
 data class PolarTrainingIntervalledSampleList(

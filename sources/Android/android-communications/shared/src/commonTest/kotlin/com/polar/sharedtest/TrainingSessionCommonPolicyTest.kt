@@ -4,6 +4,7 @@ import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingExerciseReference
 import com.polar.shared.sdk.PolarTrainingIntervalledSampleList
 import com.polar.shared.sdk.PolarTrainingPayloadFields
+import com.polar.shared.sdk.PolarTrainingPayloadParserCase
 import com.polar.shared.sdk.PolarTrainingPayloadResponse
 import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarTrainingSessionModels
@@ -122,6 +123,7 @@ class TrainingSessionCommonPolicyTest {
         val parserCases = vector.objectValue("input").objectArray("cases").map { testCase ->
             ParserCase(
                 id = testCase.stringValue("id"),
+                fileName = testCase.stringValue("fileName"),
                 parser = testCase.stringValue("parser"),
                 encoding = testCase.stringValue("encoding"),
                 fields = testCase.stringArrayValue("expectedFields")
@@ -147,10 +149,13 @@ class TrainingSessionCommonPolicyTest {
 
         parserCases.forEach { parserCase ->
             val expected = expectedCases.getValue(parserCase.id)
+            val planned: PolarTrainingPayloadParserCase = requireNotNull(PolarTrainingSessionModels.payloadParserCase(parserCase.fileName)) { parserCase.id }
 
             assertEquals(expected.stringValue("parser"), parserCase.parser, parserCase.id)
             assertEquals(expected.stringValue("encoding"), parserCase.encoding, parserCase.id)
             assertEquals(expected.stringArrayValue("fields"), parserCase.fields, parserCase.id)
+            assertEquals(parserCase.parser, planned.parser, parserCase.id)
+            assertEquals(parserCase.encoding, planned.encoding, parserCase.id)
         }
 
         val gzipCases = parserCases.filter { parserCase -> parserCase.encoding == "gzip-protobuf" }
@@ -379,6 +384,7 @@ class TrainingSessionCommonPolicyTest {
 
     private data class ParserCase(
         val id: String,
+        val fileName: String,
         val parser: String,
         val encoding: String,
         val fields: List<String>

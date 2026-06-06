@@ -3343,6 +3343,8 @@ class GoldenVectorMigrationPolicyTest {
             "trainingSessionMissingExerciseFileGoldenVectorDefinesExecutableCommonPlatformPolicy",
             "trainingSessionPayloadReadGoldenVectorDefinesExecutableCommonProgressMalformedAndUnknownSamplePolicy",
             "trainingSessionPayloadParserGoldenVectorDefinesExecutableCommonParserOwnershipPolicy",
+            "PolarTrainingPayloadParserCase",
+            "PolarTrainingSessionModels.payloadParserCase",
             "trainingSessionReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/training-session/training-session-readiness.json",
             "training-session-readiness",
