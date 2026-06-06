@@ -256,6 +256,14 @@ class PolarFirmwareUpdateUtilsTest {
     }
 
     @Test
+    fun `firmware payload file names use shared skip and ordering policy`() {
+        Assert.assertEquals(
+            listOf("APPUPDAT.BIN", "BTUPDAT.BIN", "README.TXT", "SYSUPDAT.IMG"),
+            PolarRuntimePlannerAdapter.firmwarePayloadFileNames(listOf("readme.txt", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN", "README.TXT"))
+        )
+    }
+
+    @Test
     fun `firmware golden vectors follow neutral KMP vector shape`() {
         loadFirmwareUpdateVectors().forEach { vector ->
             val id = vector.get("id").asString

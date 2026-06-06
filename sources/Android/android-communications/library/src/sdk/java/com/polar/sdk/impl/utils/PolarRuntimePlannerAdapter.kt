@@ -416,6 +416,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload(fileName)
     }
 
+    fun firmwarePayloadFileNames(fileNames: List<String>): List<String> {
+        return PolarWorkflowRuntimePlanning.firmwarePayloadFileNames(fileNames)
+    }
+
     fun firmwareFileTriggersRebootWait(fileName: String): Boolean {
         return PolarWorkflowRuntimePlanning.firmwareFileTriggersRebootWait(fileName)
     }

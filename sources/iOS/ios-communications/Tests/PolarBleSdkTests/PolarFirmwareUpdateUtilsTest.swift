@@ -230,6 +230,10 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
             ["TCHUPDAT.BIN", "APPUPDAT.BIN", "BTUPDAT.BIN", "SYSUPDAT.IMG"],
             PolarRuntimePlanner.orderFirmwareFiles(["TCHUPDAT.BIN", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN"])
         )
+        XCTAssertEqual(
+            ["APPUPDAT.BIN", "BTUPDAT.BIN", "README.TXT", "SYSUPDAT.IMG"],
+            PolarRuntimePlanner.firmwarePayloadFileNames(["readme.txt", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN", "README.TXT"])
+        )
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif

@@ -205,6 +205,10 @@ object PolarWorkflowRuntimePlanning {
         return fileName != "readme.txt"
     }
 
+    fun firmwarePayloadFileNames(fileNames: List<String>): List<String> {
+        return orderFirmwareFiles(fileNames.filter(::firmwarePackageEntryIsPayload))
+    }
+
     fun firmwareFileTriggersRebootWait(fileName: String): Boolean {
         return fileName.contains("SYSUPDAT.IMG")
     }

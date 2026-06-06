@@ -2381,14 +2381,12 @@ extension PolarBleApiImpl: PolarBleApi  {
             return []
         }
         BleLogger.trace("Firmware package unzipped, total size: \(unzippedFirmwarePackage.reduce(0) { $0 + $1.value.count }) bytes")
-        let sorted = unzippedFirmwarePackage
-            .filter { (filename, _) -> Bool in
-                if !PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload(filename) { BleLogger.trace("Skipping file \(filename)"); return false }
-                return true
-            }
-            .sorted { PolarFirmwareUpdateUtils.FwFileComparator.compare($0.key, $1.key) == .orderedAscending }
-        let firmwareFilesByName = Dictionary(uniqueKeysWithValues: sorted)
-        return PolarRuntimePlanner.orderFirmwareFiles(sorted.map { $0.key }).compactMap { fileName in
+        let orderedPayloadNames = PolarRuntimePlanner.firmwarePayloadFileNames(Array(unzippedFirmwarePackage.keys))
+        let firmwareFilesByName = unzippedFirmwarePackage
+        for filename in unzippedFirmwarePackage.keys where !PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload(filename) {
+            BleLogger.trace("Skipping file \(filename)")
+        }
+        return orderedPayloadNames.compactMap { fileName in
             firmwareFilesByName[fileName].map { (fileName, $0) }
         }
     }

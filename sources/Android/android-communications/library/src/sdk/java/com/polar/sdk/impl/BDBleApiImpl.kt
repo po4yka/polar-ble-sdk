@@ -2485,7 +2485,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         }
         zipInputStream.close()
 
-        val orderedFirmwareNames = PolarRuntimePlannerAdapter.orderFirmwareFiles(firmwareFiles.map { it.first })
+        val orderedFirmwareNames = PolarRuntimePlannerAdapter.firmwarePayloadFileNames(firmwareFiles.map { it.first })
         val remainingFirmwareFiles = firmwareFiles.toMutableList()
         return orderedFirmwareNames.mapNotNull { fileName ->
             val index = remainingFirmwareFiles.indexOfFirst { it.first == fileName }

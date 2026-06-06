@@ -87,6 +87,10 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         assertEquals(true, PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload("README.TXT"))
         assertEquals(true, PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload("BTUPDAT.BIN"))
         assertEquals(true, PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload("SYSUPDAT.IMG"))
+        assertEquals(
+            listOf("APPUPDAT.BIN", "BTUPDAT.BIN", "README.TXT", "SYSUPDAT.IMG"),
+            PolarWorkflowRuntimePlanning.firmwarePayloadFileNames(listOf("readme.txt", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN", "README.TXT"))
+        )
     }
 
     @Test

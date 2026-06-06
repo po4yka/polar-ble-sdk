@@ -24,6 +24,15 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwarePayloadFileNames(_ fileNames: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        let csv = PolarIosSharedBridge.shared.planRuntimeFirmwarePayloadFileNames(fileNamesCsv: fileNames.joined(separator: ","))
+        return csv.isEmpty ? [] : csv.split(separator: ",").map(String.init)
+        #else
+        return orderFirmwareFiles(fileNames.filter { firmwarePackageEntryIsPayload($0) })
+        #endif
+    }
+
     static func firmwareWritePaths(_ fileNames: [String]) -> [String] {
         #if canImport(PolarBleSdkShared)
         let csv = PolarIosSharedBridge.shared.planRuntimeFirmwareWritePaths(fileNamesCsv: fileNames.joined(separator: ","))

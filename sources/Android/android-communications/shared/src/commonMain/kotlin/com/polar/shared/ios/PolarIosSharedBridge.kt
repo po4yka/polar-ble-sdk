@@ -1697,6 +1697,10 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNamesCsv.csvValues()).joinToString(",")
     }
 
+    fun planRuntimeFirmwarePayloadFileNames(fileNamesCsv: String): String {
+        return PolarWorkflowRuntimePlanning.firmwarePayloadFileNames(fileNamesCsv.csvValues()).joinToString(",")
+    }
+
     fun planRuntimeFirmwareWritePaths(fileNamesCsv: String): String {
         val fileNames = fileNamesCsv.csvValues()
         return PolarWorkflowRuntimePlanning.planFirmwareWorkflow(
