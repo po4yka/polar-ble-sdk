@@ -231,16 +231,17 @@ internal object PolarTrainingSessionUtils {
         for ((type, data) in results) {
             if (data.isEmpty()) continue
             try {
-                when (type) {
-                    PolarExerciseDataTypes.EXERCISE_SUMMARY -> summary = Training.PbExerciseBase.parseFrom(data)
-                    PolarExerciseDataTypes.ROUTE, PolarExerciseDataTypes.ROUTE_GZIP ->
+                when (PolarTrainingSessionModels.payloadParserCase(type.deviceFileName)?.parser) {
+                    "PbExerciseBase" -> summary = Training.PbExerciseBase.parseFrom(data)
+                    "PbExerciseRouteSamples" ->
                         route = ExerciseRouteSamples.PbExerciseRouteSamples.parseFrom(data)
-                    PolarExerciseDataTypes.ROUTE_ADVANCED_FORMAT, PolarExerciseDataTypes.ROUTE_ADVANCED_FORMAT_GZIP ->
+                    "PbExerciseRouteSamples2" ->
                         routeAdv = ExerciseRouteSamples2.PbExerciseRouteSamples2.parseFrom(data)
-                    PolarExerciseDataTypes.SAMPLES, PolarExerciseDataTypes.SAMPLES_GZIP ->
+                    "PbExerciseSamples" ->
                         samples = ExerciseSamples.PbExerciseSamples.parseFrom(data)
-                    PolarExerciseDataTypes.SAMPLES_ADVANCED_FORMAT_GZIP ->
+                    "PbExerciseSamples2" ->
                         samplesAdv = ExerciseSamples2.PbExerciseSamples2.parseFrom(data)
+                    else -> Unit
                 }
             } catch (e: Exception) {
                 BleLogger.e(TAG, "  Failed to parse $type: ${e.message}")
