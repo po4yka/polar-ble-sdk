@@ -121,6 +121,14 @@ object PolarIosSharedBridge {
         return PolarDeviceId.uuidFromDeviceId(deviceId)
     }
 
+    fun identifierClassification(identifier: String): String {
+        return when (PolarDeviceId.classifyIdentifier(identifier)) {
+            PolarDeviceId.IdentifierClassification.DeviceId -> "deviceId"
+            PolarDeviceId.IdentifierClassification.PlatformSpecific -> "platformSpecific"
+            PolarDeviceId.IdentifierClassification.Invalid -> "invalid"
+        }
+    }
+
     fun millisToNanos(milliseconds: Int): Int {
         return PolarTimeUtils.millisToNanos(milliseconds)
     }

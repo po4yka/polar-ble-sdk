@@ -2,6 +2,11 @@
 
 import Foundation
 import CoreBluetooth
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
+
+private let IOS_CORE_BLUETOOTH_UUID_REGEX = "^([0-9a-fA-F]{8})(-[0-9a-fA-F]{4}){3}-([0-9a-fA-F]{12})"
 
 class PolarServiceClientUtils {
 
@@ -105,12 +110,15 @@ class PolarServiceClientUtils {
     }
 
     func fetchSession(_ identifier: String) throws -> BleDeviceSession? {
-        if identifier.matches("^([0-9a-fA-F]{8})(-[0-9a-fA-F]{4}){3}-([0-9a-fA-F]{12})") {
+        switch PolarServiceClientIdentifierRuntimePlanner.identifierClassification(identifier) ?? fallbackIdentifierClassification(identifier) {
+        case "platformSpecific":
+            guard identifier.matches(IOS_CORE_BLUETOOTH_UUID_REGEX) else { throw PolarErrors.invalidArgument() }
             return sessionByDeviceAddress(identifier)
-        } else if identifier.matches("([0-9a-fA-F]){6,8}") {
+        case "deviceId":
             return sessionByDeviceId(identifier)
+        default:
+            throw PolarErrors.invalidArgument()
         }
-        throw PolarErrors.invalidArgument()
     }
 
     func getRSSIValue(_ identifier: String) throws -> Int {
@@ -133,4 +141,23 @@ class PolarServiceClientUtils {
     fileprivate func sessionByDeviceId(_ identifier: String) -> BleDeviceSession? {
         return listener?.allSessions().first { $0.advertisementContent.polarDeviceIdUntouched == identifier }
     }
+}
+
+private enum PolarServiceClientIdentifierRuntimePlanner {
+    static func identifierClassification(_ identifier: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.identifierClassification(identifier: identifier)
+        #else
+        return nil
+        #endif
+    }
+}
+
+private func fallbackIdentifierClassification(_ identifier: String) -> String {
+    if identifier.matches(IOS_CORE_BLUETOOTH_UUID_REGEX) {
+        return "platformSpecific"
+    } else if identifier.matches("([0-9a-fA-F]){6,8}") {
+        return "deviceId"
+    }
+    return "invalid"
 }
