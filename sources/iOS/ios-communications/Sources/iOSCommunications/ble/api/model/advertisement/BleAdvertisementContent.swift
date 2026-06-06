@@ -49,11 +49,7 @@ public class BleAdvertisementContent {
                 polarDeviceType = PolarAdvDataUtility.getDeviceNameFromAdvLocalName(advLocalName: name, withPrefixToTrim: advertisingDeviceNamePrefix)
                 if let devId = name.split(separator: " ").map(String.init).last {
                     polarDeviceIdUntouched = devId
-                    #if canImport(PolarBleSdkShared)
-                    let sharedDeviceId = polarDeviceType.isEmpty ? devId : PolarIosSharedBridge.shared.advertisementLocalNameDeviceId(localName: name, deviceNamePrefix: advertisingDeviceNamePrefix)
-                    #else
-                    let sharedDeviceId = devId
-                    #endif
+                    let sharedDeviceId = BleAdvertisementRuntimePlanner.localNameDeviceId(localName: name, deviceNamePrefix: advertisingDeviceNamePrefix, fallback: devId, useShared: !polarDeviceType.isEmpty)
                     if let deviceId = UInt32(sharedDeviceId, radix: 16) {
                         polarDeviceId = BlePolarDeviceIdUtility.assemblyFullPolarDeviceId(deviceId, width: sharedDeviceId.count)
                         polarDeviceIdInt = BlePolarDeviceIdUtility.polarDeviceIdToInt(polarDeviceId)
@@ -66,21 +62,16 @@ public class BleAdvertisementContent {
     
     func processManufacturerData(_ advertisementData: [String : Any]) {
         var didContainHrData = false
-        #if canImport(PolarBleSdkShared)
-        if let manData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data {
-            let payloadsHex = PolarIosSharedBridge.shared.polarHrAdvertisementPayloadsHex(manufacturerDataHex: manData.hexString)
-            for payloadHex in payloadsHex.split(separator: "|").map(String.init) {
-                if let payload = Data(hexBytes: payloadHex) {
-                    polarHrAdvertisementData.processPolarManufacturerData(payload)
-                    didContainHrData = true
-                }
+        if let manData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data, let sharedPayloads = BleAdvertisementRuntimePlanner.polarHrAdvertisementPayloads(manufacturerData: manData) {
+            for payload in sharedPayloads {
+                polarHrAdvertisementData.processPolarManufacturerData(payload)
+                didContainHrData = true
             }
-        }
-        if !didContainHrData {
-            polarHrAdvertisementData.resetToDefault()
-        }
-        #else
-        if let manData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data, manData.count >= 2 {
+            if !didContainHrData {
+                polarHrAdvertisementData.resetToDefault()
+            }
+            return
+        } else if let manData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data, manData.count >= 2 {
             var manufacturer: Int16 = 0
             memcpy(&manufacturer, (manData as NSData).bytes, 2)
             if manufacturer == 0x006B {
@@ -113,7 +104,6 @@ public class BleAdvertisementContent {
         if(!didContainHrData) {
             polarHrAdvertisementData.resetToDefault()
         }
-        #endif
     }
     
     public func containsService(_ service: CBUUID) -> Bool {
@@ -125,6 +115,27 @@ public class BleAdvertisementContent {
     
     func reset() {
         advData.removeAll()
+    }
+}
+
+private enum BleAdvertisementRuntimePlanner {
+    static func localNameDeviceId(localName: String, deviceNamePrefix: String, fallback: String, useShared: Bool) -> String {
+        #if canImport(PolarBleSdkShared)
+        guard useShared else { return fallback }
+        return PolarIosSharedBridge.shared.advertisementLocalNameDeviceId(localName: localName, deviceNamePrefix: deviceNamePrefix)
+        #else
+        return fallback
+        #endif
+    }
+
+    static func polarHrAdvertisementPayloads(manufacturerData: Data) -> [Data]? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.polarHrAdvertisementPayloadsHex(manufacturerDataHex: manufacturerData.hexString)
+            .split(separator: "|")
+            .compactMap { Data(hexBytes: String($0)) }
+        #else
+        return nil
+        #endif
     }
 }
 
