@@ -3011,7 +3011,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             putNotification(
                 identifier = identifier,
                 notification = "{}",
-                path = "/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]"
+                path = PolarRuntimePlannerAdapter.sleepRecordingStateSubscribePath()
             )
             emitAll(
                 receiveRestApiEvents(identifier, mapper = { jsonString ->
@@ -3027,7 +3027,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         putNotification(
             identifier = identifier,
             notification = "{}",
-            path = "/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording"
+            path = PolarRuntimePlannerAdapter.stopSleepRecordingPath()
         )
     }
 

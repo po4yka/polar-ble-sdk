@@ -1773,6 +1773,26 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(Data("{\"enabled\":true}".utf8), try data(from: v2MockClient.writeCalls[0].data))
     }
 
+    func test_stopSleepRecording_usesSharedSleepRestPaths() throws {
+        v2MockClient.requestReturnValue = .success(Data())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.stopSleepRecording(identifier: deviceId) }
+
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(PolarRuntimePlanner.sleepRestApiPath(), requestOperation.path)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(PolarRuntimePlanner.stopSleepRecordingPath(), writeOperation.path)
+        XCTAssertEqual(Data("{}".utf8), try data(from: v2MockClient.writeCalls[0].data))
+    }
+
     func test_putNotification_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7012, userInfo: [NSLocalizedDescriptionKey: "REST notification write failed"])
         v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
@@ -2061,6 +2081,9 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("success", PolarRuntimePlanner.restFacadeGet(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json"))
         XCTAssertEqual(.get, PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")?.command)
         XCTAssertEqual("/REST/SERVICE.API", PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")?.path)
+        XCTAssertEqual("/REST/SLEEP.API", PolarRuntimePlanner.sleepRestApiPath())
+        XCTAssertEqual("/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]", PolarRuntimePlanner.sleepRecordingStateSubscribePath())
+        XCTAssertEqual("/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording", PolarRuntimePlanner.stopSleepRecordingPath())
         XCTAssertEqual("success", PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102"))
         XCTAssertEqual(.put, PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102")?.command)
         XCTAssertEqual("/U/0/CUSTOM.BIN", PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102")?.path)

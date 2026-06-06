@@ -17,6 +17,7 @@ import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarFirmwareUpdateModels
+import com.polar.shared.sdk.PolarRestServiceModels
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepModels
 import com.polar.shared.sdk.PolarSpo2Models
@@ -344,6 +345,18 @@ internal object PolarRuntimePlannerAdapter {
 
     fun sleepSkinTemperaturePath(day: String): String {
         return PolarSleepModels.sleepSkinTemperaturePath(day)
+    }
+
+    fun sleepRestApiPath(): String {
+        return PolarRestServiceModels.sleepApiPath()
+    }
+
+    fun sleepRecordingStateSubscribePath(): String {
+        return PolarRestServiceModels.sleepRecordingStateSubscribePath()
+    }
+
+    fun stopSleepRecordingPath(): String {
+        return PolarRestServiceModels.stopSleepRecordingPath()
     }
 
     fun nightlyRechargePath(day: String): String {

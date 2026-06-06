@@ -791,6 +791,18 @@ object PolarIosSharedBridge {
         return PolarRestServiceModels.serviceNames(entries.lineMap()).joinToString("|")
     }
 
+    fun sleepRestApiPath(): String {
+        return PolarRestServiceModels.sleepApiPath()
+    }
+
+    fun sleepRecordingStateSubscribePath(): String {
+        return PolarRestServiceModels.sleepRecordingStateSubscribePath()
+    }
+
+    fun stopSleepRecordingPath(): String {
+        return PolarRestServiceModels.stopSleepRecordingPath()
+    }
+
     fun restServicePaths(entries: String): String {
         return PolarRestServiceModels.servicePaths(entries.lineMap()).joinToString("|")
     }

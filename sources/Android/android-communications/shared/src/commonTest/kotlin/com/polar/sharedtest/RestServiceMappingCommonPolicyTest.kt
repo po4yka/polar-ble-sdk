@@ -8,6 +8,13 @@ import kotlin.test.assertEquals
 
 class RestServiceMappingCommonPolicyTest {
     @Test
+    fun sleepRestFacadePathsUseSharedPolicy() {
+        assertEquals("/REST/SLEEP.API", PolarRestServiceModels.sleepApiPath())
+        assertEquals("/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]", PolarRestServiceModels.sleepRecordingStateSubscribePath())
+        assertEquals("/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording", PolarRestServiceModels.stopSleepRecordingPath())
+    }
+
+    @Test
     fun restServiceListGoldenVectorsDefineExecutableCommonMappingPolicy() {
         listOf(
             "sdk/rest-service/service-list-basic.json",

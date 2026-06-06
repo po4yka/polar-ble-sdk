@@ -25,6 +25,18 @@ data class PolarRestServiceDescription(
 }
 
 object PolarRestServiceModels {
+    fun sleepApiPath(): String {
+        return "/REST/SLEEP.API"
+    }
+
+    fun sleepRecordingStateSubscribePath(): String {
+        return "${sleepApiPath()}?cmd=subscribe&event=sleep_recording_state&details=[enabled]"
+    }
+
+    fun stopSleepRecordingPath(): String {
+        return "${sleepApiPath()}?cmd=post&endpoint=stop_sleep_recording"
+    }
+
     fun serviceList(pathsForServices: Map<String, String>?): PolarRestServiceList {
         return PolarRestServiceList(pathsForServices ?: emptyMap())
     }

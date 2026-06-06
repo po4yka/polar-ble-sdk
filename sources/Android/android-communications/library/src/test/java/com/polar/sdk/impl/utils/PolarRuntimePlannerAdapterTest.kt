@@ -90,6 +90,13 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared sleep REST facade paths preserve Android strings`() {
+        Assert.assertEquals("/REST/SLEEP.API", PolarRuntimePlannerAdapter.sleepRestApiPath())
+        Assert.assertEquals("/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]", PolarRuntimePlannerAdapter.sleepRecordingStateSubscribePath())
+        Assert.assertEquals("/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording", PolarRuntimePlannerAdapter.stopSleepRecordingPath())
+    }
+
+    @Test
     fun `shared backup restore plans select Android protobuf PUT operation and path`() {
         val operation = PolarRuntimePlannerAdapter.planBackupRestoreOperation("/U/0/BACKUP.TXT", "0102")
 

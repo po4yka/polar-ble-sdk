@@ -79,6 +79,30 @@ enum PolarRuntimePlanner {
         return PolarRestFacadeRuntimePlanner.getOperation(id: id, path: path, payloadShape: payloadShape)
     }
 
+    static func sleepRestApiPath() -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepRestApiPath()
+        #else
+        return "/REST/SLEEP.API"
+        #endif
+    }
+
+    static func sleepRecordingStateSubscribePath() -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepRecordingStateSubscribePath()
+        #else
+        return "/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]"
+        #endif
+    }
+
+    static func stopSleepRecordingPath() -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.stopSleepRecordingPath()
+        #else
+        return "/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording"
+        #endif
+    }
+
     @discardableResult
     static func fileFacade(id: String, command: String, path: String, payloadHex: String = "") -> String {
         return PolarFileFacadeRuntimePlanner.fileFacade(id: id, command: command, path: path, payloadHex: payloadHex)
