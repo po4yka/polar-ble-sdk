@@ -9,8 +9,8 @@ import PolarBleSdkShared
 final class MagDataTest: XCTestCase {
     func testCalibrationStatusLookupDelegatesKnownIdsToSharedBridgeWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
-        XCTAssertEqual("GOOD", PolarIosSharedBridge.shared.magCalibrationStatusName(id: 3))
-        XCTAssertEqual("NOT_AVAILABLE", PolarIosSharedBridge.shared.magCalibrationStatusName(id: 99))
+        XCTAssertEqual("GOOD", MagDataRuntimePlanner.calibrationStatusName(id: 3))
+        XCTAssertEqual("NOT_AVAILABLE", MagDataRuntimePlanner.calibrationStatusName(id: 99))
         #endif
         XCTAssertEqual(.notAvailable, MagData.CalibrationStatus.getById(id: -1))
         XCTAssertEqual(.unknown, MagData.CalibrationStatus.getById(id: 0))
@@ -89,7 +89,7 @@ final class MagDataTest: XCTestCase {
     func testMagCompressedParserUsesSharedKmpWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         let dataFrameHex = "0600943577000000008137ff51fd6cf600000301f802"
-        let sharedRows = try XCTUnwrap(PolarIosSharedBridge.shared.magCompressedSamples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        let sharedRows = try XCTUnwrap(MagDataRuntimePlanner.compressedSamples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
         XCTAssertFalse(sharedRows.isEmpty)
 
         let dataFrame = try PmdDataFrame(

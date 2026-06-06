@@ -24,11 +24,10 @@ public class MagData {
         case good = 3
         
         static func getById(id: Int) -> CalibrationStatus {
-            #if canImport(PolarBleSdkShared)
-            if let sharedStatus = CalibrationStatus(sharedName: PolarIosSharedBridge.shared.magCalibrationStatusName(id: Int32(id))) {
+            if let sharedName = MagDataRuntimePlanner.calibrationStatusName(id: Int32(id)),
+               let sharedStatus = CalibrationStatus(sharedName: sharedName) {
                 return sharedStatus
             }
-            #endif
             guard let status = CalibrationStatus(rawValue: id) else {
                 BleLogger.error("Invalid CalibrationStatus ID: \(id)")
                 return notAvailable
@@ -124,7 +123,7 @@ public class MagData {
               frame.sampleRate <= UInt(Int32.max) else {
             return nil
         }
-        guard let sharedRows = PolarIosSharedBridge.shared.magCompressedSamples(
+        guard let sharedRows = MagDataRuntimePlanner.compressedSamples(
             dataFrameHex: sharedDataFrameHex(frame: frame),
             previousTimeStamp: Int64(frame.previousTimeStamp),
             factor: frame.factor,
@@ -163,7 +162,24 @@ public class MagData {
     #endif
 }
 
-#if canImport(PolarBleSdkShared)
+enum MagDataRuntimePlanner {
+    static func calibrationStatusName(id: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.magCalibrationStatusName(id: id)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedSamples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.magCompressedSamples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+}
+
 private extension MagData.CalibrationStatus {
     init?(sharedName: String) {
         switch sharedName {
@@ -182,4 +198,3 @@ private extension MagData.CalibrationStatus {
         }
     }
 }
-#endif
