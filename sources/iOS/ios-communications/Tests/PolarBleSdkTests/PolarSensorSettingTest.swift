@@ -55,14 +55,14 @@ class PolarSensorSettingTests: XCTestCase {
 
     func testPmdSettingTypeMappingUsesSharedKnownCodesAndPreservesPublicKeys() throws {
         #if canImport(PolarBleSdkShared)
-        XCTAssertEqual("SAMPLE_RATE", PolarIosSharedBridge.shared.pmdSettingTypeName(code: 0))
-        XCTAssertEqual("RESOLUTION", PolarIosSharedBridge.shared.pmdSettingTypeName(code: 1))
-        XCTAssertEqual("RANGE", PolarIosSharedBridge.shared.pmdSettingTypeName(code: 2))
-        XCTAssertEqual("RANGE_MILLIUNIT", PolarIosSharedBridge.shared.pmdSettingTypeName(code: 3))
-        XCTAssertEqual("CHANNELS", PolarIosSharedBridge.shared.pmdSettingTypeName(code: 4))
-        XCTAssertEqual(4, Int(truncating: try XCTUnwrap(PolarIosSharedBridge.shared.pmdSettingTypeCode(name: "CHANNELS"))))
-        XCTAssertNil(PolarIosSharedBridge.shared.pmdSettingTypeName(code: 255))
-        XCTAssertNil(PolarIosSharedBridge.shared.pmdSettingTypeCode(name: "UNKNOWN"))
+        XCTAssertEqual("SAMPLE_RATE", PolarSensorSettingRuntimePlanner.pmdSettingTypeName(code: 0))
+        XCTAssertEqual("RESOLUTION", PolarSensorSettingRuntimePlanner.pmdSettingTypeName(code: 1))
+        XCTAssertEqual("RANGE", PolarSensorSettingRuntimePlanner.pmdSettingTypeName(code: 2))
+        XCTAssertEqual("RANGE_MILLIUNIT", PolarSensorSettingRuntimePlanner.pmdSettingTypeName(code: 3))
+        XCTAssertEqual("CHANNELS", PolarSensorSettingRuntimePlanner.pmdSettingTypeName(code: 4))
+        XCTAssertEqual(4, PolarSensorSettingRuntimePlanner.pmdSettingTypeCode(name: "CHANNELS"))
+        XCTAssertNil(PolarSensorSettingRuntimePlanner.pmdSettingTypeName(code: 255))
+        XCTAssertNil(PolarSensorSettingRuntimePlanner.pmdSettingTypeCode(name: "UNKNOWN"))
         #endif
 
         let sensorSetting = PolarSensorSetting([

@@ -73,7 +73,7 @@ public struct PolarSensorSetting {
 private extension PolarSensorSetting.SettingType {
     static func fromSharedOrRaw(code: Int) -> PolarSensorSetting.SettingType {
         #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.pmdSettingTypeName(code: Int32(code)) {
+        if let sharedName = PolarSensorSettingRuntimePlanner.pmdSettingTypeName(code: Int32(code)) {
             switch sharedName {
             case "SAMPLE_RATE": return .sampleRate
             case "RESOLUTION": return .resolution
@@ -91,7 +91,7 @@ private extension PolarSensorSetting.SettingType {
 private extension PmdSetting.PmdSettingType {
     static func fromSharedOrRaw(code: Int) -> PmdSetting.PmdSettingType {
         #if canImport(PolarBleSdkShared)
-        if let sharedName = PolarIosSharedBridge.shared.pmdSettingTypeName(code: Int32(code)) {
+        if let sharedName = PolarSensorSettingRuntimePlanner.pmdSettingTypeName(code: Int32(code)) {
             switch sharedName {
             case "SAMPLE_RATE": return .sampleRate
             case "RESOLUTION": return .resolution
@@ -108,6 +108,24 @@ private extension PmdSetting.PmdSettingType {
             return .unknown
         }
         return PmdSetting.PmdSettingType(rawValue: UInt8(code)) ?? .unknown
+    }
+}
+
+enum PolarSensorSettingRuntimePlanner {
+    static func pmdSettingTypeName(code: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdSettingTypeName(code: code)
+        #else
+        return nil
+        #endif
+    }
+
+    static func pmdSettingTypeCode(name: String) -> Int32? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdSettingTypeCode(name: name)?.int32Value
+        #else
+        return nil
+        #endif
     }
 }
 
