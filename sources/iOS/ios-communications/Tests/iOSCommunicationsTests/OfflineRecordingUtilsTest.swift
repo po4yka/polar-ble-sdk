@@ -49,11 +49,14 @@ final class OfflineRecordingUtilsTest: XCTestCase {
         )
     }
 
-    func testOfflineRecordingFilenameMappingUsesSharedBridgeWhenLinked() throws {
+    func testOfflineRecordingFilenameMappingUsesSharedPlannerWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("ACC", PolarIosSharedBridge.shared.offlineRecordingMeasurementType(fileName: "ACC0.REC"))
         XCTAssertEqual("SKIN_TEMP", PolarIosSharedBridge.shared.offlineRecordingMeasurementType(fileName: "SKINTEMP.REC"))
         XCTAssertNil(PolarIosSharedBridge.shared.offlineRecordingMeasurementType(fileName: "INVALID.REC"))
+        XCTAssertEqual("ACC", OfflineRecordingRuntimePlanner.measurementTypeName(fileName: "ACC0.REC"))
+        XCTAssertEqual("SKIN_TEMP", OfflineRecordingRuntimePlanner.measurementTypeName(fileName: "SKINTEMP.REC"))
+        XCTAssertNil(OfflineRecordingRuntimePlanner.measurementTypeName(fileName: "INVALID.REC"))
         XCTAssertEqual(.acc, try OfflineRecordingUtils.mapOfflineRecordingFileNameToMeasurementType(fileName: "ACC0.REC"))
         XCTAssertEqual(.skinTemperature, try OfflineRecordingUtils.mapOfflineRecordingFileNameToMeasurementType(fileName: "SKINTEMP.REC"))
         #else
@@ -115,7 +118,7 @@ final class OfflineRecordingUtilsTest: XCTestCase {
         switch name {
         case "acc": return .acc
         case "gyro": return .gyro
-        case "mgn": return .mgn
+        case "mgn", "magnetometer": return .mgn
         case "ppg": return .ppg
         case "ppi": return .ppi
         case "offline_hr": return .offline_hr
