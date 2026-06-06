@@ -1572,7 +1572,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         builder.path = writeOperation.second
         val sdkModeLedByte = if (ledConfig.sdkModeLedEnabled) LedConfig.LED_ANIMATION_ENABLE_BYTE else LedConfig.LED_ANIMATION_DISABLE_BYTE
         val ppiModeLedByte = if (ledConfig.ppiModeLedEnabled) LedConfig.LED_ANIMATION_ENABLE_BYTE else LedConfig.LED_ANIMATION_DISABLE_BYTE
-        val data = ByteArrayInputStream(byteArrayOf(sdkModeLedByte, ppiModeLedByte))
+        val payload = byteArrayOf(sdkModeLedByte, ppiModeLedByte)
+        val data = ByteArrayInputStream(payload)
+        PolarRuntimePlannerAdapter.planPsFtpWriteProgress(payload.size, "android")
+        PolarRuntimePlannerAdapter.planPsFtpWriteAck(payload.size)
         client.write(builder.build().toByteArray(), data).collect {}
     }
 

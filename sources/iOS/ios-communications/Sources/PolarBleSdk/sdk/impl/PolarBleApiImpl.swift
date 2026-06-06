@@ -2012,6 +2012,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         let ppiModeLedByte: UInt8 = ledConfig.ppiModeLedEnabled ? LedConfig.LED_ANIMATION_ENABLE_BYTE : LedConfig.LED_ANIMATION_DISABLE_BYTE
         let data = Data([sdkModeLedByte, ppiModeLedByte])
         let inputStream = InputStream(data: data)
+        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: data.count)
+        PolarRuntimePlanner.psFtpWriteAck(payloadSize: data.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}
     }
 
