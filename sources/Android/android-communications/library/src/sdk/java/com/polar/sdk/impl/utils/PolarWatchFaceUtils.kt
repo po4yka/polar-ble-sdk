@@ -8,6 +8,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpC
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils
 import com.polar.sdk.api.errors.PolarServiceNotAvailable
 import com.polar.sdk.api.model.PolarWatchFaceComplication
+import com.polar.shared.sdk.PolarWatchFaceFields
 import protocol.PftpRequest
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
@@ -98,7 +99,7 @@ internal object PolarWatchFaceUtils {
         KvtxScriptUtils.extractValueForKey(script, WATCH_FACE_CONFIG_KVS_KEY)
 
     fun parseWatchFaceConfigFlatBuffer(raw: ByteArray): WatchfaceConfigFields {
-        val empty = WatchfaceConfigFields()
+        val empty = sharedWatchfaceConfigFields()
 
         if (raw.size < 4) {
             BleLogger.w(TAG, "parseWatchFaceConfigFlatBuffer: too short (${raw.size} bytes), returning defaults")
@@ -184,13 +185,39 @@ internal object PolarWatchFaceUtils {
             if (fo == 0) 0 else (bb.get(rootOffset + fo).toInt() and 0xFF)
         }
 
-        return WatchfaceConfigFields(
+        return sharedWatchfaceConfigFields(
             timeStyleId = timeStyleId,
             complicationLayoutId = complicationLayoutId,
             backgroundStyleId = backgroundStyleId,
             accentColor = accentColor,
             complicationIds = complicationIds,
             fontfaceId = fontfaceId
+        )
+    }
+
+    private fun sharedWatchfaceConfigFields(
+        timeStyleId: Int? = null,
+        complicationLayoutId: Int? = null,
+        backgroundStyleId: Int? = null,
+        accentColor: Long? = null,
+        complicationIds: List<Int>? = null,
+        fontfaceId: Int? = null
+    ): WatchfaceConfigFields {
+        val fields = PolarWatchFaceFields.fromNullableFields(
+            timeStyleId = timeStyleId,
+            complicationLayoutId = complicationLayoutId,
+            backgroundStyleId = backgroundStyleId,
+            accentColor = accentColor,
+            complicationIds = complicationIds,
+            fontfaceId = fontfaceId
+        )
+        return WatchfaceConfigFields(
+            timeStyleId = fields.timeStyleId,
+            complicationLayoutId = fields.complicationLayoutId,
+            backgroundStyleId = fields.backgroundStyleId,
+            accentColor = fields.accentColor,
+            complicationIds = fields.complicationIds,
+            fontfaceId = fields.fontfaceId
         )
     }
 

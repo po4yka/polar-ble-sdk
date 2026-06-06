@@ -109,7 +109,7 @@ internal enum PolarWatchFaceUtils {
     // MARK: - FlatBuffer decode
 
     static func parseWatchFaceConfigFlatBuffer(raw: [UInt8]) -> WatchfaceConfigFields {
-        let empty = WatchfaceConfigFields()
+        let empty = sharedWatchfaceConfigFields()
         guard raw.count >= 4 else {
             BleLogger.trace("\(TAG): parseWatchFaceConfigFlatBuffer: too short (\(raw.count) bytes), returning defaults")
             return empty
@@ -217,6 +217,50 @@ internal enum PolarWatchFaceUtils {
             return raw[rootOffset + fo]
         }()
 
+        return sharedWatchfaceConfigFields(
+            timeStyleId: timeStyleId,
+            complicationLayoutId: complicationLayoutId,
+            backgroundStyleId: backgroundStyleId,
+            accentColor: accentColor,
+            complicationIds: complicationIds,
+            fontfaceId: fontfaceId
+        )
+    }
+
+    private static func sharedWatchfaceConfigFields(
+        timeStyleId: UInt16 = 0,
+        complicationLayoutId: UInt16 = 0,
+        backgroundStyleId: UInt16 = 0,
+        accentColor: UInt32 = 0,
+        complicationIds: [Int32] = [],
+        fontfaceId: UInt8 = 0
+    ) -> WatchfaceConfigFields {
+        #if canImport(PolarBleSdkShared)
+        let fields = PolarIosSharedBridge.shared.watchFaceFieldsCsv(
+            timeStyleId: Int32(timeStyleId),
+            complicationLayoutId: Int32(complicationLayoutId),
+            backgroundStyleId: Int32(backgroundStyleId),
+            accentColor: Int64(accentColor),
+            complicationIdsCsv: complicationIds.map(String.init).joined(separator: ","),
+            fontfaceId: Int32(fontfaceId)
+        ).split(separator: ",", omittingEmptySubsequences: false).map(String.init)
+        if fields.count == 6,
+           let sharedTimeStyleId = UInt16(fields[0]),
+           let sharedComplicationLayoutId = UInt16(fields[1]),
+           let sharedBackgroundStyleId = UInt16(fields[2]),
+           let sharedAccentColor = UInt32(fields[3]),
+           let sharedFontfaceId = UInt8(fields[5]) {
+            let sharedComplicationIds = fields[4].isEmpty ? [] : fields[4].split(separator: ";").compactMap { Int32($0) }
+            return WatchfaceConfigFields(
+                timeStyleId: sharedTimeStyleId,
+                complicationLayoutId: sharedComplicationLayoutId,
+                backgroundStyleId: sharedBackgroundStyleId,
+                accentColor: sharedAccentColor,
+                complicationIds: sharedComplicationIds,
+                fontfaceId: sharedFontfaceId
+            )
+        }
+        #endif
         return WatchfaceConfigFields(
             timeStyleId: timeStyleId,
             complicationLayoutId: complicationLayoutId,

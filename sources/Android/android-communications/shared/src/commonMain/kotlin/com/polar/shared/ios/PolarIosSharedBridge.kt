@@ -84,6 +84,7 @@ import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarTrainingReadinessName
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
+import com.polar.shared.sdk.PolarWatchFaceFields
 import com.polar.shared.time.PolarDurationFields
 import com.polar.shared.time.PolarTimeFields
 import com.polar.shared.time.PolarTimeUtils
@@ -877,6 +878,32 @@ object PolarIosSharedBridge {
 
     fun watchFaceComplicationName(id: Int): String? {
         return PolarWatchFaceComplicationName.fromId(id)?.name
+    }
+
+    fun watchFaceFieldsCsv(
+        timeStyleId: Int,
+        complicationLayoutId: Int,
+        backgroundStyleId: Int,
+        accentColor: Long,
+        complicationIdsCsv: String,
+        fontfaceId: Int
+    ): String {
+        val fields = PolarWatchFaceFields.fromNullableFields(
+            timeStyleId = timeStyleId,
+            complicationLayoutId = complicationLayoutId,
+            backgroundStyleId = backgroundStyleId,
+            accentColor = accentColor,
+            complicationIds = complicationIdsCsv.csvValues().mapNotNull { value -> value.toIntOrNull() },
+            fontfaceId = fontfaceId
+        )
+        return listOf(
+            fields.timeStyleId.toString(),
+            fields.complicationLayoutId.toString(),
+            fields.backgroundStyleId.toString(),
+            fields.accentColor.toString(),
+            fields.complicationIds.joinToString(separator = ";"),
+            fields.fontfaceId.toString()
+        ).joinToString(separator = ",")
     }
 
     fun sleepWakeStateName(value: Int): String? {
