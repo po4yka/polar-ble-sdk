@@ -2,9 +2,6 @@
 
 import XCTest
 @testable import iOSCommunications
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
 
 final class TypeUtilsTest: XCTestCase {
 
@@ -64,21 +61,11 @@ final class TypeUtilsTest: XCTestCase {
         XCTAssertEqual(expectedValue, result)
     }
 
-    func testTypeUtilsDelegatesCompatibleConversionsToSharedKmpWhenLinked() throws {
-        #if canImport(PolarBleSdkShared)
-        XCTAssertEqual(-32768, PolarIosSharedBridge.shared.signedIntFromLittleEndianHex(hex: "0080"))
-        XCTAssertEqual("18446744073709551615", PolarIosSharedBridge.shared.unsignedLongFromLittleEndianHex(hex: "ffffffffffffffff"))
-        XCTAssertEqual(Int32(-32768), TypeRuntimePlanner.signedInt(data: Data([0x00, 0x80])))
-        XCTAssertEqual(Int32(-32768), TypeRuntimePlanner.signedInt(data: Data([0x7f, 0x00, 0x80, 0x01]), offset: 1, size: 2))
-        XCTAssertEqual(UInt64.max, TypeRuntimePlanner.unsignedLong(data: Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])))
-        XCTAssertEqual(UInt64.max, TypeRuntimePlanner.unsignedLong(data: Data([0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), offset: 1, size: 8))
+    func testTypeUtilsUsesProductionConversionPolicy() throws {
         XCTAssertEqual(Int32(-32768), TypeUtils.convertArrayToSignedInt(Data([0x00, 0x80])))
         XCTAssertEqual(Int32(-32768), TypeUtils.convertArrayToSignedInt(Data([0x7f, 0x00, 0x80, 0x01]), offset: 1, size: 2))
         XCTAssertEqual(UInt64.max, TypeUtils.convertArrayToUnsignedInt64(Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])))
         XCTAssertEqual(UInt64.max, TypeUtils.convertArrayToUnsignedInt64(Data([0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), offset: 1, size: 8))
-        #else
-        throw XCTSkip("PolarBleSdkShared is not linked for this test target")
-        #endif
     }
 
     func testTypeUtilsGoldenVectorsMatchIOSCommunicationsBehavior() throws {
