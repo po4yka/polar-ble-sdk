@@ -33,7 +33,7 @@ public class PolarBackupManager {
         BleLogger.trace("backupDevice() called")
         let rootOperation = PolarRuntimePlanner.fileFacadeOperation(id: "backup-read-root-directory", command: "GET", path: ARABICA_SYS_FOLDER)
         let operation = rootOperation ?? (.get, ARABICA_SYS_FOLDER)
-        PolarRuntimePlanner.fileFacade(id: "backup-read-root-directory", command: "GET", path: ARABICA_SYS_FOLDER)
+        try ensureFileFacadeRuntimePlan(id: "backup-read-root-directory", command: "GET", path: ARABICA_SYS_FOLDER)
         do {
             let content = try await client.request(try PolarRuntimePlanner.fileOperationBytes(operation))
             let parentDirEntries = try Protocol_PbPFtpDirectory(serializedBytes: content as Data)
@@ -122,7 +122,7 @@ public class PolarBackupManager {
     private func loadFile(path: String) async throws -> [UInt8] {
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "backup-read-file", command: "GET", path: path)
         let operation = plannedOperation ?? (.get, path)
-        PolarRuntimePlanner.fileFacade(id: "backup-read-file", command: "GET", path: path)
+        try ensureFileFacadeRuntimePlan(id: "backup-read-file", command: "GET", path: path)
         let data = try await client.request(try PolarRuntimePlanner.fileOperationBytes(operation))
         return [UInt8](data)
     }
@@ -161,7 +161,7 @@ public class PolarBackupManager {
     private func fetchRecursively(path: String) async throws -> [DeviceFolderEntry] {
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "backup-read-directory", command: "GET", path: path)
         let operation = plannedOperation ?? (.get, path)
-        PolarRuntimePlanner.fileFacade(id: "backup-read-directory", command: "GET", path: path)
+        try ensureFileFacadeRuntimePlan(id: "backup-read-directory", command: "GET", path: path)
         let request = try PolarRuntimePlanner.fileOperationBytes(operation)
         var entries = [DeviceFolderEntry]()
         do {
@@ -178,6 +178,13 @@ public class PolarBackupManager {
             BleLogger.error("fetchRecursively() error: \(error)")
         }
         return entries
+    }
+
+    private func ensureFileFacadeRuntimePlan(id: String, command: String, path: String, payloadHex: String = "") throws {
+        let terminal = PolarRuntimePlanner.fileFacade(id: id, command: command, path: path, payloadHex: payloadHex)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "Backup file facade planning failed: \(terminal)")
+        }
     }
 
     private func loadSubDirectories(path: String) async throws -> [String] {
