@@ -20,8 +20,8 @@ class PolarFirmwareUpdateUtils {
     static func readDeviceFirmwareInfo(client: BlePsFtpClient, deviceId: String) async -> PolarFirmwareVersionInfo? {
         let plannedOperation = deviceFirmwareInfoOperation()
         let request = plannedOperation ?? (.get, DEVICE_FIRMWARE_INFO_PATH)
-        planDeviceFirmwareInfoRead()
         do {
+            try ensureDeviceFirmwareInfoReadPlan()
             let serializedBytes = try PolarRuntimePlanner.fileOperationBytes(request)
             let response = try await client.request(serializedBytes)
             let proto = try Data_PbDeviceInfo(serializedBytes: response as Data)
@@ -40,8 +40,11 @@ class PolarFirmwareUpdateUtils {
         return PolarRuntimePlanner.fileFacadeOperation(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH)
     }
 
-    private static func planDeviceFirmwareInfoRead() {
-        _ = PolarRuntimePlanner.fileFacade(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH)
+    private static func ensureDeviceFirmwareInfoReadPlan() throws {
+        let terminal = PolarRuntimePlanner.fileFacade(id: "firmware-read-device-info", command: "GET", path: DEVICE_FIRMWARE_INFO_PATH)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw NSError(domain: "PolarFirmwareUpdateUtils", code: -1, userInfo: [NSLocalizedDescriptionKey: "Firmware device-info planning failed: \(terminal)"])
+        }
     }
 
     static func isAvailableFirmwareVersionHigher(currentVersion: String, availableVersion: String) -> Bool {
