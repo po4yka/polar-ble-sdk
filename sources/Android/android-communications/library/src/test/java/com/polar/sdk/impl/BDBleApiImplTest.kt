@@ -776,6 +776,30 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `setUserDeviceLocation propagates current settings read failure without write`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-location-read-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("location settings read failed")
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(any(), any()) } throws transportError
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        try {
+            api.setUserDeviceLocation(deviceId, PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT.number)
+            Assert.fail("Expected location settings read failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertTrue(writeHeaders.isEmpty())
+        Assert.assertTrue(writePayloads.isEmpty())
+    }
+
+    @Test
     fun `setUsbConnectionMode reads current settings and writes usb mode update`() = runTest {
         assertUserDeviceSettingsRuntimePolicyVectorContains("set-usb-connection-mode")
         val deviceId = "E123456F"
@@ -861,6 +885,30 @@ class BDBleApiImplTest {
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
         Assert.assertEquals(sharedUsbConnectionMode(false), writtenSettings.usbConnectionSettings.mode)
+    }
+
+    @Test
+    fun `setUsbConnectionMode propagates current settings read failure without write`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-usb-connection-mode-read-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("USB settings read failed")
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(any(), any()) } throws transportError
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        try {
+            api.setUsbConnectionMode(deviceId, false)
+            Assert.fail("Expected USB settings read failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertTrue(writeHeaders.isEmpty())
+        Assert.assertTrue(writePayloads.isEmpty())
     }
 
     @Test
@@ -960,6 +1008,30 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `setAutomaticTrainingDetectionSettings propagates current settings read failure without write`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-training-detection-read-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("automatic training detection read failed")
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(any(), any()) } throws transportError
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        try {
+            api.setAutomaticTrainingDetectionSettings(deviceId, false, 11, 120)
+            Assert.fail("Expected automatic training detection read failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertTrue(writeHeaders.isEmpty())
+        Assert.assertTrue(writePayloads.isEmpty())
+    }
+
+    @Test
     fun `setAutomaticOHRMeasurementEnabled reads current settings and writes always on state`() = runTest {
         assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-ohr-measurement")
         val deviceId = "E123456F"
@@ -1044,6 +1116,30 @@ class BDBleApiImplTest {
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
         Assert.assertEquals(PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF, writtenSettings.automaticMeasurementSettings.automaticOhrMeasurement.state)
+    }
+
+    @Test
+    fun `setAutomaticOHRMeasurementEnabled propagates current settings read failure without write`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-ohr-measurement-read-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("automatic OHR read failed")
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(any(), any()) } throws transportError
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        try {
+            api.setAutomaticOHRMeasurementEnabled(deviceId, enabled = false)
+            Assert.fail("Expected automatic OHR read failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertTrue(writeHeaders.isEmpty())
+        Assert.assertTrue(writePayloads.isEmpty())
     }
 
     @Test
@@ -3270,14 +3366,19 @@ class BDBleApiImplTest {
                 "whole-settings-direct-write",
                 "whole-settings-write-failure-after-payload",
                 "telemetry-read-then-write",
+                "telemetry-read-failure-no-write",
                 "telemetry-write-failure-after-payload",
                 "device-location-read-then-write",
+                "device-location-read-failure-no-write",
                 "device-location-write-failure-after-payload",
                 "usb-connection-mode-read-then-write",
+                "usb-connection-mode-read-failure-no-write",
                 "usb-connection-mode-write-failure-after-payload",
                 "automatic-training-detection-read-then-write",
+                "automatic-training-detection-read-failure-no-write",
                 "automatic-training-detection-write-failure-after-payload",
                 "automatic-ohr-measurement-read-then-write",
+                "automatic-ohr-measurement-read-failure-no-write",
                 "automatic-ohr-measurement-write-failure-after-payload",
                 "daylight-saving-payload-shape",
                 "protobuf-field-preservation-gate",
@@ -3733,7 +3834,7 @@ class BDBleApiImplTest {
         const val COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
         const val STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
         const val DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
-        const val USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+        const val USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
         const val USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
         val COMMAND_RUNTIME_POLICY_OPERATION_IDS = listOf(
             "h10-start-recording",
@@ -3785,12 +3886,16 @@ class BDBleApiImplTest {
             "set-telemetry-read-failure",
             "set-telemetry-write-failure",
             "set-user-device-location",
+            "set-user-device-location-read-failure",
             "set-user-device-location-write-failure",
             "set-usb-connection-mode",
+            "set-usb-connection-mode-read-failure",
             "set-usb-connection-mode-write-failure",
             "set-automatic-training-detection",
+            "set-automatic-training-detection-read-failure",
             "set-automatic-training-detection-write-failure",
             "set-automatic-ohr-measurement",
+            "set-automatic-ohr-measurement-read-failure",
             "set-automatic-ohr-measurement-write-failure",
             "set-daylight-saving-time"
         )

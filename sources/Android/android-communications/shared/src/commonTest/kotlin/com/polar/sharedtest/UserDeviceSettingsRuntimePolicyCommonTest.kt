@@ -144,12 +144,16 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         "set-telemetry-read-failure",
         "set-telemetry-write-failure",
         "set-user-device-location",
+        "set-user-device-location-read-failure",
         "set-user-device-location-write-failure",
         "set-usb-connection-mode",
+        "set-usb-connection-mode-read-failure",
         "set-usb-connection-mode-write-failure",
         "set-automatic-training-detection",
+        "set-automatic-training-detection-read-failure",
         "set-automatic-training-detection-write-failure",
         "set-automatic-ohr-measurement",
+        "set-automatic-ohr-measurement-read-failure",
         "set-automatic-ohr-measurement-write-failure",
         "set-daylight-saving-time"
     )
@@ -161,14 +165,19 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         "whole-settings-direct-write",
         "whole-settings-write-failure-after-payload",
         "telemetry-read-then-write",
+        "telemetry-read-failure-no-write",
         "telemetry-write-failure-after-payload",
         "device-location-read-then-write",
+        "device-location-read-failure-no-write",
         "device-location-write-failure-after-payload",
         "usb-connection-mode-read-then-write",
+        "usb-connection-mode-read-failure-no-write",
         "usb-connection-mode-write-failure-after-payload",
         "automatic-training-detection-read-then-write",
+        "automatic-training-detection-read-failure-no-write",
         "automatic-training-detection-write-failure-after-payload",
         "automatic-ohr-measurement-read-then-write",
+        "automatic-ohr-measurement-read-failure-no-write",
         "automatic-ohr-measurement-write-failure-after-payload",
         "daylight-saving-payload-shape",
         "protobuf-field-preservation-gate",
@@ -177,7 +186,7 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         "compile-verification-gate"
     )
 
-    private val userDeviceSettingsRuntimeReadinessCommonDecision = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+    private val userDeviceSettingsRuntimeReadinessCommonDecision = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
 
     private val userDeviceSettingsRuntimePolicyCommonDecision = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
 
@@ -251,10 +260,14 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         assertEquals("readFailure", operationsById.getValue("set-telemetry-read-failure").stringValue("kind"))
         assertEquals(listOf("telemetryEnabled=true"), operationsById.getValue("set-telemetry-write-failure").stringArrayValue("payloadFields"))
         assertEquals(listOf("deviceLocation=WRIST_RIGHT", "preserve:telemetryEnabled=true"), operationsById.getValue("set-user-device-location").stringArrayValue("payloadFields"))
+        assertEquals("readFailure", operationsById.getValue("set-user-device-location-read-failure").stringValue("kind"))
         assertEquals(listOf("deviceLocation=WRIST_LEFT", "preserve:telemetryEnabled=true"), operationsById.getValue("set-user-device-location-write-failure").stringArrayValue("payloadFields"))
         assertEquals(listOf("usbConnectionMode=ON", "preserve:deviceLocation=WRIST_LEFT", "preserve:telemetryEnabled=true"), operationsById.getValue("set-usb-connection-mode").stringArrayValue("payloadFields"))
+        assertEquals("readFailure", operationsById.getValue("set-usb-connection-mode-read-failure").stringValue("kind"))
         assertEquals(listOf("automaticTrainingDetectionMode=ON", "automaticTrainingDetectionSensitivity=77", "minimumTrainingDurationSeconds=300", "preserve:telemetryEnabled=true"), operationsById.getValue("set-automatic-training-detection").stringArrayValue("payloadFields"))
+        assertEquals("readFailure", operationsById.getValue("set-automatic-training-detection-read-failure").stringValue("kind"))
         assertEquals(listOf("automaticOhrMeasurement=ALWAYS_ON", "preserve:automaticTrainingDetectionSettings"), operationsById.getValue("set-automatic-ohr-measurement").stringArrayValue("payloadFields"))
+        assertEquals("readFailure", operationsById.getValue("set-automatic-ohr-measurement-read-failure").stringValue("kind"))
         assertEquals(listOf("daylightSaving.nextDaylightSavingTime=present", "daylightSaving.offset=nonzero"), operationsById.getValue("set-daylight-saving-time").stringArrayValue("payloadFields"))
     }
 
@@ -263,6 +276,14 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("get-user-device-settings-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
         assertEquals("transport-error", expectedCasesById.getValue("set-telemetry-read-failure").stringValue("terminal"), readFailureNoWriteBehavior)
         assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("set-telemetry-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
+        assertEquals("transport-error", expectedCasesById.getValue("set-user-device-location-read-failure").stringValue("terminal"), readFailureNoWriteBehavior)
+        assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("set-user-device-location-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
+        assertEquals("transport-error", expectedCasesById.getValue("set-usb-connection-mode-read-failure").stringValue("terminal"), readFailureNoWriteBehavior)
+        assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("set-usb-connection-mode-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
+        assertEquals("transport-error", expectedCasesById.getValue("set-automatic-training-detection-read-failure").stringValue("terminal"), readFailureNoWriteBehavior)
+        assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("set-automatic-training-detection-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
+        assertEquals("transport-error", expectedCasesById.getValue("set-automatic-ohr-measurement-read-failure").stringValue("terminal"), readFailureNoWriteBehavior)
+        assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("set-automatic-ohr-measurement-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
     }
 
 }
