@@ -30,7 +30,7 @@ final class StreamContinuationList<T>: @unchecked Sendable {
         entries.append((id: id, cont: capturedCont))
         lock.unlock()
         capturedCont.onTermination = { [weak self] _ in
-            planRuntimeStreamConsumerCancellation(target: "stream")
+            guard planRuntimeStreamConsumerCancellation(target: "stream") else { return }
             guard let self else { return }
             self.lock.lock()
             self.entries.removeAll { $0.id == id }
@@ -41,7 +41,7 @@ final class StreamContinuationList<T>: @unchecked Sendable {
 
     /// Yield a value to all active streams.
     func yield(_ value: T) {
-        if isEmpty { planRuntimeStreamPostCompletionEmission(target: "stream", value: "value") }
+        if isEmpty && planRuntimeStreamPostCompletionEmission(target: "stream", value: "value") == 0 { return }
         lock.lock()
         let current = entries
         lock.unlock()
@@ -50,17 +50,19 @@ final class StreamContinuationList<T>: @unchecked Sendable {
 
     /// Finish all active streams successfully, then remove them.
     func finish() {
-        planRuntimeStreamDuplicateCompletion(target: "stream")
+        let completionEvents = planRuntimeStreamDuplicateCompletion(target: "stream")
         lock.lock()
         let current = entries
         entries.removeAll()
         lock.unlock()
+        guard completionEvents > 0 || !current.isEmpty else { return }
         current.forEach { $0.cont.finish() }
     }
 
     /// Finish all active streams with the given error, then remove them.
     func finish(throwing error: Error) {
-        planRuntimeStreamDisconnect(target: "stream", error: String(describing: type(of: error)))
+        let errorName = String(describing: type(of: error))
+        guard planRuntimeStreamDisconnect(target: "stream", error: errorName) else { return }
         lock.lock()
         let current = entries
         entries.removeAll()
@@ -125,7 +127,8 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
 
     /// Immediately terminates all active consumers with `error` and cancels the upstream.
     func finish(throwing error: Error) {
-        planRuntimeStreamDisconnect(target: "stream", error: String(describing: type(of: error)))
+        let errorName = String(describing: type(of: error))
+        guard planRuntimeStreamDisconnect(target: "stream", error: errorName) else { return }
         lock.lock()
         let current = consumers; consumers.removeAll()
         let task = upstreamTask; upstreamTask = nil
@@ -137,7 +140,7 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
     // MARK: - Private
 
     private func remove(id: UUID) {
-        planRuntimeStreamConsumerCancellation(target: "stream")
+        guard planRuntimeStreamConsumerCancellation(target: "stream") else { return }
         lock.lock()
         consumers.removeAll { $0.id == id }
         let shouldCancel = consumers.isEmpty
@@ -153,7 +156,7 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
             do {
                 for try await value in self.makeUpstream() {
                     let current = self.lock.withLock { self.consumers }
-                    if current.isEmpty { planRuntimeStreamPostCompletionEmission(target: "stream", value: "value") }
+                    if current.isEmpty && planRuntimeStreamPostCompletionEmission(target: "stream", value: "value") == 0 { continue }
                     current.forEach { $0.cont.yield(value) }
                 }
                 let current = self.lock.withLock {
@@ -162,7 +165,8 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
                     self.upstreamTask = nil
                     return current
                 }
-                planRuntimeStreamDuplicateCompletion(target: "stream")
+                let completionEvents = planRuntimeStreamDuplicateCompletion(target: "stream")
+                guard completionEvents > 0 || !current.isEmpty else { return }
                 current.forEach { $0.cont.finish() }
             } catch {
                 guard !(error is CancellationError) else { return }
@@ -172,7 +176,8 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
                     self.upstreamTask = nil
                     return current
                 }
-                planRuntimeStreamDisconnect(target: "stream", error: String(describing: type(of: error)))
+                let errorName = String(describing: type(of: error))
+                guard planRuntimeStreamDisconnect(target: "stream", error: errorName) else { return }
                 current.forEach { $0.cont.finish(throwing: error) }
             }
         }
@@ -184,18 +189,21 @@ private func planRuntimeStreamSubscription(target: String, startConnected: Bool,
     return planned == "platform-owned" ? nil : planned
 }
 
-private func planRuntimeStreamConsumerCancellation(target: String) {
-    _ = PolarRuntimePlanner.streamConsumerCancellation(target: target)
+private func planRuntimeStreamConsumerCancellation(target: String) -> Bool {
+    let planned = PolarRuntimePlanner.streamConsumerCancellation(target: target)
+    if planned == "platform-owned" { return true }
+    return planned.split(separator: ",").contains(Substring(target))
 }
 
-private func planRuntimeStreamDisconnect(target: String, error: String) {
-    _ = PolarRuntimePlanner.streamDisconnect(target: target, error: error)
+private func planRuntimeStreamDisconnect(target: String, error: String) -> Bool {
+    let planned = PolarRuntimePlanner.streamDisconnect(target: target, error: error)
+    return planned == "platform-owned" || planned == error
 }
 
-private func planRuntimeStreamDuplicateCompletion(target: String) {
-    _ = PolarRuntimePlanner.streamDuplicateCompletion(target: target)
+private func planRuntimeStreamDuplicateCompletion(target: String) -> Int {
+    return PolarRuntimePlanner.streamDuplicateCompletion(target: target)
 }
 
-private func planRuntimeStreamPostCompletionEmission(target: String, value: String) {
-    _ = PolarRuntimePlanner.streamPostCompletionEmission(target: target, value: value)
+private func planRuntimeStreamPostCompletionEmission(target: String, value: String) -> Int {
+    return PolarRuntimePlanner.streamPostCompletionEmission(target: target, value: value)
 }
