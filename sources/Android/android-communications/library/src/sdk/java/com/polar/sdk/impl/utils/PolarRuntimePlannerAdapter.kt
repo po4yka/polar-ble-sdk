@@ -49,6 +49,20 @@ internal object PolarRuntimePlannerAdapter {
         val terminal: String,
         val terminalError: String?
     )
+    data class PlannedOfflineTriggerRuntime(
+        val commands: List<String>,
+        val enabledFeatures: List<String>,
+        val excludedFeatures: List<String>,
+        val terminal: String
+    )
+    data class PlannedOfflineTriggerDeviceTrigger(
+        val type: String,
+        val enabled: Boolean
+    )
+    data class PlannedOfflineTriggerDesiredFeature(
+        val type: String,
+        val hasSelectedSettings: Boolean
+    )
     data class PlannedBackupRestoreWrite(
         val operation: Pair<PftpRequest.PbPFtpOperation.Command, String>,
         val payloadHex: String
@@ -491,21 +505,28 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories(filePath, trailingSlash = trailingSlash)
     }
 
-    fun planOfflineTriggerSet(currentTypes: List<String>, desiredTypes: List<String>, secretPresent: Boolean) {
-        PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
+    fun planOfflineTriggerSet(currentTypes: List<String>, desiredFeatures: List<PlannedOfflineTriggerDesiredFeature>, secretPresent: Boolean): PlannedOfflineTriggerRuntime {
+        val plan = PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
             operation = "setOfflineRecordingTrigger",
             currentDeviceTriggers = currentTypes.map { type -> PolarOfflineTriggerDeviceTrigger(type, "enabled") },
-            desiredFeatures = desiredTypes.map { type -> PolarOfflineTriggerDesiredFeature(type, hasSelectedSettings = true) },
+            desiredFeatures = desiredFeatures.map { feature -> PolarOfflineTriggerDesiredFeature(feature.type, feature.hasSelectedSettings) },
             secretPresent = secretPresent,
             transport = PolarOfflineTriggerTransport()
         )
+        return PlannedOfflineTriggerRuntime(plan.commands, plan.enabledFeatures, plan.excludedFeatures, plan.terminal)
     }
 
-    fun planOfflineTriggerGet(currentTypes: List<String>) {
-        PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
+    fun planOfflineTriggerGet(currentTriggers: List<PlannedOfflineTriggerDeviceTrigger>): PlannedOfflineTriggerRuntime {
+        val plan = PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
             operation = "getOfflineRecordingTriggerSetup",
-            currentDeviceTriggers = currentTypes.map { type -> PolarOfflineTriggerDeviceTrigger(type, "enabled") }
+            currentDeviceTriggers = currentTriggers.map { trigger ->
+                PolarOfflineTriggerDeviceTrigger(
+                    type = trigger.type,
+                    status = if (trigger.enabled) "enabled" else "disabled"
+                )
+            }
         )
+        return PlannedOfflineTriggerRuntime(plan.commands, plan.enabledFeatures, plan.excludedFeatures, plan.terminal)
     }
 
     fun planFirmwareWorkflow(id: String, statuses: List<String> = emptyList(), firmwareFiles: List<String> = emptyList()): PlannedFirmwareWorkflow {

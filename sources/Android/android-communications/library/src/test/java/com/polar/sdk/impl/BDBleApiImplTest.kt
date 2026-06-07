@@ -2978,7 +2978,7 @@ class BDBleApiImplTest {
                     PmdOfflineRecTriggerStatus.TRIGGER_ENABLED,
                     PmdSetting(byteArrayOf(0x00, 0x01, 0x34, 0x00))
                 ),
-                PmdMeasurementType.GYRO to Pair(PmdOfflineRecTriggerStatus.TRIGGER_DISABLED, null),
+                PmdMeasurementType.GYRO to Pair(PmdOfflineRecTriggerStatus.TRIGGER_ENABLED, null),
                 PmdMeasurementType.OFFLINE_HR to Pair(PmdOfflineRecTriggerStatus.TRIGGER_ENABLED, null)
             )
         )

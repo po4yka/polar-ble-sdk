@@ -339,6 +339,41 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared offline trigger runtime exposes planned commands and enabled features`() {
+        val setPlan = PolarRuntimePlannerAdapter.planOfflineTriggerSet(
+            currentTypes = listOf("ACC", "GYRO", "OFFLINE_HR"),
+            desiredFeatures = listOf(
+                PolarRuntimePlannerAdapter.PlannedOfflineTriggerDesiredFeature("ACC", hasSelectedSettings = true),
+                PolarRuntimePlannerAdapter.PlannedOfflineTriggerDesiredFeature("HR", hasSelectedSettings = false)
+            ),
+            secretPresent = true
+        )
+        val getPlan = PolarRuntimePlannerAdapter.planOfflineTriggerGet(
+            listOf(
+                PolarRuntimePlannerAdapter.PlannedOfflineTriggerDeviceTrigger("ACC", enabled = true),
+                PolarRuntimePlannerAdapter.PlannedOfflineTriggerDeviceTrigger("GYRO", enabled = true),
+                PolarRuntimePlannerAdapter.PlannedOfflineTriggerDeviceTrigger("OFFLINE_HR", enabled = true)
+            )
+        )
+
+        Assert.assertEquals(
+            listOf(
+                "setMode:TRIGGER_SYSTEM_START",
+                "getStatus",
+                "setSetting:ACC:enabled:settings:secret",
+                "setSetting:GYRO:disabled",
+                "setSetting:OFFLINE_HR:enabled:no-settings:secret"
+            ),
+            setPlan.commands
+        )
+        Assert.assertEquals("success", setPlan.terminal)
+        Assert.assertEquals(listOf("getStatus"), getPlan.commands)
+        Assert.assertEquals(listOf("ACC", "HR"), getPlan.enabledFeatures)
+        Assert.assertEquals(listOf("GYRO"), getPlan.excludedFeatures)
+        Assert.assertEquals("success", getPlan.terminal)
+    }
+
+    @Test
     fun `shared firmware workflow plans select Android protobuf PUT operations and ordered paths`() {
         val workflow = PolarRuntimePlannerAdapter.planFirmwareWorkflow(
             id = "write-package-success-with-system-update-last",

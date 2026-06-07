@@ -2049,12 +2049,17 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
         val pmdOfflineTrigger = mapPolarOfflineTriggerToPmdOfflineTrigger(trigger)
         val pmdSecret = secret?.let { mapPolarSecretToPmdSecret(it) }
-        PolarRuntimePlannerAdapter.planOfflineTriggerSet(
-            currentTypes = trigger.triggerFeatures.keys.map { it.name },
-            desiredTypes = trigger.triggerFeatures.keys.map { it.name },
+        val triggerPlan = PolarRuntimePlannerAdapter.planOfflineTriggerSet(
+            currentTypes = pmdOfflineTrigger.triggers.keys.map { it.name },
+            desiredFeatures = trigger.triggerFeatures.map { feature ->
+                PolarRuntimePlannerAdapter.PlannedOfflineTriggerDesiredFeature(
+                    type = feature.key.name,
+                    hasSelectedSettings = feature.value != null
+                )
+            },
             secretPresent = secret != null
         )
-        BleLogger.d(TAG, "Setup offline recording trigger. Trigger mode: ${trigger.triggerMode} Trigger features: ${trigger.triggerFeatures.keys.joinToString(", ")} Device: $identifier Secret used: ${secret != null}")
+        BleLogger.d(TAG, "Setup offline recording trigger. Trigger mode: ${trigger.triggerMode} Trigger features: ${trigger.triggerFeatures.keys.joinToString(", ")} Device: $identifier Secret used: ${secret != null} Planned operations: ${triggerPlan.commands.joinToString(", ")}")
         client.setOfflineRecordingTrigger(pmdOfflineTrigger, pmdSecret)
     }
 
@@ -2063,10 +2068,20 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePMDClient.PMD_SERVICE) as BlePMDClient?
             ?: throw PolarServiceNotAvailable()
         BleLogger.d(TAG, "Get offline recording trigger setup. Device: $identifier")
-        PolarRuntimePlannerAdapter.planOfflineTriggerGet(
-            listOf("ACC", "GYRO", "MAGNETOMETER", "PPG", "PPI", "HR")
+        val triggerStatus = client.getOfflineRecordingTriggerStatus()
+        val triggerPlan = PolarRuntimePlannerAdapter.planOfflineTriggerGet(
+            triggerStatus.triggers.map { trigger ->
+                PolarRuntimePlannerAdapter.PlannedOfflineTriggerDeviceTrigger(
+                    type = trigger.key.name,
+                    enabled = trigger.value.first == PmdOfflineRecTriggerStatus.TRIGGER_ENABLED
+                )
+            }
         )
-        return mapPmdTriggerToPolarTrigger(client.getOfflineRecordingTriggerStatus())
+        val mappedTrigger = mapPmdTriggerToPolarTrigger(triggerStatus)
+        return PolarOfflineRecordingTrigger(
+            triggerMode = mappedTrigger.triggerMode,
+            triggerFeatures = mappedTrigger.triggerFeatures.filterKeys { feature -> feature.name in triggerPlan.enabledFeatures }
+        )
     }
 
     override fun startHrStreaming(identifier: String): Flow<PolarHrData> {
