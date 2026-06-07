@@ -192,7 +192,7 @@ class FileRuntimeErrorPolicyCommonTest {
         "write-file-payload-capture-before-stream-error",
         "delete-file-response-error-status-message",
         "command-path-capture-for-every-operation",
-        "facade-error-mapping-deferred",
+        "facade-error-mapping-pinned",
         "platform-runtime-vector-reference-gate",
         "compile-verification-gate"
     )
@@ -201,7 +201,7 @@ class FileRuntimeErrorPolicyCommonTest {
 
     private val fileRuntimeErrorCommonDecision = "Preserve documented platform-specific policies only where required for public compatibility; otherwise normalize shared runtime errors to typed request, parse, response, and write-stream failures."
 
-    private val fileRuntimeErrorReadinessCommonDecision = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping, and the shared tests are compile-verified."
+    private val fileRuntimeErrorReadinessCommonDecision = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified."
 
     private fun assertOutcome(caseId: String, expected: String, outcome: PolarFileRuntimeErrorPlan) {
         assertEquals(expected.stringValue("outcome"), outcome.outcome, caseId)

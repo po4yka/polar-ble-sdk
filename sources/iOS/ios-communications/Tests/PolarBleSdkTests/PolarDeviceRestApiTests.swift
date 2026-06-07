@@ -586,7 +586,7 @@ private let REST_REQUEST_TRANSPORT_READINESS_FAMILIES = [
     "response-error-payload-message",
     "empty-successful-response-policy-gate",
     "fake-pftp-request-harness-gate",
-    "facade-error-mapping-deferred",
+    "facade-error-mapping-pinned",
     "platform-transport-vector-reference-gate",
     "compile-verification-gate"
 ]
@@ -600,7 +600,7 @@ private let REST_REQUEST_TRANSPORT_POLICY_CASE_IDS = [
 
 private let REST_REQUEST_TRANSPORT_MIGRATION_REQUIREMENT = "Before moving REST request orchestration into common KMP code, implement a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads."
 
-private let REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping remains explicit, and the shared tests are compile-verified."
+private let REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping stays pinned through rest-facade-runtime-policy.json, and the shared tests are compile-verified."
 
 private let REST_EVENT_COMPRESSION_READINESS_FAMILIES = [
     "uncompressed-batch-payload-preservation",

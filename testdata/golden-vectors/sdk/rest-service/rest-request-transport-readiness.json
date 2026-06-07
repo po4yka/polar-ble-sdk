@@ -14,7 +14,7 @@
       "response-error-payload-message",
       "empty-successful-response-policy-gate",
       "fake-pftp-request-harness-gate",
-      "facade-error-mapping-deferred",
+      "facade-error-mapping-pinned",
       "platform-transport-vector-reference-gate",
       "compile-verification-gate"
     ]
@@ -27,11 +27,11 @@
       "response-error-payload-message",
       "empty-successful-response-policy-gate",
       "fake-pftp-request-harness-gate",
-      "facade-error-mapping-deferred",
+      "facade-error-mapping-pinned",
       "platform-transport-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping remains explicit, and the shared tests are compile-verified.",
+    "commonDecision": "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping stays pinned through rest-facade-runtime-policy.json, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
       "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
@@ -53,5 +53,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for REST request transport behavior-family completeness only; public Android and iOS facade error shapes plus the final empty successful response policy must remain adapter-owned or be standardized intentionally before production REST request orchestration moves to shared KMP."
+  "notes": "This readiness manifest is a migration gate for REST request transport behavior-family completeness only; public Android and iOS facade error shapes plus empty successful response behavior are pinned through rest-facade-runtime-policy.json and must remain adapter-owned or be standardized intentionally before production REST request orchestration moves to shared KMP."
 }

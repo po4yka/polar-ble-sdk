@@ -126,7 +126,7 @@ class RestRequestTransportPolicyCommonTest {
         "response-error-payload-message",
         "empty-successful-response-policy-gate",
         "fake-pftp-request-harness-gate",
-        "facade-error-mapping-deferred",
+        "facade-error-mapping-pinned",
         "platform-transport-vector-reference-gate",
         "compile-verification-gate"
     )
@@ -135,7 +135,7 @@ class RestRequestTransportPolicyCommonTest {
 
     private val restRequestTransportCommonDecision = "Characterize current Android and iOS behavior first, then choose whether common code preserves platform-specific empty-response behavior or normalizes it to a typed empty-response parse failure."
 
-    private val restRequestTransportReadinessCommonDecision = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping remains explicit, and the shared tests are compile-verified."
+    private val restRequestTransportReadinessCommonDecision = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping stays pinned through rest-facade-runtime-policy.json, and the shared tests are compile-verified."
 
     private fun assertOutcome(caseId: String, expected: String, outcome: PolarRuntimePlan) {
         when (expected.stringValue("outcome")) {

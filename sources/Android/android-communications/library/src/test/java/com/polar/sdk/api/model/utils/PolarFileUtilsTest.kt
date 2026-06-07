@@ -710,7 +710,7 @@ class PolarFileUtilsTest {
             "write-file-payload-capture-before-stream-error",
             "delete-file-response-error-status-message",
             "command-path-capture-for-every-operation",
-            "facade-error-mapping-deferred",
+            "facade-error-mapping-pinned",
             "platform-runtime-vector-reference-gate",
             "compile-verification-gate"
         )
@@ -725,7 +725,7 @@ class PolarFileUtilsTest {
             "delete-file-response-error"
         )
 
-        const val FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping, and the shared tests are compile-verified."
+        const val FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified."
 
         val FILE_FACADE_RUNTIME_OPERATION_IDS = listOf(
             "read-low-level-file-success",

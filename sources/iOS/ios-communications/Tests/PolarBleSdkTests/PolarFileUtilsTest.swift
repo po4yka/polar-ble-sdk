@@ -736,7 +736,7 @@ private let FILE_RUNTIME_ERROR_READINESS_FAMILIES = [
     "write-file-payload-capture-before-stream-error",
     "delete-file-response-error-status-message",
     "command-path-capture-for-every-operation",
-    "facade-error-mapping-deferred",
+    "facade-error-mapping-pinned",
     "platform-runtime-vector-reference-gate",
     "compile-verification-gate"
 ]
@@ -751,7 +751,7 @@ private let FILE_RUNTIME_ERROR_POLICY_CASE_IDS = [
 
 private let FILE_RUNTIME_ERROR_MIGRATION_REQUIREMENT = "Before moving file utility orchestration into common KMP code, implement fake PFTP request and write-stream tests that cover malformed directory payloads, request-level transport errors, response-error status mapping, and write-stream failures after the PUT header is prepared."
 
-private let FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping, and the shared tests are compile-verified."
+private let FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified."
 
 private let FILE_FACADE_RUNTIME_OPERATION_IDS = [
     "read-low-level-file-success",

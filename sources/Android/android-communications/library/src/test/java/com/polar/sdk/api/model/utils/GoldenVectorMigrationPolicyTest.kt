@@ -4130,7 +4130,7 @@ class GoldenVectorMigrationPolicyTest {
             "empty-successful-response-policy-gate",
             "response-error-payload-status",
             "response-error-payload-message",
-            "facade-error-mapping-deferred",
+            "facade-error-mapping-pinned",
             "compile-verification-gate",
             "PolarRestRequestTransportOperation"
         )
@@ -4271,7 +4271,7 @@ class GoldenVectorMigrationPolicyTest {
             "directory-missing-status-103",
             "directory-malformed-payload-parse-failure",
             "write-file-payload-capture-before-stream-error",
-            "facade-error-mapping-deferred",
+            "facade-error-mapping-pinned",
             "compile-verification-gate",
             "PolarRuntimeOrchestration.planFileRuntimeError"
         )

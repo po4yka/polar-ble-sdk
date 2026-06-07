@@ -581,7 +581,7 @@ FAKE_TRANSPORT_COMMON_REST_RUNTIME_TEST_REQUIRED_TERMS = [
   "empty-successful-response-policy-gate",
   "response-error-payload-status",
   "response-error-payload-message",
-  "facade-error-mapping-deferred",
+  "facade-error-mapping-pinned",
   "compile-verification-gate",
   "PolarRestRequestTransportOperation"
 ].freeze
@@ -610,7 +610,7 @@ FAKE_TRANSPORT_COMMON_FILE_RUNTIME_TEST_REQUIRED_TERMS = [
   "directory-missing-status-103",
   "directory-malformed-payload-parse-failure",
   "write-file-payload-capture-before-stream-error",
-  "facade-error-mapping-deferred",
+  "facade-error-mapping-pinned",
   "compile-verification-gate",
   "PolarRuntimeOrchestration.planFileRuntimeError"
 ].freeze
