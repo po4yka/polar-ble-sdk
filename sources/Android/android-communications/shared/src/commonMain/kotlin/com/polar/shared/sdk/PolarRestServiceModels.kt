@@ -78,7 +78,10 @@ object PolarRestServiceModels {
     }
 
     fun restEventPayloads(uncompressed: Boolean, payloads: List<ByteArray>): List<ByteArray> {
-        require(uncompressed) { "Shared REST event compression codec is intentionally not selected before KMP migration" }
-        return payloads
+        return if (uncompressed) {
+            payloads
+        } else {
+            PolarRestEventCompressionCodec.compressedPayloads(payloads)
+        }
     }
 }

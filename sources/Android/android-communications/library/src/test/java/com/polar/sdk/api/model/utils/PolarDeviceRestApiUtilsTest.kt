@@ -378,12 +378,12 @@ class PolarDeviceRestApiUtilsTest {
             "ios-deflate-codec-reference-gate",
             "malformed-compressed-payload-platform-split",
             "notification-payload-order-gate",
-            "normalize-or-preserve-codec-decision-gate",
+            "shared-platform-actual-codec-gate",
             "platform-event-vector-reference-gate",
             "compile-verification-gate"
         )
 
-        const val REST_EVENT_COMPRESSION_READINESS_COMMON_DECISION = "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior is deliberately normalized or deliberately preserved, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
+        const val REST_EVENT_COMPRESSION_READINESS_COMMON_DECISION = "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior are preserved through shared KMP platform actual codecs, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
 
         val REST_SERVICE_MAPPING_READINESS_FAMILIES = listOf(
             "service-list-name-path-mapping",

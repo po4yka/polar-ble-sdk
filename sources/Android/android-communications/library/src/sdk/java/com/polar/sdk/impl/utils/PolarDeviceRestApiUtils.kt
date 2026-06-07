@@ -10,9 +10,6 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import protocol.PftpNotification.PbPftpDHRestApiEvent
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.util.zip.GZIPInputStream
 
 fun BlePsFtpClient.receiveRestApiEventData(identifier: String): Flow<Array<ByteArray>> {
     return waitForNotification()
@@ -22,25 +19,9 @@ fun BlePsFtpClient.receiveRestApiEventData(identifier: String): Flow<Array<ByteA
             if (proto.hasUncompressed() && proto.uncompressed) {
                 PolarRuntimePlannerAdapter.restEventPayloads(uncompressed = true, proto.eventList.map { it.toByteArray() })
             } else {
-                proto.eventList.map { decompressProtobufByteArray(it.toByteArray()) }
+                PolarRuntimePlannerAdapter.restEventPayloads(uncompressed = false, proto.eventList.map { it.toByteArray() })
             }.toTypedArray()
         }
-}
-
-private fun decompressProtobufByteArray(input: ByteArray): ByteArray {
-    val bufferSize = 10 * 1024
-    ByteArrayInputStream(input).use { byteArrayInputStream ->
-        GZIPInputStream(byteArrayInputStream).use { gzipInputStream ->
-            ByteArrayOutputStream().use { byteArrayOutputStream ->
-                val buffer = ByteArray(bufferSize)
-                var len: Int
-                while (gzipInputStream.read(buffer).also { len = it } != -1) {
-                    byteArrayOutputStream.write(buffer, 0, len)
-                }
-                return byteArrayOutputStream.toByteArray()
-            }
-        }
-    }
 }
 
 fun BlePsFtpClient.receiveRestApiEvents(identifier: String): Flow<List<String>> {

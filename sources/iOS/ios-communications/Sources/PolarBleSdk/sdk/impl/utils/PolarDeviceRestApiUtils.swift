@@ -19,7 +19,7 @@ extension BlePsFtpClient {
                         if params.hasUncompressed && params.uncompressed {
                             events = PolarRestEventRuntimePlanner.uncompressedPayloads(params.event) ?? params.event
                         } else {
-                            events = params.event.compactMap { data in
+                            events = PolarRestEventRuntimePlanner.compressedPayloads(params.event) ?? params.event.compactMap { data in
                                 guard let uncompressedData = data.inflated() else {
                                     BleLogger.trace_hex("Failed to decompress API event parameters, data: ", data: data)
                                     return data
@@ -62,9 +62,17 @@ private enum PolarRestEventRuntimePlanner {
         #if canImport(PolarBleSdkShared)
         let encoded = payloads.map { $0.map { String(format: "%02x", $0) }.joined() }.joined(separator: ",")
         let sharedHex = uncompressedPayloadsHex(payloadsHex: encoded)
-        return sharedHex.isEmpty ? [] : sharedHex
-            .split(separator: "|", omittingEmptySubsequences: false)
-            .map { Data(hexString: String($0)) }
+        return decodePayloadsHex(sharedHex, expectedCount: payloads.count)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedPayloads(_ payloads: [Data]) -> [Data]? {
+        #if canImport(PolarBleSdkShared)
+        let encoded = payloads.map { $0.map { String(format: "%02x", $0) }.joined() }.joined(separator: ",")
+        let sharedHex = compressedPayloadsHex(payloadsHex: encoded)
+        return decodePayloadsHex(sharedHex, expectedCount: payloads.count)
         #else
         return nil
         #endif
@@ -76,6 +84,23 @@ private enum PolarRestEventRuntimePlanner {
         #else
         return ""
         #endif
+    }
+
+    private static func compressedPayloadsHex(payloadsHex: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.restCompressedEventPayloadsHex(payloadsHex: payloadsHex)
+        #else
+        return ""
+        #endif
+    }
+
+    private static func decodePayloadsHex(_ sharedHex: String, expectedCount: Int) -> [Data] {
+        if sharedHex.isEmpty {
+            return expectedCount == 0 ? [] : Array(repeating: Data(), count: expectedCount)
+        }
+        return sharedHex
+            .split(separator: "|", omittingEmptySubsequences: false)
+            .map { Data(hexString: String($0)) }
     }
 }
 

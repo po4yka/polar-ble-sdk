@@ -26,6 +26,12 @@
           "{\"path\":\"/v1/training\",\"operation\":\"synced\"}",
           "{\"path\":\"/v1/activity\",\"operation\":\"deleted\"}"
         ],
+        "compressedPayloadsHex": {
+          "android": [
+            "1f8b0800000000000213ab562a482cc950b252d22f33d42f294acccccbcc4b57d251ca2f482d4a2cc9cccf034a1557e625a7a628d50200b2cff1c62c000000",
+            "1f8b0800000000000213ab562a482cc950b252d22f33d44f4c2ec92ccb2ca954d251ca2f482d4a2cc9cccf034aa5a4e6a496a4a628d502005bcafdf42d000000"
+          ]
+        },
         "compression": {
           "android": "gzip",
           "ios": "deflate"
@@ -58,7 +64,7 @@
   },
   "platformExpectations": {
     "commonDecision": {
-      "compressionPolicy": "Android currently uses GZIPInputStream while iOS uses zlib deflate/inflate helpers for REST event payloads; normalize or explicitly preserve this platform split before moving REST event decoding to shared KMP code."
+      "compressionPolicy": "Shared KMP owns REST event compression dispatch while platform actuals deliberately preserve Android GZIPInputStream-compatible gzip decoding and iOS zlib inflate behavior."
     }
   },
   "platforms": {
@@ -66,7 +72,7 @@
     "ios": true,
     "common": true
   },
-  "notes": "REST API event notifications emit original payloads when uncompressed and inflate compressed payloads using the current platform codec.",
+  "notes": "REST API event notifications emit original payloads when uncompressed and inflate compressed payloads through shared KMP platform actual codecs that preserve the current Android gzip and iOS zlib behavior.",
   "consumerTests": {
     "android": [
       "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"

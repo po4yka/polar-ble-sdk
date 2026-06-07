@@ -61,7 +61,19 @@ fun String.optionalStringArrayValue(field: String): List<String>? {
     val arrayStart = fieldValueStart(field) ?: return null
     if (this[arrayStart] != '[') return null
     val arrayEnd = balancedEnd(arrayStart, '[', ']')
-    return Regex("\"([^\"]*)\"").findAll(substring(arrayStart + 1, arrayEnd)).map { it.groupValues[1] }.toList()
+    val values = mutableListOf<String>()
+    var index = arrayStart + 1
+    while (index < arrayEnd) {
+        when (this[index]) {
+            '"' -> {
+                val parsed = readJsonString(index)
+                values += parsed.value
+                index = parsed.nextIndex
+            }
+            else -> index += 1
+        }
+    }
+    return values
 }
 
 fun String.intValue(field: String): Int {

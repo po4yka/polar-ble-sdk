@@ -4002,21 +4002,21 @@ class GoldenVectorMigrationPolicyTest {
             "KmpFullCoverageTddBacklog.md" to listOf(
                 "add real common protobuf/gzip production dependencies",
                 "full AES implementation ownership still must be chosen",
-                "add byte-level shared codec vectors before moving gzip/deflate behavior into common code",
+                "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
                 "byte-identical output",
                 "KVTX"
             ),
             "KmpCoverageInventory.md" to listOf(
-                "Keep generic iOS `Data.deflated`/`Data.inflated` platform-specific unless a future shared REST codec deliberately standardizes gzip/zlib behavior for KMP common code.",
+                "REST event compressed payload decoding now uses shared KMP platform actual codecs while generic iOS `Data.deflated`/`Data.inflated` remains platform-specific.",
                 "Keep iOS nil-on-truncation compatibility adapter-owned if required while common parsing uses typed malformed-script errors.",
                 "semantic and codec-ownership/readiness policy executable"
             ),
             "KmpPreMigrationRemainingWork.md" to listOf(
-                "Add real common protobuf/gzip/crypto/codec dependencies",
+                "Add real common protobuf/crypto/codec dependencies",
                 "training-session payload parsing",
                 "PMD AES secret handling",
-                "compression helpers",
-                "shared FlatBuffer/KVTX byte-identical output decision"
+                "shared FlatBuffer/KVTX byte-identical output decision",
+                "REST gzip/deflate behavior now uses shared KMP platform actual codecs"
             ),
             "payload-read-policy.json" to listOf(
                 "byteLevelParserGate",
@@ -4048,7 +4048,7 @@ class GoldenVectorMigrationPolicyTest {
             "rest-event-compression-readiness.json" to listOf(
                 "android-gzip-codec-reference-gate",
                 "ios-deflate-codec-reference-gate",
-                "normalize-or-preserve-codec-decision-gate"
+                "shared-platform-actual-codec-gate"
             ),
             "watch-face-readiness.json" to listOf(
                 "byte-identical FlatBuffer output remains platform-specific unless production shared FlatBuffer builders are deliberately introduced and compile-verified"
@@ -4242,10 +4242,11 @@ class GoldenVectorMigrationPolicyTest {
             "android-gzip-codec-reference-gate",
             "ios-deflate-codec-reference-gate",
             "malformed-compressed-payload-platform-split",
-            "normalize-or-preserve-codec-decision-gate",
+            "shared-platform-actual-codec-gate",
             "compile-verification-gate",
+            "PolarRestEventCompressionCodec",
             "GZIPInputStream",
-            "normalize or explicitly preserve this platform split"
+            "shared KMP platform actual codecs"
         )
         val FAKE_TRANSPORT_COMMON_FILE_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "fileListingGoldenVectorsDefineExecutableCommonTraversalPolicy",
