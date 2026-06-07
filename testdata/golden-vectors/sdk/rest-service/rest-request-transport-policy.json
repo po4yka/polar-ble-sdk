@@ -103,8 +103,8 @@
     ]
   },
   "platformExpectations": {
-    "android": "planned facade-level fake-transport characterization for public error mapping",
-    "ios": "planned facade-level fake-transport characterization for public error mapping",
+    "android": "BDBleApiImplTest and rest-facade-runtime-policy.json pin Android public response-error enum-name mapping and empty-success parse failure through public REST facade tests",
+    "ios": "PolarBleApiImplTests and rest-facade-runtime-policy.json pin iOS public response-error code preservation and empty-success decode failure through public REST facade tests",
     "common": "executable shared commonTest covers command capture, response errors, and empty-response policy before facade mapping moves"
   },
   "platforms": {
@@ -114,7 +114,7 @@
   },
   "execution": {
     "status": "shared-common-test",
-    "reason": "Shared commonTest now asserts command capture, response-error payloads, and empty successful transport responses through the common fake transport; platform facade tests still need public error mapping before production REST request orchestration delegates to shared code."
+    "reason": "Shared commonTest now asserts command capture, response-error payloads, and empty successful transport responses through the common fake transport; Android and iOS public facade tests pin response-error and empty-success behavior before production REST request orchestration delegates to shared code."
   },
-  "notes": "This vector records REST request runtime scenarios now covered by executable shared commonTest command-capture and transport-outcome checks. Public Android and iOS facade error mapping plus the final empty successful response policy remain migration gates before production REST request orchestration delegates to shared code."
+  "notes": "This vector records REST request runtime scenarios now covered by executable shared commonTest command-capture and transport-outcome checks plus Android and iOS public facade response-error and empty-success compatibility through rest-facade-runtime-policy.json; additional REST operations still need their own facade compatibility before production REST request orchestration delegates to shared code."
 }
