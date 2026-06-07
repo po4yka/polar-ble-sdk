@@ -345,6 +345,8 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(commonPrototype["status"] as? String, "executable shared commonTest", "workflow-runtime-policy")
         XCTAssertEqual(FIRMWARE_WORKFLOW_SCENARIOS, commonPrototypeCaseIds, "workflow-runtime-policy")
         XCTAssertEqual(execution["common"] as? String, "shared-common-test", "workflow-runtime-policy")
+        XCTAssertEqual(execution["android"] as? String, "partial-production-shared-policy-consumption", "workflow-runtime-policy")
+        XCTAssertEqual(execution["ios"] as? String, "partial-production-shared-policy-consumption", "workflow-runtime-policy")
         XCTAssertEqual(commonDecision["workflowPolicy"] as? String, FIRMWARE_WORKFLOW_COMMON_DECISION, "workflow-runtime-policy")
         XCTAssertNotNil(vector["execution"], "workflow-runtime-policy")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "workflow-runtime-policy"), ["com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"])
@@ -474,4 +476,4 @@ private let FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT = "Before moving firmware up
 
 private let FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, reboot success, and terminal device errors into typed common workflow states before KMP migration"
 
-private let FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, progress, retryable fake-network server failure classification, terminal device errors, and cancellation cleanup before BLE writes are pinned, retry scheduling has explicit platform facade coverage, public facade error mapping is pinned, and the shared tests are compile-verified."
+private let FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, and cancellation cleanup before BLE writes are pinned, retry scheduling has explicit platform facade coverage, public facade error mapping is pinned, and the shared tests are compile-verified."

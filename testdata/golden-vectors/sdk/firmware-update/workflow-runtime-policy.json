@@ -251,11 +251,13 @@
     ]
   },
   "execution": {
-    "android": "planned-fake-network-filesystem-ble-harness-required",
-    "ios": "planned-fake-network-filesystem-ble-harness-required",
+    "android": "partial-production-shared-policy-consumption",
+    "ios": "partial-production-shared-policy-consumption",
     "common": "shared-common-test"
   },
   "platformExpectations": {
+    "android": "BDBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, reboot response success, and battery-too-low terminal write policy while keeping network, zip parsing, retry scheduling, backup, reconnect, filesystem, and BLE writes platform-owned.",
+    "ios": "PolarBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, reboot response success, and battery-too-low terminal write policy while keeping network, zip parsing, retry scheduling, backup, reconnect, filesystem, and BLE writes platform-owned.",
     "commonDecision": {
       "workflowPolicy": "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, reboot success, and terminal device errors into typed common workflow states before KMP migration"
     }
@@ -265,5 +267,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This vector is intentionally a runtime planning matrix, not a parser vector. The shared commonTest now executes the status, fake retryable server failure, fake download, fake filesystem/zip, fake BLE write-order, cancellation cleanup before BLE writes, reboot-success, and battery-too-low policies; platform facade tests still need production-adapter error mapping, progress, retry scheduling, and real artifact integration coverage before firmware update workflow orchestration moves to shared KMP code."
+  "notes": "This vector is intentionally a runtime planning matrix, not a parser vector. The shared commonTest now executes the status, fake retryable server failure, fake download, fake filesystem/zip, fake BLE write-order, cancellation cleanup before BLE writes, reboot-success, and battery-too-low policies. Android and iOS production code already consume shared file-order, write-path, progress, reboot-success, and battery-too-low terminal policy while platform adapters still own network, zip parsing, retry scheduling, backup/reconnect/filesystem/BLE execution, full public facade error mapping, and real artifact integration before firmware update workflow orchestration moves to shared KMP code."
 }
