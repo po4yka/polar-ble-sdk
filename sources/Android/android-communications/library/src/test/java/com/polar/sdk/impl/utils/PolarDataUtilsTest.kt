@@ -177,7 +177,7 @@ class PolarDataUtilsTest {
             "enabled-feature-projection",
             "excluded-feature-projection",
             "platform-packet-split",
-            "facade-error-mapping-deferred",
+            "facade-error-mapping-pinned",
             "compile-verification-gate"
         )
         Assert.assertEquals(expectedFamilies, requiredFamilies)

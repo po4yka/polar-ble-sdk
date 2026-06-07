@@ -4385,7 +4385,7 @@ class GoldenVectorMigrationPolicyTest {
             "typed-set-mode",
             "settings-write",
             "optional-secret-attachment",
-            "facade-error-mapping-deferred",
+            "facade-error-mapping-pinned",
             "compile-verified",
             "explicit length byte"
         )

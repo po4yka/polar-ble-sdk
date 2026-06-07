@@ -836,7 +836,7 @@ FAKE_TRANSPORT_COMMON_OFFLINE_TRIGGER_RUNTIME_TEST_REQUIRED_TERMS = [
   "typed-set-mode",
   "settings-write",
   "optional-secret-attachment",
-  "facade-error-mapping-deferred",
+  "facade-error-mapping-pinned",
   "compile-verified",
   "explicit length byte"
 ].freeze

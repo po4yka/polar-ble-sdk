@@ -290,7 +290,7 @@ class OfflineTriggerRuntimePolicyCommonTest {
             "enabled-feature-projection",
             "excluded-feature-projection",
             "platform-packet-split",
-            "facade-error-mapping-deferred",
+            "facade-error-mapping-pinned",
             "compile-verification-gate"
         )
         const val TRIGGER_RUNTIME_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
