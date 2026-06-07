@@ -66,6 +66,32 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared training session references route through Android runtime adapter DTOs`() {
+        val references = PolarRuntimePlannerAdapter.trainingSessionReferences(
+            listOf(
+                PolarRuntimePlannerAdapter.PlannedTrainingSessionFileEntry("/U/0/20260102/E/123456/TSESS.BPB", 10L),
+                PolarRuntimePlannerAdapter.PlannedTrainingSessionFileEntry("/U/0/20260102/E/123456/00/BASE.BPB", 20L),
+                PolarRuntimePlannerAdapter.PlannedTrainingSessionFileEntry("/U/0/20260102/E/123456/00/ROUTE.GZB", 30L)
+            )
+        )
+        val reference = references.single()
+
+        Assert.assertEquals("2026-01-02", reference.date)
+        Assert.assertEquals("/U/0/20260102/E/123456/TSESS.BPB", reference.path)
+        Assert.assertEquals(listOf("TRAINING_SESSION_SUMMARY"), reference.trainingDataTypes)
+        Assert.assertEquals(60L, reference.fileSize)
+        Assert.assertEquals(listOf("EXERCISE_SUMMARY", "ROUTE_GZIP"), reference.exercises.single().exerciseDataTypes)
+        Assert.assertEquals(
+            listOf(
+                "/U/0/20260102/E/123456/TSESS.BPB",
+                "/U/0/20260102/E/123456/00/BASE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.GZB"
+            ),
+            PolarRuntimePlannerAdapter.trainingSessionPayloadFetchOrder(reference)
+        )
+    }
+
+    @Test
     fun `shared time field policy routes through Android runtime adapter`() {
         val fields = PolarRuntimePlannerAdapter.dateTimeFields(
             year = 2026,

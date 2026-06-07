@@ -9,9 +9,6 @@ import com.polar.sdk.api.model.trainingsession.PolarExerciseDataTypes
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSession
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionDataTypes
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionReference
-import com.polar.shared.sdk.PolarTrainingExerciseReference as SharedPolarTrainingExerciseReference
-import com.polar.shared.sdk.PolarTrainingSessionFileEntry
-import com.polar.shared.sdk.PolarTrainingSessionReference as SharedPolarTrainingSessionReference
 import fi.polar.remote.representation.protobuf.ExerciseSamples
 import fi.polar.remote.representation.protobuf.ExerciseSamples2
 import fi.polar.remote.representation.protobuf.Training
@@ -38,7 +35,7 @@ internal object PolarTrainingSessionUtils {
     }
 
     internal fun trainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference): List<String> {
-        return PolarRuntimePlannerAdapter.trainingSessionPayloadFetchOrder(reference.toSharedReference())
+        return PolarRuntimePlannerAdapter.trainingSessionPayloadFetchOrder(reference.toPlannedReference())
     }
 
     internal fun trainingSessionPayloadEncoding(fileName: String): String? {
@@ -74,7 +71,7 @@ internal object PolarTrainingSessionUtils {
     ): Flow<PolarTrainingSessionReference> = flow {
         BleLogger.d(TAG, "getTrainingSessions: fromDate=$fromDate, toDate=$toDate")
 
-        val entries = mutableListOf<PolarTrainingSessionFileEntry>()
+        val entries = mutableListOf<PolarRuntimePlannerAdapter.PlannedTrainingSessionFileEntry>()
 
         PolarFileUtils.fetchRecursively(
             client = client,
@@ -91,7 +88,7 @@ internal object PolarTrainingSessionUtils {
             recurseDeep = true
         ).collect { (path, fileSize) ->
             BleLogger.d(TAG, "path: $path, size: $fileSize bytes")
-            entries += PolarTrainingSessionFileEntry(path = path, size = fileSize)
+            entries += PolarRuntimePlannerAdapter.PlannedTrainingSessionFileEntry(path = path, size = fileSize)
         }
 
         val references = PolarRuntimePlannerAdapter.trainingSessionReferences(entries)
@@ -257,14 +254,14 @@ internal object PolarTrainingSessionUtils {
         }
     }
 
-    private fun PolarTrainingSessionReference.toSharedReference(): SharedPolarTrainingSessionReference {
-        return SharedPolarTrainingSessionReference(
+    private fun PolarTrainingSessionReference.toPlannedReference(): PolarRuntimePlannerAdapter.PlannedTrainingSessionReference {
+        return PolarRuntimePlannerAdapter.PlannedTrainingSessionReference(
             dateTime = date.toString(),
             date = date.toString(),
             path = path,
             trainingDataTypes = trainingDataTypes.map { dataType -> dataType.name },
             exercises = exercises.map { exercise ->
-                SharedPolarTrainingExerciseReference(
+                PolarRuntimePlannerAdapter.PlannedTrainingExerciseReference(
                     index = exercise.index,
                     androidPath = exercise.path,
                     iosPath = exercise.path.substringBeforeLast("/"),

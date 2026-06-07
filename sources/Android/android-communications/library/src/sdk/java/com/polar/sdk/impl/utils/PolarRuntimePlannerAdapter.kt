@@ -100,6 +100,25 @@ internal object PolarRuntimePlannerAdapter {
         val timeZoneOffsetMinutes: Int? = null,
         val trusted: Boolean = false
     )
+    data class PlannedTrainingSessionFileEntry(
+        val path: String,
+        val size: Long
+    )
+    data class PlannedTrainingExerciseReference(
+        val index: Int,
+        val androidPath: String,
+        val iosPath: String,
+        val exerciseDataTypes: List<String>,
+        val fileSizes: Map<String, Long>
+    )
+    data class PlannedTrainingSessionReference(
+        val dateTime: String,
+        val date: String,
+        val path: String,
+        val trainingDataTypes: List<String>,
+        val exercises: List<PlannedTrainingExerciseReference>,
+        val fileSize: Long
+    )
 
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {
         return PolarRuntimeOrchestration.planCommand(
@@ -807,12 +826,14 @@ internal object PolarRuntimePlannerAdapter {
         return PolarTrainingSessionModels.ROOT_PATH
     }
 
-    fun trainingSessionReferences(entries: List<PolarTrainingSessionFileEntry>): List<PolarTrainingSessionReference> {
-        return PolarTrainingSessionModels.buildReferences(entries)
+    fun trainingSessionReferences(entries: List<PlannedTrainingSessionFileEntry>): List<PlannedTrainingSessionReference> {
+        return PolarTrainingSessionModels.buildReferences(
+            entries.map { entry -> PolarTrainingSessionFileEntry(path = entry.path, size = entry.size) }
+        ).map { reference -> reference.toPlanned() }
     }
 
-    fun trainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference): List<String> {
-        return PolarTrainingSessionModels.payloadFetchOrder(reference)
+    fun trainingSessionPayloadFetchOrder(reference: PlannedTrainingSessionReference): List<String> {
+        return PolarTrainingSessionModels.payloadFetchOrder(reference.toShared())
     }
 
     fun trainingSessionPayloadEncoding(fileName: String): String? {
@@ -937,6 +958,44 @@ internal object PolarRuntimePlannerAdapter {
             time = PlannedTimeFields(time.hour, time.minute, time.second, time.millis),
             timeZoneOffsetMinutes = timeZoneOffsetMinutes,
             trusted = trusted
+        )
+    }
+
+    private fun PolarTrainingSessionReference.toPlanned(): PlannedTrainingSessionReference {
+        return PlannedTrainingSessionReference(
+            dateTime = dateTime,
+            date = date,
+            path = path,
+            trainingDataTypes = trainingDataTypes,
+            exercises = exercises.map { exercise ->
+                PlannedTrainingExerciseReference(
+                    index = exercise.index,
+                    androidPath = exercise.androidPath,
+                    iosPath = exercise.iosPath,
+                    exerciseDataTypes = exercise.exerciseDataTypes,
+                    fileSizes = exercise.fileSizes
+                )
+            },
+            fileSize = fileSize
+        )
+    }
+
+    private fun PlannedTrainingSessionReference.toShared(): PolarTrainingSessionReference {
+        return PolarTrainingSessionReference(
+            dateTime = dateTime,
+            date = date,
+            path = path,
+            trainingDataTypes = trainingDataTypes,
+            exercises = exercises.map { exercise ->
+                com.polar.shared.sdk.PolarTrainingExerciseReference(
+                    index = exercise.index,
+                    androidPath = exercise.androidPath,
+                    iosPath = exercise.iosPath,
+                    exerciseDataTypes = exercise.exerciseDataTypes,
+                    fileSizes = exercise.fileSizes
+                )
+            },
+            fileSize = fileSize
         )
     }
 
