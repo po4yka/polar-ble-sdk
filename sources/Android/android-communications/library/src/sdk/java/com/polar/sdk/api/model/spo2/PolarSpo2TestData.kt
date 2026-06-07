@@ -1,7 +1,5 @@
 package com.polar.sdk.api.model
 
-import com.polar.shared.sdk.PolarSpo2Models
-
 data class PolarSpo2TestData(
     val recordingDevice: String? = null,
     val testTime: String? = null,
@@ -25,7 +23,7 @@ enum class Spo2Class(val value: Int) {
 
     companion object {
         fun from(value: Int): Spo2Class? {
-            return when (PolarSpo2Models.spo2ClassName(value)) {
+            return when (PolarSdkModelAdapter.spo2ClassName(value)) {
                 "unknown" -> UNKNOWN
                 "veryLow" -> VERY_LOW
                 "low" -> LOW
@@ -42,7 +40,7 @@ enum class Spo2TestTriggerType(val value: Int) {
 
     companion object {
         fun from(value: Int): Spo2TestTriggerType? {
-            return when (PolarSpo2Models.triggerTypeName(value)) {
+            return when (PolarSdkModelAdapter.spo2TriggerTypeName(value)) {
                 "manual" -> MANUAL
                 "automatic" -> AUTOMATIC
                 else -> null
@@ -59,7 +57,7 @@ enum class Spo2TestStatus(val value: Int) {
 
     companion object {
         fun from(value: Int): Spo2TestStatus? {
-            return when (PolarSpo2Models.testStatusName(value)) {
+            return when (PolarSdkModelAdapter.spo2TestStatusName(value)) {
                 "passed" -> PASSED
                 "inconclusiveTooLowQualityInSamples" -> INCONCLUSIVE_TOO_LOW_QUALITY_IN_SAMPLES
                 "inconclusiveTooLowOverallQuality" -> INCONCLUSIVE_TOO_LOW_OVERALL_QUALITY
@@ -78,7 +76,7 @@ enum class DeviationFromBaseline(val value: Int) {
 
     companion object {
         fun from(value: Int): DeviationFromBaseline? {
-            return when (PolarSpo2Models.deviationFromBaselineName(value)) {
+            return when (PolarSdkModelAdapter.spo2DeviationFromBaselineName(value)) {
                 "noBaseline" -> NO_BASELINE
                 "belowUsual" -> BELOW_USUAL
                 "usual" -> USUAL

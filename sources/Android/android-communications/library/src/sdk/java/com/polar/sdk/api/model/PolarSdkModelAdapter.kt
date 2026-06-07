@@ -20,6 +20,7 @@ import com.polar.shared.sdk.PolarSdLogTriggerName
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepRatingName
 import com.polar.shared.sdk.PolarSleepWakeStateName
+import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.shared.sdk.PolarTrainingReadinessName
 import com.polar.shared.sdk.PolarUserDeviceSettingsFields
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
@@ -247,6 +248,22 @@ internal object PolarSdkModelAdapter {
 
     fun userDeviceSettingsAutomaticMeasurementStateName(enabled: Boolean): String {
         return PolarUserDeviceSettingsModels.automaticMeasurementStateName(enabled)
+    }
+
+    fun spo2ClassName(value: Int): String? {
+        return PolarSpo2Models.spo2ClassName(value)
+    }
+
+    fun spo2TriggerTypeName(value: Int): String? {
+        return PolarSpo2Models.triggerTypeName(value)
+    }
+
+    fun spo2TestStatusName(value: Int): String? {
+        return PolarSpo2Models.testStatusName(value)
+    }
+
+    fun spo2DeviationFromBaselineName(value: Int): String? {
+        return PolarSpo2Models.deviationFromBaselineName(value)
     }
 
     fun restServiceList(pathsForServices: Map<String, String>?): PlannedRestServiceList {

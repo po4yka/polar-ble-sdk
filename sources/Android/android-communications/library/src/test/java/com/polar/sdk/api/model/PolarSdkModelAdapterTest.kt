@@ -111,6 +111,15 @@ class PolarSdkModelAdapterTest {
     }
 
     @Test
+    fun `spo2 enum lookups route through sdk model adapter`() {
+        assertEquals("normal", PolarSdkModelAdapter.spo2ClassName(3))
+        assertNull(PolarSdkModelAdapter.spo2ClassName(99))
+        assertEquals("automatic", PolarSdkModelAdapter.spo2TriggerTypeName(1))
+        assertEquals("passed", PolarSdkModelAdapter.spo2TestStatusName(0))
+        assertEquals("aboveUsual", PolarSdkModelAdapter.spo2DeviationFromBaselineName(3))
+    }
+
+    @Test
     fun `rest service projection routes through sdk model adapter`() {
         val serviceList = PolarSdkModelAdapter.restServiceList(
             linkedMapOf(
