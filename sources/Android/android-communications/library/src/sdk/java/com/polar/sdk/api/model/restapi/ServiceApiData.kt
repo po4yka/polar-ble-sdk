@@ -1,13 +1,13 @@
 package com.polar.sdk.api.model.restapi
 
-import com.polar.shared.sdk.PolarRestServiceModels
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 
 /**
  * Lists REST API services and corresponding paths
  */
 data class PolarDeviceRestApiServices(val dictionary: Map<String, Any>) {
     private val sharedProjection
-        get() = PolarRestServiceModels.serviceList(pathsForServices)
+        get() = PolarSdkModelAdapter.restServiceList(pathsForServices)
 
     /**
      * Maps available REST API service names to corresponding paths
@@ -35,7 +35,7 @@ data class PolarDeviceRestApiServiceDescription (
     val dictionary: Map<String, Any>
 ) {
     internal val sharedProjection
-        get() = PolarRestServiceModels.serviceDescription(
+        get() = PolarSdkModelAdapter.restServiceDescription(
             events = dictionary["events"].asStringList(),
             endpoints = dictionary["endpoints"].asStringList(),
             actions = dictionary["cmd"].asStringMap(),
