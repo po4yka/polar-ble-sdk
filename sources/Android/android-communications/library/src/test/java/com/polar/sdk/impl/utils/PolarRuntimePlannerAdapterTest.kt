@@ -146,6 +146,32 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared watch face field defaults route through Android runtime adapter`() {
+        val defaults = PolarRuntimePlannerAdapter.watchFaceConfigFields()
+        val explicit = PolarRuntimePlannerAdapter.watchFaceConfigFields(
+            timeStyleId = 1,
+            complicationLayoutId = 2,
+            backgroundStyleId = 3,
+            accentColor = 0x11223344L,
+            complicationIds = listOf(10, 20),
+            fontfaceId = 4
+        )
+
+        Assert.assertEquals(0, defaults.timeStyleId)
+        Assert.assertEquals(0, defaults.complicationLayoutId)
+        Assert.assertEquals(0, defaults.backgroundStyleId)
+        Assert.assertEquals(0L, defaults.accentColor)
+        Assert.assertEquals(emptyList<Int>(), defaults.complicationIds)
+        Assert.assertEquals(0, defaults.fontfaceId)
+        Assert.assertEquals(1, explicit.timeStyleId)
+        Assert.assertEquals(2, explicit.complicationLayoutId)
+        Assert.assertEquals(3, explicit.backgroundStyleId)
+        Assert.assertEquals(0x11223344L, explicit.accentColor)
+        Assert.assertEquals(listOf(10, 20), explicit.complicationIds)
+        Assert.assertEquals(4, explicit.fontfaceId)
+    }
+
+    @Test
     fun `shared sleep REST facade paths preserve Android strings`() {
         Assert.assertEquals("/REST/SLEEP.API", PolarRuntimePlannerAdapter.sleepRestApiPath())
         Assert.assertEquals("/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]", PolarRuntimePlannerAdapter.sleepRecordingStateSubscribePath())

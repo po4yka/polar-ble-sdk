@@ -8,7 +8,6 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpC
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils
 import com.polar.sdk.api.errors.PolarServiceNotAvailable
 import com.polar.sdk.api.model.PolarWatchFaceComplication
-import com.polar.shared.sdk.PolarWatchFaceFields
 import protocol.PftpRequest
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
@@ -203,7 +202,7 @@ internal object PolarWatchFaceUtils {
         complicationIds: List<Int>? = null,
         fontfaceId: Int? = null
     ): WatchfaceConfigFields {
-        val fields = PolarWatchFaceFields.fromNullableFields(
+        val fields = PolarRuntimePlannerAdapter.watchFaceConfigFields(
             timeStyleId = timeStyleId,
             complicationLayoutId = complicationLayoutId,
             backgroundStyleId = backgroundStyleId,

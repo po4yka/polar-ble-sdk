@@ -30,6 +30,7 @@ import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
+import com.polar.shared.sdk.PolarWatchFaceFields
 import com.polar.shared.time.PolarTimeUtils
 import protocol.PftpNotification
 import protocol.PftpRequest
@@ -42,6 +43,14 @@ internal object PolarRuntimePlannerAdapter {
     data class PlannedD2hNotification(
         val notificationType: String,
         val parsedProtoName: String?
+    )
+    data class PlannedWatchFaceFields(
+        val timeStyleId: Int,
+        val complicationLayoutId: Int,
+        val backgroundStyleId: Int,
+        val accentColor: Long,
+        val complicationIds: List<Int>,
+        val fontfaceId: Int
     )
 
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {
@@ -568,6 +577,32 @@ internal object PolarRuntimePlannerAdapter {
 
     fun stopSleepRecordingPath(): String {
         return PolarRestServiceModels.stopSleepRecordingPath()
+    }
+
+    fun watchFaceConfigFields(
+        timeStyleId: Int? = null,
+        complicationLayoutId: Int? = null,
+        backgroundStyleId: Int? = null,
+        accentColor: Long? = null,
+        complicationIds: List<Int>? = null,
+        fontfaceId: Int? = null
+    ): PlannedWatchFaceFields {
+        val fields = PolarWatchFaceFields.fromNullableFields(
+            timeStyleId = timeStyleId,
+            complicationLayoutId = complicationLayoutId,
+            backgroundStyleId = backgroundStyleId,
+            accentColor = accentColor,
+            complicationIds = complicationIds,
+            fontfaceId = fontfaceId
+        )
+        return PlannedWatchFaceFields(
+            timeStyleId = fields.timeStyleId,
+            complicationLayoutId = fields.complicationLayoutId,
+            backgroundStyleId = fields.backgroundStyleId,
+            accentColor = fields.accentColor,
+            complicationIds = fields.complicationIds,
+            fontfaceId = fields.fontfaceId
+        )
     }
 
     fun nightlyRechargePath(day: String): String {
