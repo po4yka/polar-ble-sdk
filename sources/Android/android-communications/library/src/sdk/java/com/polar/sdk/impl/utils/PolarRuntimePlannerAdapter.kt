@@ -419,15 +419,15 @@ internal object PolarRuntimePlannerAdapter {
         return PolarRuntimeOrchestration.userDeviceSettingsPath(fileSystemType, deviceSettingsPath, sensorSettingsPath, unknownSettingsPath)
     }
 
-    fun planStoredDataCleanup(kind: String, rootPath: String, cutoffDate: String? = null) {
-        PolarWorkflowRuntimePlanning.planStoredDataCleanup(
+    fun planStoredDataCleanup(kind: String, rootPath: String, cutoffDate: String? = null): List<Pair<PftpRequest.PbPFtpOperation.Command, String>> {
+        return PolarWorkflowRuntimePlanning.planStoredDataCleanup(
             PolarStoredDataCleanupScenario(
                 id = "platform-stored-data-cleanup",
                 kind = kind,
                 rootPath = rootPath,
                 cutoffDate = cutoffDate
             )
-        )
+        ).commands.mapNotNull(::cleanupCommandOperation)
     }
 
     fun planStoredDataCleanupOperations(

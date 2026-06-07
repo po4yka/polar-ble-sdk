@@ -457,8 +457,8 @@ class PolarRuntimePlannerAdapterTest {
             listOf("/U/0/20260530/ACT", "/U/0/20260530"),
             PolarRuntimePlannerAdapter.storedDataEmptyParentDirectories("/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash = false)
         )
-        PolarRuntimePlannerAdapter.planStoredDataCleanup("activityPrune", "/U/0")
-        PolarRuntimePlannerAdapter.planStoredDataCleanup("automaticSamplePrune", "/U/0/AUTOS", cutoffDate = "2026-05-31")
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpOperation.Command.GET to "/U/0/"), PolarRuntimePlannerAdapter.planStoredDataCleanup("activityPrune", "/U/0"))
+        Assert.assertEquals(listOf(PftpRequest.PbPFtpOperation.Command.GET to "/U/0/AUTOS/"), PolarRuntimePlannerAdapter.planStoredDataCleanup("automaticSamplePrune", "/U/0/AUTOS", cutoffDate = "2026-05-31"))
     }
 
     @Test
