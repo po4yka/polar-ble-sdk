@@ -438,6 +438,10 @@ class PolarRuntimePlannerAdapterTest {
     @Test
     fun `shared PSFTP write ack terminal preserves Android success policy`() {
         Assert.assertEquals("success", PolarRuntimePlannerAdapter.planPsFtpWriteAck(payloadSize = 2))
+        PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(payloadSize = 2)
+        Assert.assertThrows(IllegalStateException::class.java) {
+            PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(payloadSize = 2, writeAck = "never")
+        }
     }
 
     @Test

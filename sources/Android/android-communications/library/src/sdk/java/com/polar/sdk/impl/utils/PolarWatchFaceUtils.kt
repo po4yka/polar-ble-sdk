@@ -265,8 +265,7 @@ internal object PolarWatchFaceUtils {
         BleLogger.d(TAG, "writeWatchFaceComplicationInts: PUT ${kvtxScript.size} bytes to $KVTX_FILE_PATH")
         val writeOperation = watchFaceWriteOperation()
         val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(writeOperation)
-        PolarRuntimePlannerAdapter.planPsFtpWriteProgress(kvtxScript.size, "android")
-        PolarRuntimePlannerAdapter.planPsFtpWriteAck(kvtxScript.size)
+        PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(kvtxScript.size)
         client.write(requestBytes, ByteArrayInputStream(kvtxScript)).collect {}
     }
 }

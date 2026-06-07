@@ -980,6 +980,12 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.psFtpWriteAckTerminal(payloadSize, writeAck)
     }
 
+    fun ensurePsFtpWriteRuntimePlan(payloadSize: Int, platform: String = "android", writeAck: String = "success") {
+        planPsFtpWriteProgress(payloadSize, platform)
+        val terminal = planPsFtpWriteAck(payloadSize, writeAck)
+        require(terminal == "success") { "PSFTP write ACK planning failed: $terminal" }
+    }
+
     private fun PolarDateTimeFields.toPlanned(): PlannedDateTimeFields {
         return PlannedDateTimeFields(
             date = PlannedDateFields(date.year, date.month, date.day),

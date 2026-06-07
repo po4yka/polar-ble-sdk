@@ -1564,8 +1564,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val ppiModeLedByte = if (ledConfig.ppiModeLedEnabled) LedConfig.LED_ANIMATION_ENABLE_BYTE else LedConfig.LED_ANIMATION_DISABLE_BYTE
         val payload = byteArrayOf(sdkModeLedByte, ppiModeLedByte)
         val data = ByteArrayInputStream(payload)
-        PolarRuntimePlannerAdapter.planPsFtpWriteProgress(payload.size, "android")
-        PolarRuntimePlannerAdapter.planPsFtpWriteAck(payload.size)
+        PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(payload.size)
         client.write(requestBytes, data).collect {}
     }
 
@@ -1713,11 +1712,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             sendInitializationAndStartSyncNotifications(identifier)
             BleLogger.d(TAG, "doFirstTimeUse(identifier: $identifier): set local time")
             setLocalTime(identifier, localTime)
-            PolarRuntimePlannerAdapter.planPsFtpWriteProgress(ftuData.size, "android")
-            PolarRuntimePlannerAdapter.planPsFtpWriteAck(ftuData.size)
+            PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(ftuData.size)
             client.write(ftuRequestBytes, ByteArrayInputStream(ftuData)).collect {}
-            PolarRuntimePlannerAdapter.planPsFtpWriteProgress(userIdData.size, "android")
-            PolarRuntimePlannerAdapter.planPsFtpWriteAck(userIdData.size)
+            PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(userIdData.size)
             client.write(userIdRequestBytes, ByteArrayInputStream(userIdData)).collect {}
             BleLogger.d(TAG, "doFirstTimeUse(identifier: $identifier): completed")
             sendTerminateAndStopSyncNotifications(identifier)
@@ -2298,8 +2295,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(writeOperation)
         val payload = logConfig.toProto().toByteArray()
         val data = ByteArrayInputStream(payload)
-        PolarRuntimePlannerAdapter.planPsFtpWriteProgress(payload.size, "android")
-        PolarRuntimePlannerAdapter.planPsFtpWriteAck(payload.size)
+        PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(payload.size)
         client.write(requestBytes, data).collect {}
     }
 
@@ -2520,7 +2516,6 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             .associateWith { path -> PftpRequest.PbPFtpOperation.Command.PUT to path }
         for (firmwareFile in firmwareFiles) {
             var lastBytesWritten = 0L
-            PolarRuntimePlannerAdapter.planPsFtpWriteProgress(firmwareFile.second.size, "android")
             BleLogger.d(TAG, "Prepare firmware update for ${firmwareFile.first}")
             val preparePlan = PolarRuntimePlannerAdapter.planCommandQuery(
                 id = "firmware-prepare-update",
@@ -2532,7 +2527,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             val plannedWriteOperation = plannedWriteOperations.getValue("/${firmwareFile.first}")
             val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(plannedWriteOperation)
             try {
-                PolarRuntimePlannerAdapter.planPsFtpWriteAck(firmwareFile.second.size)
+                PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(firmwareFile.second.size)
                 var lastEmitTime = 0L
                 client.write(requestBytes, ByteArrayInputStream(firmwareFile.second))
                     .collect { bytesWritten: Long ->
@@ -3011,8 +3006,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             deviceUserSetting.writeTo(baos)
             baos.toByteArray()
         }
-        PolarRuntimePlannerAdapter.planPsFtpWriteProgress(deviceSettingsData.size, "android")
-        PolarRuntimePlannerAdapter.planPsFtpWriteAck(deviceSettingsData.size)
+        PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(deviceSettingsData.size)
         client.write(PolarRuntimePlannerAdapter.fileOperationBytes(operation), ByteArrayInputStream(deviceSettingsData)).collect {}
     }
 
