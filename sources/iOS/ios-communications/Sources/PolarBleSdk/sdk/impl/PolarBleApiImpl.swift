@@ -2676,7 +2676,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let payloadFields = PolarRuntimePlanner.userDeviceSettingsProtobufPayloadFields()
         let plannedOperation = PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-user-device-settings", kind: "write", path: settingsPath, payloadFields: payloadFields)?.first
         let operation = plannedOperation ?? (command: .put, path: settingsPath)
-        PolarRuntimePlanner.userDeviceSettings(id: "set-user-device-settings", kind: "write", path: settingsPath, payloadFields: payloadFields)
+        try ensureUserDeviceSettingsRuntimePlan(id: "set-user-device-settings", kind: "write", path: settingsPath, payloadFields: payloadFields)
         let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
         BleLogger.trace("Polar user device settings set. Device: \(identifier) Path: \(settingsPath)")
         let inputStream = InputStream(data: userDeviceSettingsData)
@@ -2692,7 +2692,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let fsType = BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType)
         let settingsPath = PolarRuntimePlanner.userDeviceSettingsPath(fileSystemType: "\(fsType)", unknownSettingsPath: SENSOR_SETTINGS_FILE_PATH) ?? SENSOR_SETTINGS_FILE_PATH
         let plannedOperation = PolarRuntimePlanner.userDeviceSettingsOperations(id: "get-user-device-settings", kind: "read", path: settingsPath)?.first
-        PolarRuntimePlanner.userDeviceSettings(id: "get-user-device-settings", kind: "read", path: settingsPath)
+        try ensureUserDeviceSettingsRuntimePlan(id: "get-user-device-settings", kind: "read", path: settingsPath)
         return try await PolarUserDeviceSettingsUtils.getUserDeviceSettings(client: client, deviceSettingsPath: plannedOperation?.path ?? settingsPath)
     }
 
@@ -2915,7 +2915,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let plannedOperations = PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-user-device-location", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         var currentSettings = try await getUserDeviceSettingsProto(client: client, settingsPath: settingsPath, plannedOperation: plannedOperations?.first)
         currentSettings.generalSettings.deviceLocation = deviceLocation
-        PolarRuntimePlanner.userDeviceSettings(id: "set-user-device-location", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
+        try ensureUserDeviceSettingsRuntimePlan(id: "set-user-device-location", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: currentSettings, settingsPath: settingsPath, plannedOperation: plannedOperations?.first { $0.command == .put })
     }
 
@@ -2931,7 +2931,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let plannedOperations = PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-usb-connection-mode", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         var currentSettings = try await getUserDeviceSettingsProto(client: client, settingsPath: settingsPath, plannedOperation: plannedOperations?.first)
         currentSettings.usbConnectionSettings = usbSettings
-        PolarRuntimePlanner.userDeviceSettings(id: "set-usb-connection-mode", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
+        try ensureUserDeviceSettingsRuntimePlan(id: "set-usb-connection-mode", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: currentSettings, settingsPath: settingsPath, plannedOperation: plannedOperations?.first { $0.command == .put })
     }
 
@@ -2948,7 +2948,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let plannedOperations = PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-automatic-training-detection", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         var currentSettings = try await getUserDeviceSettingsProto(client: client, settingsPath: settingsPath, plannedOperation: plannedOperations?.first)
         currentSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings = atdSettings
-        PolarRuntimePlanner.userDeviceSettings(id: "set-automatic-training-detection", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
+        try ensureUserDeviceSettingsRuntimePlan(id: "set-automatic-training-detection", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: currentSettings, settingsPath: settingsPath, plannedOperation: plannedOperations?.first { $0.command == .put })
     }
 
@@ -2964,7 +2964,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let nextDSTOffset = TimeZone.current.daylightSavingTimeOffset(for: nextDSTTransition.addingTimeInterval(24*60*60)) - TimeZone.current.daylightSavingTimeOffset(for: nextDSTTransition.addingTimeInterval(-(24*60*60)))
         currentSettings.daylightSaving.nextDaylightSavingTime = PolarTimeUtils.dateToPbSystemDateTime(date: nextDSTTransition)
         currentSettings.daylightSaving.offset = Int32(nextDSTOffset)
-        PolarRuntimePlanner.userDeviceSettings(id: "set-daylight-saving-time", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
+        try ensureUserDeviceSettingsRuntimePlan(id: "set-daylight-saving-time", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: currentSettings, settingsPath: settingsPath, plannedOperation: plannedOperations?.first { $0.command == .put })
     }
 
@@ -2977,7 +2977,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let plannedOperations = PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-telemetry-enabled", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         var currentProto = try await getUserDeviceSettingsProto(client: client, settingsPath: settingsPath, plannedOperation: plannedOperations?.first)
         currentProto.telemetrySettings.telemetryEnabled = enabled
-        PolarRuntimePlanner.userDeviceSettings(id: "set-telemetry-enabled", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
+        try ensureUserDeviceSettingsRuntimePlan(id: "set-telemetry-enabled", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: currentProto, settingsPath: settingsPath, plannedOperation: plannedOperations?.first { $0.command == .put })
         BleLogger.trace("Telemetry enabled=\(enabled) written for \(identifier)")
     }
@@ -3058,6 +3058,13 @@ extension PolarBleApiImpl: PolarBleApi  {
         return PolarRuntimePlanner.userDeviceSettingsPath(fileSystemType: "\(fsType)", unknownSettingsPath: DEVICE_SETTINGS_FILE_PATH) ?? DEVICE_SETTINGS_FILE_PATH
     }
 
+    private func ensureUserDeviceSettingsRuntimePlan(id: String, kind: String, path: String, payloadFields: [String] = []) throws {
+        let terminal = PolarRuntimePlanner.userDeviceSettings(id: id, kind: kind, path: path, payloadFields: payloadFields)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "User-device-settings planning failed: \(terminal)")
+        }
+    }
+
     private func getUserDeviceSettingsProto(client: BlePsFtpClient, settingsPath: String = DEVICE_SETTINGS_FILE_PATH, plannedOperation: (command: Protocol_PbPFtpOperation.Command, path: String)? = nil) async throws -> Data_PbUserDeviceSettings {
         let operation = plannedOperation ?? (command: .get, path: settingsPath)
         let request = try PolarRuntimePlanner.fileOperationBytes(operation)
@@ -3091,7 +3098,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             autosSettings.clearIntelligentTimedSettings()
         }
         updated.automaticMeasurementSettings.automaticOhrMeasurement = autosSettings
-        PolarRuntimePlanner.userDeviceSettings(id: "set-automatic-ohr-measurement", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
+        try ensureUserDeviceSettingsRuntimePlan(id: "set-automatic-ohr-measurement", kind: "readThenWrite", path: settingsPath, payloadFields: payloadFields)
         try await setUserDeviceSettingsProto(client: client, polarUserDeviceSettings: updated, settingsPath: settingsPath, plannedOperation: plannedOperations?.first { $0.command == .put })
         BleLogger.trace("AUTOS files enabled=\(enabled) written for \(identifier)")
     }
