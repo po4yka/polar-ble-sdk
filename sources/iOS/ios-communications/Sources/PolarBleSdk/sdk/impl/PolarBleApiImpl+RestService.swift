@@ -234,13 +234,13 @@ extension PolarBleApiImpl: PolarRestServiceApi {
     func listRestApiServices(identifier: String) async throws -> PolarDeviceRestApiServices {
         let serviceApiPath = "/REST/SERVICE.API"
         let plannedOperation = PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
-        PolarRuntimePlanner.restFacadeGet(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
+        try ensureRestFacadeRuntimePlan(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
         return try await getJSONDecodableFromPath(identifier: identifier, path: plannedOperation?.path ?? serviceApiPath)
     }
 
     func getRestApiDescription(identifier: String, path: String) async throws -> PolarDeviceRestApiServiceDescription {
         let plannedOperation = PolarRuntimePlanner.restFacadeGetOperation(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
-        PolarRuntimePlanner.restFacadeGet(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
+        try ensureRestFacadeRuntimePlan(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
         return try await getJSONDecodableFromPath(identifier: identifier, path: plannedOperation?.path ?? path)
     }
 
@@ -256,7 +256,7 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         }
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
         let operation = plannedOperation ?? (command: .get, path: path)
-        PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
+        try ensureFileFacadeRuntimePlan(id: "read-low-level-file-success", command: "GET", path: path)
         let requestData = try PolarRuntimePlanner.fileOperationBytes(operation)
         let responseData = try await client.request(requestData)
         return responseData as Data
@@ -278,7 +278,7 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         let payloadHex = data.map { String(format: "%02x", $0) }.joined()
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
         let operation = plannedOperation ?? (command: command, path: path)
-        PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
+        try ensureFileFacadeRuntimePlan(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: data.count)
         PolarRuntimePlanner.psFtpWriteAck(payloadSize: data.count)
         let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
@@ -289,6 +289,20 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         } catch {
             PolarRuntimePlanner.fileRuntimeError(operation: "writeFile", path: path, error: error)
             throw error
+        }
+    }
+
+    private func ensureRestFacadeRuntimePlan(id: String, path: String, payloadShape: String) throws {
+        let terminal = PolarRuntimePlanner.restFacadeGet(id: id, path: path, payloadShape: payloadShape)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "REST facade planning failed: \(terminal)")
+        }
+    }
+
+    private func ensureFileFacadeRuntimePlan(id: String, command: String, path: String, payloadHex: String = "") throws {
+        let terminal = PolarRuntimePlanner.fileFacade(id: id, command: command, path: path, payloadHex: payloadHex)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "File facade planning failed: \(terminal)")
         }
     }
 

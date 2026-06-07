@@ -77,7 +77,7 @@ class PolarFileUtils {
         let path = PolarRuntimePlanner.normalizeFileListFolderPath(directoryPath)
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "list-low-level-directory-success", command: "GET", path: path)
         let operation = plannedOperation ?? (.get, path)
-        PolarRuntimePlanner.fileFacade(id: "list-low-level-directory-success", command: "GET", path: path)
+        try ensureFileFacadeRuntimePlan(id: "list-low-level-directory-success", command: "GET", path: path)
         let request = try PolarRuntimePlanner.fileOperationBytes(operation)
         do {
             let data = try await client.request(request)
@@ -97,7 +97,7 @@ class PolarFileUtils {
         }
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
         let operation = plannedOperation ?? (.remove, filePath)
-        PolarRuntimePlanner.fileFacade(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
+        try ensureFileFacadeRuntimePlan(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
         let request = try PolarRuntimePlanner.fileOperationBytes(operation)
         do {
             return try await client.request(request)
@@ -115,7 +115,7 @@ class PolarFileUtils {
         for filePath in filePaths {
             let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
             let operation = plannedOperation ?? (.remove, filePath)
-            PolarRuntimePlanner.fileFacade(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
+            try ensureFileFacadeRuntimePlan(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
             let request = try PolarRuntimePlanner.fileOperationBytes(operation)
             do {
                 _ = try await client.request(request)
@@ -138,7 +138,7 @@ class PolarFileUtils {
             }
             let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: filePath)
             let operation = plannedOperation ?? (.get, filePath)
-            PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: filePath)
+            try ensureFileFacadeRuntimePlan(id: "read-low-level-file-success", command: "GET", path: filePath)
             let request = try PolarRuntimePlanner.fileOperationBytes(operation)
             return try await client.request(request)
         } catch {
@@ -150,7 +150,7 @@ class PolarFileUtils {
     private func fetchRecursive(_ path: String, client: BlePsFtpClient, condition: @escaping (_ p: String) -> Bool, recurseDeep: Bool) async throws -> [(name: String, size: UInt64)] {
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
         let operation = plannedOperation ?? (.get, path)
-        PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
+        try ensureFileFacadeRuntimePlan(id: "read-low-level-file-success", command: "GET", path: path)
         let request = try PolarRuntimePlanner.fileOperationBytes(operation)
         do {
             let data = try await client.request(request)
@@ -171,6 +171,13 @@ class PolarFileUtils {
         } catch {
             PolarRuntimePlanner.fileRuntimeError(operation: "listFiles", path: path, error: error)
             throw handleError(error)
+        }
+    }
+
+    private func ensureFileFacadeRuntimePlan(id: String, command: String, path: String, payloadHex: String = "") throws {
+        let terminal = PolarRuntimePlanner.fileFacade(id: id, command: command, path: path, payloadHex: payloadHex)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "File facade planning failed: \(terminal)")
         }
     }
 
@@ -204,7 +211,7 @@ class PolarFileUtils {
         let payloadHex = fileData.map { String(format: "%02x", $0) }.joined()
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: payloadHex)
         let operation = plannedOperation ?? (.put, filePath)
-        PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: payloadHex)
+        try ensureFileFacadeRuntimePlan(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: payloadHex)
         _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: fileData.count)
         PolarRuntimePlanner.psFtpWriteAck(payloadSize: fileData.count)
         let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
