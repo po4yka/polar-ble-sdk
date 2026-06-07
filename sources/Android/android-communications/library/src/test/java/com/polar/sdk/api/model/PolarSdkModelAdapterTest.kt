@@ -37,6 +37,25 @@ class PolarSdkModelAdapterTest {
     }
 
     @Test
+    fun `first time use enum lookups route through sdk model adapter`() {
+        assertEquals("FEMALE", PolarSdkModelAdapter.firstTimeUseGenderName(2))
+        assertEquals(1, PolarSdkModelAdapter.firstTimeUseGenderValue("MALE"))
+        assertNull(PolarSdkModelAdapter.firstTimeUseGenderValue("UNKNOWN"))
+        assertEquals(50, PolarSdkModelAdapter.firstTimeUseTrainingBackgroundValue(50))
+        assertNull(PolarSdkModelAdapter.firstTimeUseTrainingBackgroundValue(70))
+        assertEquals(3, PolarSdkModelAdapter.firstTimeUseTypicalDayValue(3))
+        assertNull(PolarSdkModelAdapter.firstTimeUseTypicalDayValue(4))
+    }
+
+    @Test
+    fun `watch face complication lookup routes through sdk model adapter`() {
+        val id = PolarSdkModelAdapter.watchFaceComplicationId("ecg-complication")
+
+        assertEquals("ECG", PolarSdkModelAdapter.watchFaceComplicationName(id))
+        assertNull(PolarSdkModelAdapter.watchFaceComplicationName(Int.MIN_VALUE))
+    }
+
+    @Test
     fun `rest service projection routes through sdk model adapter`() {
         val serviceList = PolarSdkModelAdapter.restServiceList(
             linkedMapOf(

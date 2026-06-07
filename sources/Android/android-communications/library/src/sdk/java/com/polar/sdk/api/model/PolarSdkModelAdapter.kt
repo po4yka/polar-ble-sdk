@@ -2,10 +2,14 @@ package com.polar.sdk.api.model
 
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.runtime.PolarD2hRuntimePlanning
+import com.polar.shared.sdk.PolarFirstTimeUseGenderName
+import com.polar.shared.sdk.PolarFirstTimeUseTrainingBackgroundName
+import com.polar.shared.sdk.PolarFirstTimeUseTypicalDayName
 import com.polar.shared.sdk.PolarRestServiceModels
 import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
 import com.polar.shared.sdk.PolarSdLogTriggerName
 import com.polar.shared.sdk.PolarSdkModelMappers
+import com.polar.shared.sdk.PolarWatchFaceComplicationName
 
 internal object PolarSdkModelAdapter {
     data class PlannedDiskSpace(
@@ -53,6 +57,30 @@ internal object PolarSdkModelAdapter {
 
     fun sdLogMagnetometerFrequencyName(value: Int): String? {
         return PolarSdLogMagnetometerFrequencyName.fromValue(value)?.name
+    }
+
+    fun firstTimeUseGenderName(value: Int): String? {
+        return PolarFirstTimeUseGenderName.fromValue(value)?.name
+    }
+
+    fun firstTimeUseGenderValue(name: String): Int? {
+        return PolarFirstTimeUseGenderName.fromName(name)?.value
+    }
+
+    fun firstTimeUseTrainingBackgroundValue(value: Int): Int? {
+        return PolarFirstTimeUseTrainingBackgroundName.fromValue(value)?.value
+    }
+
+    fun firstTimeUseTypicalDayValue(value: Int): Int? {
+        return PolarFirstTimeUseTypicalDayName.fromValue(value)?.value
+    }
+
+    fun watchFaceComplicationId(complicationId: String): Int {
+        return PolarWatchFaceComplicationName.idFor(complicationId)
+    }
+
+    fun watchFaceComplicationName(id: Int): String? {
+        return PolarWatchFaceComplicationName.fromId(id)?.name
     }
 
     fun restServiceList(pathsForServices: Map<String, String>?): PlannedRestServiceList {

@@ -1,8 +1,6 @@
 // Copyright 2026 Polar Electro Oy. All rights reserved.
 package com.polar.sdk.api.model
 
-import com.polar.shared.sdk.PolarWatchFaceComplicationName
-
 enum class PolarWatchFaceComplication(val complicationId: String) {
     ALARM("alarm-complication"),
     ALTITUDE("altitude-complication"),
@@ -31,12 +29,12 @@ enum class PolarWatchFaceComplication(val complicationId: String) {
     WEATHER("weather-complication"),
     WEEKLY_SUMMARY("weeklysummary-complication");
 
-    val id: Int get() = PolarWatchFaceComplicationName.idFor(complicationId)
+    val id: Int get() = PolarSdkModelAdapter.watchFaceComplicationId(complicationId)
 
     companion object {
         fun fromId(id: Int): PolarWatchFaceComplication? {
-            return PolarWatchFaceComplicationName.fromId(id)?.let { sharedName ->
-                entries.firstOrNull { complication -> complication.name == sharedName.name }
+            return PolarSdkModelAdapter.watchFaceComplicationName(id)?.let { sharedName ->
+                entries.firstOrNull { complication -> complication.name == sharedName }
             }
         }
     }
