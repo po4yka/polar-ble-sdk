@@ -35,7 +35,7 @@ internal class PolarTrainingSessionUtils {
     static func trainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference) -> [String] {
         #if canImport(PolarBleSdkShared)
         let sharedReference = trainingSessionSharedReferenceText(reference: reference)
-        let sharedOrder = PolarTrainingSessionRuntimePlanner.payloadFetchOrder(referenceText: sharedReference)
+        let sharedOrder = PolarRuntimePlanner.trainingSessionPayloadFetchOrder(referenceText: sharedReference)
         if !sharedOrder.isEmpty {
             return sharedOrder.split(separator: "\n").map(String.init)
         }
@@ -45,7 +45,7 @@ internal class PolarTrainingSessionUtils {
 
     static func trainingSessionPayloadParserCase(fileName: String) -> (parser: String, encoding: String)? {
         #if canImport(PolarBleSdkShared)
-        if let shared = PolarTrainingSessionRuntimePlanner.payloadParserCase(fileName: fileName) {
+        if let shared = PolarRuntimePlanner.trainingSessionPayloadParserCase(fileName: fileName) {
             let fields = shared.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
             if fields.count == 2 {
                 return (parser: fields[0], encoding: fields[1])
@@ -78,7 +78,7 @@ internal class PolarTrainingSessionUtils {
 
     private static func trainingSessionDeleteParentPath(referencePath: String) -> String {
         #if canImport(PolarBleSdkShared)
-        return PolarTrainingSessionRuntimePlanner.deleteParentPath(referencePath: referencePath)
+        return PolarRuntimePlanner.trainingSessionDeleteParentPath(referencePath: referencePath)
         #else
         let components = referencePath.split(separator: "/")
         return "/U/0/" + components[2] + "/E/"
@@ -87,7 +87,7 @@ internal class PolarTrainingSessionUtils {
 
     private static func trainingSessionDeleteRemovePath(referencePath: String, parentEntryCount: Int) -> String {
         #if canImport(PolarBleSdkShared)
-        return PolarTrainingSessionRuntimePlanner.deleteRemovePath(referencePath: referencePath, parentEntryCount: parentEntryCount)
+        return PolarRuntimePlanner.trainingSessionDeleteRemovePath(referencePath: referencePath, parentEntryCount: parentEntryCount)
         #else
         let components = referencePath.split(separator: "/")
         return parentEntryCount <= 1 ? "/U/0/" + components[2] + "/E/" : "/U/0/" + components[2] + "/E/" + components[4] + "/"
@@ -213,7 +213,7 @@ internal class PolarTrainingSessionUtils {
             }
             func onProgressUpdate(bytesReceived: Int) {
                 lock.lock(); accumulatedBytes += Int64(bytesReceived); let cur = accumulatedBytes; lock.unlock()
-                let percent = PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: cur, totalBytes: totalBytes)
+                let percent = PolarRuntimePlanner.trainingSessionProgressPercent(completedBytes: cur, totalBytes: totalBytes)
                 progressHandler(PolarTrainingSessionProgress(totalBytes: totalBytes, completedBytes: cur, progressPercent: percent, currentFileName: nil))
             }
         }
@@ -343,7 +343,7 @@ internal class PolarTrainingSessionUtils {
         toDate: Date?
     ) -> [PolarTrainingSessionReference]? {
         let encodedEntries = entries.map { "\($0.name)|\($0.size)" }.joined(separator: "\n")
-        let shared = PolarTrainingSessionRuntimePlanner.references(entriesText: encodedEntries)
+        let shared = PolarRuntimePlanner.trainingSessionReferences(entriesText: encodedEntries)
         guard !shared.isEmpty else { return [] }
         var references: [PolarTrainingSessionReference] = []
         let sharedDateFormatter = DateFormatter()
@@ -432,7 +432,7 @@ internal class PolarTrainingSessionUtils {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        if let sharedDecision = PolarTrainingSessionRuntimePlanner.referenceDateMatches(
+        if let sharedDecision = PolarRuntimePlanner.trainingSessionReferenceDateMatches(
             date: formatter.string(from: date),
             fromDate: fromDate.map { formatter.string(from: $0) },
             toDate: toDate.map { formatter.string(from: $0) }
@@ -471,7 +471,7 @@ internal class PolarTrainingSessionUtils {
 private extension PolarTrainingSessionDataTypes {
     static func fromSharedOrRaw(fileName: String) -> PolarTrainingSessionDataTypes? {
         #if canImport(PolarBleSdkShared)
-        if let sharedType = PolarTrainingSessionRuntimePlanner.trainingDataType(fileName: fileName) {
+        if let sharedType = PolarRuntimePlanner.trainingSessionDataType(fileName: fileName) {
             return fromSharedTypeName(sharedType)
         }
         #endif
@@ -495,7 +495,7 @@ private extension PolarTrainingSessionDataTypes {
 private extension PolarExerciseDataTypes {
     var deviceFileName: String {
         #if canImport(PolarBleSdkShared)
-        return PolarTrainingSessionRuntimePlanner.exerciseDataTypeFileName(typeName: sharedTypeName) ?? rawValue
+        return PolarRuntimePlanner.trainingSessionExerciseDataTypeFileName(typeName: sharedTypeName) ?? rawValue
         #else
         return rawValue
         #endif
@@ -503,7 +503,7 @@ private extension PolarExerciseDataTypes {
 
     static func fromSharedOrRaw(fileName: String) -> PolarExerciseDataTypes? {
         #if canImport(PolarBleSdkShared)
-        if let sharedType = PolarTrainingSessionRuntimePlanner.exerciseDataType(fileName: fileName) {
+        if let sharedType = PolarRuntimePlanner.trainingSessionExerciseDataType(fileName: fileName) {
             return fromSharedTypeName(sharedType)
         }
         #endif
@@ -535,89 +535,5 @@ private extension PolarExerciseDataTypes {
         case .samplesGzip: return "SAMPLES_GZIP"
         case .samplesAdvancedFormatGzip: return "SAMPLES_ADVANCED_FORMAT_GZIP"
         }
-    }
-}
-
-enum PolarTrainingSessionRuntimePlanner {
-    static func payloadFetchOrder(referenceText: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.trainingSessionPayloadFetchOrder(referenceText: referenceText)
-        #else
-        return ""
-        #endif
-    }
-
-    static func payloadParserCase(fileName: String) -> String? {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.trainingSessionPayloadParserCase(fileName: fileName)
-        #else
-        return nil
-        #endif
-    }
-
-    static func deleteParentPath(referencePath: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.trainingSessionDeleteParentPath(referencePath: referencePath)
-        #else
-        let components = referencePath.split(separator: "/")
-        return "/U/0/" + components[2] + "/E/"
-        #endif
-    }
-
-    static func deleteRemovePath(referencePath: String, parentEntryCount: Int) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.trainingSessionDeleteRemovePath(referencePath: referencePath, parentEntryCount: Int32(parentEntryCount))
-        #else
-        let components = referencePath.split(separator: "/")
-        return parentEntryCount <= 1 ? "/U/0/" + components[2] + "/E/" : "/U/0/" + components[2] + "/E/" + components[4] + "/"
-        #endif
-    }
-
-    static func progressPercent(completedBytes: Int64, totalBytes: Int64) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.trainingSessionProgressPercent(completedBytes: completedBytes, totalBytes: totalBytes))
-        #else
-        return totalBytes > 0 ? max(0, min(Int((completedBytes * 100) / totalBytes), 100)) : 0
-        #endif
-    }
-
-    static func referenceDateMatches(date: String, fromDate: String?, toDate: String?) -> Bool? {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.trainingSessionReferenceDateMatches(date: date, fromDate: fromDate, toDate: toDate)
-        #else
-        return nil
-        #endif
-    }
-
-    static func references(entriesText: String) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.trainingSessionReferences(entriesText: entriesText)
-        #else
-        return ""
-        #endif
-    }
-
-    static func trainingDataType(fileName: String) -> String? {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.trainingSessionDataType(fileName: fileName)
-        #else
-        return nil
-        #endif
-    }
-
-    static func exerciseDataType(fileName: String) -> String? {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.trainingSessionExerciseDataType(fileName: fileName)
-        #else
-        return nil
-        #endif
-    }
-
-    static func exerciseDataTypeFileName(typeName: String) -> String? {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.trainingSessionExerciseDataTypeFileName(typeName: typeName)
-        #else
-        return nil
-        #endif
     }
 }

@@ -120,12 +120,12 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
     }
 
     func testTrainingSessionProgressPercentUsesSharedClampPolicy() throws {
-        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: 0, totalBytes: 0), 0)
-        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: 25, totalBytes: 100), 25)
-        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: 125, totalBytes: 100), 100)
-        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.progressPercent(completedBytes: -5, totalBytes: 100), 0)
-        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.referenceDateMatches(date: "2024-02-29", fromDate: "2024-02-28", toDate: "2024-03-01"), true)
-        XCTAssertEqual(PolarTrainingSessionRuntimePlanner.referenceDateMatches(date: "2024-03-02", fromDate: "2024-02-28", toDate: "2024-03-01"), false)
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionProgressPercent(completedBytes: 0, totalBytes: 0), 0)
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionProgressPercent(completedBytes: 25, totalBytes: 100), 25)
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionProgressPercent(completedBytes: 125, totalBytes: 100), 100)
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionProgressPercent(completedBytes: -5, totalBytes: 100), 0)
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionReferenceDateMatches(date: "2024-02-29", fromDate: "2024-02-28", toDate: "2024-03-01"), true)
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionReferenceDateMatches(date: "2024-03-02", fromDate: "2024-02-28", toDate: "2024-03-01"), false)
     }
 
     // MARK: - Helpers
