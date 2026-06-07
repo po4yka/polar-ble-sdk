@@ -1095,13 +1095,13 @@ extension PolarBleApiImpl: PolarBleApi  {
         case .unknownFileSystem: break
         case .h10FileSystem:
             let localTimeHour = Calendar.current.component(.hour, from: time)
-            PolarRuntimePlanner.setLocalTimeH10(localTimeHour: localTimeHour)
+            try ensureDiskTimeRuntimeTerminal(PolarRuntimePlanner.setLocalTimeH10(localTimeHour: localTimeHour), kind: "setLocalTimeH10")
             let query = PolarRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: localTimeHour)?.first ?? Protocol_PbPFtpQuery.setLocalTime.rawValue
             _ = try await client.query(query, parameters: paramsSetLocalTime as NSData)
         case .polarFileSystemV2:
             let systemTimeHour = Calendar(identifier: .gregorian).component(.hour, from: time)
             let localTimeHour = Calendar.current.component(.hour, from: time)
-            PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour)
+            try ensureDiskTimeRuntimeTerminal(PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour), kind: "setLocalTimeV2")
             let plannedQueries = PolarRuntimePlanner.setLocalTimeV2QueryValues(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour)
             let queries = plannedQueries?.count == 2 ? plannedQueries! : [
                 Protocol_PbPFtpQuery.setSystemTime.rawValue,
@@ -1122,7 +1122,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         case .h10FileSystem, .unknownFileSystem:
             throw PolarErrors.operationNotSupported
         case .polarFileSystemV2:
-            PolarRuntimePlanner.diskTimeQuery(id: "get-local-time", query: "GET_LOCAL_TIME")
+            try ensureDiskTimeRuntimeTerminal(PolarRuntimePlanner.diskTimeQuery(id: "get-local-time", query: "GET_LOCAL_TIME"), kind: "query")
             let query = PolarRuntimePlanner.diskTimeQueryValue(id: "get-local-time", query: "GET_LOCAL_TIME") ?? Protocol_PbPFtpQuery.getLocalTime.rawValue
             let data = try await client.query(query, parameters: nil)
             let result = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: data as Data)
@@ -1140,7 +1140,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         case .h10FileSystem, .unknownFileSystem:
             throw PolarErrors.operationNotSupported
         case .polarFileSystemV2:
-            PolarRuntimePlanner.diskTimeQuery(id: "get-local-time-with-zone", query: "GET_LOCAL_TIME")
+            try ensureDiskTimeRuntimeTerminal(PolarRuntimePlanner.diskTimeQuery(id: "get-local-time-with-zone", query: "GET_LOCAL_TIME"), kind: "query")
             let query = PolarRuntimePlanner.diskTimeQueryValue(id: "get-local-time-with-zone", query: "GET_LOCAL_TIME") ?? Protocol_PbPFtpQuery.getLocalTime.rawValue
             let data = try await client.query(query, parameters: nil)
             let result = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: data as Data)
@@ -1158,7 +1158,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
-        PolarRuntimePlanner.diskTimeQuery(id: "get-disk-space", query: "GET_DISK_SPACE")
+        try ensureDiskTimeRuntimeTerminal(PolarRuntimePlanner.diskTimeQuery(id: "get-disk-space", query: "GET_DISK_SPACE"), kind: "query")
         let query = PolarRuntimePlanner.diskTimeQueryValue(id: "get-disk-space", query: "GET_DISK_SPACE") ?? Protocol_PbPFtpQuery.getDiskSpace.rawValue
         let data = try await client.query(query, parameters: nil)
         let proto = try Protocol_PbPFtpDiskSpaceResult(serializedBytes: data as Data)
@@ -3063,6 +3063,12 @@ extension PolarBleApiImpl: PolarBleApi  {
     private func ensureCommandRuntimeTerminal(_ terminal: String, kind: String) throws {
         guard terminal == "success" || terminal == "platform-owned" else {
             throw PolarErrors.polarBleSdkInternalException(description: "Command \(kind) planning failed: \(terminal)")
+        }
+    }
+
+    private func ensureDiskTimeRuntimeTerminal(_ terminal: String, kind: String) throws {
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "Disk/time \(kind) planning failed: \(terminal)")
         }
     }
 
