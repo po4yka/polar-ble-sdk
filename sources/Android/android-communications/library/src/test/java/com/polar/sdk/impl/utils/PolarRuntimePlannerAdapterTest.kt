@@ -265,6 +265,11 @@ class PolarRuntimePlannerAdapterTest {
         )
         Assert.assertEquals(listOf("automaticOhrMeasurement=ALWAYS_ON"), PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticOhrPayloadFields(true))
         Assert.assertEquals(listOf("daylightSaving.nextDaylightSavingTime=present", "daylightSaving.offset=nonzero"), PolarRuntimePlannerAdapter.userDeviceSettingsDaylightSavingPayloadFields())
+        Assert.assertEquals("ALWAYS_ON", PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticMeasurementStateName(true))
+        Assert.assertEquals("WRIST_RIGHT", PolarRuntimePlannerAdapter.userDeviceSettingsDeviceLocationName(3))
+        Assert.assertEquals(3, PolarRuntimePlannerAdapter.userDeviceSettingsDeviceLocationValue("WRIST_RIGHT"))
+        Assert.assertEquals("ON", PolarRuntimePlannerAdapter.userDeviceSettingsUsbConnectionModeName(true))
+        Assert.assertEquals("ON", PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticTrainingDetectionModeName(true))
     }
 
     @Test

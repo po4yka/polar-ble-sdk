@@ -29,6 +29,7 @@ import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarTrainingSessionReference
+import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.shared.time.PolarTimeUtils
 import protocol.PftpNotification
 import protocol.PftpRequest
@@ -275,31 +276,51 @@ internal object PolarRuntimePlannerAdapter {
     }
 
     fun userDeviceSettingsProtobufPayloadFields(): List<String> {
-        return com.polar.shared.sdk.PolarUserDeviceSettingsModels.protobufPayloadFields()
+        return PolarUserDeviceSettingsModels.protobufPayloadFields()
     }
 
     fun userDeviceSettingsTelemetryPayloadFields(enabled: Boolean): List<String> {
-        return com.polar.shared.sdk.PolarUserDeviceSettingsModels.telemetryPayloadFields(enabled)
+        return PolarUserDeviceSettingsModels.telemetryPayloadFields(enabled)
     }
 
     fun userDeviceSettingsDeviceLocationPayloadFields(value: Int): List<String> {
-        return com.polar.shared.sdk.PolarUserDeviceSettingsModels.deviceLocationPayloadFields(value)
+        return PolarUserDeviceSettingsModels.deviceLocationPayloadFields(value)
     }
 
     fun userDeviceSettingsUsbConnectionModePayloadFields(enabled: Boolean): List<String> {
-        return com.polar.shared.sdk.PolarUserDeviceSettingsModels.usbConnectionModePayloadFields(enabled)
+        return PolarUserDeviceSettingsModels.usbConnectionModePayloadFields(enabled)
     }
 
     fun userDeviceSettingsAutomaticTrainingDetectionPayloadFields(enabled: Boolean, sensitivity: Int, minimumDurationSeconds: Int): List<String> {
-        return com.polar.shared.sdk.PolarUserDeviceSettingsModels.automaticTrainingDetectionPayloadFields(enabled, sensitivity, minimumDurationSeconds)
+        return PolarUserDeviceSettingsModels.automaticTrainingDetectionPayloadFields(enabled, sensitivity, minimumDurationSeconds)
     }
 
     fun userDeviceSettingsAutomaticOhrPayloadFields(enabled: Boolean): List<String> {
-        return com.polar.shared.sdk.PolarUserDeviceSettingsModels.automaticOhrPayloadFields(enabled)
+        return PolarUserDeviceSettingsModels.automaticOhrPayloadFields(enabled)
     }
 
     fun userDeviceSettingsDaylightSavingPayloadFields(): List<String> {
-        return com.polar.shared.sdk.PolarUserDeviceSettingsModels.daylightSavingPayloadFields()
+        return PolarUserDeviceSettingsModels.daylightSavingPayloadFields()
+    }
+
+    fun userDeviceSettingsAutomaticMeasurementStateName(enabled: Boolean): String? {
+        return PolarUserDeviceSettingsModels.automaticMeasurementStateName(enabled)
+    }
+
+    fun userDeviceSettingsDeviceLocationName(value: Int): String? {
+        return PolarUserDeviceSettingsModels.deviceLocationName(value)
+    }
+
+    fun userDeviceSettingsDeviceLocationValue(name: String): Int? {
+        return PolarUserDeviceSettingsModels.deviceLocationValue(name)
+    }
+
+    fun userDeviceSettingsUsbConnectionModeName(enabled: Boolean): String? {
+        return PolarUserDeviceSettingsModels.usbConnectionModeName(if (enabled) 2 else 1)
+    }
+
+    fun userDeviceSettingsAutomaticTrainingDetectionModeName(enabled: Boolean): String? {
+        return PolarUserDeviceSettingsModels.automaticTrainingDetectionModeName(if (enabled) 1 else 0)
     }
 
     fun planUserDeviceSettingsOperations(id: String, kind: String, path: String, payloadFields: List<String> = emptyList()): List<Pair<PftpRequest.PbPFtpOperation.Command, String>> {

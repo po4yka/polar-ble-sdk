@@ -35,7 +35,6 @@ import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
 import com.polar.shared.sdk.PolarSdLogTriggerName
-import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.PolarH10OfflineExerciseApi
 import com.polar.sdk.api.errors.PolarBleSdkInstanceException
@@ -3709,20 +3708,20 @@ class BDBleApiImplTest {
     }
 
     private fun sharedAutomaticTrainingDetectionState(enabled: Boolean): PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState {
-        val sharedName = PolarUserDeviceSettingsModels.automaticTrainingDetectionModeName(if (enabled) 1 else 0)
+        val sharedName = PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticTrainingDetectionModeName(enabled)
             ?: error("Missing shared automatic training detection state for $enabled")
         return PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.valueOf(sharedName)
     }
 
     private fun sharedUsbConnectionMode(enabled: Boolean): PbUsbConnectionSettings.PbUsbConnectionMode {
-        val sharedName = PolarUserDeviceSettingsModels.usbConnectionModeName(if (enabled) 2 else 1)
+        val sharedName = PolarRuntimePlannerAdapter.userDeviceSettingsUsbConnectionModeName(enabled)
             ?: error("Missing shared USB connection mode for $enabled")
         return PbUsbConnectionSettings.PbUsbConnectionMode.valueOf(sharedName)
     }
 
     private fun sharedDeviceLocation(value: Int): PbDeviceLocation {
-        val sharedValue = PolarUserDeviceSettingsModels.deviceLocationName(value)
-            ?.let(PolarUserDeviceSettingsModels::deviceLocationValue)
+        val sharedValue = PolarRuntimePlannerAdapter.userDeviceSettingsDeviceLocationName(value)
+            ?.let(PolarRuntimePlannerAdapter::userDeviceSettingsDeviceLocationValue)
             ?: error("Missing shared device location for $value")
         return PbDeviceLocation.forNumber(sharedValue)
     }

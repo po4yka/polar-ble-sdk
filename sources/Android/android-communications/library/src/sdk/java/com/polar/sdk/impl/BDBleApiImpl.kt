@@ -79,7 +79,6 @@ import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdClientTemperatureDataToPola
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdSettingsToPolarSettings
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdTriggerToPolarTrigger
 import com.polar.shared.ble.PolarAdvertisementModels
-import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarFeatureToPmdClientMeasurementType
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarOfflineTriggerToPmdOfflineTrigger
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarSecretToPmdSecret
@@ -2760,9 +2759,14 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         } else {
             UserDeviceSettings.PbUserAutomaticMeasurementSettings.newBuilder()
         }
-        val automaticMeasurementState = UserDeviceSettings.PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.valueOf(
-            PolarUserDeviceSettingsModels.automaticMeasurementStateName(enabled)
-        )
+        val automaticMeasurementStateName = PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticMeasurementStateName(enabled)
+        val automaticMeasurementState = automaticMeasurementStateName
+            ?.let(UserDeviceSettings.PbAutomaticMeasurementSettings.PbAutomaticMeasurementState::valueOf)
+            ?: if (enabled) {
+                UserDeviceSettings.PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.ALWAYS_ON
+            } else {
+                UserDeviceSettings.PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF
+            }
         val autosBuilder = UserDeviceSettings.PbAutomaticMeasurementSettings.newBuilder()
             .setState(automaticMeasurementState)
         if (!enabled) {
@@ -3139,8 +3143,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
         val currentProto = getUserDeviceSettingsProto(client, session.polarDeviceType)
-        val sharedDeviceLocation = PolarUserDeviceSettingsModels.deviceLocationName(location)
-            ?.let(PolarUserDeviceSettingsModels::deviceLocationValue)
+        val sharedDeviceLocation = PolarRuntimePlannerAdapter.userDeviceSettingsDeviceLocationName(location)
+            ?.let(PolarRuntimePlannerAdapter::userDeviceSettingsDeviceLocationValue)
             ?.let(fi.polar.remote.representation.protobuf.Types.PbDeviceLocation::forNumber)
         val deviceLocation = sharedDeviceLocation
             ?: fi.polar.remote.representation.protobuf.Types.PbDeviceLocation.forNumber(location)
@@ -3162,7 +3166,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
         val currentProto = getUserDeviceSettingsProto(client, session.polarDeviceType)
-        val usbConnectionModeName = PolarUserDeviceSettingsModels.usbConnectionModeName(if (enabled) 2 else 1)
+        val usbConnectionModeName = PolarRuntimePlannerAdapter.userDeviceSettingsUsbConnectionModeName(enabled)
         val usbConnectionMode = usbConnectionModeName
             ?.let(UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode::valueOf)
             ?: if (enabled) {
@@ -3193,9 +3197,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
         val currentProto = getUserDeviceSettingsProto(client, session.polarDeviceType)
-        val automaticTrainingDetectionStateName = PolarUserDeviceSettingsModels.automaticTrainingDetectionModeName(
-            if (automaticTrainingDetectionMode) 1 else 0
-        )
+        val automaticTrainingDetectionStateName = PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticTrainingDetectionModeName(automaticTrainingDetectionMode)
         val automaticTrainingDetectionState = automaticTrainingDetectionStateName
             ?.let(UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState::valueOf)
             ?: if (automaticTrainingDetectionMode) {
