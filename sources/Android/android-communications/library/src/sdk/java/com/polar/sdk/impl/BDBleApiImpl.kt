@@ -2955,13 +2955,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
     private suspend fun getUserDeviceSettingsProto(client: BlePsFtpClient, polarDeviceType: String): PbUserDeviceSettings {
         val path = userDeviceSettingsPathFor(polarDeviceType)
-        val plannedOperation = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations(
-            id = "get-user-device-settings",
-            kind = "read",
-            path = path
-        ).firstOrNull()
-        PolarRuntimePlannerAdapter.planUserDeviceSettingsRead(path)
-        val operation = plannedOperation ?: (PftpRequest.PbPFtpOperation.Command.GET to path)
+        val operation = PolarRuntimePlannerAdapter.planUserDeviceSettingsRead(path)
         return try {
             val byteArray = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(operation)).toByteArray()
             PbUserDeviceSettings.parseFrom(byteArray)
@@ -2990,14 +2984,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             sensorSettingsPath = PolarUserDeviceSettings.SENSOR_SETTINGS_FILENAME,
             unknownSettingsPath = PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME
         ) ?: PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME
-        val plannedOperation = PolarRuntimePlannerAdapter.planUserDeviceSettingsOperations(
-            id = "set-user-device-settings",
-            kind = "write",
-            path = settingsPath,
-            payloadFields = PolarRuntimePlannerAdapter.userDeviceSettingsProtobufPayloadFields()
-        ).firstOrNull()
-        PolarRuntimePlannerAdapter.planUserDeviceSettingsWrite(settingsPath, PolarRuntimePlannerAdapter.userDeviceSettingsProtobufPayloadFields())
-        val operation = plannedOperation ?: (PftpRequest.PbPFtpOperation.Command.PUT to settingsPath)
+        val operation = PolarRuntimePlannerAdapter.planUserDeviceSettingsWrite(
+            settingsPath,
+            PolarRuntimePlannerAdapter.userDeviceSettingsProtobufPayloadFields()
+        )
         val deviceSettingsData = ByteArrayOutputStream().use { baos ->
             deviceUserSetting.writeTo(baos)
             baos.toByteArray()

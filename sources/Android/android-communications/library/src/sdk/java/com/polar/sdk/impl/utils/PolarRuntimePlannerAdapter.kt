@@ -318,37 +318,34 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
-    fun planUserDeviceSettingsRead(path: String) {
-        PolarRuntimeOrchestration.planUserDeviceSettings(
-            PolarUserDeviceSettingsOperation(
+    fun planUserDeviceSettingsRead(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return requireNotNull(
+            planUserDeviceSettingsOperations(
                 id = "get-user-device-settings",
                 kind = "read",
-                path = path,
-                payloadFields = emptyList()
-            )
+                path = path
+            ).firstOrNull()
+        ) { "Shared user-device-settings read plan did not produce a PSFTP operation" }
+    }
+
+    fun planUserDeviceSettingsReadThenWrite(id: String, path: String, payloadFields: List<String>): List<Pair<PftpRequest.PbPFtpOperation.Command, String>> {
+        return planUserDeviceSettingsOperations(
+            id = id,
+            kind = "readThenWrite",
+            path = path,
+            payloadFields = payloadFields
         )
     }
 
-    fun planUserDeviceSettingsReadThenWrite(id: String, path: String, payloadFields: List<String>) {
-        PolarRuntimeOrchestration.planUserDeviceSettings(
-            PolarUserDeviceSettingsOperation(
-                id = id,
-                kind = "readThenWrite",
-                path = path,
-                payloadFields = payloadFields
-            )
-        )
-    }
-
-    fun planUserDeviceSettingsWrite(path: String, payloadFields: List<String>) {
-        PolarRuntimeOrchestration.planUserDeviceSettings(
-            PolarUserDeviceSettingsOperation(
+    fun planUserDeviceSettingsWrite(path: String, payloadFields: List<String>): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return requireNotNull(
+            planUserDeviceSettingsOperations(
                 id = "set-user-device-settings",
                 kind = "write",
                 path = path,
                 payloadFields = payloadFields
-            )
-        )
+            ).firstOrNull()
+        ) { "Shared user-device-settings write plan did not produce a PSFTP operation" }
     }
 
     fun userDeviceSettingsProtobufPayloadFields(): List<String> {

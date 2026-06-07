@@ -404,6 +404,9 @@ class PolarRuntimePlannerAdapterTest {
 
         Assert.assertEquals(listOf(PftpRequest.PbPFtpOperation.Command.GET to "/U/0/S/UDEVSET.BPB"), read)
         Assert.assertEquals(listOf(PftpRequest.PbPFtpOperation.Command.PUT to "/U/0/S/UDEVSET.BPB"), write)
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET to "/U/0/S/UDEVSET.BPB", PolarRuntimePlannerAdapter.planUserDeviceSettingsRead("/U/0/S/UDEVSET.BPB"))
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT to "/U/0/S/UDEVSET.BPB", PolarRuntimePlannerAdapter.planUserDeviceSettingsWrite("/U/0/S/UDEVSET.BPB", listOf("protobufPayload=platform-built")))
+        Assert.assertEquals(readThenWrite, PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite("set-telemetry-enabled", "/U/0/S/UDEVSET.BPB", listOf("telemetryEnabled=true")))
         Assert.assertEquals(
             listOf(
                 PftpRequest.PbPFtpOperation.Command.GET to "/U/0/S/UDEVSET.BPB",
