@@ -3201,6 +3201,14 @@ class BDBleApiImplTest {
                 "h10-recording-stop-query-failure",
                 "h10-recording-status-query",
                 "h10-recording-status-query-failure",
+                "live-exercise-start-query",
+                "live-exercise-pause-query",
+                "live-exercise-resume-query",
+                "live-exercise-stop-query",
+                "live-exercise-status-query",
+                "offline-exercise-v2-start-query",
+                "offline-exercise-v2-stop-query",
+                "offline-exercise-v2-status-query",
                 "factory-reset-flags",
                 "factory-reset-notification-failure",
                 "preserve-pairing-reset-flags",
@@ -3828,10 +3836,10 @@ class BDBleApiImplTest {
     }
 
     private companion object {
-        const val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+        const val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
         const val STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup migration may proceed only after cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
         const val DISK_TIME_RUNTIME_READINESS_COMMON_DECISION = "Disk/time facade runtime migration may proceed only after disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
-        const val COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
+        const val COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10/exercise command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
         const val STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
         const val DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
         const val USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
@@ -3843,6 +3851,14 @@ class BDBleApiImplTest {
             "h10-stop-recording-query-failure",
             "h10-recording-status",
             "h10-recording-status-query-failure",
+            "live-exercise-start",
+            "live-exercise-pause",
+            "live-exercise-resume",
+            "live-exercise-stop",
+            "live-exercise-status",
+            "offline-exercise-v2-start",
+            "offline-exercise-v2-stop",
+            "offline-exercise-v2-status",
             "factory-reset",
             "factory-reset-notification-failure",
             "factory-reset-preserve-pairing",

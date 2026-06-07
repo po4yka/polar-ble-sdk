@@ -188,6 +188,14 @@ class CommandRuntimePolicyCommonTest {
         "h10-stop-recording-query-failure",
         "h10-recording-status",
         "h10-recording-status-query-failure",
+        "live-exercise-start",
+        "live-exercise-pause",
+        "live-exercise-resume",
+        "live-exercise-stop",
+        "live-exercise-status",
+        "offline-exercise-v2-start",
+        "offline-exercise-v2-stop",
+        "offline-exercise-v2-status",
         "factory-reset",
         "factory-reset-notification-failure",
         "factory-reset-preserve-pairing",
@@ -211,6 +219,14 @@ class CommandRuntimePolicyCommonTest {
         "h10-recording-stop-query-failure",
         "h10-recording-status-query",
         "h10-recording-status-query-failure",
+        "live-exercise-start-query",
+        "live-exercise-pause-query",
+        "live-exercise-resume-query",
+        "live-exercise-stop-query",
+        "live-exercise-status-query",
+        "offline-exercise-v2-start-query",
+        "offline-exercise-v2-stop-query",
+        "offline-exercise-v2-status-query",
         "factory-reset-flags",
         "factory-reset-notification-failure",
         "preserve-pairing-reset-flags",
@@ -235,9 +251,9 @@ class CommandRuntimePolicyCommonTest {
     private val COMMAND_POLICY_IOS_SYNC_START_QUERY_FAILURE = "propagates the query error and sends no notifications"
     private val COMMAND_POLICY_IOS_SYNC_STOP_NOTIFICATION_FAILURE = "propagates the notification error after STOP_SYNC is attempted"
     private val COMMAND_POLICY_PLATFORM_SPLIT_DECISION = "Keep sync failure policy platform-specific until the public API migration has an approved compatibility decision."
-    private val COMMAND_POLICY_COMMON_DECISION = "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
+    private val COMMAND_POLICY_COMMON_DECISION = "Promote reset/H10/exercise command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
 
-    private val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+    private val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
 
     private fun outcomesForCommandTransport(commands: List<CommonFakeTransportCommand>, terminal: String): List<CommonFakeTransportOutcome> {
         if (terminal == "transport-error" || terminal == "platform-split") {
@@ -318,5 +334,17 @@ class CommandRuntimePolicyCommonTest {
         assertEquals("queryFailure", operationsById.getValue("h10-recording-status-query-failure").stringValue("kind"))
         assertEquals("REQUEST_RECORDING_STATUS", operationsById.getValue("h10-recording-status-query-failure").stringValue("query"))
         assertEquals("recording-status-query-failed", operationsById.getValue("h10-recording-status-query-failure").stringValue("error"))
+        assertEquals("START_EXERCISE", operationsById.getValue("live-exercise-start").stringValue("query"))
+        assertEquals(listOf("sportProfileId=1"), operationsById.getValue("live-exercise-start").stringArrayValue("parameters"))
+        assertEquals("PAUSE_EXERCISE", operationsById.getValue("live-exercise-pause").stringValue("query"))
+        assertEquals("RESUME_EXERCISE", operationsById.getValue("live-exercise-resume").stringValue("query"))
+        assertEquals("STOP_EXERCISE", operationsById.getValue("live-exercise-stop").stringValue("query"))
+        assertEquals(listOf("save=true"), operationsById.getValue("live-exercise-stop").stringArrayValue("parameters"))
+        assertEquals("GET_EXERCISE_STATUS", operationsById.getValue("live-exercise-status").stringValue("query"))
+        assertEquals("START_DM_EXERCISE", operationsById.getValue("offline-exercise-v2-start").stringValue("query"))
+        assertEquals(listOf("sportProfileId=1"), operationsById.getValue("offline-exercise-v2-start").stringArrayValue("parameters"))
+        assertEquals("STOP_EXERCISE", operationsById.getValue("offline-exercise-v2-stop").stringValue("query"))
+        assertEquals(listOf("save=true"), operationsById.getValue("offline-exercise-v2-stop").stringArrayValue("parameters"))
+        assertEquals("GET_EXERCISE_STATUS", operationsById.getValue("offline-exercise-v2-status").stringValue("query"))
     }
 }
