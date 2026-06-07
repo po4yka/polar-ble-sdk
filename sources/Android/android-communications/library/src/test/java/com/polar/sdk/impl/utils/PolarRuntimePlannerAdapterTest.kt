@@ -340,8 +340,17 @@ class PolarRuntimePlannerAdapterTest {
 
     @Test
     fun `shared firmware workflow plans select Android protobuf PUT operations and ordered paths`() {
+        val workflow = PolarRuntimePlannerAdapter.planFirmwareWorkflow(
+            id = "write-package-success-with-system-update-last",
+            statuses = listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"),
+            firmwareFiles = listOf("SYSUPDAT.IMG", "BTUPDAT.BIN")
+        )
         val operations = PolarRuntimePlannerAdapter.planFirmwareWriteOperations(listOf("SYSUPDAT.IMG", "BTUPDAT.BIN"))
 
+        Assert.assertEquals(listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"), workflow.statuses)
+        Assert.assertEquals(listOf("/BTUPDAT.BIN", "/SYSUPDAT.IMG"), workflow.writes)
+        Assert.assertEquals("success", workflow.terminal)
+        Assert.assertNull(workflow.terminalError)
         Assert.assertEquals(
             listOf("TCHUPDAT.BIN", "APPUPDAT.BIN", "BTUPDAT.BIN", "SYSUPDAT.IMG"),
             PolarRuntimePlannerAdapter.orderFirmwareFiles(listOf("TCHUPDAT.BIN", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN"))

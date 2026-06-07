@@ -43,6 +43,12 @@ import protocol.PftpNotification
 import protocol.PftpRequest
 
 internal object PolarRuntimePlannerAdapter {
+    data class PlannedFirmwareWorkflow(
+        val statuses: List<String>,
+        val writes: List<String>,
+        val terminal: String,
+        val terminalError: String?
+    )
     data class PlannedBackupRestoreWrite(
         val operation: Pair<PftpRequest.PbPFtpOperation.Command, String>,
         val payloadHex: String
@@ -502,8 +508,8 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
-    fun planFirmwareWorkflow(id: String, statuses: List<String> = emptyList(), firmwareFiles: List<String> = emptyList()) {
-        PolarWorkflowRuntimePlanning.planFirmwareWorkflow(
+    fun planFirmwareWorkflow(id: String, statuses: List<String> = emptyList(), firmwareFiles: List<String> = emptyList()): PlannedFirmwareWorkflow {
+        val plan = PolarWorkflowRuntimePlanning.planFirmwareWorkflow(
             PolarFirmwareWorkflowScenario(
                 id = id,
                 expectedStatuses = statuses,
@@ -512,15 +518,19 @@ internal object PolarRuntimePlannerAdapter {
                 firmwareFiles = firmwareFiles
             )
         )
+        return PlannedFirmwareWorkflow(
+            statuses = plan.statuses,
+            writes = plan.writes,
+            terminal = plan.terminal,
+            terminalError = plan.terminalError
+        )
     }
 
     fun planFirmwareWriteOperations(firmwareFiles: List<String>): List<Pair<PftpRequest.PbPFtpOperation.Command, String>> {
-        return PolarWorkflowRuntimePlanning.planFirmwareWorkflow(
-            PolarFirmwareWorkflowScenario(
-                id = "write-package-success-with-system-update-last",
-                expectedStatusOrder = listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"),
-                firmwareFiles = firmwareFiles
-            )
+        return planFirmwareWorkflow(
+            id = "write-package-success-with-system-update-last",
+            statuses = listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"),
+            firmwareFiles = firmwareFiles
         ).writes.map { path -> PftpRequest.PbPFtpOperation.Command.PUT to path }
     }
 

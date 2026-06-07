@@ -2496,13 +2496,13 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                                               client: BlePsFtpClient,
                                               firmwareFiles: List<Pair<String, ByteArray>>,
                                               minPercentageIncrement: Long = 0) {
-        PolarRuntimePlannerAdapter.planFirmwareWorkflow(
+        val workflowPlan = PolarRuntimePlannerAdapter.planFirmwareWorkflow(
             id = "write-package-success-with-system-update-last",
             statuses = listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"),
             firmwareFiles = firmwareFiles.map { it.first }
         )
-        val plannedWriteOperations = PolarRuntimePlannerAdapter.planFirmwareWriteOperations(firmwareFiles.map { it.first })
-            .associateBy { operation -> operation.second }
+        val plannedWriteOperations = workflowPlan.writes
+            .associateWith { path -> PftpRequest.PbPFtpOperation.Command.PUT to path }
         for (firmwareFile in firmwareFiles) {
             var lastBytesWritten = 0L
             PolarRuntimePlannerAdapter.planPsFtpWriteProgress(firmwareFile.second.size, "android")
