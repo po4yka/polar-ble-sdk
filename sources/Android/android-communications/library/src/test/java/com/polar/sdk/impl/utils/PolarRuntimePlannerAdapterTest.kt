@@ -211,6 +211,16 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared sleep result policy routes through Android runtime adapter`() {
+        Assert.assertEquals(120, PolarRuntimePlannerAdapter.sleepStartOffsetSeconds(120))
+        Assert.assertEquals(-60, PolarRuntimePlannerAdapter.sleepEndOffsetSeconds(-60))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.shouldIncludeOriginalSleepRange(true))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.shouldIncludeOriginalSleepRange(false))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.shouldIncludeSleepSkinTemperatureResult(true))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.shouldIncludeSleepSkinTemperatureResult(false))
+    }
+
+    @Test
     fun `shared backup restore plans select Android protobuf PUT operation and path`() {
         val operation = PolarRuntimePlannerAdapter.planBackupRestoreOperation("/U/0/BACKUP.TXT", "0102")
 

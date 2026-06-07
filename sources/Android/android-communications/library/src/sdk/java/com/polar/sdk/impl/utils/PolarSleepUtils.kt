@@ -3,7 +3,6 @@ package com.polar.sdk.impl.utils
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.sleep.*
-import com.polar.shared.sdk.PolarSleepModels
 import com.polar.services.datamodels.protobuf.SleepSkinTemperatureResult
 import fi.polar.remote.representation.protobuf.SleepanalysisResult
 import protocol.PftpRequest
@@ -59,8 +58,8 @@ internal object PolarSleepUtils {
                 if (proto.hasAlarmTime()) {
                     PolarTimeUtils.pbLocalDateTimeToZonedDateTime(proto.alarmTime)
                 } else null,
-                PolarSleepModels.sleepStartOffsetSeconds(proto.sleepStartOffsetSeconds),
-                PolarSleepModels.sleepEndOffsetSeconds(proto.sleepEndOffsetSeconds),
+                PolarRuntimePlannerAdapter.sleepStartOffsetSeconds(proto.sleepStartOffsetSeconds),
+                PolarRuntimePlannerAdapter.sleepEndOffsetSeconds(proto.sleepEndOffsetSeconds),
                 if (proto.hasUserSleepRating()) {
                     SleepRating.from(proto.userSleepRating.number)
                 } else null,
@@ -68,7 +67,7 @@ internal object PolarSleepUtils {
                 proto.batteryRanOut,
                 fromPbSleepCyclesList(proto.sleepCyclesList),
                 PolarTimeUtils.pbDateToLocalDate(proto.sleepResultDate),
-                if (PolarSleepModels.shouldIncludeOriginalSleepRange(proto.hasOriginalSleepRange())) {
+                if (PolarRuntimePlannerAdapter.shouldIncludeOriginalSleepRange(proto.hasOriginalSleepRange())) {
                     fromPbOriginalSleepRange(proto.originalSleepRange)
                 } else null,
                 null
@@ -99,7 +98,7 @@ internal object PolarSleepUtils {
                 PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
             )
             val proto = SleepSkinTemperatureResult.PbSleepSkinTemperatureResult.parseFrom(response.toByteArray())
-            if (PolarSleepModels.shouldIncludeSleepSkinTemperatureResult(proto.hasSleepDate())) {
+            if (PolarRuntimePlannerAdapter.shouldIncludeSleepSkinTemperatureResult(proto.hasSleepDate())) {
                 result.sleepSkinTemperatureResult = fromPbSleepSkinTemperatureResult(proto)
             }
             result

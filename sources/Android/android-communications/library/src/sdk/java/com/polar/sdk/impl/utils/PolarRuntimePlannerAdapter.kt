@@ -575,6 +575,22 @@ internal object PolarRuntimePlannerAdapter {
         return PolarSleepModels.sleepSkinTemperaturePath(day)
     }
 
+    fun sleepStartOffsetSeconds(value: Int): Int {
+        return PolarSleepModels.sleepStartOffsetSeconds(value)
+    }
+
+    fun sleepEndOffsetSeconds(value: Int): Int {
+        return PolarSleepModels.sleepEndOffsetSeconds(value)
+    }
+
+    fun shouldIncludeOriginalSleepRange(hasOriginalSleepRange: Boolean): Boolean {
+        return PolarSleepModels.shouldIncludeOriginalSleepRange(hasOriginalSleepRange)
+    }
+
+    fun shouldIncludeSleepSkinTemperatureResult(hasSleepDate: Boolean): Boolean {
+        return PolarSleepModels.shouldIncludeSleepSkinTemperatureResult(hasSleepDate)
+    }
+
     fun sleepRestApiPath(): String {
         return PolarRestServiceModels.sleepApiPath()
     }
