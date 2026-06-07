@@ -1994,8 +1994,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let ppiModeLedByte: UInt8 = ledConfig.ppiModeLedEnabled ? LedConfig.LED_ANIMATION_ENABLE_BYTE : LedConfig.LED_ANIMATION_DISABLE_BYTE
         let data = Data([sdkModeLedByte, ppiModeLedByte])
         let inputStream = InputStream(data: data)
-        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: data.count)
-        PolarRuntimePlanner.psFtpWriteAck(payloadSize: data.count)
+        try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: data.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}
     }
 
@@ -2090,8 +2089,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let proto = try PolarRuntimePlanner.fileOperationBytes(writeOperation)
         BleLogger.trace("Sensor datalog set. Device: \(identifier) Path: \(writeOperation.path)")
         let inputStream = InputStream(data: Data(sdLogConfigProto))
-        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: sdLogConfigProto.count)
-        PolarRuntimePlanner.psFtpWriteAck(payloadSize: sdLogConfigProto.count)
+        try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: sdLogConfigProto.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}
     }
 
@@ -2110,16 +2108,14 @@ extension PolarBleApiImpl: PolarBleApi  {
         let userIdentifier = UserIdentifierType.create()
         let userIdProto = try userIdentifier.toProto().serializedData()
         let userIdHeader = try PolarRuntimePlanner.fileOperationBytes(userIdWriteOperation)
-        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: userIdProto.count)
-        PolarRuntimePlanner.psFtpWriteAck(payloadSize: userIdProto.count)
+        try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: userIdProto.count)
         for try await _ in client.write(userIdHeader as NSData, data: InputStream(data: userIdProto)) {}
         BleLogger.trace("User data written to device: \(identifier)")
         // Write FTU config
         let ftuConfigProto = try ftuConfig.toProto()?.serializedData() ?? { throw PolarErrors.deviceError(description: "Serialization of FTU Config failed.") }()
         let physicalConfigWriteOperation = Self.firstTimeUsePhysicalConfigWriteOperation()
         let physDataHeader = try PolarRuntimePlanner.fileOperationBytes(physicalConfigWriteOperation)
-        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: ftuConfigProto.count)
-        PolarRuntimePlanner.psFtpWriteAck(payloadSize: ftuConfigProto.count)
+        try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: ftuConfigProto.count)
         for try await _ in client.write(physDataHeader as NSData, data: InputStream(data: ftuConfigProto)) {}
         BleLogger.trace("User physical data written to device: \(identifier)")
         // Send initialization and stop sync (acknowledge FTU completion)
@@ -2408,7 +2404,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                         var lastProgressEmitDate = Date()
                         let firmwareFilePath = plannedWritePaths.indices.contains(index) ? plannedWritePaths[index] : "/\(firmwareFile.0)"
                         let firmwareFileBytes = firmwareFile.1
-                        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: firmwareFileBytes.count)
+                        try PolarRuntimePlanner.ensurePsFtpWriteProgressPlan(payloadSize: firmwareFileBytes.count)
                         for try await bytesWritten in self.writeFirmwareToDeviceAsync(identifier: identifier, firmwareFilePath: firmwareFilePath, firmwareBytes: firmwareFileBytes) {
                             let bw = Int(bytesWritten)
                             let timeSinceLastEmitMs = Int(Date().timeIntervalSince(lastProgressEmitDate) * 1_000)
@@ -2680,8 +2676,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
         BleLogger.trace("Polar user device settings set. Device: \(identifier) Path: \(settingsPath)")
         let inputStream = InputStream(data: userDeviceSettingsData)
-        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: userDeviceSettingsData.count)
-        PolarRuntimePlanner.psFtpWriteAck(payloadSize: userDeviceSettingsData.count)
+        try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: userDeviceSettingsData.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}
     }
 
@@ -3110,8 +3105,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
         let settingsData = try polarUserDeviceSettings.serializedData()
         let inputStream = InputStream(data: settingsData)
-        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: settingsData.count)
-        PolarRuntimePlanner.psFtpWriteAck(payloadSize: settingsData.count)
+        try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: settingsData.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}
     }
 
@@ -3187,7 +3181,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                     _ = try await client.query(query, parameters: nil)
                     BleLogger.trace("Start \(firmwareFilePath) write")
                     let writeOperation = Self.firmwareFileWriteOperation(path: firmwareFilePath)
-                    PolarRuntimePlanner.psFtpWriteAck(payloadSize: firmwareBytes.count)
+                    try PolarRuntimePlanner.ensurePsFtpWriteAckTerminal(payloadSize: firmwareBytes.count)
                     let proto = try PolarRuntimePlanner.fileOperationBytes(writeOperation)
                     for try await bytesWritten in client.write(proto as NSData, data: InputStream(data: firmwareBytes)) {
                         BleLogger.trace("Writing firmware update file, bytes written: \(bytesWritten)/\(firmwareBytes.count)")

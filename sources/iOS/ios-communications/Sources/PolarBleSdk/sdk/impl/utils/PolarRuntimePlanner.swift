@@ -335,6 +335,25 @@ enum PolarRuntimePlanner {
         return PolarFileRuntimePlanner.psFtpWriteAck(payloadSize: payloadSize, writeAck: writeAck)
     }
 
+    static func ensurePsFtpWriteProgressPlan(payloadSize: Int, platform: String = "ios") throws {
+        let progress = psFtpWriteProgress(payloadSize: payloadSize, platform: platform)
+        guard progress.isEmpty || progress.contains(payloadSize) else {
+            throw NSError(domain: "PolarRuntimePlanner", code: -1, userInfo: [NSLocalizedDescriptionKey: "PSFTP write progress planning failed for payload size \(payloadSize): \(progress)"])
+        }
+    }
+
+    static func ensurePsFtpWriteAckTerminal(payloadSize: Int, writeAck: String = "success") throws {
+        let terminal = psFtpWriteAck(payloadSize: payloadSize, writeAck: writeAck)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw NSError(domain: "PolarRuntimePlanner", code: -1, userInfo: [NSLocalizedDescriptionKey: "PSFTP write ACK planning failed: \(terminal)"])
+        }
+    }
+
+    static func ensurePsFtpWriteRuntimePlan(payloadSize: Int, platform: String = "ios", writeAck: String = "success") throws {
+        try ensurePsFtpWriteProgressPlan(payloadSize: payloadSize, platform: platform)
+        try ensurePsFtpWriteAckTerminal(payloadSize: payloadSize, writeAck: writeAck)
+    }
+
     static func trainingSessionPayloadFetchOrder(referenceText: String) -> String {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.trainingSessionPayloadFetchOrder(referenceText: referenceText)

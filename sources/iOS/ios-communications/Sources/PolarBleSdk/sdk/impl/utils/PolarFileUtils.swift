@@ -212,8 +212,7 @@ class PolarFileUtils {
         let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: payloadHex)
         let operation = plannedOperation ?? (.put, filePath)
         try ensureFileFacadeRuntimePlan(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: payloadHex)
-        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: fileData.count)
-        PolarRuntimePlanner.psFtpWriteAck(payloadSize: fileData.count)
+        try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: fileData.count)
         let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
         let inputStream = InputStream(data: fileData)
         do {
