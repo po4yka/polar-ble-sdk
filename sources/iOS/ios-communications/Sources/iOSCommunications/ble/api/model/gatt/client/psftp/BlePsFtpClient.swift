@@ -22,7 +22,6 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
     public var PROTOCOL_TIMEOUT = TimeInterval(90)
     
     private let PROTOCOL_TIMEOUT_EXTENDED = TimeInterval(900)
-    private let extendedWriteTimeoutFilePaths: [String] = ["/SYNCPART.TGZ"]
     
     internal var progressCallback: BlePsFtpProgressCallback?
 
@@ -465,14 +464,7 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
     }
     
     private func writeTimeout(for filePath: String) -> TimeInterval {
-        #if canImport(PolarBleSdkShared)
-        return TimeInterval(SharedPsFtpByteCodec.writeTimeoutSeconds(filePath: filePath, defaultTimeoutSeconds: Int(PROTOCOL_TIMEOUT), extendedTimeoutSeconds: Int(PROTOCOL_TIMEOUT_EXTENDED)))
-        #else
-        for path in extendedWriteTimeoutFilePaths {
-            if filePath.hasPrefix(path) { return PROTOCOL_TIMEOUT_EXTENDED }
-        }
-        return PROTOCOL_TIMEOUT
-        #endif
+        return TimeInterval(BlePsFtpUtility.writeTimeoutSeconds(filePath: filePath, defaultTimeoutSeconds: Int(PROTOCOL_TIMEOUT), extendedTimeoutSeconds: Int(PROTOCOL_TIMEOUT_EXTENDED)))
     }
     
     fileprivate func sendMtuCancelPacket() throws {

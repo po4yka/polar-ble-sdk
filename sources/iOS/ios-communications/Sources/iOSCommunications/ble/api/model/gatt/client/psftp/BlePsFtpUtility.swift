@@ -362,6 +362,14 @@ public class BlePsFtpUtility {
             }
         }
     }
+
+    static func writeTimeoutSeconds(filePath: String, defaultTimeoutSeconds: Int, extendedTimeoutSeconds: Int) -> Int {
+        #if canImport(PolarBleSdkShared)
+        return SharedPsFtpByteCodec.writeTimeoutSeconds(filePath: filePath, defaultTimeoutSeconds: defaultTimeoutSeconds, extendedTimeoutSeconds: extendedTimeoutSeconds)
+        #else
+        return filePath.hasPrefix("/SYNCPART.TGZ") ? extendedTimeoutSeconds : defaultTimeoutSeconds
+        #endif
+    }
 }
 
 public extension BlePsFtpException { var localizedDescription: String { return "The operation couldn't be completed. (PolarBleSdk.BleGattException.\(self)" } }

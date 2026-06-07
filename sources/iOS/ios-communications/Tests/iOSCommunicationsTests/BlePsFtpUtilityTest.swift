@@ -1,7 +1,7 @@
 //  Copyright © 2021 Polar. All rights reserved.
 
 import XCTest
-import iOSCommunications
+@testable import iOSCommunications
 
 private let PSFTP_BYTE_CODEC_READINESS_POLICY_VECTOR_PATHS = [
     "sdk/psftp-rfc76/error-frame-ffff.json",
@@ -50,6 +50,12 @@ private let RFC76_FRAME_SPLITTING_CASE_IDS = [
 private let PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
 
 class BlePsFtpUtilityTest: XCTestCase {
+
+    func testWriteTimeoutSelectionDelegatesExtendedSyncPackagePolicyToSharedRuntime() {
+        XCTAssertEqual(900, BlePsFtpUtility.writeTimeoutSeconds(filePath: "/SYNCPART.TGZ", defaultTimeoutSeconds: 90, extendedTimeoutSeconds: 900))
+        XCTAssertEqual(900, BlePsFtpUtility.writeTimeoutSeconds(filePath: "/SYNCPART.TGZ/part0", defaultTimeoutSeconds: 90, extendedTimeoutSeconds: 900))
+        XCTAssertEqual(90, BlePsFtpUtility.writeTimeoutSeconds(filePath: "/U/0/S/UDEVSET.BPB", defaultTimeoutSeconds: 90, extendedTimeoutSeconds: 900))
+    }
    
     func test_processSingleFrame() throws {
         // Arrange
