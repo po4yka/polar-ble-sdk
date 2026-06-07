@@ -11,7 +11,10 @@ internal class PolarUserDeviceSettingsUtils {
         BleLogger.trace(TAG, "getUserDeviceSettings")
         let plannedOperation = PolarRuntimePlanner.userDeviceSettingsOperations(id: "get-user-device-settings", kind: "read", path: deviceSettingsPath)?.first
         let operation = plannedOperation ?? (.get, deviceSettingsPath)
-        PolarRuntimePlanner.userDeviceSettings(id: "get-user-device-settings", kind: "read", path: deviceSettingsPath)
+        let terminal = PolarRuntimePlanner.userDeviceSettings(id: "get-user-device-settings", kind: "read", path: deviceSettingsPath)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "User-device-settings planning failed: \(terminal)")
+        }
         let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(operation))
         let proto = try Data_PbUserDeviceSettings(serializedBytes: Data(response))
         return PolarUserDeviceSettings.fromProto(pbUserDeviceSettings: proto)
