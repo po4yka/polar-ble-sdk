@@ -34,6 +34,10 @@ import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.shared.sdk.PolarWatchFaceFields
+import com.polar.shared.time.PolarDateFields
+import com.polar.shared.time.PolarDateTimeFields
+import com.polar.shared.time.PolarDurationFields
+import com.polar.shared.time.PolarTimeFields
 import com.polar.shared.time.PolarTimeUtils
 import protocol.PftpNotification
 import protocol.PftpRequest
@@ -72,6 +76,23 @@ internal object PolarRuntimePlannerAdapter {
         val heartRateVariabilityMs: Float?,
         val spo2HrvDeviationFromBaseline: String?,
         val altitudeMeters: Float?
+    )
+    data class PlannedDateFields(
+        val year: Int,
+        val month: Int,
+        val day: Int
+    )
+    data class PlannedTimeFields(
+        val hour: Int,
+        val minute: Int,
+        val second: Int,
+        val millis: Int
+    )
+    data class PlannedDateTimeFields(
+        val date: PlannedDateFields,
+        val time: PlannedTimeFields,
+        val timeZoneOffsetMinutes: Int? = null,
+        val trusted: Boolean = false
     )
 
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {
@@ -811,6 +832,37 @@ internal object PolarRuntimePlannerAdapter {
         return PolarTimeUtils.basicDateRange(startInclusive, endInclusive)
     }
 
+    fun dateTimeFields(
+        year: Int,
+        month: Int,
+        day: Int,
+        hour: Int,
+        minute: Int,
+        second: Int,
+        millis: Int,
+        timeZoneOffsetMinutes: Int? = null,
+        trusted: Boolean = false
+    ): PlannedDateTimeFields {
+        return PolarDateTimeFields(
+            date = PolarDateFields(year, month, day),
+            time = PolarTimeFields(hour, minute, second, millis),
+            timeZoneOffsetMinutes = timeZoneOffsetMinutes,
+            trusted = trusted
+        ).toPlanned()
+    }
+
+    fun millisToNanos(milliseconds: Int): Int {
+        return PolarTimeUtils.millisToNanos(milliseconds)
+    }
+
+    fun secondsToMinutes(seconds: Int): Int {
+        return PolarTimeUtils.secondsToMinutes(seconds)
+    }
+
+    fun durationMillis(hours: Int, minutes: Int, seconds: Int, millis: Int): Int {
+        return PolarTimeUtils.durationToMillis(PolarDurationFields(hours, minutes, seconds, millis))
+    }
+
     fun identifierClassification(identifier: String): String {
         return when (PolarDeviceId.classifyIdentifier(identifier)) {
             PolarDeviceId.IdentifierClassification.DeviceId -> "deviceId"
@@ -862,6 +914,15 @@ internal object PolarRuntimePlannerAdapter {
 
     fun planPsFtpWriteAck(payloadSize: Int, writeAck: String = "success"): String {
         return PolarWorkflowRuntimePlanning.psFtpWriteAckTerminal(payloadSize, writeAck)
+    }
+
+    private fun PolarDateTimeFields.toPlanned(): PlannedDateTimeFields {
+        return PlannedDateTimeFields(
+            date = PlannedDateFields(date.year, date.month, date.day),
+            time = PlannedTimeFields(time.hour, time.minute, time.second, time.millis),
+            timeZoneOffsetMinutes = timeZoneOffsetMinutes,
+            trusted = trusted
+        )
     }
 
     fun queryValue(plan: PolarRuntimePlan): Int {

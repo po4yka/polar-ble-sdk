@@ -67,6 +67,34 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared time field policy routes through Android runtime adapter`() {
+        val fields = PolarRuntimePlannerAdapter.dateTimeFields(
+            year = 2026,
+            month = 6,
+            day = 7,
+            hour = 12,
+            minute = 34,
+            second = 56,
+            millis = 789,
+            timeZoneOffsetMinutes = 240,
+            trusted = true
+        )
+
+        Assert.assertEquals(2026, fields.date.year)
+        Assert.assertEquals(6, fields.date.month)
+        Assert.assertEquals(7, fields.date.day)
+        Assert.assertEquals(12, fields.time.hour)
+        Assert.assertEquals(34, fields.time.minute)
+        Assert.assertEquals(56, fields.time.second)
+        Assert.assertEquals(789, fields.time.millis)
+        Assert.assertEquals(240, fields.timeZoneOffsetMinutes)
+        Assert.assertTrue(fields.trusted)
+        Assert.assertEquals(123_000_000, PolarRuntimePlannerAdapter.millisToNanos(123))
+        Assert.assertEquals(2, PolarRuntimePlannerAdapter.secondsToMinutes(120))
+        Assert.assertEquals(3_723_004, PolarRuntimePlannerAdapter.durationMillis(hours = 1, minutes = 2, seconds = 3, millis = 4))
+    }
+
+    @Test
     fun `shared identifier classification preserves neutral routing categories`() {
         Assert.assertEquals("deviceId", PolarRuntimePlannerAdapter.identifierClassification("E123456F"))
         Assert.assertEquals("deviceId", PolarRuntimePlannerAdapter.identifierClassification("123456"))
