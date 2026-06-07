@@ -412,7 +412,8 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
         }
     }.flowOn(Dispatchers.IO)
 
-    private fun getWriteTimeoutForFilePath(filePath: String): Long {
+    @VisibleForTesting
+    internal fun getWriteTimeoutForFilePath(filePath: String): Long {
         return PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds(
             filePath = filePath,
             defaultTimeoutSeconds = PROTOCOL_TIMEOUT_SECONDS,

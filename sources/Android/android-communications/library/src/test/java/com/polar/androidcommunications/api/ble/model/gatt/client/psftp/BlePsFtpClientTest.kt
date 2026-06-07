@@ -136,6 +136,13 @@ internal class BlePsFtpClientTest {
     }
 
     @Test
+    fun `write timeout selection delegates extended sync package policy to shared runtime`() {
+        assertEquals(900L, blePsFtpClient.getWriteTimeoutForFilePath("/SYNCPART.TGZ"))
+        assertEquals(900L, blePsFtpClient.getWriteTimeoutForFilePath("/SYNCPART.TGZ/part0"))
+        assertEquals(90L, blePsFtpClient.getWriteTimeoutForFilePath("/U/0/S/UDEVSET.BPB"))
+    }
+
+    @Test
     fun `psftp response golden vectors reassemble request responses`() = runTest {
         val vector = loadPsFtpResponseVector("request-response-reassembly")
         val requestHeader = vector.getAsJsonObject("input").get("requestHeaderHex").asString.hexToByteArray()
