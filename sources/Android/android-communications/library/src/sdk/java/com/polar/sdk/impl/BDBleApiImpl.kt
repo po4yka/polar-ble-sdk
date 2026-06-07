@@ -2790,12 +2790,12 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         }
         automaticMeasurementBuilder.setAutomaticOhrMeasurement(autosBuilder.build())
         builder.setAutomaticMeasurementSettings(automaticMeasurementBuilder)
-        PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
+        val operations = PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
             "set-automatic-ohr-measurement",
             userDeviceSettingsPathFor(session.polarDeviceType),
             PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticOhrPayloadFields(enabled)
         )
-        setUserDeviceSettingsProto(identifier, builder.build())
+        setUserDeviceSettingsProto(identifier, builder.build(), operations.last())
         BleLogger.d(TAG, "AUTOS files enabled = $enabled written for $identifier")
     }
 
@@ -2989,7 +2989,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         ) ?: throw PolarOperationNotSupported()
     }
 
-    private suspend fun setUserDeviceSettingsProto(identifier: String, deviceUserSetting: PbUserDeviceSettings) {
+    private suspend fun setUserDeviceSettingsProto(
+        identifier: String,
+        deviceUserSetting: PbUserDeviceSettings,
+        plannedOperation: Pair<PftpRequest.PbPFtpOperation.Command, String>? = null
+    ) {
         val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
@@ -2999,7 +3003,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             sensorSettingsPath = PolarUserDeviceSettings.SENSOR_SETTINGS_FILENAME,
             unknownSettingsPath = PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME
         ) ?: PolarUserDeviceSettings.DEVICE_SETTINGS_FILENAME
-        val operation = PolarRuntimePlannerAdapter.planUserDeviceSettingsWrite(
+        val operation = plannedOperation ?: PolarRuntimePlannerAdapter.planUserDeviceSettingsWrite(
             settingsPath,
             PolarRuntimePlannerAdapter.userDeviceSettingsProtobufPayloadFields()
         )
@@ -3157,12 +3161,12 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             .setDeviceLocation(deviceLocation)
             .build()
         val updated = currentProto.toBuilder().setGeneralSettings(generalSettings).build()
-        PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
+        val operations = PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
             "set-user-device-location",
             userDeviceSettingsPathFor(session.polarDeviceType),
             PolarRuntimePlannerAdapter.userDeviceSettingsDeviceLocationPayloadFields(location)
         )
-        setUserDeviceSettingsProto(identifier, updated)
+        setUserDeviceSettingsProto(identifier, updated, operations.last())
         BleLogger.d(TAG, "Device location set to $location for $identifier")
     }
 
@@ -3183,12 +3187,12 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             .setMode(usbConnectionMode)
             .build()
         val updated = currentProto.toBuilder().setUsbConnectionSettings(usbSettings).build()
-        PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
+        val operations = PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
             "set-usb-connection-mode",
             userDeviceSettingsPathFor(session.polarDeviceType),
             PolarRuntimePlannerAdapter.userDeviceSettingsUsbConnectionModePayloadFields(enabled)
         )
-        setUserDeviceSettingsProto(identifier, updated)
+        setUserDeviceSettingsProto(identifier, updated, operations.last())
         BleLogger.d(TAG, "USB connection mode set to $enabled for $identifier")
     }
 
@@ -3223,7 +3227,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val updated = currentProto.toBuilder()
             .setAutomaticMeasurementSettings(autoMeasBuilder.build())
             .build()
-        PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
+        val operations = PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
             "set-automatic-training-detection",
             userDeviceSettingsPathFor(session.polarDeviceType),
             PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticTrainingDetectionPayloadFields(
@@ -3232,7 +3236,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 minimumTrainingDurationSeconds
             )
         )
-        setUserDeviceSettingsProto(identifier, updated)
+        setUserDeviceSettingsProto(identifier, updated, operations.last())
         BleLogger.d(TAG, "Automatic training detection set to mode=$automaticTrainingDetectionMode sensitivity=$automaticTrainingDetectionSensitivity for $identifier")
     }
 
@@ -3256,12 +3260,12 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             .setTelemetryEnabled(enabled)
             .build()
         val updated = currentProto.toBuilder().setTelemetrySettings(telemetrySettings).build()
-        PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
+        val operations = PolarRuntimePlannerAdapter.planUserDeviceSettingsReadThenWrite(
             "set-telemetry-enabled",
             userDeviceSettingsPathFor(session.polarDeviceType),
             PolarRuntimePlannerAdapter.userDeviceSettingsTelemetryPayloadFields(enabled)
         )
-        setUserDeviceSettingsProto(deviceId, updated)
+        setUserDeviceSettingsProto(deviceId, updated, operations.last())
         BleLogger.d(TAG, "Telemetry enabled=$enabled for $deviceId")
     }
 
