@@ -1779,7 +1779,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         var pmdSecret: PmdSecret? = nil
         if let s = secret { pmdSecret = try PolarDataUtils.mapToPmdSecret(from: s) }
         let triggerTypes = trigger.triggerFeatures.keys.map { String(describing: $0) }
-        PolarRuntimePlanner.offlineTriggerSet(currentTypes: triggerTypes, desiredTypes: triggerTypes, secretPresent: secret != nil)
+        let terminal = PolarRuntimePlanner.offlineTriggerSet(currentTypes: triggerTypes, desiredTypes: triggerTypes, secretPresent: secret != nil)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "Offline trigger setup planning failed: \(terminal)")
+        }
         try await client.setOfflineRecordingTrigger(offlineRecordingTrigger: pmdOfflineTrigger, secret: pmdSecret)
     }
 
@@ -1788,7 +1791,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionPmdClientReady(identifier)
         guard let client = session.fetchGattClient(BlePmdClient.PMD_SERVICE) as? BlePmdClient else { throw PolarErrors.serviceNotFound }
         BleLogger.trace("Get offline recording trigger setup. Device: \(identifier)")
-        PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["acc", "gyro", "magnetometer", "ppg", "ppi", "hr"])
+        let terminal = PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["acc", "gyro", "magnetometer", "ppg", "ppi", "hr"])
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "Offline trigger read planning failed: \(terminal)")
+        }
         let trigger = try await client.getOfflineRecordingTriggerStatus()
         return try PolarDataUtils.mapToPolarOfflineTrigger(from: trigger)
     }
