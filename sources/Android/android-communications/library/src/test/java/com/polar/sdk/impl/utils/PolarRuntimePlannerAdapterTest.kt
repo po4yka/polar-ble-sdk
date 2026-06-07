@@ -174,6 +174,19 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared KVTX byte codec routes through Android runtime adapter`() {
+        val key = 0x01020304
+        val payload = byteArrayOf(0x11, 0x22, 0x33)
+        val script = PolarRuntimePlannerAdapter.kvtxBuildWriteAndCommit(key, payload)
+
+        Assert.assertEquals(0x00.toByte(), script.first())
+        Assert.assertEquals(0x05.toByte(), script.last())
+        Assert.assertArrayEquals(byteArrayOf(0x04, 0x03, 0x02, 0x01), PolarRuntimePlannerAdapter.kvtxU32Le(key))
+        Assert.assertArrayEquals(payload, PolarRuntimePlannerAdapter.kvtxExtractValueForKey(script, key))
+        Assert.assertNull(PolarRuntimePlannerAdapter.kvtxExtractValueForKey(script, 0x99))
+    }
+
+    @Test
     fun `shared offline recording metadata routes through Android runtime adapter`() {
         Assert.assertEquals("ACC", PolarRuntimePlannerAdapter.offlineRecordingMeasurementTypeName("ACC0.REC"))
         Assert.assertEquals("OFFLINE_HR", PolarRuntimePlannerAdapter.offlineRecordingMeasurementTypeName("HR.REC"))

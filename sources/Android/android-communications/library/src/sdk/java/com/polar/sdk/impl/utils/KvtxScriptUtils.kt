@@ -1,8 +1,6 @@
 // Copyright © 2026 Polar Electro Oy. All rights reserved.
 package com.polar.sdk.impl.utils
 
-import com.polar.shared.sdk.PolarKvtxScriptCodec
-
 /**
  * Generic KVTXScript builder and scanner.
  */
@@ -24,7 +22,7 @@ internal object KvtxScriptUtils {
      * Structure: WRITE_BYTES(key, data) + COMMIT
      */
     fun buildWriteAndCommit(kvKey: Int, data: ByteArray): ByteArray =
-        PolarKvtxScriptCodec.buildWriteAndCommit(kvKey.toLong() and 0xFFFF_FFFFL, data)
+        PolarRuntimePlannerAdapter.kvtxBuildWriteAndCommit(kvKey, data)
 
     /**
      * Scan a full KVTXScript binary and extract the raw value bytes stored under [kvKey].
@@ -32,8 +30,8 @@ internal object KvtxScriptUtils {
      * Returns `null` if the key is not present (or was removed) in the script.
      */
     fun extractValueForKey(script: ByteArray, kvKey: Int): ByteArray? =
-        PolarKvtxScriptCodec.extractValueForKey(script, kvKey.toLong() and 0xFFFF_FFFFL)
+        PolarRuntimePlannerAdapter.kvtxExtractValueForKey(script, kvKey)
 
     fun u32Le(value: Int): ByteArray =
-        PolarKvtxScriptCodec.u32Le(value.toLong() and 0xFFFF_FFFFL)
+        PolarRuntimePlannerAdapter.kvtxU32Le(value)
 }

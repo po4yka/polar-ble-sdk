@@ -22,6 +22,7 @@ import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarFirmwareUpdateModels
+import com.polar.shared.sdk.PolarKvtxScriptCodec
 import com.polar.shared.sdk.PolarOfflineRecordingFileEntry
 import com.polar.shared.sdk.PolarOfflineRecordingModels
 import com.polar.shared.sdk.PolarRestServiceModels
@@ -671,6 +672,18 @@ internal object PolarRuntimePlannerAdapter {
             complicationIds = fields.complicationIds,
             fontfaceId = fields.fontfaceId
         )
+    }
+
+    fun kvtxBuildWriteAndCommit(kvKey: Int, data: ByteArray): ByteArray {
+        return PolarKvtxScriptCodec.buildWriteAndCommit(kvKey.toLong() and 0xFFFF_FFFFL, data)
+    }
+
+    fun kvtxExtractValueForKey(script: ByteArray, kvKey: Int): ByteArray? {
+        return PolarKvtxScriptCodec.extractValueForKey(script, kvKey.toLong() and 0xFFFF_FFFFL)
+    }
+
+    fun kvtxU32Le(value: Int): ByteArray {
+        return PolarKvtxScriptCodec.u32Le(value.toLong() and 0xFFFF_FFFFL)
     }
 
     fun nightlyRechargePath(day: String): String {
