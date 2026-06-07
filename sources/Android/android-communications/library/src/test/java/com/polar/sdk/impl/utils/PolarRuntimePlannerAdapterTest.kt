@@ -304,6 +304,14 @@ class PolarRuntimePlannerAdapterTest {
             kind = "emptyDayFolderRemoval",
             rootPath = "/U/0/20260530/"
         )
+        val activityRemoveOperation = PolarRuntimePlannerAdapter.planStoredDataCleanupRemoveOperation(
+            rootPath = "/U/0",
+            filePath = "/U/0/20260530/ACT/ACTIVITY.BPB"
+        )
+        val automaticSampleRemoveOperation = PolarRuntimePlannerAdapter.planStoredDataCleanupRemoveOperation(
+            rootPath = "/U/0/AUTOS",
+            filePath = "/U/0/AUTOS/20260530/AUTOS001.BPB"
+        )
 
         Assert.assertEquals(
             listOf(
@@ -324,5 +332,7 @@ class PolarRuntimePlannerAdapterTest {
             listOf(PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/20260530"),
             dateFolderOperations
         )
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/20260530/ACT/ACTIVITY.BPB", activityRemoveOperation)
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/AUTOS/20260530/AUTOS001.BPB", automaticSampleRemoveOperation)
     }
 }

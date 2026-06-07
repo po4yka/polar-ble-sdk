@@ -2127,6 +2127,8 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(["/U/0/20260530/ACT/", "/U/0/20260530/"], PolarRuntimePlanner.storedDataEmptyParentDirectories(filePath: "/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash: true))
         XCTAssertEqual(["/TRC10.BIN"], PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/", entries: ["TRC10.BIN", "ABC10.BIN", "TRC10.TXT"], includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
         XCTAssertEqual(["/SDLOGS/A.SLG", "/SDLOGS/B.TXT"], PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/SDLOGS", entries: ["A.SLG", "B.TXT", "C.BPB"], includeSuffixes: [".SLG", ".TXT"]))
+        XCTAssertEqual(["/U/0/20260530/ACT/ACTIVITY.BPB"], PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/U/0/", entries: ["20260530/ACT/ACTIVITY.BPB"]))
+        XCTAssertEqual(["/U/0/AUTOS/20260530/AUTOS001.BPB"], PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/U/0/AUTOS", entries: ["20260530/AUTOS001.BPB"]))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif

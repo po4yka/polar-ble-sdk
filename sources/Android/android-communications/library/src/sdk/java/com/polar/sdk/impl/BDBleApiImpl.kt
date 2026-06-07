@@ -2629,7 +2629,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                     if (dataType.type != PolarStoredDataType.AUTO_SAMPLE.type && dataType.type != PolarStoredDataType.SDLOGS.type) {
                         val dateFromFileName = LocalDate.parse(filename.split("/")[3], dateFormatter)
                         if (cutoffDate != null && PolarRuntimePlannerAdapter.storedDataDateIsOnOrBefore(dateFromFileName.toString(), cutoffDate)) {
-                            PolarFileUtils.removeSingleFile(identifier, filename, listener, TAG)
+                            val removeOperation = PolarRuntimePlannerAdapter.planStoredDataCleanupRemoveOperation(folderPath, filename)
+                            if (removeOperation != null) {
+                                client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
+                            }
                             deletedFiles.add(filename)
                         }
                     } else if (dataType.type == PolarStoredDataType.AUTO_SAMPLE.type) {
@@ -2637,7 +2640,10 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                         val proto = PbAutomaticSampleSessions.parseFrom(byteArray)
                         val date = PolarTimeUtils.pbDateToLocalDate(proto.day)
                         if (cutoffDate != null && PolarRuntimePlannerAdapter.storedDataDateIsOnOrBefore(date.toString(), cutoffDate)) {
-                            PolarFileUtils.removeSingleFile(identifier, filename, listener, TAG)
+                            val removeOperation = PolarRuntimePlannerAdapter.planStoredDataCleanupRemoveOperation(folderPath, filename)
+                            if (removeOperation != null) {
+                                client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
+                            }
                             deletedFiles.add(filename)
                         }
                     } else if (dataType.type == PolarStoredDataType.SDLOGS.type) {

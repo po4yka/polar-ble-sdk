@@ -350,6 +350,16 @@ internal object PolarRuntimePlannerAdapter {
         ).commands.mapNotNull(::cleanupCommandOperation)
     }
 
+    fun planStoredDataCleanupRemoveOperation(rootPath: String, filePath: String): Pair<PftpRequest.PbPFtpOperation.Command, String>? {
+        val normalizedRoot = rootPath.trimEnd('/')
+        val entry = filePath.removePrefix(if (normalizedRoot.isEmpty()) "/" else "$normalizedRoot/")
+        return planStoredDataCleanupOperations(
+            kind = "filterDirectoryEntries",
+            rootPath = rootPath,
+            entries = listOf(entry)
+        ).lastOrNull()
+    }
+
     fun storedDataEntryMatchesFilter(entry: String, includePrefixes: List<String> = emptyList(), includeSuffixes: List<String> = emptyList()): Boolean {
         return PolarWorkflowRuntimePlanning.storedDataEntryMatchesFilter(entry, includePrefixes, includeSuffixes)
     }

@@ -2737,7 +2737,10 @@ extension PolarBleApiImpl: PolarBleApi  {
             switch dataType {
             case .AUTO_SAMPLE:
                 if try await fileUtils.checkAutoSampleFile(identifier: identifier, filePath: file, until: until!) {
-                    _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: file)
+                    let rootPrefix = folderPath.hasSuffix("/") ? folderPath : "\(folderPath)/"
+                    let entry = file.hasPrefix(rootPrefix) ? String(file.dropFirst(rootPrefix.count)) : file
+                    let plannedFile = PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: folderPath, entries: [entry])?.last ?? file
+                    _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: plannedFile)
                     deletedFiles.append(file)
                 }
             case .SDLOGS:
@@ -2750,7 +2753,10 @@ extension PolarBleApiImpl: PolarBleApi  {
                 let cutoffDate = formatter.string(from: until!)
                 let isOnOrBeforeCutoff = PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: day, cutoffDate: cutoffDate) ?? (cutoffDate >= day)
                 if isOnOrBeforeCutoff {
-                    _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: file)
+                    let rootPrefix = folderPath.hasSuffix("/") ? folderPath : "\(folderPath)/"
+                    let entry = file.hasPrefix(rootPrefix) ? String(file.dropFirst(rootPrefix.count)) : file
+                    let plannedFile = PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: folderPath, entries: [entry])?.last ?? file
+                    _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: plannedFile)
                     deletedFiles.append(file)
                 }
             case .UNDEFINED: break
