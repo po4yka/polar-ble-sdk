@@ -44,6 +44,7 @@ import com.polar.shared.runtime.PolarFirmwareWorkflowScenario
 import com.polar.shared.runtime.PolarOfflineTriggerDesiredFeature
 import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
 import com.polar.shared.runtime.PolarOfflineTriggerTransport
+import com.polar.shared.runtime.PolarPsFtpNotificationPacket
 import com.polar.shared.runtime.PolarRestFacadeOperation
 import com.polar.shared.runtime.PolarRuntimePlan
 import com.polar.shared.runtime.PolarRuntimeOrchestration
@@ -1884,6 +1885,30 @@ object PolarIosSharedBridge {
     fun psFtpSplitRfc76RequestWriteFramesHex(headerHex: String, dataHex: String, mtu: Int): String {
         return PolarWorkflowRuntimePlanning.splitRfc76RequestWriteFrames(headerHex.hexToBytes(), dataHex.hexToBytes(), mtu).joinToString(separator = "|") { frame ->
             frame.toHex()
+        }
+    }
+
+    fun psFtpReassembledNotifications(packets: String): String {
+        val packetList = packets
+            .split("|")
+            .filter { it.isNotBlank() }
+            .mapNotNull { packet ->
+                val parts = packet.split(":", limit = 2)
+                if (parts.size != 2) {
+                    null
+                } else {
+                    PolarPsFtpNotificationPacket(
+                        transportStatus = parts[0].toIntOrNull() ?: return@mapNotNull null,
+                        frame = parts[1].hexToBytes()
+                    )
+                }
+            }
+        return try {
+            PolarWorkflowRuntimePlanning.reassembleNotifications(packetList).joinToString(separator = "|") { notification ->
+                "${notification.id}:${notification.parameters.toHex()}"
+            }
+        } catch (_: Throwable) {
+            ""
         }
     }
 

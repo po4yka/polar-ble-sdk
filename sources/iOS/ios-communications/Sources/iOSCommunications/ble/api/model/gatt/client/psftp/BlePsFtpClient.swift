@@ -31,7 +31,7 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
     public let packetChunks = AtomicType<Int>.init(initialValue: 6)
     
     // notification rel
-    let notificationInputQueue=AtomicList<[Int : BlePsFtpUtility.BlePsFtpRfc76Frame]>()
+    let notificationInputQueue=AtomicList<[Int : Data]>()
     let notificationPacketsWritten=AtomicInteger(initialValue:0)
     
     lazy var mtuOperationQueue:OperationQueue = {
@@ -107,8 +107,8 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
             } else if chr.isEqual(BlePsFtpClient.PSFTP_D2H_NOTIFICATION_CHARACTERISTIC) {
                 BleLogger.trace_hex("Processing PSFTP_D2H_NOTIFICATION_CHARACTERISTIC, data: ", data: data)
                 do {
-                    let frame = try BlePsFtpUtility.processRfc76MessageFrame(data)
-                    notificationInputQueue.push([err : frame])
+                    _ = try BlePsFtpUtility.processRfc76MessageFrame(data)
+                    notificationInputQueue.push([err : data])
                 } catch let err {
                     BleLogger.trace_if_error("Processing Rfc76 message frame failed. Wait for next frame", error: err)
                 }
@@ -579,27 +579,37 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
                     do {
                         repeat {
                             let packet = try self.notificationInputQueue.pollUntilSignaled(canceled: block ?? BlockOperation(), cancelError: BlePsFtpException.operationCanceled)
-                            if packet.first?.key == 0, var frame = packet.first?.value {
-                                if frame.next == 0 && frame.status != BlePsFtpUtility.RFC76_STATUS_ERROR_OR_RESPONSE {
-                                    let notification = PsFtpNotification()
-                                    notification.id = Int32(frame.payload[0])
-                                    notification.parameters.append(frame.payload.subdata(in: 1..<frame.payload.count))
-                                    while frame.status == BlePsFtpUtility.RFC76_STATUS_MORE {
-                                        let packet = try self.notificationInputQueue.poll(self.PROTOCOL_TIMEOUT)
-                                        if packet.first?.key == 0, let newFrame = packet.first?.value {
-                                            frame = newFrame
-                                            if frame.status != BlePsFtpUtility.RFC76_STATUS_ERROR_OR_RESPONSE {
-                                                notification.parameters.append(frame.payload.subdata(in: 0..<frame.payload.count))
-                                            }
-                                        } else {
-                                            cont.finish(throwing: BlePsFtpException.responseError(errorCode: (packet.first?.key) ?? -1))
-                                            return
-                                        }
-                                    }
-                                    if frame.status == BlePsFtpUtility.RFC76_STATUS_LAST {
-                                        cont.yield(notification)
+                            if packet.first?.key == 0, let frameData = packet.first?.value {
+                                var packets = [(status: 0, frame: frameData)]
+                                var frame = try BlePsFtpUtility.processRfc76MessageFrame(frameData)
+                                while frame.status == BlePsFtpUtility.RFC76_STATUS_MORE {
+                                    let packet = try self.notificationInputQueue.poll(self.PROTOCOL_TIMEOUT)
+                                    if packet.first?.key == 0, let nextFrameData = packet.first?.value {
+                                        packets.append((status: 0, frame: nextFrameData))
+                                        frame = try BlePsFtpUtility.processRfc76MessageFrame(nextFrameData)
+                                    } else {
+                                        cont.finish(throwing: BlePsFtpException.responseError(errorCode: (packet.first?.key) ?? -1))
+                                        return
                                     }
                                 }
+                                #if canImport(PolarBleSdkShared)
+                                if let notifications = SharedPsFtpByteCodec.reassembledNotifications(packets), !notifications.isEmpty {
+                                    for sharedNotification in notifications {
+                                        let notification = PsFtpNotification()
+                                        notification.id = sharedNotification.id
+                                        notification.parameters.append(sharedNotification.parameters)
+                                        cont.yield(notification)
+                                    }
+                                } else if frame.status == BlePsFtpUtility.RFC76_STATUS_LAST {
+                                    let notification = try self.localNotification(from: packets)
+                                    cont.yield(notification)
+                                }
+                                #else
+                                if frame.status == BlePsFtpUtility.RFC76_STATUS_LAST {
+                                    let notification = try self.localNotification(from: packets)
+                                    cont.yield(notification)
+                                }
+                                #endif
                             } else {
                                 cont.finish(throwing: BlePsFtpException.responseError(errorCode: (packet.first?.key) ?? -1))
                                 return
@@ -615,6 +625,22 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
             }
             self.waitNotificationOperationQueue.addOperation(block)
         }
+    }
+
+    private func localNotification(from packets: [(status: Int, frame: Data)]) throws -> PsFtpNotification {
+        let notification = PsFtpNotification()
+        for (index, packet) in packets.enumerated() {
+            let frame = try BlePsFtpUtility.processRfc76MessageFrame(packet.frame)
+            if frame.status != BlePsFtpUtility.RFC76_STATUS_ERROR_OR_RESPONSE {
+                if index == 0 {
+                    notification.id = Int32(frame.payload[0])
+                    notification.parameters.append(frame.payload.subdata(in: 1..<frame.payload.count))
+                } else {
+                    notification.parameters.append(frame.payload)
+                }
+            }
+        }
+        return notification
     }
 
     public func waitPsFtpReady(_ checkConnection: Bool) async throws {

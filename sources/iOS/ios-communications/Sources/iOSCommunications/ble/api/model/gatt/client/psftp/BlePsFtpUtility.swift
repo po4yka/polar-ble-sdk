@@ -446,6 +446,24 @@ enum SharedPsFtpByteCodec {
         return frames.count == frameHexValues.count ? frames : nil
     }
 
+    static func reassembledNotifications(_ packets: [(status: Int, frame: Data)]) -> [(id: Int32, parameters: Data)]? {
+        let encodedPackets = packets.map { "\($0.status):\($0.frame.hexString)" }.joined(separator: "|")
+        let encodedNotifications = PolarIosSharedBridge.shared.psFtpReassembledNotifications(packets: encodedPackets)
+        if encodedNotifications.isEmpty {
+            return []
+        }
+        let notifications = encodedNotifications.split(separator: "|", omittingEmptySubsequences: false).compactMap { value -> (id: Int32, parameters: Data)? in
+            let parts = value.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+            guard parts.count == 2,
+                  let id = Int32(parts[0]),
+                  let parameters = Data(hexBytes: String(parts[1])) else {
+                return nil
+            }
+            return (id: id, parameters: parameters)
+        }
+        return notifications.count == encodedNotifications.split(separator: "|", omittingEmptySubsequences: false).count ? notifications : nil
+    }
+
     static func writeTimeoutSeconds(filePath: String, defaultTimeoutSeconds: Int, extendedTimeoutSeconds: Int) -> Int {
         return Int(PolarIosSharedBridge.shared.psFtpWriteTimeoutSeconds(filePath: filePath, defaultTimeoutSeconds: Int32(defaultTimeoutSeconds), extendedTimeoutSeconds: Int32(extendedTimeoutSeconds)))
     }
