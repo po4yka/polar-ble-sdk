@@ -4,7 +4,6 @@ package com.polar.sdk.impl.utils
 import com.google.protobuf.InvalidProtocolBufferException
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
-import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import com.polar.sdk.api.PolarD2HNotificationData
 import com.polar.sdk.api.PolarDeviceToHostNotification
 import kotlinx.coroutines.flow.Flow
@@ -25,13 +24,13 @@ fun BlePsFtpClient.observeDeviceToHostNotifications(identifier: String): Flow<Po
     return waitForNotification()
         .transform { notification ->
             val parameters = notification.byteArrayOutputStream.toByteArray()
-            val emissionPlan = PolarD2hRuntimePlanning.planNotificationEmission(notification.id, parameters.toHexString())
+            val emissionPlan = PolarRuntimePlannerAdapter.d2hNotificationPlan(notification.id, parameters.toHexString())
             if (emissionPlan == null) {
                 BleLogger.w(TAG, "Unknown notification type: ${notification.id}")
             } else {
                 val notificationType = PolarDeviceToHostNotification.fromValue(notification.id)
                     ?: error("Shared D2H notification type ${emissionPlan.notificationType} is not represented by the Android public enum")
-                val parsedParameters = parseD2HNotificationParameters(notificationType, parameters, emissionPlan.parsedProto)
+                val parsedParameters = parseD2HNotificationParameters(notificationType, parameters, emissionPlan.parsedProtoName)
                 emit(PolarD2HNotificationData(notificationType, parameters, parsedParameters))
             }
         }
@@ -54,7 +53,7 @@ fun BlePsFtpClient.observeDeviceToHostNotifications(identifier: String): Flow<Po
 private fun parseD2HNotificationParameters(
     notificationType: PolarDeviceToHostNotification,
     data: ByteArray,
-    sharedParsedProtoName: String? = PolarD2hRuntimePlanning.parsedProtoName(notificationType.name, data.toHexString())
+    sharedParsedProtoName: String? = PolarRuntimePlannerAdapter.d2hParsedProtoName(notificationType.name, data.toHexString())
 ): Any? {
     if (data.isEmpty()) {
         return null

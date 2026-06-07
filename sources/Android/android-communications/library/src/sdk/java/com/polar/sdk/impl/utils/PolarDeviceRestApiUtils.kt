@@ -4,7 +4,6 @@ import com.google.gson.Gson
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.RestApiEventPayload
-import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import com.polar.shared.sdk.PolarRestServiceModels
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -18,7 +17,7 @@ import java.util.zip.GZIPInputStream
 
 fun BlePsFtpClient.receiveRestApiEventData(identifier: String): Flow<Array<ByteArray>> {
     return waitForNotification()
-        .filter { PolarD2hRuntimePlanning.notificationTypeOrNull(it.id) == "REST_API_EVENT" }
+        .filter { PolarRuntimePlannerAdapter.d2hNotificationTypeName(it.id) == "REST_API_EVENT" }
         .map { PbPftpDHRestApiEvent.parseFrom(it.byteArrayOutputStream.toByteArray()) }
         .map { proto ->
             if (proto.hasUncompressed() && proto.uncompressed) {

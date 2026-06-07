@@ -12,6 +12,7 @@ import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarSyncStopNotificationFields
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import com.polar.shared.runtime.PolarBackupRestoreFile
+import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import com.polar.shared.runtime.PolarFirmwareWorkflowScenario
 import com.polar.shared.runtime.PolarOfflineTriggerDesiredFeature
 import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
@@ -36,6 +37,10 @@ internal object PolarRuntimePlannerAdapter {
     data class PlannedBackupRestoreWrite(
         val operation: Pair<PftpRequest.PbPFtpOperation.Command, String>,
         val payloadHex: String
+    )
+    data class PlannedD2hNotification(
+        val notificationType: String,
+        val parsedProtoName: String?
     )
 
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {
@@ -629,6 +634,23 @@ internal object PolarRuntimePlannerAdapter {
             PolarDeviceId.IdentifierClassification.DeviceId -> "deviceId"
             PolarDeviceId.IdentifierClassification.PlatformSpecific -> "platformSpecific"
             PolarDeviceId.IdentifierClassification.Invalid -> "invalid"
+        }
+    }
+
+    fun d2hNotificationTypeName(notificationId: Int): String? {
+        return PolarD2hRuntimePlanning.notificationTypeOrNull(notificationId)
+    }
+
+    fun d2hParsedProtoName(notificationType: String, parametersHex: String): String? {
+        return PolarD2hRuntimePlanning.parsedProtoName(notificationType, parametersHex)
+    }
+
+    fun d2hNotificationPlan(notificationId: Int, parametersHex: String): PlannedD2hNotification? {
+        return PolarD2hRuntimePlanning.planNotificationEmission(notificationId, parametersHex)?.let { plan ->
+            PlannedD2hNotification(
+                notificationType = plan.notificationType,
+                parsedProtoName = plan.parsedProto
+            )
         }
     }
 

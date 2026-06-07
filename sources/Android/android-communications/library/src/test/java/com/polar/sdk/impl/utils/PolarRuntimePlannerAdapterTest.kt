@@ -1,6 +1,5 @@
 package com.polar.sdk.impl.utils
 
-import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import com.polar.shared.runtime.PolarBackupRestoreFile
 import org.junit.Assert
 import org.junit.Test
@@ -115,14 +114,15 @@ class PolarRuntimePlannerAdapterTest {
     fun `shared D2H planner identifies exercise status notifications`() {
         Assert.assertEquals(
             "EXERCISE_STATUS",
-            PolarD2hRuntimePlanning.notificationTypeOrNull(PftpNotification.PbPFtpDevToHostNotification.EXERCISE_STATUS_VALUE)
+            PolarRuntimePlannerAdapter.d2hNotificationTypeName(PftpNotification.PbPFtpDevToHostNotification.EXERCISE_STATUS_VALUE)
         )
-        val plan = PolarD2hRuntimePlanning.planNotificationEmission(
+        val plan = PolarRuntimePlannerAdapter.d2hNotificationPlan(
             PftpNotification.PbPFtpDevToHostNotification.EXERCISE_STATUS_VALUE,
             "0a020802"
         )
         Assert.assertEquals("EXERCISE_STATUS", plan?.notificationType)
-        Assert.assertEquals("PbPftpDHExerciseStatus", plan?.parsedProto)
+        Assert.assertEquals("PbPftpDHExerciseStatus", plan?.parsedProtoName)
+        Assert.assertEquals("PbPftpDHExerciseStatus", PolarRuntimePlannerAdapter.d2hParsedProtoName("EXERCISE_STATUS", "0a020802"))
     }
 
     @Test
