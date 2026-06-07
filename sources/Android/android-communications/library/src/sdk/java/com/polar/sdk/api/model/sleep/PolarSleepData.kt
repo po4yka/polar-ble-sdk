@@ -1,8 +1,7 @@
 package com.polar.sdk.api.model.sleep
 
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 import com.polar.sdk.impl.utils.PolarTimeUtils
-import com.polar.shared.sdk.PolarSleepRatingName
-import com.polar.shared.sdk.PolarSleepWakeStateName
 import com.polar.services.datamodels.protobuf.SleepSkinTemperatureResult.PbSleepSkinTemperatureResult
 import fi.polar.remote.representation.protobuf.SleepanalysisResult.PbSleepCycle
 import fi.polar.remote.representation.protobuf.SleepanalysisResult.PbSleepWakePhase
@@ -21,8 +20,8 @@ enum class SleepWakeState(val value: Int) {
 
     companion object {
         infix fun from(value: Int): SleepWakeState? {
-            return PolarSleepWakeStateName.fromValue(value)?.let { sharedName ->
-                entries.firstOrNull { state -> state.name == sharedName.name }
+            return PolarSdkModelAdapter.sleepWakeStateName(value)?.let { sharedName ->
+                entries.firstOrNull { state -> state.name == sharedName }
             }
         }
     }
@@ -38,8 +37,8 @@ enum class SleepRating(val value: Int) {
 
     companion object {
         infix fun from(value: Int): SleepRating? {
-            return PolarSleepRatingName.fromValue(value)?.let { sharedName ->
-                entries.firstOrNull { rating -> rating.name == sharedName.name }
+            return PolarSdkModelAdapter.sleepRatingName(value)?.let { sharedName ->
+                entries.firstOrNull { rating -> rating.name == sharedName }
             }
         }
     }

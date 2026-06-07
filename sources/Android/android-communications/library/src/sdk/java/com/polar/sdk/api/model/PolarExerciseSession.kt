@@ -1,7 +1,6 @@
 // Copyright © 2025 Polar Electro Oy. All rights reserved.
 package com.polar.sdk.api.model
 
-import com.polar.shared.sdk.PolarExerciseSportProfileName
 import java.time.LocalDateTime
 
 /**
@@ -24,11 +23,11 @@ class PolarExerciseSession {
              * Falls back to [UNKNOWN] if no match is found.
              */
             fun fromId(id: Int): SportProfile {
-                return when (PolarExerciseSportProfileName.fromId(id)) {
-                    PolarExerciseSportProfileName.UNKNOWN -> UNKNOWN
-                    PolarExerciseSportProfileName.RUNNING -> RUNNING
-                    PolarExerciseSportProfileName.CYCLING -> CYCLING
-                    PolarExerciseSportProfileName.OTHER_OUTDOOR -> OTHER_OUTDOOR
+                return when (PolarSdkModelAdapter.exerciseSportProfileName(id)) {
+                    "RUNNING" -> RUNNING
+                    "CYCLING" -> CYCLING
+                    "OTHER_OUTDOOR" -> OTHER_OUTDOOR
+                    else -> UNKNOWN
                 }
             }
         }

@@ -56,6 +56,32 @@ class PolarSdkModelAdapterTest {
     }
 
     @Test
+    fun `activity sleep and exercise enum lookups route through sdk model adapter`() {
+        assertEquals("RUNNING", PolarSdkModelAdapter.exerciseSportProfileName(1))
+        assertEquals("UNKNOWN", PolarSdkModelAdapter.exerciseSportProfileName(Int.MAX_VALUE))
+        assertEquals("WAKE", PolarSdkModelAdapter.sleepWakeStateName(-2))
+        assertNull(PolarSdkModelAdapter.sleepWakeStateName(99))
+        assertEquals("SLEPT_WELL", PolarSdkModelAdapter.sleepRatingName(4))
+        assertEquals("LIGHT", PolarSdkModelAdapter.activityClassName(3))
+        assertEquals("TRIGGER_TYPE_TIMED", PolarSdkModelAdapter.automaticHrTriggerName(3))
+        assertEquals("RESPONDING_WELL_CAN_CONTINUE", PolarSdkModelAdapter.dailyBalanceFeedbackName(6))
+        assertEquals("RECOVERED_READY_FOR_SPEED_AND_STRENGTH_TRAINING", PolarSdkModelAdapter.trainingReadinessName(3))
+    }
+
+    @Test
+    fun `ppi enum lookups route through sdk model adapter`() {
+        val status = PolarSdkModelAdapter.ppiStatusNames(0b111)
+
+        assertEquals("TRIGGER_TYPE_MANUAL", PolarSdkModelAdapter.ppiSampleTriggerName(2))
+        assertEquals("SKIN_CONTACT_DETECTED", status?.skinContact)
+        assertEquals("MOVING_DETECTED", status?.movement)
+        assertEquals("INTERVAL_DENOTES_OFFLINE_PERIOD", status?.intervalStatus)
+        assertEquals("NO_SKIN_CONTACT", PolarSdkModelAdapter.ppiSkinContactName(0))
+        assertEquals("NO_MOVING_DETECTED", PolarSdkModelAdapter.ppiMovementName(0))
+        assertEquals("INTERVAL_IS_ONLINE", PolarSdkModelAdapter.ppiIntervalStatusName(0))
+    }
+
+    @Test
     fun `rest service projection routes through sdk model adapter`() {
         val serviceList = PolarSdkModelAdapter.restServiceList(
             linkedMapOf(

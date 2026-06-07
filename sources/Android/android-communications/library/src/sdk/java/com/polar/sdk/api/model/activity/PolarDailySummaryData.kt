@@ -1,8 +1,7 @@
 package com.polar.sdk.api.model.activity
 
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 import com.polar.sdk.impl.utils.PolarTimeUtils
-import com.polar.shared.sdk.PolarDailyBalanceFeedbackName
-import com.polar.shared.sdk.PolarTrainingReadinessName
 import fi.polar.remote.representation.protobuf.DailySummary.PbDailySummary
 import fi.polar.remote.representation.protobuf.Types.PbDuration
 import java.time.LocalDate
@@ -63,8 +62,8 @@ enum class PolarDailyBalanceFeedBack(val numVal: Int) {
 
     companion object {
         infix fun from(value: Int): PolarDailyBalanceFeedBack? {
-            return PolarDailyBalanceFeedbackName.fromValue(value)?.let { sharedName ->
-                entries.firstOrNull { feedback -> feedback.name == sharedName.name }
+            return PolarSdkModelAdapter.dailyBalanceFeedbackName(value)?.let { sharedName ->
+                entries.firstOrNull { feedback -> feedback.name == sharedName }
             }
         }
     }
@@ -88,8 +87,8 @@ enum class PolarReadinessForSpeedAndStrengthTraining(val numVal: Int) {
 
     companion object {
         infix fun from(value: Int): PolarReadinessForSpeedAndStrengthTraining? {
-            return PolarTrainingReadinessName.fromValue(value)?.let { sharedName ->
-                entries.firstOrNull { readiness -> readiness.name == sharedName.name }
+            return PolarSdkModelAdapter.trainingReadinessName(value)?.let { sharedName ->
+                entries.firstOrNull { readiness -> readiness.name == sharedName }
             }
         }
     }

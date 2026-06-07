@@ -2,13 +2,25 @@ package com.polar.sdk.api.model
 
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.runtime.PolarD2hRuntimePlanning
+import com.polar.shared.sdk.PolarActivityClassName
+import com.polar.shared.sdk.PolarAutomaticHrTriggerName
+import com.polar.shared.sdk.PolarDailyBalanceFeedbackName
+import com.polar.shared.sdk.PolarExerciseSportProfileName
 import com.polar.shared.sdk.PolarFirstTimeUseGenderName
 import com.polar.shared.sdk.PolarFirstTimeUseTrainingBackgroundName
 import com.polar.shared.sdk.PolarFirstTimeUseTypicalDayName
+import com.polar.shared.sdk.PolarPpiIntervalStatusName
+import com.polar.shared.sdk.PolarPpiMovementName
+import com.polar.shared.sdk.PolarPpiSampleTriggerName
+import com.polar.shared.sdk.PolarPpiSkinContactName
+import com.polar.shared.sdk.PolarPpiStatusNames
 import com.polar.shared.sdk.PolarRestServiceModels
 import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
 import com.polar.shared.sdk.PolarSdLogTriggerName
 import com.polar.shared.sdk.PolarSdkModelMappers
+import com.polar.shared.sdk.PolarSleepRatingName
+import com.polar.shared.sdk.PolarSleepWakeStateName
+import com.polar.shared.sdk.PolarTrainingReadinessName
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
 
 internal object PolarSdkModelAdapter {
@@ -29,6 +41,11 @@ internal object PolarSdkModelAdapter {
         val actionPaths: List<String>,
         val details: Map<String, List<String>>,
         val triggers: Map<String, List<String>>
+    )
+    data class PlannedPpiStatusNames(
+        val skinContact: String,
+        val movement: String,
+        val intervalStatus: String
     )
 
     fun diskSpace(fragmentSize: Long, totalFragments: Long, freeFragments: Long): PlannedDiskSpace {
@@ -81,6 +98,59 @@ internal object PolarSdkModelAdapter {
 
     fun watchFaceComplicationName(id: Int): String? {
         return PolarWatchFaceComplicationName.fromId(id)?.name
+    }
+
+    fun exerciseSportProfileName(id: Int): String {
+        return PolarExerciseSportProfileName.fromId(id).name
+    }
+
+    fun sleepWakeStateName(value: Int): String? {
+        return PolarSleepWakeStateName.fromValue(value)?.name
+    }
+
+    fun sleepRatingName(value: Int): String? {
+        return PolarSleepRatingName.fromValue(value)?.name
+    }
+
+    fun activityClassName(value: Int): String? {
+        return PolarActivityClassName.fromValue(value)?.name
+    }
+
+    fun automaticHrTriggerName(value: Int): String? {
+        return PolarAutomaticHrTriggerName.fromValue(value)?.name
+    }
+
+    fun dailyBalanceFeedbackName(value: Int): String? {
+        return PolarDailyBalanceFeedbackName.fromValue(value)?.name
+    }
+
+    fun trainingReadinessName(value: Int): String? {
+        return PolarTrainingReadinessName.fromValue(value)?.name
+    }
+
+    fun ppiSampleTriggerName(value: Int): String? {
+        return PolarPpiSampleTriggerName.fromValue(value)?.name
+    }
+
+    fun ppiStatusNames(value: Int): PlannedPpiStatusNames? {
+        val shared = PolarPpiStatusNames.fromStatusByte(value) ?: return null
+        return PlannedPpiStatusNames(
+            skinContact = shared.skinContact,
+            movement = shared.movement,
+            intervalStatus = shared.intervalStatus
+        )
+    }
+
+    fun ppiSkinContactName(value: Int): String? {
+        return PolarPpiSkinContactName.fromValue(value)?.name
+    }
+
+    fun ppiMovementName(value: Int): String? {
+        return PolarPpiMovementName.fromValue(value)?.name
+    }
+
+    fun ppiIntervalStatusName(value: Int): String? {
+        return PolarPpiIntervalStatusName.fromValue(value)?.name
     }
 
     fun restServiceList(pathsForServices: Map<String, String>?): PlannedRestServiceList {

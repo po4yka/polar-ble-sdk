@@ -1,7 +1,7 @@
 package com.polar.sdk.api.model.activity
 
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 import com.polar.sdk.impl.utils.PolarTimeUtils
-import com.polar.shared.sdk.PolarAutomaticHrTriggerName
 import fi.polar.remote.representation.protobuf.AutomaticSamples
 import fi.polar.remote.representation.protobuf.AutomaticSamples.PbAutomaticSampleSessions
 import java.time.LocalDate
@@ -65,8 +65,8 @@ enum class AutomaticSampleTriggerType(val value: Int) {
 
     companion object {
         infix fun fromProto(value: Int): AutomaticSampleTriggerType {
-            return PolarAutomaticHrTriggerName.fromValue(value)?.let { sharedName ->
-                entries.first { trigger -> trigger.name == sharedName.name }
+            return PolarSdkModelAdapter.automaticHrTriggerName(value)?.let { sharedName ->
+                entries.first { trigger -> trigger.name == sharedName }
             } ?: error("Unknown automatic sample trigger type $value")
         }
     }
