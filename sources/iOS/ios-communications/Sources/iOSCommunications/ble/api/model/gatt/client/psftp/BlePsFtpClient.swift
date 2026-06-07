@@ -449,7 +449,11 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
                     do {
                         let error = try self.readResponse(output, inputQueue: self.mtuInputQueue, canceled: block ?? BlockOperation(), timeout: timeout)
                         switch error {
-                        case 0:  cont.finish()
+                        case 0:
+                            switch BlePsFtpUtility.writeAckTerminal(payloadSize: dataBytes.count, writeAck: "success") {
+                            case "success": cont.finish()
+                            default: cont.finish(throwing: BlePsFtpException.protocolError)
+                            }
                         default: cont.finish(throwing: BlePsFtpException.responseError(errorCode: error))
                         }
                     } catch let error {

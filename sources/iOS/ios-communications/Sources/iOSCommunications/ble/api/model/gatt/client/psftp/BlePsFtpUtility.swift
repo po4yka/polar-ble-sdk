@@ -370,6 +370,14 @@ public class BlePsFtpUtility {
         return filePath.hasPrefix("/SYNCPART.TGZ") ? extendedTimeoutSeconds : defaultTimeoutSeconds
         #endif
     }
+
+    static func writeAckTerminal(payloadSize: Int, writeAck: String = "success") -> String {
+        #if canImport(PolarBleSdkShared)
+        return SharedPsFtpByteCodec.writeAckTerminal(payloadSize: payloadSize, writeAck: writeAck)
+        #else
+        return writeAck == "success" ? "success" : writeAck
+        #endif
+    }
 }
 
 public extension BlePsFtpException { var localizedDescription: String { return "The operation couldn't be completed. (PolarBleSdk.BleGattException.\(self)" } }
@@ -440,6 +448,10 @@ enum SharedPsFtpByteCodec {
 
     static func writeTimeoutSeconds(filePath: String, defaultTimeoutSeconds: Int, extendedTimeoutSeconds: Int) -> Int {
         return Int(PolarIosSharedBridge.shared.psFtpWriteTimeoutSeconds(filePath: filePath, defaultTimeoutSeconds: Int32(defaultTimeoutSeconds), extendedTimeoutSeconds: Int32(extendedTimeoutSeconds)))
+    }
+
+    static func writeAckTerminal(payloadSize: Int, writeAck: String) -> String {
+        return PolarIosSharedBridge.shared.planRuntimePsFtpWriteAck(payloadSize: Int32(payloadSize), writeAck: writeAck)
     }
 }
 

@@ -56,6 +56,11 @@ class BlePsFtpUtilityTest: XCTestCase {
         XCTAssertEqual(900, BlePsFtpUtility.writeTimeoutSeconds(filePath: "/SYNCPART.TGZ/part0", defaultTimeoutSeconds: 90, extendedTimeoutSeconds: 900))
         XCTAssertEqual(90, BlePsFtpUtility.writeTimeoutSeconds(filePath: "/U/0/S/UDEVSET.BPB", defaultTimeoutSeconds: 90, extendedTimeoutSeconds: 900))
     }
+
+    func testWriteAckTerminalDelegatesSuccessClassificationToSharedRuntime() {
+        XCTAssertEqual("success", BlePsFtpUtility.writeAckTerminal(payloadSize: 128, writeAck: "success"))
+        XCTAssertEqual("success", BlePsFtpUtility.writeAckTerminal(payloadSize: 0, writeAck: "success"))
+    }
    
     func test_processSingleFrame() throws {
         // Arrange
