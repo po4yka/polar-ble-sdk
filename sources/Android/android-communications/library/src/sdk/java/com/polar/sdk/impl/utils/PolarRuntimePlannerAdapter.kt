@@ -60,6 +60,18 @@ internal object PolarRuntimePlannerAdapter {
         val size: Long,
         val dateTime: String
     )
+    data class PlannedSpo2TestProjection(
+        val timeZoneOffsetMinutes: Int,
+        val testStatus: String?,
+        val bloodOxygenPercent: Int?,
+        val spo2Class: String?,
+        val spo2ValueDeviationFromBaseline: String?,
+        val spo2QualityAveragePercent: Float?,
+        val averageHeartRateBpm: Int?,
+        val heartRateVariabilityMs: Float?,
+        val spo2HrvDeviationFromBaseline: String?,
+        val altitudeMeters: Float?
+    )
 
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {
         return PolarRuntimeOrchestration.planCommand(
@@ -695,6 +707,51 @@ internal object PolarRuntimePlannerAdapter {
 
     fun spo2TestTimeFromFolderNames(date: String, timeDirName: String): String? {
         return PolarSpo2Models.testTimeFromFolderNames(date, timeDirName)
+    }
+
+    fun spo2TestDataProjection(
+        date: String,
+        timeDirName: String,
+        recordingDevice: String?,
+        timeZoneOffsetMinutes: Int,
+        testStatus: Int,
+        bloodOxygenPercent: Int?,
+        spo2Class: Int?,
+        spo2ValueDeviationFromBaseline: Int?,
+        spo2QualityAveragePercent: Float?,
+        averageHeartRateBpm: Int?,
+        heartRateVariabilityMs: Float?,
+        spo2HrvDeviationFromBaseline: Int?,
+        altitudeMeters: Float?
+    ): PlannedSpo2TestProjection {
+        val projection = PolarSpo2Models.projectTestData(
+            date = date,
+            timeDirName = timeDirName,
+            recordingDevice = recordingDevice,
+            timeZoneOffsetMinutes = timeZoneOffsetMinutes,
+            testStatus = testStatus,
+            bloodOxygenPercent = bloodOxygenPercent,
+            spo2Class = spo2Class,
+            spo2ValueDeviationFromBaseline = spo2ValueDeviationFromBaseline,
+            spo2QualityAveragePercent = spo2QualityAveragePercent,
+            averageHeartRateBpm = averageHeartRateBpm,
+            heartRateVariabilityMs = heartRateVariabilityMs,
+            spo2HrvDeviationFromBaseline = spo2HrvDeviationFromBaseline,
+            altitudeMeters = altitudeMeters,
+            triggerType = null
+        )
+        return PlannedSpo2TestProjection(
+            timeZoneOffsetMinutes = projection.timeZoneOffsetMinutes,
+            testStatus = projection.testStatus,
+            bloodOxygenPercent = projection.bloodOxygenPercent,
+            spo2Class = projection.spo2Class,
+            spo2ValueDeviationFromBaseline = projection.spo2ValueDeviationFromBaseline,
+            spo2QualityAveragePercent = projection.spo2QualityAveragePercent,
+            averageHeartRateBpm = projection.averageHeartRateBpm,
+            heartRateVariabilityMs = projection.heartRateVariabilityMs,
+            spo2HrvDeviationFromBaseline = projection.spo2HrvDeviationFromBaseline,
+            altitudeMeters = projection.altitudeMeters
+        )
     }
 
     fun trainingSessionRootPath(): String {

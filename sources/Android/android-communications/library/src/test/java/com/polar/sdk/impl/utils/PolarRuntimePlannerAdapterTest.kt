@@ -221,6 +221,36 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared spo2 projection routes through Android runtime adapter`() {
+        val projection = PolarRuntimePlannerAdapter.spo2TestDataProjection(
+            date = "2026-04-14",
+            timeDirName = "063635",
+            recordingDevice = "0004BF3D",
+            timeZoneOffsetMinutes = 180,
+            testStatus = 0,
+            bloodOxygenPercent = 95,
+            spo2Class = 3,
+            spo2ValueDeviationFromBaseline = 0,
+            spo2QualityAveragePercent = 99.0f,
+            averageHeartRateBpm = 66,
+            heartRateVariabilityMs = 79.97114f,
+            spo2HrvDeviationFromBaseline = 2,
+            altitudeMeters = 18.13582f
+        )
+
+        Assert.assertEquals(180, projection.timeZoneOffsetMinutes)
+        Assert.assertEquals("passed", projection.testStatus)
+        Assert.assertEquals(95, projection.bloodOxygenPercent)
+        Assert.assertEquals("normal", projection.spo2Class)
+        Assert.assertEquals("noBaseline", projection.spo2ValueDeviationFromBaseline)
+        Assert.assertEquals(99.0f, projection.spo2QualityAveragePercent)
+        Assert.assertEquals(66, projection.averageHeartRateBpm)
+        Assert.assertEquals(79.97114f, projection.heartRateVariabilityMs)
+        Assert.assertEquals("usual", projection.spo2HrvDeviationFromBaseline)
+        Assert.assertEquals(18.13582f, projection.altitudeMeters)
+    }
+
+    @Test
     fun `shared backup restore plans select Android protobuf PUT operation and path`() {
         val operation = PolarRuntimePlannerAdapter.planBackupRestoreOperation("/U/0/BACKUP.TXT", "0102")
 

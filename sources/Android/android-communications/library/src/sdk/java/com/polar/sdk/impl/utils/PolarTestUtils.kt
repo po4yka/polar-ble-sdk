@@ -6,7 +6,6 @@ import com.polar.sdk.api.model.DeviationFromBaseline
 import com.polar.sdk.api.model.PolarSpo2TestData
 import com.polar.sdk.api.model.Spo2Class
 import com.polar.sdk.api.model.Spo2TestStatus
-import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.services.datamodels.protobuf.Spo2TestResult
 import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
@@ -97,7 +96,7 @@ internal object PolarTestUtils {
                     .toLocalDateTime()
                 testTimeFormatter.format(localDateTime)
             } else null
-        val projection = PolarSpo2Models.projectTestData(
+        val projection = PolarRuntimePlannerAdapter.spo2TestDataProjection(
             date = date.toString(),
             timeDirName = timeDirName,
             recordingDevice = proto.recordingDevice,
@@ -110,8 +109,7 @@ internal object PolarTestUtils {
             averageHeartRateBpm = if (proto.hasAverageHeartRateBpm()) proto.averageHeartRateBpm else null,
             heartRateVariabilityMs = if (proto.hasHeartRateVariabilityMs()) proto.heartRateVariabilityMs else null,
             spo2HrvDeviationFromBaseline = if (proto.hasSpo2HrvDeviationFromBaseline()) proto.spo2HrvDeviationFromBaseline.number else null,
-            altitudeMeters = if (proto.hasAltitudeMeters()) proto.altitudeMeters else null,
-            triggerType = null
+            altitudeMeters = if (proto.hasAltitudeMeters()) proto.altitudeMeters else null
         )
         return PolarSpo2TestData(
             recordingDevice = proto.recordingDevice,
