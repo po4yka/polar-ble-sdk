@@ -1,6 +1,9 @@
 /// Copyright © 2026 Polar Electro Oy. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 /// Model for SPO2 test data retrieved from a Polar device.
 public struct PolarSpo2TestData: Encodable {
@@ -107,3 +110,110 @@ public struct PolarSpo2TestData: Encodable {
     }
 }
 
+extension PolarSpo2TestData.Spo2TestStatus {
+    static func fromSharedOrRaw(value: Int) -> PolarSpo2TestData.Spo2TestStatus? {
+        if let shared = PolarSpo2ModelSharedBridge.testStatusName(value: value) {
+            return fromSharedName(shared)
+        }
+        return PolarSpo2TestData.Spo2TestStatus(rawValue: value)
+    }
+
+    static func fromSharedName(_ value: String) -> PolarSpo2TestData.Spo2TestStatus? {
+        switch value {
+        case "passed": return .passed
+        case "inconclusiveTooLowQualityInSamples": return .inconclusiveTooLowQualityInSamples
+        case "inconclusiveTooLowOverallQuality": return .inconclusiveTooLowOverallQuality
+        case "inconclusiveTooManyMissingSamples": return .inconclusiveTooManyMissingSamples
+        default: return nil
+        }
+    }
+}
+
+extension PolarSpo2TestData.Spo2Class {
+    static func fromSharedOrRaw(value: Int) -> PolarSpo2TestData.Spo2Class? {
+        if let shared = PolarSpo2ModelSharedBridge.spo2ClassName(value: value) {
+            return fromSharedName(shared)
+        }
+        return PolarSpo2TestData.Spo2Class(rawValue: value)
+    }
+
+    static func fromSharedName(_ value: String) -> PolarSpo2TestData.Spo2Class? {
+        switch value {
+        case "unknown": return .unknown
+        case "veryLow": return .veryLow
+        case "low": return .low
+        case "normal": return .normal
+        default: return nil
+        }
+    }
+}
+
+extension PolarSpo2TestData.DeviationFromBaseline {
+    static func fromSharedOrRaw(value: Int) -> PolarSpo2TestData.DeviationFromBaseline? {
+        if let shared = PolarSpo2ModelSharedBridge.deviationFromBaselineName(value: value) {
+            return fromSharedName(shared)
+        }
+        return PolarSpo2TestData.DeviationFromBaseline(rawValue: value)
+    }
+
+    static func fromSharedName(_ value: String) -> PolarSpo2TestData.DeviationFromBaseline? {
+        switch value {
+        case "noBaseline": return .noBaseline
+        case "belowUsual": return .belowUsual
+        case "usual": return .usual
+        case "aboveUsual": return .aboveUsual
+        default: return nil
+        }
+    }
+}
+
+extension PolarSpo2TestData.Spo2TestTriggerType {
+    static func fromSharedOrRaw(value: Int) -> PolarSpo2TestData.Spo2TestTriggerType? {
+        if let shared = PolarSpo2ModelSharedBridge.triggerTypeName(value: value) {
+            return fromSharedName(shared)
+        }
+        return PolarSpo2TestData.Spo2TestTriggerType(rawValue: value)
+    }
+
+    static func fromSharedName(_ value: String) -> PolarSpo2TestData.Spo2TestTriggerType? {
+        switch value {
+        case "manual": return .manual
+        case "automatic": return .automatic
+        default: return nil
+        }
+    }
+}
+
+private enum PolarSpo2ModelSharedBridge {
+    static func testStatusName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2TestStatus(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func spo2ClassName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2Class(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func deviationFromBaselineName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2DeviationFromBaseline(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func triggerTypeName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.spo2TriggerType(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+}

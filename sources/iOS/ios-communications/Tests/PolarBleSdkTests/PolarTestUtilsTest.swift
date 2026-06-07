@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import PolarBleSdk
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 class PolarTestUtilsTests: XCTestCase {
 
@@ -297,6 +300,22 @@ class PolarTestUtilsTests: XCTestCase {
         XCTAssertEqual(PolarSpo2TestData.Spo2TestTriggerType(rawValue: 0), .manual)
         XCTAssertEqual(PolarSpo2TestData.Spo2TestTriggerType(rawValue: 1), .automatic)
         XCTAssertNil(PolarSpo2TestData.Spo2TestTriggerType(rawValue: 99))
+    }
+
+    func testSpo2PublicModelEnumMappingDelegatesKnownValuesToSharedBridgeWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(PolarIosSharedBridge.shared.spo2TestStatus(value: 0), "passed")
+        XCTAssertEqual(PolarSpo2TestData.Spo2TestStatus.fromSharedOrRaw(value: 0), .passed)
+        XCTAssertEqual(PolarIosSharedBridge.shared.spo2Class(value: 3), "normal")
+        XCTAssertEqual(PolarSpo2TestData.Spo2Class.fromSharedOrRaw(value: 3), .normal)
+        XCTAssertEqual(PolarIosSharedBridge.shared.spo2DeviationFromBaseline(value: 3), "aboveUsual")
+        XCTAssertEqual(PolarSpo2TestData.DeviationFromBaseline.fromSharedOrRaw(value: 3), .aboveUsual)
+        XCTAssertEqual(PolarIosSharedBridge.shared.spo2TriggerType(value: 1), "automatic")
+        XCTAssertEqual(PolarSpo2TestData.Spo2TestTriggerType.fromSharedOrRaw(value: 1), .automatic)
+        XCTAssertNil(PolarSpo2TestData.Spo2Class.fromSharedOrRaw(value: 99))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked for this target")
+        #endif
     }
 
     // MARK: - Round-trip: each Spo2TestStatus from proto
