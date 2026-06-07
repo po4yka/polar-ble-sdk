@@ -143,6 +143,8 @@ class PolarRuntimePlannerAdapterTest {
         val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(PolarRuntimePlannerAdapter.fileOperationBytes(write))
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
         Assert.assertEquals("/U/0/CUSTOM.BIN", writeOperation.path)
+        val payloads = listOf("one".toByteArray(), "two".toByteArray())
+        Assert.assertEquals(payloads, PolarRuntimePlannerAdapter.restEventPayloads(uncompressed = true, payloads = payloads))
     }
 
     @Test

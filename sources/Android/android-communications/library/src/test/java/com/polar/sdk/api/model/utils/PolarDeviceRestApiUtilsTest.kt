@@ -16,8 +16,8 @@ import com.polar.sdk.api.model.restapi.endpoints
 import com.polar.sdk.api.model.restapi.eventDetailsFor
 import com.polar.sdk.api.model.restapi.eventTriggersFor
 import com.polar.sdk.api.model.restapi.events
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.receiveRestApiEventData
-import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -81,10 +81,10 @@ class PolarDeviceRestApiUtilsTest {
     @Test
     fun receiveRestApiEventData_usesSharedD2hPlannerToSelectRestEvents() = runTest {
         val payload = """{"path":"/v1/users","operation":"created"}""".toByteArray()
-        assertEquals("REST_API_EVENT", PolarD2hRuntimePlanning.notificationTypeOrNull(PbPFtpDevToHostNotification.REST_API_EVENT_VALUE))
+        assertEquals("REST_API_EVENT", PolarRuntimePlannerAdapter.d2hNotificationTypeName(PbPFtpDevToHostNotification.REST_API_EVENT_VALUE))
         assertEquals(
             "FILESYSTEM_MODIFIED",
-            PolarD2hRuntimePlanning.notificationTypeOrNull(PbPFtpDevToHostNotification.FILESYSTEM_MODIFIED_VALUE)
+            PolarRuntimePlannerAdapter.d2hNotificationTypeName(PbPFtpDevToHostNotification.FILESYSTEM_MODIFIED_VALUE)
         )
         every { mockClient.waitForNotification() } returns flowOf(
             d2hNotification(PbPFtpDevToHostNotification.FILESYSTEM_MODIFIED_VALUE, byteArrayOf(0x0a, 0x02, 0x08, 0x02)),

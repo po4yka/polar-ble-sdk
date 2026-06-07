@@ -579,6 +579,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarRestServiceModels.stopSleepRecordingPath()
     }
 
+    fun restEventPayloads(uncompressed: Boolean, payloads: List<ByteArray>): List<ByteArray> {
+        return PolarRestServiceModels.restEventPayloads(uncompressed, payloads)
+    }
+
     fun watchFaceConfigFields(
         timeStyleId: Int? = null,
         complicationLayoutId: Int? = null,
