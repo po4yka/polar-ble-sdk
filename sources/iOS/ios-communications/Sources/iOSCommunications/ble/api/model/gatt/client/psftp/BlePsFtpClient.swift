@@ -585,7 +585,13 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
                                 var packets = [(status: 0, frame: frameData)]
                                 var frame = try BlePsFtpUtility.processRfc76MessageFrame(frameData)
                                 while frame.status == BlePsFtpUtility.RFC76_STATUS_MORE {
-                                    let packet = try self.notificationInputQueue.poll(self.PROTOCOL_TIMEOUT)
+                                    let packet: [Int: Data]
+                                    do {
+                                        packet = try self.notificationInputQueue.poll(self.PROTOCOL_TIMEOUT)
+                                    } catch AtomicListException.waitTimeout {
+                                        cont.finish(throwing: BlePsFtpException.responseError(errorCode: -1))
+                                        return
+                                    }
                                     if packet.first?.key == 0, let nextFrameData = packet.first?.value {
                                         packets.append((status: 0, frame: nextFrameData))
                                         frame = try BlePsFtpUtility.processRfc76MessageFrame(nextFrameData)

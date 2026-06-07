@@ -39,7 +39,7 @@
   },
   "execution": {
     "android": "planned-fake-clock-or-injectable-timeout-required",
-    "ios": "planned-fake-clock-or-injectable-timeout-required",
+    "ios": "injectable-timeout-xctest",
     "common": "shared-common-test"
   },
   "platformExpectations": {

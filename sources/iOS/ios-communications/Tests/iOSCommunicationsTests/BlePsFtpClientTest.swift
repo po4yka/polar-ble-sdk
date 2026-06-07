@@ -578,16 +578,58 @@ class BlePsFtpClientTest: XCTestCase {
         try assertFakeClockPlanningVector(
             try loadPsFtpNotificationVector(id: "notification-continuation-timeout-policy"),
             androidExecution: "planned-fake-clock-or-injectable-timeout-required",
-            iosExecution: "planned-fake-clock-or-injectable-timeout-required",
+            iosExecution: "injectable-timeout-xctest",
             commonExecution: "shared-common-test",
             expectedCaseIds: notificationContinuationTimeoutCaseIds
         )
         try assertFakeClockPlanningVector(
             try loadPsFtpVector(directoryName: "psftp-response", id: "write-ack-timeout-policy"),
             androidExecution: "planned-fake-clock-or-injectable-timeout-required",
-            iosExecution: "planned-fake-clock-or-injectable-timeout-required",
+            iosExecution: "injectable-timeout-xctest",
             commonExecution: "shared-common-test"
         )
+    }
+
+    func testPsFtpNotificationContinuationTimeoutExecutesWithInjectedProtocolTimeout() async throws {
+        let vector = try loadPsFtpNotificationVector(id: "notification-continuation-timeout-policy")
+        let testCase = try XCTUnwrap((try XCTUnwrap(vector["input"] as? [String: Any])["cases"] as? [[String: Any]])?.first)
+        let packet = try XCTUnwrap((try XCTUnwrap(testCase["packets"] as? [[String: Any]])).first)
+        let client = BlePsFtpClient(gattServiceTransmitter: MockGattServiceTransmitterImpl())
+        client.PROTOCOL_TIMEOUT = 0.05
+        defer { client.disconnected() }
+
+        client.processServiceData(
+            BlePsFtpClient.PSFTP_D2H_NOTIFICATION_CHARACTERISTIC,
+            data: try dataFromHex(try XCTUnwrap(packet["frameHex"] as? String)),
+            err: try XCTUnwrap(packet["status"] as? Int)
+        )
+
+        do {
+            _ = try await firstNotification(from: client.waitNotification(), timeout: 1.0)
+            XCTFail("Expected PSFTP continuation timeout")
+        } catch let error as BlePsFtpException {
+            guard case .responseError(errorCode: -1) = error else {
+                return XCTFail("Expected responseError(-1), got \(error)")
+            }
+        }
+    }
+
+    func testPsFtpWriteAckTimeoutExecutesWithInjectedProtocolTimeout() async throws {
+        let vector = try loadPsFtpVector(directoryName: "psftp-response", id: "write-ack-timeout-policy")
+        let input = try XCTUnwrap(vector["input"] as? [String: Any])
+        let header = try buildPftpOperationHeader(command: try XCTUnwrap(input["command"] as? String), path: try XCTUnwrap(input["path"] as? String))
+        let payload = try dataFromHex(try XCTUnwrap(input["payloadHex"] as? String))
+        let transmitter = PsFtpNoAckTransmitter()
+        let client = BlePsFtpClient(gattServiceTransmitter: transmitter)
+        client.PROTOCOL_TIMEOUT = 0.05
+        defer { client.disconnected() }
+
+        do {
+            for try await _ in client.write(header as NSData, data: InputStream(data: payload)) {}
+            XCTFail("Expected PSFTP write ACK timeout")
+        } catch AtomicIntegerException.waitTimeout {
+            XCTAssertTrue(true)
+        }
     }
 
     func testPsFtpRuntimeReadinessManifestIsPinnedBeforeSharedRuntimeMigration() throws {
@@ -792,5 +834,11 @@ private final class PsFtpResponseTransmitter: MockGattServiceTransmitterImpl {
         responseFrames.forEach {
             parent.processServiceData(BlePsFtpClient.PSFTP_MTU_CHARACTERISTIC, data: $0, err: 0)
         }
+    }
+}
+
+private final class PsFtpNoAckTransmitter: MockGattServiceTransmitterImpl {
+    override func transmitMessage(_ parent: BleGattClientBase, serviceUuid: CBUUID, characteristicUuid: CBUUID, packet: Data, withResponse: Bool) throws {
+        try super.transmitMessage(parent, serviceUuid: serviceUuid, characteristicUuid: characteristicUuid, packet: packet, withResponse: withResponse)
     }
 }

@@ -471,14 +471,14 @@ internal class BlePsFtpClientTest {
         assertFakeClockPlanningVector(
             vector = loadPsFtpNotificationVector("notification-continuation-timeout-policy"),
             androidExecution = "planned-fake-clock-or-injectable-timeout-required",
-            iosExecution = "planned-fake-clock-or-injectable-timeout-required",
+            iosExecution = "injectable-timeout-xctest",
             commonExecution = "shared-common-test",
             expectedCaseIds = NOTIFICATION_CONTINUATION_TIMEOUT_CASE_IDS
         )
         assertFakeClockPlanningVector(
             vector = loadPsFtpResponseVector("write-ack-timeout-policy"),
             androidExecution = "planned-fake-clock-or-injectable-timeout-required",
-            iosExecution = "planned-fake-clock-or-injectable-timeout-required",
+            iosExecution = "injectable-timeout-xctest",
             commonExecution = "shared-common-test"
         )
     }
