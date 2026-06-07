@@ -300,6 +300,8 @@ class PolarFirmwareUpdateUtilsTest {
         Assert.assertEquals("shared-common-test", vector.getAsJsonObject("execution").get("common").asString)
         Assert.assertEquals("partial-production-shared-policy-consumption", vector.getAsJsonObject("execution").get("android").asString)
         Assert.assertEquals("partial-production-shared-policy-consumption", vector.getAsJsonObject("execution").get("ios").asString)
+        Assert.assertEquals(FIRMWARE_WORKFLOW_ANDROID_PRODUCTION_EVIDENCE, vector.getAsJsonObject("platformExpectations").get("android").asString)
+        Assert.assertEquals(FIRMWARE_WORKFLOW_IOS_PRODUCTION_EVIDENCE, vector.getAsJsonObject("platformExpectations").get("ios").asString)
         Assert.assertEquals(FIRMWARE_WORKFLOW_COMMON_DECISION, vector.getAsJsonObject("platformExpectations").getAsJsonObject("commonDecision").get("workflowPolicy").asString)
         Assert.assertTrue("workflow-runtime-policy", vector.has("execution"))
         Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
@@ -430,6 +432,10 @@ class PolarFirmwareUpdateUtilsTest {
         const val FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT = "Before moving firmware update orchestration into common KMP code, implement injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors."
 
         const val FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, reboot success, and terminal device errors into typed common workflow states before KMP migration"
+
+        const val FIRMWARE_WORKFLOW_ANDROID_PRODUCTION_EVIDENCE = "BDBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, reboot response success, and battery-too-low terminal write policy while keeping network, zip parsing, retry scheduling, backup, reconnect, filesystem, and BLE writes platform-owned."
+
+        const val FIRMWARE_WORKFLOW_IOS_PRODUCTION_EVIDENCE = "PolarBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, reboot response success, and battery-too-low terminal write policy while keeping network, zip parsing, retry scheduling, backup, reconnect, filesystem, and BLE writes platform-owned."
 
         const val FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, and cancellation cleanup before BLE writes are pinned, retry scheduling has explicit platform facade coverage, public facade error mapping is pinned, and the shared tests are compile-verified."
     }
