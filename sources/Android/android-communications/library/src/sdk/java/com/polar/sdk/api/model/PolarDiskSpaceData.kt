@@ -1,6 +1,5 @@
 package com.polar.sdk.api.model
 
-import com.polar.shared.sdk.PolarSdkModelMappers
 import protocol.PftpResponse
 
 /**
@@ -12,14 +11,14 @@ data class PolarDiskSpaceData(
 ) {
     companion object {
         fun fromProto(proto: PftpResponse.PbPFtpDiskSpaceResult): PolarDiskSpaceData {
-            val shared = PolarSdkModelMappers.diskSpace(
+            val planned = PolarSdkModelAdapter.diskSpace(
                 fragmentSize = proto.fragmentSize.toLong(),
                 totalFragments = proto.totalFragments,
                 freeFragments = proto.freeFragments
             )
             return PolarDiskSpaceData(
-                totalSpace = shared.totalSpace,
-                freeSpace = shared.freeSpace
+                totalSpace = planned.totalSpace,
+                freeSpace = planned.freeSpace
             )
         }
     }

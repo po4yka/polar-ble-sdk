@@ -2807,14 +2807,23 @@ class GoldenVectorMigrationPolicyTest {
         val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DeviceIdCommonPolicyTest.kt")
         val androidDeviceIdUtility = root.resolve("sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/polar/BlePolarDeviceIdUtility.kt")
         val androidDeviceUuid = root.resolve("sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarDeviceUuid.kt")
+        val androidSdkModelAdapter = root.resolve("sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarSdkModelAdapter.kt")
+        val androidDeviceUuidSharedRoute = androidDeviceUuid.isFile &&
+            (
+                androidDeviceUuid.readText().contains("PolarDeviceId.uuidFromDeviceId") ||
+                    (
+                        androidDeviceUuid.readText().contains("PolarSdkModelAdapter.uuidFromDeviceId") &&
+                            androidSdkModelAdapter.isFile &&
+                            androidSdkModelAdapter.readText().contains("PolarDeviceId.uuidFromDeviceId")
+                    )
+            )
         return commonMain.isFile &&
             commonMain.readText().contains("object PolarDeviceId") &&
             commonTest.isFile &&
             commonTest.readText().contains("PolarDeviceId.uuidFromDeviceId") &&
             androidDeviceIdUtility.isFile &&
             androidDeviceIdUtility.readText().contains("PolarDeviceId.assembleFull") &&
-            androidDeviceUuid.isFile &&
-            androidDeviceUuid.readText().contains("PolarDeviceId.uuidFromDeviceId")
+            androidDeviceUuidSharedRoute
     }
 
     private fun iosSharedConsumptionMigrated(root: File): Boolean {

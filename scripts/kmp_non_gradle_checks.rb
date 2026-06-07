@@ -2433,19 +2433,28 @@ device_id_common_main = File.join(ROOT, "sources/Android/android-communications/
 device_id_common_test = File.join(ROOT, "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DeviceIdCommonPolicyTest.kt")
 android_device_id_utility = File.join(ROOT, "sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/polar/BlePolarDeviceIdUtility.kt")
 android_device_uuid = File.join(ROOT, "sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarDeviceUuid.kt")
+android_sdk_model_adapter = File.join(ROOT, "sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarSdkModelAdapter.kt")
 ios_shared_bridge = File.join(ROOT, "sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/ios/PolarIosSharedBridge.kt")
 ios_device_id_utility = File.join(ROOT, "sources/iOS/ios-communications/Sources/iOSCommunications/ble/api/model/polar/BlePolarDeviceIdUtility.swift")
 ios_device_uuid = File.join(ROOT, "sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/api/model/PolarDeviceUuid.swift")
 ios_time_utils = File.join(ROOT, "sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarTimeUtils.swift")
 ios_kmp_script = File.join(ROOT, "sources/iOS/ios-communications/scripts/build_kmp_ios_framework.sh")
+android_device_uuid_shared_route = File.file?(android_device_uuid) &&
+                                   (
+                                     File.read(android_device_uuid).include?("PolarDeviceId.uuidFromDeviceId") ||
+                                     (
+                                       File.read(android_device_uuid).include?("PolarSdkModelAdapter.uuidFromDeviceId") &&
+                                       File.file?(android_sdk_model_adapter) &&
+                                       File.read(android_sdk_model_adapter).include?("PolarDeviceId.uuidFromDeviceId")
+                                     )
+                                   )
 device_id_slice_migrated = File.file?(device_id_common_main) &&
                            File.read(device_id_common_main).include?("object PolarDeviceId") &&
                            File.file?(device_id_common_test) &&
                            File.read(device_id_common_test).include?("PolarDeviceId.uuidFromDeviceId") &&
                            File.file?(android_device_id_utility) &&
                            File.read(android_device_id_utility).include?("PolarDeviceId.assembleFull") &&
-                           File.file?(android_device_uuid) &&
-                           File.read(android_device_uuid).include?("PolarDeviceId.uuidFromDeviceId")
+                           android_device_uuid_shared_route
 ios_shared_consumption_migrated = File.file?(ios_shared_bridge) &&
                                   File.read(ios_shared_bridge).include?("object PolarIosSharedBridge") &&
                                   File.read(ios_shared_bridge).include?("PolarDeviceId.uuidFromDeviceId") &&
