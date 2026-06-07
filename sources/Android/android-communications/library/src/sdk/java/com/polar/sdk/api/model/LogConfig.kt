@@ -2,8 +2,6 @@ package com.polar.sdk.api.model
 
 import data.SensorDataLog
 import data.SensorDataLog.PbSensorDataLog
-import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
-import com.polar.shared.sdk.PolarSdLogTriggerName
 
 data class LogConfig(
     val ohrLogEnabled: Boolean? = null,
@@ -104,13 +102,13 @@ data class LogConfig(
 }
 
 private fun PbSensorDataLog.PbLogTrigger.sharedKnownValue(): PbSensorDataLog.PbLogTrigger {
-    return PolarSdLogTriggerName.fromValue(number)
-        ?.let { PbSensorDataLog.PbLogTrigger.valueOf(it.name) }
+    return PolarSdkModelAdapter.sdLogTriggerName(number)
+        ?.let { PbSensorDataLog.PbLogTrigger.valueOf(it) }
         ?: this
 }
 
 private fun PbSensorDataLog.PbMagnetometerLogFrequency.sharedKnownValue(): PbSensorDataLog.PbMagnetometerLogFrequency {
-    return PolarSdLogMagnetometerFrequencyName.fromValue(number)
-        ?.let { PbSensorDataLog.PbMagnetometerLogFrequency.valueOf(it.name) }
+    return PolarSdkModelAdapter.sdLogMagnetometerFrequencyName(number)
+        ?.let { PbSensorDataLog.PbMagnetometerLogFrequency.valueOf(it) }
         ?: this
 }

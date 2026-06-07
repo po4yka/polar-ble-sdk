@@ -3,6 +3,8 @@ package com.polar.sdk.api.model
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import com.polar.shared.sdk.PolarRestServiceModels
+import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
+import com.polar.shared.sdk.PolarSdLogTriggerName
 import com.polar.shared.sdk.PolarSdkModelMappers
 
 internal object PolarSdkModelAdapter {
@@ -43,6 +45,14 @@ internal object PolarSdkModelAdapter {
 
     fun d2hNotificationTypeName(value: Int): String? {
         return PolarD2hRuntimePlanning.notificationTypeOrNull(value)
+    }
+
+    fun sdLogTriggerName(value: Int): String? {
+        return PolarSdLogTriggerName.fromValue(value)?.name
+    }
+
+    fun sdLogMagnetometerFrequencyName(value: Int): String? {
+        return PolarSdLogMagnetometerFrequencyName.fromValue(value)?.name
     }
 
     fun restServiceList(pathsForServices: Map<String, String>?): PlannedRestServiceList {

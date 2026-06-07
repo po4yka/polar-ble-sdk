@@ -29,6 +29,14 @@ class PolarSdkModelAdapterTest {
     }
 
     @Test
+    fun `sd log enum lookups route through sdk model adapter`() {
+        assertEquals("LOG_TRIGGER_EXERCISE", PolarSdkModelAdapter.sdLogTriggerName(2))
+        assertNull(PolarSdkModelAdapter.sdLogTriggerName(3))
+        assertEquals("MAG_LOG_100HZ", PolarSdkModelAdapter.sdLogMagnetometerFrequencyName(3))
+        assertNull(PolarSdkModelAdapter.sdLogMagnetometerFrequencyName(0))
+    }
+
+    @Test
     fun `rest service projection routes through sdk model adapter`() {
         val serviceList = PolarSdkModelAdapter.restServiceList(
             linkedMapOf(
