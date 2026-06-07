@@ -2729,12 +2729,12 @@ extension PolarBleApiImpl: PolarBleApi  {
             }
         case .UNDEFINED: return
         }
-        PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: folderPath)
+        try ensureStoredDataCleanupRuntimeTerminal(PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: folderPath), kind: "filterDirectoryEntries")
         switch dataType {
         case .ACTIVITY:
-            PolarRuntimePlanner.storedDataCleanup(kind: "activityPrune", rootPath: "/U/0")
+            try ensureStoredDataCleanupRuntimeTerminal(PolarRuntimePlanner.storedDataCleanup(kind: "activityPrune", rootPath: "/U/0"), kind: "activityPrune")
         case .AUTO_SAMPLE:
-            PolarRuntimePlanner.storedDataCleanup(kind: "automaticSamplePrune", rootPath: folderPath, cutoffDate: formatter.string(from: until!))
+            try ensureStoredDataCleanupRuntimeTerminal(PolarRuntimePlanner.storedDataCleanup(kind: "automaticSamplePrune", rootPath: folderPath, cutoffDate: formatter.string(from: until!)), kind: "automaticSamplePrune")
         default:
             break
         }
@@ -2817,7 +2817,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             return false
         }
         for try await folder in fileUtils.listFiles(identifier: identifier, folderPath: path, condition: condition, recurseDeep: false) {
-            PolarRuntimePlanner.storedDataCleanup(kind: "emptyDayFolderRemoval", rootPath: folder)
+            try ensureStoredDataCleanupRuntimeTerminal(PolarRuntimePlanner.storedDataCleanup(kind: "emptyDayFolderRemoval", rootPath: folder), kind: "emptyDayFolderRemoval")
             try await fileUtils.deleteDataDirectory(identifier: identifier, directoryPath: folder)
         }
     }
@@ -2828,7 +2828,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: e, includePrefixes: ["TRC"], includeSuffixes: [".BIN"]) ??
             (e.contains("^([A-Za-z]{3}[0-9]{1,3})") && e.contains("TRC") && e.contains(".BIN"))
         }
-        PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/")
+        try ensureStoredDataCleanupRuntimeTerminal(PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"), kind: "filterDirectoryEntries")
         for try await file in fileUtils.listFiles(identifier: identifier, folderPath: "/", condition: condition) {
             let entry = file.hasPrefix("/") ? String(file.dropFirst()) : file
             let plannedFile = PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/", entries: [entry], includePrefixes: ["TRC"], includeSuffixes: [".BIN"])?.last ?? file
@@ -3069,6 +3069,12 @@ extension PolarBleApiImpl: PolarBleApi  {
     private func ensureDiskTimeRuntimeTerminal(_ terminal: String, kind: String) throws {
         guard terminal == "success" || terminal == "platform-owned" else {
             throw PolarErrors.polarBleSdkInternalException(description: "Disk/time \(kind) planning failed: \(terminal)")
+        }
+    }
+
+    private func ensureStoredDataCleanupRuntimeTerminal(_ terminal: String, kind: String) throws {
+        guard terminal == "success" || terminal == "platform-path-split" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "Stored-data cleanup \(kind) planning failed: \(terminal)")
         }
     }
 
