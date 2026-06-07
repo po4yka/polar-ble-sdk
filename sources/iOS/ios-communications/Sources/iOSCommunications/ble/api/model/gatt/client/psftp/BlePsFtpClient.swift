@@ -386,6 +386,7 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
                     var next = 0
                     var pCounter: UInt64 = 0
                     var response = false
+                    let payloadSize = Int64(dataBytes.count)
                     let sequenceNumber = BlePsFtpUtility.BlePsFtpRfc76SequenceNumber()
                     var totalTransmitted: Int64 = 0
                     let frames = BlePsFtpUtility.buildRfc76MessageFrameAll(totalStream, data: localDataStream, mtuSize: self.mtuSize, sequenceNumber: sequenceNumber)
@@ -411,6 +412,7 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
                             var transferred: Int64 = 0
                             let component = totalTransmitted - headerSize - Int64(2)
                             if component > 0 { transferred = totalTransmitted - headerSize - 2 }
+                            let boundedTransferred = min(max(transferred, 0), payloadSize)
                             if more {
                                 do {
                                     let cancelPacket = try self.mtuInputQueue.poll()
@@ -427,7 +429,7 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
                                     BleLogger.trace("No interruption from device: \(error)")
                                 }
                             }
-                            cont.yield(UInt(transferred))
+                            cont.yield(UInt(boundedTransferred))
                         } catch let error {
                             self.logPsFtpError("PS-FTP write interrupted", error)
                             if !(self.gattServiceTransmitter?.isConnected() ?? false) {
