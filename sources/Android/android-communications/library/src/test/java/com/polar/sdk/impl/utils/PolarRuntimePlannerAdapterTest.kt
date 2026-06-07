@@ -174,6 +174,36 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared offline recording metadata routes through Android runtime adapter`() {
+        Assert.assertEquals("ACC", PolarRuntimePlannerAdapter.offlineRecordingMeasurementTypeName("ACC0.REC"))
+        Assert.assertEquals("OFFLINE_HR", PolarRuntimePlannerAdapter.offlineRecordingMeasurementTypeName("HR.REC"))
+
+        val grouped = PolarRuntimePlannerAdapter.groupedOfflineRecordingEntries(
+            listOf(
+                "/U/0/20250730/R/101010/ACC0.REC" to 10L,
+                "/U/0/20250730/R/101010/ACC1.REC" to 20L,
+                "/U/0/20250730/R/101010/HR.REC" to 30L,
+                "/U/0/20250730/R/101010/PPG.REC" to 0L
+            )
+        )
+        Assert.assertEquals(listOf("ACC", "HR"), grouped.map { it.type })
+        Assert.assertEquals("/U/0/20250730/R/101010/ACC.REC", grouped.first().androidPath)
+        Assert.assertEquals(30L, grouped.first().size)
+        Assert.assertEquals("2025-07-30T10:10:10", grouped.first().dateTime)
+
+        val parsed = PolarRuntimePlannerAdapter.parsePmdFilesV2(
+            """
+            10 /U/0/20250730/R/101010/ACC0.REC
+            20 /U/0/20250730/R/101010/ACC1.REC
+            bad /U/0/20250730/R/101010/PPG.REC
+            """.trimIndent()
+        )
+        Assert.assertEquals(1, parsed.size)
+        Assert.assertEquals("ACC", parsed.single().type)
+        Assert.assertEquals(30L, parsed.single().size)
+    }
+
+    @Test
     fun `shared sleep REST facade paths preserve Android strings`() {
         Assert.assertEquals("/REST/SLEEP.API", PolarRuntimePlannerAdapter.sleepRestApiPath())
         Assert.assertEquals("/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]", PolarRuntimePlannerAdapter.sleepRecordingStateSubscribePath())

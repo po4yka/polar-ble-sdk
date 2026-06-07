@@ -2,66 +2,33 @@ package com.polar.sdk.impl.utils
 
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
-import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.errors.PolarInvalidArgument
 import com.polar.sdk.api.model.PolarOfflineRecordingEntry
-import com.polar.shared.sdk.PolarOfflineRecordingFileEntry
-import com.polar.shared.sdk.PolarOfflineRecordingMeasurementType
-import com.polar.shared.sdk.PolarOfflineRecordingModels
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.ByteArrayInputStream
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.*
 
 internal object PolarOfflineRecordingUtils {
 
     private const val TAG = "OfflineRecordingUtils"
-
-    private fun mapOfflineRecordingFileNameToMeasurementType(fileName: String): PmdMeasurementType {
-        return when (PolarOfflineRecordingModels.measurementTypeFromFileName(fileName)) {
-            PolarOfflineRecordingMeasurementType.ACC -> PmdMeasurementType.ACC
-            PolarOfflineRecordingMeasurementType.GYRO -> PmdMeasurementType.GYRO
-            PolarOfflineRecordingMeasurementType.MAGNETOMETER -> PmdMeasurementType.MAGNETOMETER
-            PolarOfflineRecordingMeasurementType.PPG -> PmdMeasurementType.PPG
-            PolarOfflineRecordingMeasurementType.PPI -> PmdMeasurementType.PPI
-            PolarOfflineRecordingMeasurementType.OFFLINE_HR -> PmdMeasurementType.OFFLINE_HR
-            PolarOfflineRecordingMeasurementType.TEMPERATURE -> PmdMeasurementType.TEMPERATURE
-            PolarOfflineRecordingMeasurementType.SKIN_TEMP -> PmdMeasurementType.SKIN_TEMP
-        }
-    }
-
-    private fun mapPmdMeasurementTypeToPolarDeviceDataType(type: PmdMeasurementType): PolarBleApi.PolarDeviceDataType {
-        return when (type) {
-            PmdMeasurementType.ACC -> PolarBleApi.PolarDeviceDataType.ACC
-            PmdMeasurementType.GYRO -> PolarBleApi.PolarDeviceDataType.GYRO
-            PmdMeasurementType.MAGNETOMETER -> PolarBleApi.PolarDeviceDataType.MAGNETOMETER
-            PmdMeasurementType.PPG -> PolarBleApi.PolarDeviceDataType.PPG
-            PmdMeasurementType.PPI -> PolarBleApi.PolarDeviceDataType.PPI
-            PmdMeasurementType.OFFLINE_HR -> PolarBleApi.PolarDeviceDataType.HR
-            PmdMeasurementType.TEMPERATURE -> PolarBleApi.PolarDeviceDataType.TEMPERATURE
-            PmdMeasurementType.SKIN_TEMP -> PolarBleApi.PolarDeviceDataType.SKIN_TEMPERATURE
-            else -> throw IllegalArgumentException("Unknown PMD measurement type: $type")
-        }
-    }
 
     fun listOfflineRecordingsV1(
         client: BlePsFtpClient,
         fetchRecursively: (client: BlePsFtpClient, path: String, condition: (String) -> Boolean) -> Flow<Pair<String, Long>>
     ): Flow<PolarOfflineRecordingEntry> = flow {
 
-        val entries = mutableListOf<PolarOfflineRecordingFileEntry>()
+        val entries = mutableListOf<Pair<String, Long>>()
         fetchRecursively(client, "/U/0/") { entry ->
             entry.matches(Regex("^(\\d{8})(/)")) ||
                     entry == "R/" ||
                     entry.matches(Regex("^(\\d{6})(/)")) ||
                     entry.contains(".REC")
         }.collect { entry ->
-            entries += PolarOfflineRecordingFileEntry(path = entry.first, size = entry.second)
+            entries += entry
         }
-        PolarOfflineRecordingModels.groupedRecordingEntries(entries).forEach { entry ->
+        PolarRuntimePlannerAdapter.groupedOfflineRecordingEntries(entries).forEach { entry ->
             emit(
                 PolarOfflineRecordingEntry(
                     path = entry.androidPath,
@@ -77,7 +44,7 @@ internal object PolarOfflineRecordingUtils {
         return ByteArrayInputStream(file)
             .bufferedReader()
             .use { reader ->
-                PolarOfflineRecordingModels.parsePmdFilesV2(reader.readText()).map { entry ->
+                PolarRuntimePlannerAdapter.parsePmdFilesV2(reader.readText()).map { entry ->
                     PolarOfflineRecordingEntry(
                         path = entry.androidPath,
                         size = entry.size,

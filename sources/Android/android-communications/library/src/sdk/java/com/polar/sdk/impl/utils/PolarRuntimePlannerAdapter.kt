@@ -22,6 +22,8 @@ import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarFirmwareUpdateModels
+import com.polar.shared.sdk.PolarOfflineRecordingFileEntry
+import com.polar.shared.sdk.PolarOfflineRecordingModels
 import com.polar.shared.sdk.PolarRestServiceModels
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepModels
@@ -51,6 +53,12 @@ internal object PolarRuntimePlannerAdapter {
         val accentColor: Long,
         val complicationIds: List<Int>,
         val fontfaceId: Int
+    )
+    data class PlannedOfflineRecordingEntry(
+        val type: String,
+        val androidPath: String,
+        val size: Long,
+        val dateTime: String
     )
 
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {
@@ -581,6 +589,34 @@ internal object PolarRuntimePlannerAdapter {
 
     fun restEventPayloads(uncompressed: Boolean, payloads: List<ByteArray>): List<ByteArray> {
         return PolarRestServiceModels.restEventPayloads(uncompressed, payloads)
+    }
+
+    fun offlineRecordingMeasurementTypeName(fileName: String): String {
+        return PolarOfflineRecordingModels.measurementTypeFromFileName(fileName).name
+    }
+
+    fun groupedOfflineRecordingEntries(entries: List<Pair<String, Long>>): List<PlannedOfflineRecordingEntry> {
+        return PolarOfflineRecordingModels.groupedRecordingEntries(
+            entries.map { entry -> PolarOfflineRecordingFileEntry(path = entry.first, size = entry.second) }
+        ).map { entry ->
+            PlannedOfflineRecordingEntry(
+                type = entry.type,
+                androidPath = entry.androidPath,
+                size = entry.size,
+                dateTime = entry.dateTime
+            )
+        }
+    }
+
+    fun parsePmdFilesV2(text: String): List<PlannedOfflineRecordingEntry> {
+        return PolarOfflineRecordingModels.parsePmdFilesV2(text).map { entry ->
+            PlannedOfflineRecordingEntry(
+                type = entry.type,
+                androidPath = entry.androidPath,
+                size = entry.size,
+                dateTime = entry.dateTime
+            )
+        }
     }
 
     fun watchFaceConfigFields(
