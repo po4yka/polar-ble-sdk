@@ -22,6 +22,7 @@ import com.polar.shared.sdk.PolarSleepRatingName
 import com.polar.shared.sdk.PolarSleepWakeStateName
 import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.shared.sdk.PolarTrainingReadinessName
+import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarUserDeviceSettingsFields
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
@@ -264,6 +265,10 @@ internal object PolarSdkModelAdapter {
 
     fun spo2DeviationFromBaselineName(value: Int): String? {
         return PolarSpo2Models.deviationFromBaselineName(value)
+    }
+
+    fun trainingSessionExerciseDataTypeFileName(dataType: String): String? {
+        return PolarTrainingSessionModels.exerciseDataTypeFileName(dataType)
     }
 
     fun restServiceList(pathsForServices: Map<String, String>?): PlannedRestServiceList {

@@ -120,6 +120,13 @@ class PolarSdkModelAdapterTest {
     }
 
     @Test
+    fun `training session file lookup routes through sdk model adapter`() {
+        assertEquals("BASE.BPB", PolarSdkModelAdapter.trainingSessionExerciseDataTypeFileName("EXERCISE_SUMMARY"))
+        assertEquals("SAMPLES2.GZB", PolarSdkModelAdapter.trainingSessionExerciseDataTypeFileName("SAMPLES_ADVANCED_FORMAT_GZIP"))
+        assertNull(PolarSdkModelAdapter.trainingSessionExerciseDataTypeFileName("UNKNOWN"))
+    }
+
+    @Test
     fun `rest service projection routes through sdk model adapter`() {
         val serviceList = PolarSdkModelAdapter.restServiceList(
             linkedMapOf(
