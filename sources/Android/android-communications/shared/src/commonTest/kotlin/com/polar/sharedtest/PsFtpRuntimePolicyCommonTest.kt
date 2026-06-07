@@ -319,7 +319,7 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("write_ack_timeout_policy", vector.stringValue("case"))
         assertEquals("writeAckTimeoutPolicy", input.stringValue("kind"))
         assertEquals("write acknowledgement timeout is a protocol-timeout path distinct from transport transmit failure and peer-side RFC76 response errors", vector.objectValue("platformExpectations").objectValue("commonDecision").stringValue("errorPolicy"))
-        assertEquals("planned-fake-clock-or-injectable-timeout-required", vector.objectValue("execution").stringValue("android"))
+        assertEquals("injectable-timeout-unit-test", vector.objectValue("execution").stringValue("android"))
         assertEquals("injectable-timeout-xctest", vector.objectValue("execution").stringValue("ios"))
         assertEquals("shared-common-test", vector.objectValue("execution").stringValue("common"))
         assertPsFtpRuntimeConsumerAndPlatformShape(vector)

@@ -46,7 +46,7 @@
     ]
   },
   "execution": {
-    "android": "planned-fake-clock-or-injectable-timeout-required",
+    "android": "injectable-timeout-unit-test",
     "ios": "injectable-timeout-xctest",
     "common": "shared-common-test"
   },

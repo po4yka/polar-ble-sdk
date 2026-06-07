@@ -57,6 +57,10 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
     private val pftpWaitNotificationMutex = Any()
     private val pftpWaitNotificationSharedMutex = Any()
     @Volatile private var _sharedWaitNotificationFlow: Flow<PftpNotificationMessage>? = null
+    @VisibleForTesting
+    internal var protocolTimeoutSeconds: Long = PROTOCOL_TIMEOUT_SECONDS.toLong()
+    @VisibleForTesting
+    internal var protocolTimeoutExtendedSeconds: Long = PROTOCOL_TIMEOUT_EXTENDED_SECONDS.toLong()
 
     fun interface ProgressCallback {
         fun onProgressUpdate(bytesReceived: Long)
@@ -249,10 +253,10 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                         )
                         waitPacketsWritten(
                             packetsWritten, mtuWaiting, requestData.size,
-                            PROTOCOL_TIMEOUT_SECONDS.toLong()
+                            protocolTimeoutSeconds
                         )
                         requestData.clear()
-                        readResponse(outputStream, PROTOCOL_TIMEOUT_SECONDS.toLong())
+                        readResponse(outputStream, protocolTimeoutSeconds)
                         this@BlePsFtpClient.progressCallback = previousCallback
                         return@synchronized outputStream
                     } catch (ex: InterruptedException) {
@@ -416,8 +420,8 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
     internal fun getWriteTimeoutForFilePath(filePath: String): Long {
         return PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds(
             filePath = filePath,
-            defaultTimeoutSeconds = PROTOCOL_TIMEOUT_SECONDS,
-            extendedTimeoutSeconds = PROTOCOL_TIMEOUT_EXTENDED_SECONDS
+            defaultTimeoutSeconds = protocolTimeoutSeconds.toInt(),
+            extendedTimeoutSeconds = protocolTimeoutExtendedSeconds.toInt()
         ).toLong()
     }
 
@@ -426,7 +430,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
             val cancelPacket = byteArrayOf(0x00, 0x00, 0x00)
             try {
                 if (mtuWaiting.get()) {
-                    waitPacketsWritten(packetsWritten, mtuWaiting, lastRequest, PROTOCOL_TIMEOUT_SECONDS.toLong())
+                    waitPacketsWritten(packetsWritten, mtuWaiting, lastRequest, protocolTimeoutSeconds)
                 }
                 txInterface.transmitMessages(
                     BlePsFtpUtils.RFC77_PFTP_SERVICE,
@@ -434,7 +438,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                     listOf(cancelPacket),
                     useAttributeLevelResponse.get()
                 )
-                waitPacketsWritten(packetsWritten, mtuWaiting, 1, PROTOCOL_TIMEOUT_SECONDS.toLong())
+                waitPacketsWritten(packetsWritten, mtuWaiting, 1, protocolTimeoutSeconds)
                 d(TAG, "MTU interrupted. Stream cancel has been successfully send")
             } catch (throwable: Throwable) {
                 e(TAG, "Exception while trying to cancel streaming")
@@ -471,9 +475,9 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                             BlePsFtpUtils.RFC77_PFTP_MTU_CHARACTERISTIC,
                             requs, false
                         )
-                        waitPacketsWritten(packetsWritten, mtuWaiting, requs.size, PROTOCOL_TIMEOUT_SECONDS.toLong())
+                        waitPacketsWritten(packetsWritten, mtuWaiting, requs.size, protocolTimeoutSeconds)
                         requs = mutableListOf()
-                        readResponse(response, PROTOCOL_TIMEOUT_SECONDS.toLong())
+                        readResponse(response, protocolTimeoutSeconds)
                         return@synchronized response
                     } catch (ex: InterruptedException) {
                         e(TAG, "Query $id interrupted")
@@ -520,7 +524,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                             BlePsFtpUtils.RFC77_PFTP_H2D_CHARACTERISTIC,
                             requs, false
                         )
-                        waitPacketsWritten(notificationPacketsWritten, notificationWaiting, requs.size, PROTOCOL_TIMEOUT_SECONDS.toLong())
+                        waitPacketsWritten(notificationPacketsWritten, notificationWaiting, requs.size, protocolTimeoutSeconds)
                     } else {
                         e(TAG, "Send notification id: $id failed. PS-FTP notification not enabled")
                         throw BleCharacteristicNotificationNotEnabled("PS-FTP notification not enabled")
@@ -586,7 +590,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                                 }
                                 var status = response.status
                                 while (status == BlePsFtpUtils.RFC76_STATUS_MORE) {
-                                    packet = notificationInputQueue.poll(PROTOCOL_TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)
+                                    packet = notificationInputQueue.poll(protocolTimeoutSeconds, TimeUnit.SECONDS)
                                     if (packet != null && packet.second == 0) {
                                         response = BlePsFtpUtils.processRfc76MessageFrameHeader(packet.first)
                                         status = response.status
@@ -597,7 +601,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                                             )
                                         }
                                     } else {
-                                        throw Throwable("Failed to receive notification packet in timeline")
+                                        throw Exception("Failed to receive notification packet in timeline")
                                     }
                                 }
                                 pendingMessage = msg
@@ -647,7 +651,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
             } else {
                 throw BleDisconnected("Connection lost during read response")
             }
-            val packet = mtuInputQueue.poll(PROTOCOL_TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS)
+            val packet = mtuInputQueue.poll(timeoutSeconds, TimeUnit.SECONDS)
             if (packet != null && packet.second == 0) {
                 BlePsFtpUtils.processRfc76MessageFrameHeader(response, packet.first)
                 if (sequenceNumber.seq != response.sequenceNumber) {
@@ -689,7 +693,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
     }
 
     @Throws(Exception::class)
-    private fun handlePacketError(packet: Pair<ByteArray, Int>) {
+    private fun handlePacketError(packet: Pair<ByteArray, Int>?) {
         if (!txInterface.isConnected()) {
             throw BleDisconnected("Connection lost during packet read")
         } else if (packet == null) {

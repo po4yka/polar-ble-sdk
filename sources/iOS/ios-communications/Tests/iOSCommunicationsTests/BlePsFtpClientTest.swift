@@ -577,14 +577,14 @@ class BlePsFtpClientTest: XCTestCase {
     func testPsFtpTimeoutPlanningVectorsRequireFakeClockBeforeSharedRuntimeMigration() throws {
         try assertFakeClockPlanningVector(
             try loadPsFtpNotificationVector(id: "notification-continuation-timeout-policy"),
-            androidExecution: "planned-fake-clock-or-injectable-timeout-required",
+            androidExecution: "injectable-timeout-unit-test",
             iosExecution: "injectable-timeout-xctest",
             commonExecution: "shared-common-test",
             expectedCaseIds: notificationContinuationTimeoutCaseIds
         )
         try assertFakeClockPlanningVector(
             try loadPsFtpVector(directoryName: "psftp-response", id: "write-ack-timeout-policy"),
-            androidExecution: "planned-fake-clock-or-injectable-timeout-required",
+            androidExecution: "injectable-timeout-unit-test",
             iosExecution: "injectable-timeout-xctest",
             commonExecution: "shared-common-test"
         )
