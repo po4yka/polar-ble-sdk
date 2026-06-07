@@ -127,6 +127,28 @@ class PolarSdkModelAdapterTest {
     }
 
     @Test
+    fun `skin temperature projection routes through sdk model adapter`() {
+        val sample = PolarSdkModelAdapter.PlannedSkinTemperatureSample(
+            recordingTimeDeltaMs = 1_000L,
+            temperature = 36.5f
+        )
+        val projection = PolarSdkModelAdapter.skinTemperature(
+            sourceDeviceId = "device",
+            measurementType = 1,
+            sensorLocation = 1,
+            samples = listOf(sample)
+        )
+
+        assertEquals("TM_SKIN_TEMPERATURE", PolarSdkModelAdapter.skinTemperatureMeasurementTypeName(1))
+        assertNull(PolarSdkModelAdapter.skinTemperatureMeasurementTypeName(0))
+        assertEquals("SL_DISTAL", PolarSdkModelAdapter.skinTemperatureSensorLocationName(1))
+        assertEquals("device", projection.sourceDeviceId)
+        assertEquals("TM_SKIN_TEMPERATURE", projection.measurementType)
+        assertEquals("SL_DISTAL", projection.sensorLocation)
+        assertEquals(listOf(sample), projection.samples)
+    }
+
+    @Test
     fun `rest service projection routes through sdk model adapter`() {
         val serviceList = PolarSdkModelAdapter.restServiceList(
             linkedMapOf(

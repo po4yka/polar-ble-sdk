@@ -21,6 +21,9 @@ import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepRatingName
 import com.polar.shared.sdk.PolarSleepWakeStateName
 import com.polar.shared.sdk.PolarSpo2Models
+import com.polar.shared.sdk.PolarSkinTemperatureMeasurementType
+import com.polar.shared.sdk.PolarSkinTemperatureSampleModel
+import com.polar.shared.sdk.PolarSkinTemperatureSensorLocation
 import com.polar.shared.sdk.PolarTrainingReadinessName
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarUserDeviceSettingsFields
@@ -67,6 +70,16 @@ internal object PolarSdkModelAdapter {
         val automaticTrainingDetectionSensitivity: Int?,
         val minimumTrainingDurationSeconds: Int?,
         val autosFilesEnabled: Boolean?
+    )
+    data class PlannedSkinTemperatureSample(
+        val recordingTimeDeltaMs: Long,
+        val temperature: Float
+    )
+    data class PlannedSkinTemperature(
+        val sourceDeviceId: String?,
+        val measurementType: String?,
+        val sensorLocation: String?,
+        val samples: List<PlannedSkinTemperatureSample>
     )
 
     fun diskSpace(fragmentSize: Long, totalFragments: Long, freeFragments: Long): PlannedDiskSpace {
@@ -269,6 +282,53 @@ internal object PolarSdkModelAdapter {
 
     fun trainingSessionExerciseDataTypeFileName(dataType: String): String? {
         return PolarTrainingSessionModels.exerciseDataTypeFileName(dataType)
+    }
+
+    fun skinTemperatureMeasurementTypeName(value: Int): String? {
+        return PolarSkinTemperatureMeasurementType.fromValue(value)?.name
+    }
+
+    fun skinTemperatureSensorLocationName(value: Int): String? {
+        return PolarSkinTemperatureSensorLocation.fromValue(value)?.name
+    }
+
+    fun skinTemperatureSamples(samples: List<PlannedSkinTemperatureSample>): List<PlannedSkinTemperatureSample> {
+        return samples.map { sample ->
+            PlannedSkinTemperatureSample(
+                recordingTimeDeltaMs = sample.recordingTimeDeltaMs,
+                temperature = sample.temperature
+            )
+        }
+    }
+
+    fun skinTemperature(
+        sourceDeviceId: String?,
+        measurementType: Int,
+        sensorLocation: Int,
+        samples: List<PlannedSkinTemperatureSample>
+    ): PlannedSkinTemperature {
+        val shared = PolarSdkModelMappers.skinTemperature(
+            sourceDeviceId = sourceDeviceId,
+            measurementType = measurementType,
+            sensorLocation = sensorLocation,
+            samples = samples.map { sample ->
+                PolarSkinTemperatureSampleModel(
+                    recordingTimeDeltaMs = sample.recordingTimeDeltaMs,
+                    temperature = sample.temperature
+                )
+            }
+        )
+        return PlannedSkinTemperature(
+            sourceDeviceId = shared.sourceDeviceId,
+            measurementType = shared.measurementType?.name,
+            sensorLocation = shared.sensorLocation?.name,
+            samples = shared.samples.map { sample ->
+                PlannedSkinTemperatureSample(
+                    recordingTimeDeltaMs = sample.recordingTimeDeltaMs,
+                    temperature = sample.temperature
+                )
+            }
+        )
     }
 
     fun restServiceList(pathsForServices: Map<String, String>?): PlannedRestServiceList {
