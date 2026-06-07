@@ -1,6 +1,5 @@
 package com.polar.sdk.impl.utils
 
-import com.polar.shared.runtime.PolarBackupRestoreFile
 import org.junit.Assert
 import org.junit.Test
 import protocol.PftpNotification
@@ -299,8 +298,8 @@ class PolarRuntimePlannerAdapterTest {
         Assert.assertEquals("/U/0/BACKUP.TXT", operation?.second)
         val writes = PolarRuntimePlannerAdapter.planBackupRestoreWrites(
             listOf(
-                PolarBackupRestoreFile(directory = "/U/0/S/", fileName = "UDEVSET.BPB", dataHex = "0102"),
-                PolarBackupRestoreFile(directory = "/SYS/BT/", fileName = "BTDEV.BPB", dataHex = "0304")
+                PolarRuntimePlannerAdapter.PlannedBackupRestoreFile(directory = "/U/0/S/", fileName = "UDEVSET.BPB", dataHex = "0102"),
+                PolarRuntimePlannerAdapter.PlannedBackupRestoreFile(directory = "/SYS/BT/", fileName = "BTDEV.BPB", dataHex = "0304")
             )
         )
         Assert.assertEquals(listOf(PftpRequest.PbPFtpOperation.Command.PUT, PftpRequest.PbPFtpOperation.Command.PUT), writes.map { it.operation.first })

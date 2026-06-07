@@ -47,6 +47,12 @@ internal object PolarRuntimePlannerAdapter {
         val operation: Pair<PftpRequest.PbPFtpOperation.Command, String>,
         val payloadHex: String
     )
+    data class PlannedBackupRestoreFile(
+        val directory: String,
+        val fileName: String,
+        val dataHex: String,
+        val writeResult: String = "success"
+    )
     data class PlannedD2hNotification(
         val notificationType: String,
         val parsedProtoName: String?
@@ -569,8 +575,17 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
-    fun planBackupRestoreWrites(files: List<PolarBackupRestoreFile>): List<PlannedBackupRestoreWrite> {
-        return PolarWorkflowRuntimePlanning.planBackupRestore(files).commands.mapNotNull { command ->
+    fun planBackupRestoreWrites(files: List<PlannedBackupRestoreFile>): List<PlannedBackupRestoreWrite> {
+        return PolarWorkflowRuntimePlanning.planBackupRestore(
+            files.map { file ->
+                PolarBackupRestoreFile(
+                    directory = file.directory,
+                    fileName = file.fileName,
+                    dataHex = file.dataHex,
+                    writeResult = file.writeResult
+                )
+            }
+        ).commands.mapNotNull { command ->
             val parts = command.split(":", limit = 3)
             if (parts.size != 3 || parts[0] != "PUT") return@mapNotNull null
             PlannedBackupRestoreWrite(

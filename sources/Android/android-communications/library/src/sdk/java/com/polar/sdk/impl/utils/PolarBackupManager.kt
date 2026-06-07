@@ -2,7 +2,6 @@ package com.polar.sdk.impl.utils
 
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
-import com.polar.shared.runtime.PolarBackupRestoreFile
 import java.io.ByteArrayInputStream
 import java.io.File
 import protocol.PftpResponse.PbPFtpDirectory
@@ -93,7 +92,7 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
         }
         val plannedWrites = PolarRuntimePlannerAdapter.planBackupRestoreWrites(
             backupFiles.map { backupFileData ->
-                PolarBackupRestoreFile(
+                PolarRuntimePlannerAdapter.PlannedBackupRestoreFile(
                     directory = backupFileData.directory,
                     fileName = backupFileData.fileName,
                     dataHex = backupFileData.data.toHexString()
