@@ -75,6 +75,10 @@ class PolarFirmwareUpdateUtils {
             var fileDataDictionary: [String: Data] = [:]
             for fileURL in contents {
                 let fileName = fileURL.lastPathComponent
+                guard firmwarePackageEntryIsPayload(fileName) else {
+                    BleLogger.trace("Skipping file: \(fileName)")
+                    continue
+                }
                 let decompressedData = try Data(contentsOf: fileURL)
                 fileDataDictionary[fileName] = decompressedData
                 BleLogger.trace("Extracted file: \(fileName) - Size: \(decompressedData.count) bytes")

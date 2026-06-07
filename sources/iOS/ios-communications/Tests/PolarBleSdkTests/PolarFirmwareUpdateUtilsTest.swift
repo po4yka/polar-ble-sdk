@@ -2,6 +2,7 @@
 
 import XCTest
 @testable import PolarBleSdk
+import Zip
 
 class PolarFirmwareUpdateUtilsTest: XCTestCase {
 
@@ -249,6 +250,29 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif
+    }
+
+    func testUnzipFirmwarePackageSkipsSharedNonPayloadEntries() throws {
+        let sourceDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let zipURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("zip")
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: sourceDirectory)
+            try? FileManager.default.removeItem(at: zipURL)
+        }
+        try Data("skip".utf8).write(to: sourceDirectory.appendingPathComponent("readme.txt"))
+        try Data([0x01]).write(to: sourceDirectory.appendingPathComponent("BTUPDAT.BIN"))
+        try Data([0x02]).write(to: sourceDirectory.appendingPathComponent("SYSUPDAT.IMG"))
+        try Zip.zipFiles(paths: [
+            sourceDirectory.appendingPathComponent("readme.txt"),
+            sourceDirectory.appendingPathComponent("BTUPDAT.BIN"),
+            sourceDirectory.appendingPathComponent("SYSUPDAT.IMG")
+        ], zipFilePath: zipURL, password: nil, progress: nil)
+        let unzipped = try XCTUnwrap(PolarFirmwareUpdateUtils.unzipFirmwarePackage(zippedData: try Data(contentsOf: zipURL)))
+        XCTAssertNil(unzipped["readme.txt"])
+        XCTAssertEqual(Data([0x01]), unzipped["BTUPDAT.BIN"])
+        XCTAssertEqual(Data([0x02]), unzipped["SYSUPDAT.IMG"])
+        XCTAssertEqual(PolarRuntimePlanner.firmwarePayloadFileNames(Array(unzipped.keys)).sorted(), Array(unzipped.keys).sorted())
     }
 
     func testFirmwareRebootWaitFilterUsesSharedPolicyWhenLinked() throws {
