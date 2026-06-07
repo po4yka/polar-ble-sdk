@@ -449,6 +449,18 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten.toInt(), payloadSize).toLong()
     }
 
+    fun firmwareFilePriority(fileName: String): Int {
+        return PolarFirmwareUpdateModels.firmwareFilePriority(fileName)
+    }
+
+    fun isAvailableFirmwareVersionHigher(currentVersion: String, availableVersion: String): Boolean {
+        return PolarFirmwareUpdateModels.isAvailableFirmwareVersionHigher(currentVersion, availableVersion)
+    }
+
+    fun firmwareDeviceVersion(major: Int, minor: Int, patch: Int): String {
+        return PolarFirmwareUpdateModels.deviceVersionToString(major, minor, patch)
+    }
+
     fun shouldEmitFirmwareWriteProgress(
         lastBytesWritten: Long,
         bytesWritten: Long,

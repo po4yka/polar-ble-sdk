@@ -3,7 +3,6 @@ package com.polar.sdk.impl.utils
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.PolarFirmwareVersionInfo
-import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import fi.polar.remote.representation.protobuf.Device
 import fi.polar.remote.representation.protobuf.Structures
 import java.io.ByteArrayInputStream
@@ -19,7 +18,7 @@ internal object PolarFirmwareUpdateUtils {
      */
     class FwFileComparator : Comparator<File> {
         override fun compare(f1: File, f2: File): Int {
-            return PolarFirmwareUpdateModels.firmwareFilePriority(f1.name).compareTo(PolarFirmwareUpdateModels.firmwareFilePriority(f2.name))
+            return PolarRuntimePlannerAdapter.firmwareFilePriority(f1.name).compareTo(PolarRuntimePlannerAdapter.firmwareFilePriority(f2.name))
         }
     }
 
@@ -44,7 +43,7 @@ internal object PolarFirmwareUpdateUtils {
     }
 
     fun isAvailableFirmwareVersionHigher(currentVersion: String, availableVersion: String): Boolean {
-        return PolarFirmwareUpdateModels.isAvailableFirmwareVersionHigher(currentVersion, availableVersion)
+        return PolarRuntimePlannerAdapter.isAvailableFirmwareVersionHigher(currentVersion, availableVersion)
     }
 
     fun unzipFirmwarePackage(zipBytes: ByteArray): ByteArray {
@@ -72,5 +71,5 @@ internal object PolarFirmwareUpdateUtils {
     }
 
     private fun devicePbVersionToString(pbVersion: Structures.PbVersion): String =
-        PolarFirmwareUpdateModels.deviceVersionToString(pbVersion.major, pbVersion.minor, pbVersion.patch)
+        PolarRuntimePlannerAdapter.firmwareDeviceVersion(pbVersion.major, pbVersion.minor, pbVersion.patch)
 }
