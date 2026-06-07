@@ -2401,7 +2401,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         return AsyncThrowingStream { continuation in
             Task {
                 do {
-                    PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"], firmwareFiles: firmwareFiles.map { $0.0 })
+                    try ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"], firmwareFiles: firmwareFiles.map { $0.0 }), kind: "writePackage")
                     let plannedWritePaths = PolarRuntimePlanner.firmwareWritePaths(firmwareFiles.map { $0.0 })
                     for (index, firmwareFile) in firmwareFiles.enumerated() {
                         var lastBytesWritten: Int = 0
@@ -3075,6 +3075,12 @@ extension PolarBleApiImpl: PolarBleApi  {
     private func ensureStoredDataCleanupRuntimeTerminal(_ terminal: String, kind: String) throws {
         guard terminal == "success" || terminal == "platform-path-split" || terminal == "platform-owned" else {
             throw PolarErrors.polarBleSdkInternalException(description: "Stored-data cleanup \(kind) planning failed: \(terminal)")
+        }
+    }
+
+    private func ensureFirmwareWorkflowRuntimeTerminal(_ terminal: String, kind: String) throws {
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "Firmware workflow \(kind) planning failed: \(terminal)")
         }
     }
 
