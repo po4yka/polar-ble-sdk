@@ -8,7 +8,6 @@ import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionDataTypes
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionReference
 import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarTrainingSessionUtils
-import com.polar.shared.sdk.PolarTrainingSessionModels
 import fi.polar.remote.representation.protobuf.Structures
 import fi.polar.remote.representation.protobuf.Training
 import fi.polar.remote.representation.protobuf.TrainingSession
@@ -81,9 +80,10 @@ class PolarTrainingSessionUtilsTest {
 
     @Test
     fun `training session exercise filenames are delegated to shared mapping`() {
+        assertEquals("/U/0/", PolarRuntimePlannerAdapter.trainingSessionRootPath())
         PolarExerciseDataTypes.entries.forEach { dataType ->
             assertEquals(
-                PolarTrainingSessionModels.exerciseDataTypeFileName(dataType.name),
+                PolarRuntimePlannerAdapter.trainingSessionExerciseDataTypeFileName(dataType.name),
                 dataType.deviceFileName
             )
         }

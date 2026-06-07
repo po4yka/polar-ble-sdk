@@ -11,7 +11,6 @@ import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionDataTypes
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarTrainingExerciseReference as SharedPolarTrainingExerciseReference
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
-import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarTrainingSessionReference as SharedPolarTrainingSessionReference
 import fi.polar.remote.representation.protobuf.ExerciseSamples
 import fi.polar.remote.representation.protobuf.ExerciseSamples2
@@ -25,7 +24,7 @@ import java.io.ByteArrayInputStream
 import java.time.LocalDate
 import java.util.zip.GZIPInputStream
 
-private const val ARABICA_USER_ROOT_FOLDER = PolarTrainingSessionModels.ROOT_PATH
+private val ARABICA_USER_ROOT_FOLDER = PolarRuntimePlannerAdapter.trainingSessionRootPath()
 private const val TAG = "PolarTrainingSessionUtils"
 
 internal object PolarTrainingSessionUtils {
@@ -39,11 +38,11 @@ internal object PolarTrainingSessionUtils {
     }
 
     internal fun trainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference): List<String> {
-        return PolarTrainingSessionModels.payloadFetchOrder(reference.toSharedReference())
+        return PolarRuntimePlannerAdapter.trainingSessionPayloadFetchOrder(reference.toSharedReference())
     }
 
     internal fun trainingSessionPayloadEncoding(fileName: String): String? {
-        return PolarTrainingSessionModels.payloadParserCase(fileName)?.encoding
+        return PolarRuntimePlannerAdapter.trainingSessionPayloadEncoding(fileName)
     }
 
     internal fun trainingSessionDeleteParentReadOperation(reference: PolarTrainingSessionReference): Pair<PftpRequest.PbPFtpOperation.Command, String> {
@@ -95,7 +94,7 @@ internal object PolarTrainingSessionUtils {
             entries += PolarTrainingSessionFileEntry(path = path, size = fileSize)
         }
 
-        val references = PolarTrainingSessionModels.buildReferences(entries)
+        val references = PolarRuntimePlannerAdapter.trainingSessionReferences(entries)
             .filter { reference -> PolarRuntimePlannerAdapter.trainingSessionReferenceDateMatches(reference.date, fromDate?.toString(), toDate?.toString()) }
             .map { reference ->
                 PolarTrainingSessionReference(
@@ -211,7 +210,7 @@ internal object PolarTrainingSessionUtils {
         for ((type, data) in results) {
             if (data.isEmpty()) continue
             try {
-                when (PolarTrainingSessionModels.payloadParserCase(type.deviceFileName)?.parser) {
+                when (PolarRuntimePlannerAdapter.trainingSessionPayloadParser(type.deviceFileName)) {
                     "PbExerciseBase" -> summary = Training.PbExerciseBase.parseFrom(data)
                     "PbExerciseRouteSamples" ->
                         route = ExerciseRouteSamples.PbExerciseRouteSamples.parseFrom(data)

@@ -25,7 +25,9 @@ import com.polar.shared.sdk.PolarRestServiceModels
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepModels
 import com.polar.shared.sdk.PolarSpo2Models
+import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
+import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.time.PolarTimeUtils
 import protocol.PftpNotification
 import protocol.PftpRequest
@@ -564,6 +566,30 @@ internal object PolarRuntimePlannerAdapter {
 
     fun spo2TestTimeFromFolderNames(date: String, timeDirName: String): String? {
         return PolarSpo2Models.testTimeFromFolderNames(date, timeDirName)
+    }
+
+    fun trainingSessionRootPath(): String {
+        return PolarTrainingSessionModels.ROOT_PATH
+    }
+
+    fun trainingSessionReferences(entries: List<PolarTrainingSessionFileEntry>): List<PolarTrainingSessionReference> {
+        return PolarTrainingSessionModels.buildReferences(entries)
+    }
+
+    fun trainingSessionPayloadFetchOrder(reference: PolarTrainingSessionReference): List<String> {
+        return PolarTrainingSessionModels.payloadFetchOrder(reference)
+    }
+
+    fun trainingSessionPayloadEncoding(fileName: String): String? {
+        return PolarTrainingSessionModels.payloadParserCase(fileName)?.encoding
+    }
+
+    fun trainingSessionPayloadParser(fileName: String): String? {
+        return PolarTrainingSessionModels.payloadParserCase(fileName)?.parser
+    }
+
+    fun trainingSessionExerciseDataTypeFileName(typeName: String): String? {
+        return PolarTrainingSessionModels.exerciseDataTypeFileName(typeName)
     }
 
     fun trainingSessionDeleteParentPath(referencePath: String): String {
