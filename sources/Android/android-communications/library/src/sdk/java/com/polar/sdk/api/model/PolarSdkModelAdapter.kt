@@ -21,6 +21,8 @@ import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepRatingName
 import com.polar.shared.sdk.PolarSleepWakeStateName
 import com.polar.shared.sdk.PolarTrainingReadinessName
+import com.polar.shared.sdk.PolarUserDeviceSettingsFields
+import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
 
 internal object PolarSdkModelAdapter {
@@ -46,6 +48,23 @@ internal object PolarSdkModelAdapter {
         val skinContact: String,
         val movement: String,
         val intervalStatus: String
+    )
+    data class PlannedUserDeviceSettingsFields(
+        val deviceLocation: Int? = null,
+        val usbConnectionMode: Boolean? = null,
+        val automaticTrainingDetectionMode: Boolean? = null,
+        val automaticTrainingDetectionSensitivity: Int? = null,
+        val minimumTrainingDurationSeconds: Int? = null,
+        val telemetryEnabled: Boolean? = null,
+        val autosFilesEnabled: Boolean? = null
+    )
+    data class PlannedSerializedUserDeviceSettingsFields(
+        val deviceLocation: Int?,
+        val usbConnectionMode: String?,
+        val automaticTrainingDetectionMode: String?,
+        val automaticTrainingDetectionSensitivity: Int?,
+        val minimumTrainingDurationSeconds: Int?,
+        val autosFilesEnabled: Boolean?
     )
 
     fun diskSpace(fragmentSize: Long, totalFragments: Long, freeFragments: Long): PlannedDiskSpace {
@@ -153,6 +172,83 @@ internal object PolarSdkModelAdapter {
         return PolarPpiIntervalStatusName.fromValue(value)?.name
     }
 
+    fun userDeviceSettingsFields(
+        deviceLocation: Int? = null,
+        usbConnectionMode: Boolean? = null,
+        automaticTrainingDetectionMode: Boolean? = null,
+        automaticTrainingDetectionSensitivity: Int? = null,
+        minimumTrainingDurationSeconds: Int? = null,
+        telemetryEnabled: Boolean? = null,
+        autosFilesEnabled: Boolean? = null
+    ): PlannedUserDeviceSettingsFields {
+        return PlannedUserDeviceSettingsFields(
+            deviceLocation = deviceLocation,
+            usbConnectionMode = usbConnectionMode,
+            automaticTrainingDetectionMode = automaticTrainingDetectionMode,
+            automaticTrainingDetectionSensitivity = automaticTrainingDetectionSensitivity,
+            minimumTrainingDurationSeconds = minimumTrainingDurationSeconds,
+            telemetryEnabled = telemetryEnabled,
+            autosFilesEnabled = autosFilesEnabled
+        )
+    }
+
+    fun serializeUserDeviceSettingsFields(model: PlannedUserDeviceSettingsFields): PlannedSerializedUserDeviceSettingsFields {
+        val shared = PolarUserDeviceSettingsModels.serializePresencePreservingFields(model.toShared())
+        return PlannedSerializedUserDeviceSettingsFields(
+            deviceLocation = shared.deviceLocation,
+            usbConnectionMode = shared.usbConnectionMode,
+            automaticTrainingDetectionMode = shared.automaticTrainingDetectionMode,
+            automaticTrainingDetectionSensitivity = shared.automaticTrainingDetectionSensitivity,
+            minimumTrainingDurationSeconds = shared.minimumTrainingDurationSeconds,
+            autosFilesEnabled = shared.autosFilesEnabled
+        )
+    }
+
+    fun parseUserDeviceSettingsFields(
+        deviceLocation: Int? = null,
+        usbConnectionMode: String? = null,
+        automaticTrainingDetectionMode: String? = null,
+        automaticTrainingDetectionSensitivity: Int? = null,
+        minimumTrainingDurationSeconds: Int? = null,
+        telemetryEnabled: Boolean? = null,
+        autosFilesEnabled: Boolean? = null
+    ): PlannedUserDeviceSettingsFields {
+        val shared = PolarUserDeviceSettingsModels.parsePresencePreservingFields(
+            deviceLocation = deviceLocation,
+            usbConnectionMode = usbConnectionMode,
+            automaticTrainingDetectionMode = automaticTrainingDetectionMode,
+            automaticTrainingDetectionSensitivity = automaticTrainingDetectionSensitivity,
+            minimumTrainingDurationSeconds = minimumTrainingDurationSeconds,
+            telemetryEnabled = telemetryEnabled,
+            autosFilesEnabled = autosFilesEnabled
+        )
+        return PlannedUserDeviceSettingsFields(
+            deviceLocation = shared.deviceLocation,
+            usbConnectionMode = shared.usbConnectionMode,
+            automaticTrainingDetectionMode = shared.automaticTrainingDetectionMode,
+            automaticTrainingDetectionSensitivity = shared.automaticTrainingDetectionSensitivity,
+            minimumTrainingDurationSeconds = shared.minimumTrainingDurationSeconds,
+            telemetryEnabled = shared.telemetryEnabled,
+            autosFilesEnabled = shared.autosFilesEnabled
+        )
+    }
+
+    fun userDeviceSettingsDeviceLocationName(value: Int): String? {
+        return PolarUserDeviceSettingsModels.deviceLocationName(value)
+    }
+
+    fun userDeviceSettingsUsbConnectionModeValue(name: String): Int? {
+        return PolarUserDeviceSettingsModels.usbConnectionModeValue(name)
+    }
+
+    fun userDeviceSettingsAutomaticTrainingDetectionModeValue(name: String): Int? {
+        return PolarUserDeviceSettingsModels.automaticTrainingDetectionModeValue(name)
+    }
+
+    fun userDeviceSettingsAutomaticMeasurementStateName(enabled: Boolean): String {
+        return PolarUserDeviceSettingsModels.automaticMeasurementStateName(enabled)
+    }
+
     fun restServiceList(pathsForServices: Map<String, String>?): PlannedRestServiceList {
         val shared = PolarRestServiceModels.serviceList(pathsForServices)
         return PlannedRestServiceList(
@@ -182,6 +278,18 @@ internal object PolarSdkModelAdapter {
             actionPaths = shared.actionPaths,
             details = shared.details,
             triggers = shared.triggers
+        )
+    }
+
+    private fun PlannedUserDeviceSettingsFields.toShared(): PolarUserDeviceSettingsFields {
+        return PolarUserDeviceSettingsFields(
+            deviceLocation = deviceLocation,
+            usbConnectionMode = usbConnectionMode,
+            automaticTrainingDetectionMode = automaticTrainingDetectionMode,
+            automaticTrainingDetectionSensitivity = automaticTrainingDetectionSensitivity,
+            minimumTrainingDurationSeconds = minimumTrainingDurationSeconds,
+            telemetryEnabled = telemetryEnabled,
+            autosFilesEnabled = autosFilesEnabled
         )
     }
 }

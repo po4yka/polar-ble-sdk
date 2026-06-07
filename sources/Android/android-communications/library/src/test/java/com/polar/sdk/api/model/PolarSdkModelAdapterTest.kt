@@ -82,6 +82,35 @@ class PolarSdkModelAdapterTest {
     }
 
     @Test
+    fun `user device settings field projection routes through sdk model adapter`() {
+        val fields = PolarSdkModelAdapter.userDeviceSettingsFields(
+            deviceLocation = 3,
+            usbConnectionMode = true,
+            automaticTrainingDetectionMode = false,
+            automaticTrainingDetectionSensitivity = 77,
+            minimumTrainingDurationSeconds = 300,
+            telemetryEnabled = true,
+            autosFilesEnabled = true
+        )
+        val serialized = PolarSdkModelAdapter.serializeUserDeviceSettingsFields(fields)
+        val parsed = PolarSdkModelAdapter.parseUserDeviceSettingsFields(
+            deviceLocation = serialized.deviceLocation,
+            usbConnectionMode = serialized.usbConnectionMode,
+            automaticTrainingDetectionMode = serialized.automaticTrainingDetectionMode,
+            automaticTrainingDetectionSensitivity = serialized.automaticTrainingDetectionSensitivity,
+            minimumTrainingDurationSeconds = serialized.minimumTrainingDurationSeconds,
+            telemetryEnabled = true,
+            autosFilesEnabled = serialized.autosFilesEnabled
+        )
+
+        assertEquals("WRIST_RIGHT", PolarSdkModelAdapter.userDeviceSettingsDeviceLocationName(3))
+        assertEquals(2, PolarSdkModelAdapter.userDeviceSettingsUsbConnectionModeValue(serialized.usbConnectionMode!!))
+        assertEquals(0, PolarSdkModelAdapter.userDeviceSettingsAutomaticTrainingDetectionModeValue(serialized.automaticTrainingDetectionMode!!))
+        assertEquals("ALWAYS_ON", PolarSdkModelAdapter.userDeviceSettingsAutomaticMeasurementStateName(true))
+        assertEquals(fields, parsed)
+    }
+
+    @Test
     fun `rest service projection routes through sdk model adapter`() {
         val serviceList = PolarSdkModelAdapter.restServiceList(
             linkedMapOf(

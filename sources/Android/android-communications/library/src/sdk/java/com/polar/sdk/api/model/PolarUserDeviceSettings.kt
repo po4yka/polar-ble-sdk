@@ -8,8 +8,6 @@ import fi.polar.remote.representation.protobuf.UserDeviceSettings
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbAutomaticMeasurementSettings
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceGeneralSettings
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceSettings
-import com.polar.shared.sdk.PolarUserDeviceSettingsFields
-import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import java.time.ZonedDateTime
 import java.time.ZoneId
 
@@ -21,8 +19,8 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
                                    val minimumTrainingDurationSeconds: Int? = null,
                                    val autosFilesEnabled: Boolean? = null
 ) {
-    private val sharedFields: PolarUserDeviceSettingsFields
-        get() = PolarUserDeviceSettingsFields(
+    private val sharedFields: PolarSdkModelAdapter.PlannedUserDeviceSettingsFields
+        get() = PolarSdkModelAdapter.userDeviceSettingsFields(
             deviceLocation = deviceLocation,
             usbConnectionMode = usbConnectionMode,
             automaticTrainingDetectionMode = automaticTrainingDetectionMode,
@@ -51,20 +49,20 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
 
     companion object {
         infix fun from(value: Int): DeviceLocation? {
-            return PolarUserDeviceSettingsModels.deviceLocationName(value)?.let(DeviceLocation::valueOf)
+            return PolarSdkModelAdapter.userDeviceSettingsDeviceLocationName(value)?.let(DeviceLocation::valueOf)
         }
         const val DEVICE_SETTINGS_FILENAME = "/U/0/S/UDEVSET.BPB"
         const val SENSOR_SETTINGS_FILENAME = "/UDEVSET.BPB"
     }
 
     fun toProto(): PbUserDeviceSettings {
-        val serialized = PolarUserDeviceSettingsModels.serializePresencePreservingFields(sharedFields)
+        val serialized = PolarSdkModelAdapter.serializeUserDeviceSettingsFields(sharedFields)
         val pbSettingsWithDeviceLocation = PbUserDeviceGeneralSettings.newBuilder()
             .setDeviceLocation(serialized.deviceLocation?.let { PbDeviceLocation.forNumber(it) })
 
         val pbUsbConnectionSettings = UserDeviceSettings.PbUsbConnectionSettings.newBuilder()
         serialized.usbConnectionMode?.let {
-            val sharedModeValue = requireNotNull(PolarUserDeviceSettingsModels.usbConnectionModeValue(it)) {
+            val sharedModeValue = requireNotNull(PolarSdkModelAdapter.userDeviceSettingsUsbConnectionModeValue(it)) {
                 "Unknown USB connection mode $it"
             }
             val sharedMode = requireNotNull(UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.forNumber(sharedModeValue)) {
@@ -77,7 +75,7 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
         val pbUserAutomaticMeasurementSettings = UserDeviceSettings.PbUserAutomaticMeasurementSettings.newBuilder()
 
         serialized.automaticTrainingDetectionMode?.let {
-            val sharedStateValue = requireNotNull(PolarUserDeviceSettingsModels.automaticTrainingDetectionModeValue(it)) {
+            val sharedStateValue = requireNotNull(PolarSdkModelAdapter.userDeviceSettingsAutomaticTrainingDetectionModeValue(it)) {
                 "Unknown automatic training detection mode $it"
             }
             val sharedState = requireNotNull(UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.forNumber(sharedStateValue)) {
@@ -95,7 +93,7 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
         }
 
         serialized.autosFilesEnabled?.let {
-            val sharedState = PolarUserDeviceSettingsModels.automaticMeasurementStateName(it)
+            val sharedState = PolarSdkModelAdapter.userDeviceSettingsAutomaticMeasurementStateName(it)
             val automaticMeasurementState = UserDeviceSettings.PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.valueOf(sharedState)
             pbUserAutomaticMeasurementSettings.setAutomaticOhrMeasurement(
                 PbAutomaticMeasurementSettings.newBuilder()
@@ -120,7 +118,7 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
         } else {
             null
         }
-        val shared = PolarUserDeviceSettingsModels.parsePresencePreservingFields(
+        val shared = PolarSdkModelAdapter.parseUserDeviceSettingsFields(
             deviceLocation = if (proto.hasGeneralSettings() && proto.generalSettings.hasDeviceLocation()) {
                 proto.generalSettings.deviceLocation.number
             } else {
