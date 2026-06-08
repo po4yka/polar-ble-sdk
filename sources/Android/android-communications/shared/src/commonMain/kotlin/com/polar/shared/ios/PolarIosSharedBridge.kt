@@ -1744,6 +1744,11 @@ object PolarIosSharedBridge {
                 id = id,
                 expectedStatuses = statuses,
                 expectedTerminalStatus = statuses.lastOrNull(),
+                expectedTerminalError = when (id) {
+                    "retryable-server-failure" -> "retryable-server-failure"
+                    "cancel-after-package-fetch-cleans-up-before-ble-write" -> "cancelled"
+                    else -> null
+                },
                 expectedStatusOrder = statuses,
                 firmwareFiles = firmwareFilesCsv.csvValues()
             )

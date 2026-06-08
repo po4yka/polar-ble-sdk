@@ -2206,6 +2206,9 @@ extension PolarBleApiImpl: PolarBleApi  {
                         let failedStatus = FirmwareUpdateStatus.fwUpdateFailed(details: error.localizedDescription)
                         if self.isRetryableFirmwareAvailabilityFailure(failedStatus) {
                             try self.ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwareRetryableServerFailureWorkflow(), kind: "retryableServerFailure")
+                            if let terminalError = PolarRuntimePlanner.firmwareRetryableServerFailureTerminalError(), terminalError != "retryable-server-failure" {
+                                throw PolarErrors.polarBleSdkInternalException(description: "Firmware workflow retryableServerFailure terminal-error planning failed: \(terminalError)")
+                            }
                         }
                         continuation.yield(.checkFwUpdateFailed(details: error.localizedDescription))
                     }

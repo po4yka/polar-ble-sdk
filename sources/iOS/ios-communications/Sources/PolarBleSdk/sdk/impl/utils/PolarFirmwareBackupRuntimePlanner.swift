@@ -56,6 +56,10 @@ enum PolarFirmwareBackupRuntimePlanner {
         return firmwareWorkflow(id: "retryable-server-failure", statuses: ["fwUpdateFailed"])
     }
 
+    static func firmwareRetryableServerFailureTerminalError() -> String? {
+        return firmwareWorkflowTerminalError(id: "retryable-server-failure", statuses: ["fwUpdateFailed"])
+    }
+
     @discardableResult
     static func firmwarePackageFetchCancellationWorkflow() -> String {
         return firmwareWorkflow(id: "cancel-after-package-fetch-cleans-up-before-ble-write", statuses: ["fetchingFwUpdatePackage", "fwUpdateCancelled"])
