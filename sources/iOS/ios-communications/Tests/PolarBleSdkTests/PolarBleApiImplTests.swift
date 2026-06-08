@@ -3325,6 +3325,69 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(writePaths.contains(backupFilePath), "\(writePaths)")
     }
 
+    func test_updateFirmwareFromUrl_mapsBackupRestoreWriteFailureToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let backupFilePath = "/U/0/S/UDEVSET.BPB"
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let rootDirectory = Protocol_PbPFtpDirectory.with {
+            $0.entries = [
+                Protocol_PbPFtpEntry.with {
+                    $0.name = "BACKUP.TXT"
+                    $0.size = 24
+                }
+            ]
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValueClosure = { data in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: data as Data)
+            switch operation.path {
+            case "/SYS/":
+                return try rootDirectory.serializedData()
+            case "/SYS/BACKUP.TXT":
+                return Data("\(backupFilePath)\n".utf8)
+            case backupFilePath:
+                return Data([0x0A, 0x0B])
+            default:
+                return try emptyDirectory.serializedData()
+            }
+        }
+        v2MockClient.writeReturnValues = [
+            AsyncThrowingStream { continuation in
+                continuation.yield(UInt(firmwareFile.count))
+                continuation.finish()
+            },
+            AsyncThrowingStream { continuation in
+                continuation.finish(throwing: NSError(domain: "PolarBleApiImplTests", code: 20, userInfo: [NSLocalizedDescriptionKey: "restore write failed"]))
+            }
+        ]
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Restoring backup to device" }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("PolarBackupManager"), details)
+        XCTAssertTrue(details.contains(backupFilePath), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        let writePaths = try v2MockClient.writeCalls.map { try Protocol_PbPFtpOperation(serializedBytes: $0.header as Data).path }
+        XCTAssertTrue(writePaths.contains("/SYSUPDAT.IMG"), "\(writePaths)")
+        XCTAssertTrue(writePaths.contains(backupFilePath), "\(writePaths)")
+    }
+
     func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
