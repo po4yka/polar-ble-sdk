@@ -2428,6 +2428,36 @@ final class PolarBleApiImplTests: XCTestCase {
         #endif
     }
 
+    func test_checkFirmwareUpdate_usesFirmwareServiceForAvailableStatus() throws {
+        let packageError = NSError(domain: "firmware-service", code: 500, userInfo: [NSLocalizedDescriptionKey: "package download must not run"])
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageError: packageError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let statuses = try collectAllAsync(v2Api.checkFirmwareUpdate(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .checkFwUpdateAvailable(let version):
+            XCTAssertEqual("9.9.9", version)
+        default:
+            XCTFail("Expected checkFwUpdateAvailable")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
     func test_checkFirmwareUpdate_mapsFirmwareServiceFailureToFailedStatus() throws {
         let firmwareError = NSError(domain: "firmware-service", code: 503, userInfo: [NSLocalizedDescriptionKey: "retryable server failure"])
         let service = FailingCheckFirmwareUpdateService(error: firmwareError)

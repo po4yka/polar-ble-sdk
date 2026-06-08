@@ -576,6 +576,20 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun planFirmwareCheckUpdateAvailableWorkflow(): PlannedFirmwareWorkflow {
+        return planFirmwareWorkflow(
+            id = "check-update-available",
+            statuses = listOf("checkFwUpdateAvailable")
+        )
+    }
+
+    fun planFirmwareCheckUpdateNotAvailableWorkflow(): PlannedFirmwareWorkflow {
+        return planFirmwareWorkflow(
+            id = "check-update-not-available",
+            statuses = listOf("checkFwUpdateNotAvailable")
+        )
+    }
+
     fun orderFirmwareFiles(fileNames: List<String>): List<String> {
         return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNames)
     }

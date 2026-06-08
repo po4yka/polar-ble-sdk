@@ -2476,12 +2476,20 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 BleLogger.d(TAG, "Received firmware update response: $firmwareUpdateResponse")
                 if (firmwareUpdateResponse != null &&
                     PolarFirmwareUpdateUtils.isAvailableFirmwareVersionHigher(deviceInfo.deviceFwVersion, firmwareUpdateResponse.version)) {
+                    val availablePlan = PolarRuntimePlannerAdapter.planFirmwareCheckUpdateAvailableWorkflow()
+                    require(availablePlan.statuses.last() == "checkFwUpdateAvailable")
                     Triple(firmwareUpdateResponse.version, firmwareUpdateResponse.fileUrl, FirmwareUpdateStatus.FetchingFwUpdatePackage("Firmware available, fetching"))
                 } else {
+                    val notAvailablePlan = PolarRuntimePlannerAdapter.planFirmwareCheckUpdateNotAvailableWorkflow()
+                    require(notAvailablePlan.statuses.last() == "checkFwUpdateNotAvailable")
                     Triple(null, null, FirmwareUpdateStatus.FwUpdateNotAvailable("No fw update available, device firmware version ${deviceInfo.deviceFwVersion}"))
                 }
             }
-            HttpResponseCodes.NO_CONTENT -> Triple(null, null, FirmwareUpdateStatus.FwUpdateNotAvailable("No firmware update available"))
+            HttpResponseCodes.NO_CONTENT -> {
+                val notAvailablePlan = PolarRuntimePlannerAdapter.planFirmwareCheckUpdateNotAvailableWorkflow()
+                require(notAvailablePlan.statuses.last() == "checkFwUpdateNotAvailable")
+                Triple(null, null, FirmwareUpdateStatus.FwUpdateNotAvailable("No firmware update available"))
+            }
             HttpResponseCodes.BAD_REQUEST -> {
                 val errorBody = try { response.errorBody()?.string() ?: "Failed to read error body" } catch (e: Exception) { "Error reading error body: ${e.message}" }
                 BleLogger.e("TAG", "Bad request to firmware update API: $errorBody")

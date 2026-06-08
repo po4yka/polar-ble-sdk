@@ -2196,8 +2196,10 @@ extension PolarBleApiImpl: PolarBleApi  {
                     switch checkResult {
                     case .success(let result):
                         if let url = result.fileUrl, !url.isEmpty {
+                            try self.ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwareCheckUpdateAvailableWorkflow(), kind: "checkUpdateAvailable")
                             continuation.yield(.checkFwUpdateAvailable(version: result.version ?? ""))
                         } else {
+                            try self.ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwareCheckUpdateNotAvailableWorkflow(), kind: "checkUpdateNotAvailable")
                             continuation.yield(.checkFwUpdateNotAvailable(details: "No new firmware available"))
                         }
                     case .failure(let error):

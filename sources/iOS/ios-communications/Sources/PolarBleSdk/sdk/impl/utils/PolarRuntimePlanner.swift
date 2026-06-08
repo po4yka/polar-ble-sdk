@@ -256,6 +256,16 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwarePackageDownloadFailureWorkflow()
     }
 
+    @discardableResult
+    static func firmwareCheckUpdateAvailableWorkflow() -> String {
+        return PolarFirmwareBackupRuntimePlanner.firmwareCheckUpdateAvailableWorkflow()
+    }
+
+    @discardableResult
+    static func firmwareCheckUpdateNotAvailableWorkflow() -> String {
+        return PolarFirmwareBackupRuntimePlanner.firmwareCheckUpdateNotAvailableWorkflow()
+    }
+
     static func orderFirmwareFiles(_ fileNames: [String]) -> [String] {
         return PolarFirmwareBackupRuntimePlanner.orderFirmwareFiles(fileNames)
     }
