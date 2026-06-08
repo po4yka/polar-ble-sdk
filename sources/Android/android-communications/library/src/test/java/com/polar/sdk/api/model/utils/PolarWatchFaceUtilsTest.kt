@@ -316,6 +316,7 @@ class PolarWatchFaceUtilsTest {
             "unknown-complication-null-lookup-policy",
             "malformed-too-short-defaulting",
             "kvtx-wrapper-metadata",
+            "flatbuffer-byte-output-deferral",
             "platform-watch-face-vector-reference-gate",
             "compile-verification-gate"
         )

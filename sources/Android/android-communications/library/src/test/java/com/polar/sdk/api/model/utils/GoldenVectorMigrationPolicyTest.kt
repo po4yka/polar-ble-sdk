@@ -3469,6 +3469,7 @@ class GoldenVectorMigrationPolicyTest {
             "complication-id-order-preservation",
             "unknown-complication-raw-id-preservation",
             "kvtx-wrapper-metadata",
+            "flatbuffer-byte-output-deferral",
             "compile-verification-gate",
             "preserve-raw-id-in-config-fields-and-return-null-for-enum-lookup",
             "MINIMUM_FLATBUFFER_HEADER_SIZE",
@@ -4087,6 +4088,7 @@ class GoldenVectorMigrationPolicyTest {
                 "shared-platform-actual-codec-gate"
             ),
             "watch-face-readiness.json" to listOf(
+                "flatbuffer-byte-output-deferral",
                 "byte-identical FlatBuffer output remains platform-specific unless production shared FlatBuffer builders are deliberately introduced and compile-verified"
             )
         )
