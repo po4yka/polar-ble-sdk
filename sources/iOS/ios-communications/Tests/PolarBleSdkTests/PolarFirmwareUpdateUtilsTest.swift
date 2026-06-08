@@ -394,6 +394,24 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(firmwareFiles.first?.1, Data([0x01]))
     }
 
+    func testGetFirmwareUpdatePackagePropagatesInjectedFacadeFirmwareServiceError() async throws {
+        let api = PolarBleApiImpl(DispatchQueue(label: "PolarFirmwareUpdateUtilsTest.firmware-service-error"), features: [.feature_polar_firmware_update])
+        let service = CapturingFirmwareUpdateService()
+        let expectedError = NSError(domain: "firmware-service", code: 503)
+        service.packageResult = .failure(expectedError)
+        api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+
+        do {
+            _ = try await api.getFirmwareUpdatePackageAsync(firmwareUrl: "https://example.invalid/fw.zip")
+            XCTFail("Expected package helper to propagate the firmware service error")
+        } catch {
+            XCTAssertEqual((error as NSError).domain, expectedError.domain)
+            XCTAssertEqual((error as NSError).code, expectedError.code)
+        }
+
+        XCTAssertEqual(service.packageUrls, ["https://example.invalid/fw.zip"])
+    }
+
     func testWriteFirmwareFilesUsesInjectedBleWriterAndSharedProgressPolicy() async throws {
         let api = PolarBleApiImpl(DispatchQueue(label: "PolarFirmwareUpdateUtilsTest.firmware-writer"), features: [.feature_polar_firmware_update])
         let baseDate = Date(timeIntervalSince1970: 0)
