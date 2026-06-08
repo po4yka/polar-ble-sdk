@@ -47,7 +47,8 @@ internal object PolarRuntimePlannerAdapter {
         val statuses: List<String>,
         val writes: List<String>,
         val terminal: String,
-        val terminalError: String?
+        val terminalError: String?,
+        val retryDelaysMillis: List<Long>
     )
     data class PlannedOfflineTriggerRuntime(
         val commands: List<String>,
@@ -535,6 +536,7 @@ internal object PolarRuntimePlannerAdapter {
                 id = id,
                 expectedStatuses = statuses,
                 expectedTerminalStatus = statuses.lastOrNull(),
+                expectedTerminalError = if (id == "retryable-server-failure") "retryable-server-failure" else null,
                 expectedStatusOrder = statuses,
                 firmwareFiles = firmwareFiles
             )
@@ -543,8 +545,13 @@ internal object PolarRuntimePlannerAdapter {
             statuses = plan.statuses,
             writes = plan.writes,
             terminal = plan.terminal,
-            terminalError = plan.terminalError
+            terminalError = plan.terminalError,
+            retryDelaysMillis = plan.retryDelaysMillis
         )
+    }
+
+    fun firmwareRetryDelaysMillis(maxRetries: Int): List<Long> {
+        return PolarWorkflowRuntimePlanning.firmwareRetryDelaysMillis(maxRetries)
     }
 
     fun planFirmwareWriteOperations(firmwareFiles: List<String>): List<Pair<PftpRequest.PbPFtpOperation.Command, String>> {

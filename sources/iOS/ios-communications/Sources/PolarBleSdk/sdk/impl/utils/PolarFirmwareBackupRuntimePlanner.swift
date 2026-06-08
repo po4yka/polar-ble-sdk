@@ -48,6 +48,15 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwareRetryDelaysMillis(maxRetries: Int) -> [Int64] {
+        #if canImport(PolarBleSdkShared)
+        let csv = PolarIosSharedBridge.shared.planRuntimeFirmwareRetryDelaysMillis(maxRetries: Int32(maxRetries))
+        return csv.isEmpty ? [] : csv.split(separator: ",").compactMap { Int64($0) }
+        #else
+        return Array([1000, 2000].prefix(max(0, maxRetries))).map(Int64.init)
+        #endif
+    }
+
     static func firmwarePackageEntryIsPayload(_ fileName: String) -> Bool {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.firmwarePackageEntryIsPayload(fileName: fileName)

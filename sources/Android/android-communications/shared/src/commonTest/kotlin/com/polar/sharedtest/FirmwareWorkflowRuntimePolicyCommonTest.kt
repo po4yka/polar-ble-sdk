@@ -45,6 +45,11 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
             if (expected.contains("\"cleanupCallbackCount\"")) {
                 assertEquals(expected.intValue("cleanupCallbackCount"), outcome.cleanupCallbackCount, caseId)
             }
+            if (caseId == "retryable-server-failure") {
+                assertEquals(listOf(1000L, 2000L), outcome.retryDelaysMillis, caseId)
+            } else {
+                assertEquals(emptyList(), outcome.retryDelaysMillis, caseId)
+            }
         }
     }
 
@@ -146,6 +151,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
             assertEquals(expectedPayloads, fakeRuntime.bleWritePayloads, scenario.stringValue("id"))
             assertEquals(expectedPayloads.flatMap { (path, payloadHex) -> listOf("$path:0", "$path:${payloadHex.length / 2}") }, fakeRuntime.bleWriteProgressEvents, scenario.stringValue("id"))
             if (scenario.stringValue("id") == "retryable-server-failure") {
+                assertEquals(listOf(1000L, 2000L), PolarWorkflowRuntimePlanning.planFirmwareWorkflow(scenario.toWorkflowScenario()).retryDelaysMillis)
                 assertEquals(listOf(1000L, 3000L), fakeRuntime.retryTimesMillis)
             }
         }
@@ -267,6 +273,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
             get() = bleWriter.progressEvents
 
         fun run(scenario: PolarFirmwareWorkflowScenario): CommonFirmwareWorkflowFakeOutcome {
+            val plan = PolarWorkflowRuntimePlanning.planFirmwareWorkflow(scenario)
             val status = mutableListOf<String>()
             val writes = mutableListOf<String>()
             var downloadAttempted = false
@@ -283,7 +290,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
                 return CommonFirmwareWorkflowFakeOutcome(status, writes, terminalError, downloadAttempted, zipExtractionAttempted, cleanup.count)
             }
             if (server == CommonFirmwareServerResponse.RetryableFailure) {
-                retryScheduler.runRetryDelays(delaysMillis = listOf(1000L, 2000L), maxRetries = 2)
+                retryScheduler.runRetryDelays(delaysMillis = plan.retryDelaysMillis, maxRetries = 2)
                 status += "fwUpdateFailed"
                 terminalError = "retryable-server-failure"
                 return CommonFirmwareWorkflowFakeOutcome(status, writes, terminalError, downloadAttempted, zipExtractionAttempted, cleanup.count)

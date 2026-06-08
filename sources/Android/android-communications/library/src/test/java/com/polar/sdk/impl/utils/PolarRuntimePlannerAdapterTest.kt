@@ -386,6 +386,7 @@ class PolarRuntimePlannerAdapterTest {
         Assert.assertEquals(listOf("/BTUPDAT.BIN", "/SYSUPDAT.IMG"), workflow.writes)
         Assert.assertEquals("success", workflow.terminal)
         Assert.assertNull(workflow.terminalError)
+        Assert.assertTrue(workflow.retryDelaysMillis.isEmpty())
         Assert.assertEquals(
             listOf("TCHUPDAT.BIN", "APPUPDAT.BIN", "BTUPDAT.BIN", "SYSUPDAT.IMG"),
             PolarRuntimePlannerAdapter.orderFirmwareFiles(listOf("TCHUPDAT.BIN", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN"))
@@ -401,6 +402,20 @@ class PolarRuntimePlannerAdapterTest {
             ),
             operations
         )
+    }
+
+    @Test
+    fun `shared firmware workflow exposes retry delay planning without platform network execution`() {
+        val workflow = PolarRuntimePlannerAdapter.planFirmwareWorkflow(
+            id = "retryable-server-failure",
+            statuses = listOf("preparingDeviceForFwUpdate", "fwUpdateFailed")
+        )
+
+        Assert.assertEquals(listOf("preparingDeviceForFwUpdate", "fwUpdateFailed"), workflow.statuses)
+        Assert.assertEquals("retryable-server-failure", workflow.terminalError)
+        Assert.assertEquals(listOf(1000L, 2000L), workflow.retryDelaysMillis)
+        Assert.assertEquals(listOf(1000L, 2000L), PolarRuntimePlannerAdapter.firmwareRetryDelaysMillis(maxRetries = 2))
+        Assert.assertEquals(listOf(1000L), PolarRuntimePlannerAdapter.firmwareRetryDelaysMillis(maxRetries = 1))
     }
 
     @Test

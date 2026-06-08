@@ -258,6 +258,10 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwareWritePaths(fileNames)
     }
 
+    static func firmwareRetryDelaysMillis(maxRetries: Int) -> [Int64] {
+        return PolarFirmwareBackupRuntimePlanner.firmwareRetryDelaysMillis(maxRetries: maxRetries)
+    }
+
     static func firmwarePackageEntryIsPayload(_ fileName: String) -> Bool {
         return PolarFirmwareBackupRuntimePlanner.firmwarePackageEntryIsPayload(fileName)
     }

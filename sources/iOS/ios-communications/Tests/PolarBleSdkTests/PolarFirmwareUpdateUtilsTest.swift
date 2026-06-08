@@ -313,6 +313,8 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 3, payloadSize: 100, minPercentageIncrement: 25, timeSinceLastEmitMs: 5_000))
         XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 52, payloadSize: 100, minPercentageIncrement: 25))
         XCTAssertEqual(["/BTUPDAT.BIN", "/SYSUPDAT.IMG"], PolarRuntimePlanner.firmwareWritePaths(["SYSUPDAT.IMG", "BTUPDAT.BIN"]))
+        XCTAssertEqual([1000, 2000], PolarRuntimePlanner.firmwareRetryDelaysMillis(maxRetries: 2))
+        XCTAssertEqual([1000], PolarRuntimePlanner.firmwareRetryDelaysMillis(maxRetries: 1))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif

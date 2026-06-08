@@ -35,6 +35,7 @@ data class PolarWorkflowPlan(
     val downloadAttempted: Boolean = false,
     val zipExtractionAttempted: Boolean = false,
     val cleanupCallbackCount: Int = 0,
+    val retryDelaysMillis: List<Long> = emptyList(),
     val enabledFeatures: List<String> = emptyList(),
     val excludedFeatures: List<String> = emptyList()
 )
@@ -187,7 +188,7 @@ object PolarWorkflowRuntimePlanning {
             "check-update-not-available",
             "check-update-available" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses)
             "download-failure" -> PolarWorkflowPlan(statuses = listOf("fetchingFwUpdatePackage", requireNotNull(scenario.expectedTerminalStatus)), downloadAttempted = true)
-            "retryable-server-failure" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses, terminalError = scenario.expectedTerminalError, downloadAttempted = scenario.downloadAttempted)
+            "retryable-server-failure" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses, terminalError = scenario.expectedTerminalError, downloadAttempted = scenario.downloadAttempted, retryDelaysMillis = firmwareRetryDelaysMillis(maxRetries = 2))
             "empty-or-invalid-zip" -> PolarWorkflowPlan(statuses = listOf("fetchingFwUpdatePackage", requireNotNull(scenario.expectedTerminalStatus)), downloadAttempted = true, zipExtractionAttempted = true)
             "cancel-after-package-fetch-cleans-up-before-ble-write" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses, writes = scenario.expectedWrites, terminalError = scenario.expectedTerminalError, downloadAttempted = true, zipExtractionAttempted = true, cleanupCallbackCount = scenario.expectedCleanupCallbackCount)
             "write-package-success-with-system-update-last" -> PolarWorkflowPlan(statuses = scenario.expectedStatusOrder, writes = orderFirmwareFiles(scenario.firmwareFiles).map { "/$it" })
@@ -199,6 +200,11 @@ object PolarWorkflowRuntimePlanning {
 
     fun orderFirmwareFiles(fileNames: List<String>): List<String> {
         return PolarFirmwareUpdateModels.orderFirmwareFiles(fileNames)
+    }
+
+    fun firmwareRetryDelaysMillis(maxRetries: Int): List<Long> {
+        require(maxRetries >= 0) { "Retry count cannot be negative" }
+        return listOf(1000L, 2000L).take(maxRetries)
     }
 
     fun firmwarePackageEntryIsPayload(fileName: String): Boolean {
