@@ -337,6 +337,7 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   ],
   "secret-readiness.json" => [
     "AES block-alignment gating",
+    "aes-provider-ownership-deferral",
     "production common AES provider selection remains an explicit implementation gate rather than a test-only shortcut"
   ],
   "rest-event-compression-readiness.json" => [

@@ -3117,6 +3117,7 @@ class GoldenVectorMigrationPolicyTest {
             "security-strategy-byte-mapping",
             "unknown-security-strategy-rejection",
             "aes-fixture-pinning",
+            "aes-provider-ownership-deferral",
             "compile-verification-gate",
             "invalidSecurityKey",
             "unknownSecurityStrategy",
@@ -4077,6 +4078,7 @@ class GoldenVectorMigrationPolicyTest {
             ),
             "secret-readiness.json" to listOf(
                 "AES block-alignment gating",
+                "aes-provider-ownership-deferral",
                 "production common AES provider selection remains an explicit implementation gate rather than a test-only shortcut"
             ),
             "rest-event-compression-readiness.json" to listOf(

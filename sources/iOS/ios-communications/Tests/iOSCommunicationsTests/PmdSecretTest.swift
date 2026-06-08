@@ -375,6 +375,7 @@ private let pmdSecretReadinessBehaviorFamilies = [
     "shared-none-xor-production-decryption",
     "aes-fixture-pinning",
     "aes-block-alignment-gate",
+    "aes-provider-ownership-deferral",
     "platform-pmd-secret-vector-reference-gate",
     "compile-verification-gate"
 ]
