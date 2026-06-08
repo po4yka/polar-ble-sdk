@@ -241,6 +241,10 @@ enum PolarRuntimePlanner {
         return PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: currentTypes)
     }
 
+    static func offlineTriggerSetCommands(currentTypes: [String], desiredTypes: [String], secretPresent: Bool) -> [String] {
+        return PolarStoredDataOfflineRuntimePlanner.offlineTriggerSetCommands(currentTypes: currentTypes, desiredTypes: desiredTypes, secretPresent: secretPresent)
+    }
+
     static func offlineTriggerEnabledFeatures(currentTypes: [String]) -> [String] {
         return PolarStoredDataOfflineRuntimePlanner.offlineTriggerEnabledFeatures(currentTypes: currentTypes)
     }

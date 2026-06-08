@@ -1717,23 +1717,27 @@ object PolarIosSharedBridge {
     fun planRuntimeOfflineTrigger(operation: String, currentTypesCsv: String, desiredTypesCsv: String, secretPresent: Boolean): String {
         return PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
             operation = operation,
-            currentDeviceTriggers = currentTypesCsv.csvValues().map { type -> PolarOfflineTriggerDeviceTrigger(type, "enabled") },
-            desiredFeatures = desiredTypesCsv.csvValues().map { type -> PolarOfflineTriggerDesiredFeature(type, hasSelectedSettings = true) },
+            currentDeviceTriggers = currentTypesCsv.csvValues().map { encoded -> offlineTriggerDeviceTrigger(encoded) },
+            desiredFeatures = desiredTypesCsv.csvValues().map { encoded -> offlineTriggerDesiredFeature(encoded) },
             secretPresent = secretPresent,
             transport = PolarOfflineTriggerTransport()
         ).terminal
     }
 
+    fun planRuntimeOfflineTriggerCommands(operation: String, currentTypesCsv: String, desiredTypesCsv: String, secretPresent: Boolean): String {
+        return PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
+            operation = operation,
+            currentDeviceTriggers = currentTypesCsv.csvValues().map { encoded -> offlineTriggerDeviceTrigger(encoded) },
+            desiredFeatures = desiredTypesCsv.csvValues().map { encoded -> offlineTriggerDesiredFeature(encoded) },
+            secretPresent = secretPresent,
+            transport = PolarOfflineTriggerTransport()
+        ).commands.joinToString(separator = ",")
+    }
+
     fun planRuntimeOfflineTriggerEnabledFeatures(currentTypesCsv: String): String {
         return PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
             operation = "getOfflineRecordingTriggerSetup",
-            currentDeviceTriggers = currentTypesCsv.csvValues().map { encoded ->
-                val parts = encoded.split(":", limit = 2)
-                PolarOfflineTriggerDeviceTrigger(
-                    type = parts[0],
-                    status = parts.getOrNull(1) ?: "enabled"
-                )
-            },
+            currentDeviceTriggers = currentTypesCsv.csvValues().map { encoded -> offlineTriggerDeviceTrigger(encoded) },
             transport = PolarOfflineTriggerTransport()
         ).enabledFeatures.joinToString(separator = ",")
     }
@@ -2028,6 +2032,22 @@ object PolarIosSharedBridge {
 
     private fun String.csvValues(): List<String> {
         return split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    }
+
+    private fun offlineTriggerDeviceTrigger(encoded: String): PolarOfflineTriggerDeviceTrigger {
+        val parts = encoded.split(":", limit = 2)
+        return PolarOfflineTriggerDeviceTrigger(
+            type = parts[0],
+            status = parts.getOrNull(1) ?: "enabled"
+        )
+    }
+
+    private fun offlineTriggerDesiredFeature(encoded: String): PolarOfflineTriggerDesiredFeature {
+        val parts = encoded.split(":", limit = 2)
+        return PolarOfflineTriggerDesiredFeature(
+            type = parts[0],
+            hasSelectedSettings = parts.getOrNull(1) != "no-settings"
+        )
     }
 
     private fun String.semicolonList(): List<String> {

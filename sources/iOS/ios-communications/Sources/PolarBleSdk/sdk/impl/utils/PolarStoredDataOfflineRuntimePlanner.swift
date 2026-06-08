@@ -124,6 +124,15 @@ enum PolarStoredDataOfflineRuntimePlanner {
         #endif
     }
 
+    static func offlineTriggerSetCommands(currentTypes: [String], desiredTypes: [String], secretPresent: Bool) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        let csv = PolarIosSharedBridge.shared.planRuntimeOfflineTriggerCommands(operation: "setOfflineRecordingTrigger", currentTypesCsv: currentTypes.joined(separator: ","), desiredTypesCsv: desiredTypes.joined(separator: ","), secretPresent: secretPresent)
+        return csv.isEmpty ? [] : csv.split(separator: ",").map(String.init)
+        #else
+        return []
+        #endif
+    }
+
     static func offlineTriggerEnabledFeatures(currentTypes: [String]) -> [String] {
         #if canImport(PolarBleSdkShared)
         let csv = PolarIosSharedBridge.shared.planRuntimeOfflineTriggerEnabledFeatures(currentTypesCsv: currentTypes.joined(separator: ","))

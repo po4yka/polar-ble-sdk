@@ -2289,6 +2289,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("success", PolarRuntimePlanner.storedDataCleanup(kind: "automaticSamplePrune", rootPath: "/U/0/AUTOS", cutoffDate: "20260531"))
         XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
         XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["ACC:enabled"]))
+        XCTAssertEqual(["setMode:TRIGGER_SYSTEM_START", "getStatus", "setSetting:ACC:enabled:settings:secret", "setSetting:GYRO:disabled", "setSetting:OFFLINE_HR:enabled:no-settings:secret"], PolarRuntimePlanner.offlineTriggerSetCommands(currentTypes: ["ACC", "GYRO", "OFFLINE_HR"], desiredTypes: ["ACC:settings", "HR:no-settings"], secretPresent: true))
         XCTAssertEqual(["ACC", "HR"], PolarRuntimePlanner.offlineTriggerEnabledFeatures(currentTypes: ["ACC:enabled", "GYRO:enabled", "OFFLINE_HR:enabled"]))
         XCTAssertEqual("success", PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "completed"], firmwareFiles: ["BTUPDAT.BIN", "SYSUPDAT.IMG"]))
         XCTAssertEqual("success", PolarRuntimePlanner.backupRestore(path: "/U/0/BACKUP.TXT", payloadHex: "0102"))
@@ -3207,6 +3208,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "automaticSamplePrune", rootPath: "/U/0/AUTOS", cutoffDate: "20260531"))
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: ["ACC:enabled"]))
+        XCTAssertEqual(["setMode:TRIGGER_SYSTEM_START", "getStatus", "setSetting:ACC:enabled:settings:secret", "setSetting:GYRO:disabled", "setSetting:OFFLINE_HR:enabled:no-settings:secret"], PolarStoredDataOfflineRuntimePlanner.offlineTriggerSetCommands(currentTypes: ["ACC", "GYRO", "OFFLINE_HR"], desiredTypes: ["ACC:settings", "HR:no-settings"], secretPresent: true))
         XCTAssertEqual(["ACC", "HR"], PolarStoredDataOfflineRuntimePlanner.offlineTriggerEnabledFeatures(currentTypes: ["ACC:enabled", "GYRO:enabled", "OFFLINE_HR:enabled"]))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
