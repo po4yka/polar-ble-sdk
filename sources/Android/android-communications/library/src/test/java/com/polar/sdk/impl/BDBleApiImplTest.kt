@@ -4048,6 +4048,22 @@ class BDBleApiImplTest {
         Assert.assertEquals("/U/0/AUTOS", PolarRuntimePlannerAdapter.storedDataCleanupRootPath(PolarBleApi.PolarStoredDataType.AUTO_SAMPLE.type, "/U/0"))
         Assert.assertEquals("/U/0", PolarRuntimePlannerAdapter.storedDataCleanupRootPath(PolarBleApi.PolarStoredDataType.ACTIVITY.type, "/U/0"))
         Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpOperation.Command.GET to "/SDLOGS",
+                PftpRequest.PbPFtpOperation.Command.REMOVE to "/SDLOGS/A.SLG"
+            ),
+            PolarRuntimePlannerAdapter.planStoredDataCleanupOperations(
+                kind = "filterDirectoryEntries",
+                rootPath = "/SDLOGS",
+                entries = listOf("A.SLG", "C.BPB"),
+                includeSuffixes = listOf(".SLG", ".TXT")
+            )
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/20260530/ACT/ACTIVITY.BPB",
+            PolarRuntimePlannerAdapter.planStoredDataCleanupRemoveOperation("/U/0", "/U/0/20260530/ACT/ACTIVITY.BPB")
+        )
+        Assert.assertEquals(
             listOf("/U/0/20260530/ACT", "/U/0/20260530"),
             PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories("/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash = false)
         )
