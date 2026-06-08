@@ -2469,6 +2469,41 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(service.packageDownloadUrls.isEmpty)
     }
 
+    func test_updateFirmware_retriesRetryableFirmwareCheckFailuresUsingSharedDelayPlan() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 503, userInfo: [NSLocalizedDescriptionKey: "retryable server failure"])
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .failure(firmwareError),
+            .failure(firmwareError),
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: nil, fileUrl: nil))
+        ], packageError: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var delayedMillis: [Int64] = []
+        v2Api.firmwareRetryDelay = { delayMillis in delayedMillis.append(delayMillis) }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .fwUpdateNotAvailable(let details):
+            XCTAssertEqual("Firmware update not available", details)
+        default:
+            XCTFail("Expected fwUpdateNotAvailable")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 3)
+        XCTAssertEqual(delayedMillis, [1000, 2000])
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
     func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
@@ -4594,25 +4629,37 @@ final class PolarBleApiImplTests: XCTestCase {
 }
 
 private final class FailingCheckFirmwareUpdateService: PolarBleSdk.FirmwareUpdateServicing {
-    private let error: Error
+    private let packageError: Error
+    private var checkResults: [Result<PolarBleSdk.FirmwareUpdateResponse, Error>]
     private(set) var checkFirmwareUpdateRequests: [PolarBleSdk.FirmwareUpdateRequest] = []
     private(set) var packageDownloadUrls: [String] = []
 
     init(error: Error) {
-        self.error = error
+        self.packageError = error
+        self.checkResults = [.failure(error)]
+    }
+
+    init(checkResults: [Result<PolarBleSdk.FirmwareUpdateResponse, Error>], packageError: Error) {
+        precondition(!checkResults.isEmpty)
+        self.checkResults = checkResults
+        self.packageError = packageError
     }
 
     func checkFirmwareUpdate(firmwareUpdateRequest: PolarBleSdk.FirmwareUpdateRequest, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
         checkFirmwareUpdateRequests.append(firmwareUpdateRequest)
-        completion(.failure(error))
+        if checkResults.count > 1 {
+            completion(checkResults.removeFirst())
+        } else {
+            completion(checkResults[0])
+        }
     }
 
     func checkFirmwareUpdateFromFirmwareUrl(_ url: URL, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
-        completion(.failure(error))
+        completion(.failure(packageError))
     }
 
     func getFirmwareUpdatePackage(url: String) async throws -> Data? {
         packageDownloadUrls.append(url)
-        throw error
+        throw packageError
     }
 }

@@ -62,6 +62,9 @@ import UIKit
     typealias FirmwareFileWriteStreamFactory = (_ identifier: String, _ firmwareFilePath: String, _ firmwareBytes: Data) -> AsyncThrowingStream<UInt, Error>
     var firmwareFileWriteStreamFactory: FirmwareFileWriteStreamFactory?
     var firmwareProgressDateProvider: () -> Date = { Date() }
+    var firmwareRetryDelay: (Int64) async -> Void = { delayMillis in
+        try? await Task.sleep(nanoseconds: UInt64(delayMillis) * 1_000_000)
+    }
 
     static func sdLogConfigReadOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         return facadeFileOperation(id: "sd-log-config-read", command: "GET", path: SERVICE_DATALOG_CONFIG_FILEPATH)
@@ -2277,7 +2280,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                     if let firmwareURL = firmwareURL {
                         (availableVersionInfo, url, availabilityStatus) = (firmwareURL.lastPathComponent, firmwareURL.absoluteString, FirmwareUpdateStatus.preparingDeviceForFwUpdate(details: "Preparing for firmware update"))
                     } else {
-                        (availableVersionInfo, url, availabilityStatus) = try await self.checkFirmwareUrlAvailabilityAsync(identifier)
+                        (availableVersionInfo, url, availabilityStatus) = try await self.checkFirmwareUrlAvailabilityForUpdateAsync(identifier)
                     }
                     firmwareVersionInfo = availableVersionInfo ?? "new version"
                     guard let url = url else {
@@ -2364,6 +2367,26 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
     // Returns (availableVersion, firmwareURL, FirmwareUpdateStatus)
+    private func checkFirmwareUrlAvailabilityForUpdateAsync(_ identifier: String) async throws -> (String?, String?, FirmwareUpdateStatus) {
+        var result = try await checkFirmwareUrlAvailabilityAsync(identifier)
+        for delayMillis in PolarRuntimePlanner.firmwareRetryDelaysMillis(maxRetries: 2) {
+            if !isRetryableFirmwareAvailabilityFailure(result.2) {
+                return result
+            }
+            await firmwareRetryDelay(delayMillis)
+            result = try await checkFirmwareUrlAvailabilityAsync(identifier)
+        }
+        return result
+    }
+
+    private func isRetryableFirmwareAvailabilityFailure(_ status: FirmwareUpdateStatus) -> Bool {
+        guard case .fwUpdateFailed(let details) = status else {
+            return false
+        }
+        let lowercasedDetails = details.lowercased()
+        return lowercasedDetails.contains("server") || lowercasedDetails.contains("response code: 5") || lowercasedDetails.contains("500") || lowercasedDetails.contains("503")
+    }
+
     private func checkFirmwareUrlAvailabilityAsync(_ identifier: String) async throws -> (String?, String?, FirmwareUpdateStatus) {
         guard let session = try? serviceClientUtils.sessionFtpClientReady(identifier) else {
             return (nil, nil, .fwUpdateFailed(details: "No BleDeviceSession available"))
