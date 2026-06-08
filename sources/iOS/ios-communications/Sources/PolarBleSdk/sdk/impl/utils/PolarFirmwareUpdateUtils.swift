@@ -107,6 +107,25 @@ class PolarFirmwareUpdateUtils {
     static func unzipFirmwarePackage(zippedData: Data) -> [String: Data]? {
         return packageExtractor.unzipFirmwarePackage(zippedData: zippedData)
     }
+
+    static func firmwareWriteFailure(error: Error, fileName: String, mapBatteryTooLow: () -> Error, mapError: (Error) -> Error) -> Error? {
+        let errorCode = (error as NSError).code
+        guard isPftpErrorCode(errorCode) else {
+            return mapError(error)
+        }
+        let terminal = PolarRuntimePlanner.firmwareWriteTerminal(errorCode: errorCode, fileName: fileName)
+        if terminal == "success-rebooting" {
+            return nil
+        }
+        if terminal == "battery-too-low" {
+            return mapBatteryTooLow()
+        }
+        return mapError(error)
+    }
+
+    private static func isPftpErrorCode(_ code: Int) -> Bool {
+        return code == 0 || code == 1 || code == 2 || (100...108).contains(code) || (200...209).contains(code)
+    }
     
     private static func devicePbVersionToString(pbVersion: PbVersion) -> String {
         return PolarRuntimePlanner.firmwareDeviceVersion(major: Int(pbVersion.major), minor: Int(pbVersion.minor), patch: Int(pbVersion.patch))

@@ -301,6 +301,67 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         #endif
     }
 
+    func testFirmwareWriteFailureMapsSharedTerminalToIosPublicError() throws {
+        let fallbackError = PolarErrors.fileError(description: "mapped")
+        let mapper: (Error) -> Error = { _ in fallbackError }
+
+        let batteryError = PolarFirmwareUpdateUtils.firmwareWriteFailure(
+            error: NSError(domain: "pftp", code: Protocol_PbPFtpError.batteryTooLow.rawValue),
+            fileName: "/SYSUPDAT.IMG",
+            mapBatteryTooLow: { PolarErrors.deviceError(description: "Battery too low to perform firmware update") },
+            mapError: mapper
+        )
+        guard let batteryPolarError = batteryError as? PolarErrors else {
+            return XCTFail("Expected battery-too-low to map to deviceError")
+        }
+        switch batteryPolarError {
+        case .deviceError(let description):
+            XCTAssertEqual("Battery too low to perform firmware update", description)
+        default:
+            XCTFail("Expected battery-too-low to map to deviceError")
+        }
+
+        let rebootError = PolarFirmwareUpdateUtils.firmwareWriteFailure(
+            error: NSError(domain: "pftp", code: Protocol_PbPFtpError.rebooting.rawValue),
+            fileName: "/SYSUPDAT.IMG",
+            mapBatteryTooLow: { PolarErrors.deviceError(description: "Battery too low to perform firmware update") },
+            mapError: mapper
+        )
+        XCTAssertNil(rebootError)
+
+        let nonSystemRebootError = PolarFirmwareUpdateUtils.firmwareWriteFailure(
+            error: NSError(domain: "pftp", code: Protocol_PbPFtpError.rebooting.rawValue),
+            fileName: "BTUPDAT.BIN",
+            mapBatteryTooLow: { PolarErrors.deviceError(description: "Battery too low to perform firmware update") },
+            mapError: mapper
+        )
+        guard let nonSystemPolarError = nonSystemRebootError as? PolarErrors else {
+            return XCTFail("Expected non-system reboot to use platform error mapper")
+        }
+        switch nonSystemPolarError {
+        case .fileError(let description):
+            XCTAssertEqual("mapped", description)
+        default:
+            XCTFail("Expected non-system reboot to use platform error mapper")
+        }
+
+        let transportError = PolarFirmwareUpdateUtils.firmwareWriteFailure(
+            error: NSError(domain: "transport", code: -999),
+            fileName: "/SYSUPDAT.IMG",
+            mapBatteryTooLow: { PolarErrors.deviceError(description: "Battery too low to perform firmware update") },
+            mapError: mapper
+        )
+        guard let transportPolarError = transportError as? PolarErrors else {
+            return XCTFail("Expected non-PFTP error to use platform error mapper")
+        }
+        switch transportPolarError {
+        case .fileError(let description):
+            XCTAssertEqual("mapped", description)
+        default:
+            XCTFail("Expected non-PFTP error to use platform error mapper")
+        }
+    }
+
     func testFirmwareWriteProgressPolicyUsesSharedZeroSafeThresholdsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual(0, PolarRuntimePlanner.firmwareWriteProgressPercent(bytesWritten: 0, payloadSize: 0))

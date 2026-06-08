@@ -3213,20 +3213,12 @@ extension PolarBleApiImpl: PolarBleApi  {
                     }
                     continuation.finish()
                 } catch {
-                    if let pftpError = Protocol_PbPFtpError(rawValue: (error as NSError)._code) {
-                        let terminal = PolarRuntimePlanner.firmwareWriteTerminal(errorCode: pftpError.rawValue, fileName: firmwareFilePath)
-                        if terminal == "battery-too-low" {
-                            continuation.finish(throwing: PolarErrors.deviceError(description: "Battery too low to perform firmware update"))
-                        } else if terminal == "success-rebooting" {
-                            BleLogger.trace("PFTP firmware file write success - device is rebooting")
-                            continuation.finish()
-                        } else {
-                            BleLogger.error("PFTP error during firmware write: \(error.localizedDescription)")
-                            continuation.finish(throwing: self.handleError(error))
-                        }
-                    } else {
+                    if let mappedError = PolarFirmwareUpdateUtils.firmwareWriteFailure(error: error, fileName: firmwareFilePath, mapBatteryTooLow: { PolarErrors.deviceError(description: "Battery too low to perform firmware update") }, mapError: self.handleError) {
                         BleLogger.error("PFTP error during firmware write: \(error.localizedDescription)")
-                        continuation.finish(throwing: self.handleError(error))
+                        continuation.finish(throwing: mappedError)
+                    } else {
+                        BleLogger.trace("PFTP firmware file write success - device is rebooting")
+                        continuation.finish()
                     }
                 }
             }
