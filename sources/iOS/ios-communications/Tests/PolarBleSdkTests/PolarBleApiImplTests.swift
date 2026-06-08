@@ -2664,6 +2664,51 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(writeRequests.isEmpty)
     }
 
+    func test_updateFirmware_mapsBatteryTooLowWriteTerminalToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValues = [
+            .success(try proto.serializedData()),
+            .success(try emptyDirectory.serializedData())
+        ]
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.batteryTooLow.rawValue))
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 15)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .preparingDeviceForFwUpdate(let details) = status { return details == "Reconnecting after factory reset" }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("Battery too low to perform firmware update"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+    }
+
     func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
