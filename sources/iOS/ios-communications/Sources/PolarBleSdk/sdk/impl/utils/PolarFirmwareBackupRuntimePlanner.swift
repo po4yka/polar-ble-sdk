@@ -27,6 +27,11 @@ enum PolarFirmwareBackupRuntimePlanner {
         return firmwareWorkflow(id: "empty-or-invalid-zip", statuses: ["fetchingFwUpdatePackage", "fwUpdateNotAvailable"])
     }
 
+    @discardableResult
+    static func firmwarePackageDownloadFailureWorkflow() -> String {
+        return firmwareWorkflow(id: "download-failure", statuses: ["fetchingFwUpdatePackage", "fwUpdateFailed"])
+    }
+
     static func orderFirmwareFiles(_ fileNames: [String]) -> [String] {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.planRuntimeOrderFirmwareFiles(fileNamesCsv: fileNames.joined(separator: ",")).split(separator: ",").map(String.init)

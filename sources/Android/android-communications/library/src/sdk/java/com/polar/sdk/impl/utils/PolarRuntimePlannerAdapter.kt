@@ -569,6 +569,13 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun planFirmwarePackageDownloadFailureWorkflow(): PlannedFirmwareWorkflow {
+        return planFirmwareWorkflow(
+            id = "download-failure",
+            statuses = listOf("fetchingFwUpdatePackage", "fwUpdateFailed")
+        )
+    }
+
     fun orderFirmwareFiles(fileNames: List<String>): List<String> {
         return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNames)
     }

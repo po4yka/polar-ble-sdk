@@ -2346,7 +2346,13 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             }
             emit(updateStatus)
             emit(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to $firmwareVersionInfo"))
-            val firmwareFiles = getFirmwareUpdatePackage(url)
+            val firmwareFiles = try {
+                getFirmwareUpdatePackage(url)
+            } catch (error: Throwable) {
+                val downloadFailurePlan = PolarRuntimePlannerAdapter.planFirmwarePackageDownloadFailureWorkflow()
+                require(downloadFailurePlan.statuses.last() == "fwUpdateFailed")
+                throw error
+            }
             if (firmwareFiles.isEmpty()) {
                 val invalidPackagePlan = PolarRuntimePlannerAdapter.planInvalidFirmwarePackageWorkflow()
                 require(invalidPackagePlan.statuses.last() == "fwUpdateNotAvailable")
