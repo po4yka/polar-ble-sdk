@@ -4,6 +4,8 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpC
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils.PftpResponseError
+import com.polar.sdk.api.errors.PolarBleSdkInternalException
 import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarFirmwareUpdateUtils
 import com.polar.sdk.impl.utils.PolarFirmwareUpdateUtils.FwFileComparator
@@ -16,6 +18,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Test
+import protocol.PftpError.PbPFtpError
 import protocol.PftpRequest
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -261,6 +264,22 @@ class PolarFirmwareUpdateUtilsTest {
             listOf("APPUPDAT.BIN", "BTUPDAT.BIN", "README.TXT", "SYSUPDAT.IMG"),
             PolarRuntimePlannerAdapter.firmwarePayloadFileNames(listOf("readme.txt", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN", "README.TXT"))
         )
+    }
+
+    @Test
+    fun `firmware write failure maps shared battery terminal to Android public error`() {
+        val batteryError = PftpResponseError("Battery too low", PbPFtpError.BATTERY_TOO_LOW_VALUE)
+        val rebootOnSystemUpdate = PftpResponseError("Rebooting", PbPFtpError.REBOOTING_VALUE)
+        val rebootOnNonSystemUpdate = PftpResponseError("Rebooting", PbPFtpError.REBOOTING_VALUE)
+        val transportError = IllegalStateException("transport failed")
+
+        val mappedBatteryError = PolarFirmwareUpdateUtils.firmwareWriteFailure(batteryError, "SYSUPDAT.IMG")
+
+        Assert.assertTrue(mappedBatteryError is PolarBleSdkInternalException)
+        Assert.assertEquals("Battery too low to perform firmware update", mappedBatteryError?.message)
+        Assert.assertNull(PolarFirmwareUpdateUtils.firmwareWriteFailure(rebootOnSystemUpdate, "SYSUPDAT.IMG"))
+        Assert.assertSame(rebootOnNonSystemUpdate, PolarFirmwareUpdateUtils.firmwareWriteFailure(rebootOnNonSystemUpdate, "BTUPDAT.BIN"))
+        Assert.assertSame(transportError, PolarFirmwareUpdateUtils.firmwareWriteFailure(transportError, "SYSUPDAT.IMG"))
     }
 
     @Test

@@ -2551,13 +2551,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                         }
                     }
             } catch (error: Throwable) {
-                val terminal = (error as? PftpResponseError)?.let { pftpError ->
-                    PolarRuntimePlannerAdapter.firmwareWriteTerminal(pftpError.error, firmwareFile.first)
-                } ?: "propagate-error"
-                if (terminal == "success-rebooting") {
+                val mappedError = PolarFirmwareUpdateUtils.firmwareWriteFailure(error, firmwareFile.first)
+                if (mappedError == null) {
                     BleLogger.d(TAG, "REBOOTING after writing ${firmwareFile.first}")
                 } else {
-                    throw error
+                    throw mappedError
                 }
             }
             if (PolarRuntimePlannerAdapter.firmwareFileTriggersRebootWait(firmwareFile.first)) {

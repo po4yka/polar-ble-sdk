@@ -2,6 +2,8 @@ package com.polar.sdk.impl.utils
 
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
+import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils.PftpResponseError
+import com.polar.sdk.api.errors.PolarBleSdkInternalException
 import com.polar.sdk.api.model.PolarFirmwareVersionInfo
 import fi.polar.remote.representation.protobuf.Device
 import fi.polar.remote.representation.protobuf.Structures
@@ -67,6 +69,17 @@ internal object PolarFirmwareUpdateUtils {
         } catch (e: Exception) {
             BleLogger.e(TAG, "Failed to unzip firmware package: $e")
             throw e
+        }
+    }
+
+    fun firmwareWriteFailure(error: Throwable, fileName: String): Throwable? {
+        val terminal = (error as? PftpResponseError)?.let { pftpError ->
+            PolarRuntimePlannerAdapter.firmwareWriteTerminal(pftpError.error, fileName)
+        } ?: return error
+        return when (terminal) {
+            "success-rebooting" -> null
+            "battery-too-low" -> PolarBleSdkInternalException("Battery too low to perform firmware update")
+            else -> error
         }
     }
 
