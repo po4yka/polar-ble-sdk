@@ -113,6 +113,8 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.TimeZone
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class BDBleApiImplTest {
 
@@ -351,6 +353,41 @@ class BDBleApiImplTest {
         val failed = statuses[2] as FirmwareUpdateStatus.FwUpdateFailed
         Assert.assertTrue(failed.details, failed.details.contains("backup not available"))
         Assert.assertTrue(failed.details, failed.details.contains("Package download is not used by this test"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+        coVerify(exactly = 0) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware maps empty firmware package to not available before device writes`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        coEvery { client.write(any(), any()) } returns flowOf(0)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("readme.txt" to byteArrayOf(0x01))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(4, statuses.size)
+        Assert.assertTrue(statuses[0] is FirmwareUpdateStatus.FetchingFwUpdatePackage)
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to 9.9.9"), statuses[1])
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateNotAvailable("Can not update, firmware files were not available"), statuses[2])
+        val failed = statuses[3] as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.contains("Firmware files were not available"))
         Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
         coVerify(exactly = 0) { client.write(any(), any()) }
     }
@@ -4127,16 +4164,19 @@ class BDBleApiImplTest {
 
 private class CapturingFirmwareUpdateApi : FirmwareUpdateApi {
     private val checkResponses: MutableList<Response<FirmwareUpdateResponse>>
+    private val packageBytes: ByteArray?
     val checkRequests = mutableListOf<FirmwareUpdateRequest>()
     val packageUrls = mutableListOf<String>()
 
-    constructor(checkResponse: Response<FirmwareUpdateResponse>) {
+    constructor(checkResponse: Response<FirmwareUpdateResponse>, packageBytes: ByteArray? = null) {
         this.checkResponses = mutableListOf(checkResponse)
+        this.packageBytes = packageBytes
     }
 
-    constructor(checkResponses: List<Response<FirmwareUpdateResponse>>) {
+    constructor(checkResponses: List<Response<FirmwareUpdateResponse>>, packageBytes: ByteArray? = null) {
         require(checkResponses.isNotEmpty())
         this.checkResponses = checkResponses.toMutableList()
+        this.packageBytes = packageBytes
     }
 
     override suspend fun checkFirmwareUpdate(firmwareUpdateRequest: FirmwareUpdateRequest): Response<FirmwareUpdateResponse> {
@@ -4150,6 +4190,25 @@ private class CapturingFirmwareUpdateApi : FirmwareUpdateApi {
 
     override suspend fun getFirmwareUpdatePackage(url: String): ResponseBody {
         packageUrls.add(url)
+        packageBytes?.let { return byteArrayResponseBody(it) }
         throw UnsupportedOperationException("Package download is not used by this test")
     }
+}
+
+private fun firmwareZip(vararg entries: Pair<String, ByteArray>): ByteArray {
+    val output = ByteArrayOutputStream()
+    ZipOutputStream(output).use { zip ->
+        entries.forEach { (name, bytes) ->
+            zip.putNextEntry(ZipEntry(name))
+            zip.write(bytes)
+            zip.closeEntry()
+        }
+    }
+    return output.toByteArray()
+}
+
+private fun byteArrayResponseBody(bytes: ByteArray): ResponseBody = object : ResponseBody() {
+    override fun contentType() = null
+    override fun contentLength() = bytes.size.toLong()
+    override fun source() = okio.Buffer().write(bytes)
 }

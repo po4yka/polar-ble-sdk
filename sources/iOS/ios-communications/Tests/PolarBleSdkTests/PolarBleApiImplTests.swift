@@ -66,6 +66,7 @@ final class PolarBleApiImplTests: XCTestCase {
         v2MockClient = nil; v2MockSession = nil; v2Api = nil
         h10MockClient = nil; h10MockSession = nil; h10Api = nil
         cancellables.removeAll()
+        PolarFirmwareUpdateUtils.packageExtractor = ZipFirmwarePackageExtractor()
     }
 
     // MARK: - Helpers
@@ -2562,6 +2563,54 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(completionError?.localizedDescription.contains("package download failed") == true)
     }
 
+    func test_updateFirmware_mapsEmptyFirmwarePackageToNotAvailableBeforeDeviceWrites() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["readme.txt": Data([0x01])])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 2)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to 9.9.9", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        switch statuses[1] {
+        case .fwUpdateNotAvailable(let details):
+            XCTAssertEqual("Can not update, firmware files were not available", details)
+        default:
+            XCTFail("Expected fwUpdateNotAvailable")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
     func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
@@ -4688,12 +4737,14 @@ final class PolarBleApiImplTests: XCTestCase {
 
 private final class FailingCheckFirmwareUpdateService: PolarBleSdk.FirmwareUpdateServicing {
     private let packageError: Error
+    private let packageData: Data?
     private var checkResults: [Result<PolarBleSdk.FirmwareUpdateResponse, Error>]
     private(set) var checkFirmwareUpdateRequests: [PolarBleSdk.FirmwareUpdateRequest] = []
     private(set) var packageDownloadUrls: [String] = []
 
     init(error: Error) {
         self.packageError = error
+        self.packageData = nil
         self.checkResults = [.failure(error)]
     }
 
@@ -4701,6 +4752,14 @@ private final class FailingCheckFirmwareUpdateService: PolarBleSdk.FirmwareUpdat
         precondition(!checkResults.isEmpty)
         self.checkResults = checkResults
         self.packageError = packageError
+        self.packageData = nil
+    }
+
+    init(checkResults: [Result<PolarBleSdk.FirmwareUpdateResponse, Error>], packageData: Data) {
+        precondition(!checkResults.isEmpty)
+        self.checkResults = checkResults
+        self.packageData = packageData
+        self.packageError = NSError(domain: "firmware-service", code: 500, userInfo: [NSLocalizedDescriptionKey: "package download failed"])
     }
 
     func checkFirmwareUpdate(firmwareUpdateRequest: PolarBleSdk.FirmwareUpdateRequest, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
@@ -4718,6 +4777,23 @@ private final class FailingCheckFirmwareUpdateService: PolarBleSdk.FirmwareUpdat
 
     func getFirmwareUpdatePackage(url: String) async throws -> Data? {
         packageDownloadUrls.append(url)
+        if let packageData = packageData {
+            return packageData
+        }
         throw packageError
+    }
+}
+
+private final class FacadeFirmwarePackageExtractor: FirmwarePackageExtracting {
+    private let result: [String: Data]?
+    private(set) var zippedPackages: [Data] = []
+
+    init(result: [String: Data]?) {
+        self.result = result
+    }
+
+    func unzipFirmwarePackage(zippedData: Data) -> [String: Data]? {
+        zippedPackages.append(zippedData)
+        return result
     }
 }
