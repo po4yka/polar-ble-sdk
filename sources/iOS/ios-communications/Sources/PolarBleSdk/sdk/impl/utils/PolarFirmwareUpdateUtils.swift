@@ -3,9 +3,54 @@
 import Foundation
 import Zip
 
+protocol FirmwarePackageExtracting {
+    func unzipFirmwarePackage(zippedData: Data) -> [String: Data]?
+}
+
+final class ZipFirmwarePackageExtractor: FirmwarePackageExtracting {
+    func unzipFirmwarePackage(zippedData: Data) -> [String: Data]? {
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+
+        let zipFilePath = temporaryDirectory.appendingPathComponent(UUID().uuidString + ".zip")
+        do {
+            try zippedData.write(to: zipFilePath)
+
+            let destinationURL = temporaryDirectory.appendingPathComponent(UUID().uuidString)
+
+            try Zip.unzipFile(zipFilePath, destination: destinationURL, overwrite: true, password: nil)
+
+            let contents = try FileManager.default.contentsOfDirectory(at: destinationURL, includingPropertiesForKeys: nil)
+            guard !contents.isEmpty else {
+                BleLogger.error("unzipFirmwarePackage() error: No files found in the extracted directory")
+                return nil
+            }
+            var fileDataDictionary: [String: Data] = [:]
+            for fileURL in contents {
+                let fileName = fileURL.lastPathComponent
+                guard PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload(fileName) else {
+                    BleLogger.trace("Skipping file: \(fileName)")
+                    continue
+                }
+                let decompressedData = try Data(contentsOf: fileURL)
+                fileDataDictionary[fileName] = decompressedData
+                BleLogger.trace("Extracted file: \(fileName) - Size: \(decompressedData.count) bytes")
+            }
+
+            try FileManager.default.removeItem(at: zipFilePath)
+            try FileManager.default.removeItem(at: destinationURL)
+
+            return fileDataDictionary
+        } catch {
+            BleLogger.error("Error during unzipFirmwarePackage(): \(error)")
+            return nil
+        }
+    }
+}
+
 class PolarFirmwareUpdateUtils {
     static let FIRMWARE_UPDATE_FILE_PATH = "/SYSUPDAT.IMG"
     static let DEVICE_FIRMWARE_INFO_PATH = PolarRuntimePlanner.firmwareDeviceInfoPath()
+    static var packageExtractor: FirmwarePackageExtracting = ZipFirmwarePackageExtractor()
 
     public class FwFileComparator {
         static func compare(_ file1: String, _ file2: String) -> ComparisonResult {
@@ -60,41 +105,7 @@ class PolarFirmwareUpdateUtils {
     }
 
     static func unzipFirmwarePackage(zippedData: Data) -> [String: Data]? {
-        let temporaryDirectory = FileManager.default.temporaryDirectory
-        
-        let zipFilePath = temporaryDirectory.appendingPathComponent(UUID().uuidString + ".zip")
-        do {
-            try zippedData.write(to: zipFilePath)
-
-            let destinationURL = temporaryDirectory.appendingPathComponent(UUID().uuidString)
-
-            try Zip.unzipFile(zipFilePath, destination: destinationURL, overwrite: true, password: nil)
-
-            let contents = try FileManager.default.contentsOfDirectory(at: destinationURL, includingPropertiesForKeys: nil)
-            guard !contents.isEmpty else {
-                BleLogger.error("unzipFirmwarePackage() error: No files found in the extracted directory")
-                return nil
-            }
-            var fileDataDictionary: [String: Data] = [:]
-            for fileURL in contents {
-                let fileName = fileURL.lastPathComponent
-                guard firmwarePackageEntryIsPayload(fileName) else {
-                    BleLogger.trace("Skipping file: \(fileName)")
-                    continue
-                }
-                let decompressedData = try Data(contentsOf: fileURL)
-                fileDataDictionary[fileName] = decompressedData
-                BleLogger.trace("Extracted file: \(fileName) - Size: \(decompressedData.count) bytes")
-            }
-
-            try FileManager.default.removeItem(at: zipFilePath)
-            try FileManager.default.removeItem(at: destinationURL)
-
-            return fileDataDictionary
-        } catch {
-            BleLogger.error("Error during unzipFirmwarePackage(): \(error)")
-            return nil
-        }
+        return packageExtractor.unzipFirmwarePackage(zippedData: zippedData)
     }
     
     private static func devicePbVersionToString(pbVersion: PbVersion) -> String {

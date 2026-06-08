@@ -3847,6 +3847,7 @@ class GoldenVectorMigrationPolicyTest {
             "PolarFirmwareUpdateUtilsTest.kt",
             "PolarFirmwareUpdateUtilsTest.swift",
             "FirmwareUpdateApi(transport:)",
+            "PolarFirmwareUpdateUtils.packageExtractor",
             "workflow-runtime-policy.json",
             "FirmwareWorkflowRuntimePolicyCommonTest.kt",
             "injectable production dependencies",

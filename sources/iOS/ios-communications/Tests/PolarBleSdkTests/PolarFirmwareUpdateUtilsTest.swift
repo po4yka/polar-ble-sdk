@@ -13,6 +13,7 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        PolarFirmwareUpdateUtils.packageExtractor = ZipFirmwarePackageExtractor()
         mockClient = nil
     }
 
@@ -273,6 +274,16 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(Data([0x01]), unzipped["BTUPDAT.BIN"])
         XCTAssertEqual(Data([0x02]), unzipped["SYSUPDAT.IMG"])
         XCTAssertEqual(PolarRuntimePlanner.firmwarePayloadFileNames(Array(unzipped.keys)).sorted(), Array(unzipped.keys).sorted())
+    }
+
+    func testUnzipFirmwarePackageUsesInjectedExtractor() throws {
+        let extractor = CapturingFirmwarePackageExtractor(result: ["BTUPDAT.BIN": Data([0x0B])])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+
+        let unzipped = try XCTUnwrap(PolarFirmwareUpdateUtils.unzipFirmwarePackage(zippedData: Data([0x01, 0x02])))
+
+        XCTAssertEqual([Data([0x01, 0x02])], extractor.zippedPayloads)
+        XCTAssertEqual(Data([0x0B]), unzipped["BTUPDAT.BIN"])
     }
 
     func testFirmwareRebootWaitFilterUsesSharedPolicyWhenLinked() throws {
@@ -564,5 +575,19 @@ private final class CapturingFirmwareUpdateDataTask: FirmwareUpdateDataTask {
 
     func resume() {
         onResume()
+    }
+}
+
+private final class CapturingFirmwarePackageExtractor: FirmwarePackageExtracting {
+    private let result: [String: Data]?
+    private(set) var zippedPayloads: [Data] = []
+
+    init(result: [String: Data]?) {
+        self.result = result
+    }
+
+    func unzipFirmwarePackage(zippedData: Data) -> [String: Data]? {
+        zippedPayloads.append(zippedData)
+        return result
     }
 }
