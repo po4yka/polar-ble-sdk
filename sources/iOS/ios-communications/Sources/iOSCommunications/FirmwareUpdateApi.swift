@@ -12,13 +12,19 @@ protocol FirmwareUpdateNetworkTransport {
     func firmwareDataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> FirmwareUpdateDataTask
 }
 
+protocol FirmwareUpdateServicing {
+    func checkFirmwareUpdate(firmwareUpdateRequest: FirmwareUpdateRequest, completion: @escaping (Result<FirmwareUpdateResponse, Error>) -> Void)
+    func checkFirmwareUpdateFromFirmwareUrl(_ url: URL, completion: @escaping (Result<FirmwareUpdateResponse, Error>) -> Void)
+    func getFirmwareUpdatePackage(url: String) async throws -> Data?
+}
+
 extension URLSession: FirmwareUpdateNetworkTransport {
     func firmwareDataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> FirmwareUpdateDataTask {
         dataTask(with: request, completionHandler: completionHandler)
     }
 }
 
-class FirmwareUpdateApi {
+class FirmwareUpdateApi: FirmwareUpdateServicing {
 
     enum Failure: Error {
         case responseParseError

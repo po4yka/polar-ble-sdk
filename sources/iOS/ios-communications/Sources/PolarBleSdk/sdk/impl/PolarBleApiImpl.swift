@@ -58,6 +58,7 @@ import UIKit
     let dateFormatter = ISO8601DateFormatter()
     public private(set) var serviceClientUtils: PolarServiceClientUtils
     var fileUtils: PolarFileUtils
+    var firmwareUpdateApiFactory: () -> FirmwareUpdateServicing = { FirmwareUpdateApi() }
     typealias FirmwareFileWriteStreamFactory = (_ identifier: String, _ firmwareFilePath: String, _ firmwareBytes: Data) -> AsyncThrowingStream<UInt, Error>
     var firmwareFileWriteStreamFactory: FirmwareFileWriteStreamFactory?
     var firmwareProgressDateProvider: () -> Date = { Date() }
@@ -2183,7 +2184,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                         continuation.finish()
                         return
                     }
-                    let fwApi = FirmwareUpdateApi()
+                    let fwApi = self.firmwareUpdateApiFactory()
                     let result = try await withCheckedThrowingContinuation { (cont: CheckedContinuation<FirmwareUpdateResponse?, Error>) in
                         fwApi.checkFirmwareUpdate(firmwareUpdateRequest: firmwareUpdateRequest) { response in
                             switch response {
@@ -2375,7 +2376,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             return (nil, nil, .fwUpdateFailed(details: "Failed to create FirmwareUpdateRequest"))
         }
         return await withCheckedContinuation { cont in
-            let fwApi = FirmwareUpdateApi()
+            let fwApi = firmwareUpdateApiFactory()
             fwApi.checkFirmwareUpdate(firmwareUpdateRequest: firmwareUpdateRequest) { response in
                 switch response {
                 case .success(let result):
@@ -2387,8 +2388,8 @@ extension PolarBleApiImpl: PolarBleApi  {
         }
     }
 
-    private func getFirmwareUpdatePackageAsync(firmwareUrl: String) async throws -> [(String, Data)] {
-        guard let firmwarePackage = try await FirmwareUpdateApi().getFirmwareUpdatePackage(url: firmwareUrl) else {
+    func getFirmwareUpdatePackageAsync(firmwareUrl: String) async throws -> [(String, Data)] {
+        guard let firmwarePackage = try await firmwareUpdateApiFactory().getFirmwareUpdatePackage(url: firmwareUrl) else {
             BleLogger.error("Firmware package download fetch failed")
             return []
         }

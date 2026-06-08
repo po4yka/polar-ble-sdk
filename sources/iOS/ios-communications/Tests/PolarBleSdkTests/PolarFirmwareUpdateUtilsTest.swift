@@ -377,6 +377,23 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(transport.requests.first?.url?.absoluteString, "https://example.invalid/fw.zip")
     }
 
+    func testGetFirmwareUpdatePackageUsesInjectedFacadeFirmwareService() async throws {
+        let api = PolarBleApiImpl(DispatchQueue(label: "PolarFirmwareUpdateUtilsTest.firmware-service"), features: [.feature_polar_firmware_update])
+        let service = CapturingFirmwareUpdateService()
+        service.packageResult = .success(Data([0x0A, 0x0B]))
+        let extractor = CapturingFirmwarePackageExtractor(result: ["BTUPDAT.BIN": Data([0x01])])
+        api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+
+        let firmwareFiles = try await api.getFirmwareUpdatePackageAsync(firmwareUrl: "https://example.invalid/fw.zip")
+
+        XCTAssertEqual(service.packageUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPayloads, [Data([0x0A, 0x0B])])
+        XCTAssertEqual(firmwareFiles.count, 1)
+        XCTAssertEqual(firmwareFiles.first?.0, "BTUPDAT.BIN")
+        XCTAssertEqual(firmwareFiles.first?.1, Data([0x01]))
+    }
+
     func testWriteFirmwareFilesUsesInjectedBleWriterAndSharedProgressPolicy() async throws {
         let api = PolarBleApiImpl(DispatchQueue(label: "PolarFirmwareUpdateUtilsTest.firmware-writer"), features: [.feature_polar_firmware_update])
         let baseDate = Date(timeIntervalSince1970: 0)
@@ -675,5 +692,23 @@ private final class CapturingFirmwarePackageExtractor: FirmwarePackageExtracting
     func unzipFirmwarePackage(zippedData: Data) -> [String: Data]? {
         zippedPayloads.append(zippedData)
         return result
+    }
+}
+
+private final class CapturingFirmwareUpdateService: PolarBleSdk.FirmwareUpdateServicing {
+    var packageResult: Result<Data?, Error> = .success(nil)
+    private(set) var packageUrls: [String] = []
+
+    func checkFirmwareUpdate(firmwareUpdateRequest: PolarBleSdk.FirmwareUpdateRequest, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        completion(.success(PolarBleSdk.FirmwareUpdateResponse(version: nil, fileUrl: nil)))
+    }
+
+    func checkFirmwareUpdateFromFirmwareUrl(_ url: URL, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        completion(.success(PolarBleSdk.FirmwareUpdateResponse(version: url.lastPathComponent, fileUrl: url.absoluteString)))
+    }
+
+    func getFirmwareUpdatePackage(url: String) async throws -> Data? {
+        packageUrls.append(url)
+        return try packageResult.get()
     }
 }
