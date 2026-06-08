@@ -321,6 +321,37 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `updateFirmware maps injected client request failure through shared terminal plan without retry or download`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.error(400, mockk<ResponseBody>(relaxed = true))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals("client-request-failure", PolarRuntimePlannerAdapter.planFirmwareWorkflow(id = "client-request-failure", statuses = listOf("fwUpdateFailed")).terminalError)
+        Assert.assertEquals(1, statuses.size)
+        val failed = statuses.single() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.startsWith("Bad request to firmware update API:"))
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
     fun `updateFirmware retries retryable firmware check failures using shared delay plan`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
