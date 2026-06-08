@@ -60,32 +60,39 @@ class FirmwareUpdateApi: FirmwareUpdateServicing {
                 BleLogger.trace("Request Headers: \(request.allHTTPHeaderFields ?? [:])")
                 BleLogger.trace("Request Body: \(String(describing: firmwareUpdateRequest))")
 
-                if let data = data {
-                    BleLogger.trace("Response Data: \(String(data: data, encoding: .utf8) ?? "N/A")")
-                    if let statusCode = (response as? HTTPURLResponse)?.statusCode {
-                        switch statusCode {
-                        case 204:
-                            var fwResponse = FirmwareUpdateResponse(version: nil, fileUrl: nil)
-                            fwResponse.statusCode = statusCode
-                            completion(.success(fwResponse))
-                            return
-                        case 400..<500:
-                            BleLogger.error("Client error: (\(statusCode))")
-                            return
-                        case 500..<600:
-                            BleLogger.error("Server error: (\(statusCode))")
-                        default:
-                            BleLogger.error("Response status code: (\(statusCode))")
-                        }
-                        if var fwResponse = try? JSONDecoder().decode(FirmwareUpdateResponse.self, from: data) {
-                            fwResponse.statusCode = statusCode
-                            completion(.success(fwResponse))
-                        } else {
-                            completion(.failure(Failure.responseParseError))
-                        }
-                    } else {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                guard let data = data else {
+                    completion(.failure(Failure.requestFailed))
+                    return
+                }
+                BleLogger.trace("Response Data: \(String(data: data, encoding: .utf8) ?? "N/A")")
+                if let statusCode = (response as? HTTPURLResponse)?.statusCode {
+                    switch statusCode {
+                    case 204:
+                        var fwResponse = FirmwareUpdateResponse(version: nil, fileUrl: nil)
+                        fwResponse.statusCode = statusCode
+                        completion(.success(fwResponse))
+                        return
+                    case 400..<500:
+                        BleLogger.error("Client error: (\(statusCode))")
                         completion(.failure(Failure.requestFailed))
+                        return
+                    case 500..<600:
+                        BleLogger.error("Server error: (\(statusCode))")
+                    default:
+                        BleLogger.error("Response status code: (\(statusCode))")
                     }
+                    if var fwResponse = try? JSONDecoder().decode(FirmwareUpdateResponse.self, from: data) {
+                        fwResponse.statusCode = statusCode
+                        completion(.success(fwResponse))
+                    } else {
+                        completion(.failure(Failure.responseParseError))
+                    }
+                } else {
+                    completion(.failure(Failure.requestFailed))
                 }
             }
         }.resume()

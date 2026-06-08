@@ -423,6 +423,33 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(response.statusCode, 200)
     }
 
+    func testFirmwareUpdateApiCompletesClientErrorCheckRequest() throws {
+        let transport = CapturingFirmwareUpdateTransport()
+        transport.nextResponse = (
+            data: Data("{}".utf8),
+            response: HTTPURLResponse(url: URL(string: "https://firmware-management.polar.com/api/v1/firmware-update/check")!, statusCode: 404, httpVersion: nil, headerFields: nil),
+            error: nil
+        )
+        let api = FirmwareUpdateApi(transport: transport)
+        let finished = expectation(description: "check firmware update client error")
+        var result: Result<FirmwareUpdateResponse, Error>?
+
+        api.checkFirmwareUpdate(
+            firmwareUpdateRequest: FirmwareUpdateRequest(clientId: "sdk", uuid: "device", firmwareVersion: "1.0.0", hardwareCode: "hw")
+        ) {
+            result = $0
+            finished.fulfill()
+        }
+
+        wait(for: [finished], timeout: 1)
+        guard case .failure(let error) = try XCTUnwrap(result) else {
+            return XCTFail("Expected firmware update client error")
+        }
+        guard case FirmwareUpdateApi.Failure.requestFailed = error else {
+            return XCTFail("Expected requestFailed error, got \(error)")
+        }
+    }
+
     func testFirmwareUpdateApiUsesInjectedTransportForPackageDownloadFailure() async throws {
         let transport = CapturingFirmwareUpdateTransport()
         let expectedError = NSError(domain: "firmware-test", code: 7)
