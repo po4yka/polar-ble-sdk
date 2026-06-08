@@ -416,6 +416,36 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         ])
     }
 
+    func testWriteFirmwareFilesCancelsInjectedBleWriterWhenConsumerTerminates() async throws {
+        let api = PolarBleApiImpl(DispatchQueue(label: "PolarFirmwareUpdateUtilsTest.firmware-cancel"), features: [.feature_polar_firmware_update])
+        let writerStarted = expectation(description: "writer started")
+        let writerCancelled = expectation(description: "writer cancelled")
+        api.firmwareProgressDateProvider = { Date(timeIntervalSince1970: 0) }
+        api.firmwareFileWriteStreamFactory = { _, _, _ in
+            return AsyncThrowingStream { continuation in
+                writerStarted.fulfill()
+                continuation.onTermination = { @Sendable _ in
+                    writerCancelled.fulfill()
+                }
+                continuation.yield(0)
+            }
+        }
+        let stream = api.writeFirmwareFilesToDeviceAsync(
+            "device-id",
+            firmwareFiles: [("BTUPDAT.BIN", Data([0x01, 0x02]))],
+            minPercentageIncrement: 25
+        )
+        let reader = Task {
+            var iterator = stream.makeAsyncIterator()
+            _ = try await iterator.next()
+            _ = try await iterator.next()
+        }
+
+        await fulfillment(of: [writerStarted], timeout: 1)
+        reader.cancel()
+        await fulfillment(of: [writerCancelled], timeout: 1)
+    }
+
     func testFirmwareGoldenVectorsFollowNeutralKmpShape() throws {
         for vector in try loadFirmwareUpdateGoldenVectors() {
             let id = try XCTUnwrap(vector["id"] as? String)

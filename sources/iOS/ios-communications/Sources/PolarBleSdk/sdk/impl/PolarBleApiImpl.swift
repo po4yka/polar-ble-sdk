@@ -2161,7 +2161,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     
     func checkFirmwareUpdate(_ identifier: String) -> AsyncThrowingStream<CheckFirmwareUpdateStatus, Error> {
         return AsyncThrowingStream { continuation in
-            Task {
+            let task = Task {
                 do {
                     let session = try self.serviceClientUtils.sessionFtpClientReady(identifier)
                     guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
@@ -2202,12 +2202,15 @@ extension PolarBleApiImpl: PolarBleApi  {
                     continuation.finish(throwing: error)
                 }
             }
+            continuation.onTermination = { @Sendable _ in
+                task.cancel()
+            }
         }
     }
     
     func updateFirmware(_ identifier: String) -> AsyncThrowingStream<FirmwareUpdateStatus, Error> {
         return AsyncThrowingStream { continuation in
-            Task {
+            let task = Task {
                 do {
                     for try await status in self.updateFirmwareAsync(identifier) {
                         continuation.yield(status)
@@ -2217,6 +2220,9 @@ extension PolarBleApiImpl: PolarBleApi  {
                     continuation.finish(throwing: error)
                 }
             }
+            continuation.onTermination = { @Sendable _ in
+                task.cancel()
+            }
         }
     }
 
@@ -2224,7 +2230,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     
     func updateFirmware(_ identifier: String, fromFirmwareURL: URL) -> AsyncThrowingStream<FirmwareUpdateStatus, Error> {
         return AsyncThrowingStream { continuation in
-            Task {
+            let task = Task {
                 do {
                     for try await status in self.updateFirmwareAsync(identifier, firmwareURL: fromFirmwareURL) {
                         continuation.yield(status)
@@ -2234,6 +2240,9 @@ extension PolarBleApiImpl: PolarBleApi  {
                     continuation.finish(throwing: error)
                 }
             }
+            continuation.onTermination = { @Sendable _ in
+                task.cancel()
+            }
         }
     }
 
@@ -2241,7 +2250,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         
     private func updateFirmwareAsync(_ identifier: String, firmwareURL: URL? = nil) -> AsyncThrowingStream<FirmwareUpdateStatus, Error> {
         return AsyncThrowingStream { continuation in
-            Task {
+            let task = Task {
                 let session = try? self.serviceClientUtils.sessionFtpClientReady(identifier)
                 guard let client = session?.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                     continuation.yield(.fwUpdateFailed(details: "No BlePsFtpClient available"))
@@ -2341,6 +2350,9 @@ extension PolarBleApiImpl: PolarBleApi  {
                     }
                 }
             }
+            continuation.onTermination = { @Sendable _ in
+                task.cancel()
+            }
         }
     }
 
@@ -2398,7 +2410,7 @@ extension PolarBleApiImpl: PolarBleApi  {
 
     func writeFirmwareFilesToDeviceAsync(_ identifier: String, firmwareFiles: [(String, Data)], minPercentageIncrement: Int = 0) -> AsyncThrowingStream<FirmwareUpdateStatus, Error> {
         return AsyncThrowingStream { continuation in
-            Task {
+            let task = Task {
                 do {
                     try ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"], firmwareFiles: firmwareFiles.map { $0.0 }), kind: "writePackage")
                     let plannedWritePaths = PolarRuntimePlanner.firmwareWritePaths(firmwareFiles.map { $0.0 })
@@ -2436,6 +2448,9 @@ extension PolarBleApiImpl: PolarBleApi  {
                 } catch {
                     continuation.finish(throwing: error)
                 }
+            }
+            continuation.onTermination = { @Sendable _ in
+                task.cancel()
             }
         }
     }
@@ -3171,7 +3186,7 @@ extension PolarBleApiImpl: PolarBleApi  {
 
     private func writeFirmwareToDeviceAsync(identifier: String, firmwareFilePath: String, firmwareBytes: Data) -> AsyncThrowingStream<UInt, Error> {
         return AsyncThrowingStream { continuation in
-            Task<Void, Never> {
+            let task = Task<Void, Never> {
                 do {
                     guard let session = try? self.serviceClientUtils.sessionFtpClientReady(identifier) else {
                         continuation.finish(throwing: PolarErrors.deviceNotConnected)
@@ -3213,6 +3228,9 @@ extension PolarBleApiImpl: PolarBleApi  {
                         continuation.finish(throwing: self.handleError(error))
                     }
                 }
+            }
+            continuation.onTermination = { @Sendable _ in
+                task.cancel()
             }
         }
     }
