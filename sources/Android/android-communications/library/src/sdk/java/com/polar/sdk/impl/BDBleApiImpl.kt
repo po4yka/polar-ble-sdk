@@ -199,6 +199,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     private var logger: PolarBleApiLogger? = null
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ENGLISH)
     private lateinit var offlineExerciseV2Api: PolarOfflineExerciseV2ApiImpl
+    internal var firmwareUpdateApiFactory: () -> FirmwareUpdateApi = {
+        RetrofitClient.createRetrofitInstance().create(FirmwareUpdateApi::class.java)
+    }
 
     init {
         val clients: MutableSet<Class<out BleGattBase>> = mutableSetOf()
@@ -2426,8 +2429,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     // Returns availableVersion, firmwareURL, FirmwareUpdateStatus
     private suspend fun checkFirmwareUrlAvailability(client: BlePsFtpClient, identifier: String): Triple<String?, String?, FirmwareUpdateStatus> {
         val deviceInfo = PolarFirmwareUpdateUtils.readDeviceFirmwareInfo(client, identifier)
-        val httpClient = RetrofitClient.createRetrofitInstance()
-        val firmwareUpdateApi = httpClient.create(FirmwareUpdateApi::class.java)
+        val firmwareUpdateApi = firmwareUpdateApiFactory()
         val request = FirmwareUpdateRequest(
             clientId = "polar-sensor-data-collector-android",
             uuid = PolarDeviceUuid.fromDeviceId(identifier),
@@ -2462,8 +2464,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             BleLogger.d(TAG, "FW package read from local file: ${file.absolutePath}, size: ${file.length()} bytes")
             parseFirmwareZip(file.readBytes())
         } else {
-            val httpClient = RetrofitClient.createRetrofitInstance()
-            val firmwareUpdateApi = httpClient.create(FirmwareUpdateApi::class.java)
+            val firmwareUpdateApi = firmwareUpdateApiFactory()
             val firmwareBytes = firmwareUpdateApi.getFirmwareUpdatePackage(firmwareUrl)
             BleLogger.d(TAG, "FW package downloaded, size: ${firmwareBytes.contentLength()} bytes")
             parseFirmwareZip(firmwareBytes.bytes())

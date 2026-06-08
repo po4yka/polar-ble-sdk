@@ -25,6 +25,9 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSecret
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSetting
 import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtility
 import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtility.Companion.getFileSystemType
+import com.polar.androidcommunications.http.fwu.FirmwareUpdateApi
+import com.polar.androidcommunications.http.fwu.FirmwareUpdateRequest
+import com.polar.androidcommunications.http.fwu.FirmwareUpdateResponse
 import com.polar.sdk.api.model.PolarUserDeviceSettings
 import com.polar.androidcommunications.enpoints.ble.bluedroid.host.BDScanCallback
 import com.polar.shared.runtime.PolarFileFacadeOperation
@@ -39,6 +42,7 @@ import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.PolarH10OfflineExerciseApi
 import com.polar.sdk.api.errors.PolarBleSdkInstanceException
 import com.polar.sdk.api.errors.PolarOperationNotSupported
+import com.polar.sdk.api.model.CheckFirmwareUpdateStatus
 import com.polar.sdk.api.model.LedConfig
 import com.polar.sdk.api.model.LogConfig
 import com.polar.sdk.api.model.PolarFirstTimeUseConfig
@@ -58,12 +62,14 @@ import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import data.SensorDataLog.PbSensorDataLog
 import protocol.PftpError.PbPFtpError
 import com.polar.sdk.impl.utils.PolarServiceClientUtils
+import fi.polar.remote.representation.protobuf.Device
 import fi.polar.remote.representation.protobuf.Types.PbDate
 import fi.polar.remote.representation.protobuf.Types.PbDeviceLocation
 import fi.polar.remote.representation.protobuf.Types.PbDuration
 import fi.polar.remote.representation.protobuf.Types.PbSampleType
 import fi.polar.remote.representation.protobuf.Types.PbSystemDateTime
 import fi.polar.remote.representation.protobuf.Types.PbTime
+import fi.polar.remote.representation.protobuf.Structures.PbVersion
 import fi.polar.remote.representation.protobuf.AutomaticSamples.PbAutomaticSampleSessions
 import fi.polar.remote.representation.protobuf.UserIds.PbUserIdentifier
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceGeneralSettings
@@ -86,7 +92,9 @@ import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import okhttp3.ResponseBody
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -94,6 +102,7 @@ import org.junit.Test
 import protocol.PftpNotification
 import protocol.PftpRequest
 import protocol.PftpResponse
+import retrofit2.Response
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -184,6 +193,35 @@ class BDBleApiImplTest {
                 setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER)
             )
         }
+    }
+
+    @Test
+    fun `checkFirmwareUpdate uses injected firmware API`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip"))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.checkFirmwareUpdate(deviceId).toList()
+
+        Assert.assertEquals(listOf(CheckFirmwareUpdateStatus.CheckFwUpdateAvailable("9.9.9")), statuses)
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        val request = firmwareApi.checkRequests.single()
+        Assert.assertEquals("polar-sensor-data-collector-android", request.clientId)
+        Assert.assertEquals("1.2.0", request.firmwareVersion)
+        Assert.assertEquals("00112233.01", request.hardwareCode)
     }
 
     @Test
@@ -3953,5 +3991,20 @@ class BDBleApiImplTest {
             "get-trigger-success",
             "get-trigger-transport-error"
         )
+    }
+}
+
+private class CapturingFirmwareUpdateApi(
+    private val checkResponse: Response<FirmwareUpdateResponse>
+) : FirmwareUpdateApi {
+    val checkRequests = mutableListOf<FirmwareUpdateRequest>()
+
+    override suspend fun checkFirmwareUpdate(firmwareUpdateRequest: FirmwareUpdateRequest): Response<FirmwareUpdateResponse> {
+        checkRequests.add(firmwareUpdateRequest)
+        return checkResponse
+    }
+
+    override suspend fun getFirmwareUpdatePackage(url: String): ResponseBody {
+        throw UnsupportedOperationException("Package download is not used by this test")
     }
 }
