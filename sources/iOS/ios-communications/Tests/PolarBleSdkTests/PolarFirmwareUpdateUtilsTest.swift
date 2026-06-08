@@ -307,6 +307,65 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         #endif
     }
 
+    func testFirmwareUpdateApiUsesInjectedTransportForCheckRequest() throws {
+        let transport = CapturingFirmwareUpdateTransport()
+        let responseData = try JSONSerialization.data(withJSONObject: [
+            "version": "9.9.9",
+            "fileUrl": "https://example.invalid/fw.zip"
+        ])
+        transport.nextResponse = (
+            data: responseData,
+            response: HTTPURLResponse(url: URL(string: "https://firmware-management.polar.com/api/v1/firmware-update/check")!, statusCode: 200, httpVersion: nil, headerFields: nil),
+            error: nil
+        )
+        let api = FirmwareUpdateApi(transport: transport)
+        let finished = expectation(description: "check firmware update")
+        var result: Result<FirmwareUpdateResponse, Error>?
+
+        api.checkFirmwareUpdate(
+            firmwareUpdateRequest: FirmwareUpdateRequest(clientId: "sdk", uuid: "device", firmwareVersion: "1.0.0", hardwareCode: "hw")
+        ) {
+            result = $0
+            finished.fulfill()
+        }
+
+        wait(for: [finished], timeout: 1)
+        let request = try XCTUnwrap(transport.requests.first)
+        XCTAssertEqual(request.url?.absoluteString, "https://firmware-management.polar.com/api/v1/firmware-update/check")
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+        let body = try XCTUnwrap(request.httpBody)
+        let bodyJson = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: String])
+        XCTAssertEqual(bodyJson["clientId"], "sdk")
+        XCTAssertEqual(bodyJson["uuid"], "device")
+        XCTAssertEqual(bodyJson["firmwareVersion"], "1.0.0")
+        XCTAssertEqual(bodyJson["hardwareCode"], "hw")
+        guard case .success(let response) = try XCTUnwrap(result) else {
+            return XCTFail("Expected firmware update success")
+        }
+        XCTAssertEqual(response.version, "9.9.9")
+        XCTAssertEqual(response.fileUrl, "https://example.invalid/fw.zip")
+        XCTAssertEqual(response.statusCode, 200)
+    }
+
+    func testFirmwareUpdateApiUsesInjectedTransportForPackageDownloadFailure() async throws {
+        let transport = CapturingFirmwareUpdateTransport()
+        let expectedError = NSError(domain: "firmware-test", code: 7)
+        transport.nextResponse = (data: nil, response: nil, error: expectedError)
+        let api = FirmwareUpdateApi(transport: transport)
+
+        do {
+            _ = try await api.getFirmwareUpdatePackage(url: "https://example.invalid/fw.zip")
+            XCTFail("Expected package download failure")
+        } catch {
+            XCTAssertEqual((error as NSError).domain, expectedError.domain)
+            XCTAssertEqual((error as NSError).code, expectedError.code)
+        }
+
+        XCTAssertEqual(transport.requests.first?.url?.absoluteString, "https://example.invalid/fw.zip")
+    }
+
     func testFirmwareGoldenVectorsFollowNeutralKmpShape() throws {
         for vector in try loadFirmwareUpdateGoldenVectors() {
             let id = try XCTUnwrap(vector["id"] as? String)
@@ -483,3 +542,27 @@ private let FIRMWARE_WORKFLOW_ANDROID_PRODUCTION_EVIDENCE = "BDBleApiImpl and Po
 private let FIRMWARE_WORKFLOW_IOS_PRODUCTION_EVIDENCE = "PolarBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, reboot response success, and battery-too-low terminal write policy while keeping network, zip parsing, retry scheduling, backup, reconnect, filesystem, and BLE writes platform-owned."
 
 private let FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, and cancellation cleanup before BLE writes are pinned, retry scheduling has explicit platform facade coverage, public facade error mapping is pinned, and the shared tests are compile-verified."
+
+private final class CapturingFirmwareUpdateTransport: FirmwareUpdateNetworkTransport {
+    var requests: [URLRequest] = []
+    var nextResponse: (data: Data?, response: URLResponse?, error: Error?) = (nil, nil, nil)
+
+    func firmwareDataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> FirmwareUpdateDataTask {
+        requests.append(request)
+        return CapturingFirmwareUpdateDataTask {
+            completionHandler(self.nextResponse.data, self.nextResponse.response, self.nextResponse.error)
+        }
+    }
+}
+
+private final class CapturingFirmwareUpdateDataTask: FirmwareUpdateDataTask {
+    private let onResume: () -> Void
+
+    init(onResume: @escaping () -> Void) {
+        self.onResume = onResume
+    }
+
+    func resume() {
+        onResume()
+    }
+}

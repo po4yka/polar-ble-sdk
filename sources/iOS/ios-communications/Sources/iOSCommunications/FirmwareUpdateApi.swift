@@ -2,6 +2,22 @@
 
 import Foundation
 
+protocol FirmwareUpdateDataTask {
+    func resume()
+}
+
+extension URLSessionDataTask: FirmwareUpdateDataTask {}
+
+protocol FirmwareUpdateNetworkTransport {
+    func firmwareDataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> FirmwareUpdateDataTask
+}
+
+extension URLSession: FirmwareUpdateNetworkTransport {
+    func firmwareDataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> FirmwareUpdateDataTask {
+        dataTask(with: request, completionHandler: completionHandler)
+    }
+}
+
 class FirmwareUpdateApi {
 
     enum Failure: Error {
@@ -16,6 +32,11 @@ class FirmwareUpdateApi {
     }
 
     let baseURL = "https://firmware-management.polar.com"
+    private let transport: FirmwareUpdateNetworkTransport
+
+    init(transport: FirmwareUpdateNetworkTransport = URLSession.shared) {
+        self.transport = transport
+    }
 
     func checkFirmwareUpdate(firmwareUpdateRequest: FirmwareUpdateRequest, completion: @escaping (Result<FirmwareUpdateResponse, Error>) -> Void) {
         let url = "\(baseURL)/api/v1/firmware-update/check"
@@ -26,7 +47,7 @@ class FirmwareUpdateApi {
         taskRequest.httpBody = try? JSONEncoder().encode(firmwareUpdateRequest)
         let request = taskRequest
 
-        URLSession.shared.dataTask(with: request) { (data, response, error) in
+        transport.firmwareDataTask(with: request) { (data, response, error) in
             Task { @MainActor in
                 BleLogger.trace("Request URL: \(String(describing: request.url))")
                 BleLogger.trace("Request Method: \(request.httpMethod ?? "N/A")")
@@ -73,7 +94,7 @@ class FirmwareUpdateApi {
         }
         var request = URLRequest(url: url)
         request.httpMethod = "HEAD"
-        URLSession.shared.dataTask(with: request) { (data, response, error) in
+        transport.firmwareDataTask(with: request) { (data, response, error) in
             Task { @MainActor in
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
                 let responseWithUrl = FirmwareUpdateResponse(version: "custom(\(file))", fileUrl: url.absoluteString, statusCode: statusCode)
@@ -85,7 +106,7 @@ class FirmwareUpdateApi {
     /// Download firmware update package from the given URL.
     func getFirmwareUpdatePackage(url: String) async throws -> Data? {
         return try await withCheckedThrowingContinuation { continuation in
-            URLSession.shared.dataTask(with: URLRequest(url: URL(string: url)!)) { (data, _, error) in
+            transport.firmwareDataTask(with: URLRequest(url: URL(string: url)!)) { (data, _, error) in
                 if let error = error {
                     continuation.resume(throwing: error)
                 } else {

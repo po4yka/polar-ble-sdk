@@ -81,6 +81,7 @@ FIRMWARE_FACADE_GATE_REQUIRED_TERMS = [
   "facade gate open",
   "PolarFirmwareUpdateUtilsTest.kt",
   "PolarFirmwareUpdateUtilsTest.swift",
+  "FirmwareUpdateApi(transport:)",
   "workflow-runtime-policy.json",
   "FirmwareWorkflowRuntimePolicyCommonTest.kt",
   "injectable production dependencies",
