@@ -748,20 +748,22 @@ private let FIRMWARE_WORKFLOW_SCENARIOS = [
     "check-update-available",
     "download-failure",
     "retryable-server-failure",
+    "client-request-failure",
     "empty-or-invalid-zip",
     "cancel-after-package-fetch-cleans-up-before-ble-write",
     "write-package-success-with-system-update-last",
     "system-update-reboot-response-is-success",
+    "non-system-reboot-response-is-terminal-failure",
     "battery-too-low-response-is-terminal-failure"
 ]
 
 private let FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT = "Before moving firmware update orchestration into common KMP code, implement injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors."
 
-private let FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, reboot success, and terminal device errors into typed common workflow states before KMP migration"
+private let FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, reboot success, non-system reboot failure, and terminal device errors into typed common workflow states before KMP migration"
 
-private let FIRMWARE_WORKFLOW_ANDROID_PRODUCTION_EVIDENCE = "BDBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, reboot response success, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned."
+private let FIRMWARE_WORKFLOW_ANDROID_PRODUCTION_EVIDENCE = "BDBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, reboot response success, non-system reboot failure, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned."
 
-private let FIRMWARE_WORKFLOW_IOS_PRODUCTION_EVIDENCE = "PolarBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, reboot response success, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned."
+private let FIRMWARE_WORKFLOW_IOS_PRODUCTION_EVIDENCE = "PolarBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, reboot response success, non-system reboot failure, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned."
 
 private let FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, cancellation cleanup before BLE writes, and shared-planned retry delay execution are pinned, public facade error mapping is pinned, and the shared tests are compile-verified."
 
