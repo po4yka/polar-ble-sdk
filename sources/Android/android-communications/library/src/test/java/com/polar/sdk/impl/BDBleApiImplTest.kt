@@ -284,6 +284,43 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `updateFirmware retries retryable firmware check failures using shared delay plan`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val delayedMillis = mutableListOf<Long>()
+        api.firmwareRetryDelay = { delayMillis -> delayedMillis.add(delayMillis) }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponses = listOf(
+                Response.error(503, mockk<ResponseBody>(relaxed = true)),
+                Response.error(503, mockk<ResponseBody>(relaxed = true)),
+                Response.success(FirmwareUpdateResponse("1.0.0", "https://example.invalid/fw.zip"))
+            )
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(1, statuses.size)
+        val notAvailable = statuses.single() as FirmwareUpdateStatus.FwUpdateNotAvailable
+        Assert.assertEquals("Firmware update not available", notAvailable.details)
+        Assert.assertEquals(3, firmwareApi.checkRequests.size)
+        Assert.assertEquals(listOf(1000L, 2000L), delayedMillis)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
     fun `activity data readiness device type uses shared advertisement local name parsing`() {
         Assert.assertEquals("GritX Pro", BDBleApiImpl.activityCapabilityDeviceType("Polar GritX Pro aa123459"))
         Assert.assertEquals("Custom Strap", BDBleApiImpl.activityCapabilityDeviceType("Custom Strap aa123459"))
@@ -4053,15 +4090,27 @@ class BDBleApiImplTest {
     }
 }
 
-private class CapturingFirmwareUpdateApi(
-    private val checkResponse: Response<FirmwareUpdateResponse>
-) : FirmwareUpdateApi {
+private class CapturingFirmwareUpdateApi : FirmwareUpdateApi {
+    private val checkResponses: MutableList<Response<FirmwareUpdateResponse>>
     val checkRequests = mutableListOf<FirmwareUpdateRequest>()
     val packageUrls = mutableListOf<String>()
 
+    constructor(checkResponse: Response<FirmwareUpdateResponse>) {
+        this.checkResponses = mutableListOf(checkResponse)
+    }
+
+    constructor(checkResponses: List<Response<FirmwareUpdateResponse>>) {
+        require(checkResponses.isNotEmpty())
+        this.checkResponses = checkResponses.toMutableList()
+    }
+
     override suspend fun checkFirmwareUpdate(firmwareUpdateRequest: FirmwareUpdateRequest): Response<FirmwareUpdateResponse> {
         checkRequests.add(firmwareUpdateRequest)
-        return checkResponse
+        return if (checkResponses.size > 1) {
+            checkResponses.removeAt(0)
+        } else {
+            checkResponses.first()
+        }
     }
 
     override suspend fun getFirmwareUpdatePackage(url: String): ResponseBody {

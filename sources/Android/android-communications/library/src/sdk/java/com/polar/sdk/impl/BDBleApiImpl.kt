@@ -202,6 +202,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     internal var firmwareUpdateApiFactory: () -> FirmwareUpdateApi = {
         RetrofitClient.createRetrofitInstance().create(FirmwareUpdateApi::class.java)
     }
+    internal var firmwareRetryDelay: suspend (Long) -> Unit = { delayMillis -> delay(delayMillis) }
 
     init {
         val clients: MutableSet<Class<out BleGattBase>> = mutableSetOf()
@@ -2328,7 +2329,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val fwUrlProvider = if (firmwareUrl.isNotBlank()) {
             Triple(File(firmwareUrl).name, firmwareUrl, FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Preparing for firmware update"))
         } else {
-            checkFirmwareUrlAvailability(client, identifier)
+            checkFirmwareUrlAvailabilityForUpdate(client, identifier)
         }
 
         try {
@@ -2431,6 +2432,26 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     // Returns availableVersion, firmwareURL, FirmwareUpdateStatus
+    private suspend fun checkFirmwareUrlAvailabilityForUpdate(client: BlePsFtpClient, identifier: String): Triple<String?, String?, FirmwareUpdateStatus> {
+        var result = checkFirmwareUrlAvailability(client, identifier)
+        for (delayMillis in PolarRuntimePlannerAdapter.firmwareRetryDelaysMillis(maxRetries = 2)) {
+            if (!isRetryableFirmwareAvailabilityFailure(result.third)) {
+                return result
+            }
+            firmwareRetryDelay(delayMillis)
+            result = checkFirmwareUrlAvailability(client, identifier)
+        }
+        return result
+    }
+
+    private fun isRetryableFirmwareAvailabilityFailure(status: FirmwareUpdateStatus): Boolean {
+        if (status !is FirmwareUpdateStatus.FwUpdateFailed) {
+            return false
+        }
+        val responseCode = Regex("""Unexpected response code: (\d{3})""").find(status.details)?.groupValues?.get(1)?.toIntOrNull()
+        return responseCode != null && responseCode in 500..599
+    }
+
     private suspend fun checkFirmwareUrlAvailability(client: BlePsFtpClient, identifier: String): Triple<String?, String?, FirmwareUpdateStatus> {
         val deviceInfo = PolarFirmwareUpdateUtils.readDeviceFirmwareInfo(client, identifier)
         val firmwareUpdateApi = firmwareUpdateApiFactory()
