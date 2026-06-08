@@ -330,6 +330,7 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   ],
   "training-session-readiness.json" => [
     "byte-level-parser-dependency-gate",
+    "protobuf-gzip-byte-decoding-deferral",
     "real byte-level protobuf/gzip decoding remains deferred until common production parser dependencies exist and are compile-verified"
   ],
   "settings-model-readiness.json" => [

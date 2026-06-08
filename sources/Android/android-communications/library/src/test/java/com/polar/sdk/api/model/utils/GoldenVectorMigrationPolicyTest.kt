@@ -3369,6 +3369,7 @@ class GoldenVectorMigrationPolicyTest {
             "payload-fetch-order",
             "malformed-component-isolation",
             "byte-level-parser-dependency-gate",
+            "protobuf-gzip-byte-decoding-deferral",
             "platform-training-session-vector-reference-gate",
             "compile-verification-gate",
             "ignore-files-that-do-not-map-to-public-training-or-exercise-data-types",
@@ -4072,6 +4073,7 @@ class GoldenVectorMigrationPolicyTest {
             ),
             "training-session-readiness.json" to listOf(
                 "byte-level-parser-dependency-gate",
+                "protobuf-gzip-byte-decoding-deferral",
                 "real byte-level protobuf/gzip decoding remains deferred until common production parser dependencies exist and are compile-verified"
             ),
             "settings-model-readiness.json" to listOf(
