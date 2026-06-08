@@ -2336,7 +2336,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             firmwareVersionInfo = availableVersionInfo ?: "new version"
 
             if (url.isNullOrBlank()) {
-                emit(FirmwareUpdateStatus.FwUpdateNotAvailable("Firmware update not available"))
+                if (updateStatus is FirmwareUpdateStatus.FwUpdateFailed) {
+                    emit(updateStatus)
+                } else {
+                    emit(FirmwareUpdateStatus.FwUpdateNotAvailable("Firmware update not available"))
+                }
                 return@flow
             }
             emit(updateStatus)

@@ -43,6 +43,7 @@ import com.polar.sdk.api.PolarH10OfflineExerciseApi
 import com.polar.sdk.api.errors.PolarBleSdkInstanceException
 import com.polar.sdk.api.errors.PolarOperationNotSupported
 import com.polar.sdk.api.model.CheckFirmwareUpdateStatus
+import com.polar.sdk.api.model.FirmwareUpdateStatus
 import com.polar.sdk.api.model.LedConfig
 import com.polar.sdk.api.model.LogConfig
 import com.polar.sdk.api.model.PolarFirstTimeUseConfig
@@ -247,6 +248,36 @@ class BDBleApiImplTest {
 
         Assert.assertEquals(1, statuses.size)
         val failed = statuses.single() as CheckFirmwareUpdateStatus.CheckFwUpdateFailed
+        Assert.assertEquals("Unexpected response code: 503", failed.details)
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware maps injected firmware check failure to failed status without download`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.error(503, mockk<ResponseBody>(relaxed = true))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(1, statuses.size)
+        val failed = statuses.single() as FirmwareUpdateStatus.FwUpdateFailed
         Assert.assertEquals("Unexpected response code: 503", failed.details)
         Assert.assertEquals(1, firmwareApi.checkRequests.size)
         Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
