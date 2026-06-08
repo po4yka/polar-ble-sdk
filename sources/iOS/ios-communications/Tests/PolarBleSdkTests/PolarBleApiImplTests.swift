@@ -2685,6 +2685,54 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(writeRequests.isEmpty)
     }
 
+    func test_updateFirmware_mapsInvalidFirmwarePackageToNotAvailableBeforeDeviceWrites() throws {
+        let firmwarePackage = Data([0x01, 0x02, 0x03])
+        let extractor = FacadeFirmwarePackageExtractor(result: nil)
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 2)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to 9.9.9", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        switch statuses[1] {
+        case .fwUpdateNotAvailable(let details):
+            XCTAssertEqual("Can not update, firmware files were not available", details)
+        default:
+            XCTFail("Expected fwUpdateNotAvailable")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
     func test_updateFirmware_cancellationDuringPackageDownloadStopsBeforeDeviceWrites() throws {
         let packageDownloadStarted = expectation(description: "package download started")
         let packageDownloadCancelled = expectation(description: "package download cancelled")
