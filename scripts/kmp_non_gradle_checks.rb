@@ -91,16 +91,6 @@ FIRMWARE_FACADE_GATE_REQUIRED_TERMS = [
   "error-mapping tests before delegation"
 ].freeze
 FACADE_GATE_OPEN_REQUIRED_TERMS = {
-  "Reset sync notification and H10 recording commands" => [
-    "facade gate open",
-    "BDBleApiImplTest.kt",
-    "PolarBleApiImplTests.swift",
-    "reset-sync-h10-command-policy.json",
-    "CommandRuntimePolicyCommonTest.kt",
-    "platform facade success/error compatibility tests",
-    "exercise query planning before delegation",
-    "sync failure splits before delegation"
-  ],
   "Firmware update workflow" => FIRMWARE_FACADE_GATE_REQUIRED_TERMS
 }.freeze
 RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = {
@@ -133,6 +123,21 @@ RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = {
     "directory listing",
     "automatic-sample protobuf date reads",
     "public error translation adapter-owned"
+  ],
+  "Reset sync notification and H10 recording commands" => [
+    "facade sync-failure split pinned",
+    "BDBleApiImplTest.kt",
+    "PolarBleApiImplTests.swift",
+    "reset-sync-h10-command-policy.json",
+    "CommandRuntimePolicyCommonTest.kt",
+    "H10 recording start/stop/status query payloads and query failures",
+    "Android sync-start/sync-stop failure compatibility",
+    "iOS sync-start/sync-stop failure propagation",
+    "facade-error mapping gate",
+    "protobuf builders",
+    "BLE transport calls",
+    "sync failure split translation",
+    "public error mapping adapter-owned"
   ],
   "REST service discovery and description" => [
     "facade response-error pinned",
