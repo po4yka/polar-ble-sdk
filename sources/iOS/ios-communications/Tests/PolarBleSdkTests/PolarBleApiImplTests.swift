@@ -2288,7 +2288,8 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("platform-path-split", PolarRuntimePlanner.storedDataCleanup(kind: "activityPrune", rootPath: "/U/0"))
         XCTAssertEqual("success", PolarRuntimePlanner.storedDataCleanup(kind: "automaticSamplePrune", rootPath: "/U/0/AUTOS", cutoffDate: "20260531"))
         XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
-        XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["acc"]))
+        XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["ACC:enabled"]))
+        XCTAssertEqual(["ACC", "HR"], PolarRuntimePlanner.offlineTriggerEnabledFeatures(currentTypes: ["ACC:enabled", "GYRO:enabled", "OFFLINE_HR:enabled"]))
         XCTAssertEqual("success", PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "completed"], firmwareFiles: ["BTUPDAT.BIN", "SYSUPDAT.IMG"]))
         XCTAssertEqual("success", PolarRuntimePlanner.backupRestore(path: "/U/0/BACKUP.TXT", payloadHex: "0102"))
         XCTAssertEqual(.put, PolarRuntimePlanner.backupRestoreOperation(path: "/U/0/BACKUP.TXT", payloadHex: "0102")?.command)
@@ -3205,7 +3206,8 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("platform-path-split", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "activityPrune", rootPath: "/U/0"))
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "automaticSamplePrune", rootPath: "/U/0/AUTOS", cutoffDate: "20260531"))
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
-        XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: ["acc"]))
+        XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: ["ACC:enabled"]))
+        XCTAssertEqual(["ACC", "HR"], PolarStoredDataOfflineRuntimePlanner.offlineTriggerEnabledFeatures(currentTypes: ["ACC:enabled", "GYRO:enabled", "OFFLINE_HR:enabled"]))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif
@@ -3896,7 +3898,7 @@ final class PolarBleApiImplTests: XCTestCase {
         let statusData = Data([
             0x01,
             0x01, PmdMeasurementType.acc.rawValue, 0x04, 0x00, 0x01, 0x34, 0x00,
-            0x00, PmdMeasurementType.gyro.rawValue,
+            0x01, PmdMeasurementType.gyro.rawValue, 0x00,
             0x01, PmdMeasurementType.offline_hr.rawValue, 0x00
         ])
         let (successApi, successGatt) = makePmdApi { [self] packet in

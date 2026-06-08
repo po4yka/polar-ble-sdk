@@ -33,6 +33,64 @@ internal class PolarDataUtils {
             return PmdMeasurementType.pressure
         }
     }
+
+    static func mapToSharedRuntimeName(from pmdMeasurementType: PmdMeasurementType) -> String {
+        switch pmdMeasurementType {
+        case .ecg:
+            return "ECG"
+        case .ppg:
+            return "PPG"
+        case .acc:
+            return "ACC"
+        case .ppi:
+            return "PPI"
+        case .gyro:
+            return "GYRO"
+        case .mgn:
+            return "MAG"
+        case .skinTemperature:
+            return "SKIN_TEMP"
+        case .sdkMode:
+            return "SDK_MODE"
+        case .location:
+            return "LOCATION"
+        case .pressure:
+            return "PRESSURE"
+        case .temperature:
+            return "TEMPERATURE"
+        case .offline_recording:
+            return "OFFLINE_RECORDING"
+        case .offline_hr:
+            return "OFFLINE_HR"
+        case .unknown_type:
+            return "UNKNOWN"
+        }
+    }
+
+    static func mapToSharedRuntimeFeatureName(from polarDataType: PolarDeviceDataType) -> String {
+        switch polarDataType {
+        case .ecg:
+            return "ECG"
+        case .acc:
+            return "ACC"
+        case .ppg:
+            return "PPG"
+        case .ppi:
+            return "PPI"
+        case .gyro:
+            return "GYRO"
+        case .magnetometer:
+            return "MAG"
+        case .hr:
+            return "HR"
+        case .temperature:
+            return "TEMPERATURE"
+        case .pressure:
+            return "PRESSURE"
+        case .skinTemperature:
+            return "SKIN_TEMP"
+        }
+    }
     
     static func mapToPolarFeature(from pmdMeasurementType : PmdMeasurementType) throws -> PolarDeviceDataType {
         if let sharedName = PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(pmdMeasurementType.rawValue)) {

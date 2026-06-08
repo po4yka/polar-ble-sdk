@@ -123,4 +123,15 @@ enum PolarStoredDataOfflineRuntimePlanner {
         return "platform-owned"
         #endif
     }
+
+    static func offlineTriggerEnabledFeatures(currentTypes: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        let csv = PolarIosSharedBridge.shared.planRuntimeOfflineTriggerEnabledFeatures(currentTypesCsv: currentTypes.joined(separator: ","))
+        return csv.isEmpty ? [] : csv.split(separator: ",").map(String.init)
+        #else
+        return currentTypes.map { encoded in
+            encoded.split(separator: ":", maxSplits: 1).first.map(String.init) ?? encoded
+        }
+        #endif
+    }
 }

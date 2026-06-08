@@ -1724,6 +1724,20 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun planRuntimeOfflineTriggerEnabledFeatures(currentTypesCsv: String): String {
+        return PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime(
+            operation = "getOfflineRecordingTriggerSetup",
+            currentDeviceTriggers = currentTypesCsv.csvValues().map { encoded ->
+                val parts = encoded.split(":", limit = 2)
+                PolarOfflineTriggerDeviceTrigger(
+                    type = parts[0],
+                    status = parts.getOrNull(1) ?: "enabled"
+                )
+            },
+            transport = PolarOfflineTriggerTransport()
+        ).enabledFeatures.joinToString(separator = ",")
+    }
+
     fun planRuntimeFirmwareWorkflow(id: String, statusesCsv: String, firmwareFilesCsv: String): String {
         val statuses = statusesCsv.csvValues()
         return PolarWorkflowRuntimePlanning.planFirmwareWorkflow(

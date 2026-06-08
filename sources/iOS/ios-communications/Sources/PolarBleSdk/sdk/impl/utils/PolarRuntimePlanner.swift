@@ -241,6 +241,10 @@ enum PolarRuntimePlanner {
         return PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: currentTypes)
     }
 
+    static func offlineTriggerEnabledFeatures(currentTypes: [String]) -> [String] {
+        return PolarStoredDataOfflineRuntimePlanner.offlineTriggerEnabledFeatures(currentTypes: currentTypes)
+    }
+
     @discardableResult
     static func firmwareWorkflow(id: String, statuses: [String] = [], firmwareFiles: [String] = []) -> String {
         return PolarFirmwareBackupRuntimePlanner.firmwareWorkflow(id: id, statuses: statuses, firmwareFiles: firmwareFiles)
