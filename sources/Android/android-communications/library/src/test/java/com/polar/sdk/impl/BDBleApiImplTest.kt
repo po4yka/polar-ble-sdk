@@ -363,6 +363,31 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `updateFirmware with direct firmware url maps package download failure before device writes`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flowOf(0)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip"))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertEquals(FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Preparing for firmware update"), statuses[0])
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to manual-fw.zip"), statuses[1])
+        val failed = statuses[2] as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.contains("backup not available"))
+        Assert.assertTrue(failed.details, failed.details.contains("Package download is not used by this test"))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+        coVerify(exactly = 0) { client.write(any(), any()) }
+    }
+
+    @Test
     fun `updateFirmware maps empty firmware package to not available before device writes`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
