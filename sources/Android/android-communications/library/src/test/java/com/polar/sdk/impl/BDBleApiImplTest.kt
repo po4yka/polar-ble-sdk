@@ -225,6 +225,34 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `checkFirmwareUpdate maps injected retryable server failure to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.error(503, mockk<ResponseBody>(relaxed = true))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.checkFirmwareUpdate(deviceId).toList()
+
+        Assert.assertEquals(1, statuses.size)
+        val failed = statuses.single() as CheckFirmwareUpdateStatus.CheckFwUpdateFailed
+        Assert.assertEquals("Unexpected response code: 503", failed.details)
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
     fun `activity data readiness device type uses shared advertisement local name parsing`() {
         Assert.assertEquals("GritX Pro", BDBleApiImpl.activityCapabilityDeviceType("Polar GritX Pro aa123459"))
         Assert.assertEquals("Custom Strap", BDBleApiImpl.activityCapabilityDeviceType("Custom Strap aa123459"))
@@ -3998,6 +4026,7 @@ private class CapturingFirmwareUpdateApi(
     private val checkResponse: Response<FirmwareUpdateResponse>
 ) : FirmwareUpdateApi {
     val checkRequests = mutableListOf<FirmwareUpdateRequest>()
+    val packageUrls = mutableListOf<String>()
 
     override suspend fun checkFirmwareUpdate(firmwareUpdateRequest: FirmwareUpdateRequest): Response<FirmwareUpdateResponse> {
         checkRequests.add(firmwareUpdateRequest)
@@ -4005,6 +4034,7 @@ private class CapturingFirmwareUpdateApi(
     }
 
     override suspend fun getFirmwareUpdatePackage(url: String): ResponseBody {
+        packageUrls.add(url)
         throw UnsupportedOperationException("Package download is not used by this test")
     }
 }
