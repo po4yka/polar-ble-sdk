@@ -759,6 +759,33 @@ final class PpgDataTest: XCTestCase {
     
     }
     
+    func testPpgCompressedType7ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "016600000000000000870100000200000300000400000500000600000700000800000900000a00000b00000c00000d00000e00000f0000100000050000"
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.compressedType7Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        let rowValues = sharedRows.split(separator: "|")
+        XCTAssertEqual(1, rowValues.count)
+        let sharedFields = try XCTUnwrap(rowValues.first?.split(separator: ","))
+        XCTAssertEqual("102", sharedFields[0])
+        XCTAssertEqual("1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;5", sharedFields[1])
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let ppgData = try PpgData.parseDataFromDataFrame(frame: dataFrame)
+        XCTAssertEqual(1, ppgData.samples.count)
+        let sample = try XCTUnwrap(ppgData.samples.first as? PpgData.PpgDataFrameType7)
+
+        XCTAssertEqual(UInt64(102), ppgData.timeStamp)
+        XCTAssertEqual(UInt64(102), sample.timeStamp)
+        XCTAssertEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 5], sample.ppgDataSamples)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func testCompressedPpgFrameType10() throws {
 
         // Arrange
