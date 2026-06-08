@@ -41,7 +41,7 @@
       "facade-error-mapping-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, and cancellation cleanup before BLE writes are pinned, retry scheduling has explicit platform facade coverage, public facade error mapping is pinned, and the shared tests are compile-verified.",
+    "commonDecision": "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, cancellation cleanup before BLE writes, and shared-planned retry delay execution are pinned, public facade error mapping is pinned, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
       "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
@@ -63,5 +63,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for firmware workflow behavior-family completeness only; shared production file-order/progress/terminal write policy consumption is pinned on Android and iOS, while real artifact integration, retry scheduling, public facade error mapping, and compile verification remain required before production firmware workflow code moves to shared KMP."
+  "notes": "This readiness manifest is a migration gate for firmware workflow behavior-family completeness only; shared production file-order/progress/terminal write policy consumption and shared-planned retry delay execution are pinned on Android and iOS, while real artifact integration, public facade error mapping, and compile verification remain required before production firmware workflow code moves to shared KMP."
 }
