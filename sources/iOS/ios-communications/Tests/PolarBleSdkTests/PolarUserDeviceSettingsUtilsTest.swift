@@ -277,6 +277,7 @@ private let USER_DEVICE_SETTINGS_MODEL_READINESS_FAMILIES = [
     "encoder-owned-trusted-last-modified",
     "explicit-telemetry-write-policy",
     "platform-default-divergence",
+    "protobuf-byte-ownership-deferral",
     "platform-user-device-settings-vector-references",
     "compile-verification-gate"
 ]

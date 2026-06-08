@@ -2065,6 +2065,7 @@ class GoldenVectorMigrationPolicyTest {
         val trainingSessionPayloadRead = root.resolve("testdata/golden-vectors/sdk/training-session/payload-read-policy.json").readText()
         val trainingSessionPayloadParser = root.resolve("testdata/golden-vectors/sdk/training-session/payload-parser-policy.json").readText()
         val trainingSessionReadiness = root.resolve("testdata/golden-vectors/sdk/training-session/training-session-readiness.json").readText()
+        val userDeviceSettingsReadiness = root.resolve("testdata/golden-vectors/sdk/user-device-settings/settings-model-readiness.json").readText()
         val pmdSecretReadiness = root.resolve("testdata/golden-vectors/protocol/pmd/secret-readiness.json").readText()
         val restCompressionReadiness = root.resolve("testdata/golden-vectors/sdk/rest-service/rest-event-compression-readiness.json").readText()
         val watchFaceReadiness = root.resolve("testdata/golden-vectors/sdk/watch-face/watch-face-readiness.json").readText()
@@ -2081,6 +2082,7 @@ class GoldenVectorMigrationPolicyTest {
                 "payload-read-policy.json" -> trainingSessionPayloadRead
                 "payload-parser-policy.json" -> trainingSessionPayloadParser
                 "training-session-readiness.json" -> trainingSessionReadiness
+                "settings-model-readiness.json" -> userDeviceSettingsReadiness
                 "secret-readiness.json" -> pmdSecretReadiness
                 "rest-event-compression-readiness.json" -> restCompressionReadiness
                 "watch-face-readiness.json" -> watchFaceReadiness
@@ -3592,6 +3594,7 @@ class GoldenVectorMigrationPolicyTest {
             "encoder-owned-trusted-last-modified",
             "explicit-telemetry-write-policy",
             "platform-default-divergence",
+            "protobuf-byte-ownership-deferral",
             "platform-user-device-settings-vector-references",
             "compile-verification-gate",
             "preserve-protobuf-presence",
@@ -4022,6 +4025,7 @@ class GoldenVectorMigrationPolicyTest {
         val BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = mapOf(
             "KmpFullCoverageTddBacklog.md" to listOf(
                 "add real common protobuf/gzip production dependencies",
+                "User-device-settings protobuf parsing/building remains platform-owned until a common protobuf dependency and cross-platform default/error policy are introduced deliberately.",
                 "REST JSON decoding remains platform-owned until a common JSON dependency and error policy are chosen",
                 "full AES implementation ownership still must be chosen",
                 "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
@@ -4031,15 +4035,18 @@ class GoldenVectorMigrationPolicyTest {
             "KmpCoverageInventory.md" to listOf(
                 "REST event compressed payload decoding now uses shared KMP platform actual codecs while generic iOS `Data.deflated`/`Data.inflated` remains platform-specific.",
                 "REST JSON parsing stays platform-owned until a shared JSON dependency and cross-platform error policy are introduced deliberately.",
+                "User-device-settings protobuf parsing/building remains platform-owned until a common protobuf dependency and cross-platform default/error policy are introduced deliberately.",
                 "Keep iOS nil-on-truncation compatibility adapter-owned if required while common parsing uses typed malformed-script errors.",
                 "semantic and codec-ownership/readiness policy executable"
             ),
             "KmpPreMigrationRemainingWork.md" to listOf(
                 "Add real common protobuf/crypto/codec dependencies",
+                "user-device-settings protobuf parsing/building",
                 "REST JSON decoding/error-policy normalization",
                 "training-session payload parsing",
                 "PMD AES secret handling",
                 "shared FlatBuffer/KVTX byte-identical output decision",
+                "training-session, user-device-settings, PMD secret, REST JSON, and watch-face deferral artifacts",
                 "REST gzip/deflate behavior now uses shared KMP platform actual codecs"
             ),
             "payload-read-policy.json" to listOf(
@@ -4064,6 +4071,9 @@ class GoldenVectorMigrationPolicyTest {
             "training-session-readiness.json" to listOf(
                 "byte-level-parser-dependency-gate",
                 "real byte-level protobuf/gzip decoding remains deferred until common production parser dependencies exist and are compile-verified"
+            ),
+            "settings-model-readiness.json" to listOf(
+                "protobuf-byte-ownership-deferral"
             ),
             "secret-readiness.json" to listOf(
                 "AES block-alignment gating",

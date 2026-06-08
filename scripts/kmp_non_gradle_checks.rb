@@ -285,6 +285,7 @@ SHARED_COMMON_PRODUCTION_CODEC_DEPENDENCY_TERMS = [
 BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   "KmpFullCoverageTddBacklog.md" => [
     "add real common protobuf/gzip production dependencies",
+    "User-device-settings protobuf parsing/building remains platform-owned until a common protobuf dependency and cross-platform default/error policy are introduced deliberately.",
     "REST JSON decoding remains platform-owned until a common JSON dependency and error policy are chosen",
     "full AES implementation ownership still must be chosen",
     "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
@@ -294,15 +295,18 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   "KmpCoverageInventory.md" => [
     "REST event compressed payload decoding now uses shared KMP platform actual codecs while generic iOS `Data.deflated`/`Data.inflated` remains platform-specific.",
     "REST JSON parsing stays platform-owned until a shared JSON dependency and cross-platform error policy are introduced deliberately.",
+    "User-device-settings protobuf parsing/building remains platform-owned until a common protobuf dependency and cross-platform default/error policy are introduced deliberately.",
     "Keep iOS nil-on-truncation compatibility adapter-owned if required while common parsing uses typed malformed-script errors.",
     "semantic and codec-ownership/readiness policy executable"
   ],
   "KmpPreMigrationRemainingWork.md" => [
     "Add real common protobuf/crypto/codec dependencies",
+    "user-device-settings protobuf parsing/building",
     "REST JSON decoding/error-policy normalization",
     "training-session payload parsing",
     "PMD AES secret handling",
     "shared FlatBuffer/KVTX byte-identical output decision",
+    "training-session, user-device-settings, PMD secret, REST JSON, and watch-face deferral artifacts",
     "REST gzip/deflate behavior now uses shared KMP platform actual codecs"
   ],
   "payload-read-policy.json" => [
@@ -327,6 +331,9 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   "training-session-readiness.json" => [
     "byte-level-parser-dependency-gate",
     "real byte-level protobuf/gzip decoding remains deferred until common production parser dependencies exist and are compile-verified"
+  ],
+  "settings-model-readiness.json" => [
+    "protobuf-byte-ownership-deferral"
   ],
   "secret-readiness.json" => [
     "AES block-alignment gating",
@@ -2599,6 +2606,8 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS.each do |artifact, required_terms|
                     File.join(ROOT, "testdata/golden-vectors/sdk/training-session/payload-parser-policy.json")
                   when "training-session-readiness.json"
                     File.join(ROOT, "testdata/golden-vectors/sdk/training-session/training-session-readiness.json")
+                  when "settings-model-readiness.json"
+                    File.join(ROOT, "testdata/golden-vectors/sdk/user-device-settings/settings-model-readiness.json")
                   when "secret-readiness.json"
                     File.join(ROOT, "testdata/golden-vectors/protocol/pmd/secret-readiness.json")
                   when "rest-event-compression-readiness.json"

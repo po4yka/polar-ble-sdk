@@ -82,6 +82,7 @@ class PolarUserDeviceSettingsTest {
             "encoder-owned-trusted-last-modified",
             "explicit-telemetry-write-policy",
             "platform-default-divergence",
+            "protobuf-byte-ownership-deferral",
             "platform-user-device-settings-vector-references",
             "compile-verification-gate"
         )
