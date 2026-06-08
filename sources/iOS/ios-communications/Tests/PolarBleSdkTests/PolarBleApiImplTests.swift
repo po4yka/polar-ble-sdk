@@ -2415,6 +2415,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(["TCHUPDAT.BIN", "APPUPDAT.BIN", "BTUPDAT.BIN", "SYSUPDAT.IMG"], PolarFirmwareBackupRuntimePlanner.orderFirmwareFiles(["TCHUPDAT.BIN", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN"]))
         XCTAssertEqual("success", PolarFirmwareBackupRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "completed"], firmwareFiles: ["BTUPDAT.BIN", "SYSUPDAT.IMG"]))
         XCTAssertEqual("retryable-server-failure", PolarFirmwareBackupRuntimePlanner.firmwareRetryableServerFailureTerminalError())
+        XCTAssertEqual("client-request-failure", PolarFirmwareBackupRuntimePlanner.firmwareClientRequestFailureTerminalError())
         XCTAssertEqual("success", PolarFirmwareBackupRuntimePlanner.backupRestore(path: "/U/0/BACKUP.TXT", payloadHex: "0102"))
         let operation = PolarFirmwareBackupRuntimePlanner.backupRestoreOperation(path: "/U/0/BACKUP.TXT", payloadHex: "0102")
         XCTAssertEqual(.put, operation?.command)
@@ -2489,6 +2490,37 @@ final class PolarBleApiImplTests: XCTestCase {
         }
     }
 
+    func test_checkFirmwareUpdate_mapsClientFirmwareServiceFailureThroughSharedPlan() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 400, userInfo: [NSLocalizedDescriptionKey: "Firmware update request failed"])
+        let service = FailingCheckFirmwareUpdateService(error: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("client-request-failure", PolarRuntimePlanner.firmwareClientRequestFailureTerminalError())
+        #endif
+        let statuses = try collectAllAsync(v2Api.checkFirmwareUpdate(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .checkFwUpdateFailed(let details):
+            XCTAssertTrue(details.contains("Firmware update request failed"), details)
+        default:
+            XCTFail("Expected checkFwUpdateFailed")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
     func test_updateFirmware_mapsFirmwareServiceFailureToFailedStatusWithoutDownload() throws {
         let firmwareError = NSError(domain: "firmware-service", code: 503, userInfo: [NSLocalizedDescriptionKey: "retryable server failure"])
         let service = FailingCheckFirmwareUpdateService(error: firmwareError)
@@ -2517,6 +2549,37 @@ final class PolarBleApiImplTests: XCTestCase {
             XCTFail("Expected fwUpdateFailed")
         }
         XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 3)
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
+    func test_updateFirmware_mapsClientFirmwareServiceFailureThroughSharedPlanWithoutDownload() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 400, userInfo: [NSLocalizedDescriptionKey: "Firmware update request failed"])
+        let service = FailingCheckFirmwareUpdateService(error: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("client-request-failure", PolarRuntimePlanner.firmwareClientRequestFailureTerminalError())
+        #endif
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .fwUpdateFailed(let details):
+            XCTAssertTrue(details.contains("Firmware update request failed"), details)
+        default:
+            XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
         XCTAssertTrue(service.packageDownloadUrls.isEmpty)
     }
 

@@ -1746,6 +1746,7 @@ object PolarIosSharedBridge {
                 expectedTerminalStatus = statuses.lastOrNull(),
                 expectedTerminalError = when (id) {
                     "retryable-server-failure" -> "retryable-server-failure"
+                    "client-request-failure" -> "client-request-failure"
                     "cancel-after-package-fetch-cleans-up-before-ble-write" -> "cancelled"
                     else -> null
                 },

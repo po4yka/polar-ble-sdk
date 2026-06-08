@@ -181,11 +181,14 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         assertEquals(listOf("checkFwUpdateNotAvailable"), scenarios.getValue("check-update-not-available").stringArrayValue("expectedStatuses"))
         assertEquals("1.3.0", scenarios.getValue("check-update-available").objectValue("serverResponse").stringValue("availableVersion"))
         assertEquals("https://firmware.example.invalid/fw-1.3.0.zip", scenarios.getValue("download-failure").objectValue("serverResponse").stringValue("fileUrl"))
-        assertEquals("fwUpdateFailed", scenarios.getValue("download-failure").stringValue("expectedTerminalStatus"))
-        assertEquals(true, scenarios.getValue("retryable-server-failure").objectValue("serverResponse").booleanValue("retryable"))
-        assertEquals("retryable-server-failure", scenarios.getValue("retryable-server-failure").stringValue("expectedTerminalError"))
-        assertEquals(false, scenarios.getValue("retryable-server-failure").booleanValue("downloadAttempted"))
-        assertEquals("empty-or-invalid", scenarios.getValue("empty-or-invalid-zip").stringValue("zipExtraction"))
+            assertEquals("fwUpdateFailed", scenarios.getValue("download-failure").stringValue("expectedTerminalStatus"))
+            assertEquals(true, scenarios.getValue("retryable-server-failure").objectValue("serverResponse").booleanValue("retryable"))
+            assertEquals("retryable-server-failure", scenarios.getValue("retryable-server-failure").stringValue("expectedTerminalError"))
+            assertEquals(false, scenarios.getValue("retryable-server-failure").booleanValue("downloadAttempted"))
+            assertEquals(false, scenarios.getValue("client-request-failure").objectValue("serverResponse").booleanValue("retryable"))
+            assertEquals("client-request-failure", scenarios.getValue("client-request-failure").stringValue("expectedTerminalError"))
+            assertEquals(false, scenarios.getValue("client-request-failure").booleanValue("downloadAttempted"))
+            assertEquals("empty-or-invalid", scenarios.getValue("empty-or-invalid-zip").stringValue("zipExtraction"))
         val cancellation = scenarios.getValue("cancel-after-package-fetch-cleans-up-before-ble-write")
         assertEquals("afterPackageFetch", cancellation.stringValue("cancellationPoint"))
         assertEquals(listOf("fetchingFwUpdatePackage", "fwUpdateCancelled"), cancellation.stringArrayValue("expectedStatuses"))
@@ -295,6 +298,11 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
                 terminalError = "retryable-server-failure"
                 return CommonFirmwareWorkflowFakeOutcome(status, writes, terminalError, downloadAttempted, zipExtractionAttempted, cleanup.count)
             }
+            if (server == CommonFirmwareServerResponse.ClientFailure) {
+                status += "fwUpdateFailed"
+                terminalError = "client-request-failure"
+                return CommonFirmwareWorkflowFakeOutcome(status, writes, terminalError, downloadAttempted, zipExtractionAttempted, cleanup.count)
+            }
 
             status += "fetchingFwUpdatePackage"
             downloadAttempted = true
@@ -340,6 +348,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
                 "check-update-not-available" -> CommonFirmwareServerResponse.NotAvailable
                 "check-update-available" -> CommonFirmwareServerResponse.Available
                 "retryable-server-failure" -> CommonFirmwareServerResponse.RetryableFailure
+                "client-request-failure" -> CommonFirmwareServerResponse.ClientFailure
                 else -> CommonFirmwareServerResponse.PackageAvailable
             }
         }
@@ -404,6 +413,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         NotAvailable,
         Available,
         RetryableFailure,
+        ClientFailure,
         PackageAvailable
     }
 
@@ -423,6 +433,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
             "check-update-available",
             "download-failure",
             "retryable-server-failure",
+            "client-request-failure",
             "empty-or-invalid-zip",
             "cancel-after-package-fetch-cleans-up-before-ble-write",
             "write-package-success-with-system-update-last",

@@ -2500,6 +2500,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             HttpResponseCodes.BAD_REQUEST -> {
                 val errorBody = try { response.errorBody()?.string() ?: "Failed to read error body" } catch (e: Exception) { "Error reading error body: ${e.message}" }
                 BleLogger.e("TAG", "Bad request to firmware update API: $errorBody")
+                val clientFailurePlan = PolarRuntimePlannerAdapter.planFirmwareWorkflow(
+                    id = "client-request-failure",
+                    statuses = listOf("fwUpdateFailed")
+                )
+                require(clientFailurePlan.terminalError == "client-request-failure")
                 Triple(null, null, FirmwareUpdateStatus.FwUpdateFailed("Bad request to firmware update API: $errorBody"))
             }
             else -> {

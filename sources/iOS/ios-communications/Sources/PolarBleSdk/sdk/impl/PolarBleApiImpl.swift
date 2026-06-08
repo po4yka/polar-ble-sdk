@@ -2209,6 +2209,11 @@ extension PolarBleApiImpl: PolarBleApi  {
                             if let terminalError = PolarRuntimePlanner.firmwareRetryableServerFailureTerminalError(), terminalError != "retryable-server-failure" {
                                 throw PolarErrors.polarBleSdkInternalException(description: "Firmware workflow retryableServerFailure terminal-error planning failed: \(terminalError)")
                             }
+                        } else {
+                            try self.ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwareClientRequestFailureWorkflow(), kind: "clientRequestFailure")
+                            if let terminalError = PolarRuntimePlanner.firmwareClientRequestFailureTerminalError(), terminalError != "client-request-failure" {
+                                throw PolarErrors.polarBleSdkInternalException(description: "Firmware workflow clientRequestFailure terminal-error planning failed: \(terminalError)")
+                            }
                         }
                         continuation.yield(.checkFwUpdateFailed(details: error.localizedDescription))
                     }
@@ -2442,6 +2447,16 @@ extension PolarBleApiImpl: PolarBleApi  {
                         }
                         if let terminalError = PolarRuntimePlanner.firmwareRetryableServerFailureTerminalError(), terminalError != "retryable-server-failure" {
                             cont.resume(returning: (nil, nil, .fwUpdateFailed(details: "Firmware workflow retryableServerFailure terminal-error planning failed: \(terminalError)")))
+                            return
+                        }
+                    } else {
+                        let terminal = PolarRuntimePlanner.firmwareClientRequestFailureWorkflow()
+                        guard terminal == "success" || terminal == "platform-owned" else {
+                            cont.resume(returning: (nil, nil, .fwUpdateFailed(details: "Firmware workflow clientRequestFailure planning failed: \(terminal)")))
+                            return
+                        }
+                        if let terminalError = PolarRuntimePlanner.firmwareClientRequestFailureTerminalError(), terminalError != "client-request-failure" {
+                            cont.resume(returning: (nil, nil, .fwUpdateFailed(details: "Firmware workflow clientRequestFailure terminal-error planning failed: \(terminalError)")))
                             return
                         }
                     }

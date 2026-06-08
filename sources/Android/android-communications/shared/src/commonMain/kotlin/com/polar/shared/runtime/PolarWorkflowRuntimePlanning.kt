@@ -189,6 +189,7 @@ object PolarWorkflowRuntimePlanning {
             "check-update-available" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses)
             "download-failure" -> PolarWorkflowPlan(statuses = listOf("fetchingFwUpdatePackage", requireNotNull(scenario.expectedTerminalStatus)), downloadAttempted = true)
             "retryable-server-failure" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses, terminalError = scenario.expectedTerminalError, downloadAttempted = scenario.downloadAttempted, retryDelaysMillis = firmwareRetryDelaysMillis(maxRetries = 2))
+            "client-request-failure" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses, terminalError = scenario.expectedTerminalError, downloadAttempted = scenario.downloadAttempted)
             "empty-or-invalid-zip" -> PolarWorkflowPlan(statuses = listOf("fetchingFwUpdatePackage", requireNotNull(scenario.expectedTerminalStatus)), downloadAttempted = true, zipExtractionAttempted = true)
             "cancel-after-package-fetch-cleans-up-before-ble-write" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses, writes = scenario.expectedWrites, terminalError = scenario.expectedTerminalError, downloadAttempted = true, zipExtractionAttempted = true, cleanupCallbackCount = scenario.expectedCleanupCallbackCount)
             "write-package-success-with-system-update-last" -> PolarWorkflowPlan(statuses = scenario.expectedStatusOrder, writes = orderFirmwareFiles(scenario.firmwareFiles).map { "/$it" })

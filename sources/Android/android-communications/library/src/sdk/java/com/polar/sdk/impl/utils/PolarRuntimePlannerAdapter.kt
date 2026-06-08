@@ -537,7 +537,11 @@ internal object PolarRuntimePlannerAdapter {
                 id = id,
                 expectedStatuses = statuses,
                 expectedTerminalStatus = statuses.lastOrNull(),
-                expectedTerminalError = if (id == "retryable-server-failure") "retryable-server-failure" else null,
+                expectedTerminalError = when (id) {
+                    "retryable-server-failure" -> "retryable-server-failure"
+                    "client-request-failure" -> "client-request-failure"
+                    else -> null
+                },
                 expectedStatusOrder = statuses,
                 firmwareFiles = firmwareFiles
             )

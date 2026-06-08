@@ -58,6 +58,18 @@
         "downloadAttempted": false
       },
       {
+        "id": "client-request-failure",
+        "serverResponse": {
+          "status": 400,
+          "retryable": false
+        },
+        "expectedStatuses": [
+          "fwUpdateFailed"
+        ],
+        "expectedTerminalError": "client-request-failure",
+        "downloadAttempted": false
+      },
+      {
         "id": "empty-or-invalid-zip",
         "serverResponse": {
           "availableVersion": "1.3.0",
@@ -172,6 +184,15 @@
           ],
           "writes": [],
           "terminalError": "retryable-server-failure",
+          "downloadAttempted": false
+        },
+        {
+          "id": "client-request-failure",
+          "statuses": [
+            "fwUpdateFailed"
+          ],
+          "writes": [],
+          "terminalError": "client-request-failure",
           "downloadAttempted": false
         },
         {
