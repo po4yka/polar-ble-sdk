@@ -126,6 +126,9 @@ class PolarFirmwareUpdateUtils {
             guard workflowTerminal == "success" || workflowTerminal == "platform-owned" else {
                 return mapError(NSError(domain: "PolarFirmwareUpdateUtils", code: -1, userInfo: [NSLocalizedDescriptionKey: "Firmware battery terminal planning failed: \(workflowTerminal)"]))
             }
+            if let terminalError = PolarRuntimePlanner.firmwareBatteryTooLowTerminalError(fileNames: [fileName]), terminalError != "battery-too-low" {
+                return mapError(NSError(domain: "PolarFirmwareUpdateUtils", code: -1, userInfo: [NSLocalizedDescriptionKey: "Firmware battery terminal-error planning failed: \(terminalError)"]))
+            }
             return mapBatteryTooLow()
         }
         return mapError(error)

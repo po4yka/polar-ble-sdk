@@ -22,6 +22,15 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwareWorkflowTerminalError(id: String, statuses: [String] = [], firmwareFiles: [String] = []) -> String? {
+        #if canImport(PolarBleSdkShared)
+        let terminalError = PolarIosSharedBridge.shared.planRuntimeFirmwareWorkflowTerminalError(id: id, statusesCsv: statuses.joined(separator: ","), firmwareFilesCsv: firmwareFiles.joined(separator: ","))
+        return terminalError.isEmpty ? nil : terminalError
+        #else
+        return nil
+        #endif
+    }
+
     @discardableResult
     static func invalidFirmwarePackageWorkflow() -> String {
         return firmwareWorkflow(id: "empty-or-invalid-zip", statuses: ["fetchingFwUpdatePackage", "fwUpdateNotAvailable"])
@@ -60,6 +69,10 @@ enum PolarFirmwareBackupRuntimePlanner {
     @discardableResult
     static func firmwareBatteryTooLowTerminalWorkflow(fileNames: [String]) -> String {
         return firmwareWorkflow(id: "battery-too-low-response-is-terminal-failure", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "fwUpdateFailed"], firmwareFiles: fileNames.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "/")) })
+    }
+
+    static func firmwareBatteryTooLowTerminalError(fileNames: [String]) -> String? {
+        return firmwareWorkflowTerminalError(id: "battery-too-low-response-is-terminal-failure", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "fwUpdateFailed"], firmwareFiles: fileNames.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "/")) })
     }
 
     static func orderFirmwareFiles(_ fileNames: [String]) -> [String] {

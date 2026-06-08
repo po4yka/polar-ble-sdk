@@ -286,6 +286,10 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwareBatteryTooLowTerminalWorkflow(fileNames: fileNames)
     }
 
+    static func firmwareBatteryTooLowTerminalError(fileNames: [String]) -> String? {
+        return PolarFirmwareBackupRuntimePlanner.firmwareBatteryTooLowTerminalError(fileNames: fileNames)
+    }
+
     static func orderFirmwareFiles(_ fileNames: [String]) -> [String] {
         return PolarFirmwareBackupRuntimePlanner.orderFirmwareFiles(fileNames)
     }

@@ -1737,6 +1737,19 @@ object PolarIosSharedBridge {
         ).terminal
     }
 
+    fun planRuntimeFirmwareWorkflowTerminalError(id: String, statusesCsv: String, firmwareFilesCsv: String): String {
+        val statuses = statusesCsv.csvValues()
+        return PolarWorkflowRuntimePlanning.planFirmwareWorkflow(
+            PolarFirmwareWorkflowScenario(
+                id = id,
+                expectedStatuses = statuses,
+                expectedTerminalStatus = statuses.lastOrNull(),
+                expectedStatusOrder = statuses,
+                firmwareFiles = firmwareFilesCsv.csvValues()
+            )
+        ).terminalError.orEmpty()
+    }
+
     fun planRuntimeOrderFirmwareFiles(fileNamesCsv: String): String {
         return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNamesCsv.csvValues()).joinToString(",")
     }
