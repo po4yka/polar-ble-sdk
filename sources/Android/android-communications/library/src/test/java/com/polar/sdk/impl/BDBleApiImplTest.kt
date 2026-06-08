@@ -81,6 +81,7 @@ import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUsbConnectio
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbAutomaticMeasurementSettings
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbAutomaticTrainingDetectionSettings
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -318,6 +319,40 @@ class BDBleApiImplTest {
         Assert.assertEquals(3, firmwareApi.checkRequests.size)
         Assert.assertEquals(listOf(1000L, 2000L), delayedMillis)
         Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware maps package download failure to failed status before device writes`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        coEvery { client.write(any(), any()) } returns flowOf(0)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip"))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(3, statuses.size)
+        Assert.assertTrue(statuses[0] is FirmwareUpdateStatus.FetchingFwUpdatePackage)
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to 9.9.9"), statuses[1])
+        val failed = statuses[2] as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.contains("backup not available"))
+        Assert.assertTrue(failed.details, failed.details.contains("Package download is not used by this test"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+        coVerify(exactly = 0) { client.write(any(), any()) }
     }
 
     @Test
