@@ -246,6 +246,11 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwareWorkflow(id: id, statuses: statuses, firmwareFiles: firmwareFiles)
     }
 
+    @discardableResult
+    static func invalidFirmwarePackageWorkflow() -> String {
+        return PolarFirmwareBackupRuntimePlanner.invalidFirmwarePackageWorkflow()
+    }
+
     static func orderFirmwareFiles(_ fileNames: [String]) -> [String] {
         return PolarFirmwareBackupRuntimePlanner.orderFirmwareFiles(fileNames)
     }

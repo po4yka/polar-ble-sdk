@@ -2297,6 +2297,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                     continuation.yield(.fetchingFwUpdatePackage(details: "Fetching firmware package to \(firmwareVersionInfo)"))
                     let firmwareFiles = try await self.getFirmwareUpdatePackageAsync(firmwareUrl: url)
                     guard firmwareFiles.count > 0 else {
+                        try self.ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.invalidFirmwarePackageWorkflow(), kind: "emptyOrInvalidPackage")
                         BleLogger.error("No firmware files available, can not update")
                         continuation.yield(.fwUpdateNotAvailable(details: "Can not update, firmware files were not available"))
                         continuation.finish()

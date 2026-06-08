@@ -562,6 +562,13 @@ internal object PolarRuntimePlannerAdapter {
         ).writes.map { path -> PftpRequest.PbPFtpOperation.Command.PUT to path }
     }
 
+    fun planInvalidFirmwarePackageWorkflow(): PlannedFirmwareWorkflow {
+        return planFirmwareWorkflow(
+            id = "empty-or-invalid-zip",
+            statuses = listOf("fetchingFwUpdatePackage", "fwUpdateNotAvailable")
+        )
+    }
+
     fun orderFirmwareFiles(fileNames: List<String>): List<String> {
         return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNames)
     }
