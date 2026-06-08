@@ -2309,6 +2309,9 @@ extension PolarBleApiImpl: PolarBleApi  {
                         firmwareFiles = try await self.getFirmwareUpdatePackageAsync(firmwareUrl: url)
                     } catch is CancellationError {
                         try self.ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwarePackageFetchCancellationWorkflow(), kind: "packageFetchCancellation")
+                        if let terminalError = PolarRuntimePlanner.firmwarePackageFetchCancellationTerminalError(), terminalError != "cancelled" {
+                            throw PolarErrors.polarBleSdkInternalException(description: "Firmware workflow packageFetchCancellation terminal-error planning failed: \(terminalError)")
+                        }
                         throw CancellationError()
                     } catch {
                         try self.ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwarePackageDownloadFailureWorkflow(), kind: "packageDownloadFailure")

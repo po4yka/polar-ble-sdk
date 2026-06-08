@@ -65,6 +65,10 @@ enum PolarFirmwareBackupRuntimePlanner {
         return firmwareWorkflow(id: "cancel-after-package-fetch-cleans-up-before-ble-write", statuses: ["fetchingFwUpdatePackage", "fwUpdateCancelled"])
     }
 
+    static func firmwarePackageFetchCancellationTerminalError() -> String? {
+        return firmwareWorkflowTerminalError(id: "cancel-after-package-fetch-cleans-up-before-ble-write", statuses: ["fetchingFwUpdatePackage", "fwUpdateCancelled"])
+    }
+
     @discardableResult
     static func firmwareSystemUpdateRebootSuccessWorkflow(fileNames: [String]) -> String {
         return firmwareWorkflow(id: "system-update-reboot-response-is-success", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"], firmwareFiles: fileNames.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "/")) })

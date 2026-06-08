@@ -2421,6 +2421,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("/U/0/BACKUP.TXT", operation?.path)
         XCTAssertEqual(["/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB", "/U/0/USERID.BPB"], PolarFirmwareBackupRuntimePlanner.defaultBackupPaths())
         XCTAssertEqual("/U/0/S/UDEVSET.BPB", PolarFirmwareBackupRuntimePlanner.backupTraversalRootPath("/U/*/S/UDEVSET.BPB"))
+        XCTAssertEqual("cancelled", PolarFirmwareBackupRuntimePlanner.firmwarePackageFetchCancellationTerminalError())
         XCTAssertEqual("success-rebooting", PolarFirmwareBackupRuntimePlanner.firmwareWriteTerminal(errorCode: 1, fileName: "/SYSUPDAT.IMG"))
         XCTAssertEqual("propagate-error", PolarFirmwareBackupRuntimePlanner.firmwareWriteTerminal(errorCode: 1, fileName: "BTUPDAT.BIN"))
         XCTAssertEqual("battery-too-low", PolarFirmwareBackupRuntimePlanner.firmwareWriteTerminal(errorCode: 209, fileName: "/SYSUPDAT.IMG"))
