@@ -77,8 +77,18 @@ internal object PolarFirmwareUpdateUtils {
             PolarRuntimePlannerAdapter.firmwareWriteTerminal(pftpError.error, fileName)
         } ?: return error
         return when (terminal) {
-            "success-rebooting" -> null
-            "battery-too-low" -> PolarBleSdkInternalException("Battery too low to perform firmware update")
+            "success-rebooting" -> {
+                val plan = PolarRuntimePlannerAdapter.planFirmwareSystemUpdateRebootSuccessWorkflow(listOf(fileName))
+                require(plan.statuses.last() == "fwUpdateCompletedSuccessfully")
+                require(plan.terminalError == null)
+                null
+            }
+            "battery-too-low" -> {
+                val plan = PolarRuntimePlannerAdapter.planFirmwareBatteryTooLowTerminalWorkflow(listOf(fileName))
+                require(plan.statuses.last() == "fwUpdateFailed")
+                require(plan.terminalError == "battery-too-low")
+                PolarBleSdkInternalException("Battery too low to perform firmware update")
+            }
             else -> error
         }
     }

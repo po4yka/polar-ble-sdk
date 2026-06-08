@@ -436,6 +436,14 @@ class PolarRuntimePlannerAdapterTest {
         Assert.assertEquals("propagate-error", PolarRuntimePlannerAdapter.firmwareWriteTerminal(errorCode = 1, fileName = "BTUPDAT.BIN"))
         Assert.assertEquals("battery-too-low", PolarRuntimePlannerAdapter.firmwareWriteTerminal(errorCode = 209, fileName = "/SYSUPDAT.IMG"))
         Assert.assertEquals("propagate-error", PolarRuntimePlannerAdapter.firmwareWriteTerminal(errorCode = 103, fileName = "/SYSUPDAT.IMG"))
+        val rebootPlan = PolarRuntimePlannerAdapter.planFirmwareSystemUpdateRebootSuccessWorkflow(listOf("/SYSUPDAT.IMG"))
+        Assert.assertEquals(listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"), rebootPlan.statuses)
+        Assert.assertEquals(listOf("/SYSUPDAT.IMG"), rebootPlan.writes)
+        Assert.assertNull(rebootPlan.terminalError)
+        val batteryPlan = PolarRuntimePlannerAdapter.planFirmwareBatteryTooLowTerminalWorkflow(listOf("/SYSUPDAT.IMG"))
+        Assert.assertEquals(listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "fwUpdateFailed"), batteryPlan.statuses)
+        Assert.assertEquals(listOf("/SYSUPDAT.IMG"), batteryPlan.writes)
+        Assert.assertEquals("battery-too-low", batteryPlan.terminalError)
     }
 
     @Test

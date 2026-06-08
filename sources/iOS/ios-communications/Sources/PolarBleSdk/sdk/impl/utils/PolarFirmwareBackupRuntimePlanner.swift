@@ -52,6 +52,16 @@ enum PolarFirmwareBackupRuntimePlanner {
         return firmwareWorkflow(id: "cancel-after-package-fetch-cleans-up-before-ble-write", statuses: ["fetchingFwUpdatePackage", "fwUpdateCancelled"])
     }
 
+    @discardableResult
+    static func firmwareSystemUpdateRebootSuccessWorkflow(fileNames: [String]) -> String {
+        return firmwareWorkflow(id: "system-update-reboot-response-is-success", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"], firmwareFiles: fileNames.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "/")) })
+    }
+
+    @discardableResult
+    static func firmwareBatteryTooLowTerminalWorkflow(fileNames: [String]) -> String {
+        return firmwareWorkflow(id: "battery-too-low-response-is-terminal-failure", statuses: ["preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "fwUpdateFailed"], firmwareFiles: fileNames.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "/")) })
+    }
+
     static func orderFirmwareFiles(_ fileNames: [String]) -> [String] {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.planRuntimeOrderFirmwareFiles(fileNamesCsv: fileNames.joined(separator: ",")).split(separator: ",").map(String.init)

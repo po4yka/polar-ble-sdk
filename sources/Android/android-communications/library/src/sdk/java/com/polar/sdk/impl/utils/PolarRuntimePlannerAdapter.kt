@@ -619,6 +619,32 @@ internal object PolarRuntimePlannerAdapter {
         }
     }
 
+    fun planFirmwareSystemUpdateRebootSuccessWorkflow(firmwareFiles: List<String>): PlannedFirmwareWorkflow {
+        return planFirmwareWorkflow(
+            id = "system-update-reboot-response-is-success",
+            statuses = listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", "fwUpdateCompletedSuccessfully"),
+            firmwareFiles = firmwareFiles.map { it.trimStart('/') }
+        )
+    }
+
+    fun planFirmwareBatteryTooLowTerminalWorkflow(firmwareFiles: List<String>): PlannedFirmwareWorkflow {
+        return PolarWorkflowRuntimePlanning.planFirmwareWorkflow(
+            PolarFirmwareWorkflowScenario(
+                id = "battery-too-low-response-is-terminal-failure",
+                firmwareFiles = firmwareFiles.map { it.trimStart('/') }
+            )
+        ).let { plan ->
+            PlannedFirmwareWorkflow(
+                statuses = plan.statuses,
+                writes = plan.writes,
+                terminal = plan.terminal,
+                terminalError = plan.terminalError,
+                retryDelaysMillis = plan.retryDelaysMillis,
+                cleanupCallbackCount = plan.cleanupCallbackCount
+            )
+        }
+    }
+
     fun orderFirmwareFiles(fileNames: List<String>): List<String> {
         return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNames)
     }

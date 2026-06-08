@@ -115,9 +115,17 @@ class PolarFirmwareUpdateUtils {
         }
         let terminal = PolarRuntimePlanner.firmwareWriteTerminal(errorCode: errorCode, fileName: fileName)
         if terminal == "success-rebooting" {
+            let workflowTerminal = PolarRuntimePlanner.firmwareSystemUpdateRebootSuccessWorkflow(fileNames: [fileName])
+            guard workflowTerminal == "success" || workflowTerminal == "platform-owned" else {
+                return mapError(NSError(domain: "PolarFirmwareUpdateUtils", code: -1, userInfo: [NSLocalizedDescriptionKey: "Firmware system reboot planning failed: \(workflowTerminal)"]))
+            }
             return nil
         }
         if terminal == "battery-too-low" {
+            let workflowTerminal = PolarRuntimePlanner.firmwareBatteryTooLowTerminalWorkflow(fileNames: [fileName])
+            guard workflowTerminal == "success" || workflowTerminal == "platform-owned" else {
+                return mapError(NSError(domain: "PolarFirmwareUpdateUtils", code: -1, userInfo: [NSLocalizedDescriptionKey: "Firmware battery terminal planning failed: \(workflowTerminal)"]))
+            }
             return mapBatteryTooLow()
         }
         return mapError(error)

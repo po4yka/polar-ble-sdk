@@ -2423,6 +2423,8 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("success-rebooting", PolarFirmwareBackupRuntimePlanner.firmwareWriteTerminal(errorCode: 1, fileName: "/SYSUPDAT.IMG"))
         XCTAssertEqual("propagate-error", PolarFirmwareBackupRuntimePlanner.firmwareWriteTerminal(errorCode: 1, fileName: "BTUPDAT.BIN"))
         XCTAssertEqual("battery-too-low", PolarFirmwareBackupRuntimePlanner.firmwareWriteTerminal(errorCode: 209, fileName: "/SYSUPDAT.IMG"))
+        XCTAssertEqual("success", PolarFirmwareBackupRuntimePlanner.firmwareSystemUpdateRebootSuccessWorkflow(fileNames: ["/SYSUPDAT.IMG"]))
+        XCTAssertEqual("success", PolarFirmwareBackupRuntimePlanner.firmwareBatteryTooLowTerminalWorkflow(fileNames: ["/SYSUPDAT.IMG"]))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif
