@@ -37,6 +37,11 @@ public class TemperatureData {
     }
 
     private static func dataFromCompressedType0(frame: PmdDataFrame) throws -> TemperatureData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedCompressedType0Data(frame: frame) {
+            return sharedData
+        }
+        #endif
 
         let temperatureData = TemperatureData()
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_0_CHANNELS_IN_SAMPLE, resolution: TYPE_0_SAMPLE_SIZE_IN_BITS)
@@ -76,6 +81,24 @@ public class TemperatureData {
     }
 
     #if canImport(PolarBleSdkShared)
+    private static func sharedCompressedType0Data(frame: PmdDataFrame) -> TemperatureData? {
+        guard frame.isCompressedFrame,
+              frame.frameType == .type_0,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = TemperatureDataRuntimePlanner.compressedType0Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        return temperatureData(fromSharedRows: sharedRows)
+    }
+
     private static func sharedRawType0Data(frame: PmdDataFrame) -> TemperatureData? {
         guard !frame.isCompressedFrame,
               frame.frameType == .type_0,
@@ -91,6 +114,10 @@ public class TemperatureData {
         ), !sharedRows.isEmpty else {
             return nil
         }
+        return temperatureData(fromSharedRows: sharedRows)
+    }
+
+    private static func temperatureData(fromSharedRows sharedRows: String) -> TemperatureData? {
         let rowValues = sharedRows.split(separator: "|")
         let samples = rowValues.compactMap { row -> TemperatureSample? in
             let fields = row.split(separator: ",")
@@ -123,6 +150,14 @@ enum TemperatureDataRuntimePlanner {
     static func rawType0Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.temperatureRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedType0Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.temperatureCompressedType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
         #else
         return nil
         #endif

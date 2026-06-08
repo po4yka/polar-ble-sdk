@@ -53,11 +53,20 @@ final class TemperatureDataTest: XCTestCase {
             { _ in 0 })
 
         let temperatureData = try TemperatureData.parseDataFromDataFrame(frame: dataFrame)
-        
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(3, temperatureData.samples.count)
+        XCTAssertEqual(666666747, temperatureData.samples[0].timeStamp)
+        XCTAssertEqual(27.54, temperatureData.samples[0].temperature, accuracy: 0.00001)
+        XCTAssertEqual(1333333373, temperatureData.samples[1].timeStamp)
+        XCTAssertEqual(27.54, temperatureData.samples[1].temperature, accuracy: 0.00001)
+        XCTAssertEqual(2000000000, temperatureData.samples[2].timeStamp)
+        XCTAssertEqual(27.54, temperatureData.samples[2].temperature, accuracy: 0.00001)
+        #else
         XCTAssertEqual(3,temperatureData.samples.count)
         XCTAssertEqual(27.54, temperatureData.samples[0].temperature)
         XCTAssertEqual(27.54, temperatureData.samples[1].temperature)
         XCTAssertEqual(27.54, temperatureData.samples[2].temperature)
+        #endif
     }
 
     func testTemperatureRawType0ParserUsesSharedKmpWhenLinked() throws {
@@ -325,8 +334,8 @@ final class TemperatureDataTest: XCTestCase {
         "unsupported-raw-frame-policy",
         "unsupported-compressed-frame-policy",
         "truncated-raw-sample-policy",
-        "compressed-pressure-one-channel-indexing-deferral",
-        "compressed-temperature-sample-count-deferral",
+        "compressed-pressure-shared-type0-parser",
+        "compressed-temperature-shared-type0-parser",
         "platform-pressure-temperature-vector-reference-gate",
         "compile-verification-gate"
     ]

@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.pmd.sensors.PolarPmdDataFrame
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -7,16 +9,18 @@ import kotlin.test.assertTrue
 
 class PressureTemperatureParserCommonPolicyTest {
     @Test
-    fun pressureAndTemperatureGoldenVectorsDefineExecutableCommonRawType0Policy() {
+    fun pressureAndTemperatureGoldenVectorsDefineExecutableCommonScalarPolicy() {
         PRESSURE_TEMPERATURE_VECTORS.forEach { relativePath ->
             val vector = loadGoldenVectorText(relativePath)
             val caseId = vector.stringValue("id")
             val input = vector.objectValue("input")
             val expected = vector.objectValue("expected")
+            val frameTypeHex = input.stringValue("dataFrameHex").substring(18, 20)
             val parsed = parseScalarSensor(
                 input.stringValue("dataFrameHex"),
                 input.longValue("previousTimeStamp"),
-                forceCompressed = COMPRESSED_PLATFORM_PARITY_VECTORS.contains(relativePath)
+                input.floatValue("factor"),
+                input.intValue("sampleRate")
             )
 
             expected.optionalStringValue("migrationOwnership")?.let { ownership ->
@@ -33,7 +37,7 @@ class PressureTemperatureParserCommonPolicyTest {
 
             assertEquals(expected.stringValue("measurementType"), parsed.measurementType, caseId)
             assertEquals(expected.intValue("frameType"), parsed.frameType, caseId)
-            assertEquals(expected.booleanValue("compressed"), parsed.compressed, caseId)
+            assertEquals(expected.booleanValue("compressed"), parsed.compressed, "$caseId frameTypeHex=$frameTypeHex")
             assertEquals(expected.longValue("timeStamp"), parsed.timeStamp, caseId)
             expected.optionalStringValue("parseError")?.let { parseError ->
                 assertEquals(parseError, parsed.error, caseId)
@@ -52,22 +56,28 @@ class PressureTemperatureParserCommonPolicyTest {
     }
 
     @Test
-    fun pressureAndTemperatureCompressedVectorsPinPlatformParityDeferralBeforeCommonParserMigration() {
-        COMPRESSED_PLATFORM_PARITY_VECTORS.forEach { relativePath ->
+    fun pressureAndTemperatureCompressedVectorsUseProductionSharedType0Parser() {
+        COMPRESSED_COMMON_VECTORS.forEach { relativePath ->
             val vector = loadGoldenVectorText(relativePath)
             val caseId = vector.stringValue("id")
             val input = vector.objectValue("input")
             val expected = vector.objectValue("expected")
             val platforms = vector.objectValue("platforms")
-            val parsed = parseScalarSensor(input.stringValue("dataFrameHex"), input.longValue("previousTimeStamp"), forceCompressed = true)
+            val frameTypeHex = input.stringValue("dataFrameHex").substring(18, 20)
+            val parsed = parseScalarSensor(
+                input.stringValue("dataFrameHex"),
+                input.longValue("previousTimeStamp"),
+                input.floatValue("factor"),
+                input.intValue("sampleRate")
+            )
 
-            assertEquals(PROTOCOL_ONLY_MIGRATION_OWNERSHIP, expected.stringValue("migrationOwnership"), caseId)
             assertEquals(expected.stringValue("measurementType"), parsed.measurementType, caseId)
             assertEquals(expected.intValue("frameType"), parsed.frameType, caseId)
-            assertEquals(true, parsed.compressed, caseId)
-            assertEquals("unsupportedFrame", parsed.error, caseId)
-            assertEquals(false, platforms.booleanValue("common"), "$caseId common ownership")
+            assertEquals(true, parsed.compressed, "$caseId frameTypeHex=$frameTypeHex")
+            assertEquals(null, parsed.error, caseId)
+            assertEquals(true, platforms.booleanValue("common"), "$caseId common ownership")
             assertEquals(caseId.compressedScalarDecisionNote(), vector.stringValue("notes"), caseId)
+            assertEquals(expected.objectArray("samples").size, parsed.samples.size, "$caseId sample count")
         }
     }
 
@@ -91,51 +101,40 @@ class PressureTemperatureParserCommonPolicyTest {
         assertEquals(listOf("com.polar.sharedtest.PressureTemperatureParserCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
-    private fun parseScalarSensor(hex: String, previousTimeStamp: Long, forceCompressed: Boolean = false): ScalarSensorParseResult {
+    private fun parseScalarSensor(hex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): ScalarSensorParseResult {
         val bytes = hexToBytes(hex)
         if (bytes.size < HEADER_SIZE) return ScalarSensorParseResult(error = "malformedFrame")
         val measurementType = (bytes[0].toInt() and 0xFF).measurementType()
-        val rawFrameType = if (bytes.size == HEADER_SIZE + 1) {
-            bytes[HEADER_SIZE].toInt() and 0xFF
-        } else {
-            bytes[9].toInt() and 0xFF
-        }
-        val compressed = forceCompressed || (rawFrameType and 0x80) != 0
-        val frameType = rawFrameType and 0x7F
-        val frameTimeStamp = bytes.readLittleEndianLong(offset = 1, size = 8)
-        if (compressed || frameType != 0) {
+        val frameTypeField = hex.substring(18, 20).toInt(16)
+        val compressed = (frameTypeField and 0x80) != 0
+        val frameType = frameTypeField and 0x7F
+        val frame = PolarPmdDataFrame.fromByteArray(
+            data = bytes,
+            previousTimeStamp = previousTimeStamp,
+            factor = factor,
+            sampleRate = sampleRate
+        )
+        val parsed = runCatching {
+            when (measurementType) {
+                "PRESSURE" -> PolarSensorDataParser.parsePressure(frame).map { sample -> ScalarSample(sample.timeStamp.toLong(), sample.pressure) }
+                "TEMPERATURE" -> PolarSensorDataParser.parseTemperature(frame).map { sample -> ScalarSample(sample.timeStamp.toLong(), sample.temperature) }
+                else -> emptyList()
+            }
+        }.getOrElse { error ->
             return ScalarSensorParseResult(
                 measurementType = measurementType,
                 frameType = frameType,
                 compressed = compressed,
-                timeStamp = frameTimeStamp,
-                error = "unsupportedFrame"
-            )
-        }
-        val payload = bytes.copyOfRange(HEADER_SIZE, bytes.size)
-        if (payload.size % RAW_FLOAT_SAMPLE_SIZE != 0) {
-            return ScalarSensorParseResult(
-                measurementType = measurementType,
-                frameType = frameType,
-                compressed = compressed,
-                timeStamp = frameTimeStamp,
-                error = "malformedFrame"
-            )
-        }
-        val sampleCount = payload.size / RAW_FLOAT_SAMPLE_SIZE
-        val samples = (0 until sampleCount).map { index ->
-            val sampleTimeStamp = previousTimeStamp + ((frameTimeStamp - previousTimeStamp) * (index + 1) / sampleCount)
-            ScalarSample(
-                timeStamp = sampleTimeStamp,
-                value = payload.readFloatLe(offset = index * RAW_FLOAT_SAMPLE_SIZE)
+                timeStamp = frame.timeStamp.toLong(),
+                error = error.message ?: UNSUPPORTED_FRAME
             )
         }
         return ScalarSensorParseResult(
             measurementType = measurementType,
             frameType = frameType,
             compressed = compressed,
-            timeStamp = frameTimeStamp,
-            samples = samples
+            timeStamp = frame.timeStamp.toLong(),
+            samples = parsed
         )
     }
 
@@ -153,19 +152,6 @@ class PressureTemperatureParserCommonPolicyTest {
             "TEMPERATURE" -> "temperature"
             else -> error("Unexpected scalar measurement type $this")
         }
-    }
-
-    private fun ByteArray.readFloatLe(offset: Int): Float {
-        val bits = (this[offset].toInt() and 0xFF) or ((this[offset + 1].toInt() and 0xFF) shl 8) or ((this[offset + 2].toInt() and 0xFF) shl 16) or ((this[offset + 3].toInt() and 0xFF) shl 24)
-        return Float.fromBits(bits)
-    }
-
-    private fun ByteArray.readLittleEndianLong(offset: Int, size: Int): Long {
-        var value = 0L
-        for (index in 0 until size) {
-            value = value or ((this[offset + index].toLong() and 0xFFL) shl (index * 8))
-        }
-        return value
     }
 
     private fun assertFloatEquals(expected: Float, actual: Float, message: String) {
@@ -213,8 +199,8 @@ class PressureTemperatureParserCommonPolicyTest {
 
     private companion object {
         const val HEADER_SIZE = 10
-        const val RAW_FLOAT_SAMPLE_SIZE = 4
-        val COMPRESSED_PLATFORM_PARITY_VECTORS = listOf(
+        const val UNSUPPORTED_FRAME = "unsupportedFrame"
+        val COMPRESSED_COMMON_VECTORS = listOf(
             "protocol/sensors/pressure-compressed-type0-android-factor-half.json",
             "protocol/sensors/temperature-compressed-type0-flat-deltas.json",
             "protocol/sensors/temperature-compressed-type0-flat-deltas-android-two-samples.json"
@@ -241,8 +227,8 @@ class PressureTemperatureParserCommonPolicyTest {
             "unsupported-raw-frame-policy",
             "unsupported-compressed-frame-policy",
             "truncated-raw-sample-policy",
-            "compressed-pressure-one-channel-indexing-deferral",
-            "compressed-temperature-sample-count-deferral",
+            "compressed-pressure-shared-type0-parser",
+            "compressed-temperature-shared-type0-parser",
             "platform-pressure-temperature-vector-reference-gate",
             "compile-verification-gate"
         )
@@ -251,9 +237,9 @@ class PressureTemperatureParserCommonPolicyTest {
 
 private fun String.compressedScalarDecisionNote(): String {
     return when (this) {
-        "pressure-compressed-type0-android-factor-half" -> "Android decodes compressed pressure type-0 as an IEEE-754 reference sample and applies frame.factor. iOS is excluded until the compressed pressure parser's one-channel indexing behavior is intentionally fixed or retained for KMP."
-        "temperature-compressed-type0-flat-deltas" -> "iOS currently decodes this compressed type-0 payload as two samples with platform-specific float bit-pattern interpretation; Android and common policy use separate vectors until shared parser ownership is decided."
-        "temperature-compressed-type0-flat-deltas-android-two-samples" -> "Android currently returns two samples for this compressed type-0 zero-delta payload, with the second sample decoding to a large negative value. KMP should choose an explicit shared interpretation before moving compressed temperature parsing."
+        "pressure-compressed-type0-android-factor-half" -> "Shared KMP decodes compressed pressure type-0 as an IEEE-754 reference sample and applies frame.factor; Android production and linked iOS production consume this shared parser while unlinked SwiftPM/watchOS keeps the legacy Swift fallback."
+        "temperature-compressed-type0-flat-deltas" -> "Shared KMP decodes this compressed temperature type-0 zero-delta payload as the reference sample plus two zero-delta samples with the Android-compatible IEEE-754 bit-pattern interpretation; Android production and linked iOS production consume this shared parser."
+        "temperature-compressed-type0-flat-deltas-android-two-samples" -> "Shared KMP preserves the Android-compatible compressed temperature type-0 interpretation for this zero-delta payload: one reference sample followed by two zero-delta samples."
         else -> error("Unexpected compressed scalar vector $this")
     }
 }

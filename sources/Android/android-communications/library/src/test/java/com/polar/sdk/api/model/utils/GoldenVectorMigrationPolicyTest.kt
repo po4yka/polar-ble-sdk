@@ -3257,12 +3257,12 @@ class GoldenVectorMigrationPolicyTest {
             "skinContactSupported"
         )
         val PRESSURE_TEMPERATURE_COMMON_POLICY_REQUIRED_TERMS = listOf(
-            "pressureAndTemperatureGoldenVectorsDefineExecutableCommonRawType0Policy",
-            "pressureAndTemperatureCompressedVectorsPinPlatformParityDeferralBeforeCommonParserMigration",
+            "pressureAndTemperatureGoldenVectorsDefineExecutableCommonScalarPolicy",
+            "pressureAndTemperatureCompressedVectorsUseProductionSharedType0Parser",
             "pressureTemperatureReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "protocol/sensors/pressure-temperature-readiness.json",
             "pressure-temperature-readiness",
-            "COMPRESSED_PLATFORM_PARITY_VECTORS",
+            "COMPRESSED_COMMON_VECTORS",
             "protocol/sensors/pressure-compressed-type0-android-factor-half.json",
             "protocol/sensors/pressure-raw-type0-single-sample.json",
             "protocol/sensors/pressure-raw-type0-truncated-sample-android-error.json",
@@ -3271,11 +3271,12 @@ class GoldenVectorMigrationPolicyTest {
             "protocol/sensors/temperature-compressed-type0-flat-deltas-android-two-samples.json",
             "pressure-raw-type0-ieee754-parsing",
             "temperature-raw-type0-ieee754-parsing",
-            "compressed-pressure-one-channel-indexing-deferral",
-            "compressed-temperature-sample-count-deferral",
+            "compressed-pressure-shared-type0-parser",
+            "compressed-temperature-shared-type0-parser",
             "compile-verification-gate",
             "compressedScalarDecisionNote",
-            "readFloatLe",
+            "PolarSensorDataParser.parsePressure",
+            "PolarSensorDataParser.parseTemperature",
             "unsupportedFrame",
             "malformedFrame",
             "PROTOCOL_ONLY_MIGRATION_OWNERSHIP"

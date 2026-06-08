@@ -709,11 +709,47 @@ object PolarIosSharedBridge {
         }.getOrNull()
     }
 
+    fun pressureCompressedType0Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
+        val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
+        if (bytes.size < 10) return null
+        val frameType = bytes[9].toInt() and 0xFF
+        if ((frameType and 0x80) == 0 || (frameType and 0x7F) != 0) return null
+        return runCatching {
+            PolarSensorDataParser.parsePressure(
+                PolarPmdDataFrame.fromByteArray(
+                    data = bytes,
+                    previousTimeStamp = previousTimeStamp,
+                    factor = factor,
+                    sampleRate = sampleRate
+                )
+            ).filterIsInstance<PolarPressureSample>()
+                .joinToString(separator = "|") { sample -> "${sample.timeStamp},${sample.pressure}" }
+        }.getOrNull()
+    }
+
     fun temperatureRawType0Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
         val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
         if (bytes.size < 10) return null
         val frameType = bytes[9].toInt() and 0xFF
         if ((frameType and 0x80) != 0 || (frameType and 0x7F) != 0) return null
+        return runCatching {
+            PolarSensorDataParser.parseTemperature(
+                PolarPmdDataFrame.fromByteArray(
+                    data = bytes,
+                    previousTimeStamp = previousTimeStamp,
+                    factor = factor,
+                    sampleRate = sampleRate
+                )
+            ).filterIsInstance<PolarTemperatureSample>()
+                .joinToString(separator = "|") { sample -> "${sample.timeStamp},${sample.temperature}" }
+        }.getOrNull()
+    }
+
+    fun temperatureCompressedType0Samples(dataFrameHex: String, previousTimeStamp: Long, factor: Float, sampleRate: Int): String? {
+        val bytes = runCatching { dataFrameHex.hexToBytes() }.getOrNull() ?: return null
+        if (bytes.size < 10) return null
+        val frameType = bytes[9].toInt() and 0xFF
+        if ((frameType and 0x80) == 0 || (frameType and 0x7F) != 0) return null
         return runCatching {
             PolarSensorDataParser.parseTemperature(
                 PolarPmdDataFrame.fromByteArray(

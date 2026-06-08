@@ -4,7 +4,7 @@
   "case": "temperature_raw_type1_unsupported_frame",
   "source": "Android TemperatureDataTest and iOS TemperatureDataTest",
   "input": {
-    "dataFrameHex": "0c00943577000000000001",
+    "dataFrameHex": "0c009435770000000001",
     "previousTimeStamp": 120,
     "factor": 1.0,
     "sampleRate": 0
