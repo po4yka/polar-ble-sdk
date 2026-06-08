@@ -2495,7 +2495,14 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 BleLogger.e("TAG", "Bad request to firmware update API: $errorBody")
                 Triple(null, null, FirmwareUpdateStatus.FwUpdateFailed("Bad request to firmware update API: $errorBody"))
             }
-            else -> Triple(null, null, FirmwareUpdateStatus.FwUpdateFailed("Unexpected response code: ${response.code()}"))
+            else -> {
+                val failedStatus = FirmwareUpdateStatus.FwUpdateFailed("Unexpected response code: ${response.code()}")
+                if (isRetryableFirmwareAvailabilityFailure(failedStatus)) {
+                    val retryableFailurePlan = PolarRuntimePlannerAdapter.planFirmwareRetryableServerFailureWorkflow()
+                    require(retryableFailurePlan.terminalError == "retryable-server-failure")
+                }
+                Triple(null, null, failedStatus)
+            }
         }
     }
 

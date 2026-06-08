@@ -2454,7 +2454,7 @@ final class PolarBleApiImplTests: XCTestCase {
         default:
             XCTFail("Expected checkFwUpdateAvailable")
         }
-        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 3)
         XCTAssertTrue(service.packageDownloadUrls.isEmpty)
     }
 
@@ -2508,7 +2508,7 @@ final class PolarBleApiImplTests: XCTestCase {
         default:
             XCTFail("Expected fwUpdateFailed")
         }
-        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 3)
         XCTAssertTrue(service.packageDownloadUrls.isEmpty)
     }
 

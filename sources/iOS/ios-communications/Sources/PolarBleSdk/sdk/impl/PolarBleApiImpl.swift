@@ -2203,6 +2203,10 @@ extension PolarBleApiImpl: PolarBleApi  {
                             continuation.yield(.checkFwUpdateNotAvailable(details: "No new firmware available"))
                         }
                     case .failure(let error):
+                        let failedStatus = FirmwareUpdateStatus.fwUpdateFailed(details: error.localizedDescription)
+                        if self.isRetryableFirmwareAvailabilityFailure(failedStatus) {
+                            try self.ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwareRetryableServerFailureWorkflow(), kind: "retryableServerFailure")
+                        }
                         continuation.yield(.checkFwUpdateFailed(details: error.localizedDescription))
                     }
                     continuation.finish()
@@ -2420,6 +2424,14 @@ extension PolarBleApiImpl: PolarBleApi  {
                 case .success(let result):
                     cont.resume(returning: (result.version, result.fileUrl, .preparingDeviceForFwUpdate(details: "Preparing for firmware update")))
                 case .failure(let error):
+                    let failedStatus = FirmwareUpdateStatus.fwUpdateFailed(details: error.localizedDescription)
+                    if self.isRetryableFirmwareAvailabilityFailure(failedStatus) {
+                        let terminal = PolarRuntimePlanner.firmwareRetryableServerFailureWorkflow()
+                        guard terminal == "success" || terminal == "platform-owned" else {
+                            cont.resume(returning: (nil, nil, .fwUpdateFailed(details: "Firmware workflow retryableServerFailure planning failed: \(terminal)")))
+                            return
+                        }
+                    }
                     cont.resume(returning: (nil, nil, .fwUpdateFailed(details: error.localizedDescription)))
                 }
             }

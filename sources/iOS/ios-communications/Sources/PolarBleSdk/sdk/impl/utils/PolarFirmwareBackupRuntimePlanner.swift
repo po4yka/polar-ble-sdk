@@ -42,6 +42,11 @@ enum PolarFirmwareBackupRuntimePlanner {
         return firmwareWorkflow(id: "check-update-not-available", statuses: ["checkFwUpdateNotAvailable"])
     }
 
+    @discardableResult
+    static func firmwareRetryableServerFailureWorkflow() -> String {
+        return firmwareWorkflow(id: "retryable-server-failure", statuses: ["fwUpdateFailed"])
+    }
+
     static func orderFirmwareFiles(_ fileNames: [String]) -> [String] {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.planRuntimeOrderFirmwareFiles(fileNamesCsv: fileNames.joined(separator: ",")).split(separator: ",").map(String.init)

@@ -287,7 +287,7 @@ class BDBleApiImplTest {
         Assert.assertEquals(1, statuses.size)
         val failed = statuses.single() as FirmwareUpdateStatus.FwUpdateFailed
         Assert.assertEquals("Unexpected response code: 503", failed.details)
-        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(3, firmwareApi.checkRequests.size)
         Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
     }
 

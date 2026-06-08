@@ -590,6 +590,13 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun planFirmwareRetryableServerFailureWorkflow(): PlannedFirmwareWorkflow {
+        return planFirmwareWorkflow(
+            id = "retryable-server-failure",
+            statuses = listOf("fwUpdateFailed")
+        )
+    }
+
     fun orderFirmwareFiles(fileNames: List<String>): List<String> {
         return PolarWorkflowRuntimePlanning.orderFirmwareFiles(fileNames)
     }
