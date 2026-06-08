@@ -2415,6 +2415,32 @@ final class PolarBleApiImplTests: XCTestCase {
         #endif
     }
 
+    func test_checkFirmwareUpdate_mapsFirmwareServiceFailureToFailedStatus() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 503, userInfo: [NSLocalizedDescriptionKey: "retryable server failure"])
+        let service = FailingCheckFirmwareUpdateService(error: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let statuses = try collectAllAsync(v2Api.checkFirmwareUpdate(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .checkFwUpdateFailed(let details):
+            XCTAssertTrue(details.contains("retryable server failure"), details)
+        default:
+            XCTFail("Expected checkFwUpdateFailed")
+        }
+    }
+
     func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
@@ -4536,5 +4562,25 @@ final class PolarBleApiImplTests: XCTestCase {
             return PbDeviceLocation(rawValue: PolarUserDeviceSettings.getDeviceLocation(deviceLocation: sharedName).toInt())!
         }
         return PbDeviceLocation(rawValue: value)!
+    }
+}
+
+private final class FailingCheckFirmwareUpdateService: PolarBleSdk.FirmwareUpdateServicing {
+    private let error: Error
+
+    init(error: Error) {
+        self.error = error
+    }
+
+    func checkFirmwareUpdate(firmwareUpdateRequest: PolarBleSdk.FirmwareUpdateRequest, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        completion(.failure(error))
+    }
+
+    func checkFirmwareUpdateFromFirmwareUrl(_ url: URL, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        completion(.failure(error))
+    }
+
+    func getFirmwareUpdatePackage(url: String) async throws -> Data? {
+        throw error
     }
 }

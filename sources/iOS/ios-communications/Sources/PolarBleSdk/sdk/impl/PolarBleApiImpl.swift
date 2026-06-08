@@ -2185,18 +2185,20 @@ extension PolarBleApiImpl: PolarBleApi  {
                         return
                     }
                     let fwApi = self.firmwareUpdateApiFactory()
-                    let result = try await withCheckedThrowingContinuation { (cont: CheckedContinuation<FirmwareUpdateResponse?, Error>) in
+                    let checkResult = await withCheckedContinuation { (cont: CheckedContinuation<Result<FirmwareUpdateResponse, Error>, Never>) in
                         fwApi.checkFirmwareUpdate(firmwareUpdateRequest: firmwareUpdateRequest) { response in
-                            switch response {
-                            case .success(let result): cont.resume(returning: result)
-                            case .failure: cont.resume(returning: nil)
-                            }
+                            cont.resume(returning: response)
                         }
                     }
-                    if let result = result, let url = result.fileUrl, !url.isEmpty {
-                        continuation.yield(.checkFwUpdateAvailable(version: result.version ?? ""))
-                    } else {
-                        continuation.yield(.checkFwUpdateNotAvailable(details: "No new firmware available"))
+                    switch checkResult {
+                    case .success(let result):
+                        if let url = result.fileUrl, !url.isEmpty {
+                            continuation.yield(.checkFwUpdateAvailable(version: result.version ?? ""))
+                        } else {
+                            continuation.yield(.checkFwUpdateNotAvailable(details: "No new firmware available"))
+                        }
+                    case .failure(let error):
+                        continuation.yield(.checkFwUpdateFailed(details: error.localizedDescription))
                     }
                     continuation.finish()
                 } catch {
