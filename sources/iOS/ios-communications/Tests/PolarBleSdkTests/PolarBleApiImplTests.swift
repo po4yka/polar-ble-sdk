@@ -842,6 +842,18 @@ final class PolarBleApiImplTests: XCTestCase {
         return results
     }
 
+    private func collectAllAsyncWithCompletionError<T>(_ stream: AsyncThrowingStream<T, Error>, timeout: TimeInterval = 5) throws -> ([T], Error?) {
+        return try awaitSingleAsync({
+            var results: [T] = []
+            do {
+                for try await value in stream { results.append(value) }
+                return (results, nil)
+            } catch {
+                return (results, error)
+            }
+        }, timeout: timeout)
+    }
+
     private func data(from stream: InputStream) throws -> Data {
         stream.open()
         defer { stream.close() }
@@ -2502,6 +2514,52 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 3)
         XCTAssertEqual(delayedMillis, [1000, 2000])
         XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
+    func test_updateFirmware_mapsPackageDownloadFailureToFailedStatusBeforeDeviceWrites() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 503, userInfo: [NSLocalizedDescriptionKey: "package download failed"])
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageError: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 2)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to 9.9.9", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        switch statuses[1] {
+        case .fwUpdateFailed(let details):
+            XCTAssertTrue(details.contains("package download failed"), details)
+        default:
+            XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertTrue(writeRequests.isEmpty)
+        XCTAssertTrue(completionError?.localizedDescription.contains("package download failed") == true)
     }
 
     func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
