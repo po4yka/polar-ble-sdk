@@ -48,7 +48,8 @@ internal object PolarRuntimePlannerAdapter {
         val writes: List<String>,
         val terminal: String,
         val terminalError: String?,
-        val retryDelaysMillis: List<Long>
+        val retryDelaysMillis: List<Long>,
+        val cleanupCallbackCount: Int = 0
     )
     data class PlannedOfflineTriggerRuntime(
         val commands: List<String>,
@@ -546,7 +547,8 @@ internal object PolarRuntimePlannerAdapter {
             writes = plan.writes,
             terminal = plan.terminal,
             terminalError = plan.terminalError,
-            retryDelaysMillis = plan.retryDelaysMillis
+            retryDelaysMillis = plan.retryDelaysMillis,
+            cleanupCallbackCount = plan.cleanupCallbackCount
         )
     }
 
@@ -595,6 +597,26 @@ internal object PolarRuntimePlannerAdapter {
             id = "retryable-server-failure",
             statuses = listOf("fwUpdateFailed")
         )
+    }
+
+    fun planFirmwarePackageFetchCancellationWorkflow(): PlannedFirmwareWorkflow {
+        return PolarWorkflowRuntimePlanning.planFirmwareWorkflow(
+            PolarFirmwareWorkflowScenario(
+                id = "cancel-after-package-fetch-cleans-up-before-ble-write",
+                expectedStatuses = listOf("fetchingFwUpdatePackage", "fwUpdateCancelled"),
+                expectedTerminalError = "cancelled",
+                expectedCleanupCallbackCount = 1
+            )
+        ).let { plan ->
+            PlannedFirmwareWorkflow(
+                statuses = plan.statuses,
+                writes = plan.writes,
+                terminal = plan.terminal,
+                terminalError = plan.terminalError,
+                retryDelaysMillis = plan.retryDelaysMillis,
+                cleanupCallbackCount = plan.cleanupCallbackCount
+            )
+        }
     }
 
     fun orderFirmwareFiles(fileNames: List<String>): List<String> {

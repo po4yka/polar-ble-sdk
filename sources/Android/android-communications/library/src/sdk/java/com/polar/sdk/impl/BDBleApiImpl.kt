@@ -152,6 +152,7 @@ import com.polar.sdk.impl.utils.PolarWatchFaceUtils
 import com.polar.sdk.api.model.PolarWatchFaceComplication
 import com.polar.sdk.api.model.PolarWatchFaceConfig
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -2349,6 +2350,12 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             val firmwareFiles = try {
                 getFirmwareUpdatePackage(url)
             } catch (error: Throwable) {
+                if (error is CancellationException) {
+                    val cancellationPlan = PolarRuntimePlannerAdapter.planFirmwarePackageFetchCancellationWorkflow()
+                    require(cancellationPlan.terminalError == "cancelled")
+                    require(cancellationPlan.cleanupCallbackCount == 1)
+                    throw error
+                }
                 val downloadFailurePlan = PolarRuntimePlannerAdapter.planFirmwarePackageDownloadFailureWorkflow()
                 require(downloadFailurePlan.statuses.last() == "fwUpdateFailed")
                 throw error
