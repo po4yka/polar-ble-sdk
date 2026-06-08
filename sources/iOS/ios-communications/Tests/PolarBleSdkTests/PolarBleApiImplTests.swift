@@ -2599,6 +2599,44 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(writeRequests.isEmpty)
     }
 
+    func test_updateFirmwareFromUrl_mapsEmptyFirmwarePackageToNotAvailableBeforeDeviceWrites() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["readme.txt": Data([0x01])])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!))
+
+        XCTAssertEqual(statuses.count, 2)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to manual-fw.zip", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        switch statuses[1] {
+        case .fwUpdateNotAvailable(let details):
+            XCTAssertEqual("Can not update, firmware files were not available", details)
+        default:
+            XCTFail("Expected fwUpdateNotAvailable")
+        }
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
     func test_updateFirmware_mapsEmptyFirmwarePackageToNotAvailableBeforeDeviceWrites() throws {
         let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
         let extractor = FacadeFirmwarePackageExtractor(result: ["readme.txt": Data([0x01])])
