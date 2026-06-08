@@ -377,6 +377,45 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(transport.requests.first?.url?.absoluteString, "https://example.invalid/fw.zip")
     }
 
+    func testWriteFirmwareFilesUsesInjectedBleWriterAndSharedProgressPolicy() async throws {
+        let api = PolarBleApiImpl(DispatchQueue(label: "PolarFirmwareUpdateUtilsTest.firmware-writer"), features: [.feature_polar_firmware_update])
+        let baseDate = Date(timeIntervalSince1970: 0)
+        var dateOffsets: [TimeInterval] = [0, 0, 0, 0, 0, 0]
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        api.firmwareProgressDateProvider = {
+            return baseDate.addingTimeInterval(dateOffsets.isEmpty ? 0 : dateOffsets.removeFirst())
+        }
+        api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier: identifier, path: path, data: data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(0)
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+
+        let statuses = try await collectFirmwareStatuses(
+            api.writeFirmwareFilesToDeviceAsync(
+                "device-id",
+                firmwareFiles: [
+                    ("BTUPDAT.BIN", Data([0x01, 0x02, 0x03, 0x04])),
+                    ("SYSUPDAT.IMG", Data([0x05, 0x06]))
+                ],
+                minPercentageIncrement: 25
+            )
+        )
+
+        XCTAssertEqual(writeRequests.map { $0.identifier }, ["device-id", "device-id"])
+        XCTAssertEqual(writeRequests.map { $0.path }, ["/BTUPDAT.BIN", "/SYSUPDAT.IMG"])
+        XCTAssertEqual(writeRequests.map { $0.data }, [Data([0x01, 0x02, 0x03, 0x04]), Data([0x05, 0x06])])
+        XCTAssertEqual(firmwareWritingDetails(statuses), [
+            "Writing firmware update file BTUPDAT.BIN, (0%) bytes written: 0/4",
+            "Writing firmware update file BTUPDAT.BIN, (100%) bytes written: 4/4",
+            "Writing firmware update file SYSUPDAT.IMG, (0%) bytes written: 0/2",
+            "Writing firmware update file SYSUPDAT.IMG, (100%) bytes written: 2/2"
+        ])
+    }
+
     func testFirmwareGoldenVectorsFollowNeutralKmpShape() throws {
         for vector in try loadFirmwareUpdateGoldenVectors() {
             let id = try XCTUnwrap(vector["id"] as? String)
@@ -494,6 +533,23 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
 
     private func int32(_ object: [String: Any], _ key: String, id: String) throws -> Int32 {
         return try XCTUnwrap(object[key] as? NSNumber, "\(id) \(key)").int32Value
+    }
+
+    private func collectFirmwareStatuses(_ stream: AsyncThrowingStream<FirmwareUpdateStatus, Error>) async throws -> [FirmwareUpdateStatus] {
+        var statuses: [FirmwareUpdateStatus] = []
+        for try await status in stream {
+            statuses.append(status)
+        }
+        return statuses
+    }
+
+    private func firmwareWritingDetails(_ statuses: [FirmwareUpdateStatus]) -> [String] {
+        return statuses.compactMap { status in
+            if case .writingFwUpdatePackage(let details) = status {
+                return details
+            }
+            return nil
+        }
     }
 }
 

@@ -58,6 +58,9 @@ import UIKit
     let dateFormatter = ISO8601DateFormatter()
     public private(set) var serviceClientUtils: PolarServiceClientUtils
     var fileUtils: PolarFileUtils
+    typealias FirmwareFileWriteStreamFactory = (_ identifier: String, _ firmwareFilePath: String, _ firmwareBytes: Data) -> AsyncThrowingStream<UInt, Error>
+    var firmwareFileWriteStreamFactory: FirmwareFileWriteStreamFactory?
+    var firmwareProgressDateProvider: () -> Date = { Date() }
 
     static func sdLogConfigReadOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         return facadeFileOperation(id: "sd-log-config-read", command: "GET", path: SERVICE_DATALOG_CONFIG_FILEPATH)
@@ -2393,7 +2396,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         }
     }
 
-    private func writeFirmwareFilesToDeviceAsync(_ identifier: String, firmwareFiles: [(String, Data)], minPercentageIncrement: Int = 0) -> AsyncThrowingStream<FirmwareUpdateStatus, Error> {
+    func writeFirmwareFilesToDeviceAsync(_ identifier: String, firmwareFiles: [(String, Data)], minPercentageIncrement: Int = 0) -> AsyncThrowingStream<FirmwareUpdateStatus, Error> {
         return AsyncThrowingStream { continuation in
             Task {
                 do {
@@ -2401,13 +2404,15 @@ extension PolarBleApiImpl: PolarBleApi  {
                     let plannedWritePaths = PolarRuntimePlanner.firmwareWritePaths(firmwareFiles.map { $0.0 })
                     for (index, firmwareFile) in firmwareFiles.enumerated() {
                         var lastBytesWritten: Int = 0
-                        var lastProgressEmitDate = Date()
+                        var lastProgressEmitDate = self.firmwareProgressDateProvider()
                         let firmwareFilePath = plannedWritePaths.indices.contains(index) ? plannedWritePaths[index] : "/\(firmwareFile.0)"
                         let firmwareFileBytes = firmwareFile.1
                         try PolarRuntimePlanner.ensurePsFtpWriteProgressPlan(payloadSize: firmwareFileBytes.count)
-                        for try await bytesWritten in self.writeFirmwareToDeviceAsync(identifier: identifier, firmwareFilePath: firmwareFilePath, firmwareBytes: firmwareFileBytes) {
+                        let writeStream = self.firmwareFileWriteStreamFactory?(identifier, firmwareFilePath, firmwareFileBytes) ?? self.writeFirmwareToDeviceAsync(identifier: identifier, firmwareFilePath: firmwareFilePath, firmwareBytes: firmwareFileBytes)
+                        for try await bytesWritten in writeStream {
                             let bw = Int(bytesWritten)
-                            let timeSinceLastEmitMs = Int(Date().timeIntervalSince(lastProgressEmitDate) * 1_000)
+                            let progressDate = self.firmwareProgressDateProvider()
+                            let timeSinceLastEmitMs = Int(progressDate.timeIntervalSince(lastProgressEmitDate) * 1_000)
                             if PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(
                                 lastBytesWritten: lastBytesWritten,
                                 bytesWritten: bw,
@@ -2416,7 +2421,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                                 timeSinceLastEmitMs: timeSinceLastEmitMs
                             ) {
                                 lastBytesWritten = bw
-                                lastProgressEmitDate = Date()
+                                lastProgressEmitDate = progressDate
                                 let percentage = PolarRuntimePlanner.firmwareWriteProgressPercent(
                                     bytesWritten: bw,
                                     payloadSize: firmwareFileBytes.count

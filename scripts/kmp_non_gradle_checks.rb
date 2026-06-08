@@ -83,6 +83,7 @@ FIRMWARE_FACADE_GATE_REQUIRED_TERMS = [
   "PolarFirmwareUpdateUtilsTest.swift",
   "FirmwareUpdateApi(transport:)",
   "PolarFirmwareUpdateUtils.packageExtractor",
+  "firmwareFileWriteStreamFactory",
   "workflow-runtime-policy.json",
   "FirmwareWorkflowRuntimePolicyCommonTest.kt",
   "injectable production dependencies",
