@@ -2504,6 +2504,9 @@ final class PolarBleApiImplTests: XCTestCase {
         }
         v2MockClient.requestReturnValue = .success(try proto.serializedData())
 
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("retryable-server-failure", PolarRuntimePlanner.firmwareRetryableServerFailureTerminalError())
+        #endif
         let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId))
 
         XCTAssertEqual(statuses.count, 1)

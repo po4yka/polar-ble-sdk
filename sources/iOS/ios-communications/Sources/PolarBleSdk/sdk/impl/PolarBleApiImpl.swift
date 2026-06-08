@@ -2440,6 +2440,10 @@ extension PolarBleApiImpl: PolarBleApi  {
                             cont.resume(returning: (nil, nil, .fwUpdateFailed(details: "Firmware workflow retryableServerFailure planning failed: \(terminal)")))
                             return
                         }
+                        if let terminalError = PolarRuntimePlanner.firmwareRetryableServerFailureTerminalError(), terminalError != "retryable-server-failure" {
+                            cont.resume(returning: (nil, nil, .fwUpdateFailed(details: "Firmware workflow retryableServerFailure terminal-error planning failed: \(terminalError)")))
+                            return
+                        }
                     }
                     cont.resume(returning: (nil, nil, .fwUpdateFailed(details: error.localizedDescription)))
                 }
