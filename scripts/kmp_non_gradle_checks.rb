@@ -91,15 +91,6 @@ FIRMWARE_FACADE_GATE_REQUIRED_TERMS = [
   "error-mapping tests before delegation"
 ].freeze
 FACADE_GATE_OPEN_REQUIRED_TERMS = {
-  "Stored data cleanup and deletion workflows" => [
-    "facade gate open",
-    "BDBleApiImplTest.kt",
-    "PolarBleApiImplTests.swift",
-    "cleanup-workflow-policy.json",
-    "StoredDataCleanupRuntimePolicyCommonTest.kt",
-    "facade compatibility tests",
-    "cleanup error/path splits before delegation"
-  ],
   "Reset sync notification and H10 recording commands" => [
     "facade gate open",
     "BDBleApiImplTest.kt",
@@ -127,6 +118,20 @@ RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = {
     "daylight-saving payload shape",
     "facade-error mapping gate",
     "protobuf parser/builder ownership",
+    "public error translation adapter-owned"
+  ],
+  "Stored data cleanup and deletion workflows" => [
+    "facade list-failure/path split pinned",
+    "BDBleApiImplTest.kt",
+    "PolarBleApiImplTests.swift",
+    "cleanup-workflow-policy.json",
+    "StoredDataCleanupRuntimePolicyCommonTest.kt",
+    "SDLOGS list-failure swallowing",
+    "SDLOGS list-failure propagation",
+    "empty-parent pruning",
+    "facade-error mapping gate",
+    "directory listing",
+    "automatic-sample protobuf date reads",
     "public error translation adapter-owned"
   ],
   "REST service discovery and description" => [

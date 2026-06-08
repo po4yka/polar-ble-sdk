@@ -3856,15 +3856,6 @@ class GoldenVectorMigrationPolicyTest {
             "error-mapping tests before delegation"
         )
         val FACADE_GATE_OPEN_REQUIRED_TERMS = mapOf(
-            "Stored data cleanup and deletion workflows" to listOf(
-                "facade gate open",
-                "BDBleApiImplTest.kt",
-                "PolarBleApiImplTests.swift",
-                "cleanup-workflow-policy.json",
-                "StoredDataCleanupRuntimePolicyCommonTest.kt",
-                "facade compatibility tests",
-                "cleanup error/path splits before delegation"
-            ),
             "Reset sync notification and H10 recording commands" to listOf(
                 "facade gate open",
                 "BDBleApiImplTest.kt",
@@ -3892,6 +3883,20 @@ class GoldenVectorMigrationPolicyTest {
                 "daylight-saving payload shape",
                 "facade-error mapping gate",
                 "protobuf parser/builder ownership",
+                "public error translation adapter-owned"
+            ),
+            "Stored data cleanup and deletion workflows" to listOf(
+                "facade list-failure/path split pinned",
+                "BDBleApiImplTest.kt",
+                "PolarBleApiImplTests.swift",
+                "cleanup-workflow-policy.json",
+                "StoredDataCleanupRuntimePolicyCommonTest.kt",
+                "SDLOGS list-failure swallowing",
+                "SDLOGS list-failure propagation",
+                "empty-parent pruning",
+                "facade-error mapping gate",
+                "directory listing",
+                "automatic-sample protobuf date reads",
                 "public error translation adapter-owned"
             ),
             "REST service discovery and description" to listOf(
