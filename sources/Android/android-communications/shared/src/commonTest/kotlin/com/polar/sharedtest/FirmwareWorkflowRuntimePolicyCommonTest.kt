@@ -175,8 +175,8 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         assertEquals("shared-common-test", policy.objectValue("execution").stringValue("common"))
         assertEquals("partial-production-shared-policy-consumption", policy.objectValue("execution").stringValue("android"))
         assertEquals("partial-production-shared-policy-consumption", policy.objectValue("execution").stringValue("ios"))
-        assertEquals("BDBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, reboot response success, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned.", policy.objectValue("platformExpectations").stringValue("android"))
-        assertEquals("PolarBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, reboot response success, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned.", policy.objectValue("platformExpectations").stringValue("ios"))
+        assertEquals("BDBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, reboot response success, non-system reboot failure, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned.", policy.objectValue("platformExpectations").stringValue("android"))
+        assertEquals("PolarBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, reboot response success, non-system reboot failure, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned.", policy.objectValue("platformExpectations").stringValue("ios"))
         assertEquals(FIRMWARE_WORKFLOW_NOTES, policy.stringValue("notes"))
         assertEquals(listOf("checkFwUpdateNotAvailable"), scenarios.getValue("check-update-not-available").stringArrayValue("expectedStatuses"))
         assertEquals("1.3.0", scenarios.getValue("check-update-available").objectValue("serverResponse").stringValue("availableVersion"))
@@ -199,11 +199,14 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         assertEquals(SYSTEM_UPDATE_FILE, writeSuccess.objectArray("firmwareFiles").last().stringValue("name"))
         assertEquals("rebooting", scenarios.getValue("system-update-reboot-response-is-success").objectValue("writeTerminalError").stringValue("pftpError"))
         assertEquals("fwUpdateCompletedSuccessfully", scenarios.getValue("system-update-reboot-response-is-success").stringValue("expectedTerminalStatus"))
+        assertEquals("rebooting", scenarios.getValue("non-system-reboot-response-is-terminal-failure").objectValue("writeTerminalError").stringValue("pftpError"))
+        assertEquals("propagate-error", scenarios.getValue("non-system-reboot-response-is-terminal-failure").stringValue("expectedTerminalError"))
         assertEquals("batteryTooLow", scenarios.getValue("battery-too-low-response-is-terminal-failure").objectValue("writeTerminalError").stringValue("pftpError"))
         assertEquals("battery-too-low", scenarios.getValue("battery-too-low-response-is-terminal-failure").stringValue("expectedTerminalError"))
         assertEquals(listOf("fetchingFwUpdatePackage", "fwUpdateCancelled"), expectedCases.getValue("cancel-after-package-fetch-cleans-up-before-ble-write").stringArrayValue("statuses"))
         assertEquals(1, expectedCases.getValue("cancel-after-package-fetch-cleans-up-before-ble-write").intValue("cleanupCallbackCount"))
         assertEquals(listOf("/BTUPDAT.BIN", "/SYSUPDAT.IMG"), expectedCases.getValue("write-package-success-with-system-update-last").stringArrayValue("writes"))
+        assertEquals("propagate-error", expectedCases.getValue("non-system-reboot-response-is-terminal-failure").stringValue("terminalError"))
         assertEquals("battery-too-low", expectedCases.getValue("battery-too-low-response-is-terminal-failure").stringValue("terminalError"))
     }
 
@@ -334,7 +337,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
                 "batteryTooLow" -> "battery-too-low"
                 else -> scenario.expectedTerminalError
             }
-            if (scenario.writeTerminalError == "batteryTooLow") {
+            if (scenario.writeTerminalError != null && scenario.expectedTerminalError != null) {
                 status.clear()
                 status += listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "fwUpdateFailed")
             }
@@ -438,6 +441,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
             "cancel-after-package-fetch-cleans-up-before-ble-write",
             "write-package-success-with-system-update-last",
             "system-update-reboot-response-is-success",
+            "non-system-reboot-response-is-terminal-failure",
             "battery-too-low-response-is-terminal-failure"
         )
         val REQUIRED_FIRMWARE_WORKFLOW_FAMILIES = listOf(
@@ -457,8 +461,8 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
             "compile-verification-gate"
         )
         const val FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT = "Before moving firmware update orchestration into common KMP code, implement injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors."
-        const val FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, reboot success, and terminal device errors into typed common workflow states before KMP migration"
+        const val FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, reboot success, non-system reboot failure, and terminal device errors into typed common workflow states before KMP migration"
         const val FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, cancellation cleanup before BLE writes, and shared-planned retry delay execution are pinned, public facade error mapping is pinned, and the shared tests are compile-verified."
-        const val FIRMWARE_WORKFLOW_NOTES = "This vector is intentionally a runtime planning matrix, not a parser vector. The shared commonTest now executes the status, fake retryable server failure, fake download, fake filesystem/zip, fake BLE write-order, cancellation cleanup before BLE writes, reboot-success, and battery-too-low policies. Android and iOS production code already consume shared file-order, write-path, progress, retry delay execution, reboot-success, and battery-too-low terminal policy while platform adapters still own network, zip parsing, backup/reconnect/filesystem/BLE execution, full public facade error mapping, and real artifact integration before firmware update workflow orchestration moves to shared KMP code."
+        const val FIRMWARE_WORKFLOW_NOTES = "This vector is intentionally a runtime planning matrix, not a parser vector. The shared commonTest now executes the status, fake retryable server failure, fake download, fake filesystem/zip, fake BLE write-order, cancellation cleanup before BLE writes, reboot-success, non-system reboot failure, and battery-too-low policies. Android and iOS production code already consume shared file-order, write-path, progress, retry delay execution, reboot-success, non-system reboot failure, and battery-too-low terminal policy while platform adapters still own network, zip parsing, backup/reconnect/filesystem/BLE execution, full public facade error mapping, and real artifact integration before firmware update workflow orchestration moves to shared KMP code."
     }
 }

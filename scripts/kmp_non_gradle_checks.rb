@@ -949,6 +949,8 @@ FAKE_TRANSPORT_COMMON_FIRMWARE_WORKFLOW_TEST_REQUIRED_TERMS = [
   "retryable-server-failure",
   "write-package-success-with-system-update-last",
   "system-update-reboot-response-is-success",
+  "non-system-reboot-response-is-terminal-failure",
+  "propagate-error",
   "SYSUPDAT.IMG",
   "rebooting",
   "battery-too-low-response-is-terminal-failure",
