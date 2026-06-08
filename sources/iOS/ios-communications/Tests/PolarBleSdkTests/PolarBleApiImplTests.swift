@@ -2738,6 +2738,52 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(writeRequests.isEmpty)
     }
 
+    func test_updateFirmwareFromUrl_cancellationDuringPackageDownloadStopsBeforeDeviceWrites() throws {
+        let packageDownloadStarted = expectation(description: "package download started")
+        let packageDownloadCancelled = expectation(description: "package download cancelled")
+        let collectionFinished = expectation(description: "collection finished")
+        let service = CancellableFirmwareUpdateService(
+            response: PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"),
+            packageDownloadStarted: packageDownloadStarted,
+            packageDownloadCancelled: packageDownloadCancelled
+        )
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        var statuses: [FirmwareUpdateStatus] = []
+
+        let task = Task {
+            defer { collectionFinished.fulfill() }
+            do {
+                for try await status in v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!) {
+                    statuses.append(status)
+                }
+            } catch is CancellationError {
+            } catch {
+            }
+        }
+        wait(for: [packageDownloadStarted], timeout: 2)
+        task.cancel()
+        wait(for: [packageDownloadCancelled, collectionFinished], timeout: 2)
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to manual-fw.zip", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
     func test_updateFirmware_mapsBatteryTooLowWriteTerminalToFailedStatus() throws {
         let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
         let firmwareFile = Data([0x01, 0x02])
