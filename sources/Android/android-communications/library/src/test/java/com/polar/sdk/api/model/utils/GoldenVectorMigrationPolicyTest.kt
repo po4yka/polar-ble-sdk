@@ -3856,20 +3856,6 @@ class GoldenVectorMigrationPolicyTest {
             "error-mapping tests before delegation"
         )
         val FACADE_GATE_OPEN_REQUIRED_TERMS = mapOf(
-            "User device settings writes and reads" to listOf(
-                "facade gate open",
-                "BDBleApiImplTest.kt",
-                "PolarUserDeviceSettingsTest.kt",
-                "UserDeviceSettingsCommonPolicyTest.kt",
-                "PolarBleApiImplTests.swift",
-                "PolarUserDeviceSettingsUtilsTest.swift",
-                "settings-runtime-policy.json",
-                "UserDeviceSettingsRuntimePolicyCommonTest.kt",
-                "protobuf serialization",
-                "platform defaults",
-                "daylight-saving time source",
-                "public error mapping before delegation"
-            ),
             "Stored data cleanup and deletion workflows" to listOf(
                 "facade gate open",
                 "BDBleApiImplTest.kt",
@@ -3892,6 +3878,22 @@ class GoldenVectorMigrationPolicyTest {
             "Firmware update workflow" to FIRMWARE_FACADE_GATE_REQUIRED_TERMS
         )
         val RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = mapOf(
+            "User device settings writes and reads" to listOf(
+                "facade read/write error mapping pinned",
+                "BDBleApiImplTest.kt",
+                "PolarUserDeviceSettingsTest.kt",
+                "UserDeviceSettingsCommonPolicyTest.kt",
+                "PolarBleApiImplTests.swift",
+                "PolarUserDeviceSettingsUtilsTest.swift",
+                "settings-runtime-policy.json",
+                "UserDeviceSettingsRuntimePolicyCommonTest.kt",
+                "read-failure no-write",
+                "write-failure-after-payload",
+                "daylight-saving payload shape",
+                "facade-error mapping gate",
+                "protobuf parser/builder ownership",
+                "public error translation adapter-owned"
+            ),
             "REST service discovery and description" to listOf(
                 "facade response-error pinned",
                 "BDBleApiImplTest.kt",

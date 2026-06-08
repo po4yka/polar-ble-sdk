@@ -91,20 +91,6 @@ FIRMWARE_FACADE_GATE_REQUIRED_TERMS = [
   "error-mapping tests before delegation"
 ].freeze
 FACADE_GATE_OPEN_REQUIRED_TERMS = {
-  "User device settings writes and reads" => [
-    "facade gate open",
-    "BDBleApiImplTest.kt",
-    "PolarUserDeviceSettingsTest.kt",
-    "UserDeviceSettingsCommonPolicyTest.kt",
-    "PolarBleApiImplTests.swift",
-    "PolarUserDeviceSettingsUtilsTest.swift",
-    "settings-runtime-policy.json",
-    "UserDeviceSettingsRuntimePolicyCommonTest.kt",
-    "protobuf serialization",
-    "platform defaults",
-    "daylight-saving time source",
-    "public error mapping before delegation"
-  ],
   "Stored data cleanup and deletion workflows" => [
     "facade gate open",
     "BDBleApiImplTest.kt",
@@ -127,6 +113,22 @@ FACADE_GATE_OPEN_REQUIRED_TERMS = {
   "Firmware update workflow" => FIRMWARE_FACADE_GATE_REQUIRED_TERMS
 }.freeze
 RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = {
+  "User device settings writes and reads" => [
+    "facade read/write error mapping pinned",
+    "BDBleApiImplTest.kt",
+    "PolarUserDeviceSettingsTest.kt",
+    "UserDeviceSettingsCommonPolicyTest.kt",
+    "PolarBleApiImplTests.swift",
+    "PolarUserDeviceSettingsUtilsTest.swift",
+    "settings-runtime-policy.json",
+    "UserDeviceSettingsRuntimePolicyCommonTest.kt",
+    "read-failure no-write",
+    "write-failure-after-payload",
+    "daylight-saving payload shape",
+    "facade-error mapping gate",
+    "protobuf parser/builder ownership",
+    "public error translation adapter-owned"
+  ],
   "REST service discovery and description" => [
     "facade response-error pinned",
     "BDBleApiImplTest.kt",
