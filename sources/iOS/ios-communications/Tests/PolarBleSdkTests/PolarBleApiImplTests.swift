@@ -2611,6 +2611,59 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(writeRequests.isEmpty)
     }
 
+    func test_updateFirmware_cancellationDuringPackageDownloadStopsBeforeDeviceWrites() throws {
+        let packageDownloadStarted = expectation(description: "package download started")
+        let packageDownloadCancelled = expectation(description: "package download cancelled")
+        let collectionFinished = expectation(description: "collection finished")
+        let service = CancellableFirmwareUpdateService(
+            response: PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"),
+            packageDownloadStarted: packageDownloadStarted,
+            packageDownloadCancelled: packageDownloadCancelled
+        )
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+        var statuses: [FirmwareUpdateStatus] = []
+
+        let task = Task {
+            defer { collectionFinished.fulfill() }
+            do {
+                for try await status in v2Api.updateFirmware(deviceId) {
+                    statuses.append(status)
+                }
+            } catch is CancellationError {
+            } catch {
+            }
+        }
+        wait(for: [packageDownloadStarted], timeout: 2)
+        task.cancel()
+        wait(for: [packageDownloadCancelled, collectionFinished], timeout: 2)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .fetchingFwUpdatePackage = status { return true }
+            return false
+        })
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
     func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
@@ -4795,5 +4848,41 @@ private final class FacadeFirmwarePackageExtractor: FirmwarePackageExtracting {
     func unzipFirmwarePackage(zippedData: Data) -> [String: Data]? {
         zippedPackages.append(zippedData)
         return result
+    }
+}
+
+private final class CancellableFirmwareUpdateService: PolarBleSdk.FirmwareUpdateServicing {
+    private let response: PolarBleSdk.FirmwareUpdateResponse
+    private let packageDownloadStarted: XCTestExpectation
+    private let packageDownloadCancelled: XCTestExpectation
+    private(set) var checkFirmwareUpdateRequests: [PolarBleSdk.FirmwareUpdateRequest] = []
+    private(set) var packageDownloadUrls: [String] = []
+
+    init(response: PolarBleSdk.FirmwareUpdateResponse, packageDownloadStarted: XCTestExpectation, packageDownloadCancelled: XCTestExpectation) {
+        self.response = response
+        self.packageDownloadStarted = packageDownloadStarted
+        self.packageDownloadCancelled = packageDownloadCancelled
+    }
+
+    func checkFirmwareUpdate(firmwareUpdateRequest: PolarBleSdk.FirmwareUpdateRequest, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        checkFirmwareUpdateRequests.append(firmwareUpdateRequest)
+        completion(.success(response))
+    }
+
+    func checkFirmwareUpdateFromFirmwareUrl(_ url: URL, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        completion(.success(response))
+    }
+
+    func getFirmwareUpdatePackage(url: String) async throws -> Data? {
+        packageDownloadUrls.append(url)
+        packageDownloadStarted.fulfill()
+        do {
+            while true {
+                try await Task.sleep(nanoseconds: 10_000_000)
+            }
+        } catch is CancellationError {
+            packageDownloadCancelled.fulfill()
+            throw CancellationError()
+        }
     }
 }
