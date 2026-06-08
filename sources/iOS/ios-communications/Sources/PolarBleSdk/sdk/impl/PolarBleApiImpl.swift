@@ -2273,16 +2273,20 @@ extension PolarBleApiImpl: PolarBleApi  {
                 defer { self.automaticReconnection = automaticReconnection }
                 do {
                     // Resolve Firmware URL
-                    let (availableVersionInfo, url, _): (String?, String?, FirmwareUpdateStatus)
+                    let (availableVersionInfo, url, availabilityStatus): (String?, String?, FirmwareUpdateStatus)
                     if let firmwareURL = firmwareURL {
-                        (availableVersionInfo, url, _) = (firmwareURL.lastPathComponent, firmwareURL.absoluteString, FirmwareUpdateStatus.preparingDeviceForFwUpdate(details: "Preparing for firmware update"))
+                        (availableVersionInfo, url, availabilityStatus) = (firmwareURL.lastPathComponent, firmwareURL.absoluteString, FirmwareUpdateStatus.preparingDeviceForFwUpdate(details: "Preparing for firmware update"))
                     } else {
-                        (availableVersionInfo, url, _) = try await self.checkFirmwareUrlAvailabilityAsync(identifier)
+                        (availableVersionInfo, url, availabilityStatus) = try await self.checkFirmwareUrlAvailabilityAsync(identifier)
                     }
                     firmwareVersionInfo = availableVersionInfo ?? "new version"
                     guard let url = url else {
                         BleLogger.trace("Did not receive url for firmware package, can not update")
-                        continuation.yield(.fwUpdateNotAvailable(details: "Firmware update not available"))
+                        if case .fwUpdateFailed = availabilityStatus {
+                            continuation.yield(availabilityStatus)
+                        } else {
+                            continuation.yield(.fwUpdateNotAvailable(details: "Firmware update not available"))
+                        }
                         continuation.finish()
                         return
                     }
