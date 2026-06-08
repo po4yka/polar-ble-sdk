@@ -3059,6 +3059,98 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(v2MockClient.writeCalls.count, 1)
     }
 
+    func test_updateFirmwareFromUrl_treatsSystemUpdateRebootWriteTerminalAsSuccess() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValues = [
+            .success(try emptyDirectory.serializedData())
+        ]
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.rebooting.rawValue))
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        switch statuses.first {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to manual-fw.zip", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Waiting for device to update to manual-fw.zip" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateFailed = status { return true }
+            return false
+        }, "\(statuses)")
+        switch statuses.last {
+        case .fwUpdateCompletedSuccessfully(let details):
+            XCTAssertEqual(details, "Firmware update to manual-fw.zip completed successfully")
+        default:
+            XCTFail("Expected fwUpdateCompletedSuccessfully")
+        }
+        XCTAssertNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+    }
+
+    func test_updateFirmwareFromUrl_mapsNonSystemRebootWriteTerminalToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["BTUPDAT.BIN": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValues = [
+            .success(try emptyDirectory.serializedData())
+        ]
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.rebooting.rawValue))
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 15)
+
+        switch statuses.first {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to manual-fw.zip", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        XCTAssertTrue(statuses.contains { status in
+            if case .preparingDeviceForFwUpdate(let details) = status { return details == "Reconnecting after factory reset" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.localizedCaseInsensitiveContains("reboot"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+    }
+
     func test_updateFirmware_treatsSystemUpdateRebootWriteTerminalAsSuccess() throws {
         let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
         let firmwareFile = Data([0x01, 0x02])
