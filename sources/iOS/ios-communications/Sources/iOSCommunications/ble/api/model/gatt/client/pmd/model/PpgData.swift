@@ -976,8 +976,11 @@ enum PpgDataRuntimePlanner {
     }
 
     static func rawType9Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
-        // Raw type 9 currently has platform-specific timestamp semantics in the golden vectors.
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType9Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
         return nil
+        #endif
     }
 
     static func rawType14Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {

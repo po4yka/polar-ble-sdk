@@ -584,7 +584,8 @@ final class PpgDataTest: XCTestCase {
             { _ in factor },
             { _ in 13 })
         let sharedDataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
-        XCTAssertNil(PpgDataRuntimePlanner.rawType9Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType9Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
+        XCTAssertEqual(1, sharedRows.split(separator: "|").count)
 
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
