@@ -4012,12 +4012,17 @@ class GoldenVectorMigrationPolicyTest {
             "gzip",
             "zlib",
             "compression",
+            "gson",
+            "moshi",
+            "kotlinx.serialization",
+            "serialization-json",
             "okio",
             "kotlinx-io"
         )
         val BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = mapOf(
             "KmpFullCoverageTddBacklog.md" to listOf(
                 "add real common protobuf/gzip production dependencies",
+                "REST JSON decoding remains platform-owned until a common JSON dependency and error policy are chosen",
                 "full AES implementation ownership still must be chosen",
                 "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
                 "byte-identical output",
@@ -4025,11 +4030,13 @@ class GoldenVectorMigrationPolicyTest {
             ),
             "KmpCoverageInventory.md" to listOf(
                 "REST event compressed payload decoding now uses shared KMP platform actual codecs while generic iOS `Data.deflated`/`Data.inflated` remains platform-specific.",
+                "REST JSON parsing stays platform-owned until a shared JSON dependency and cross-platform error policy are introduced deliberately.",
                 "Keep iOS nil-on-truncation compatibility adapter-owned if required while common parsing uses typed malformed-script errors.",
                 "semantic and codec-ownership/readiness policy executable"
             ),
             "KmpPreMigrationRemainingWork.md" to listOf(
                 "Add real common protobuf/crypto/codec dependencies",
+                "REST JSON decoding/error-policy normalization",
                 "training-session payload parsing",
                 "PMD AES secret handling",
                 "shared FlatBuffer/KVTX byte-identical output decision",
