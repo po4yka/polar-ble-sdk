@@ -2370,23 +2370,43 @@ extension PolarBleApiImpl: PolarBleApi  {
                     for try await status in self.writeFirmwareFilesToDeviceAsync(identifier, firmwareFiles: firmwareFiles) {
                         continuation.yield(status)
                     }
+                    let deviceIsSensor = BlePolarDeviceCapabilitiesUtility.isDeviceSensor(session!.advertisementContent.polarDeviceType)
+                    let finalizationSteps = PolarRuntimePlanner.firmwareFinalizationSteps(hasH10FileSystem: hasH10FileSystem, isDeviceSensor: deviceIsSensor)
+                    guard finalizationSteps.first == "wait-for-device-update" else {
+                        throw PolarErrors.polarBleSdkInternalException(description: "Shared firmware finalization plan did not start with wait-for-device-update")
+                    }
                     continuation.yield(.finalizingFwUpdate(details: "Waiting for device to update to \(firmwareVersionInfo)"))
                     try await self.waitDeviceSessionWithPftpToOpen(identifier: identifier, timeoutSeconds: 6*60, waitForDeviceDownSeconds: 10)
                     if !hasH10FileSystem {
+                        guard finalizationSteps.contains("restore-backup") else {
+                            throw PolarErrors.polarBleSdkInternalException(description: "Shared firmware finalization plan skipped restore-backup for V2 filesystem")
+                        }
                         try await self.sendInitializationAndStartSyncNotifications(identifier: identifier)
                         continuation.yield(.finalizingFwUpdate(details: "Restoring backup to device"))
                         try await backupManager.restoreBackup(backupFiles: backupList)
                         backupList = []
                         try await self.sendTerminateSessionNotification(identifier: identifier)
                     }
+                    guard finalizationSteps.contains("set-device-time") else {
+                        throw PolarErrors.polarBleSdkInternalException(description: "Shared firmware finalization plan skipped set-device-time")
+                    }
                     continuation.yield(.finalizingFwUpdate(details: "Setting device time"))
                     try await self.setLocalTime(identifier, time: Date(), zone: TimeZone.current)
-                    if BlePolarDeviceCapabilitiesUtility.isDeviceSensor(session!.advertisementContent.polarDeviceType) {
+                    if deviceIsSensor {
+                        guard finalizationSteps.contains("stop-sync") else {
+                            throw PolarErrors.polarBleSdkInternalException(description: "Shared firmware finalization plan skipped stop-sync for device sensor")
+                        }
                         continuation.yield(.finalizingFwUpdate(details: "Stopping sync"))
                         try await self.sendStopSyncNotification(identifier: identifier)
                     } else {
+                        guard finalizationSteps.contains("restart-device") else {
+                            throw PolarErrors.polarBleSdkInternalException(description: "Shared firmware finalization plan skipped restart-device for non-sensor device")
+                        }
                         continuation.yield(.finalizingFwUpdate(details: "Restarting device"))
                         try await self.doRestart(identifier, preservePairingInformation: true)
+                        guard finalizationSteps.contains("wait-for-restart-reconnect") else {
+                            throw PolarErrors.polarBleSdkInternalException(description: "Shared firmware finalization plan skipped wait-for-restart-reconnect for non-sensor device")
+                        }
                         continuation.yield(.finalizingFwUpdate(details: "Reconnecting after restart"))
                         try await self.waitDeviceSessionWithPftpToOpen(identifier: identifier, timeoutSeconds: 6*60, waitForDeviceDownSeconds: 10)
                     }

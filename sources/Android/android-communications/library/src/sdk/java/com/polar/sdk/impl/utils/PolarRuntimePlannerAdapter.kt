@@ -669,6 +669,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.firmwareWriteTerminal(errorCode, fileName)
     }
 
+    fun firmwareFinalizationSteps(hasH10FileSystem: Boolean, isDeviceSensor: Boolean): List<String> {
+        return PolarWorkflowRuntimePlanning.firmwareFinalizationSteps(hasH10FileSystem, isDeviceSensor)
+    }
+
     fun firmwareWriteProgressPercent(bytesWritten: Long, payloadSize: Int): Long {
         return PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten.toInt(), payloadSize).toLong()
     }

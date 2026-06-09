@@ -153,6 +153,24 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwareFinalizationSteps(hasH10FileSystem: Bool, isDeviceSensor: Bool) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        let csv = PolarIosSharedBridge.shared.firmwareFinalizationSteps(hasH10FileSystem: hasH10FileSystem, isDeviceSensor: isDeviceSensor)
+        return csv.isEmpty ? [] : csv.split(separator: ",").map(String.init)
+        #else
+        var steps = ["wait-for-device-update"]
+        if !hasH10FileSystem { steps.append("restore-backup") }
+        steps.append("set-device-time")
+        if isDeviceSensor {
+            steps.append("stop-sync")
+        } else {
+            steps.append("restart-device")
+            steps.append("wait-for-restart-reconnect")
+        }
+        return steps
+        #endif
+    }
+
     static func firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int) -> Int {
         #if canImport(PolarBleSdkShared)
         return Int(PolarIosSharedBridge.shared.firmwareWriteProgressPercent(bytesWritten: Int32(bytesWritten), payloadSize: Int32(payloadSize)))

@@ -1815,6 +1815,10 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.firmwareWriteTerminal(errorCode, fileName)
     }
 
+    fun firmwareFinalizationSteps(hasH10FileSystem: Boolean, isDeviceSensor: Boolean): String {
+        return PolarWorkflowRuntimePlanning.firmwareFinalizationSteps(hasH10FileSystem, isDeviceSensor).joinToString(",")
+    }
+
     fun firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int): Int {
         return PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten, payloadSize)
     }

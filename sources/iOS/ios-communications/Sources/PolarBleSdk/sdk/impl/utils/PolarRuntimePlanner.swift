@@ -343,6 +343,10 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwareWriteTerminal(errorCode: errorCode, fileName: fileName)
     }
 
+    static func firmwareFinalizationSteps(hasH10FileSystem: Bool, isDeviceSensor: Bool) -> [String] {
+        return PolarFirmwareBackupRuntimePlanner.firmwareFinalizationSteps(hasH10FileSystem: hasH10FileSystem, isDeviceSensor: isDeviceSensor)
+    }
+
     static func firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int) -> Int {
         return PolarFirmwareBackupRuntimePlanner.firmwareWriteProgressPercent(bytesWritten: bytesWritten, payloadSize: payloadSize)
     }

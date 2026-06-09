@@ -2380,22 +2380,30 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 val t = if (error is RuntimeException && error.cause != null) error.cause!! else error
                 if (t !is BleDisconnected) throw t
             }
+            val deviceIsSensor = BlePolarDeviceCapabilitiesUtility.isDeviceSensor(session.polarDeviceType)
+            val finalizationSteps = PolarRuntimePlannerAdapter.firmwareFinalizationSteps(hasH10FileSystem, deviceIsSensor)
+            require(finalizationSteps.firstOrNull() == "wait-for-device-update") { "Shared firmware finalization plan did not start with wait-for-device-update" }
             emit(FirmwareUpdateStatus.FinalizingFwUpdate("Reconnecting after updating to $firmwareVersionInfo"))
             waitDeviceSessionWithPftpToOpen(identifier, 6 * 60L, waitForDeviceDownSeconds = 10L)
             if (!hasH10FileSystem) {
+                require(finalizationSteps.contains("restore-backup")) { "Shared firmware finalization plan skipped restore-backup for V2 filesystem" }
                 sendInitializationAndStartSyncNotifications(identifier)
                 emit(FirmwareUpdateStatus.FinalizingFwUpdate("Restoring backup on device"))
                 backupManager.restoreBackup(backupList)
             }
             backupList = listOf()
+            require(finalizationSteps.contains("set-device-time")) { "Shared firmware finalization plan skipped set-device-time" }
             emit(FirmwareUpdateStatus.FinalizingFwUpdate("Setting device time"))
             setLocalTime(identifier, LocalDateTime.now())
-            if (BlePolarDeviceCapabilitiesUtility.isDeviceSensor(session.polarDeviceType)) {
+            if (deviceIsSensor) {
+                require(finalizationSteps.contains("stop-sync")) { "Shared firmware finalization plan skipped stop-sync for device sensor" }
                 emit(FirmwareUpdateStatus.FinalizingFwUpdate("Stopping sync"))
                 sendTerminateAndStopSyncNotifications(identifier)
             } else {
+                require(finalizationSteps.contains("restart-device")) { "Shared firmware finalization plan skipped restart-device for non-sensor device" }
                 emit(FirmwareUpdateStatus.FinalizingFwUpdate("Restarting device"))
                 doRestart(identifier)
+                require(finalizationSteps.contains("wait-for-restart-reconnect")) { "Shared firmware finalization plan skipped wait-for-restart-reconnect for non-sensor device" }
                 emit(FirmwareUpdateStatus.FinalizingFwUpdate("Restarting and reconnecting"))
                 waitDeviceSessionWithPftpToOpen(identifier, 6 * 60L, waitForDeviceDownSeconds = 10L)
             }

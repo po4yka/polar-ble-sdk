@@ -229,6 +229,20 @@ object PolarWorkflowRuntimePlanning {
         }
     }
 
+    fun firmwareFinalizationSteps(hasH10FileSystem: Boolean, isDeviceSensor: Boolean): List<String> {
+        return buildList {
+            add("wait-for-device-update")
+            if (!hasH10FileSystem) add("restore-backup")
+            add("set-device-time")
+            if (isDeviceSensor) {
+                add("stop-sync")
+            } else {
+                add("restart-device")
+                add("wait-for-restart-reconnect")
+            }
+        }
+    }
+
     fun firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int): Int {
         return if (payloadSize <= 0) 0 else bytesWritten * 100 / payloadSize
     }
