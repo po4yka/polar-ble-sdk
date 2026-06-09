@@ -1046,6 +1046,38 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `updateFirmware with direct firmware url maps final restart failure to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val restartFailure = RuntimeException("restart notification failed")
+        var resetNotifications = 0
+        coEvery { client.request(any()) } returns ByteArrayOutputStream()
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } answers {
+            if (firstArg<Int>() == PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal && ++resetNotifications == 2) {
+                throw restartFailure
+            }
+            Unit
+        }
+        coEvery { client.write(any(), any()) } returns flowOf(2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Restarting device") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateCompletedSuccessfully })
+        val failed = statuses.last() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(statuses.toString(), failed.details.contains("restart notification failed"))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
     fun `activity data readiness device type uses shared advertisement local name parsing`() {
         Assert.assertEquals("GritX Pro", BDBleApiImpl.activityCapabilityDeviceType("Polar GritX Pro aa123459"))
         Assert.assertEquals("Custom Strap", BDBleApiImpl.activityCapabilityDeviceType("Custom Strap aa123459"))
