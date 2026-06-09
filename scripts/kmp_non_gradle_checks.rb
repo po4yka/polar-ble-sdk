@@ -91,6 +91,7 @@ FIRMWARE_FACADE_GATE_REQUIRED_TERMS = [
   "facade progress",
   "cleanup",
   "cancellation",
+  "multi-BLE host-state restoration",
   "retry scheduling",
   "error-mapping tests before delegation"
 ].freeze
