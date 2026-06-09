@@ -2211,9 +2211,10 @@ extension PolarBleApiImpl: PolarBleApi  {
                     }
                     switch checkResult {
                     case .success(let result):
-                        if let url = result.fileUrl, !url.isEmpty {
+                        let version = result.version ?? ""
+                        if let url = result.fileUrl, !url.isEmpty, PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: deviceInfo.deviceFwVersion, availableVersion: version) {
                             try self.ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwareCheckUpdateAvailableWorkflow(), kind: "checkUpdateAvailable")
-                            continuation.yield(.checkFwUpdateAvailable(version: result.version ?? ""))
+                            continuation.yield(.checkFwUpdateAvailable(version: version))
                         } else {
                             try self.ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwareCheckUpdateNotAvailableWorkflow(), kind: "checkUpdateNotAvailable")
                             continuation.yield(.checkFwUpdateNotAvailable(details: "No new firmware available"))
@@ -2471,7 +2472,12 @@ extension PolarBleApiImpl: PolarBleApi  {
             fwApi.checkFirmwareUpdate(firmwareUpdateRequest: firmwareUpdateRequest) { response in
                 switch response {
                 case .success(let result):
-                    cont.resume(returning: (result.version, result.fileUrl, .preparingDeviceForFwUpdate(details: "Preparing for firmware update")))
+                    let version = result.version ?? ""
+                    if let url = result.fileUrl, !url.isEmpty, PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: deviceInfo.deviceFwVersion, availableVersion: version) {
+                        cont.resume(returning: (version, url, .preparingDeviceForFwUpdate(details: "Preparing for firmware update")))
+                    } else {
+                        cont.resume(returning: (nil, nil, .fwUpdateNotAvailable(details: "No firmware update available")))
+                    }
                 case .failure(let error):
                     let failedStatus = FirmwareUpdateStatus.fwUpdateFailed(details: error.localizedDescription)
                     if self.isRetryableFirmwareAvailabilityFailure(failedStatus) {
