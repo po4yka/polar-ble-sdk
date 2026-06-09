@@ -865,6 +865,7 @@ FAKE_TRANSPORT_COMMON_BACKUP_UTILITY_TEST_REQUIRED_TERMS = [
   "backupWorkflowRunsThroughCommonFakeTraversalAndRestoreHarness",
   "CommonBackupFakeRuntime",
   "backupTraversalRootPath",
+  "backupTraversalPlan",
   "directoryEntries",
   "readCommands",
   "restorePayloads",

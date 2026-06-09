@@ -7,8 +7,6 @@ import PolarBleSdkShared
 
 private let TAG = "PolarDeviceBackup"
 private let ARABICA_SYS_FOLDER = "/SYS/"
-private let WILD_CARD_CHARACTER = "*"
-
 public class PolarBackupManager {
 
     public struct BackupFileData {
@@ -131,11 +129,13 @@ public class PolarBackupManager {
         var result = [BackupFileData]()
         for directoryPath in directoryPaths {
             guard !directoryPath.isEmpty else { continue }
-            let path = PolarFirmwareBackupRuntimePlanner.backupTraversalRootPath(directoryPath)
-            if path.contains(WILD_CARD_CHARACTER) {
-                let rootPath = path.components(separatedBy: WILD_CARD_CHARACTER).first ?? ""
+            let traversalPlan = PolarFirmwareBackupRuntimePlanner.backupTraversalPlan(directoryPath)
+            let path = traversalPlan.path
+            if let rootPath = traversalPlan.wildcardRootPath {
                 let entries = try await fetchRecursively(path: rootPath)
-                let subdirs = entries.filter { $0.folderPath.isFolder }.map { rootPath + $0.name }
+                let subdirs = entries.filter { entry in
+                    entry.folderPath.isFolder && (traversalPlan.wildcardSubFolder == nil || entry.name == traversalPlan.wildcardSubFolder)
+                }.map { rootPath + $0.name }
                 for subdir in subdirs {
                     let files = try await backUpDirectories([subdir])
                     result.append(contentsOf: files)

@@ -197,6 +197,10 @@ class PolarBackupManagerTest: XCTestCase {
             PolarFirmwareBackupRuntimePlanner.defaultBackupPaths(),
             PolarFirmwareBackupRuntimePlanner.backupRootPaths([])
         )
+        let wildcardPlan = PolarFirmwareBackupRuntimePlanner.backupTraversalPlan("/SYS/*/BT/BTDEV.BPB")
+        XCTAssertEqual("/SYS/*/BT/BTDEV.BPB", wildcardPlan.path)
+        XCTAssertEqual("/SYS/", wildcardPlan.wildcardRootPath)
+        XCTAssertEqual("BT", wildcardPlan.wildcardSubFolder)
     }
 
     func testBackupTextParsingUsesSharedIosCompatibilityPolicyWhenLinked() throws {

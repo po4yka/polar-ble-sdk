@@ -80,6 +80,12 @@ data class PolarBackupFilePath(
     val fileName: String
 )
 
+data class PolarBackupTraversalPlan(
+    val path: String,
+    val wildcardRootPath: String? = null,
+    val wildcardSubFolder: String? = null
+)
+
 data class PolarBackupRestoreFile(
     val directory: String,
     val fileName: String,
@@ -312,6 +318,18 @@ object PolarWorkflowRuntimePlanning {
 
     fun backupTraversalRootPath(path: String): String {
         return path.replace("/U/*/", "/U/0/")
+    }
+
+    fun backupTraversalPlan(path: String): PolarBackupTraversalPlan {
+        val normalizedPath = backupTraversalRootPath(path)
+        if (!normalizedPath.contains("*")) {
+            return PolarBackupTraversalPlan(path = normalizedPath)
+        }
+        return PolarBackupTraversalPlan(
+            path = normalizedPath,
+            wildcardRootPath = normalizedPath.substringBefore("*"),
+            wildcardSubFolder = normalizedPath.substringAfter("*").removePrefix("/").split("/").firstOrNull()
+        )
     }
 
     fun readBackupFiles(paths: List<String>, filesByPath: Map<String, String>): List<PolarBackupFile> {

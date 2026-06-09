@@ -336,6 +336,10 @@ class PolarRuntimePlannerAdapterTest {
             PolarRuntimePlannerAdapter.defaultBackupPaths()
         )
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", PolarRuntimePlannerAdapter.backupTraversalRootPath("/U/*/S/UDEVSET.BPB"))
+        val wildcardPlan = PolarRuntimePlannerAdapter.backupTraversalPlan("/SYS/*/BT/BTDEV.BPB")
+        Assert.assertEquals("/SYS/*/BT/BTDEV.BPB", wildcardPlan.path)
+        Assert.assertEquals("/SYS/", wildcardPlan.wildcardRootPath)
+        Assert.assertEquals("BT", wildcardPlan.wildcardSubFolder)
     }
 
     @Test

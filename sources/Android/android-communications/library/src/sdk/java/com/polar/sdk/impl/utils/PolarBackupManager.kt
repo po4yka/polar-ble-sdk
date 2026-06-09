@@ -8,7 +8,6 @@ import protocol.PftpResponse.PbPFtpDirectory
 
 private const val TAG = "PolarDeviceBackup"
 private const val ARABICA_SYS_FOLDER = "/SYS/"
-private const val WILD_CARD_CHARACTER = "*"
 
 /**
  * Handles backing up the device.
@@ -133,16 +132,13 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
     }
 
     private suspend fun backupDirectory(backupDirectory: String): List<BackupFileData> {
-        val path = PolarRuntimePlannerAdapter.backupTraversalRootPath(backupDirectory)
+        val traversalPlan = PolarRuntimePlannerAdapter.backupTraversalPlan(backupDirectory)
+        val path = traversalPlan.path
 
         return when {
-            path.contains(WILD_CARD_CHARACTER) -> {
-                val rootPath = path.substringBefore(WILD_CARD_CHARACTER)
-                val subFolderToBackup = path.substringAfter(WILD_CARD_CHARACTER)
-                    .removePrefix(File.separator)
-                    .split(File.separator)
-                    .firstOrNull()
-
+            traversalPlan.wildcardRootPath != null -> {
+                val rootPath = traversalPlan.wildcardRootPath
+                val subFolderToBackup = traversalPlan.wildcardSubFolder
                 val backupDirectories = try {
                     loadSubDirectories(rootPath)
                         .filter { it.isFolder() }

@@ -1918,6 +1918,11 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.backupTraversalRootPath(path)
     }
 
+    fun backupTraversalPlanParts(path: String): String {
+        val plan = PolarWorkflowRuntimePlanning.backupTraversalPlan(path)
+        return "${plan.path}\t${plan.wildcardRootPath.orEmpty()}\t${plan.wildcardSubFolder.orEmpty()}"
+    }
+
     fun backupFilePathParts(path: String): String {
         val filePath = PolarWorkflowRuntimePlanning.backupFilePath(path)
         return "${filePath.directory}\t${filePath.fileName}"

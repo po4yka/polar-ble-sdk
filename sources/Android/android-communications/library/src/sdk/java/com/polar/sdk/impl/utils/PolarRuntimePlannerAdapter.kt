@@ -75,6 +75,11 @@ internal object PolarRuntimePlannerAdapter {
         val dataHex: String,
         val writeResult: String = "success"
     )
+    data class BackupTraversalPlan(
+        val path: String,
+        val wildcardRootPath: String?,
+        val wildcardSubFolder: String?
+    )
     data class PlannedD2hNotification(
         val notificationType: String,
         val parsedProtoName: String?
@@ -758,6 +763,15 @@ internal object PolarRuntimePlannerAdapter {
 
     fun backupTraversalRootPath(path: String): String {
         return PolarWorkflowRuntimePlanning.backupTraversalRootPath(path)
+    }
+
+    fun backupTraversalPlan(path: String): BackupTraversalPlan {
+        val plan = PolarWorkflowRuntimePlanning.backupTraversalPlan(path)
+        return BackupTraversalPlan(
+            path = plan.path,
+            wildcardRootPath = plan.wildcardRootPath,
+            wildcardSubFolder = plan.wildcardSubFolder
+        )
     }
 
     fun backupFilePath(path: String): Pair<String, String> {

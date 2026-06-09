@@ -4390,6 +4390,7 @@ class GoldenVectorMigrationPolicyTest {
             "backupWorkflowRunsThroughCommonFakeTraversalAndRestoreHarness",
             "CommonBackupFakeRuntime",
             "backupTraversalRootPath",
+            "backupTraversalPlan",
             "directoryEntries",
             "readCommands",
             "restorePayloads",

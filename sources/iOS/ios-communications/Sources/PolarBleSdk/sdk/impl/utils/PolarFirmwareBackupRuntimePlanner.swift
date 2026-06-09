@@ -12,6 +12,11 @@ enum PolarFirmwareBackupRuntimePlanner {
         let path: String
         let payloadHex: String
     }
+    struct BackupTraversalPlan {
+        let path: String
+        let wildcardRootPath: String?
+        let wildcardSubFolder: String?
+    }
 
     @discardableResult
     static func firmwareWorkflow(id: String, statuses: [String] = [], firmwareFiles: [String] = []) -> String {
@@ -325,6 +330,24 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func backupTraversalPlan(_ path: String) -> BackupTraversalPlan {
+        #if canImport(PolarBleSdkShared)
+        let parts = PolarIosSharedBridge.shared.backupTraversalPlanParts(path: path).split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+        let planPath = parts.count > 0 ? parts[0] : path
+        let rootPath = parts.count > 1 ? parts[1].nilIfEmpty : nil
+        let subFolder = parts.count > 2 ? parts[2].nilIfEmpty : nil
+        return BackupTraversalPlan(path: planPath, wildcardRootPath: rootPath, wildcardSubFolder: subFolder)
+        #else
+        let normalizedPath = backupTraversalRootPath(path)
+        guard normalizedPath.contains("*") else {
+            return BackupTraversalPlan(path: normalizedPath, wildcardRootPath: nil, wildcardSubFolder: nil)
+        }
+        let parts = normalizedPath.components(separatedBy: "*")
+        let suffix = parts.count > 1 ? parts[1].dropLeadingSlash : ""
+        return BackupTraversalPlan(path: normalizedPath, wildcardRootPath: parts.first ?? "", wildcardSubFolder: suffix.split(separator: "/").first.map(String.init))
+        #endif
+    }
+
     static func backupFilePath(_ path: String) -> (directory: String, fileName: String) {
         #if canImport(PolarBleSdkShared)
         let parts = PolarIosSharedBridge.shared.backupFilePathParts(path: path).split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
@@ -347,5 +370,15 @@ enum PolarFirmwareBackupRuntimePlanner {
         let fileName = (path as NSString).lastPathComponent
         let directory = (path as NSString).deletingLastPathComponent + "/"
         return (directory, fileName)
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
+    }
+
+    var dropLeadingSlash: String {
+        hasPrefix("/") ? String(dropFirst()) : self
     }
 }

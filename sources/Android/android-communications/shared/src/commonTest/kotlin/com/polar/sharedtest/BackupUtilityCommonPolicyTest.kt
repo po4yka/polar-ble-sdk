@@ -122,6 +122,10 @@ class BackupUtilityCommonPolicyTest {
         )
         assertEquals("/U/0/S/UDEVSET.BPB", PolarWorkflowRuntimePlanning.backupTraversalRootPath("/U/*/S/UDEVSET.BPB"))
         assertEquals("/SYS/BT/", PolarWorkflowRuntimePlanning.backupTraversalRootPath("/SYS/BT/"))
+        val wildcardPlan = PolarWorkflowRuntimePlanning.backupTraversalPlan("/SYS/*/BT/BTDEV.BPB")
+        assertEquals("/SYS/*/BT/BTDEV.BPB", wildcardPlan.path)
+        assertEquals("/SYS/", wildcardPlan.wildcardRootPath)
+        assertEquals("BT", wildcardPlan.wildcardSubFolder)
     }
 
     @Test
