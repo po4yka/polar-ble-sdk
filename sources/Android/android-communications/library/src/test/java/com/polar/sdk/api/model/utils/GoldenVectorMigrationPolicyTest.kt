@@ -3866,6 +3866,7 @@ class GoldenVectorMigrationPolicyTest {
             "automatic reconnection restoration",
             "final set-time failure mapping",
             "final restart failure mapping",
+            "final stop-sync platform split",
             "retry scheduling",
             "error-mapping tests before delegation"
         )
