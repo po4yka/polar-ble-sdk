@@ -3864,6 +3864,7 @@ class GoldenVectorMigrationPolicyTest {
             "cancellation",
             "multi-BLE host-state restoration",
             "automatic reconnection restoration",
+            "final set-time failure mapping",
             "retry scheduling",
             "error-mapping tests before delegation"
         )
