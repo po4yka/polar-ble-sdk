@@ -127,6 +127,15 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwareAvailabilityFailureIsRetryable(details: String) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firmwareAvailabilityFailureIsRetryable(details: details)
+        #else
+        let lowercasedDetails = details.lowercased()
+        return lowercasedDetails.contains("server") || lowercasedDetails.contains("response code: 5") || lowercasedDetails.contains("500") || lowercasedDetails.contains("503")
+        #endif
+    }
+
     static func firmwarePackageEntryIsPayload(_ fileName: String) -> Bool {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.firmwarePackageEntryIsPayload(fileName: fileName)

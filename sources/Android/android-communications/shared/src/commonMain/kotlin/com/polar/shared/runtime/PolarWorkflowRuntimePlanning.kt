@@ -209,6 +209,18 @@ object PolarWorkflowRuntimePlanning {
         return listOf(1000L, 2000L).take(maxRetries)
     }
 
+    fun firmwareAvailabilityFailureIsRetryable(details: String): Boolean {
+        val lowercasedDetails = details.lowercase()
+        val responseCode = Regex("""response code:\s*(\d{3})""")
+            .find(lowercasedDetails)
+            ?.groupValues
+            ?.get(1)
+            ?.toIntOrNull()
+        return lowercasedDetails.contains("server") ||
+            (responseCode != null && responseCode in 500..599) ||
+            Regex("""(^|[^0-9])50[0-9]([^0-9]|$)""").containsMatchIn(lowercasedDetails)
+    }
+
     fun firmwarePackageEntryIsPayload(fileName: String): Boolean {
         return fileName != "readme.txt"
     }

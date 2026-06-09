@@ -2471,8 +2471,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         if (status !is FirmwareUpdateStatus.FwUpdateFailed) {
             return false
         }
-        val responseCode = Regex("""Unexpected response code: (\d{3})""").find(status.details)?.groupValues?.get(1)?.toIntOrNull()
-        return responseCode != null && responseCode in 500..599
+        return PolarRuntimePlannerAdapter.firmwareAvailabilityFailureIsRetryable(status.details)
     }
 
     private suspend fun checkFirmwareUrlAvailability(client: BlePsFtpClient, identifier: String): Triple<String?, String?, FirmwareUpdateStatus> {

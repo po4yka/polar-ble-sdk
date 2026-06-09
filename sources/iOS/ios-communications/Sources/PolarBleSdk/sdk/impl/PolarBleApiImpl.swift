@@ -2446,8 +2446,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard case .fwUpdateFailed(let details) = status else {
             return false
         }
-        let lowercasedDetails = details.lowercased()
-        return lowercasedDetails.contains("server") || lowercasedDetails.contains("response code: 5") || lowercasedDetails.contains("500") || lowercasedDetails.contains("503")
+        return PolarRuntimePlanner.firmwareAvailabilityFailureIsRetryable(details: details)
     }
 
     private func checkFirmwareUrlAvailabilityAsync(_ identifier: String) async throws -> (String?, String?, FirmwareUpdateStatus) {

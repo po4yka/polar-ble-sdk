@@ -127,6 +127,16 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
     }
 
     @Test
+    fun firmwareAvailabilityFailureRetryClassificationUsesSharedPolicy() {
+        assertEquals(false, PolarWorkflowRuntimePlanning.firmwareAvailabilityFailureIsRetryable("Bad request to firmware update API: invalid hardware"))
+        assertEquals(false, PolarWorkflowRuntimePlanning.firmwareAvailabilityFailureIsRetryable("Unexpected response code: 404"))
+        assertEquals(true, PolarWorkflowRuntimePlanning.firmwareAvailabilityFailureIsRetryable("Unexpected response code: 500"))
+        assertEquals(true, PolarWorkflowRuntimePlanning.firmwareAvailabilityFailureIsRetryable("Unexpected response code: 599"))
+        assertEquals(true, PolarWorkflowRuntimePlanning.firmwareAvailabilityFailureIsRetryable("server temporarily unavailable"))
+        assertEquals(true, PolarWorkflowRuntimePlanning.firmwareAvailabilityFailureIsRetryable("HTTP 503"))
+    }
+
+    @Test
     fun firmwareWriteProgressPolicyIsZeroSafeAndThresholdBased() {
         assertEquals(0, PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten = 0, payloadSize = 0))
         assertEquals(0, PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten = 12, payloadSize = 0))

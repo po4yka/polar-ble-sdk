@@ -560,6 +560,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.firmwareRetryDelaysMillis(maxRetries)
     }
 
+    fun firmwareAvailabilityFailureIsRetryable(details: String): Boolean {
+        return PolarWorkflowRuntimePlanning.firmwareAvailabilityFailureIsRetryable(details)
+    }
+
     fun planFirmwareWriteOperations(firmwareFiles: List<String>): List<Pair<PftpRequest.PbPFtpOperation.Command, String>> {
         return planFirmwareWorkflow(
             id = "write-package-success-with-system-update-last",

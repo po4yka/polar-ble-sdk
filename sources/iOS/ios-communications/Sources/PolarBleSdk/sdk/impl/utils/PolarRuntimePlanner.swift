@@ -331,6 +331,10 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwareRetryDelaysMillis(maxRetries: maxRetries)
     }
 
+    static func firmwareAvailabilityFailureIsRetryable(details: String) -> Bool {
+        return PolarFirmwareBackupRuntimePlanner.firmwareAvailabilityFailureIsRetryable(details: details)
+    }
+
     static func firmwarePackageEntryIsPayload(_ fileName: String) -> Bool {
         return PolarFirmwareBackupRuntimePlanner.firmwarePackageEntryIsPayload(fileName)
     }

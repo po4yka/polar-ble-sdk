@@ -1803,6 +1803,10 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.firmwareRetryDelaysMillis(maxRetries).joinToString(",")
     }
 
+    fun firmwareAvailabilityFailureIsRetryable(details: String): Boolean {
+        return PolarWorkflowRuntimePlanning.firmwareAvailabilityFailureIsRetryable(details)
+    }
+
     fun firmwarePackageEntryIsPayload(fileName: String): Boolean {
         return PolarWorkflowRuntimePlanning.firmwarePackageEntryIsPayload(fileName)
     }
