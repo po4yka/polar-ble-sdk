@@ -94,6 +94,7 @@ FIRMWARE_FACADE_GATE_REQUIRED_TERMS = [
   "multi-BLE host-state restoration",
   "automatic reconnection restoration",
   "final set-time failure mapping",
+  "final restart failure mapping",
   "retry scheduling",
   "error-mapping tests before delegation"
 ].freeze
