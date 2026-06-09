@@ -428,6 +428,34 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `updateFirmware restores automatic reconnection after no update early return`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("1.2.0", "https://example.invalid/fw.zip"))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+        api.setAutomaticReconnection(false)
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(listOf(FirmwareUpdateStatus.FwUpdateNotAvailable("Firmware update not available")), statuses)
+        Assert.assertEquals(false, automaticReconnection(api))
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
     fun `updateFirmware maps package download failure to failed status before device writes`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
@@ -3919,6 +3947,12 @@ class BDBleApiImplTest {
         every { PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, any()) } returns session
 
         return Pair(client, session)
+    }
+
+    private fun automaticReconnection(api: BDBleApiImpl): Boolean? {
+        val method = BDBleApiImpl::class.java.getDeclaredMethod("getAutomaticReconnection")
+        method.isAccessible = true
+        return method.invoke(api) as Boolean?
     }
 
     private fun mockPmdConnection(deviceId: String): Pair<BlePMDClient, BleDeviceSession> {
