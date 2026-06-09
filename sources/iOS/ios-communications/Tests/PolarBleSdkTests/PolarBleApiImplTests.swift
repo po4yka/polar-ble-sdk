@@ -3388,6 +3388,52 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(writePaths.contains(backupFilePath), "\(writePaths)")
     }
 
+    func test_updateFirmwareFromUrl_mapsFinalSetTimeFailureToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let setTimeError = NSError(domain: "PolarBleApiImplTests", code: 7007, userInfo: [NSLocalizedDescriptionKey: "set local time failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValue = .success(try emptyDirectory.serializedData())
+        v2MockClient.queryReturnValueClosure = { id, _ in
+            if id == Protocol_PbPFtpQuery.setLocalTime.rawValue {
+                throw setTimeError
+            }
+            return Data()
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Setting device time" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("set local time failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertTrue(v2MockClient.queryCalls.contains { $0.id == Protocol_PbPFtpQuery.setLocalTime.rawValue })
+    }
+
     func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))

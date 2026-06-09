@@ -581,6 +581,7 @@ public class MockBlePsFtpClient: BlePsFtpClient, @unchecked Sendable {
 
     public var queryCalls: [(id: Int, parameters: NSData?)] = []
     public var queryReturnValues: [Result<Data, Error>] = []
+    public var queryReturnValueClosure: ((Int, NSData?) async throws -> Data)?
     public var queryReturnValue: Result<Data, Error>?
 
     public var writeCalls: [(header: NSData, data: InputStream)] = []
@@ -621,6 +622,9 @@ public class MockBlePsFtpClient: BlePsFtpClient, @unchecked Sendable {
 
     override public func query(_ id: Int, parameters: NSData?) async throws -> NSData {
         queryCalls.append((id: id, parameters: parameters))
+        if let closure = queryReturnValueClosure {
+            return NSData(data: try await closure(id, parameters))
+        }
         if !queryReturnValues.isEmpty {
             let result = queryReturnValues.removeFirst()
             switch result {
