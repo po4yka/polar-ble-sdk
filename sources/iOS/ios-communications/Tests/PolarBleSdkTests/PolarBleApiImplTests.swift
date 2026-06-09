@@ -3484,6 +3484,57 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(resetNotifications, 2)
     }
 
+    func test_updateFirmwareFromUrl_mapsFinalStopSyncFailureToFailedStatus() throws {
+        BlePolarDeviceCapabilitiesUtility.resetAndInitializeForTesting(
+            deviceFileSystemTypes: ["360": .polarFileSystemV2],
+            deviceIsSensor: ["360": true],
+            defaultFileSystemType: .polarFileSystemV2
+        )
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let stopSyncError = NSError(domain: "PolarBleApiImplTests", code: 7009, userInfo: [NSLocalizedDescriptionKey: "stop sync notification failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValue = .success(try emptyDirectory.serializedData())
+        v2MockClient.queryReturnValue = .success(Data())
+        v2MockClient.sendNotificationClosure = { id, _ in
+            if id == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue {
+                throw stopSyncError
+            }
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Stopping sync" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("stop sync notification failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertTrue(v2MockClient.sendNotificationCalls.contains { $0.notification == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue })
+    }
+
     func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
