@@ -261,6 +261,10 @@ object PolarIosSharedBridge {
         return PolarWorkflowRuntimePlanning.firmwareUpdateIsAvailable(currentVersion, availableVersion, fileUrl)
     }
 
+    fun ledConfigPayloadCsv(sdkModeLedEnabled: Boolean, ppiModeLedEnabled: Boolean): String {
+        return PolarWorkflowRuntimePlanning.ledConfigPayloadBytes(sdkModeLedEnabled, ppiModeLedEnabled).joinToString(",")
+    }
+
     fun firmwareFilePriority(fileName: String): Int {
         return PolarFirmwareUpdateModels.firmwareFilePriority(fileName)
     }

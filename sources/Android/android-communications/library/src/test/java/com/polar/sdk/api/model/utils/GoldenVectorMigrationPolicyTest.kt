@@ -4327,6 +4327,8 @@ class GoldenVectorMigrationPolicyTest {
             "fileFacadeRuntimePolicyVectorDefinesExecutableCommonCommandPlanning",
             "fileFacadeRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
             "fileFacadeRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+            "ledConfigPayloadPlanningPreservesSdkAndPpiByteOrder",
+            "ledConfigPayloadBytes",
             "sdk/file-utils/file-facade-runtime-policy.json",
             "sdk/file-utils/file-facade-runtime-readiness.json",
             "file-facade-runtime-policy",

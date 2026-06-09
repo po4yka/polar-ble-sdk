@@ -231,6 +231,13 @@ object PolarWorkflowRuntimePlanning {
         return fileUrl.isNotBlank() && PolarFirmwareUpdateModels.isAvailableFirmwareVersionHigher(currentVersion, availableVersion)
     }
 
+    fun ledConfigPayloadBytes(sdkModeLedEnabled: Boolean, ppiModeLedEnabled: Boolean): List<Int> {
+        return listOf(
+            if (sdkModeLedEnabled) 1 else 0,
+            if (ppiModeLedEnabled) 1 else 0
+        )
+    }
+
     fun firmwarePackageEntryIsPayload(fileName: String): Boolean {
         return fileName != "readme.txt"
     }

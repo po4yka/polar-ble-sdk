@@ -2013,9 +2013,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let writeOperation = Self.ledConfigWriteOperation()
         let proto = try PolarRuntimePlanner.fileOperationBytes(writeOperation)
-        let sdkModeLedByte: UInt8 = ledConfig.sdkModeLedEnabled ? LedConfig.LED_ANIMATION_ENABLE_BYTE : LedConfig.LED_ANIMATION_DISABLE_BYTE
-        let ppiModeLedByte: UInt8 = ledConfig.ppiModeLedEnabled ? LedConfig.LED_ANIMATION_ENABLE_BYTE : LedConfig.LED_ANIMATION_DISABLE_BYTE
-        let data = Data([sdkModeLedByte, ppiModeLedByte])
+        let data = PolarRuntimePlanner.ledConfigPayload(sdkModeLedEnabled: ledConfig.sdkModeLedEnabled, ppiModeLedEnabled: ledConfig.ppiModeLedEnabled)
         let inputStream = InputStream(data: data)
         try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: data.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}

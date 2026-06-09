@@ -2302,6 +2302,10 @@ class BDBleApiImplTest {
 
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.first)
         Assert.assertEquals(LedConfig.LED_CONFIG_FILENAME, writeOperation.second)
+        Assert.assertArrayEquals(
+            byteArrayOf(LedConfig.LED_ANIMATION_ENABLE_BYTE, LedConfig.LED_ANIMATION_DISABLE_BYTE),
+            PolarRuntimePlannerAdapter.ledConfigPayloadBytes(sdkModeLedEnabled = true, ppiModeLedEnabled = false)
+        )
     }
 
     @Test

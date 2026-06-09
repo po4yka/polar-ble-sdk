@@ -1565,9 +1565,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
         val writeOperation = ledConfigWriteOperation()
         val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(writeOperation)
-        val sdkModeLedByte = if (ledConfig.sdkModeLedEnabled) LedConfig.LED_ANIMATION_ENABLE_BYTE else LedConfig.LED_ANIMATION_DISABLE_BYTE
-        val ppiModeLedByte = if (ledConfig.ppiModeLedEnabled) LedConfig.LED_ANIMATION_ENABLE_BYTE else LedConfig.LED_ANIMATION_DISABLE_BYTE
-        val payload = byteArrayOf(sdkModeLedByte, ppiModeLedByte)
+        val payload = PolarRuntimePlannerAdapter.ledConfigPayloadBytes(ledConfig.sdkModeLedEnabled, ledConfig.ppiModeLedEnabled)
         val data = ByteArrayInputStream(payload)
         PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(payload.size)
         client.write(requestBytes, data).collect {}

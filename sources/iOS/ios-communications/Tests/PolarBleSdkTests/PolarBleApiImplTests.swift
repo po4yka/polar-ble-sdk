@@ -1562,6 +1562,10 @@ final class PolarBleApiImplTests: XCTestCase {
 
         XCTAssertEqual(.put, writeOperation.command)
         XCTAssertEqual(LedConfig.LED_CONFIG_FILENAME, writeOperation.path)
+        XCTAssertEqual(
+            Data([LedConfig.LED_ANIMATION_ENABLE_BYTE, LedConfig.LED_ANIMATION_DISABLE_BYTE]),
+            PolarRuntimePlanner.ledConfigPayload(sdkModeLedEnabled: true, ppiModeLedEnabled: false)
+        )
     }
 
     func test_setLedConfig_writeError_propagatesErrorAfterPayloadIsPrepared() throws {

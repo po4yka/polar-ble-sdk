@@ -698,6 +698,12 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.firmwareUpdateIsAvailable(currentVersion, availableVersion, fileUrl)
     }
 
+    fun ledConfigPayloadBytes(sdkModeLedEnabled: Boolean, ppiModeLedEnabled: Boolean): ByteArray {
+        return PolarWorkflowRuntimePlanning.ledConfigPayloadBytes(sdkModeLedEnabled, ppiModeLedEnabled)
+            .map { value -> value.toByte() }
+            .toByteArray()
+    }
+
     fun firmwareDeviceVersion(major: Int, minor: Int, patch: Int): String {
         return PolarFirmwareUpdateModels.deviceVersionToString(major, minor, patch)
     }

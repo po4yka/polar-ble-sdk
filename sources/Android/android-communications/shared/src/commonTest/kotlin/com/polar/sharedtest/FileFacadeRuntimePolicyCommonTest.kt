@@ -2,10 +2,17 @@ package com.polar.sharedtest
 
 import com.polar.shared.runtime.PolarFileFacadeOperation
 import com.polar.shared.runtime.PolarRuntimeOrchestration
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class FileFacadeRuntimePolicyCommonTest {
+    @Test
+    fun ledConfigPayloadPlanningPreservesSdkAndPpiByteOrder() {
+        assertEquals(listOf(1, 0), PolarWorkflowRuntimePlanning.ledConfigPayloadBytes(sdkModeLedEnabled = true, ppiModeLedEnabled = false))
+        assertEquals(listOf(0, 1), PolarWorkflowRuntimePlanning.ledConfigPayloadBytes(sdkModeLedEnabled = false, ppiModeLedEnabled = true))
+    }
+
     @Test
     fun fileFacadeRuntimePolicyVectorDefinesExecutableCommonCommandPlanning() {
         val vector = loadGoldenVectorText("sdk/file-utils/file-facade-runtime-policy.json")

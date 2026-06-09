@@ -382,6 +382,19 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwareUpdateIsAvailable(currentVersion: currentVersion, availableVersion: availableVersion, fileUrl: fileUrl)
     }
 
+    static func ledConfigPayload(sdkModeLedEnabled: Bool, ppiModeLedEnabled: Bool) -> Data {
+        #if canImport(PolarBleSdkShared)
+        let csv = PolarIosSharedBridge.shared.ledConfigPayloadCsv(sdkModeLedEnabled: sdkModeLedEnabled, ppiModeLedEnabled: ppiModeLedEnabled)
+        let bytes = csv.split(separator: ",").compactMap { UInt8($0) }
+        return Data(bytes)
+        #else
+        return Data([
+            sdkModeLedEnabled ? LedConfig.LED_ANIMATION_ENABLE_BYTE : LedConfig.LED_ANIMATION_DISABLE_BYTE,
+            ppiModeLedEnabled ? LedConfig.LED_ANIMATION_ENABLE_BYTE : LedConfig.LED_ANIMATION_DISABLE_BYTE
+        ])
+        #endif
+    }
+
     static func firmwareDeviceVersion(major: Int, minor: Int, patch: Int) -> String {
         return PolarFirmwareBackupRuntimePlanner.firmwareDeviceVersion(major: major, minor: minor, patch: patch)
     }
