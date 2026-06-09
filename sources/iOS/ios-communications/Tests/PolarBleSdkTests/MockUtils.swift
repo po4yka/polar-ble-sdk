@@ -589,6 +589,7 @@ public class MockBlePsFtpClient: BlePsFtpClient, @unchecked Sendable {
     public var writeReturnValue: AsyncThrowingStream<UInt, Error>?
 
     public var sendNotificationCalls: [(notification: Int, parameters: NSData?)] = []
+    public var sendNotificationClosure: ((Int, NSData?) async throws -> Void)?
     public var sendNotificationError: Error?
 
     public var receiveNotificationCalls: [(notification: Int, parameters: [Data], compressed: Bool)] = []
@@ -646,6 +647,10 @@ public class MockBlePsFtpClient: BlePsFtpClient, @unchecked Sendable {
 
     public override func sendNotification(_ id: Int, parameters: NSData?) async throws {
         sendNotificationCalls.append((id, parameters))
+        if let closure = sendNotificationClosure {
+            try await closure(id, parameters)
+            return
+        }
         if let error = sendNotificationError { throw error }
     }
 

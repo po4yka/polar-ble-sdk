@@ -3434,6 +3434,56 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(v2MockClient.queryCalls.contains { $0.id == Protocol_PbPFtpQuery.setLocalTime.rawValue })
     }
 
+    func test_updateFirmwareFromUrl_mapsFinalRestartFailureToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let restartError = NSError(domain: "PolarBleApiImplTests", code: 7008, userInfo: [NSLocalizedDescriptionKey: "restart notification failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValue = .success(try emptyDirectory.serializedData())
+        v2MockClient.queryReturnValue = .success(Data())
+        var resetNotifications = 0
+        v2MockClient.sendNotificationClosure = { id, _ in
+            if id == Protocol_PbPFtpHostToDevNotification.reset.rawValue {
+                resetNotifications += 1
+                if resetNotifications == 2 {
+                    throw restartError
+                }
+            }
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Restarting device" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("restart notification failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(resetNotifications, 2)
+    }
+
     func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
