@@ -137,6 +137,14 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
     }
 
     @Test
+    fun firmwareUpdateAvailabilityRequiresHigherVersionAndPackageUrl() {
+        assertEquals(true, PolarWorkflowRuntimePlanning.firmwareUpdateIsAvailable("1.2.0", "1.2.1", "https://example.invalid/fw.zip"))
+        assertEquals(false, PolarWorkflowRuntimePlanning.firmwareUpdateIsAvailable("1.2.0", "1.2.0", "https://example.invalid/fw.zip"))
+        assertEquals(false, PolarWorkflowRuntimePlanning.firmwareUpdateIsAvailable("1.2.0", "1.2.1", ""))
+        assertEquals(false, PolarWorkflowRuntimePlanning.firmwareUpdateIsAvailable("1.2.0", "1.2.1", " "))
+    }
+
+    @Test
     fun firmwareWriteProgressPolicyIsZeroSafeAndThresholdBased() {
         assertEquals(0, PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten = 0, payloadSize = 0))
         assertEquals(0, PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten = 12, payloadSize = 0))

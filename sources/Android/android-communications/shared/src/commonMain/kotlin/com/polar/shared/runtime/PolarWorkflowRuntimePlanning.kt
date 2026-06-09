@@ -227,6 +227,10 @@ object PolarWorkflowRuntimePlanning {
             Regex("""(^|[^0-9])50[0-9]([^0-9]|$)""").containsMatchIn(lowercasedDetails)
     }
 
+    fun firmwareUpdateIsAvailable(currentVersion: String, availableVersion: String, fileUrl: String): Boolean {
+        return fileUrl.isNotBlank() && PolarFirmwareUpdateModels.isAvailableFirmwareVersionHigher(currentVersion, availableVersion)
+    }
+
     fun firmwarePackageEntryIsPayload(fileName: String): Boolean {
         return fileName != "readme.txt"
     }

@@ -234,6 +234,31 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `checkFirmwareUpdate maps higher server version without package url to not available through shared availability`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", ""))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.checkFirmwareUpdate(deviceId).toList()
+
+        Assert.assertEquals(listOf(CheckFirmwareUpdateStatus.CheckFwUpdateNotAvailable("No fw update available, device firmware version 1.2.0")), statuses)
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+    }
+
+    @Test
     fun `checkFirmwareUpdate maps injected retryable server failure to failed status`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))

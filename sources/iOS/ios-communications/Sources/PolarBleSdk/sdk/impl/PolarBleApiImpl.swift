@@ -2212,7 +2212,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                     switch checkResult {
                     case .success(let result):
                         let version = result.version ?? ""
-                        if let url = result.fileUrl, !url.isEmpty, PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: deviceInfo.deviceFwVersion, availableVersion: version) {
+                        if PolarRuntimePlanner.firmwareUpdateIsAvailable(currentVersion: deviceInfo.deviceFwVersion, availableVersion: version, fileUrl: result.fileUrl ?? "") {
                             try self.ensureFirmwareWorkflowRuntimeTerminal(PolarRuntimePlanner.firmwareCheckUpdateAvailableWorkflow(), kind: "checkUpdateAvailable")
                             continuation.yield(.checkFwUpdateAvailable(version: version))
                         } else {
@@ -2473,7 +2473,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                 switch response {
                 case .success(let result):
                     let version = result.version ?? ""
-                    if let url = result.fileUrl, !url.isEmpty, PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: deviceInfo.deviceFwVersion, availableVersion: version) {
+                    if let url = result.fileUrl, PolarRuntimePlanner.firmwareUpdateIsAvailable(currentVersion: deviceInfo.deviceFwVersion, availableVersion: version, fileUrl: url) {
                         cont.resume(returning: (version, url, .preparingDeviceForFwUpdate(details: "Preparing for firmware update")))
                     } else {
                         cont.resume(returning: (nil, nil, .fwUpdateNotAvailable(details: "No firmware update available")))

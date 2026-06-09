@@ -2489,7 +2489,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 val firmwareUpdateResponse = response.body()
                 BleLogger.d(TAG, "Received firmware update response: $firmwareUpdateResponse")
                 if (firmwareUpdateResponse != null &&
-                    PolarFirmwareUpdateUtils.isAvailableFirmwareVersionHigher(deviceInfo.deviceFwVersion, firmwareUpdateResponse.version)) {
+                    PolarRuntimePlannerAdapter.firmwareUpdateIsAvailable(deviceInfo.deviceFwVersion, firmwareUpdateResponse.version, firmwareUpdateResponse.fileUrl)) {
                     val availablePlan = PolarRuntimePlannerAdapter.planFirmwareCheckUpdateAvailableWorkflow()
                     require(availablePlan.statuses.last() == "checkFwUpdateAvailable")
                     Triple(firmwareUpdateResponse.version, firmwareUpdateResponse.fileUrl, FirmwareUpdateStatus.FetchingFwUpdatePackage("Firmware available, fetching"))

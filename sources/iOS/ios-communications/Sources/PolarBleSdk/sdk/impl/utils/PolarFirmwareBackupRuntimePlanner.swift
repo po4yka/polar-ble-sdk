@@ -251,6 +251,14 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwareUpdateIsAvailable(currentVersion: String, availableVersion: String, fileUrl: String) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firmwareUpdateIsAvailable(currentVersion: currentVersion, availableVersion: availableVersion, fileUrl: fileUrl)
+        #else
+        return !fileUrl.isEmpty && isFirmwareVersionHigher(currentVersion: currentVersion, availableVersion: availableVersion)
+        #endif
+    }
+
     static func firmwareDeviceVersion(major: Int, minor: Int, patch: Int) -> String {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.firmwareDeviceVersion(major: Int32(major), minor: Int32(minor), patch: Int32(patch))

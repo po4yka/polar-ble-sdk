@@ -694,6 +694,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarFirmwareUpdateModels.isAvailableFirmwareVersionHigher(currentVersion, availableVersion)
     }
 
+    fun firmwareUpdateIsAvailable(currentVersion: String, availableVersion: String, fileUrl: String): Boolean {
+        return PolarWorkflowRuntimePlanning.firmwareUpdateIsAvailable(currentVersion, availableVersion, fileUrl)
+    }
+
     fun firmwareDeviceVersion(major: Int, minor: Int, patch: Int): String {
         return PolarFirmwareUpdateModels.deviceVersionToString(major, minor, patch)
     }

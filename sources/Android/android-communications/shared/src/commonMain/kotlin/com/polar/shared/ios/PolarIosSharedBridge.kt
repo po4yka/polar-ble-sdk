@@ -257,6 +257,10 @@ object PolarIosSharedBridge {
         return PolarFirmwareUpdateModels.isAvailableFirmwareVersionHigher(currentVersion, availableVersion)
     }
 
+    fun firmwareUpdateIsAvailable(currentVersion: String, availableVersion: String, fileUrl: String): Boolean {
+        return PolarWorkflowRuntimePlanning.firmwareUpdateIsAvailable(currentVersion, availableVersion, fileUrl)
+    }
+
     fun firmwareFilePriority(fileName: String): Int {
         return PolarFirmwareUpdateModels.firmwareFilePriority(fileName)
     }

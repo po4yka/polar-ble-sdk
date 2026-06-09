@@ -378,6 +378,10 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.isFirmwareVersionHigher(currentVersion: currentVersion, availableVersion: availableVersion)
     }
 
+    static func firmwareUpdateIsAvailable(currentVersion: String, availableVersion: String, fileUrl: String) -> Bool {
+        return PolarFirmwareBackupRuntimePlanner.firmwareUpdateIsAvailable(currentVersion: currentVersion, availableVersion: availableVersion, fileUrl: fileUrl)
+    }
+
     static func firmwareDeviceVersion(major: Int, minor: Int, patch: Int) -> String {
         return PolarFirmwareBackupRuntimePlanner.firmwareDeviceVersion(major: major, minor: minor, patch: patch)
     }

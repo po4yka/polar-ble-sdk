@@ -335,6 +335,8 @@ class PolarRuntimePlannerAdapterTest {
             listOf("/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB", "/U/0/USERID.BPB"),
             PolarRuntimePlannerAdapter.defaultBackupPaths()
         )
+        Assert.assertTrue(PolarRuntimePlannerAdapter.firmwareUpdateIsAvailable("1.2.0", "1.2.1", "https://example.invalid/fw.zip"))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.firmwareUpdateIsAvailable("1.2.0", "1.2.1", ""))
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", PolarRuntimePlannerAdapter.backupTraversalRootPath("/U/*/S/UDEVSET.BPB"))
         val wildcardPlan = PolarRuntimePlannerAdapter.backupTraversalPlan("/SYS/*/BT/BTDEV.BPB")
         Assert.assertEquals("/SYS/*/BT/BTDEV.BPB", wildcardPlan.path)
