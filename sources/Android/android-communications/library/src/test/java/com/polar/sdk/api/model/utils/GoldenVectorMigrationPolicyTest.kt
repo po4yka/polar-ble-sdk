@@ -3863,6 +3863,7 @@ class GoldenVectorMigrationPolicyTest {
             "cleanup",
             "cancellation",
             "multi-BLE host-state restoration",
+            "automatic reconnection restoration",
             "retry scheduling",
             "error-mapping tests before delegation"
         )
