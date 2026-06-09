@@ -2318,22 +2318,21 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
         var wasMultiConnectionEnabled = false
         try {
-            wasMultiConnectionEnabled = getMultiBLEConnectionMode(identifier)
-            if (wasMultiConnectionEnabled) {
-                setMultiBLEConnectionMode(identifier, false)
-                BleLogger.d(TAG, "Temporarily disabled multi-BLE connection for firmware update on $identifier")
+            try {
+                wasMultiConnectionEnabled = getMultiBLEConnectionMode(identifier)
+                if (wasMultiConnectionEnabled) {
+                    setMultiBLEConnectionMode(identifier, false)
+                    BleLogger.d(TAG, "Temporarily disabled multi-BLE connection for firmware update on $identifier")
+                }
+            } catch (ex: Exception) {
+                BleLogger.e(TAG, "Failed to read/disable multi-BLE connection mode: ${ex.message}")
             }
-        } catch (ex: Exception) {
-            BleLogger.e(TAG, "Failed to read/disable multi-BLE connection mode: ${ex.message}")
-        }
 
-        val fwUrlProvider = if (firmwareUrl.isNotBlank()) {
-            Triple(File(firmwareUrl).name, firmwareUrl, FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Preparing for firmware update"))
-        } else {
-            checkFirmwareUrlAvailabilityForUpdate(client, identifier)
-        }
-
-        try {
+            val fwUrlProvider = if (firmwareUrl.isNotBlank()) {
+                Triple(File(firmwareUrl).name, firmwareUrl, FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Preparing for firmware update"))
+            } else {
+                checkFirmwareUrlAvailabilityForUpdate(client, identifier)
+            }
             val (availableVersionInfo, url, updateStatus) = fwUrlProvider
             firmwareVersionInfo = availableVersionInfo ?: "new version"
 
@@ -2415,15 +2414,16 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             } else {
                 emit(FirmwareUpdateStatus.FwUpdateFailed("Error during updateFirmware() to $firmwareVersionInfo, error: $error"))
             }
-        }
-        try {
-            if (wasMultiConnectionEnabled) {
-                setMultiBLEConnectionMode(identifier, true)
+        } finally {
+            try {
+                if (wasMultiConnectionEnabled) {
+                    setMultiBLEConnectionMode(identifier, true)
+                }
+            } catch (ex: Exception) {
+                BleLogger.e(TAG, "Failed to restore multi-BLE connection mode: ${ex.message}")
             }
-        } catch (ex: Exception) {
-            BleLogger.e(TAG, "Failed to restore multi-BLE connection mode: ${ex.message}")
+            automaticReconnection?.let { listener?.setAutomaticReconnection(it) }
         }
-        automaticReconnection?.let { listener?.setAutomaticReconnection(it) }
     }
 
     override fun updateFirmware(identifier: String): Flow<FirmwareUpdateStatus> {

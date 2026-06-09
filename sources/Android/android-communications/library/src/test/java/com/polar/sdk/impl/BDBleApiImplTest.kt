@@ -389,6 +389,45 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `updateFirmware restores multi BLE mode after no update early return`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, psFtpSession) = mockPsFtpConnection(deviceId)
+        val (pfcClient, pfcSession) = mockPfcConnection(deviceId)
+        every { PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, any()) } returns psFtpSession
+        every { PolarServiceClientUtils.sessionPsPfcClientReady(deviceId, any()) } returns pfcSession
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val pfcOperations = mutableListOf<String>()
+        coEvery { pfcClient.sendControlPointCommand(PfcMessage.PFC_REQUEST_MULTI_CONNECTION_SETTING, null) } answers {
+            pfcOperations += "request"
+            BlePfcClient.PfcResponse(byteArrayOf(0, PfcMessage.PFC_REQUEST_MULTI_CONNECTION_SETTING.numVal.toByte(), 1, 1))
+        }
+        coEvery { pfcClient.sendControlPointCommand(PfcMessage.PFC_CONFIGURE_MULTI_CONNECTION_SETTING, any<Int>()) } answers {
+            pfcOperations += "configure:${secondArg<Int>()}"
+            BlePfcClient.PfcResponse(byteArrayOf(0, PfcMessage.PFC_CONFIGURE_MULTI_CONNECTION_SETTING.numVal.toByte(), 1))
+        }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("1.2.0", "https://example.invalid/fw.zip"))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(listOf(FirmwareUpdateStatus.FwUpdateNotAvailable("Firmware update not available")), statuses)
+        Assert.assertEquals(listOf("request", "configure:0", "configure:1"), pfcOperations)
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
     fun `updateFirmware maps package download failure to failed status before device writes`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
