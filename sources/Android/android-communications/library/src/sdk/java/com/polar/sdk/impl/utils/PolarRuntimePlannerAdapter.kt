@@ -162,6 +162,10 @@ internal object PolarRuntimePlannerAdapter {
         ).mapToPolarDeviceDataTypes()
     }
 
+    fun availableHrServiceDataTypes(hasHrService: Boolean): Set<PolarDeviceDataType> {
+        return PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService).mapToPolarDeviceDataTypes()
+    }
+
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {
         return PolarRuntimeOrchestration.planCommand(
             PolarFacadeCommandOperation(

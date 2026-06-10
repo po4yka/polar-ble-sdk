@@ -32,4 +32,10 @@ class AvailableDataTypesCommonPolicyTest {
             PolarSdkModelMappers.availableOnlineStreamDataTypeNames(pmdTypes, hasHrService = false, includeLocation = false, includePressure = true)
         )
     }
+
+    @Test
+    fun hrServiceAvailabilityProjectsOnlyDiscoveredHrService() {
+        assertEquals(setOf("HR"), PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService = true))
+        assertEquals(emptySet(), PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService = false))
+    }
 }

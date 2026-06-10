@@ -225,6 +225,14 @@ enum PolarPmdMeasurementRuntimePlanner {
         #endif
     }
 
+    static func availableHrServiceDataTypes(hasHrService: Bool) -> Set<PolarDeviceDataType> {
+        #if canImport(PolarBleSdkShared)
+        return polarDataTypes(fromCsv: PolarIosSharedBridge.shared.availableHrServiceDataTypesCsv(hasHrService: hasHrService))
+        #else
+        return hasHrService ? [.hr] : []
+        #endif
+    }
+
     private static func polarDataTypes(fromCsv csv: String) -> Set<PolarDeviceDataType> {
         return polarDataTypes(fromNames: Set(csv.split(separator: ",").map(String.init)))
     }

@@ -1828,11 +1828,8 @@ extension PolarBleApiImpl: PolarBleApi  {
     
     func getAvailableHRServiceDataTypes(identifier: String) async throws -> Set<PolarDeviceDataType> {
         let session = try serviceClientUtils.sessionServiceReady(identifier, service: BleHrClient.HR_SERVICE)
-        var deviceData: Set<PolarDeviceDataType> = Set()
-        if let bleHrClient = session.fetchGattClient(BleHrClient.HR_SERVICE) as? BleHrClient, bleHrClient.isServiceDiscovered() {
-            deviceData.insert(.hr)
-        }
-        return deviceData
+        let bleHrClient = session.fetchGattClient(BleHrClient.HR_SERVICE) as? BleHrClient
+        return PolarPmdMeasurementRuntimePlanner.availableHrServiceDataTypes(hasHrService: bleHrClient?.isServiceDiscovered() == true)
     }
 
     

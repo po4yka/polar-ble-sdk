@@ -101,6 +101,10 @@ object PolarSdkModelMappers {
         )
     }
 
+    fun availableHrServiceDataTypeNames(hasHrService: Boolean): Set<String> {
+        return if (hasHrService) setOf("HR") else emptySet()
+    }
+
     fun skinTemperature(
         sourceDeviceId: String?,
         measurementType: Int,

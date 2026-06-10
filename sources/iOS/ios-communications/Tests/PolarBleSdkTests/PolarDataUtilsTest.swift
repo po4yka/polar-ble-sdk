@@ -161,6 +161,8 @@ final class PolarDataUtilsTest: XCTestCase {
             [.hr, .ecg, .acc, .ppg, .ppi, .gyro, .magnetometer, .pressure, .temperature, .skinTemperature]
         )
         XCTAssertFalse(PolarPmdMeasurementRuntimePlanner.availableOnlineStreamDataTypes(from: pmdTypes, hasHrService: false).contains(.hr))
+        XCTAssertEqual(PolarPmdMeasurementRuntimePlanner.availableHrServiceDataTypes(hasHrService: true), [.hr])
+        XCTAssertEqual(PolarPmdMeasurementRuntimePlanner.availableHrServiceDataTypes(hasHrService: false), [])
     }
 
     // MARK: - mapToPmdSecret

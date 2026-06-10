@@ -57,6 +57,8 @@ class PolarRuntimePlannerAdapterTest {
             PolarRuntimePlannerAdapter.availableOnlineStreamDataTypes(features, hasHrService = true)
         )
         Assert.assertFalse(PolarRuntimePlannerAdapter.availableOnlineStreamDataTypes(features, hasHrService = false).contains(PolarDeviceDataType.HR))
+        Assert.assertEquals(setOf(PolarDeviceDataType.HR), PolarRuntimePlannerAdapter.availableHrServiceDataTypes(hasHrService = true))
+        Assert.assertEquals(emptySet<PolarDeviceDataType>(), PolarRuntimePlannerAdapter.availableHrServiceDataTypes(hasHrService = false))
     }
 
     @Test

@@ -2248,11 +2248,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     override suspend fun getAvailableHRServiceDataTypes(identifier: String): Set<PolarDeviceDataType> {
         val session = PolarServiceClientUtils.sessionServiceReady(identifier, HR_SERVICE, listener)
         val bleHrClient = session.fetchClient(HR_SERVICE) as BleHrClient?
-        val deviceData: MutableSet<PolarDeviceDataType> = mutableSetOf()
-        if (bleHrClient != null && bleHrClient.isServiceDiscovered) {
-            deviceData.add(PolarDeviceDataType.HR)
-        }
-        return deviceData
+        return PolarRuntimePlannerAdapter.availableHrServiceDataTypes(bleHrClient != null && bleHrClient.isServiceDiscovered)
     }
 
     override suspend fun getLogConfig(identifier: String): LogConfig {

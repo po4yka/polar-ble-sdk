@@ -964,6 +964,10 @@ object PolarIosSharedBridge {
         ).joinToString(separator = ",")
     }
 
+    fun availableHrServiceDataTypesCsv(hasHrService: Boolean): String {
+        return PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService).joinToString(separator = ",")
+    }
+
     fun magCalibrationStatusName(id: Int): String {
         return PolarMagCalibrationStatus.fromId(id).name
     }
