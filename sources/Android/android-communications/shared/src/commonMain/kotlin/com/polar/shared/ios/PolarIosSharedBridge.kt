@@ -968,6 +968,10 @@ object PolarIosSharedBridge {
         return PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService).joinToString(separator = ",")
     }
 
+    fun pmdMeasurementTypeNameForPublicDataTypeName(publicDataTypeName: String): String? {
+        return PolarSdkModelMappers.pmdMeasurementTypeNameForPublicDataTypeName(publicDataTypeName)
+    }
+
     fun magCalibrationStatusName(id: Int): String {
         return PolarMagCalibrationStatus.fromId(id).name
     }

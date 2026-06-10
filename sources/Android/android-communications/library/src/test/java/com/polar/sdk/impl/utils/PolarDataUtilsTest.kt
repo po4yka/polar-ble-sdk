@@ -45,6 +45,7 @@ class PolarDataUtilsTest {
 
         cases.forEach { (pmdType, polarType) ->
             Assert.assertEquals(pmdType.name, polarType, PolarDataUtils.mapPmdClientFeatureToPolarFeature(pmdType))
+            Assert.assertEquals(pmdType.name, pmdType, PolarDataUtils.mapPolarFeatureToPmdClientMeasurementType(polarType))
         }
         Assert.assertThrows(PolarBleSdkInternalException::class.java) {
             PolarDataUtils.mapPmdClientFeatureToPolarFeature(PmdMeasurementType.UNKNOWN_TYPE)

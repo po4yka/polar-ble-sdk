@@ -105,6 +105,23 @@ object PolarSdkModelMappers {
         return if (hasHrService) setOf("HR") else emptySet()
     }
 
+    fun pmdMeasurementTypeNameForPublicDataTypeName(publicDataTypeName: String): String? {
+        return when (publicDataTypeName) {
+            "ECG" -> "ECG"
+            "ACC" -> "ACC"
+            "PPG" -> "PPG"
+            "PPI" -> "PPI"
+            "GYRO" -> "GYRO"
+            "MAGNETOMETER" -> "MAG"
+            "PRESSURE" -> "PRESSURE"
+            "LOCATION" -> "LOCATION"
+            "TEMPERATURE" -> "TEMPERATURE"
+            "SKIN_TEMPERATURE" -> "SKIN_TEMP"
+            "HR" -> "OFFLINE_HR"
+            else -> null
+        }
+    }
+
     fun skinTemperature(
         sourceDeviceId: String?,
         measurementType: Int,

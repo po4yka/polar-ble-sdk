@@ -38,4 +38,26 @@ class AvailableDataTypesCommonPolicyTest {
         assertEquals(setOf("HR"), PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService = true))
         assertEquals(emptySet(), PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService = false))
     }
+
+    @Test
+    fun publicDataTypeNamesMapToSharedPmdMeasurementTypeNames() {
+        val cases = mapOf(
+            "ECG" to "ECG",
+            "ACC" to "ACC",
+            "PPG" to "PPG",
+            "PPI" to "PPI",
+            "GYRO" to "GYRO",
+            "MAGNETOMETER" to "MAG",
+            "PRESSURE" to "PRESSURE",
+            "LOCATION" to "LOCATION",
+            "TEMPERATURE" to "TEMPERATURE",
+            "SKIN_TEMPERATURE" to "SKIN_TEMP",
+            "HR" to "OFFLINE_HR"
+        )
+
+        cases.forEach { (publicDataType, measurementType) ->
+            assertEquals(measurementType, PolarSdkModelMappers.pmdMeasurementTypeNameForPublicDataTypeName(publicDataType), publicDataType)
+        }
+        assertEquals(null, PolarSdkModelMappers.pmdMeasurementTypeNameForPublicDataTypeName("UNKNOWN"))
+    }
 }

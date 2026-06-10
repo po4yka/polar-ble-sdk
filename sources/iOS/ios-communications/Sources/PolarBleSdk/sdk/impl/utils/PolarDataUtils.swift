@@ -10,28 +10,8 @@ import PolarBleSdkShared
 internal class PolarDataUtils {
     
     static func mapToPmdClientMeasurementType(from polarDataType : PolarDeviceDataType) -> PmdMeasurementType {
-        switch(polarDataType) {
-        case .ecg:
-            return PmdMeasurementType.ecg
-        case .acc:
-            return PmdMeasurementType.acc
-        case .ppg:
-            return PmdMeasurementType.ppg
-        case .ppi:
-            return PmdMeasurementType.ppi
-        case .gyro:
-            return PmdMeasurementType.gyro
-        case .magnetometer:
-            return PmdMeasurementType.mgn
-        case .hr:
-            return PmdMeasurementType.offline_hr
-        case .temperature:
-            return PmdMeasurementType.temperature
-        case .skinTemperature:
-            return PmdMeasurementType.skinTemperature
-        case .pressure:
-            return PmdMeasurementType.pressure
-        }
+        let sharedName = PolarPmdMeasurementRuntimePlanner.pmdMeasurementTypeName(forPublicDataTypeName: mapToSharedRuntimeFeatureName(from: polarDataType))
+        return mapSharedMeasurementTypeNameToPmdClientMeasurementType(sharedName)
     }
 
     static func mapToSharedRuntimeName(from pmdMeasurementType: PmdMeasurementType) -> String {
@@ -89,6 +69,31 @@ internal class PolarDataUtils {
             return "PRESSURE"
         case .skinTemperature:
             return "SKIN_TEMP"
+        }
+    }
+
+    private static func mapSharedMeasurementTypeNameToPmdClientMeasurementType(_ sharedName: String) -> PmdMeasurementType {
+        switch sharedName {
+        case "ECG": return PmdMeasurementType.ecg
+        case "ACC": return PmdMeasurementType.acc
+        case "PPG": return PmdMeasurementType.ppg
+        case "PPI": return PmdMeasurementType.ppi
+        case "GYRO": return PmdMeasurementType.gyro
+        case "MAG": return PmdMeasurementType.mgn
+        case "OFFLINE_HR": return PmdMeasurementType.offline_hr
+        case "TEMPERATURE": return PmdMeasurementType.temperature
+        case "SKIN_TEMP": return PmdMeasurementType.skinTemperature
+        case "PRESSURE": return PmdMeasurementType.pressure
+        default: return fallbackPmdClientMeasurementType(fromSharedRuntimeFeatureName: sharedName)
+        }
+    }
+
+    private static func fallbackPmdClientMeasurementType(fromSharedRuntimeFeatureName sharedName: String) -> PmdMeasurementType {
+        switch sharedName {
+        case "HR": return PmdMeasurementType.offline_hr
+        case "MAGNETOMETER": return PmdMeasurementType.mgn
+        case "SKIN_TEMPERATURE": return PmdMeasurementType.skinTemperature
+        default: fatalError("Error when map shared measurement type \(sharedName) to PMD feature")
         }
     }
     
@@ -205,6 +210,14 @@ enum PolarPmdMeasurementRuntimePlanner {
         #endif
     }
 
+    static func pmdMeasurementTypeName(forPublicDataTypeName publicDataTypeName: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdMeasurementTypeNameForPublicDataTypeName(publicDataTypeName: publicDataTypeName) ?? fallbackPmdMeasurementTypeName(forPublicDataTypeName: publicDataTypeName)
+        #else
+        return fallbackPmdMeasurementTypeName(forPublicDataTypeName: publicDataTypeName)
+        #endif
+    }
+
     static func availableOfflineRecordingDataTypes(from pmdMeasurementTypes: Set<PmdMeasurementType>) -> Set<PolarDeviceDataType> {
         let measurementNames = pmdMeasurementTypes.map { PolarDataUtils.mapToSharedRuntimeName(from: $0) }
         #if canImport(PolarBleSdkShared)
@@ -299,6 +312,23 @@ enum PolarPmdMeasurementRuntimePlanner {
             }
         }
         return result
+    }
+
+    private static func fallbackPmdMeasurementTypeName(forPublicDataTypeName publicDataTypeName: String) -> String {
+        switch publicDataTypeName {
+        case "ECG": return "ECG"
+        case "ACC": return "ACC"
+        case "PPG": return "PPG"
+        case "PPI": return "PPI"
+        case "GYRO": return "GYRO"
+        case "MAGNETOMETER": return "MAG"
+        case "HR": return "OFFLINE_HR"
+        case "TEMPERATURE": return "TEMPERATURE"
+        case "PRESSURE": return "PRESSURE"
+        case "SKIN_TEMP": return "SKIN_TEMP"
+        case "SKIN_TEMPERATURE": return "SKIN_TEMP"
+        default: return publicDataTypeName
+        }
     }
 }
 

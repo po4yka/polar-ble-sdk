@@ -34,6 +34,7 @@ import com.polar.shared.pmd.sensors.PolarLocationNmeaProjectionSample
 import com.polar.shared.pmd.sensors.PolarLocationSatelliteDilutionProjectionSample
 import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjection
 import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjectionSample
+import com.polar.shared.sdk.PolarSdkModelMappers
 import java.util.Collections
 
 internal object PolarDataUtils {
@@ -333,18 +334,21 @@ internal object PolarDataUtils {
     }
 
     fun mapPolarFeatureToPmdClientMeasurementType(polarFeature: PolarBleApi.PolarDeviceDataType): PmdMeasurementType {
-        return when (polarFeature) {
-            PolarBleApi.PolarDeviceDataType.ECG -> PmdMeasurementType.ECG
-            PolarBleApi.PolarDeviceDataType.ACC -> PmdMeasurementType.ACC
-            PolarBleApi.PolarDeviceDataType.PPG -> PmdMeasurementType.PPG
-            PolarBleApi.PolarDeviceDataType.PPI -> PmdMeasurementType.PPI
-            PolarBleApi.PolarDeviceDataType.GYRO -> PmdMeasurementType.GYRO
-            PolarBleApi.PolarDeviceDataType.MAGNETOMETER -> PmdMeasurementType.MAGNETOMETER
-            PolarBleApi.PolarDeviceDataType.PRESSURE -> PmdMeasurementType.PRESSURE
-            PolarBleApi.PolarDeviceDataType.LOCATION -> PmdMeasurementType.LOCATION
-            PolarBleApi.PolarDeviceDataType.TEMPERATURE -> PmdMeasurementType.TEMPERATURE
-            PolarBleApi.PolarDeviceDataType.SKIN_TEMPERATURE -> PmdMeasurementType.SKIN_TEMP
-            PolarBleApi.PolarDeviceDataType.HR -> PmdMeasurementType.OFFLINE_HR
+        val sharedTypeName = PolarSdkModelMappers.pmdMeasurementTypeNameForPublicDataTypeName(polarFeature.name)
+            ?: throw PolarBleSdkInternalException("Error when map Polar feature $polarFeature to measurement type")
+        return when (sharedTypeName) {
+            "ECG" -> PmdMeasurementType.ECG
+            "ACC" -> PmdMeasurementType.ACC
+            "PPG" -> PmdMeasurementType.PPG
+            "PPI" -> PmdMeasurementType.PPI
+            "GYRO" -> PmdMeasurementType.GYRO
+            "MAG" -> PmdMeasurementType.MAGNETOMETER
+            "PRESSURE" -> PmdMeasurementType.PRESSURE
+            "LOCATION" -> PmdMeasurementType.LOCATION
+            "TEMPERATURE" -> PmdMeasurementType.TEMPERATURE
+            "SKIN_TEMP" -> PmdMeasurementType.SKIN_TEMP
+            "OFFLINE_HR" -> PmdMeasurementType.OFFLINE_HR
+            else -> throw PolarBleSdkInternalException("Error when map shared measurement type $sharedTypeName to PMD feature")
         }
     }
 

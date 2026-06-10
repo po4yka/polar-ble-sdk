@@ -47,6 +47,12 @@ final class PolarDataUtilsTest: XCTestCase {
         XCTAssertEqual(.pressure, PolarDataUtils.mapToPmdClientMeasurementType(from: .pressure))
     }
 
+    func testMapToPmdClientMeasurementType_usesSharedPlannerNames() {
+        XCTAssertEqual("MAG", PolarPmdMeasurementRuntimePlanner.pmdMeasurementTypeName(forPublicDataTypeName: "MAGNETOMETER"))
+        XCTAssertEqual("OFFLINE_HR", PolarPmdMeasurementRuntimePlanner.pmdMeasurementTypeName(forPublicDataTypeName: "HR"))
+        XCTAssertEqual("SKIN_TEMP", PolarPmdMeasurementRuntimePlanner.pmdMeasurementTypeName(forPublicDataTypeName: "SKIN_TEMPERATURE"))
+    }
+
     // MARK: - mapToPolarFeature – all supported types
 
     func testMapToPolarFeature_ecg() throws {
