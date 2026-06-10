@@ -204,6 +204,94 @@ enum PolarPmdMeasurementRuntimePlanner {
         return nil
         #endif
     }
+
+    static func availableOfflineRecordingDataTypes(from pmdMeasurementTypes: Set<PmdMeasurementType>) -> Set<PolarDeviceDataType> {
+        let measurementNames = pmdMeasurementTypes.map { PolarDataUtils.mapToSharedRuntimeName(from: $0) }
+        #if canImport(PolarBleSdkShared)
+        let csv = PolarIosSharedBridge.shared.availableOfflineRecordingDataTypesCsv(pmdMeasurementTypesCsv: measurementNames.joined(separator: ","), includeLocation: false, includePressure: false)
+        return polarDataTypes(fromCsv: csv)
+        #else
+        return polarDataTypes(fromNames: offlineDataTypeNames(from: Set(measurementNames), includeLocation: false, includePressure: false))
+        #endif
+    }
+
+    static func availableOnlineStreamDataTypes(from pmdMeasurementTypes: Set<PmdMeasurementType>, hasHrService: Bool) -> Set<PolarDeviceDataType> {
+        let measurementNames = pmdMeasurementTypes.map { PolarDataUtils.mapToSharedRuntimeName(from: $0) }
+        #if canImport(PolarBleSdkShared)
+        let csv = PolarIosSharedBridge.shared.availableOnlineStreamDataTypesCsv(pmdMeasurementTypesCsv: measurementNames.joined(separator: ","), hasHrService: hasHrService, includeLocation: false, includePressure: true)
+        return polarDataTypes(fromCsv: csv)
+        #else
+        return polarDataTypes(fromNames: onlineDataTypeNames(from: Set(measurementNames), hasHrService: hasHrService, includeLocation: false, includePressure: true))
+        #endif
+    }
+
+    private static func polarDataTypes(fromCsv csv: String) -> Set<PolarDeviceDataType> {
+        return polarDataTypes(fromNames: Set(csv.split(separator: ",").map(String.init)))
+    }
+
+    private static func polarDataTypes(fromNames names: Set<String>) -> Set<PolarDeviceDataType> {
+        var result: Set<PolarDeviceDataType> = Set()
+        for name in names {
+            switch name {
+            case "ECG": result.insert(.ecg)
+            case "ACC": result.insert(.acc)
+            case "PPG": result.insert(.ppg)
+            case "PPI": result.insert(.ppi)
+            case "GYRO": result.insert(.gyro)
+            case "MAGNETOMETER": result.insert(.magnetometer)
+            case "HR": result.insert(.hr)
+            case "TEMPERATURE": result.insert(.temperature)
+            case "PRESSURE": result.insert(.pressure)
+            case "SKIN_TEMPERATURE": result.insert(.skinTemperature)
+            default: break
+            }
+        }
+        return result
+    }
+
+    private static func offlineDataTypeNames(from pmdMeasurementTypeNames: Set<String>, includeLocation: Bool, includePressure: Bool) -> Set<String> {
+        var names = pmdDataTypeNames(from: pmdMeasurementTypeNames, includeLocation: includeLocation, includePressure: includePressure)
+        if pmdMeasurementTypeNames.contains("OFFLINE_HR") {
+            names.insert("HR")
+        }
+        return names
+    }
+
+    private static func onlineDataTypeNames(from pmdMeasurementTypeNames: Set<String>, hasHrService: Bool, includeLocation: Bool, includePressure: Bool) -> Set<String> {
+        var names = pmdDataTypeNames(from: pmdMeasurementTypeNames, includeLocation: includeLocation, includePressure: includePressure)
+        if hasHrService {
+            names.insert("HR")
+        }
+        return names
+    }
+
+    private static func pmdDataTypeNames(from pmdMeasurementTypeNames: Set<String>, includeLocation: Bool, includePressure: Bool) -> Set<String> {
+        var result: Set<String> = Set()
+        let mappings = [
+            ("ECG", "ECG"),
+            ("ACC", "ACC"),
+            ("PPG", "PPG"),
+            ("PPI", "PPI"),
+            ("GYRO", "GYRO"),
+            ("MAG", "MAGNETOMETER"),
+            ("PRESSURE", "PRESSURE"),
+            ("LOCATION", "LOCATION"),
+            ("TEMPERATURE", "TEMPERATURE"),
+            ("SKIN_TEMP", "SKIN_TEMPERATURE")
+        ]
+        for (measurementType, dataType) in mappings {
+            if !includeLocation && dataType == "LOCATION" {
+                continue
+            }
+            if !includePressure && dataType == "PRESSURE" {
+                continue
+            }
+            if pmdMeasurementTypeNames.contains(measurementType) {
+                result.insert(dataType)
+            }
+        }
+        return result
+    }
 }
 
 internal extension PmdSetting {

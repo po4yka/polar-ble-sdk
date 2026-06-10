@@ -149,6 +149,20 @@ final class PolarDataUtilsTest: XCTestCase {
         }
     }
 
+    func testAvailableDataTypes_useSharedPlannerWithIosPublicSurfaceFilters() throws {
+        let pmdTypes: Set<PmdMeasurementType> = [.ecg, .acc, .ppg, .ppi, .gyro, .mgn, .pressure, .temperature, .skinTemperature, .offline_hr]
+
+        XCTAssertEqual(
+            PolarPmdMeasurementRuntimePlanner.availableOfflineRecordingDataTypes(from: pmdTypes),
+            [.ecg, .acc, .ppg, .ppi, .gyro, .magnetometer, .temperature, .skinTemperature, .hr]
+        )
+        XCTAssertEqual(
+            PolarPmdMeasurementRuntimePlanner.availableOnlineStreamDataTypes(from: pmdTypes, hasHrService: true),
+            [.hr, .ecg, .acc, .ppg, .ppi, .gyro, .magnetometer, .pressure, .temperature, .skinTemperature]
+        )
+        XCTAssertFalse(PolarPmdMeasurementRuntimePlanner.availableOnlineStreamDataTypes(from: pmdTypes, hasHrService: false).contains(.hr))
+    }
+
     // MARK: - mapToPmdSecret
 
     func testMapToPmdSecret_validKey_returnsAes128Secret() throws {

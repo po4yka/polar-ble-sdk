@@ -1,11 +1,64 @@
 package com.polar.sdk.impl.utils
 
+import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
+import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType
 import org.junit.Assert
 import org.junit.Test
 import protocol.PftpNotification
 import protocol.PftpRequest
 
 class PolarRuntimePlannerAdapterTest {
+    @Test
+    fun `shared available data type planner preserves Android public data type surface`() {
+        val features = setOf(
+            PmdMeasurementType.ECG,
+            PmdMeasurementType.ACC,
+            PmdMeasurementType.PPG,
+            PmdMeasurementType.PPI,
+            PmdMeasurementType.GYRO,
+            PmdMeasurementType.MAGNETOMETER,
+            PmdMeasurementType.PRESSURE,
+            PmdMeasurementType.LOCATION,
+            PmdMeasurementType.TEMPERATURE,
+            PmdMeasurementType.SKIN_TEMP,
+            PmdMeasurementType.OFFLINE_HR
+        )
+
+        Assert.assertEquals(
+            setOf(
+                PolarDeviceDataType.ECG,
+                PolarDeviceDataType.ACC,
+                PolarDeviceDataType.PPG,
+                PolarDeviceDataType.PPI,
+                PolarDeviceDataType.GYRO,
+                PolarDeviceDataType.MAGNETOMETER,
+                PolarDeviceDataType.PRESSURE,
+                PolarDeviceDataType.LOCATION,
+                PolarDeviceDataType.TEMPERATURE,
+                PolarDeviceDataType.SKIN_TEMPERATURE,
+                PolarDeviceDataType.HR
+            ),
+            PolarRuntimePlannerAdapter.availableOfflineRecordingDataTypes(features)
+        )
+        Assert.assertEquals(
+            setOf(
+                PolarDeviceDataType.HR,
+                PolarDeviceDataType.ECG,
+                PolarDeviceDataType.ACC,
+                PolarDeviceDataType.PPG,
+                PolarDeviceDataType.PPI,
+                PolarDeviceDataType.GYRO,
+                PolarDeviceDataType.MAGNETOMETER,
+                PolarDeviceDataType.PRESSURE,
+                PolarDeviceDataType.LOCATION,
+                PolarDeviceDataType.TEMPERATURE,
+                PolarDeviceDataType.SKIN_TEMPERATURE
+            ),
+            PolarRuntimePlannerAdapter.availableOnlineStreamDataTypes(features, hasHrService = true)
+        )
+        Assert.assertFalse(PolarRuntimePlannerAdapter.availableOnlineStreamDataTypes(features, hasHrService = false).contains(PolarDeviceDataType.HR))
+    }
+
     @Test
     fun `shared command query plans select Android protobuf query ids`() {
         val cases = listOf(

@@ -2232,19 +2232,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val blePMDClient = session.fetchClient(BlePMDClient.PMD_SERVICE) as BlePMDClient?
             ?: throw PolarServiceNotAvailable()
         val pmdFeature = blePMDClient.readFeature(true)
-        val deviceData: MutableSet<PolarDeviceDataType> = mutableSetOf()
-        if (pmdFeature.contains(PmdMeasurementType.ECG)) deviceData.add(PolarDeviceDataType.ECG)
-        if (pmdFeature.contains(PmdMeasurementType.ACC)) deviceData.add(PolarDeviceDataType.ACC)
-        if (pmdFeature.contains(PmdMeasurementType.PPG)) deviceData.add(PolarDeviceDataType.PPG)
-        if (pmdFeature.contains(PmdMeasurementType.PPI)) deviceData.add(PolarDeviceDataType.PPI)
-        if (pmdFeature.contains(PmdMeasurementType.GYRO)) deviceData.add(PolarDeviceDataType.GYRO)
-        if (pmdFeature.contains(PmdMeasurementType.MAGNETOMETER)) deviceData.add(PolarDeviceDataType.MAGNETOMETER)
-        if (pmdFeature.contains(PmdMeasurementType.PRESSURE)) deviceData.add(PolarDeviceDataType.PRESSURE)
-        if (pmdFeature.contains(PmdMeasurementType.LOCATION)) deviceData.add(PolarDeviceDataType.LOCATION)
-        if (pmdFeature.contains(PmdMeasurementType.TEMPERATURE)) deviceData.add(PolarDeviceDataType.TEMPERATURE)
-        if (pmdFeature.contains(PmdMeasurementType.OFFLINE_HR)) deviceData.add(PolarDeviceDataType.HR)
-        if (pmdFeature.contains(PmdMeasurementType.SKIN_TEMP)) deviceData.add(PolarDeviceDataType.SKIN_TEMPERATURE)
-        return deviceData
+        return PolarRuntimePlannerAdapter.availableOfflineRecordingDataTypes(pmdFeature)
     }
 
     override suspend fun getAvailableOnlineStreamDataTypes(identifier: String): Set<PolarDeviceDataType> {
@@ -2254,19 +2242,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val bleHrClient = session.fetchClient(HR_SERVICE) as BleHrClient?
         blePMDClient.clientReady(true)
         val pmdFeature = blePMDClient.readFeature(true)
-        val deviceData: MutableSet<PolarDeviceDataType> = mutableSetOf()
-        if (bleHrClient != null) deviceData.add(PolarDeviceDataType.HR)
-        if (pmdFeature.contains(PmdMeasurementType.ECG)) deviceData.add(PolarDeviceDataType.ECG)
-        if (pmdFeature.contains(PmdMeasurementType.ACC)) deviceData.add(PolarDeviceDataType.ACC)
-        if (pmdFeature.contains(PmdMeasurementType.PPG)) deviceData.add(PolarDeviceDataType.PPG)
-        if (pmdFeature.contains(PmdMeasurementType.PPI)) deviceData.add(PolarDeviceDataType.PPI)
-        if (pmdFeature.contains(PmdMeasurementType.GYRO)) deviceData.add(PolarDeviceDataType.GYRO)
-        if (pmdFeature.contains(PmdMeasurementType.MAGNETOMETER)) deviceData.add(PolarDeviceDataType.MAGNETOMETER)
-        if (pmdFeature.contains(PmdMeasurementType.PRESSURE)) deviceData.add(PolarDeviceDataType.PRESSURE)
-        if (pmdFeature.contains(PmdMeasurementType.LOCATION)) deviceData.add(PolarDeviceDataType.LOCATION)
-        if (pmdFeature.contains(PmdMeasurementType.TEMPERATURE)) deviceData.add(PolarDeviceDataType.TEMPERATURE)
-        if (pmdFeature.contains(PmdMeasurementType.SKIN_TEMP)) deviceData.add(PolarDeviceDataType.SKIN_TEMPERATURE)
-        return deviceData
+        return PolarRuntimePlannerAdapter.availableOnlineStreamDataTypes(pmdFeature, hasHrService = bleHrClient != null)
     }
 
     override suspend fun getAvailableHRServiceDataTypes(identifier: String): Set<PolarDeviceDataType> {

@@ -1331,17 +1331,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try serviceClientUtils.sessionPmdClientReady(identifier)
         guard let client = session.fetchGattClient(BlePmdClient.PMD_SERVICE) as? BlePmdClient else { throw PolarErrors.serviceNotFound }
         let pmdFeature = try await client.readFeature(true)
-        var deviceData: Set<PolarDeviceDataType> = Set()
-        if pmdFeature.contains(.ecg) { deviceData.insert(.ecg) }
-        if pmdFeature.contains(.acc) { deviceData.insert(.acc) }
-        if pmdFeature.contains(.ppg) { deviceData.insert(.ppg) }
-        if pmdFeature.contains(.ppi) { deviceData.insert(.ppi) }
-        if pmdFeature.contains(.gyro) { deviceData.insert(.gyro) }
-        if pmdFeature.contains(.mgn) { deviceData.insert(.magnetometer) }
-        if pmdFeature.contains(.offline_hr) { deviceData.insert(.hr) }
-        if pmdFeature.contains(.temperature) { deviceData.insert(.temperature) }
-        if pmdFeature.contains(.skinTemperature) { deviceData.insert(.skinTemperature) }
-        return deviceData
+        return PolarPmdMeasurementRuntimePlanner.availableOfflineRecordingDataTypes(from: pmdFeature)
     }
 
     
@@ -1832,16 +1822,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let pmdSession = try serviceClientUtils.sessionPmdClientReady(identifier)
         guard let pmdClient = pmdSession.fetchGattClient(BlePmdClient.PMD_SERVICE) as? BlePmdClient else { return deviceData }
         let pmdFeature = try await pmdClient.readFeature(true)
-        if pmdFeature.contains(.ecg) { deviceData.insert(.ecg) }
-        if pmdFeature.contains(.acc) { deviceData.insert(.acc) }
-        if pmdFeature.contains(.ppg) { deviceData.insert(.ppg) }
-        if pmdFeature.contains(.ppi) { deviceData.insert(.ppi) }
-        if pmdFeature.contains(.gyro) { deviceData.insert(.gyro) }
-        if pmdFeature.contains(.mgn) { deviceData.insert(.magnetometer) }
-        if pmdFeature.contains(.temperature) { deviceData.insert(.temperature) }
-        if pmdFeature.contains(.pressure) { deviceData.insert(.pressure) }
-        if pmdFeature.contains(.skinTemperature) { deviceData.insert(.skinTemperature) }
-        return deviceData
+        return PolarPmdMeasurementRuntimePlanner.availableOnlineStreamDataTypes(from: pmdFeature, hasHrService: deviceData.contains(.hr))
     }
 
     

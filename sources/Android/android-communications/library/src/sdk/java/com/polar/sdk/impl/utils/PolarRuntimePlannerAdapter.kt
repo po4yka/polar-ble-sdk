@@ -1,5 +1,7 @@
 package com.polar.sdk.impl.utils
 
+import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
+import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType
 import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
@@ -20,6 +22,7 @@ import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.device.PolarDeviceId
+import com.polar.shared.pmd.PolarPmdMeasurementTypeName
 import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import com.polar.shared.sdk.PolarKvtxScriptCodec
@@ -146,6 +149,18 @@ internal object PolarRuntimePlannerAdapter {
         val exercises: List<PlannedTrainingExerciseReference>,
         val fileSize: Long
     )
+
+    fun availableOfflineRecordingDataTypes(features: Set<PmdMeasurementType>): Set<PolarDeviceDataType> {
+        return PolarSdkModelMappers.availableOfflineRecordingDataTypeNames(features.sharedMeasurementTypeNames())
+            .mapToPolarDeviceDataTypes()
+    }
+
+    fun availableOnlineStreamDataTypes(features: Set<PmdMeasurementType>, hasHrService: Boolean): Set<PolarDeviceDataType> {
+        return PolarSdkModelMappers.availableOnlineStreamDataTypeNames(
+            pmdMeasurementTypeNames = features.sharedMeasurementTypeNames(),
+            hasHrService = hasHrService
+        ).mapToPolarDeviceDataTypes()
+    }
 
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {
         return PolarRuntimeOrchestration.planCommand(
@@ -1256,6 +1271,31 @@ internal object PolarRuntimePlannerAdapter {
             "GET" -> PftpRequest.PbPFtpOperation.Command.GET to parts[1]
             "REMOVE" -> PftpRequest.PbPFtpOperation.Command.REMOVE to parts[1]
             else -> null
+        }
+    }
+
+    private fun Set<PmdMeasurementType>.sharedMeasurementTypeNames(): Set<String> {
+        return mapNotNull { feature ->
+            PolarPmdMeasurementTypeName.fromRawValue(feature.numVal.toInt())?.name
+        }.toSet()
+    }
+
+    private fun Set<String>.mapToPolarDeviceDataTypes(): Set<PolarDeviceDataType> {
+        return mapTo(linkedSetOf()) { typeName ->
+            when (typeName) {
+                "ECG" -> PolarDeviceDataType.ECG
+                "ACC" -> PolarDeviceDataType.ACC
+                "PPG" -> PolarDeviceDataType.PPG
+                "PPI" -> PolarDeviceDataType.PPI
+                "GYRO" -> PolarDeviceDataType.GYRO
+                "MAGNETOMETER" -> PolarDeviceDataType.MAGNETOMETER
+                "PRESSURE" -> PolarDeviceDataType.PRESSURE
+                "LOCATION" -> PolarDeviceDataType.LOCATION
+                "TEMPERATURE" -> PolarDeviceDataType.TEMPERATURE
+                "HR" -> PolarDeviceDataType.HR
+                "SKIN_TEMPERATURE" -> PolarDeviceDataType.SKIN_TEMPERATURE
+                else -> error("Unsupported shared runtime data type $typeName")
+            }
         }
     }
 }

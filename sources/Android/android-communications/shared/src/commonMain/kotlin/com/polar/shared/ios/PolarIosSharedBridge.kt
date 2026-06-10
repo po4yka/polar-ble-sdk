@@ -947,6 +947,23 @@ object PolarIosSharedBridge {
         return PolarPmdMeasurementTypeName.fromMaskedId(id)?.name
     }
 
+    fun availableOfflineRecordingDataTypesCsv(pmdMeasurementTypesCsv: String, includeLocation: Boolean, includePressure: Boolean): String {
+        return PolarSdkModelMappers.availableOfflineRecordingDataTypeNames(
+            pmdMeasurementTypeNames = pmdMeasurementTypesCsv.csvValues().toSet(),
+            includeLocation = includeLocation,
+            includePressure = includePressure
+        ).joinToString(separator = ",")
+    }
+
+    fun availableOnlineStreamDataTypesCsv(pmdMeasurementTypesCsv: String, hasHrService: Boolean, includeLocation: Boolean, includePressure: Boolean): String {
+        return PolarSdkModelMappers.availableOnlineStreamDataTypeNames(
+            pmdMeasurementTypeNames = pmdMeasurementTypesCsv.csvValues().toSet(),
+            hasHrService = hasHrService,
+            includeLocation = includeLocation,
+            includePressure = includePressure
+        ).joinToString(separator = ",")
+    }
+
     fun magCalibrationStatusName(id: Int): String {
         return PolarMagCalibrationStatus.fromId(id).name
     }
