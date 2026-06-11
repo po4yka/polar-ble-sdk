@@ -1932,7 +1932,7 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
-    fun `firmware workflow facade ledger stays gated on injectable dependencies and facade compatibility`() {
+    fun `firmware workflow facade ledger stays pinned on injectable dependencies and facade compatibility`() {
         val root = findRepositoryRoot()
         val plan = root.resolve("documentation/KmpFakeTransportTestPlan.md").readText()
         val ledgerRow = plan.sectionBetween("## Public Facade Operation Coverage Ledger", "## Pre-Migration Gates")
@@ -1946,13 +1946,13 @@ class GoldenVectorMigrationPolicyTest {
             FIRMWARE_FACADE_GATE_REQUIRED_TERMS
                 .filterNot { term -> rowText.contains(term) }
                 .mapTo(violations) { term -> "Firmware update workflow ledger row missing $term" }
-            if (!ledgerRow[PUBLIC_FACADE_LEDGER_STATUS_COLUMN].contains("facade gate open")) {
-                violations += "Firmware update workflow must stay facade-gated until production injectable dependencies and facade compatibility tests exist"
+            if (!ledgerRow[PUBLIC_FACADE_LEDGER_STATUS_COLUMN].contains("facade compatibility pinned")) {
+                violations += "Firmware update workflow must stay pinned once production injectable dependencies and facade compatibility tests exist"
             }
         }
 
         assertTrue(
-            "Firmware workflow public facade delegation must remain explicitly blocked by concrete dependency and facade-test gates: $violations",
+            "Firmware workflow public facade delegation must remain explicitly pinned by concrete dependency and facade-test evidence: $violations",
             violations.isEmpty()
         )
     }
@@ -3863,7 +3863,7 @@ class GoldenVectorMigrationPolicyTest {
             "Offline trigger runtime"
         )
         val FIRMWARE_FACADE_GATE_REQUIRED_TERMS = listOf(
-            "facade gate open",
+            "facade compatibility pinned",
             "PolarFirmwareUpdateUtilsTest.kt",
             "PolarFirmwareUpdateUtilsTest.swift",
             "FirmwareUpdateApi(transport:)",
@@ -3883,11 +3883,9 @@ class GoldenVectorMigrationPolicyTest {
             "final restart failure mapping",
             "final stop-sync platform split",
             "retry scheduling",
-            "error-mapping tests before delegation"
+            "public error translation adapter-owned"
         )
-        val FACADE_GATE_OPEN_REQUIRED_TERMS = mapOf(
-            "Firmware update workflow" to FIRMWARE_FACADE_GATE_REQUIRED_TERMS
-        )
+        val FACADE_GATE_OPEN_REQUIRED_TERMS = mapOf<String, List<String>>()
         val RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = mapOf(
             "User device settings writes and reads" to listOf(
                 "facade read/write error mapping pinned",
@@ -3981,7 +3979,8 @@ class GoldenVectorMigrationPolicyTest {
                 "OfflineTriggerRuntimePolicyCommonTest.kt",
                 "response-queue cleanup split explicit",
                 "cancellation coverage only if production shared delegation introduces cancellable tasks, observers, or streams"
-            )
+            ),
+            "Firmware update workflow" to FIRMWARE_FACADE_GATE_REQUIRED_TERMS
         )
         val PSFTP_TIMEOUT_LEDGER_REQUIRED_TERMS = mapOf(
             "Timeout without notification" to listOf(

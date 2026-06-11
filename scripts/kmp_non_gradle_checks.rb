@@ -78,7 +78,7 @@ PUBLIC_FACADE_OPERATION_FAMILIES = [
   "Offline trigger runtime"
 ].freeze
 FIRMWARE_FACADE_GATE_REQUIRED_TERMS = [
-  "facade gate open",
+  "facade compatibility pinned",
   "PolarFirmwareUpdateUtilsTest.kt",
   "PolarFirmwareUpdateUtilsTest.swift",
   "FirmwareUpdateApi(transport:)",
@@ -98,11 +98,9 @@ FIRMWARE_FACADE_GATE_REQUIRED_TERMS = [
   "final restart failure mapping",
   "final stop-sync platform split",
   "retry scheduling",
-  "error-mapping tests before delegation"
+  "public error translation adapter-owned"
 ].freeze
-FACADE_GATE_OPEN_REQUIRED_TERMS = {
-  "Firmware update workflow" => FIRMWARE_FACADE_GATE_REQUIRED_TERMS
-}.freeze
+FACADE_GATE_OPEN_REQUIRED_TERMS = {}.freeze
 RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = {
   "User device settings writes and reads" => [
     "facade read/write error mapping pinned",
@@ -196,7 +194,8 @@ RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = {
     "OfflineTriggerRuntimePolicyCommonTest.kt",
     "response-queue cleanup split explicit",
     "cancellation coverage only if production shared delegation introduces cancellable tasks, observers, or streams"
-  ]
+  ],
+  "Firmware update workflow" => FIRMWARE_FACADE_GATE_REQUIRED_TERMS
 }.freeze
 PSFTP_TIMEOUT_LEDGER_REQUIRED_TERMS = {
   "Timeout without notification" => [
