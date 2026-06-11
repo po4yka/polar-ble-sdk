@@ -2806,6 +2806,58 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(writeRequests.isEmpty)
     }
 
+    func test_updateFirmwareFromUrl_emitsSharedWriteProgressBeforeSuccess() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(1)
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValue = .success(try emptyDirectory.serializedData())
+        v2MockClient.queryReturnValue = .success(Data())
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        let progress = statuses.compactMap { status -> String? in
+            if case .writingFwUpdatePackage(let details) = status, details.contains("Writing firmware update file") {
+                return details
+            }
+            return nil
+        }
+        XCTAssertEqual(progress, [
+            "Writing firmware update file SYSUPDAT.IMG, (50%) bytes written: 1/2",
+            "Writing firmware update file SYSUPDAT.IMG, (100%) bytes written: 2/2"
+        ])
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateFailed = status { return true }
+            return false
+        }, "\(statuses)")
+        XCTAssertTrue(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully(let details) = status { return details == "Firmware update to manual-fw.zip completed successfully" }
+            return false
+        }, "\(statuses)")
+        XCTAssertNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(writeRequests.map { $0.identifier }, [deviceId])
+        XCTAssertEqual(writeRequests.map { $0.path }, ["/SYSUPDAT.IMG"])
+        XCTAssertEqual(writeRequests.map { $0.data }, [firmwareFile])
+    }
+
     func test_updateFirmwareFromUrl_mapsEmptyFirmwarePackageToNotAvailableBeforeDeviceWrites() throws {
         let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
         let extractor = FacadeFirmwarePackageExtractor(result: ["readme.txt": Data([0x01])])
