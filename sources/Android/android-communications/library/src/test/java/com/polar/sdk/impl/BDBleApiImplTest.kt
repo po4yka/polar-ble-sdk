@@ -263,6 +263,66 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun startListenForPolarHrBroadcasts_filtersDeviceIdsAndMapsUpdatedHrAdvertisement() = runTest {
+        val matchingSession = searchSession(
+            name = "Polar H10 AABBCCDD",
+            address = "AA:BB:CC:DD:EE:03",
+            rssi = -50,
+            hrPayload = byteArrayOf(0xE3.toByte(), 0xFE.toByte(), 95, 96)
+        )
+        val otherSession = searchSession(
+            name = "Polar H10 11223344",
+            address = "AA:BB:CC:DD:EE:04",
+            rssi = -60,
+            hrPayload = byteArrayOf(0xE7.toByte(), 0xFE.toByte(), 88, 89)
+        )
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flowOf(otherSession, matchingSession)
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        val values = api.startListenForPolarHrBroadcasts(setOf("AABBCCDD")).toList()
+
+        Assert.assertEquals(1, values.size)
+        val value = values.single()
+        Assert.assertEquals("AABBCCDD", value.polarDeviceInfo.deviceId)
+        Assert.assertEquals("AA:BB:CC:DD:EE:03", value.polarDeviceInfo.address)
+        Assert.assertEquals(-50, value.polarDeviceInfo.rssi)
+        Assert.assertEquals("Polar H10 AABBCCDD", value.polarDeviceInfo.name)
+        Assert.assertTrue(value.polarDeviceInfo.isConnectable)
+        Assert.assertEquals(96, value.hr)
+        Assert.assertTrue(value.batteryStatus)
+    }
+
+    @Test
+    fun startListenForPolarHrBroadcasts_collectorCancellationCancelsListenerSearchStream() = runTest {
+        var upstreamCancelled = false
+        val session = searchSession(
+            name = "Polar H10 AABBCCDD",
+            hrPayload = byteArrayOf(0xE3.toByte(), 0xFE.toByte(), 95, 96)
+        )
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow {
+            try {
+                emit(session)
+                awaitCancellation()
+            } finally {
+                upstreamCancelled = true
+            }
+        }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+        val values = mutableListOf<Int>()
+
+        val collection = launch {
+            api.startListenForPolarHrBroadcasts(null).collect { values.add(it.hr) }
+        }
+        testScheduler.advanceUntilIdle()
+        collection.cancelAndJoin()
+
+        Assert.assertEquals(listOf(96), values)
+        Assert.assertTrue(upstreamCancelled)
+    }
+
+    @Test
     fun `checkFirmwareUpdate uses injected firmware API`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
@@ -4880,7 +4940,8 @@ class BDBleApiImplTest {
         name: String,
         address: String = "AA:BB:CC:DD:EE:FF",
         rssi: Int = -60,
-        services: ByteArray = ByteArray(0)
+        services: ByteArray = ByteArray(0),
+        hrPayload: ByteArray? = null
     ): BleDeviceSession {
         val advertisement = BleAdvertisementContent().apply {
             val data = hashMapOf<AD_TYPE, ByteArray>(
@@ -4891,6 +4952,7 @@ class BDBleApiImplTest {
             }
             processAdvertisementData(data, EVENT_TYPE.ADV_IND, rssi)
         }
+        hrPayload?.let(advertisement.polarHrAdvertisement::processPolarManufacturerData)
         val session = mockk<BleDeviceSession>()
         every { session.advertisementContent } returns advertisement
         every { session.address } returns address
@@ -4899,6 +4961,7 @@ class BDBleApiImplTest {
         every { session.polarDeviceId } returns advertisement.polarDeviceId
         every { session.polarDeviceType } returns advertisement.polarDeviceType
         every { session.isConnectableAdvertisement } returns true
+        every { session.blePolarHrAdvertisement } returns advertisement.polarHrAdvertisement
         return session
     }
 
