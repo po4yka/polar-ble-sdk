@@ -112,7 +112,7 @@ internal object PolarTestUtils {
             altitudeMeters = if (proto.hasAltitudeMeters()) proto.altitudeMeters else null
         )
         return PolarSpo2TestData(
-            recordingDevice = proto.recordingDevice,
+            recordingDevice = projection.recordingDevice,
             testTime = testTime,
             timeZoneOffsetMinutes = projection.timeZoneOffsetMinutes,
             testStatus = projection.testStatus?.toSpo2TestStatus(),

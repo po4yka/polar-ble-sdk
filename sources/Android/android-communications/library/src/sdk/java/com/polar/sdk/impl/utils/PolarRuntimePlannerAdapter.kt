@@ -105,6 +105,7 @@ internal object PolarRuntimePlannerAdapter {
         val dateTime: String
     )
     data class PlannedSpo2TestProjection(
+        val recordingDevice: String?,
         val timeZoneOffsetMinutes: Int,
         val testStatus: String?,
         val bloodOxygenPercent: Int?,
@@ -1035,6 +1036,7 @@ internal object PolarRuntimePlannerAdapter {
             triggerType = null
         )
         return PlannedSpo2TestProjection(
+            recordingDevice = projection.recordingDevice,
             timeZoneOffsetMinutes = projection.timeZoneOffsetMinutes,
             testStatus = projection.testStatus,
             bloodOxygenPercent = projection.bloodOxygenPercent,
