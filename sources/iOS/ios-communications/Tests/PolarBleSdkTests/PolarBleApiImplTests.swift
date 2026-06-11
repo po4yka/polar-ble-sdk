@@ -3492,6 +3492,198 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(writePaths.contains(backupFilePath), "\(writePaths)")
     }
 
+    func test_updateFirmware_mapsFinalSetTimeFailureToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let setTimeError = NSError(domain: "PolarBleApiImplTests", code: 7007, userInfo: [NSLocalizedDescriptionKey: "set local time failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValueClosure = { headerData in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: headerData)
+            if operation.path == "/DEVICE.BPB" {
+                return try proto.serializedData()
+            }
+            return try emptyDirectory.serializedData()
+        }
+        v2MockClient.queryReturnValueClosure = { id, _ in
+            if id == Protocol_PbPFtpQuery.setLocalTime.rawValue {
+                throw setTimeError
+            }
+            return Data()
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Setting device time" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("set local time failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertTrue(v2MockClient.queryCalls.contains { $0.id == Protocol_PbPFtpQuery.setLocalTime.rawValue })
+    }
+
+    func test_updateFirmware_mapsFinalRestartFailureToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let restartError = NSError(domain: "PolarBleApiImplTests", code: 7008, userInfo: [NSLocalizedDescriptionKey: "restart notification failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValueClosure = { headerData in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: headerData)
+            if operation.path == "/DEVICE.BPB" {
+                return try proto.serializedData()
+            }
+            return try emptyDirectory.serializedData()
+        }
+        v2MockClient.queryReturnValue = .success(Data())
+        var resetNotifications = 0
+        v2MockClient.sendNotificationClosure = { id, _ in
+            if id == Protocol_PbPFtpHostToDevNotification.reset.rawValue {
+                resetNotifications += 1
+                if resetNotifications == 2 {
+                    throw restartError
+                }
+            }
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Restarting device" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("restart notification failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(resetNotifications, 2)
+    }
+
+    func test_updateFirmware_mapsFinalStopSyncFailureToFailedStatus() throws {
+        BlePolarDeviceCapabilitiesUtility.resetAndInitializeForTesting(
+            deviceFileSystemTypes: ["360": .polarFileSystemV2],
+            deviceIsSensor: ["360": true],
+            defaultFileSystemType: .polarFileSystemV2
+        )
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let stopSyncError = NSError(domain: "PolarBleApiImplTests", code: 7009, userInfo: [NSLocalizedDescriptionKey: "stop sync notification failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValueClosure = { headerData in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: headerData)
+            if operation.path == "/DEVICE.BPB" {
+                return try proto.serializedData()
+            }
+            return try emptyDirectory.serializedData()
+        }
+        v2MockClient.queryReturnValue = .success(Data())
+        v2MockClient.sendNotificationClosure = { id, _ in
+            if id == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue {
+                throw stopSyncError
+            }
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Stopping sync" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("stop sync notification failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertTrue(v2MockClient.sendNotificationCalls.contains { $0.notification == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue })
+    }
+
     func test_updateFirmwareFromUrl_mapsFinalSetTimeFailureToFailedStatus() throws {
         let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
         let firmwareFile = Data([0x01, 0x02])
