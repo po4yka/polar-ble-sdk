@@ -278,6 +278,28 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun searchForDevice_emitsMatchingValuesBeforeListenerSearchError() = runTest {
+        val expected = IllegalStateException("scan failed after value")
+        val session = searchSession(name = "Polar H10 AABBCCDD")
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow {
+            emit(session)
+            throw expected
+        }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+        val deviceIds = mutableListOf<String>()
+
+        try {
+            api.searchForDevice(withDeviceNameFilterPrefix = "Polar").collect { deviceIds.add(it.deviceId) }
+            Assert.fail("Expected listener search error")
+        } catch (error: IllegalStateException) {
+            Assert.assertEquals(expected, error)
+        }
+
+        Assert.assertEquals(listOf("AABBCCDD"), deviceIds)
+    }
+
+    @Test
     fun startListenForPolarHrBroadcasts_filtersDeviceIdsAndMapsUpdatedHrAdvertisement() = runTest {
         val matchingSession = searchSession(
             name = "Polar H10 AABBCCDD",
@@ -350,6 +372,36 @@ class BDBleApiImplTest {
         } catch (error: IllegalStateException) {
             Assert.assertEquals(expected, error)
         }
+    }
+
+    @Test
+    fun startListenForPolarHrBroadcasts_emitsValuesBeforeListenerSearchError() = runTest {
+        val expected = IllegalStateException("scan failed after value")
+        val session = searchSession(
+            name = "Polar H10 AABBCCDD",
+            hrPayload = byteArrayOf(0xE3.toByte(), 0xFE.toByte(), 95, 96)
+        )
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow {
+            emit(session)
+            throw expected
+        }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+        val hrs = mutableListOf<Int>()
+        val deviceIds = mutableListOf<String>()
+
+        try {
+            api.startListenForPolarHrBroadcasts(null).collect {
+                hrs.add(it.hr)
+                deviceIds.add(it.polarDeviceInfo.deviceId)
+            }
+            Assert.fail("Expected listener search error")
+        } catch (error: IllegalStateException) {
+            Assert.assertEquals(expected, error)
+        }
+
+        Assert.assertEquals(listOf(96), hrs)
+        Assert.assertEquals(listOf("AABBCCDD"), deviceIds)
     }
 
     @Test
