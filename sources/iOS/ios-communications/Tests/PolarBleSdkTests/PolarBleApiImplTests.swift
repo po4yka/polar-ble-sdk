@@ -4664,6 +4664,25 @@ final class PolarBleApiImplTests: XCTestCase {
         wait(for: [exp], timeout: 2)
     }
 
+    func test_searchForDevice_ignoresValuesAfterCompletion() {
+        searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
+        var received: [PolarDeviceInfo] = []
+        let completed = XCTestExpectation(description: "completed")
+        searchApi.searchForDevice(withRequiredDeviceNamePrefix: nil)
+            .sink(receiveCompletion: { _ in completed.fulfill() },
+                  receiveValue: { received.append($0) })
+            .store(in: &cancellables)
+        searchApi.searchSubject.send(makeSession(name: "Polar H10 AABBCCDD", deviceIdUntouched: "AABBCCDD"))
+        searchApi.searchSubject.send(completion: .finished)
+        wait(for: [completed], timeout: 2)
+        searchApi.searchSubject.send(makeSession(name: "Polar H10 BBBB0002", deviceIdUntouched: "BBBB0002"))
+
+        let settled = XCTestExpectation(description: "settled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { settled.fulfill() }
+        wait(for: [settled], timeout: 1)
+        XCTAssertEqual(received.map { $0.deviceId }, ["AABBCCDD"])
+    }
+
     func test_searchForDevice_cancellationCancelsSearchSubscription() {
         searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
         let cancellable = searchApi.searchForDevice(withRequiredDeviceNamePrefix: nil)
@@ -5119,6 +5138,31 @@ final class PolarBleApiImplTests: XCTestCase {
         }
         hrBroadcastApi.searchSubject.send(completion: .finished)
         wait(for: [exp], timeout: 2)
+    }
+
+    func test_startListenForPolarHrBroadcasts_ignoresValuesAfterCompletion() {
+        hrBroadcastApi = MockHrBroadcastBleApiImpl(mockDeviceSession: v2MockSession)
+        var received: [PolarHrBroadcastData] = []
+        let firstValue = XCTestExpectation(description: "first")
+        let completed = XCTestExpectation(description: "completed")
+        Task {
+            for try await value in hrBroadcastApi.startListenForPolarHrBroadcasts(nil) {
+                received.append(value)
+                firstValue.fulfill()
+            }
+            completed.fulfill()
+        }
+        hrBroadcastApi.searchSubject.send(makeHrSession(deviceIdUntouched: "AABBCCDD", hr: 96))
+        wait(for: [firstValue], timeout: 2)
+        hrBroadcastApi.searchSubject.send(completion: .finished)
+        wait(for: [completed], timeout: 2)
+        hrBroadcastApi.searchSubject.send(makeHrSession(deviceIdUntouched: "BBBB0002", hr: 88))
+
+        let settled = XCTestExpectation(description: "settled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { settled.fulfill() }
+        wait(for: [settled], timeout: 1)
+        XCTAssertEqual(received.map { $0.deviceInfo.deviceId }, ["AABBCCDD"])
+        XCTAssertEqual(received.map { $0.hr }, [96])
     }
 
     func test_startListenForPolarHrBroadcasts_cancellationTerminatesSearchStream() {

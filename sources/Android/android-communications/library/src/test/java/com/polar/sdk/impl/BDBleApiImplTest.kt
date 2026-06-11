@@ -322,6 +322,18 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun searchForDevice_emitsMatchingValuesBeforeListenerSearchCompletion() = runTest {
+        val session = searchSession(name = "Polar H10 AABBCCDD")
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flowOf(session)
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        val values = api.searchForDevice(withDeviceNameFilterPrefix = "Polar").toList()
+
+        Assert.assertEquals(listOf("AABBCCDD"), values.map { it.deviceId })
+    }
+
+    @Test
     fun startListenForPolarHrBroadcasts_filtersDeviceIdsAndMapsUpdatedHrAdvertisement() = runTest {
         val matchingSession = searchSession(
             name = "Polar H10 AABBCCDD",
@@ -453,6 +465,22 @@ class BDBleApiImplTest {
 
         Assert.assertEquals(listOf(96), hrs)
         Assert.assertEquals(listOf("AABBCCDD"), deviceIds)
+    }
+
+    @Test
+    fun startListenForPolarHrBroadcasts_emitsValuesBeforeListenerSearchCompletion() = runTest {
+        val session = searchSession(
+            name = "Polar H10 AABBCCDD",
+            hrPayload = byteArrayOf(0xE3.toByte(), 0xFE.toByte(), 95, 96)
+        )
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flowOf(session)
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        val values = api.startListenForPolarHrBroadcasts(null).toList()
+
+        Assert.assertEquals(listOf(96), values.map { it.hr })
+        Assert.assertEquals(listOf("AABBCCDD"), values.map { it.polarDeviceInfo.deviceId })
     }
 
     @Test
