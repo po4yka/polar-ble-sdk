@@ -263,6 +263,21 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun searchForDevice_propagatesListenerSearchError() = runTest {
+        val expected = IllegalStateException("scan failed")
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow { throw expected }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        try {
+            api.searchForDevice(withDeviceNameFilterPrefix = "Polar").toList()
+            Assert.fail("Expected listener search error")
+        } catch (error: IllegalStateException) {
+            Assert.assertEquals(expected, error)
+        }
+    }
+
+    @Test
     fun startListenForPolarHrBroadcasts_filtersDeviceIdsAndMapsUpdatedHrAdvertisement() = runTest {
         val matchingSession = searchSession(
             name = "Polar H10 AABBCCDD",
@@ -320,6 +335,21 @@ class BDBleApiImplTest {
 
         Assert.assertEquals(listOf(96), values)
         Assert.assertTrue(upstreamCancelled)
+    }
+
+    @Test
+    fun startListenForPolarHrBroadcasts_propagatesListenerSearchError() = runTest {
+        val expected = IllegalStateException("scan failed")
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow { throw expected }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        try {
+            api.startListenForPolarHrBroadcasts(null).toList()
+            Assert.fail("Expected listener search error")
+        } catch (error: IllegalStateException) {
+            Assert.assertEquals(expected, error)
+        }
     }
 
     @Test
