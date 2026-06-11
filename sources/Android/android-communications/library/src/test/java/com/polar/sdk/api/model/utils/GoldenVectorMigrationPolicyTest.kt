@@ -837,6 +837,12 @@ class GoldenVectorMigrationPolicyTest {
         if (!inventory.contains("GnssLocationOwnershipCommonPolicyTest.kt")) {
             violations += "KmpCoverageInventory.md must mention GnssLocationOwnershipCommonPolicyTest.kt in the GNSS/location parser row"
         }
+        if (!inventory.contains("No direct iOS parser surface; `gnss-location-readiness.json` intentionally has no iOS consumer")) {
+            violations += "KmpCoverageInventory.md must record GNSS iOS as an intentional no-parser-surface boundary, not a generic missing test"
+        }
+        if (inventory.contains("Missing direct Swift parser implementation/test")) {
+            violations += "KmpCoverageInventory.md must not describe GNSS iOS parser ownership as a generic missing Swift test"
+        }
         if (!readme.contains("GnssLocationOwnershipCommonPolicyTest")) {
             violations += "protocol/sensors/README.md must mention executable shared GNSS ownership policy coverage"
         }
@@ -3310,6 +3316,8 @@ class GoldenVectorMigrationPolicyTest {
             "consumerTests.hasStringArray(\"ios\")",
             "platforms.booleanValue(\"ios\")",
             "platforms.booleanValue(\"common\")",
+            "No direct iOS parser surface",
+            "intentionally has no iOS consumer",
             "SHARED_GNSS_LOCATION_MIGRATION_OWNERSHIP"
         )
         val OFFLINE_HR_COMMON_POLICY_REQUIRED_TERMS = listOf(

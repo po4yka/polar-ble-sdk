@@ -45,7 +45,7 @@ class GnssLocationOwnershipCommonPolicyTest {
         assertEquals(REQUIRED_GNSS_LOCATION_SHARED_PARSER_FAMILIES, coveredBehaviorFamilies)
         assertEquals(GNSS_LOCATION_SHARED_PARSER_VECTORS.map { it.relativePath }, policyVectorPaths)
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GnssLocationDataTest"), consumerTests.stringArrayValue("android"))
-        assertEquals(false, consumerTests.hasStringArray("ios"))
+        assertEquals(false, consumerTests.hasStringArray("ios"), GNSS_LOCATION_IOS_CONSUMER_BOUNDARY)
         assertEquals(listOf("com.polar.sharedtest.GnssLocationOwnershipCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
@@ -93,6 +93,7 @@ class GnssLocationOwnershipCommonPolicyTest {
     private companion object {
         const val HEADER_SIZE = 10
         const val SHARED_GNSS_LOCATION_MIGRATION_OWNERSHIP = "Shared common KMP GNSS/location parser owns raw type 0-3 byte decoding and Android production delegates to it; iOS has no current direct GNSS parser surface."
+        const val GNSS_LOCATION_IOS_CONSUMER_BOUNDARY = "No direct iOS parser surface; gnss-location-readiness intentionally has no iOS consumer."
         val REQUIRED_GNSS_LOCATION_SHARED_PARSER_FAMILIES = listOf(
             "shared-parser-raw-type0-coordinate",
             "shared-parser-raw-type1-satellite-dilution",
