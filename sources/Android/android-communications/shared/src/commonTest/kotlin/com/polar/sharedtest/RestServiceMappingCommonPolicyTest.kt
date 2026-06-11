@@ -120,17 +120,11 @@ class RestServiceMappingCommonPolicyTest {
     }
 
     private fun parseServiceList(json: String): PolarRestServiceList {
-        val services = json.optionalObjectValue("services")?.objectEntries()?.associate { entry -> entry.key to entry.value }
-        return PolarRestServiceModels.serviceList(services)
+        return PolarRestServiceModels.serviceListJson(json)
     }
 
     private fun parseServiceDescription(json: String): PolarRestServiceDescription {
-        val events = json.optionalStringArrayValue("events") ?: emptyList()
-        val endpoints = json.optionalStringArrayValue("endpoints") ?: emptyList()
-        val actions = json.optionalObjectValue("cmd")?.objectEntries()?.associate { action -> action.key to action.value } ?: emptyMap()
-        val topLevelObjects = json.objectEntries().associate { entry -> entry.key to entry.value }
-        val eventDescriptions = events.associateWith { event -> topLevelObjects[event]?.stringArrayMapValue() ?: emptyMap() }
-        return PolarRestServiceModels.serviceDescription(events, endpoints, actions, eventDescriptions)
+        return PolarRestServiceModels.serviceDescriptionJson(json)
     }
 
     private fun String.optionalObjectValue(field: String): String? {

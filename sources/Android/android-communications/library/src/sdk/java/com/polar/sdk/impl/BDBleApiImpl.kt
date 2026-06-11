@@ -2,8 +2,6 @@
 package com.polar.sdk.impl
 
 import android.content.Context
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.polar.androidcommunications.api.ble.BleDeviceListener
 import com.polar.androidcommunications.api.ble.BleDeviceListener.BlePowerStateChangedCallback
 import com.polar.androidcommunications.api.ble.BleDeviceListener.BleSearchPreFilter
@@ -1578,32 +1576,16 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         if (byteArray.isEmpty()) {
             PolarRuntimePlannerAdapter.planRestRequestTransportGet(path = PolarRuntimePlannerAdapter.fileOperationPath(plan), payloadHex = "")
         }
-        val map: Map<String, Any> = Gson().fromJson(byteArray.toString(Charsets.UTF_8), object: TypeToken<Map<String,Any>>() {}.type)
-        return PolarDeviceRestApiServices(map)
+        return PolarSdkModelAdapter.restServiceListFromJson(byteArray.toString(Charsets.UTF_8))
     }
 
     override suspend fun getRestApiDescription(identifier: String, path: String): PolarDeviceRestApiServiceDescription {
         val plan = PolarRuntimePlannerAdapter.planRestFacadeGet("get-rest-api-description-success", path, "service-description-json")
-        val map = getJSONMapFromPath(identifier = identifier, path = PolarRuntimePlannerAdapter.fileOperationPath(plan))
-        return PolarDeviceRestApiServiceDescription(map)
-    }
-
-    private suspend fun getJSONMapFromPath(identifier: String, path: String): Map<String,Any> {
-        return getJSONDecodableFromPath(
-            identifier = identifier,
-            path = path,
-            mapper = { jsonString ->
-                Gson().fromJson(jsonString, object: TypeToken<Map<String,Any>>() {}.type)
-            }
-        )
-    }
-
-    private suspend fun <T:Any> getJSONDecodableFromPath(identifier: String, path: String, mapper:((jsonString: String) -> T)): T {
-        val byteArray = getFile(identifier = identifier, path = path)
+        val byteArray = getFile(identifier = identifier, path = PolarRuntimePlannerAdapter.fileOperationPath(plan))
         if (byteArray.isEmpty()) {
-            PolarRuntimePlannerAdapter.planRestRequestTransportGet(path = path, payloadHex = "")
+            PolarRuntimePlannerAdapter.planRestRequestTransportGet(path = PolarRuntimePlannerAdapter.fileOperationPath(plan), payloadHex = "")
         }
-        return mapper(byteArray.toString(Charsets.UTF_8))
+        return PolarSdkModelAdapter.restServiceDescriptionFromJson(byteArray.toString(Charsets.UTF_8))
     }
 
     override suspend fun getFile(identifier: String, path: String): ByteArray {

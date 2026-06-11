@@ -29,6 +29,8 @@ import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarUserDeviceSettingsFields
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
+import com.polar.sdk.api.model.restapi.PolarDeviceRestApiServiceDescription
+import com.polar.sdk.api.model.restapi.PolarDeviceRestApiServices
 
 internal object PolarSdkModelAdapter {
     data class PlannedDiskSpace(
@@ -340,6 +342,11 @@ internal object PolarSdkModelAdapter {
         )
     }
 
+    fun restServiceListFromJson(jsonPayload: String): PolarDeviceRestApiServices {
+        val shared = PolarRestServiceModels.serviceListJson(jsonPayload)
+        return PolarDeviceRestApiServices(mapOf("services" to shared.pathsForServices))
+    }
+
     fun restServiceDescription(
         events: List<String>?,
         endpoints: List<String>?,
@@ -361,6 +368,21 @@ internal object PolarSdkModelAdapter {
             details = shared.details,
             triggers = shared.triggers
         )
+    }
+
+    fun restServiceDescriptionFromJson(jsonPayload: String): PolarDeviceRestApiServiceDescription {
+        val shared = PolarRestServiceModels.serviceDescriptionJson(jsonPayload)
+        val dictionary = linkedMapOf<String, Any>()
+        dictionary["events"] = shared.events
+        dictionary["endpoints"] = shared.endpoints
+        dictionary["cmd"] = shared.actions
+        (shared.details.keys + shared.triggers.keys).forEach { event ->
+            dictionary[event] = mapOf(
+                "details" to (shared.details[event] ?: emptyList()),
+                "triggers" to (shared.triggers[event] ?: emptyList())
+            )
+        }
+        return PolarDeviceRestApiServiceDescription(dictionary)
     }
 
     private fun PlannedUserDeviceSettingsFields.toShared(): PolarUserDeviceSettingsFields {

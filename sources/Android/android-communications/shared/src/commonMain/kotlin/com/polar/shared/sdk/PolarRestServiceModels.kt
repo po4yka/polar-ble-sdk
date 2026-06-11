@@ -1,5 +1,12 @@
 package com.polar.shared.sdk
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+
 data class PolarRestServiceList(
     val pathsForServices: Map<String, String>
 ) {
@@ -25,6 +32,10 @@ data class PolarRestServiceDescription(
 }
 
 object PolarRestServiceModels {
+    private val json = Json {
+        ignoreUnknownKeys = true
+    }
+
     fun sleepApiPath(): String {
         return "/REST/SLEEP.API"
     }
@@ -41,6 +52,11 @@ object PolarRestServiceModels {
         return PolarRestServiceList(pathsForServices ?: emptyMap())
     }
 
+    fun serviceListJson(jsonPayload: String): PolarRestServiceList {
+        val root = parseObject(jsonPayload)
+        return serviceList(root["services"].stringMapOrNull())
+    }
+
     fun serviceDescription(events: List<String>?, endpoints: List<String>?, actions: Map<String, String>?, eventDescriptions: Map<String, Map<String, List<String>>>): PolarRestServiceDescription {
         val eventNames = events ?: emptyList()
         val detailKeys = (eventNames + eventDescriptions.keys).distinct()
@@ -50,6 +66,20 @@ object PolarRestServiceModels {
             actions = actions ?: emptyMap(),
             details = detailKeys.associateWith { event -> eventDetails(eventDescriptions[event] ?: emptyMap()) },
             triggers = detailKeys.associateWith { event -> eventTriggers(eventDescriptions[event] ?: emptyMap()) }
+        )
+    }
+
+    fun serviceDescriptionJson(jsonPayload: String): PolarRestServiceDescription {
+        val root = parseObject(jsonPayload)
+        val eventDescriptions = root.mapNotNull { (key, value) ->
+            val description = value.stringListMapOrNull()
+            if (description == null) null else key to description
+        }.toMap()
+        return serviceDescription(
+            events = root["events"].stringListOrNull(),
+            endpoints = root["endpoints"].stringListOrNull(),
+            actions = root["cmd"].stringMapOrNull(),
+            eventDescriptions = eventDescriptions
         )
     }
 
@@ -83,5 +113,37 @@ object PolarRestServiceModels {
         } else {
             PolarRestEventCompressionCodec.compressedPayloads(payloads)
         }
+    }
+
+    private fun parseObject(jsonPayload: String): JsonObject {
+        return json.parseToJsonElement(jsonPayload).jsonObject
+    }
+
+    private fun JsonElement?.stringListOrNull(): List<String>? {
+        val array = this as? JsonArray ?: return null
+        return array.mapNotNull { primitiveStringOrNull(it) }
+    }
+
+    private fun JsonElement?.stringMapOrNull(): Map<String, String>? {
+        val jsonObject = this as? JsonObject ?: return null
+        return jsonObject.mapNotNull { (key, value) ->
+            val content = primitiveStringOrNull(value)
+            if (content == null) null else key to content
+        }.toMap()
+    }
+
+    private fun JsonElement?.stringListMapOrNull(): Map<String, List<String>>? {
+        val jsonObject = this as? JsonObject ?: return null
+        val result = jsonObject.mapNotNull { (key, value) ->
+            val values = value.stringListOrNull()
+            if (values == null) null else key to values
+        }.toMap()
+        return result.takeIf { it.isNotEmpty() }
+    }
+
+    private fun primitiveStringOrNull(element: JsonElement): String? {
+        val primitive = element as? JsonPrimitive ?: return null
+        if (!primitive.isString) return null
+        return primitive.content
     }
 }
