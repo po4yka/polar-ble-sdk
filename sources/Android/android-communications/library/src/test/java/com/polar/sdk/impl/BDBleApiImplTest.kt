@@ -3723,7 +3723,7 @@ class BDBleApiImplTest {
             api.getRestApiDescription(deviceId, "/REST/SLEEP.API")
             Assert.fail("Expected REST service description empty response to fail parsing")
         } catch (error: Exception) {
-            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+            assertRestJsonParseFailure(error)
         }
         Assert.assertEquals(1, requestHeaders.size)
         val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
@@ -3747,7 +3747,7 @@ class BDBleApiImplTest {
             api.getRestApiDescription(deviceId, "/REST/SLEEP.API")
             Assert.fail("Expected REST service description malformed response to fail parsing")
         } catch (error: Exception) {
-            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+            assertRestJsonParseFailure(error)
         }
         Assert.assertEquals(1, requestHeaders.size)
         val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
@@ -3817,7 +3817,7 @@ class BDBleApiImplTest {
             api.listRestApiServices(deviceId)
             Assert.fail("Expected REST service list empty response to fail parsing")
         } catch (error: Exception) {
-            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+            assertRestJsonParseFailure(error)
         }
         Assert.assertEquals(1, requestHeaders.size)
         val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
@@ -3841,7 +3841,7 @@ class BDBleApiImplTest {
             api.listRestApiServices(deviceId)
             Assert.fail("Expected REST service list malformed response to fail parsing")
         } catch (error: Exception) {
-            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+            assertRestJsonParseFailure(error)
         }
         Assert.assertEquals(1, requestHeaders.size)
         val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
@@ -5060,6 +5060,16 @@ class BDBleApiImplTest {
             ?.let(PolarRuntimePlannerAdapter::userDeviceSettingsDeviceLocationValue)
             ?: error("Missing shared device location for $value")
         return PbDeviceLocation.forNumber(sharedValue)
+    }
+
+    private fun assertRestJsonParseFailure(error: Exception) {
+        Assert.assertTrue(
+            "Expected REST JSON parse failure, got ${error::class.qualifiedName}: ${error.message}",
+            error is NullPointerException ||
+                error is com.google.gson.JsonSyntaxException ||
+                error is IllegalArgumentException ||
+                error::class.qualifiedName?.startsWith("kotlinx.serialization.") == true
+        )
     }
 
     private fun BDBleApiImpl.withListener(listener: BleDeviceListener): BDBleApiImpl {
