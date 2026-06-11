@@ -400,6 +400,15 @@ class PolarTrainingSessionUtilsTest {
     }
 
     @Test
+    fun `training session decoded protobuf malformed preflight delegates to shared parser`() {
+        val validSummaryNameOnly = byteArrayOf(0x22, 0x01, 'P'.code.toByte())
+        val truncatedSummaryName = byteArrayOf(0x22, 0x05, 'P'.code.toByte())
+
+        assertEquals(false, PolarRuntimePlannerAdapter.trainingSessionPayloadMalformed("TSESS.BPB", validSummaryNameOnly))
+        assertEquals(true, PolarRuntimePlannerAdapter.trainingSessionPayloadMalformed("TSESS.BPB", truncatedSummaryName))
+    }
+
+    @Test
     fun `training session readiness manifest is pinned before migration`() {
         val readiness = loadTrainingSessionReadinessManifest()
         val input = readiness.getAsJsonObject("input")

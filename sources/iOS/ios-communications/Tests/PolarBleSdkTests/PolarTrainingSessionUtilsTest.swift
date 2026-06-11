@@ -361,6 +361,14 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         XCTAssertThrowsError(try PolarTrainingSessionUtils.decodePayload(fileName: "ROUTE.GZB", data: Data([0x01, 0x02, 0x03])))
     }
 
+    func testTrainingSessionDecodedProtobufMalformedPreflightUsesSharedBridgeWhenLinked() throws {
+        let validSummaryNameOnly = Data([0x22, 0x01, 0x50])
+        let truncatedSummaryName = Data([0x22, 0x05, 0x50])
+
+        XCTAssertFalse(PolarRuntimePlanner.trainingSessionPayloadMalformed(fileName: "TSESS.BPB", payload: validSummaryNameOnly))
+        XCTAssertTrue(PolarRuntimePlanner.trainingSessionPayloadMalformed(fileName: "TSESS.BPB", payload: truncatedSummaryName))
+    }
+
     func testTrainingSessionReadinessManifestIsPinnedBeforeMigration() throws {
         let readiness = try loadTrainingSessionReadinessManifest()
         let input = try XCTUnwrap(readiness["input"] as? [String: Any])
