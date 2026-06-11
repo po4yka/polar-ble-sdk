@@ -4635,6 +4635,26 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(error?.code, expected.code)
     }
 
+    func test_searchForDevice_valueBeforeGattDisconnected_preservesValueAndDisconnectError() throws {
+        searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
+        var received: [PolarDeviceInfo] = []
+        var receivedError: Error?
+        let valueExp = XCTestExpectation(description: "value")
+        let errorExp = XCTestExpectation(description: "error")
+        searchApi.searchForDevice(withRequiredDeviceNamePrefix: nil)
+            .sink(receiveCompletion: { if case .failure(let e) = $0 { receivedError = e }; errorExp.fulfill() },
+                  receiveValue: { received.append($0); valueExp.fulfill() })
+            .store(in: &cancellables)
+        searchApi.searchSubject.send(makeSession(name: "Polar H10 AABBCCDD", deviceIdUntouched: "AABBCCDD"))
+        searchApi.searchSubject.send(completion: .failure(BleGattException.gattDisconnected))
+        wait(for: [valueExp, errorExp], timeout: 2)
+        XCTAssertEqual(try XCTUnwrap(received.first).deviceId, "AABBCCDD")
+        if case BleGattException.gattDisconnected? = receivedError as? BleGattException {
+        } else {
+            XCTFail("Expected gattDisconnected, got \(String(describing: receivedError))")
+        }
+    }
+
     func test_searchForDevice_completesWhenSubjectCompletes() {
         searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
         let exp = XCTestExpectation(description: "completed")
@@ -5060,6 +5080,34 @@ final class PolarBleApiImplTests: XCTestCase {
         let error = receivedError as NSError?
         XCTAssertEqual(error?.domain, expected.domain)
         XCTAssertEqual(error?.code, expected.code)
+    }
+
+    func test_startListenForPolarHrBroadcasts_valueBeforeGattDisconnected_preservesValueAndDisconnectError() throws {
+        hrBroadcastApi = MockHrBroadcastBleApiImpl(mockDeviceSession: v2MockSession)
+        var received: [PolarHrBroadcastData] = []
+        var receivedError: Error?
+        let valueExp = XCTestExpectation(description: "value")
+        let errorExp = XCTestExpectation(description: "error")
+        Task {
+            do {
+                for try await value in hrBroadcastApi.startListenForPolarHrBroadcasts(nil) {
+                    received.append(value)
+                    valueExp.fulfill()
+                }
+            } catch {
+                receivedError = error
+                errorExp.fulfill()
+            }
+        }
+        hrBroadcastApi.searchSubject.send(makeHrSession(deviceIdUntouched: "AABBCCDD", hr: 96))
+        hrBroadcastApi.searchSubject.send(completion: .failure(BleGattException.gattDisconnected))
+        wait(for: [valueExp, errorExp], timeout: 2)
+        XCTAssertEqual(try XCTUnwrap(received.first).hr, 96)
+        XCTAssertEqual(try XCTUnwrap(received.first).deviceInfo.deviceId, "AABBCCDD")
+        if case BleGattException.gattDisconnected? = receivedError as? BleGattException {
+        } else {
+            XCTFail("Expected gattDisconnected, got \(String(describing: receivedError))")
+        }
     }
 
     func test_startListenForPolarHrBroadcasts_completesWhenSourceCompletes() {
