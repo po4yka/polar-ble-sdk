@@ -134,6 +134,21 @@ enum PolarWatchFaceRuntimePlanner {
         return nil
         #endif
     }
+
+    static func buildFlatBufferHex(fields: WatchfaceConfigFields) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.buildWatchFaceConfigFlatBufferHex(
+            timeStyleId: Int32(fields.timeStyleId),
+            complicationLayoutId: Int32(fields.complicationLayoutId),
+            backgroundStyleId: Int32(fields.backgroundStyleId),
+            accentColor: Int64(fields.accentColor),
+            complicationIdsCsv: fields.complicationIds.map(String.init).joined(separator: ","),
+            fontfaceId: Int32(fields.fontfaceId)
+        )
+        #else
+        return nil
+        #endif
+    }
 }
 
 private extension PolarWatchFaceComplication {

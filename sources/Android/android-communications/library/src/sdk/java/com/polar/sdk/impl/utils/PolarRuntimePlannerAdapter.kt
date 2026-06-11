@@ -942,6 +942,19 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun buildWatchFaceConfigFlatBuffer(fields: PlannedWatchFaceFields): ByteArray {
+        return PolarWatchFaceConfigFlatBuffer.build(
+            PolarWatchFaceFields(
+                timeStyleId = fields.timeStyleId,
+                complicationLayoutId = fields.complicationLayoutId,
+                backgroundStyleId = fields.backgroundStyleId,
+                accentColor = fields.accentColor,
+                complicationIds = fields.complicationIds,
+                fontfaceId = fields.fontfaceId
+            )
+        )
+    }
+
     fun kvtxBuildWriteAndCommit(kvKey: Int, data: ByteArray): ByteArray {
         return PolarKvtxScriptCodec.buildWriteAndCommit(kvKey.toLong() and 0xFFFF_FFFFL, data)
     }

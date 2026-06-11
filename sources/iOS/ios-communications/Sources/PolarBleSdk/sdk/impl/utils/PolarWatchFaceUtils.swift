@@ -65,6 +65,11 @@ internal enum PolarWatchFaceUtils {
 
     /// Build a WatchfaceConfig FlatBuffer preserving all fields from `fields`.
     static func buildWatchFaceConfigFlatBuffer(fields: WatchfaceConfigFields) -> [UInt8] {
+        if let sharedHex = PolarWatchFaceRuntimePlanner.buildFlatBufferHex(fields: fields),
+           let sharedBytes = bytes(fromHex: sharedHex) {
+            return sharedBytes
+        }
+
         let builder = FlatBufferBuilder(initialSize: 256)
 
         // Build complication_ids vector first
@@ -342,4 +347,18 @@ private extension Array where Element == UInt8 {
     func hexString() -> String {
         return map { String(format: "%02x", $0) }.joined()
     }
+}
+
+private func bytes(fromHex hex: String) -> [UInt8]? {
+    guard hex.count.isMultiple(of: 2) else { return nil }
+    var bytes: [UInt8] = []
+    bytes.reserveCapacity(hex.count / 2)
+    var index = hex.startIndex
+    while index < hex.endIndex {
+        let next = hex.index(index, offsetBy: 2)
+        guard let byte = UInt8(hex[index..<next], radix: 16) else { return nil }
+        bytes.append(byte)
+        index = next
+    }
+    return bytes
 }

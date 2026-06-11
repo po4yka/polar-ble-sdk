@@ -1,7 +1,6 @@
 // Copyright © 2026 Polar Electro Oy. All rights reserved.
 package com.polar.sdk.impl.utils
 
-import com.google.flatbuffers.FlatBufferBuilder
 import com.polar.androidcommunications.api.ble.BleDeviceListener
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
@@ -25,14 +24,6 @@ internal object PolarWatchFaceUtils {
 
     /** KVS key for "ui.watchface_config" */
     const val WATCH_FACE_CONFIG_KVS_KEY: Int = 1064434511
-
-    private const val FB_FIELD_TIME_STYLE_ID = 0
-    private const val FB_FIELD_COMPLICATION_LAYOUT_ID = 1
-    private const val FB_FIELD_BACKGROUND_STYLE_ID = 2
-    private const val FB_FIELD_ACCENT_COLOR = 3
-    private const val FB_FIELD_COMPLICATION_IDS = 4
-    private const val FB_FIELD_FONTFACE_ID = 5
-    private const val FB_TABLE_FIELD_COUNT = 6
 
     private const val KVTX_FILE_PATH = "/SYS/KVTX"
 
@@ -62,33 +53,16 @@ internal object PolarWatchFaceUtils {
      * so unchanged zero fields are omitted automatically.
      */
     internal fun buildWatchFaceConfigFlatBuffer(fields: WatchfaceConfigFields): ByteArray {
-        val builder = FlatBufferBuilder(256)
-
-        // Build complication_ids vector first (offsets must be created before startTable)
-        builder.startVector(4, fields.complicationIds.size, 4)
-        for (i in fields.complicationIds.indices.reversed()) {
-            builder.addInt(fields.complicationIds[i])
-        }
-        val vectorOffset = builder.endVector()
-
-        builder.startTable(FB_TABLE_FIELD_COUNT)
-
-        // field 0: time_style_id (uint16)
-        builder.addShort(FB_FIELD_TIME_STYLE_ID, fields.timeStyleId.toShort(), 0)
-        // field 1: complication_layout_id (uint16)
-        builder.addShort(FB_FIELD_COMPLICATION_LAYOUT_ID, fields.complicationLayoutId.toShort(), 0)
-        // field 2: background_style_id (uint16)
-        builder.addShort(FB_FIELD_BACKGROUND_STYLE_ID, fields.backgroundStyleId.toShort(), 0)
-        // field 3: accent_color (uint32) — stored as int in FlatBuffers
-        builder.addInt(FB_FIELD_ACCENT_COLOR, fields.accentColor.toInt(), 0)
-        // field 4: complication_ids ([int32]) — offset field
-        builder.addOffset(FB_FIELD_COMPLICATION_IDS, vectorOffset, 0)
-        // field 5: fontface_id (byte)
-        builder.addByte(FB_FIELD_FONTFACE_ID, fields.fontfaceId.toByte(), 0)
-
-        val tableOffset = builder.endTable()
-        builder.finish(tableOffset)
-        return builder.sizedByteArray()
+        return PolarRuntimePlannerAdapter.buildWatchFaceConfigFlatBuffer(
+            PolarRuntimePlannerAdapter.PlannedWatchFaceFields(
+                timeStyleId = fields.timeStyleId,
+                complicationLayoutId = fields.complicationLayoutId,
+                backgroundStyleId = fields.backgroundStyleId,
+                accentColor = fields.accentColor,
+                complicationIds = fields.complicationIds,
+                fontfaceId = fields.fontfaceId
+            )
+        )
     }
 
     fun extractWatchFaceConfigFromKvtxScript(script: ByteArray): ByteArray? =

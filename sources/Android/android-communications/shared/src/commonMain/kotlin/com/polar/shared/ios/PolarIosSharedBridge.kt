@@ -1106,6 +1106,25 @@ object PolarIosSharedBridge {
         ).joinToString(separator = ",")
     }
 
+    fun buildWatchFaceConfigFlatBufferHex(
+        timeStyleId: Int,
+        complicationLayoutId: Int,
+        backgroundStyleId: Int,
+        accentColor: Long,
+        complicationIdsCsv: String,
+        fontfaceId: Int
+    ): String {
+        val fields = PolarWatchFaceFields.fromNullableFields(
+            timeStyleId = timeStyleId,
+            complicationLayoutId = complicationLayoutId,
+            backgroundStyleId = backgroundStyleId,
+            accentColor = accentColor,
+            complicationIds = complicationIdsCsv.csvValues().mapNotNull { value -> value.toIntOrNull() },
+            fontfaceId = fontfaceId
+        )
+        return PolarWatchFaceConfigFlatBuffer.build(fields).toHex()
+    }
+
     fun sleepWakeStateName(value: Int): String? {
         return PolarSleepWakeStateName.fromValue(value)?.name
     }

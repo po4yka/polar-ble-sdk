@@ -293,7 +293,7 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
     "shared-common-aes-production-decryption",
     "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
-    "byte-identical output",
+    "Watch-face FlatBuffer byte input parsing and output construction now live in shared production code",
     "KVTX"
   ],
   "KmpCoverageInventory.md" => [
@@ -304,14 +304,12 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "semantic and codec-ownership/readiness policy executable"
   ],
   "KmpPreMigrationRemainingWork.md" => [
-    "Add real common protobuf/codec dependencies",
+    "Add real common protobuf dependencies",
     "user-device-settings protobuf parsing/building",
-    "REST JSON decoding/error-policy normalization",
     "training-session payload parsing",
     "PMD AES ECB/no-padding decryption now lives in shared common production code",
-    "shared FlatBuffer/KVTX byte-identical output decision",
-    "training-session, user-device-settings, REST JSON, and watch-face deferral artifacts",
-    "REST gzip/deflate behavior now uses shared KMP platform actual codecs"
+    "watch-face FlatBuffer input/output construction lives in shared common production code",
+    "training-session and user-device-settings deferral artifacts"
   ],
   "payload-read-policy.json" => [
     "byteLevelParserGate",
@@ -352,9 +350,9 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   ],
   "watch-face-readiness.json" => [
     "flatbuffer-byte-input-parser",
-    "flatbuffer-byte-output-deferral",
+    "flatbuffer-byte-output-shared-code",
     "shared FlatBuffer byte input parsing",
-    "byte-identical FlatBuffer output remains platform-specific unless production shared FlatBuffer builders are deliberately introduced and compile-verified"
+    "shared FlatBuffer byte output construction"
   ]
 }.freeze
 FAKE_TRANSPORT_REQUIRED_OPERATIONS = %w[read write subscribe unsubscribe].freeze
