@@ -22,6 +22,7 @@ class PmdSecret(val strategy: SecurityStrategy, val key: ByteArray) {
     }
 
     fun decryptArray(cipherArray: ByteArray): ByteArray {
+        PolarPmdSecret.from(strategy.name, key).decryptBytes(cipherArray)?.let { return it }
         when (this.strategy) {
             SecurityStrategy.AES128 -> {
                 val key = SecretKeySpec(this.key, "AES")

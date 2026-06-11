@@ -375,9 +375,9 @@ private let pmdSecretReadinessBehaviorFamilies = [
     "shared-none-xor-production-decryption",
     "aes-fixture-pinning",
     "aes-block-alignment-gate",
-    "aes-provider-ownership-deferral",
+    "shared-common-aes-production-decryption",
     "platform-pmd-secret-vector-reference-gate",
     "compile-verification-gate"
 ]
 
-private let pmdSecretReadinessDecision = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, shared production NONE/XOR decryption, AES fixture pinning, AES block-alignment gating, and compile verification remain explicit before AES ownership or remaining fallback removal moves."
+private let pmdSecretReadinessDecision = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, shared production NONE/XOR decryption, AES fixture pinning, AES block-alignment gating, shared common AES production decryption, and compile verification remain explicit before remaining fallback removal moves."

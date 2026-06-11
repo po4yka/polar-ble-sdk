@@ -291,7 +291,7 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "add real common protobuf/gzip production dependencies",
     "User-device-settings protobuf parsing/building remains platform-owned until a common protobuf dependency and cross-platform default/error policy are introduced deliberately.",
     "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
-    "full AES implementation ownership still must be chosen",
+    "shared-common-aes-production-decryption",
     "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
     "byte-identical output",
     "KVTX"
@@ -304,13 +304,13 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "semantic and codec-ownership/readiness policy executable"
   ],
   "KmpPreMigrationRemainingWork.md" => [
-    "Add real common protobuf/crypto/codec dependencies",
+    "Add real common protobuf/codec dependencies",
     "user-device-settings protobuf parsing/building",
     "REST JSON decoding/error-policy normalization",
     "training-session payload parsing",
-    "PMD AES secret handling",
+    "PMD AES ECB/no-padding decryption now lives in shared common production code",
     "shared FlatBuffer/KVTX byte-identical output decision",
-    "training-session, user-device-settings, PMD secret, REST JSON, and watch-face deferral artifacts",
+    "training-session, user-device-settings, REST JSON, and watch-face deferral artifacts",
     "REST gzip/deflate behavior now uses shared KMP platform actual codecs"
   ],
   "payload-read-policy.json" => [
@@ -342,8 +342,8 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   ],
   "secret-readiness.json" => [
     "AES block-alignment gating",
-    "aes-provider-ownership-deferral",
-    "production common AES provider selection remains an explicit implementation gate rather than a test-only shortcut"
+    "shared-common-aes-production-decryption",
+    "shared production code owns NONE/XOR decryption and shared common AES ECB/no-padding decryption"
   ],
   "rest-event-compression-readiness.json" => [
     "android-gzip-codec-reference-gate",

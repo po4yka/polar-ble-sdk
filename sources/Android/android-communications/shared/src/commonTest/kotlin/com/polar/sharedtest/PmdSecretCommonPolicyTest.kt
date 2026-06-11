@@ -37,11 +37,7 @@ class PmdSecretCommonPolicyTest {
                 "decrypt" -> {
                     val secret = PolarPmdSecret.from(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
                     val cipherHex = input.stringValue("cipherHex")
-                    val decryptedHex = when (secret.strategy) {
-                        "NONE", "XOR" -> secret.decryptHex(hexToBytes(cipherHex))
-                        "AES128", "AES256" -> expected.stringValue("decryptedHex")
-                        else -> error("Unexpected strategy ${secret.strategy}")
-                    }
+                    val decryptedHex = secret.decryptHex(hexToBytes(cipherHex))
                     assertEquals(expected.stringValue("decryptedHex"), decryptedHex, caseId)
                     if (secret.strategy.startsWith("AES")) {
                         assertEquals(0, hexToBytes(cipherHex).size % 16, "$caseId AES vectors must use block-aligned ECB/no-padding payloads")
@@ -113,7 +109,7 @@ class PmdSecretCommonPolicyTest {
             "shared-none-xor-production-decryption",
             "aes-fixture-pinning",
             "aes-block-alignment-gate",
-            "aes-provider-ownership-deferral",
+            "shared-common-aes-production-decryption",
             "platform-pmd-secret-vector-reference-gate",
             "compile-verification-gate"
         )
@@ -124,6 +120,6 @@ class PmdSecretCommonPolicyTest {
             "pmd-secret-invalid-xor-empty-key" to "XOR must reject an empty key because decrypt reads the first key byte.",
             "pmd-secret-strategy-from-byte-unknown" to "Unknown strategy bytes must be rejected deterministically."
         )
-        const val PMD_SECRET_READINESS_DECISION = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, shared production NONE/XOR decryption, AES fixture pinning, AES block-alignment gating, and compile verification remain explicit before AES ownership or remaining fallback removal moves."
+        const val PMD_SECRET_READINESS_DECISION = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, shared production NONE/XOR decryption, AES fixture pinning, AES block-alignment gating, shared common AES production decryption, and compile verification remain explicit before remaining fallback removal moves."
     }
 }
