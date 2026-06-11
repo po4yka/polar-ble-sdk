@@ -259,6 +259,7 @@ class MockSearchBleDeviceSession: BleDeviceSession {
 
 class MockSearchBleApiImpl {
     let searchSubject = PassthroughSubject<BleDeviceSession, Error>()
+    var searchCancellationCount = 0
 
     // Accept a MockBleDeviceSession to match the call-site signature in tests.
     init(mockDeviceSession: MockBleDeviceSession) {}
@@ -285,6 +286,7 @@ class MockSearchBleApiImpl {
                         connectable: value.advertisementContent.isConnectable,
                         hasSAGRFCFileSystem: hasSAGRFCFileSystem)
             }
+            .handleEvents(receiveCancel: { [weak self] in self?.searchCancellationCount += 1 })
             .eraseToAnyPublisher()
     }
 }

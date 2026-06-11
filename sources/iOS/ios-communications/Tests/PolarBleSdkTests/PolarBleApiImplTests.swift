@@ -4620,6 +4620,16 @@ final class PolarBleApiImplTests: XCTestCase {
         wait(for: [exp], timeout: 2)
     }
 
+    func test_searchForDevice_cancellationCancelsSearchSubscription() {
+        searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
+        let cancellable = searchApi.searchForDevice(withRequiredDeviceNamePrefix: nil)
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+
+        cancellable.cancel()
+
+        XCTAssertEqual(searchApi.searchCancellationCount, 1)
+    }
+
     func test_searchForDevice_multipleMatchingSessions_emitsAll() {
         searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
         var received: [PolarDeviceInfo] = []
