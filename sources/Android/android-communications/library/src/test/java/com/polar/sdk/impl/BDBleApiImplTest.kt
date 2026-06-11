@@ -1179,6 +1179,52 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `updateFirmware emits shared write progress after firmware check before success`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        val writeHeaders = mutableListOf<ByteArray>()
+        coEvery { client.request(any()) } answers {
+            val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+            ByteArrayOutputStream().apply {
+                write(if (operation.path == "/DEVICE.BPB") deviceInfo.toByteArray() else emptyDirectory)
+            }
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(capture(writeHeaders), any()) } returns flowOf(1L, 2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        val progress = statuses.filterIsInstance<FirmwareUpdateStatus.WritingFwUpdatePackage>().map { it.details }
+        Assert.assertEquals(
+            listOf(
+                "Writing firmware update file SYSUPDAT.IMG (50%), bytes written: 1/2",
+                "Writing firmware update file SYSUPDAT.IMG (100%), bytes written: 2/2"
+            ),
+            progress
+        )
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateFailed })
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateCompletedSuccessfully("Firmware update to 9.9.9 completed successfully"), statuses.last())
+        val writePaths = writeHeaders.map { PftpRequest.PbPFtpOperation.parseFrom(it).path }
+        Assert.assertEquals("/SYSUPDAT.IMG", writePaths.first())
+        Assert.assertTrue(writePaths.toString(), writePaths.contains("/U/0/S/UDEVSET.BPB"))
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
     fun `updateFirmware treats system update reboot write terminal as success`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
