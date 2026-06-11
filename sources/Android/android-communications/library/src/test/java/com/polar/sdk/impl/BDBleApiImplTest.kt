@@ -2808,6 +2808,7 @@ class BDBleApiImplTest {
 
     @Test
     fun `setLedConfig propagates write failure after payload is prepared`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_LED_ANIMATION))
         val (client, _) = mockPsFtpConnection(deviceId)

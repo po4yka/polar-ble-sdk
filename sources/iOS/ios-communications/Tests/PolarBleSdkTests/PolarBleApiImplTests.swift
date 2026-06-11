@@ -1587,6 +1587,7 @@ final class PolarBleApiImplTests: XCTestCase {
     }
 
     func test_setLedConfig_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7010, userInfo: [NSLocalizedDescriptionKey: "led config write failed"])
         v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
             continuation.finish(throwing: transportError)
