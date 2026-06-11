@@ -942,8 +942,15 @@ final class PolarBleApiImplTests: XCTestCase {
     func test_setLocalTime_h10FileSystem_sendsOneQuery() throws {
         try assertDiskTimeRuntimePolicyVectorContains("set-local-time-h10")
         h10MockClient.queryReturnValue = .success(Data())
-        try awaitVoidAsync { [self] in try await h10Api.setLocalTime(deviceId, time: Date(), zone: TimeZone(secondsFromGMT: 0)!) }
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = try XCTUnwrap(utcCalendar.date(from: DateComponents(timeZone: TimeZone(secondsFromGMT: 0), year: 2026, month: 4, day: 13, hour: 10, minute: 30, second: 15)))
+        try awaitVoidAsync { [self] in try await h10Api.setLocalTime(deviceId, time: date, zone: TimeZone(secondsFromGMT: 7200)!) }
         XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.setLocalTime.rawValue)
+        let localTimeParamsData = try XCTUnwrap(h10MockClient.queryCalls.first?.parameters) as Data
+        let localTimeParams = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: localTimeParamsData)
+        XCTAssertEqual(localTimeParams.time.hour, 12)
+        XCTAssertEqual(localTimeParams.tzOffset, 120)
     }
 
     func test_setLocalTime_h10FileSystem_queryError_propagatesError() throws {
