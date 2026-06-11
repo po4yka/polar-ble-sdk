@@ -1124,16 +1124,20 @@ extension PolarBleApiImpl: PolarBleApi  {
         self.logMessage("set local time to \(time) and timeZone \(zone) in device \(identifier)")
         let paramsSetLocalTime = try pbLocalDateTime.serializedData()
         let paramsSetSystemTime = try pbSystemDateTime.serializedData()
+        var localCalendar = Calendar(identifier: .gregorian)
+        localCalendar.timeZone = zone
+        var systemCalendar = Calendar(identifier: .gregorian)
+        systemCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
         switch BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) {
         case .unknownFileSystem: break
         case .h10FileSystem:
-            let localTimeHour = Calendar.current.component(.hour, from: time)
+            let localTimeHour = localCalendar.component(.hour, from: time)
             try ensureDiskTimeRuntimeTerminal(PolarRuntimePlanner.setLocalTimeH10(localTimeHour: localTimeHour), kind: "setLocalTimeH10")
             let query = PolarRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: localTimeHour)?.first ?? Protocol_PbPFtpQuery.setLocalTime.rawValue
             _ = try await client.query(query, parameters: paramsSetLocalTime as NSData)
         case .polarFileSystemV2:
-            let systemTimeHour = Calendar(identifier: .gregorian).component(.hour, from: time)
-            let localTimeHour = Calendar.current.component(.hour, from: time)
+            let systemTimeHour = systemCalendar.component(.hour, from: time)
+            let localTimeHour = localCalendar.component(.hour, from: time)
             try ensureDiskTimeRuntimeTerminal(PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour), kind: "setLocalTimeV2")
             let plannedQueries = PolarRuntimePlanner.setLocalTimeV2QueryValues(systemTimeHour: systemTimeHour, localTimeHour: localTimeHour)
             let queries = plannedQueries?.count == 2 ? plannedQueries! : [

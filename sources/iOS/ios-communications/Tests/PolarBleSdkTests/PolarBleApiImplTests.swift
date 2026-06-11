@@ -963,11 +963,22 @@ final class PolarBleApiImplTests: XCTestCase {
     func test_setLocalTime_polarFileSystemV2_sendsTwoQueries() throws {
         try assertDiskTimeRuntimePolicyVectorContains("set-local-time-v2")
         for _ in 0..<2 { v2MockClient.queryReturnValues.append(.success(Data())) }
-        try awaitVoidAsync { [self] in try await v2Api.setLocalTime(deviceId, time: Date(), zone: TimeZone(secondsFromGMT: 3600)!) }
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = try XCTUnwrap(utcCalendar.date(from: DateComponents(timeZone: TimeZone(secondsFromGMT: 0), year: 2026, month: 4, day: 13, hour: 10, minute: 30, second: 15)))
+        try awaitVoidAsync { [self] in try await v2Api.setLocalTime(deviceId, time: date, zone: TimeZone(secondsFromGMT: 7200)!) }
         XCTAssertEqual(v2MockClient.queryCalls.count, 2)
         let ids = v2MockClient.queryCalls.map { $0.id }
         XCTAssertTrue(ids.contains(Protocol_PbPFtpQuery.setLocalTime.rawValue))
         XCTAssertTrue(ids.contains(Protocol_PbPFtpQuery.setSystemTime.rawValue))
+        let systemTimeParamsData = try XCTUnwrap(v2MockClient.queryCalls.first { $0.id == Protocol_PbPFtpQuery.setSystemTime.rawValue }?.parameters) as Data
+        let localTimeParamsData = try XCTUnwrap(v2MockClient.queryCalls.first { $0.id == Protocol_PbPFtpQuery.setLocalTime.rawValue }?.parameters) as Data
+        let systemTimeParams = try Protocol_PbPFtpSetSystemTimeParams(serializedBytes: systemTimeParamsData)
+        let localTimeParams = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: localTimeParamsData)
+        XCTAssertEqual(systemTimeParams.time.hour, 10)
+        XCTAssertTrue(systemTimeParams.trusted)
+        XCTAssertEqual(localTimeParams.time.hour, 12)
+        XCTAssertEqual(localTimeParams.tzOffset, 120)
     }
 
     // MARK: - setTelemetryEnabled
