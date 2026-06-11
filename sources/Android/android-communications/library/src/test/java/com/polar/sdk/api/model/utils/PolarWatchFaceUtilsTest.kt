@@ -315,6 +315,7 @@ class PolarWatchFaceUtilsTest {
             "unknown-complication-raw-id-preservation",
             "unknown-complication-null-lookup-policy",
             "malformed-too-short-defaulting",
+            "flatbuffer-byte-input-parser",
             "kvtx-wrapper-metadata",
             "flatbuffer-byte-output-deferral",
             "platform-watch-face-vector-reference-gate",
@@ -323,7 +324,7 @@ class PolarWatchFaceUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, KVTX wrapper metadata, and the shared tests are compile-verified.",
+            "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, shared FlatBuffer byte input parsing, KVTX wrapper metadata, and the shared tests are compile-verified.",
             expected.get("commonDecision").asString
         )
         val consumerTests = vector.getAsJsonObject("consumerTests")

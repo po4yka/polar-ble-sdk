@@ -3467,6 +3467,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val WATCH_FACE_COMMON_POLICY_REQUIRED_TERMS = listOf(
             "watchFaceGoldenVectorsDefineExecutableCommonFieldComplicationAndMalformedPolicy",
+            "watchFaceFlatBufferParsingExecutesInSharedCommonCode",
             "watchFaceReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/watch-face/watch-face-readiness.json",
             "watch-face-readiness",
@@ -3478,10 +3479,11 @@ class GoldenVectorMigrationPolicyTest {
             "complication-id-order-preservation",
             "unknown-complication-raw-id-preservation",
             "kvtx-wrapper-metadata",
+            "flatbuffer-byte-input-parser",
             "flatbuffer-byte-output-deferral",
             "compile-verification-gate",
             "preserve-raw-id-in-config-fields-and-return-null-for-enum-lookup",
-            "MINIMUM_FLATBUFFER_HEADER_SIZE",
+            "PolarWatchFaceConfigFlatBuffer.parse",
             "complicationNameOrNull"
         )
         val KVTX_COMMON_POLICY_REQUIRED_TERMS = listOf(
@@ -4102,7 +4104,9 @@ class GoldenVectorMigrationPolicyTest {
                 "shared-platform-actual-codec-gate"
             ),
             "watch-face-readiness.json" to listOf(
+                "flatbuffer-byte-input-parser",
                 "flatbuffer-byte-output-deferral",
+                "shared FlatBuffer byte input parsing",
                 "byte-identical FlatBuffer output remains platform-specific unless production shared FlatBuffer builders are deliberately introduced and compile-verified"
             )
         )

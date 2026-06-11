@@ -38,6 +38,7 @@ import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
+import com.polar.shared.sdk.PolarWatchFaceConfigFlatBuffer
 import com.polar.shared.sdk.PolarWatchFaceFields
 import com.polar.shared.time.PolarDateFields
 import com.polar.shared.time.PolarDateTimeFields
@@ -919,6 +920,18 @@ internal object PolarRuntimePlannerAdapter {
             complicationIds = complicationIds,
             fontfaceId = fontfaceId
         )
+        return PlannedWatchFaceFields(
+            timeStyleId = fields.timeStyleId,
+            complicationLayoutId = fields.complicationLayoutId,
+            backgroundStyleId = fields.backgroundStyleId,
+            accentColor = fields.accentColor,
+            complicationIds = fields.complicationIds,
+            fontfaceId = fields.fontfaceId
+        )
+    }
+
+    fun parseWatchFaceConfigFlatBuffer(raw: ByteArray): PlannedWatchFaceFields {
+        val fields = PolarWatchFaceConfigFlatBuffer.parse(raw)
         return PlannedWatchFaceFields(
             timeStyleId = fields.timeStyleId,
             complicationLayoutId = fields.complicationLayoutId,

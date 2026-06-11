@@ -351,7 +351,9 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "shared-platform-actual-codec-gate"
   ],
   "watch-face-readiness.json" => [
+    "flatbuffer-byte-input-parser",
     "flatbuffer-byte-output-deferral",
+    "shared FlatBuffer byte input parsing",
     "byte-identical FlatBuffer output remains platform-specific unless production shared FlatBuffer builders are deliberately introduced and compile-verified"
   ]
 }.freeze

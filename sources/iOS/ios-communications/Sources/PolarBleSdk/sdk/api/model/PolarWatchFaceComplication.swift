@@ -126,6 +126,14 @@ enum PolarWatchFaceRuntimePlanner {
         return nil
         #endif
     }
+
+    static func parseFlatBufferCsv(rawHex: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.parseWatchFaceConfigFlatBufferHex(rawHex: rawHex)
+        #else
+        return nil
+        #endif
+    }
 }
 
 private extension PolarWatchFaceComplication {

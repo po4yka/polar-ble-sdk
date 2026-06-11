@@ -7,11 +7,8 @@ import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils
 import com.polar.sdk.api.errors.PolarServiceNotAvailable
-import com.polar.sdk.api.model.PolarWatchFaceComplication
 import protocol.PftpRequest
 import java.io.ByteArrayInputStream
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 private const val TAG = "PolarWatchFaceUtils"
 
@@ -105,92 +102,14 @@ internal object PolarWatchFaceUtils {
             return empty
         }
 
-        val bb = ByteBuffer.wrap(raw).order(ByteOrder.LITTLE_ENDIAN)
-        val rootOffset = bb.getInt(0)
-
-        if (rootOffset + 4 > raw.size) {
-            BleLogger.w(TAG, "parseWatchFaceConfigFlatBuffer: rootOffset out of bounds"); return empty
-        }
-
-        val vtableOffsetFromTable = bb.getInt(rootOffset)
-        val vtablePos = rootOffset - vtableOffsetFromTable
-
-        if (vtablePos < 0 || vtablePos + 4 > raw.size) {
-            BleLogger.w(TAG, "parseWatchFaceConfigFlatBuffer: vtablePos out of bounds"); return empty
-        }
-
-        val vtableSize = bb.getShort(vtablePos).toInt() and 0xFFFF
-        val fieldCount = (vtableSize - 4) / 2
-
-        // Helper: read a scalar field offset from vtable (0 = absent/default)
-        fun fieldOffset(fieldIdx: Int): Int {
-            if (fieldIdx >= fieldCount) return 0
-            return bb.getShort(vtablePos + 4 + fieldIdx * 2).toInt() and 0xFFFF
-        }
-
-        // field 0: time_style_id (uint16)
-        val timeStyleId = fieldOffset(0).let { fo ->
-            if (fo == 0) 0 else (bb.getShort(rootOffset + fo).toInt() and 0xFFFF)
-        }
-
-        // field 1: complication_layout_id (uint16)
-        val complicationLayoutId = fieldOffset(1).let { fo ->
-            if (fo == 0) 0 else (bb.getShort(rootOffset + fo).toInt() and 0xFFFF)
-        }
-
-        // field 2: background_style_id (uint16)
-        val backgroundStyleId = fieldOffset(2).let { fo ->
-            if (fo == 0) 0 else (bb.getShort(rootOffset + fo).toInt() and 0xFFFF)
-        }
-
-        // field 3: accent_color (uint32)
-        val accentColor = fieldOffset(3).let { fo ->
-            if (fo == 0) 0L else (bb.getInt(rootOffset + fo).toLong() and 0xFFFFFFFFL)
-        }
-
-        // field 4: complication_ids ([int32])
-        val complicationIds: List<Int> = run {
-            val fo = fieldOffset(4)
-            if (fo == 0) return@run emptyList()
-            val vectorRefPos = rootOffset + fo
-            if (vectorRefPos + 4 > raw.size) {
-                BleLogger.w(TAG, "parseWatchFaceConfigFlatBuffer: complication_ids ref out of bounds"); return@run emptyList()
-            }
-            val vectorPos = vectorRefPos + bb.getInt(vectorRefPos)
-            if (vectorPos + 4 > raw.size) {
-                BleLogger.w(TAG, "parseWatchFaceConfigFlatBuffer: complication_ids vector out of bounds"); return@run emptyList()
-            }
-            val vectorLength = bb.getInt(vectorPos)
-            if (vectorLength !in 0..1000) {
-                BleLogger.w(TAG, "parseWatchFaceConfigFlatBuffer: complication_ids length $vectorLength invalid"); return@run emptyList()
-            }
-            val dataStart = vectorPos + 4
-            if (dataStart + vectorLength * 4 > raw.size) {
-                BleLogger.w(TAG, "parseWatchFaceConfigFlatBuffer: complication_ids data overruns buffer"); return@run emptyList()
-            }
-            val ids = mutableListOf<Int>()
-            for (i in 0 until vectorLength) {
-                val id = bb.getInt(dataStart + i * 4)
-                val known = PolarWatchFaceComplication.fromId(id)
-                BleLogger.d(TAG, "  complication_ids[$i] = $id (0x${id.toUInt().toString(16).padStart(8,'0')})" +
-                        if (known != null) " => ${known.name}" else " => UNKNOWN (not in enum)")
-                ids += id
-            }
-            ids
-        }
-
-        // field 5: fontface_id (byte)
-        val fontfaceId = fieldOffset(5).let { fo ->
-            if (fo == 0) 0 else (bb.get(rootOffset + fo).toInt() and 0xFF)
-        }
-
-        return sharedWatchfaceConfigFields(
-            timeStyleId = timeStyleId,
-            complicationLayoutId = complicationLayoutId,
-            backgroundStyleId = backgroundStyleId,
-            accentColor = accentColor,
-            complicationIds = complicationIds,
-            fontfaceId = fontfaceId
+        val sharedFields = PolarRuntimePlannerAdapter.parseWatchFaceConfigFlatBuffer(raw)
+        return WatchfaceConfigFields(
+            timeStyleId = sharedFields.timeStyleId,
+            complicationLayoutId = sharedFields.complicationLayoutId,
+            backgroundStyleId = sharedFields.backgroundStyleId,
+            accentColor = sharedFields.accentColor,
+            complicationIds = sharedFields.complicationIds,
+            fontfaceId = sharedFields.fontfaceId
         )
     }
 

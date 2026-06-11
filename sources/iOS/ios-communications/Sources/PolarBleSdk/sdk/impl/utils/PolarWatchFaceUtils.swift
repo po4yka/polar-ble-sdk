@@ -114,6 +114,9 @@ internal enum PolarWatchFaceUtils {
             BleLogger.trace("\(TAG): parseWatchFaceConfigFlatBuffer: too short (\(raw.count) bytes), returning defaults")
             return empty
         }
+        if let shared = PolarWatchFaceRuntimePlanner.parseFlatBufferCsv(rawHex: raw.hexString()).flatMap(parseSharedWatchfaceConfigFields) {
+            return shared
+        }
 
         func u16At(_ p: Int) -> Int {
             guard p + 2 <= raw.count else { return 0 }
@@ -227,6 +230,27 @@ internal enum PolarWatchFaceUtils {
         )
     }
 
+    private static func parseSharedWatchfaceConfigFields(_ csv: String) -> WatchfaceConfigFields? {
+        let fields = csv.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
+        guard fields.count == 6,
+              let timeStyleId = UInt16(fields[0]),
+              let complicationLayoutId = UInt16(fields[1]),
+              let backgroundStyleId = UInt16(fields[2]),
+              let accentColor = UInt32(fields[3]),
+              let fontfaceId = UInt8(fields[5]) else {
+            return nil
+        }
+        let complicationIds = fields[4].isEmpty ? [] : fields[4].split(separator: ";").compactMap { Int32($0) }
+        return WatchfaceConfigFields(
+            timeStyleId: timeStyleId,
+            complicationLayoutId: complicationLayoutId,
+            backgroundStyleId: backgroundStyleId,
+            accentColor: accentColor,
+            complicationIds: complicationIds,
+            fontfaceId: fontfaceId
+        )
+    }
+
     private static func sharedWatchfaceConfigFields(
         timeStyleId: UInt16 = 0,
         complicationLayoutId: UInt16 = 0,
@@ -311,5 +335,11 @@ internal enum PolarWatchFaceUtils {
         let inputStream = InputStream(data: Data(kvtxScript))
         try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: kvtxScript.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}
+    }
+}
+
+private extension Array where Element == UInt8 {
+    func hexString() -> String {
+        return map { String(format: "%02x", $0) }.joined()
     }
 }

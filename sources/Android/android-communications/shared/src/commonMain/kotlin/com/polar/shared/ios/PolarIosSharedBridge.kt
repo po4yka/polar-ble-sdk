@@ -86,6 +86,7 @@ import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarTrainingReadinessName
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
+import com.polar.shared.sdk.PolarWatchFaceConfigFlatBuffer
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
 import com.polar.shared.sdk.PolarWatchFaceFields
 import com.polar.shared.time.PolarDateFields
@@ -1083,6 +1084,18 @@ object PolarIosSharedBridge {
             complicationIds = complicationIdsCsv.csvValues().mapNotNull { value -> value.toIntOrNull() },
             fontfaceId = fontfaceId
         )
+        return listOf(
+            fields.timeStyleId.toString(),
+            fields.complicationLayoutId.toString(),
+            fields.backgroundStyleId.toString(),
+            fields.accentColor.toString(),
+            fields.complicationIds.joinToString(separator = ";"),
+            fields.fontfaceId.toString()
+        ).joinToString(separator = ",")
+    }
+
+    fun parseWatchFaceConfigFlatBufferHex(rawHex: String): String {
+        val fields = PolarWatchFaceConfigFlatBuffer.parse(rawHex.hexToBytes())
         return listOf(
             fields.timeStyleId.toString(),
             fields.complicationLayoutId.toString(),

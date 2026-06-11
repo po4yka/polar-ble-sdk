@@ -1,6 +1,7 @@
 package com.polar.sharedtest
 
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
+import com.polar.shared.sdk.PolarWatchFaceConfigFlatBuffer
 import com.polar.shared.sdk.PolarWatchFaceFields
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -66,6 +67,29 @@ class WatchFaceCommonPolicyTest {
         assertEquals(true, platforms.booleanValue("common"))
     }
 
+    @Test
+    fun watchFaceFlatBufferParsingExecutesInSharedCommonCode() {
+        val spo2Id = PolarWatchFaceComplicationName.SPO2.id
+        val heartRateId = PolarWatchFaceComplicationName.HEART_RATE.id
+        val raw = minimalWatchFaceFlatBuffer(
+            timeStyleId = 7,
+            complicationLayoutId = 3,
+            backgroundStyleId = 4,
+            accentColor = 0x00AABBCC,
+            complicationIds = listOf(spo2Id, heartRateId),
+            fontfaceId = 2
+        )
+
+        val fields = PolarWatchFaceConfigFlatBuffer.parse(raw)
+
+        assertEquals(7, fields.timeStyleId)
+        assertEquals(3, fields.complicationLayoutId)
+        assertEquals(4, fields.backgroundStyleId)
+        assertEquals(0x00AABBCC, fields.accentColor)
+        assertEquals(listOf(spo2Id, heartRateId), fields.complicationIds)
+        assertEquals(2, fields.fontfaceId)
+    }
+
     private fun normalizeFields(fields: String): PolarWatchFaceFields {
         return PolarWatchFaceFields.fromNullableFields(
             timeStyleId = fields.optionalIntValue("timeStyleId") ?: 0,
@@ -78,11 +102,48 @@ class WatchFaceCommonPolicyTest {
     }
 
     private fun parseMalformedOrDefault(hex: String): PolarWatchFaceFields {
-        return if (hexToBytes(hex).size < MINIMUM_FLATBUFFER_HEADER_SIZE) {
-            PolarWatchFaceFields()
-        } else {
-            error("Only malformed default policy is covered in current shared common vectors")
-        }
+        return PolarWatchFaceConfigFlatBuffer.parse(hexToBytes(hex))
+    }
+
+    private fun minimalWatchFaceFlatBuffer(
+        timeStyleId: Int,
+        complicationLayoutId: Int,
+        backgroundStyleId: Int,
+        accentColor: Int,
+        complicationIds: List<Int>,
+        fontfaceId: Int
+    ): ByteArray {
+        val tablePosition = 20
+        val vtablePosition = 4
+        val vectorRefPosition = tablePosition + 16
+        val vectorPosition = vectorRefPosition + 4
+        val raw = ByteArray(vectorPosition + 4 + complicationIds.size * 4)
+        raw.writeLeI32(0, tablePosition)
+        raw.writeLeU16(vtablePosition, 16)
+        raw.writeLeU16(vtablePosition + 2, 21)
+        listOf(4, 6, 8, 12, 16, 20).forEachIndexed { index, offset -> raw.writeLeU16(vtablePosition + 4 + index * 2, offset) }
+        raw.writeLeI32(tablePosition, tablePosition - vtablePosition)
+        raw.writeLeU16(tablePosition + 4, timeStyleId)
+        raw.writeLeU16(tablePosition + 6, complicationLayoutId)
+        raw.writeLeU16(tablePosition + 8, backgroundStyleId)
+        raw.writeLeI32(tablePosition + 12, accentColor)
+        raw.writeLeI32(vectorRefPosition, vectorPosition - vectorRefPosition)
+        raw[tablePosition + 20] = fontfaceId.toByte()
+        raw.writeLeI32(vectorPosition, complicationIds.size)
+        complicationIds.forEachIndexed { index, id -> raw.writeLeI32(vectorPosition + 4 + index * 4, id) }
+        return raw
+    }
+
+    private fun ByteArray.writeLeU16(position: Int, value: Int) {
+        this[position] = value.toByte()
+        this[position + 1] = (value shr 8).toByte()
+    }
+
+    private fun ByteArray.writeLeI32(position: Int, value: Int) {
+        this[position] = value.toByte()
+        this[position + 1] = (value shr 8).toByte()
+        this[position + 2] = (value shr 16).toByte()
+        this[position + 3] = (value shr 24).toByte()
     }
 
     private fun Int.complicationName(): String {
@@ -164,11 +225,12 @@ class WatchFaceCommonPolicyTest {
             "unknown-complication-raw-id-preservation",
             "unknown-complication-null-lookup-policy",
             "malformed-too-short-defaulting",
+            "flatbuffer-byte-input-parser",
             "kvtx-wrapper-metadata",
             "flatbuffer-byte-output-deferral",
             "platform-watch-face-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val WATCH_FACE_READINESS_COMMON_DECISION = "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, KVTX wrapper metadata, and the shared tests are compile-verified."
+        const val WATCH_FACE_READINESS_COMMON_DECISION = "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, shared FlatBuffer byte input parsing, KVTX wrapper metadata, and the shared tests are compile-verified."
     }
 }
