@@ -6,6 +6,7 @@ import android.content.IntentFilter
 import android.os.ParcelUuid
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.polar.androidcommunications.api.ble.BleDeviceListener
 import com.polar.androidcommunications.api.ble.model.BleDeviceSession
 import com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContent
 import com.polar.androidcommunications.api.ble.model.gatt.client.BleBattClient
@@ -25,6 +26,8 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSecret
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSetting
 import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtility
 import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtility.Companion.getFileSystemType
+import com.polar.androidcommunications.common.ble.BleUtils.AD_TYPE
+import com.polar.androidcommunications.common.ble.BleUtils.EVENT_TYPE
 import com.polar.androidcommunications.http.fwu.FirmwareUpdateApi
 import com.polar.androidcommunications.http.fwu.FirmwareUpdateRequest
 import com.polar.androidcommunications.http.fwu.FirmwareUpdateResponse
@@ -202,6 +205,61 @@ class BDBleApiImplTest {
                 setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER)
             )
         }
+    }
+
+    @Test
+    fun searchForDevice_filtersByPrefixAndMapsFacadeStreamOutput() = runTest {
+        val polarSession = searchSession(
+            name = "Polar 360 AABBCCDD",
+            address = "AA:BB:CC:DD:EE:01",
+            rssi = -55,
+            services = byteArrayOf(0x0D, 0x18, 0xEE.toByte(), 0xFE.toByte())
+        )
+        val nonPolarSession = searchSession(name = "Garmin Device 1234", address = "AA:BB:CC:DD:EE:02", rssi = -65)
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flowOf(nonPolarSession, polarSession)
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType("360") } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        val values = api.searchForDevice(withDeviceNameFilterPrefix = "Polar").toList()
+
+        Assert.assertEquals(1, values.size)
+        val value = values.single()
+        Assert.assertEquals("AABBCCDD", value.deviceId)
+        Assert.assertEquals("AA:BB:CC:DD:EE:01", value.address)
+        Assert.assertEquals(-55, value.rssi)
+        Assert.assertEquals("Polar 360 AABBCCDD", value.name)
+        Assert.assertTrue(value.isConnectable)
+        Assert.assertTrue(value.hasHeartRateService)
+        Assert.assertTrue(value.hasFileSystemService)
+        Assert.assertTrue(value.hasSAGRFCFileSystem)
+    }
+
+    @Test
+    fun searchForDevice_collectorCancellationCancelsListenerSearchStream() = runTest {
+        var upstreamCancelled = false
+        val session = searchSession(name = "Polar H10 AABBCCDD")
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow {
+            try {
+                emit(session)
+                awaitCancellation()
+            } finally {
+                upstreamCancelled = true
+            }
+        }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+        val values = mutableListOf<String>()
+
+        val collection = launch {
+            api.searchForDevice(withDeviceNameFilterPrefix = "Polar").collect { values.add(it.deviceId) }
+        }
+        testScheduler.advanceUntilIdle()
+        collection.cancelAndJoin()
+
+        Assert.assertEquals(listOf("AABBCCDD"), values)
+        Assert.assertTrue(upstreamCancelled)
     }
 
     @Test
@@ -4809,6 +4867,39 @@ class BDBleApiImplTest {
             ?.let(PolarRuntimePlannerAdapter::userDeviceSettingsDeviceLocationValue)
             ?: error("Missing shared device location for $value")
         return PbDeviceLocation.forNumber(sharedValue)
+    }
+
+    private fun BDBleApiImpl.withListener(listener: BleDeviceListener): BDBleApiImpl {
+        val field = BDBleApiImpl::class.java.getDeclaredField("listener")
+        field.isAccessible = true
+        field.set(this, listener)
+        return this
+    }
+
+    private fun searchSession(
+        name: String,
+        address: String = "AA:BB:CC:DD:EE:FF",
+        rssi: Int = -60,
+        services: ByteArray = ByteArray(0)
+    ): BleDeviceSession {
+        val advertisement = BleAdvertisementContent().apply {
+            val data = hashMapOf<AD_TYPE, ByteArray>(
+                AD_TYPE.GAP_ADTYPE_LOCAL_NAME_COMPLETE to name.toByteArray()
+            )
+            if (services.isNotEmpty()) {
+                data[AD_TYPE.GAP_ADTYPE_16BIT_COMPLETE] = services
+            }
+            processAdvertisementData(data, EVENT_TYPE.ADV_IND, rssi)
+        }
+        val session = mockk<BleDeviceSession>()
+        every { session.advertisementContent } returns advertisement
+        every { session.address } returns address
+        every { session.rssi } returns rssi
+        every { session.name } returns advertisement.name
+        every { session.polarDeviceId } returns advertisement.polarDeviceId
+        every { session.polarDeviceType } returns advertisement.polarDeviceType
+        every { session.isConnectableAdvertisement } returns true
+        return session
     }
 
     private companion object {
