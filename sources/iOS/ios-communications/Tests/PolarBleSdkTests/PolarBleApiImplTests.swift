@@ -1727,6 +1727,7 @@ final class PolarBleApiImplTests: XCTestCase {
     }
 
     func test_setSDLogConfiguration_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7022, userInfo: [NSLocalizedDescriptionKey: "sd log write failed"])
         v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
             continuation.finish(throwing: transportError)
