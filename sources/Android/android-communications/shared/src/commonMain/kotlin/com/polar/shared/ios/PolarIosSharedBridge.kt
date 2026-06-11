@@ -887,6 +887,14 @@ object PolarIosSharedBridge {
         return PolarRestServiceModels.servicePaths(entries.lineMap()).joinToString("|")
     }
 
+    fun restServiceJsonPathsForServices(jsonPayload: String): String {
+        return PolarRestServiceModels.serviceListJson(jsonPayload).pathsForServices.lineString()
+    }
+
+    fun restServiceJsonHasServices(jsonPayload: String): Boolean {
+        return PolarRestServiceModels.serviceListJsonHasServices(jsonPayload)
+    }
+
     fun restActionNames(entries: String): String {
         return PolarRestServiceModels.actionNames(entries.lineMap()).joinToString("|")
     }
@@ -913,6 +921,26 @@ object PolarIosSharedBridge {
 
     fun restEventTriggers(detailsCsv: String, triggersCsv: String): String {
         return PolarRestServiceModels.eventTriggers(mapOf("details" to detailsCsv.csvFields(), "triggers" to triggersCsv.csvFields())).joinToString("|")
+    }
+
+    fun restServiceDescriptionJsonEvents(jsonPayload: String): String {
+        return PolarRestServiceModels.serviceDescriptionJson(jsonPayload).events.joinToString("|")
+    }
+
+    fun restServiceDescriptionJsonEndpoints(jsonPayload: String): String {
+        return PolarRestServiceModels.serviceDescriptionJson(jsonPayload).endpoints.joinToString("|")
+    }
+
+    fun restServiceDescriptionJsonActions(jsonPayload: String): String {
+        return PolarRestServiceModels.serviceDescriptionJson(jsonPayload).actions.lineString()
+    }
+
+    fun restServiceDescriptionJsonEventDetails(jsonPayload: String): String {
+        return PolarRestServiceModels.serviceDescriptionJson(jsonPayload).details.nestedLineString()
+    }
+
+    fun restServiceDescriptionJsonEventTriggers(jsonPayload: String): String {
+        return PolarRestServiceModels.serviceDescriptionJson(jsonPayload).triggers.nestedLineString()
     }
 
     fun restUncompressedEventPayloadsHex(payloadsHex: String): String {
@@ -2181,6 +2209,10 @@ object PolarIosSharedBridge {
 
     private fun Map<String, String>.lineString(): String {
         return entries.joinToString("\n") { (key, value) -> "$key\t$value" }
+    }
+
+    private fun Map<String, List<String>>.nestedLineString(): String {
+        return entries.joinToString("\n") { (key, values) -> "$key\t${values.joinToString("|")}" }
     }
 
     private fun List<String>.optionalField(index: Int): String? {

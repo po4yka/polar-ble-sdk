@@ -57,6 +57,10 @@ object PolarRestServiceModels {
         return serviceList(root["services"].stringMapOrNull())
     }
 
+    fun serviceListJsonHasServices(jsonPayload: String): Boolean {
+        return parseObject(jsonPayload)["services"] is JsonObject
+    }
+
     fun serviceDescription(events: List<String>?, endpoints: List<String>?, actions: Map<String, String>?, eventDescriptions: Map<String, Map<String, List<String>>>): PolarRestServiceDescription {
         val eventNames = events ?: emptyList()
         val detailKeys = (eventNames + eventDescriptions.keys).distinct()

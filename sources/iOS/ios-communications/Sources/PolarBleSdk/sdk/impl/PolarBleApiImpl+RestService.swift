@@ -15,6 +15,10 @@ public struct PolarDeviceRestApiServices: Decodable {
     enum CodingKeys: String, CodingKey {
         case pathsForServices = "services"
     }
+
+    init(pathsForServices: [String: String]?) {
+        self.pathsForServices = pathsForServices
+    }
     
     /// Lists REST API service names
     var serviceNames: [String] {
@@ -42,6 +46,20 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
         init?(stringValue: String) {
             self.stringValue = stringValue
         }
+    }
+
+    init(events: [String], endpoints: [String], actions: [String: String], details: [String: [String]], triggers: [String: [String]]) {
+        var dictionary = Dictionary<String, Decodable>()
+        dictionary["events"] = events
+        dictionary["endpoints"] = endpoints
+        dictionary["cmd"] = actions
+        for eventName in Set(details.keys).union(triggers.keys) {
+            dictionary[eventName] = [
+                "details": details[eventName] ?? [],
+                "triggers": triggers[eventName] ?? []
+            ]
+        }
+        self.dictionary = dictionary
     }
     
     // By conforming to Decodable, this struct can be parsed with JSONDecoder the usual way
@@ -127,7 +145,32 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     }
 }
 
-private enum PolarRestServiceProjectionPlanner {
+enum PolarRestServiceProjectionPlanner {
+    static func serviceList(jsonData: Data) throws -> PolarDeviceRestApiServices {
+        #if canImport(PolarBleSdkShared)
+        let jsonPayload = try jsonPayloadString(jsonData)
+        let paths = sharedMap(PolarIosSharedBridge.shared.restServiceJsonPathsForServices(jsonPayload: jsonPayload))
+        return PolarDeviceRestApiServices(pathsForServices: PolarIosSharedBridge.shared.restServiceJsonHasServices(jsonPayload: jsonPayload) ? paths : nil)
+        #else
+        return try JSONDecoder().decode(PolarDeviceRestApiServices.self, from: jsonData)
+        #endif
+    }
+
+    static func serviceDescription(jsonData: Data) throws -> PolarDeviceRestApiServiceDescription {
+        #if canImport(PolarBleSdkShared)
+        let jsonPayload = try jsonPayloadString(jsonData)
+        return PolarDeviceRestApiServiceDescription(
+            events: sharedList(PolarIosSharedBridge.shared.restServiceDescriptionJsonEvents(jsonPayload: jsonPayload)),
+            endpoints: sharedList(PolarIosSharedBridge.shared.restServiceDescriptionJsonEndpoints(jsonPayload: jsonPayload)),
+            actions: sharedMap(PolarIosSharedBridge.shared.restServiceDescriptionJsonActions(jsonPayload: jsonPayload)),
+            details: sharedNestedMap(PolarIosSharedBridge.shared.restServiceDescriptionJsonEventDetails(jsonPayload: jsonPayload)),
+            triggers: sharedNestedMap(PolarIosSharedBridge.shared.restServiceDescriptionJsonEventTriggers(jsonPayload: jsonPayload))
+        )
+        #else
+        return try JSONDecoder().decode(PolarDeviceRestApiServiceDescription.self, from: jsonData)
+        #endif
+    }
+
     static func serviceNames(_ pathsForServices: [String: String]) -> [String] {
         #if canImport(PolarBleSdkShared)
         return sharedList(PolarIosSharedBridge.shared.restServiceNames(entries: pathsForServices.sharedLineMap))
@@ -201,6 +244,13 @@ private enum PolarRestServiceProjectionPlanner {
     }
 }
 
+private func jsonPayloadString(_ data: Data) throws -> String {
+    guard let payload = String(data: data, encoding: .utf8) else {
+        throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "REST JSON payload is not valid UTF-8"))
+    }
+    return payload
+}
+
 private func sharedList(_ value: String) -> [String] {
     if value.isEmpty { return [] }
     return value.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
@@ -212,6 +262,15 @@ private func sharedMap(_ value: String) -> [String: String] {
         let parts = line.split(separator: "\t", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
         guard parts.count == 2 else { return nil }
         return (parts[0], parts[1])
+    })
+}
+
+private func sharedNestedMap(_ value: String) -> [String: [String]] {
+    if value.isEmpty { return [:] }
+    return Dictionary(uniqueKeysWithValues: value.split(separator: "\n", omittingEmptySubsequences: false).compactMap { line in
+        let parts = line.split(separator: "\t", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
+        guard parts.count == 2 else { return nil }
+        return (parts[0], sharedList(parts[1]))
     })
 }
 
@@ -235,18 +294,15 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         let serviceApiPath = "/REST/SERVICE.API"
         let plannedOperation = PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
         try ensureRestFacadeRuntimePlan(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
-        return try await getJSONDecodableFromPath(identifier: identifier, path: plannedOperation?.path ?? serviceApiPath)
+        let data = try await getDataFromPath(identifier: identifier, path: plannedOperation?.path ?? serviceApiPath)
+        return try PolarRestServiceProjectionPlanner.serviceList(jsonData: data)
     }
 
     func getRestApiDescription(identifier: String, path: String) async throws -> PolarDeviceRestApiServiceDescription {
         let plannedOperation = PolarRuntimePlanner.restFacadeGetOperation(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
         try ensureRestFacadeRuntimePlan(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
-        return try await getJSONDecodableFromPath(identifier: identifier, path: plannedOperation?.path ?? path)
-    }
-
-    private func getJSONDecodableFromPath<T: Decodable>(identifier: String, path: String) async throws -> T {
-        let data = try await getDataFromPath(identifier: identifier, path: path)
-        return try JSONDecoder().decode(T.self, from: data)
+        let data = try await getDataFromPath(identifier: identifier, path: plannedOperation?.path ?? path)
+        return try PolarRestServiceProjectionPlanner.serviceDescription(jsonData: data)
     }
 
     private func getDataFromPath(identifier: String, path: String) async throws -> Data {

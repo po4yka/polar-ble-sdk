@@ -357,13 +357,13 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
                     XCTAssertThrowsError(try JSONDecoder().decode(PolarDeviceRestApiServices.self, from: data), caseId)
                     continue
                 }
-                let model = try JSONDecoder().decode(PolarDeviceRestApiServices.self, from: data)
+                let model = try PolarRestServiceProjectionPlanner.serviceList(jsonData: data)
                 try assertServiceList(model, expected: iosExpected(expected), id: caseId)
             case "serviceDescription":
                 let jsonObject = try XCTUnwrap(input["json"] as? [String: Any], caseId)
                 let data = try JSONSerialization.data(withJSONObject: jsonObject)
                 let expected = try XCTUnwrap(vector["expected"] as? [String: Any], caseId)
-                let model = try JSONDecoder().decode(PolarDeviceRestApiServiceDescription.self, from: data)
+                let model = try PolarRestServiceProjectionPlanner.serviceDescription(jsonData: data)
                 try assertServiceDescription(model, expected: expected, id: caseId)
             case "restEventCompression":
                 continue

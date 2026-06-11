@@ -4041,7 +4041,7 @@ class GoldenVectorMigrationPolicyTest {
             "KmpFullCoverageTddBacklog.md" to listOf(
                 "add real common protobuf/gzip production dependencies",
                 "User-device-settings protobuf parsing/building remains platform-owned until a common protobuf dependency and cross-platform default/error policy are introduced deliberately.",
-                "REST service-list/service-description JSON decoding now has Android production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
+                "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
                 "full AES implementation ownership still must be chosen",
                 "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
                 "byte-identical output",
@@ -4049,7 +4049,7 @@ class GoldenVectorMigrationPolicyTest {
             ),
             "KmpCoverageInventory.md" to listOf(
                 "REST event compressed payload decoding now uses shared KMP platform actual codecs while generic iOS `Data.deflated`/`Data.inflated` remains platform-specific.",
-                "linked iOS raw JSON decoding still uses `JSONDecoder` to preserve `Decodable` compatibility",
+                "linked iOS `PolarRestServiceProjectionPlanner` now consume shared REST JSON parsing",
                 "User-device-settings protobuf parsing/building remains platform-owned until a common protobuf dependency and cross-platform default/error policy are introduced deliberately.",
                 "Keep iOS nil-on-truncation compatibility adapter-owned if required while common parsing uses typed malformed-script errors.",
                 "semantic and codec-ownership/readiness policy executable"
