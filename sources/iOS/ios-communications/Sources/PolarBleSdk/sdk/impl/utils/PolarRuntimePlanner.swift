@@ -95,6 +95,15 @@ enum PolarRuntimePlanner {
         return PolarRestFacadeRuntimePlanner.getOperation(id: id, path: path, payloadShape: payloadShape)
     }
 
+    @discardableResult
+    static func restRequestTransportGet(path: String, payloadHex: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.planRuntimeRestRequestTransportGet(path: path, payloadHex: payloadHex)
+        #else
+        return payloadHex.isEmpty ? "requires-empty-response-policy" : "platform-owned"
+        #endif
+    }
+
     static func sleepRestApiPath() -> String {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.sleepRestApiPath()

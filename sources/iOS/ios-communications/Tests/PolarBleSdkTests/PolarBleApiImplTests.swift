@@ -2273,6 +2273,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("success", PolarRuntimePlanner.restFacadeGet(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json"))
         XCTAssertEqual(.get, PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")?.command)
         XCTAssertEqual("/REST/SERVICE.API", PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")?.path)
+        XCTAssertEqual("requires-empty-response-policy", PolarRuntimePlanner.restRequestTransportGet(path: "/REST/SERVICE.API", payloadHex: ""))
         XCTAssertEqual("/REST/SLEEP.API", PolarRuntimePlanner.sleepRestApiPath())
         XCTAssertEqual("/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]", PolarRuntimePlanner.sleepRecordingStateSubscribePath())
         XCTAssertEqual("/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording", PolarRuntimePlanner.stopSleepRecordingPath())

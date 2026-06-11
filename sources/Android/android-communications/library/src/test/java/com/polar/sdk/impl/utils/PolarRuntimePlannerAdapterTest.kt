@@ -236,12 +236,16 @@ class PolarRuntimePlannerAdapterTest {
     @Test
     fun `shared file and REST plans select Android protobuf operation commands and paths`() {
         val rest = PolarRuntimePlannerAdapter.planRestFacadeGet("list-rest-api-services-success", "/REST/SERVICE.API", "service-list-json")
+        val emptyRestTransport = PolarRuntimePlannerAdapter.planRestRequestTransportGet("/REST/SERVICE.API", payloadHex = "")
         val read = PolarRuntimePlannerAdapter.planFileFacade("read-low-level-file-success", "GET", "/U/0/CUSTOM.BIN")
         val write = PolarRuntimePlannerAdapter.planFileFacade("write-low-level-file-success", "PUT", "/U/0/CUSTOM.BIN", "0102")
         val remove = PolarRuntimePlannerAdapter.planFileFacade("delete-low-level-file-success", "REMOVE", "/U/0/CUSTOM.BIN")
 
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, PolarRuntimePlannerAdapter.fileOperationCommand(rest))
         Assert.assertEquals("/REST/SERVICE.API", PolarRuntimePlannerAdapter.fileOperationPath(rest))
+        Assert.assertEquals(listOf("GET:/REST/SERVICE.API"), emptyRestTransport.commands)
+        Assert.assertEquals("requires-empty-response-policy", emptyRestTransport.terminal)
+        Assert.assertEquals("", emptyRestTransport.resultHex)
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, PolarRuntimePlannerAdapter.fileOperationCommand(read))
         Assert.assertEquals("/U/0/CUSTOM.BIN", PolarRuntimePlannerAdapter.fileOperationPath(read))
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, PolarRuntimePlannerAdapter.fileOperationCommand(write))

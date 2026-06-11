@@ -46,6 +46,7 @@ import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
 import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarPsFtpNotificationPacket
 import com.polar.shared.runtime.PolarRestFacadeOperation
+import com.polar.shared.runtime.PolarRestRequestTransportOperation
 import com.polar.shared.runtime.PolarRuntimePlan
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
@@ -1601,6 +1602,19 @@ object PolarIosSharedBridge {
                 expectedPlatformTerminal = null
             )
         ).fileOperationCommandsCsv()
+    }
+
+    fun planRuntimeRestRequestTransportGet(path: String, payloadHex: String): String {
+        return PolarRuntimeOrchestration.planRestRequestTransport(
+            PolarRestRequestTransportOperation(
+                id = "platform-rest-request-transport",
+                path = path,
+                transportMode = "success",
+                status = null,
+                message = null,
+                payloadHex = payloadHex
+            )
+        ).terminal
     }
 
     fun planRuntimeFileFacade(id: String, command: String, path: String, payloadHex: String): String {

@@ -8,6 +8,7 @@ import com.polar.shared.runtime.PolarFileFacadeOperation
 import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
 import com.polar.shared.runtime.PolarH10StartRecordingFields
 import com.polar.shared.runtime.PolarRestFacadeOperation
+import com.polar.shared.runtime.PolarRestRequestTransportOperation
 import com.polar.shared.runtime.PolarResetNotificationFields
 import com.polar.shared.runtime.PolarRuntimePlan
 import com.polar.shared.runtime.PolarRuntimeOrchestration
@@ -326,6 +327,19 @@ internal object PolarRuntimePlannerAdapter {
                 responseErrorStatus = null,
                 responseErrorMessage = null,
                 expectedPlatformTerminal = null
+            )
+        )
+    }
+
+    fun planRestRequestTransportGet(path: String, payloadHex: String): PolarRuntimePlan {
+        return PolarRuntimeOrchestration.planRestRequestTransport(
+            PolarRestRequestTransportOperation(
+                id = "platform-rest-request-transport",
+                path = path,
+                transportMode = "success",
+                status = null,
+                message = null,
+                payloadHex = payloadHex
             )
         )
     }

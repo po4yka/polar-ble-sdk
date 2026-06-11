@@ -1574,6 +1574,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     override suspend fun listRestApiServices(identifier: String): PolarDeviceRestApiServices {
         val plan = PolarRuntimePlannerAdapter.planRestFacadeGet("list-rest-api-services-success", "/REST/SERVICE.API", "service-list-json")
         val byteArray = getFile(identifier = identifier, path = PolarRuntimePlannerAdapter.fileOperationPath(plan))
+        if (byteArray.isEmpty()) {
+            PolarRuntimePlannerAdapter.planRestRequestTransportGet(path = PolarRuntimePlannerAdapter.fileOperationPath(plan), payloadHex = "")
+        }
         val map: Map<String, Any> = Gson().fromJson(byteArray.toString(Charsets.UTF_8), object: TypeToken<Map<String,Any>>() {}.type)
         return PolarDeviceRestApiServices(map)
     }
@@ -1596,6 +1599,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
     private suspend fun <T:Any> getJSONDecodableFromPath(identifier: String, path: String, mapper:((jsonString: String) -> T)): T {
         val byteArray = getFile(identifier = identifier, path = path)
+        if (byteArray.isEmpty()) {
+            PolarRuntimePlannerAdapter.planRestRequestTransportGet(path = path, payloadHex = "")
+        }
         return mapper(byteArray.toString(Charsets.UTF_8))
     }
 

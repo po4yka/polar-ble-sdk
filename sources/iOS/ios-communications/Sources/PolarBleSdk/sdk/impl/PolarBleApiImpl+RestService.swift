@@ -259,7 +259,11 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         try ensureFileFacadeRuntimePlan(id: "read-low-level-file-success", command: "GET", path: path)
         let requestData = try PolarRuntimePlanner.fileOperationBytes(operation)
         let responseData = try await client.request(requestData)
-        return responseData as Data
+        let data = responseData as Data
+        if data.isEmpty {
+            PolarRuntimePlanner.restRequestTransportGet(path: path, payloadHex: "")
+        }
+        return data
     }
 
     func putNotification(identifier: String, notification: String, path: String) async throws {
