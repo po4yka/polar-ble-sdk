@@ -79,6 +79,7 @@ import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdClientTemperatureDataToPola
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdSettingsToPolarSettings
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdTriggerToPolarTrigger
 import com.polar.shared.ble.PolarAdvertisementModels
+import com.polar.shared.sdk.PolarSdkFeatureAvailability
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarFeatureToPmdClientMeasurementType
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarOfflineTriggerToPmdOfflineTrigger
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarSecretToPmdSecret
@@ -3630,48 +3631,78 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         return Pair(feature, available)
     }
 
+    private fun featureAvailabilityPreconditionsMet(feature: PolarBleSdkFeature, discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
+        return PolarRuntimePlannerAdapter.featureAvailabilityPreconditionsMet(
+            featureName = feature.name,
+            discoveredServices = discoveredServices.sharedServiceNames(),
+            capabilities = session.sharedFeatureCapabilityNames()
+        )
+    }
+
+    private fun List<UUID>.sharedServiceNames(): Set<String> {
+        val names = mutableSetOf<String>()
+        if (contains(HR_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_HR
+        if (contains(BleDisClient.DIS_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_DEVICE_INFO
+        if (contains(BleBattClient.BATTERY_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_BATTERY
+        if (contains(BlePMDClient.PMD_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_PMD
+        if (contains(BlePsFtpUtils.RFC77_PFTP_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_PSFTP
+        if (contains(HealthThermometer.HTS_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_HTS
+        if (contains(PFC_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_PFC
+        return names
+    }
+
+    private fun BleDeviceSession.sharedFeatureCapabilityNames(): Set<String> {
+        val names = mutableSetOf<String>()
+        if (isRecordingSupported(polarDeviceType)) names += PolarSdkFeatureAvailability.CAPABILITY_RECORDING
+        if (BlePolarDeviceCapabilitiesUtility.isActivityDataSupported(polarDeviceType)) names += PolarSdkFeatureAvailability.CAPABILITY_ACTIVITY_DATA
+        if (BlePolarDeviceCapabilitiesUtility.isFirmwareUpdateSupported(polarDeviceType)) names += PolarSdkFeatureAvailability.CAPABILITY_FIRMWARE_UPDATE
+        if (getFileSystemType(polarDeviceType) == FileSystemType.H10_FILE_SYSTEM) names += PolarSdkFeatureAvailability.CAPABILITY_H10_FILE_SYSTEM
+        if (!BlePolarDeviceCapabilitiesUtility.isDeviceSensor(polarDeviceType)) names += PolarSdkFeatureAvailability.CAPABILITY_NOT_SENSOR
+        return names
+    }
+
     private suspend fun isHealthThermometerFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(HealthThermometer.HTS_SERVICE)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_HTS, discoveredServices, session)) return false
         val bleHtsClient = session.fetchClient(HealthThermometer.HTS_SERVICE) as BleHtsClient? ?: return false
         return try { bleHtsClient.clientReady(true); true } catch (e: Throwable) { false }
     }
 
     private suspend fun isPolarDeviceTimeFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(BlePsFtpUtils.RFC77_PFTP_SERVICE)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_POLAR_DEVICE_TIME_SETUP, discoveredServices, session)) return false
         val blePsftpClient = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient? ?: return false
         return try { blePsftpClient.clientReady(true); true } catch (e: Throwable) { false }
     }
 
     private suspend fun isBatteryInfoFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(BleBattClient.BATTERY_SERVICE)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_BATTERY_INFO, discoveredServices, session)) return false
         val bleBattClient = session.fetchClient(BleBattClient.BATTERY_SERVICE) as BleBattClient? ?: return false
         return try { bleBattClient.clientReady(true); true } catch (e: Throwable) { false }
     }
 
     private suspend fun isDeviceInfoFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(BleDisClient.DIS_SERVICE)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_DEVICE_INFO, discoveredServices, session)) return false
         val bleDisClient = session.fetchClient(BleDisClient.DIS_SERVICE) as BleDisClient? ?: return false
         return try { bleDisClient.clientReady(true); true } catch (e: Throwable) { false }
     }
 
     private suspend fun isHeartRateFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(HR_SERVICE)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_HR, discoveredServices, session)) return false
         val bleHrClient = session.fetchClient(HR_SERVICE) as BleHrClient? ?: return false
         return try { bleHrClient.clientReady(true); true } catch (e: Throwable) { false }
     }
 
     private suspend fun isH10ExerciseFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(BlePsFtpUtils.RFC77_PFTP_SERVICE) || !isRecordingSupported(session.polarDeviceType)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_POLAR_H10_EXERCISE_RECORDING, discoveredServices, session)) return false
         val blePsftpClient = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient? ?: return false
         return try { blePsftpClient.clientReady(true); true } catch (e: Throwable) { false }
     }
 
     private fun isOfflineExerciseV2FeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        return getFileSystemType(session.polarDeviceType) == FileSystemType.H10_FILE_SYSTEM
+        return featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_EXERCISE_V2, discoveredServices, session)
     }
 
     private suspend fun isSdkModeFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(BlePMDClient.PMD_SERVICE)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_POLAR_SDK_MODE, discoveredServices, session)) return false
         val blePMDClient = session.fetchClient(BlePMDClient.PMD_SERVICE) as BlePMDClient? ?: return false
         return try {
             blePMDClient.clientReady(true)
@@ -3680,7 +3711,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     private suspend fun isOnlineStreamingAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(BlePMDClient.PMD_SERVICE)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_POLAR_ONLINE_STREAMING, discoveredServices, session)) return false
         val blePMDClient = session.fetchClient(BlePMDClient.PMD_SERVICE) as BlePMDClient? ?: return false
         return try {
             if (discoveredServices.contains(HR_SERVICE)) {
@@ -3692,18 +3723,18 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     private suspend fun isPsftpServiceAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(BlePsFtpUtils.RFC77_PFTP_SERVICE)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER, discoveredServices, session)) return false
         val blePsftpClient = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient? ?: return false
         return try { blePsftpClient.clientReady(true); true } catch (e: Throwable) { false }
     }
 
     private suspend fun deviceIsWatchAndPsftpIsEnabled(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (BlePolarDeviceCapabilitiesUtility.isDeviceSensor(session.polarDeviceType)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_WATCH_FACES_CONFIGURATION, discoveredServices, session)) return false
         return isPsftpServiceAvailable(discoveredServices, session)
     }
 
     private suspend fun isOfflineRecordingAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(BlePMDClient.PMD_SERVICE) || !discoveredServices.contains(BlePsFtpUtils.RFC77_PFTP_SERVICE)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING, discoveredServices, session)) return false
         val blePMDClient = session.fetchClient(BlePMDClient.PMD_SERVICE) as BlePMDClient? ?: return false
         val blePsftpClient = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient? ?: return false
         return try {
@@ -3714,7 +3745,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     private suspend fun isLedAnimationFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(BlePMDClient.PMD_SERVICE) || !discoveredServices.contains(BlePsFtpUtils.RFC77_PFTP_SERVICE)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_POLAR_LED_ANIMATION, discoveredServices, session)) return false
         val blePMDClient = session.fetchClient(BlePMDClient.PMD_SERVICE) as BlePMDClient? ?: return false
         val blePsftpClient = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient? ?: return false
         return try {
@@ -3725,19 +3756,19 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     private suspend fun isPolarFirmwareUpdateFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(BlePsFtpUtils.RFC77_PFTP_SERVICE) || !BlePolarDeviceCapabilitiesUtility.isFirmwareUpdateSupported(session.polarDeviceType)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE, discoveredServices, session)) return false
         val blePsftpClient = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient? ?: return false
         return try { blePsftpClient.clientReady(true); true } catch (e: Throwable) { false }
     }
 
     private suspend fun isActivityDataFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(BlePsFtpUtils.RFC77_PFTP_SERVICE) || !BlePolarDeviceCapabilitiesUtility.isActivityDataSupported(session.polarDeviceType)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_POLAR_ACTIVITY_DATA, discoveredServices, session)) return false
         val blePsftpClient = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient? ?: return false
         return try { blePsftpClient.clientReady(true); true } catch (e: Throwable) { false }
     }
 
     private suspend fun isPolarFeaturesConfigurationServiceFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
-        if (!discoveredServices.contains(PFC_SERVICE)) return false
+        if (!featureAvailabilityPreconditionsMet(PolarBleSdkFeature.FEATURE_POLAR_FEATURES_CONFIGURATION_SERVICE, discoveredServices, session)) return false
         val blePfcClient = session.fetchClient(PFC_SERVICE) as BlePfcClient? ?: return false
         return try { blePfcClient.clientReady(true); true } catch (e: Throwable) { false }
     }

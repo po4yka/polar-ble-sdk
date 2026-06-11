@@ -171,6 +171,37 @@ final class PolarDataUtilsTest: XCTestCase {
         XCTAssertEqual(PolarPmdMeasurementRuntimePlanner.availableHrServiceDataTypes(hasHrService: false), [])
     }
 
+    func testFeatureAvailabilityPreconditions_useSharedPlannerForServiceAndCapabilityGuards() throws {
+        XCTAssertTrue(
+            PolarFeatureAvailabilityRuntimePlanner.preconditionsMet(
+                featureName: "feature_polar_firmware_update",
+                discoveredServiceNames: ["PSFTP"],
+                capabilityNames: ["FIRMWARE_UPDATE"]
+            )
+        )
+        XCTAssertFalse(
+            PolarFeatureAvailabilityRuntimePlanner.preconditionsMet(
+                featureName: "feature_polar_firmware_update",
+                discoveredServiceNames: ["PSFTP"],
+                capabilityNames: []
+            )
+        )
+        XCTAssertFalse(
+            PolarFeatureAvailabilityRuntimePlanner.preconditionsMet(
+                featureName: "feature_polar_led_animation",
+                discoveredServiceNames: ["PMD"],
+                capabilityNames: []
+            )
+        )
+        XCTAssertTrue(
+            PolarFeatureAvailabilityRuntimePlanner.preconditionsMet(
+                featureName: "feature_polar_watch_faces_configuration",
+                discoveredServiceNames: ["PSFTP"],
+                capabilityNames: ["NOT_SENSOR"]
+            )
+        )
+    }
+
     // MARK: - mapToPmdSecret
 
     func testMapToPmdSecret_validKey_returnsAes128Secret() throws {

@@ -73,6 +73,7 @@ import com.polar.shared.sdk.PolarPpiStatusNames
 import com.polar.shared.sdk.PolarRestServiceModels
 import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
 import com.polar.shared.sdk.PolarSdLogTriggerName
+import com.polar.shared.sdk.PolarSdkFeatureAvailability
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepModels
 import com.polar.shared.sdk.PolarSleepRatingName
@@ -967,6 +968,14 @@ object PolarIosSharedBridge {
 
     fun availableHrServiceDataTypesCsv(hasHrService: Boolean): String {
         return PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService).joinToString(separator = ",")
+    }
+
+    fun featureAvailabilityPreconditionsMet(featureName: String, discoveredServiceNamesCsv: String, capabilityNamesCsv: String): Boolean {
+        return PolarSdkFeatureAvailability.preconditionsMet(
+            featureName = featureName,
+            discoveredServices = discoveredServiceNamesCsv.csvValues().toSet(),
+            capabilities = capabilityNamesCsv.csvValues().toSet()
+        )
     }
 
     fun pmdMeasurementTypeNameForPublicDataTypeName(publicDataTypeName: String): String? {

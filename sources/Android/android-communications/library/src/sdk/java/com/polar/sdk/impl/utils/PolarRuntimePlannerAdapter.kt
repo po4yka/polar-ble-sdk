@@ -30,6 +30,7 @@ import com.polar.shared.sdk.PolarKvtxScriptCodec
 import com.polar.shared.sdk.PolarOfflineRecordingFileEntry
 import com.polar.shared.sdk.PolarOfflineRecordingModels
 import com.polar.shared.sdk.PolarRestServiceModels
+import com.polar.shared.sdk.PolarSdkFeatureAvailability
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepModels
 import com.polar.shared.sdk.PolarSpo2Models
@@ -165,6 +166,18 @@ internal object PolarRuntimePlannerAdapter {
 
     fun availableHrServiceDataTypes(hasHrService: Boolean): Set<PolarDeviceDataType> {
         return PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService).mapToPolarDeviceDataTypes()
+    }
+
+    fun featureAvailabilityPreconditionsMet(
+        featureName: String,
+        discoveredServices: Set<String>,
+        capabilities: Set<String>
+    ): Boolean {
+        return PolarSdkFeatureAvailability.preconditionsMet(
+            featureName = featureName,
+            discoveredServices = discoveredServices,
+            capabilities = capabilities
+        )
     }
 
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {

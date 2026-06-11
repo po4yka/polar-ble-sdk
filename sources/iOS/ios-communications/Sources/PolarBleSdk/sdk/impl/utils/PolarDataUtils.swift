@@ -332,6 +332,73 @@ enum PolarPmdMeasurementRuntimePlanner {
     }
 }
 
+enum PolarFeatureAvailabilityRuntimePlanner {
+    static func preconditionsMet(featureName: String, discoveredServiceNames: Set<String>, capabilityNames: Set<String>) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.featureAvailabilityPreconditionsMet(
+            featureName: featureName,
+            discoveredServiceNamesCsv: discoveredServiceNames.joined(separator: ","),
+            capabilityNamesCsv: capabilityNames.joined(separator: ",")
+        )
+        #else
+        let preconditions = fallbackPreconditions(featureName: featureName)
+        return preconditions.services.isSubset(of: discoveredServiceNames) && preconditions.capabilities.isSubset(of: capabilityNames)
+        #endif
+    }
+
+    private static func fallbackPreconditions(featureName: String) -> (services: Set<String>, capabilities: Set<String>) {
+        switch normalizedFeatureName(featureName) {
+        case "FEATURE_HR":
+            return (["HR"], [])
+        case "FEATURE_DEVICE_INFO":
+            return (["DEVICE_INFO"], [])
+        case "FEATURE_BATTERY_INFO":
+            return (["BATTERY"], [])
+        case "FEATURE_POLAR_ONLINE_STREAMING":
+            return (["PMD"], [])
+        case "FEATURE_POLAR_OFFLINE_RECORDING":
+            return (["PMD", "PSFTP"], [])
+        case "FEATURE_POLAR_DEVICE_TIME_SETUP":
+            return (["PSFTP"], [])
+        case "FEATURE_POLAR_SDK_MODE":
+            return (["PMD"], [])
+        case "FEATURE_POLAR_H10_EXERCISE_RECORDING":
+            return (["PSFTP"], ["RECORDING"])
+        case "FEATURE_POLAR_OFFLINE_EXERCISE_V2":
+            return ([], ["H10_FILE_SYSTEM"])
+        case "FEATURE_POLAR_FILE_TRANSFER":
+            return (["PSFTP"], [])
+        case "FEATURE_HTS":
+            return (["HTS"], [])
+        case "FEATURE_POLAR_LED_ANIMATION":
+            return (["PMD", "PSFTP"], [])
+        case "FEATURE_POLAR_FIRMWARE_UPDATE":
+            return (["PSFTP"], ["FIRMWARE_UPDATE"])
+        case "FEATURE_POLAR_ACTIVITY_DATA", "FEATURE_POLAR_SLEEP_DATA", "FEATURE_POLAR_TEMPERATURE_DATA":
+            return (["PSFTP"], ["ACTIVITY_DATA"])
+        case "FEATURE_POLAR_TRAINING_DATA", "FEATURE_POLAR_DEVICE_CONTROL", "FEATURE_POLAR_SPO2_TEST_DATA":
+            return (["PSFTP"], [])
+        case "FEATURE_POLAR_FEATURES_CONFIGURATION_SERVICE":
+            return (["PFC"], [])
+        case "FEATURE_WATCH_FACES_CONFIGURATION":
+            return (["PSFTP"], ["NOT_SENSOR"])
+        default:
+            return ([], [])
+        }
+    }
+
+    private static func normalizedFeatureName(_ featureName: String) -> String {
+        var normalized = featureName.uppercased()
+        if normalized.hasPrefix("FEATURE_") == false {
+            normalized = "FEATURE_\(normalized)"
+        }
+        if normalized == "FEATURE_POLAR_WATCH_FACES_CONFIGURATION" {
+            normalized = "FEATURE_WATCH_FACES_CONFIGURATION"
+        }
+        return normalized
+    }
+}
+
 internal extension PmdSetting {
     func mapToPolarSettings() -> PolarSensorSetting {
         var settings: [PolarSensorSetting.SettingType : Set<UInt32>] = [:]

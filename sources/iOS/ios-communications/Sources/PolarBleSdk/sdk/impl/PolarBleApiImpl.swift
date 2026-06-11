@@ -333,8 +333,39 @@ import UIKit
         return session.fetchGattClient(HealthThermometer.HTS_SERVICE) as? BleHtsClient != nil
     }
 
+    private func featureAvailabilityPreconditionsMet(featureName: String, _ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
+        return PolarFeatureAvailabilityRuntimePlanner.preconditionsMet(
+            featureName: featureName,
+            discoveredServiceNames: sharedFeatureServiceNames(discoveredServices),
+            capabilityNames: sharedFeatureCapabilityNames(session)
+        )
+    }
+
+    private func sharedFeatureServiceNames(_ discoveredServices: [CBUUID]) -> Set<String> {
+        var names = Set<String>()
+        if discoveredServices.contains(BleHrClient.HR_SERVICE) { names.insert("HR") }
+        if discoveredServices.contains(BleDisClient.DIS_SERVICE) { names.insert("DEVICE_INFO") }
+        if discoveredServices.contains(BleBasClient.BATTERY_SERVICE) { names.insert("BATTERY") }
+        if discoveredServices.contains(BlePmdClient.PMD_SERVICE) { names.insert("PMD") }
+        if discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) { names.insert("PSFTP") }
+        if discoveredServices.contains(HealthThermometer.HTS_SERVICE) { names.insert("HTS") }
+        if discoveredServices.contains(BlePfcClient.PFC_SERVICE) { names.insert("PFC") }
+        return names
+    }
+
+    private func sharedFeatureCapabilityNames(_ session: BleDeviceSession) -> Set<String> {
+        let deviceType = session.advertisementContent.polarDeviceType
+        var names = Set<String>()
+        if BlePolarDeviceCapabilitiesUtility.isRecordingSupported(deviceType) { names.insert("RECORDING") }
+        if BlePolarDeviceCapabilitiesUtility.isActivityDataSupported(deviceType) { names.insert("ACTIVITY_DATA") }
+        if BlePolarDeviceCapabilitiesUtility.isFirmwareUpdateSupported(deviceType) { names.insert("FIRMWARE_UPDATE") }
+        if BlePolarDeviceCapabilitiesUtility.fileSystemType(deviceType) == .h10FileSystem { names.insert("H10_FILE_SYSTEM") }
+        if !BlePolarDeviceCapabilitiesUtility.isDeviceSensor(deviceType) { names.insert("NOT_SENSOR") }
+        return names
+    }
+
     private func isHeartRateFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BleHrClient.HR_SERVICE) && hasHrClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_hr", session, discoveredServices) && hasHrClient(session)
     }
 
     private func isHeartRateFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
@@ -346,7 +377,7 @@ import UIKit
     }
 
     private func isDeviceInfoFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BleDisClient.DIS_SERVICE) && hasDisClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_device_info", session, discoveredServices) && hasDisClient(session)
     }
 
     private func isDeviceInfoFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
@@ -354,7 +385,7 @@ import UIKit
     }
 
     private func isBatteryInfoFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BleBasClient.BATTERY_SERVICE) && hasBasClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_battery_info", session, discoveredServices) && hasBasClient(session)
     }
 
     private func isBatteryInfoFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
@@ -416,8 +447,7 @@ import UIKit
     }
 
     private func isOfflineRecordingFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePmdClient.PMD_SERVICE) &&
-               discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) &&
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_offline_recording", session, discoveredServices) &&
                hasPmdClient(session) &&
                hasPsFtpClient(session)
     }
@@ -433,7 +463,7 @@ import UIKit
     }
 
     private func isH10ExerciseFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) &&
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_h10_exercise_recording", session, discoveredServices) &&
                hasPsFtpClient(session) &&
                BlePolarDeviceCapabilitiesUtility.isRecordingSupported(session.advertisementContent.polarDeviceType)
     }
@@ -468,7 +498,7 @@ import UIKit
     }
 
     private func isPolarDeviceTimeFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) && hasPsFtpClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_device_time_setup", session, discoveredServices) && hasPsFtpClient(session)
     }
 
     private func isPolarDeviceTimeFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
@@ -477,7 +507,7 @@ import UIKit
     }
 
     private func isSdkModeFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePmdClient.PMD_SERVICE) && hasPmdClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_sdk_mode", session, discoveredServices) && hasPmdClient(session)
     }
 
     private func isSdkModeFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
@@ -485,8 +515,7 @@ import UIKit
     }
 
     private func isLedAnimationFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePmdClient.PMD_SERVICE) &&
-               discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) &&
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_led_animation", session, discoveredServices) &&
                hasPmdClient(session) &&
                hasPsFtpClient(session)
     }
@@ -502,7 +531,7 @@ import UIKit
     }
 
     private func isPolarActivityDataFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) &&
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_activity_data", session, discoveredServices) &&
                hasPsFtpClient(session) &&
                BlePolarDeviceCapabilitiesUtility.isActivityDataSupported(session.advertisementContent.polarDeviceType)
     }
@@ -516,7 +545,7 @@ import UIKit
     }
 
     private func isPolarTrainingDataFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) && hasPsFtpClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_training_data", session, discoveredServices) && hasPsFtpClient(session)
     }
 
     private func isPolarTrainingDataFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
@@ -524,7 +553,7 @@ import UIKit
     }
 
     private func isPolarSleepFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) &&
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_sleep_data", session, discoveredServices) &&
                hasPsFtpClient(session) &&
                BlePolarDeviceCapabilitiesUtility.isActivityDataSupported(session.advertisementContent.polarDeviceType)
     }
@@ -534,7 +563,7 @@ import UIKit
     }
 
     private func isPolarDeviceControlFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) && hasPsFtpClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_device_control", session, discoveredServices) && hasPsFtpClient(session)
     }
 
     private func isPolarDeviceControlFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
@@ -542,7 +571,7 @@ import UIKit
     }
 
     private func isPolarFileTransferFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) && hasPsFtpClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_file_transfer", session, discoveredServices) && hasPsFtpClient(session)
     }
 
     private func isPolarFileTransferFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
@@ -550,7 +579,7 @@ import UIKit
     }
 
     private func isHtsFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(HealthThermometer.HTS_SERVICE) && hasHtsClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_hts", session, discoveredServices) && hasHtsClient(session)
     }
 
     private func isHtsFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
@@ -562,7 +591,7 @@ import UIKit
     }
 
     private func isPolarTemperatureDataFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) &&
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_temperature_data", session, discoveredServices) &&
                hasPsFtpClient(session) &&
                BlePolarDeviceCapabilitiesUtility.isActivityDataSupported(session.advertisementContent.polarDeviceType)
     }
@@ -572,7 +601,7 @@ import UIKit
     }
 
     private func isPolarFirmwareUpdateFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) &&
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_firmware_update", session, discoveredServices) &&
                hasPsFtpClient(session) &&
                BlePolarDeviceCapabilitiesUtility.isFirmwareUpdateSupported(session.advertisementContent.polarDeviceType)
     }
@@ -582,7 +611,7 @@ import UIKit
     }
 
     private func isFeatureConfigurationServiceFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePfcClient.PFC_SERVICE) && hasPfcClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_features_configuration_service", session, discoveredServices) && hasPfcClient(session)
     }
 
     private func isFeatureConfigurationServiceFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
@@ -594,7 +623,7 @@ import UIKit
     }
 
     private func isPolarSpo2TestDataFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        return discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) && hasPsFtpClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_spo2_test_data", session, discoveredServices) && hasPsFtpClient(session)
     }
 
     private func isPolarSpo2TestDataFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
@@ -602,10 +631,7 @@ import UIKit
     }
 
     private func isWatchFacesConfigurationFeatureAvailable(_ session: BleDeviceSession, _ discoveredServices: [CBUUID]) -> Bool {
-        guard !BlePolarDeviceCapabilitiesUtility.isDeviceSensor(session.advertisementContent.polarDeviceType) else {
-            return false
-        }
-        return discoveredServices.contains(BlePsFtpClient.PSFTP_SERVICE) && hasPsFtpClient(session)
+        return featureAvailabilityPreconditionsMet(featureName: "feature_polar_watch_faces_configuration", session, discoveredServices) && hasPsFtpClient(session)
     }
 
     private func isWatchFacesConfigurationFeatureReady(_ session: BleDeviceSession) -> AnyPublisher<FeatureState, Never> {
