@@ -28,6 +28,7 @@ import com.polar.shared.sdk.PolarTrainingReadinessName
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarUserDeviceSettingsFields
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
+import com.polar.shared.sdk.PolarUserDeviceSettingsTimestamp
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
 import com.polar.sdk.api.model.restapi.PolarDeviceRestApiServiceDescription
 import com.polar.sdk.api.model.restapi.PolarDeviceRestApiServices
@@ -71,6 +72,7 @@ internal object PolarSdkModelAdapter {
         val automaticTrainingDetectionMode: String?,
         val automaticTrainingDetectionSensitivity: Int?,
         val minimumTrainingDurationSeconds: Int?,
+        val telemetryEnabled: Boolean?,
         val autosFilesEnabled: Boolean?
     )
     data class PlannedSkinTemperatureSample(
@@ -217,7 +219,20 @@ internal object PolarSdkModelAdapter {
             automaticTrainingDetectionMode = shared.automaticTrainingDetectionMode,
             automaticTrainingDetectionSensitivity = shared.automaticTrainingDetectionSensitivity,
             minimumTrainingDurationSeconds = shared.minimumTrainingDurationSeconds,
+            telemetryEnabled = shared.telemetryEnabled,
             autosFilesEnabled = shared.autosFilesEnabled
+        )
+    }
+
+    fun parseUserDeviceSettingsBytes(bytes: ByteArray): PlannedUserDeviceSettingsFields {
+        return PolarUserDeviceSettingsModels.parseProtoBytes(bytes).toPlanned()
+    }
+
+    fun buildUserDeviceSettingsBytes(model: PlannedUserDeviceSettingsFields, timestamp: PolarUserDeviceSettingsTimestamp, includeTelemetry: Boolean): ByteArray {
+        return PolarUserDeviceSettingsModels.buildProtoBytes(
+            model = model.toShared(),
+            timestamp = timestamp,
+            includeTelemetry = includeTelemetry
         )
     }
 
@@ -387,6 +402,18 @@ internal object PolarSdkModelAdapter {
 
     private fun PlannedUserDeviceSettingsFields.toShared(): PolarUserDeviceSettingsFields {
         return PolarUserDeviceSettingsFields(
+            deviceLocation = deviceLocation,
+            usbConnectionMode = usbConnectionMode,
+            automaticTrainingDetectionMode = automaticTrainingDetectionMode,
+            automaticTrainingDetectionSensitivity = automaticTrainingDetectionSensitivity,
+            minimumTrainingDurationSeconds = minimumTrainingDurationSeconds,
+            telemetryEnabled = telemetryEnabled,
+            autosFilesEnabled = autosFilesEnabled
+        )
+    }
+
+    private fun PolarUserDeviceSettingsFields.toPlanned(): PlannedUserDeviceSettingsFields {
+        return PlannedUserDeviceSettingsFields(
             deviceLocation = deviceLocation,
             usbConnectionMode = usbConnectionMode,
             automaticTrainingDetectionMode = automaticTrainingDetectionMode,

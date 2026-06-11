@@ -1,5 +1,7 @@
 package com.polar.sdk.api.model
 
+import com.polar.shared.sdk.PolarUserDeviceSettingsTimestamp
+import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -108,6 +110,44 @@ class PolarSdkModelAdapterTest {
         assertEquals(0, PolarSdkModelAdapter.userDeviceSettingsAutomaticTrainingDetectionModeValue(serialized.automaticTrainingDetectionMode!!))
         assertEquals("ALWAYS_ON", PolarSdkModelAdapter.userDeviceSettingsAutomaticMeasurementStateName(true))
         assertEquals(fields, parsed)
+    }
+
+    @Test
+    fun `user device settings protobuf bytes route through shared sdk model adapter`() {
+        val fields = PolarSdkModelAdapter.userDeviceSettingsFields(
+            deviceLocation = 2,
+            usbConnectionMode = true,
+            automaticTrainingDetectionMode = true,
+            automaticTrainingDetectionSensitivity = 75,
+            minimumTrainingDurationSeconds = 300,
+            telemetryEnabled = true,
+            autosFilesEnabled = true
+        )
+        val timestamp = PolarUserDeviceSettingsTimestamp(
+            year = 2026,
+            month = 5,
+            day = 28,
+            hour = 12,
+            minute = 0,
+            seconds = 0,
+            millis = 0,
+            trusted = true
+        )
+
+        val sharedBytes = PolarSdkModelAdapter.buildUserDeviceSettingsBytes(fields, timestamp, includeTelemetry = true)
+        val generated = PbUserDeviceSettings.parseFrom(sharedBytes)
+        val parsed = PolarSdkModelAdapter.parseUserDeviceSettingsBytes(sharedBytes)
+        val legacyAndroidBytes = PolarSdkModelAdapter.buildUserDeviceSettingsBytes(fields, timestamp, includeTelemetry = false)
+        val legacyAndroidGenerated = PbUserDeviceSettings.parseFrom(legacyAndroidBytes)
+
+        assertEquals(fields, parsed)
+        assertEquals(2, generated.generalSettings.deviceLocation.number)
+        assertEquals("ON", generated.usbConnectionSettings.mode.name)
+        assertEquals("ON", generated.automaticMeasurementSettings.automaticTrainingDetectionSettings.state.name)
+        assertEquals(75, generated.automaticMeasurementSettings.automaticTrainingDetectionSettings.sensitivity)
+        assertEquals(300, generated.automaticMeasurementSettings.automaticTrainingDetectionSettings.minimumTrainingDurationSeconds)
+        assertEquals(true, generated.telemetrySettings.telemetryEnabled)
+        assertEquals(false, legacyAndroidGenerated.hasTelemetrySettings())
     }
 
     @Test

@@ -1,12 +1,6 @@
 package com.polar.sdk.api.model
 
-import fi.polar.remote.representation.protobuf.Types.PbSystemDateTime
-import fi.polar.remote.representation.protobuf.Types.PbDate
-import fi.polar.remote.representation.protobuf.Types.PbTime
-import fi.polar.remote.representation.protobuf.Types.PbDeviceLocation
-import fi.polar.remote.representation.protobuf.UserDeviceSettings
-import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbAutomaticMeasurementSettings
-import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceGeneralSettings
+import com.polar.shared.sdk.PolarUserDeviceSettingsTimestamp
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceSettings
 import java.time.ZonedDateTime
 import java.time.ZoneId
@@ -56,104 +50,17 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
     }
 
     fun toProto(): PbUserDeviceSettings {
-        val serialized = PolarSdkModelAdapter.serializeUserDeviceSettingsFields(sharedFields)
-        val pbSettingsWithDeviceLocation = PbUserDeviceGeneralSettings.newBuilder()
-            .setDeviceLocation(serialized.deviceLocation?.let { PbDeviceLocation.forNumber(it) })
-
-        val pbUsbConnectionSettings = UserDeviceSettings.PbUsbConnectionSettings.newBuilder()
-        serialized.usbConnectionMode?.let {
-            val sharedModeValue = requireNotNull(PolarSdkModelAdapter.userDeviceSettingsUsbConnectionModeValue(it)) {
-                "Unknown USB connection mode $it"
-            }
-            val sharedMode = requireNotNull(UserDeviceSettings.PbUsbConnectionSettings.PbUsbConnectionMode.forNumber(sharedModeValue)) {
-                "Unknown USB connection mode value $sharedModeValue"
-            }
-            pbUsbConnectionSettings.setMode(sharedMode)
-        }
-
-        val pbAutomaticTrainingDetectionSettings = UserDeviceSettings.PbAutomaticTrainingDetectionSettings.newBuilder()
-        val pbUserAutomaticMeasurementSettings = UserDeviceSettings.PbUserAutomaticMeasurementSettings.newBuilder()
-
-        serialized.automaticTrainingDetectionMode?.let {
-            val sharedStateValue = requireNotNull(PolarSdkModelAdapter.userDeviceSettingsAutomaticTrainingDetectionModeValue(it)) {
-                "Unknown automatic training detection mode $it"
-            }
-            val sharedState = requireNotNull(UserDeviceSettings.PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.forNumber(sharedStateValue)) {
-                "Unknown automatic training detection mode value $sharedStateValue"
-            }
-            pbAutomaticTrainingDetectionSettings.setState(sharedState)
-        }
-
-        serialized.automaticTrainingDetectionSensitivity?.let {
-            pbAutomaticTrainingDetectionSettings.setSensitivity(it)
-        }
-
-        serialized.minimumTrainingDurationSeconds?.let {
-            pbAutomaticTrainingDetectionSettings.setMinimumTrainingDurationSeconds(it)
-        }
-
-        serialized.autosFilesEnabled?.let {
-            val sharedState = PolarSdkModelAdapter.userDeviceSettingsAutomaticMeasurementStateName(it)
-            val automaticMeasurementState = UserDeviceSettings.PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.valueOf(sharedState)
-            pbUserAutomaticMeasurementSettings.setAutomaticOhrMeasurement(
-                PbAutomaticMeasurementSettings.newBuilder()
-                    .setState(automaticMeasurementState)
+        return PbUserDeviceSettings.parseFrom(
+            PolarSdkModelAdapter.buildUserDeviceSettingsBytes(
+                model = sharedFields,
+                timestamp = createSharedTimeStamp(),
+                includeTelemetry = false
             )
-        }
-
-        return PbUserDeviceSettings.newBuilder()
-            .setGeneralSettings(pbSettingsWithDeviceLocation.build())
-            .setUsbConnectionSettings(pbUsbConnectionSettings.build())
-            .setAutomaticMeasurementSettings(
-                pbUserAutomaticMeasurementSettings.setAutomaticTrainingDetectionSettings(pbAutomaticTrainingDetectionSettings.build()).build()
-            )
-            .setLastModified(createTimeStamp())
-            .build()
+        )
     }
 
     fun fromBytes(bytes: ByteArray): PolarUserDeviceSettings {
-        val proto = PbUserDeviceSettings.parseFrom(bytes)
-        val automaticTrainingDetectionSettings = if (proto.hasAutomaticMeasurementSettings() && proto.automaticMeasurementSettings.hasAutomaticTrainingDetectionSettings()) {
-            proto.automaticMeasurementSettings.automaticTrainingDetectionSettings
-        } else {
-            null
-        }
-        val shared = PolarSdkModelAdapter.parseUserDeviceSettingsFields(
-            deviceLocation = if (proto.hasGeneralSettings() && proto.generalSettings.hasDeviceLocation()) {
-                proto.generalSettings.deviceLocation.number
-            } else {
-                null
-            },
-            usbConnectionMode = if (proto.hasUsbConnectionSettings() && proto.usbConnectionSettings.hasMode()) {
-                proto.usbConnectionSettings.mode.name
-            } else {
-                null
-            },
-            automaticTrainingDetectionMode = automaticTrainingDetectionSettings?.state?.name,
-            automaticTrainingDetectionSensitivity = if (automaticTrainingDetectionSettings?.hasSensitivity() == true) {
-                automaticTrainingDetectionSettings.sensitivity
-            } else {
-                null
-            },
-            minimumTrainingDurationSeconds = if (automaticTrainingDetectionSettings?.hasMinimumTrainingDurationSeconds() == true) {
-                automaticTrainingDetectionSettings.minimumTrainingDurationSeconds
-            } else {
-                null
-            },
-            telemetryEnabled = if (proto.hasTelemetrySettings() && proto.telemetrySettings.hasTelemetryEnabled()) {
-                proto.telemetrySettings.telemetryEnabled
-            } else {
-                null
-            },
-            autosFilesEnabled = if (proto.hasAutomaticMeasurementSettings() &&
-                proto.automaticMeasurementSettings.hasAutomaticOhrMeasurement() &&
-                proto.automaticMeasurementSettings.automaticOhrMeasurement.hasState()
-            ) {
-                proto.automaticMeasurementSettings.automaticOhrMeasurement.state != PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF
-            } else {
-                null
-            }
-        )
+        val shared = PolarSdkModelAdapter.parseUserDeviceSettingsBytes(bytes)
 
         return PolarUserDeviceSettings(
             deviceLocation = shared.deviceLocation,
@@ -167,25 +74,16 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
     }
 }
 
-private fun createTimeStamp(): PbSystemDateTime {
-
-    val builder = PbSystemDateTime.newBuilder()
-    val date = PbDate.newBuilder()
-    val time = PbTime.newBuilder()
-
+private fun createSharedTimeStamp(): PolarUserDeviceSettingsTimestamp {
     val utcTime = ZonedDateTime.now(ZoneId.of("UTC"))
-
-    date.day = utcTime.dayOfMonth
-    date.month = utcTime.monthValue
-    date.year = utcTime.year
-
-    time.hour = utcTime.hour
-    time.minute = utcTime.minute
-    time.seconds = utcTime.second
-    time.millis = utcTime.nano / 1_000_000
-
-    builder.setDate(date)
-    builder.setTime(time)
-    builder.trusted = true
-    return builder.build()
+    return PolarUserDeviceSettingsTimestamp(
+        year = utcTime.year,
+        month = utcTime.monthValue,
+        day = utcTime.dayOfMonth,
+        hour = utcTime.hour,
+        minute = utcTime.minute,
+        seconds = utcTime.second,
+        millis = utcTime.nano / 1_000_000,
+        trusted = true
+    )
 }

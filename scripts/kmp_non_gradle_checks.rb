@@ -289,7 +289,7 @@ SHARED_COMMON_PRODUCTION_CODEC_DEPENDENCY_TERMS = [
 BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   "KmpFullCoverageTddBacklog.md" => [
     "add real common protobuf/gzip production dependencies",
-    "User-device-settings protobuf parsing/building remains platform-owned until a common protobuf dependency and cross-platform default/error policy are introduced deliberately.",
+    "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android consumption",
     "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
     "shared-common-aes-production-decryption",
     "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
@@ -299,17 +299,17 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   "KmpCoverageInventory.md" => [
     "REST event compressed payload decoding now uses shared KMP platform actual codecs while generic iOS `Data.deflated`/`Data.inflated` remains platform-specific.",
     "linked iOS `PolarRestServiceProjectionPlanner` now consume shared REST JSON parsing",
-    "User-device-settings protobuf parsing/building remains platform-owned until a common protobuf dependency and cross-platform default/error policy are introduced deliberately.",
+    "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android consumption",
     "Keep iOS nil-on-truncation compatibility adapter-owned if required while common parsing uses typed malformed-script errors.",
     "semantic and codec-ownership/readiness policy executable"
   ],
   "KmpPreMigrationRemainingWork.md" => [
-    "Add real common protobuf dependencies",
-    "user-device-settings protobuf parsing/building",
+    "Add real common protobuf/gzip dependencies",
+    "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android consumption",
     "training-session payload parsing",
     "PMD AES ECB/no-padding decryption now lives in shared common production code",
     "watch-face FlatBuffer input/output construction lives in shared common production code",
-    "training-session and user-device-settings deferral artifacts"
+    "training-session deferral artifacts"
   ],
   "payload-read-policy.json" => [
     "byteLevelParserGate",
@@ -334,9 +334,6 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "byte-level-parser-dependency-gate",
     "protobuf-gzip-byte-decoding-deferral",
     "real byte-level protobuf/gzip decoding remains deferred until common production parser dependencies exist and are compile-verified"
-  ],
-  "settings-model-readiness.json" => [
-    "protobuf-byte-ownership-deferral"
   ],
   "secret-readiness.json" => [
     "AES block-alignment gating",

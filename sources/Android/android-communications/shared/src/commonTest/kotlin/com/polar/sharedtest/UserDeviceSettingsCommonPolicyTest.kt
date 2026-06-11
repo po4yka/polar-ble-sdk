@@ -3,6 +3,7 @@ package com.polar.sharedtest
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import com.polar.shared.sdk.PolarUserDeviceSettingsFields
 import com.polar.shared.sdk.PolarSerializedUserDeviceSettingsFields
+import com.polar.shared.sdk.PolarUserDeviceSettingsTimestamp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -56,6 +57,38 @@ class UserDeviceSettingsCommonPolicyTest {
         assertEquals(listOf("com.polar.sdk.api.model.PolarUserDeviceSettingsTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarUserDeviceSettingsUtilsTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.UserDeviceSettingsCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
+    }
+
+    @Test
+    fun userDeviceSettingsCommonProtoCodecPreservesMappedFieldPresence() {
+        val timestamp = PolarUserDeviceSettingsTimestamp(
+            year = 2026,
+            month = 5,
+            day = 28,
+            hour = 12,
+            minute = 0,
+            seconds = 0,
+            millis = 0,
+            trusted = true
+        )
+        val fullModel = PolarUserDeviceSettingsFields(
+            deviceLocation = 2,
+            usbConnectionMode = true,
+            automaticTrainingDetectionMode = true,
+            automaticTrainingDetectionSensitivity = 75,
+            minimumTrainingDurationSeconds = 300,
+            telemetryEnabled = true,
+            autosFilesEnabled = true
+        )
+        val fullBytes = PolarUserDeviceSettingsModels.buildProtoBytes(fullModel, timestamp)
+        assertEquals(fullModel, PolarUserDeviceSettingsModels.parseProtoBytes(fullBytes))
+
+        val minimalModel = PolarUserDeviceSettingsFields(deviceLocation = 5)
+        val minimalBytes = PolarUserDeviceSettingsModels.buildProtoBytes(minimalModel, timestamp)
+        assertEquals(minimalModel, PolarUserDeviceSettingsModels.parseProtoBytes(minimalBytes))
+
+        val noTelemetryBytes = PolarUserDeviceSettingsModels.buildProtoBytes(fullModel, timestamp, includeTelemetry = false)
+        assertEquals(fullModel.copy(telemetryEnabled = null), PolarUserDeviceSettingsModels.parseProtoBytes(noTelemetryBytes))
     }
 
     private fun parseSettings(proto: String): PolarUserDeviceSettingsFields {
@@ -216,7 +249,7 @@ class UserDeviceSettingsCommonPolicyTest {
             "encoder-owned-trusted-last-modified",
             "explicit-telemetry-write-policy",
             "platform-default-divergence",
-            "protobuf-byte-ownership-deferral",
+            "mapped-protobuf-byte-codec",
             "platform-user-device-settings-vector-references",
             "compile-verification-gate"
         )
