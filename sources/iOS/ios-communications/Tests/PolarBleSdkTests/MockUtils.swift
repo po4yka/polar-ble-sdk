@@ -351,6 +351,7 @@ class MockHrBroadcastBleApiImpl {
     }
 
     private let channel = SessionChannel()
+    var streamCancellationCount = 0
 
     init(mockDeviceSession: MockBleDeviceSession) {}
 
@@ -369,7 +370,7 @@ class MockHrBroadcastBleApiImpl {
 
     func startListenForPolarHrBroadcasts(_ identifiers: Set<String>?) -> AsyncThrowingStream<PolarHrBroadcastData, Error> {
         AsyncThrowingStream { continuation in
-            Task { [channel] in
+            let task = Task { [channel] in
                 do {
                     while let session = try await channel.next() {
                         let hasSAGRFCFileSystem = BlePolarDeviceCapabilitiesUtility.fileSystemType(
@@ -391,6 +392,11 @@ class MockHrBroadcastBleApiImpl {
                 } catch {
                     continuation.finish(throwing: error)
                 }
+            }
+            continuation.onTermination = { [weak self, channel] _ in
+                self?.streamCancellationCount += 1
+                task.cancel()
+                Task { await channel.finish() }
             }
         }
     }

@@ -5017,6 +5017,25 @@ final class PolarBleApiImplTests: XCTestCase {
         wait(for: [exp], timeout: 2)
     }
 
+    func test_startListenForPolarHrBroadcasts_cancellationTerminatesSearchStream() {
+        hrBroadcastApi = MockHrBroadcastBleApiImpl(mockDeviceSession: v2MockSession)
+        let received = XCTestExpectation(description: "received")
+        let task = Task {
+            for try await _ in hrBroadcastApi.startListenForPolarHrBroadcasts(nil) {
+                received.fulfill()
+            }
+        }
+
+        hrBroadcastApi.searchSubject.send(makeHrSession(deviceIdUntouched: "AAAA0001"))
+        wait(for: [received], timeout: 2)
+        task.cancel()
+
+        let cancelled = XCTestExpectation(description: "cancelled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { cancelled.fulfill() }
+        wait(for: [cancelled], timeout: 1)
+        XCTAssertEqual(hrBroadcastApi.streamCancellationCount, 1)
+    }
+
     // MARK: - PMD helpers (shared by requestStreamSettings / requestFullStreamSettings /
     //         requestOfflineRecordingSettings / requestFullOfflineRecordingSettings /
     //         getAvailableOfflineRecordingDataTypes / getOfflineRecordingStatus)
