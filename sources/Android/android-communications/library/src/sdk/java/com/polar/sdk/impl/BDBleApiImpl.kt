@@ -139,7 +139,6 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.TimeUnit
-import java.util.zip.ZipInputStream
 import fi.polar.remote.representation.protobuf.Structures
 import com.polar.sdk.impl.utils.PolarFileUtils
 import com.polar.sdk.impl.utils.PolarFileUtils.pFtpWriteOperation
@@ -2498,36 +2497,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     private fun parseFirmwareZip(bytes: ByteArray): List<Pair<String, ByteArray>> {
-        val firmwareFiles = mutableListOf<Pair<String, ByteArray>>()
-        val zipInputStream = ZipInputStream(ByteArrayInputStream(bytes))
-        val buffer = ByteArray(PolarFirmwareUpdateUtils.BUFFER_SIZE)
-        while (true) {
-            val entry = zipInputStream.nextEntry ?: break
-            val entryFileName = entry.name
-            if (!PolarRuntimePlannerAdapter.firmwarePackageEntryIsPayload(entryFileName)) {
-                BleLogger.d(TAG, "Skipping file $entryFileName")
-                zipInputStream.closeEntry()
-                continue
-            }
-
-            val byteArrayOutputStream = ByteArrayOutputStream()
-            var length: Int
-            while (zipInputStream.read(buffer).also { length = it } != -1) {
-                byteArrayOutputStream.write(buffer, 0, length)
-            }
-            val fileName = entry.name
-            BleLogger.d(TAG, "Extracted firmware file: $fileName")
-            firmwareFiles.add(Pair(fileName, byteArrayOutputStream.toByteArray()))
-            zipInputStream.closeEntry()
-        }
-        zipInputStream.close()
-
-        val orderedFirmwareNames = PolarRuntimePlannerAdapter.firmwarePayloadFileNames(firmwareFiles.map { it.first })
-        val remainingFirmwareFiles = firmwareFiles.toMutableList()
-        return orderedFirmwareNames.mapNotNull { fileName ->
-            val index = remainingFirmwareFiles.indexOfFirst { it.first == fileName }
-            if (index >= 0) remainingFirmwareFiles.removeAt(index) else null
-        }
+        return PolarFirmwareUpdateUtils.extractFirmwarePackagePayloads(bytes)
     }
 
     private suspend fun writeFirmwareToDevice(collector: FlowCollector<FirmwareUpdateStatus>,

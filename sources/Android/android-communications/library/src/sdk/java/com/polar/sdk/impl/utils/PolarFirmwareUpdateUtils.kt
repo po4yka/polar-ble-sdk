@@ -49,6 +49,7 @@ internal object PolarFirmwareUpdateUtils {
     }
 
     fun unzipFirmwarePackage(zipBytes: ByteArray): ByteArray {
+        extractFirmwarePackagePayloads(zipBytes).firstOrNull()?.let { return it.second }
         try {
             val byteArrayInputStream = ByteArrayInputStream(zipBytes)
             val zipInputStream = ZipInputStream(byteArrayInputStream)
@@ -69,6 +70,38 @@ internal object PolarFirmwareUpdateUtils {
         } catch (e: Exception) {
             BleLogger.e(TAG, "Failed to unzip firmware package: $e")
             throw e
+        }
+    }
+
+    fun extractFirmwarePackagePayloads(zipBytes: ByteArray): List<Pair<String, ByteArray>> {
+        val firmwareFiles = mutableListOf<Pair<String, ByteArray>>()
+        val buffer = ByteArray(BUFFER_SIZE)
+        ZipInputStream(ByteArrayInputStream(zipBytes)).use { zipInputStream ->
+            while (true) {
+                val entry = zipInputStream.nextEntry ?: break
+                val entryFileName = entry.name
+                if (!PolarRuntimePlannerAdapter.firmwarePackageEntryIsPayload(entryFileName)) {
+                    BleLogger.d(TAG, "Skipping firmware package entry $entryFileName")
+                    zipInputStream.closeEntry()
+                    continue
+                }
+
+                val byteArrayOutputStream = ByteArrayOutputStream()
+                var length: Int
+                while (zipInputStream.read(buffer).also { length = it } != -1) {
+                    byteArrayOutputStream.write(buffer, 0, length)
+                }
+                BleLogger.d(TAG, "Extracted firmware package payload: $entryFileName")
+                firmwareFiles.add(entryFileName to byteArrayOutputStream.toByteArray())
+                zipInputStream.closeEntry()
+            }
+        }
+
+        val orderedFirmwareNames = PolarRuntimePlannerAdapter.firmwarePayloadFileNames(firmwareFiles.map { it.first })
+        val remainingFirmwareFiles = firmwareFiles.toMutableList()
+        return orderedFirmwareNames.mapNotNull { fileName ->
+            val index = remainingFirmwareFiles.indexOfFirst { it.first == fileName }
+            if (index >= 0) remainingFirmwareFiles.removeAt(index) else null
         }
     }
 
