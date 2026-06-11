@@ -4604,11 +4604,15 @@ final class PolarBleApiImplTests: XCTestCase {
         searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
         var receivedError: Error?
         let exp = XCTestExpectation(description: "error")
+        let expected = NSError(domain: "test", code: 99)
         searchApi.searchForDevice(withRequiredDeviceNamePrefix: nil)
             .sink(receiveCompletion: { if case .failure(let e) = $0 { receivedError = e }; exp.fulfill() },
                   receiveValue: { _ in }).store(in: &cancellables)
-        searchApi.searchSubject.send(completion: .failure(NSError(domain: "test", code: 99)))
-        wait(for: [exp], timeout: 2); XCTAssertNotNil(receivedError)
+        searchApi.searchSubject.send(completion: .failure(expected))
+        wait(for: [exp], timeout: 2)
+        let error = receivedError as NSError?
+        XCTAssertEqual(error?.domain, expected.domain)
+        XCTAssertEqual(error?.code, expected.code)
     }
 
     func test_searchForDevice_completesWhenSubjectCompletes() {
@@ -4998,12 +5002,16 @@ final class PolarBleApiImplTests: XCTestCase {
     func test_startListenForPolarHrBroadcasts_errorFromSource_propagatesError() {
         hrBroadcastApi = MockHrBroadcastBleApiImpl(mockDeviceSession: v2MockSession)
         var receivedError: Error?; let exp = XCTestExpectation(description: "error")
+        let expected = NSError(domain: "test", code: 5)
         Task {
             do { for try await _ in hrBroadcastApi.startListenForPolarHrBroadcasts(nil) {} }
             catch { receivedError = error; exp.fulfill() }
         }
-        hrBroadcastApi.searchSubject.send(completion: .failure(NSError(domain: "test", code: 5)))
-        wait(for: [exp], timeout: 2); XCTAssertNotNil(receivedError)
+        hrBroadcastApi.searchSubject.send(completion: .failure(expected))
+        wait(for: [exp], timeout: 2)
+        let error = receivedError as NSError?
+        XCTAssertEqual(error?.domain, expected.domain)
+        XCTAssertEqual(error?.code, expected.code)
     }
 
     func test_startListenForPolarHrBroadcasts_completesWhenSourceCompletes() {
