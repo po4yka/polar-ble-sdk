@@ -1066,6 +1066,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarTrainingSessionModels.payloadParserCase(fileName)?.encoding
     }
 
+    fun decodeTrainingSessionPayloadBytes(fileName: String, payload: ByteArray): ByteArray {
+        return PolarTrainingSessionModels.decodePayloadBytes(fileName, payload)
+    }
+
     fun trainingSessionPayloadParser(fileName: String): String? {
         return PolarTrainingSessionModels.payloadParserCase(fileName)?.parser
     }

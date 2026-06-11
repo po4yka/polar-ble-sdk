@@ -17,9 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import protocol.PftpRequest
 import protocol.PftpResponse
-import java.io.ByteArrayInputStream
 import java.time.LocalDate
-import java.util.zip.GZIPInputStream
 
 private val ARABICA_USER_ROOT_FOLDER = PolarRuntimePlannerAdapter.trainingSessionRootPath()
 private const val TAG = "PolarTrainingSessionUtils"
@@ -170,7 +168,7 @@ internal object PolarTrainingSessionUtils {
                 val raw = fileResponse.toByteArray()
                 if (trainingSessionPayloadEncoding(dataType.deviceFileName) == "gzip-protobuf") {
                     BleLogger.d(TAG, "Unzipping: ${dataType.deviceFileName}")
-                    unzipData(raw)
+                    decodePayloadBytes(dataType.deviceFileName, raw)
                 } else raw
             } catch (e: Exception) {
                 BleLogger.e(TAG, "Failed to fetch ${dataType.deviceFileName}: ${e.message}")
@@ -183,11 +181,9 @@ internal object PolarTrainingSessionUtils {
         return parseExerciseData(exercise, results)
     }
 
-    private fun unzipData(data: ByteArray): ByteArray {
+    internal fun decodePayloadBytes(fileName: String, data: ByteArray): ByteArray {
         return try {
-            ByteArrayInputStream(data).use { bs ->
-                GZIPInputStream(bs).use { gz -> gz.readBytes() }
-            }
+            PolarRuntimePlannerAdapter.decodeTrainingSessionPayloadBytes(fileName, data)
         } catch (e: Exception) {
             BleLogger.e(TAG, "Failed to unzip data: ${e.message}")
             data

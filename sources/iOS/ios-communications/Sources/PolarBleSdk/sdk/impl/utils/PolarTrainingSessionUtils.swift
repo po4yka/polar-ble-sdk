@@ -261,7 +261,8 @@ internal class PolarTrainingSessionUtils {
                     let dataType = dataTypesByFileName[(filePath as NSString).lastPathComponent]!
                     let fileOperation = trainingSessionExerciseFileReadOperation(path: filePath)
                     let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(fileOperation))
-                    let data: Data = trainingSessionPayloadEncoding(fileName: dataType.deviceFileName) == "gzip-protobuf" ? try unzipGzip(response as Data) : response as Data
+                    let responseData = response as Data
+                    let data: Data = trainingSessionPayloadEncoding(fileName: dataType.deviceFileName) == "gzip-protobuf" ? try decodePayload(fileName: dataType.deviceFileName, data: responseData) : responseData
                     return (dataType, data)
                 }
             }
@@ -286,6 +287,18 @@ internal class PolarTrainingSessionUtils {
         }
         return PolarExercise(index: exercise.index, path: basePath, exerciseDataTypes: exercise.exerciseDataTypes,
                              exerciseSummary: summary, route: route, routeAdvanced: route2, samples: samples, samplesAdvanced: samples2)
+    }
+
+    static func decodePayload(fileName: String, data: Data) throws -> Data {
+        guard trainingSessionPayloadEncoding(fileName: fileName) == "gzip-protobuf" else {
+            return data
+        }
+        #if canImport(PolarBleSdkShared)
+        if let decoded = PolarRuntimePlanner.decodeTrainingSessionPayload(fileName: fileName, payload: data) {
+            return decoded
+        }
+        #endif
+        return try unzipGzip(data)
     }
     
     private static func unzipGzip(_ data: Data) throws -> Data {

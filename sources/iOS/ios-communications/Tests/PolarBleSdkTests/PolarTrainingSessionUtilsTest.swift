@@ -344,11 +344,21 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             XCTAssertEqual(PolarTrainingSessionUtils.trainingSessionPayloadEncoding(fileName: fileName), inputCase["encoding"] as? String, id)
         }
         XCTAssertEqual(cases.filter { ($0["encoding"] as? String) == "gzip-protobuf" }.count, 4, "payload-parser-policy")
-        XCTAssertEqual(commonParserPrototype["status"] as? String, "executable shared parser-policy coverage; byte decoding remains gated on common protobuf and gzip dependencies", "payload-parser-policy")
+        XCTAssertEqual(commonParserPrototype["status"] as? String, "executable shared parser-policy coverage; gzip decoding is shared and protobuf parsing remains gated on common protobuf dependencies", "payload-parser-policy")
         XCTAssertEqual(expected["commonDecision"] as? String, TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION, "payload-parser-policy")
         XCTAssertEqual(consumerTests["android"] as? [String], ["com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"], "payload-parser-policy")
         XCTAssertEqual(consumerTests["ios"] as? [String], ["PolarTrainingSessionUtilsTest"], "payload-parser-policy")
         XCTAssertEqual(consumerTests["commonPrototype"] as? [String], ["com.polar.sharedtest.TrainingSessionCommonPolicyTest"], "payload-parser-policy")
+    }
+
+    func testTrainingSessionGzipPayloadDecodingDelegatesToSharedCodecAndPreservesMalformedThrowing() throws {
+        let compressed = try data(hex: "1f8b0800d7bd2a6a02ff2b294acccccbcc4bd72d4e2d2ececccfd34dafca2cd02d48acccc94f4c0100a58206c51d000000")
+        let expected = Data("training-session-gzip-payload".utf8)
+        let decoded = try PolarTrainingSessionUtils.decodePayload(fileName: "ROUTE.GZB", data: compressed)
+
+        XCTAssertEqual(decoded, expected)
+        XCTAssertEqual(try PolarTrainingSessionUtils.decodePayload(fileName: "BASE.BPB", data: expected), expected)
+        XCTAssertThrowsError(try PolarTrainingSessionUtils.decodePayload(fileName: "ROUTE.GZB", data: Data([0x01, 0x02, 0x03])))
     }
 
     func testTrainingSessionReadinessManifestIsPinnedBeforeMigration() throws {
@@ -381,13 +391,14 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             "known-sample-preservation",
             "payload-parser-family-ownership",
             "byte-level-parser-dependency-gate",
-            "protobuf-gzip-byte-decoding-deferral",
+            "shared-gzip-payload-codec",
+            "protobuf-byte-parsing-deferral",
             "platform-training-session-vector-reference-gate",
             "compile-verification-gate"
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, byte-level parser dependency gates, protobuf/gzip byte decoding deferral, and compile verification remain explicit before production discovery/read orchestration moves.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, and compile verification remain explicit before production discovery/read orchestration moves.")
     }
 
     func test_readTrainingSession_shouldReturnTrainingSessionDataWithExercises() async throws {
@@ -797,6 +808,18 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
     private func number(_ object: [String: Any], _ key: String, id: String) throws -> Int {
         return try XCTUnwrap(object[key] as? NSNumber, "\(id) \(key)").intValue
     }
+
+    private func data(hex: String) throws -> Data {
+        var data = Data()
+        var index = hex.startIndex
+        while index < hex.endIndex {
+            let nextIndex = hex.index(index, offsetBy: 2, limitedBy: hex.endIndex) ?? hex.endIndex
+            let byte = try XCTUnwrap(UInt8(hex[index..<nextIndex], radix: 16))
+            data.append(byte)
+            index = nextIndex
+        }
+        return data
+    }
 }
 
 private let TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS = [
@@ -811,4 +834,4 @@ private let TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS = [
     "samples-advanced-gzip-protobuf"
 ]
 
-private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing to common code, add production common protobuf and gzip dependencies that can execute these parser cases against real bytes; until then this vector is the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies that can execute these parser cases against real bytes; gzip decompression is now shared KMP production code, and until protobuf parsing moves this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."

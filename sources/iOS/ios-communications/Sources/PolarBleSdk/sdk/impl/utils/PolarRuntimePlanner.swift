@@ -477,6 +477,17 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func decodeTrainingSessionPayload(fileName: String, payload: Data) -> Data? {
+        #if canImport(PolarBleSdkShared)
+        guard let decodedHex = PolarIosSharedBridge.shared.trainingSessionDecodePayloadHex(fileName: fileName, payloadHex: payload.hexString()) else {
+            return nil
+        }
+        return Data(hexString: decodedHex)
+        #else
+        return nil
+        #endif
+    }
+
     static func trainingSessionDeleteParentPath(referencePath: String) -> String {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.trainingSessionDeleteParentPath(referencePath: referencePath)
@@ -578,5 +589,25 @@ enum PolarRuntimePlanner {
     @discardableResult
     static func streamPostCompletionEmission(target: String, value: String) -> Int {
         return PolarStreamRuntimePlanner.postCompletionEmission(target: target, value: value)
+    }
+}
+
+private extension Data {
+    init(hexString: String) {
+        var data = Data()
+        var index = hexString.startIndex
+        while index < hexString.endIndex {
+            let nextIndex = hexString.index(index, offsetBy: 2, limitedBy: hexString.endIndex) ?? hexString.endIndex
+            if nextIndex <= hexString.endIndex,
+               let byte = UInt8(hexString[index..<nextIndex], radix: 16) {
+                data.append(byte)
+            }
+            index = nextIndex
+        }
+        self = data
+    }
+
+    func hexString() -> String {
+        return map { String(format: "%02x", $0) }.joined()
     }
 }

@@ -240,9 +240,9 @@
       "progressPolicy": "compute-progress-from-reference-file-sizes-and-last-completed-file",
       "malformedPayloadPolicy": "omit-only-the-malformed-component-and-continue-reading-remaining-files",
       "unknownSampleListPolicy": "ignore-unknown-advanced-sample-lists-and-preserve-known-samples",
-      "byteLevelParserGate": "add-common-protobuf-and-gzip-parser-dependencies-before-byte-level-payload-migration",
-      "byteLevelPayloadStatus": "deferred-until-common-protobuf-and-gzip-parser-exist"
+      "byteLevelParserGate": "add-common-protobuf-parser-dependency-before-byte-level-payload-migration",
+      "byteLevelPayloadStatus": "protobuf-parsing-deferred-until-common-protobuf-parser-exists"
     }
   },
-  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, and unknown advanced sample-list handling. payload-parser-policy.json now pins the parser-family ownership cases; real byte-level protobuf/gzip decoding remains an explicit production gate because the current shared module has no common protobuf or gzip parser dependency."
+  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, and unknown advanced sample-list handling. payload-parser-policy.json now pins the parser-family ownership cases; gzip payload decompression is owned by shared platform actuals, while real protobuf byte parsing remains an explicit production gate because the current shared module has no common protobuf parser dependency."
 }

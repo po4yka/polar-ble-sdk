@@ -123,6 +123,14 @@ object PolarTrainingSessionModels {
         }
     }
 
+    fun decodePayloadBytes(fileName: String, payload: ByteArray): ByteArray {
+        return if (payloadParserCase(fileName)?.encoding == "gzip-protobuf") {
+            PolarTrainingSessionPayloadCodec.decodeGzipPayload(payload)
+        } else {
+            payload
+        }
+    }
+
     fun payloadFetchOrder(reference: PolarTrainingSessionReference): List<String> {
         return listOf(reference.path) + reference.exercises.flatMap { exercise ->
             val basePath = exercise.androidPath.substringBeforeLast("/")

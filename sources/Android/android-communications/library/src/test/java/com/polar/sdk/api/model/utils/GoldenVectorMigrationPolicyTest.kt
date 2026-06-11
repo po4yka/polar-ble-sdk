@@ -3377,7 +3377,8 @@ class GoldenVectorMigrationPolicyTest {
             "payload-fetch-order",
             "malformed-component-isolation",
             "byte-level-parser-dependency-gate",
-            "protobuf-gzip-byte-decoding-deferral",
+            "shared-gzip-payload-codec",
+            "protobuf-byte-parsing-deferral",
             "platform-training-session-vector-reference-gate",
             "compile-verification-gate",
             "ignore-files-that-do-not-map-to-public-training-or-exercise-data-types",
@@ -3386,9 +3387,9 @@ class GoldenVectorMigrationPolicyTest {
             "omit-only-the-malformed-component-and-continue-reading-remaining-files",
             "ignore-unknown-advanced-sample-lists-and-preserve-known-samples",
             "compute-progress-from-reference-file-sizes-and-last-completed-file",
-            "trainingSessionByteLevelPayloadParserMigrationRequiresExplicitCommonProtoAndGzipDependencies",
-            "add-common-protobuf-and-gzip-parser-dependencies-before-byte-level-payload-migration",
-            "deferred-until-common-protobuf-and-gzip-parser-exist",
+            "trainingSessionByteLevelPayloadParserMigrationRequiresExplicitCommonProtoDependencies",
+            "add-common-protobuf-parser-dependency-before-byte-level-payload-migration",
+            "protobuf-parsing-deferred-until-common-protobuf-parser-exists",
             "samples-advanced-gzip-protobuf",
             "PbExerciseSamples2",
             "gzip-protobuf",
@@ -4044,11 +4045,12 @@ class GoldenVectorMigrationPolicyTest {
         )
         val BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = mapOf(
             "KmpFullCoverageTddBacklog.md" to listOf(
-                "add real common protobuf/gzip production dependencies",
+                "add real common protobuf production parser dependencies",
                 "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
                 "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
                 "shared-common-aes-production-decryption",
                 "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
+                "training-session gzip payload decompression now uses shared KMP platform actuals",
                 "Watch-face FlatBuffer byte input parsing and output construction now live in shared production code",
                 "KVTX"
             ),
@@ -4060,21 +4062,23 @@ class GoldenVectorMigrationPolicyTest {
                 "semantic and codec-ownership/readiness policy executable"
             ),
             "KmpPreMigrationRemainingWork.md" to listOf(
-                "Add real common protobuf/gzip dependencies",
+                "Add real common protobuf parser dependencies",
                 "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
                 "training-session payload parsing",
+                "Training-session gzip payload decoding now uses shared KMP platform actuals",
                 "PMD AES ECB/no-padding decryption now lives in shared common production code",
                 "watch-face FlatBuffer input/output construction lives in shared common production code",
                 "training-session deferral artifacts"
             ),
             "payload-read-policy.json" to listOf(
                 "byteLevelParserGate",
-                "add-common-protobuf-and-gzip-parser-dependencies-before-byte-level-payload-migration",
-                "deferred-until-common-protobuf-and-gzip-parser-exist"
+                "add-common-protobuf-parser-dependency-before-byte-level-payload-migration",
+                "protobuf-parsing-deferred-until-common-protobuf-parser-exists"
             ),
             "payload-parser-policy.json" to listOf(
-                "Before moving byte-level training payload parsing to common code, add production common protobuf and gzip dependencies",
-                "without claiming common byte decoding is implemented",
+                "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies",
+                "gzip decompression is now shared KMP production code",
+                "while gzip payload decoding is already shared production code",
                 "training-session-summary-protobuf",
                 "exercise-summary-protobuf",
                 "route-protobuf",
@@ -4088,8 +4092,10 @@ class GoldenVectorMigrationPolicyTest {
             ),
             "training-session-readiness.json" to listOf(
                 "byte-level-parser-dependency-gate",
-                "protobuf-gzip-byte-decoding-deferral",
-                "real byte-level protobuf/gzip decoding remains deferred until common production parser dependencies exist and are compile-verified"
+                "shared-gzip-payload-codec",
+                "protobuf-byte-parsing-deferral",
+                "gzip payload decoding now uses shared KMP platform actuals",
+                "real byte-level protobuf parsing remains deferred until common production parser dependencies exist and are compile-verified"
             ),
             "secret-readiness.json" to listOf(
                 "AES block-alignment gating",

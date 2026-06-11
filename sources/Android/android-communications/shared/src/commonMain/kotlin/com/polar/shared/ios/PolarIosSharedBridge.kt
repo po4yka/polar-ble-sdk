@@ -368,6 +368,12 @@ object PolarIosSharedBridge {
         return "${parserCase.parser}|${parserCase.encoding}"
     }
 
+    fun trainingSessionDecodePayloadHex(fileName: String, payloadHex: String): String? {
+        return runCatching {
+            PolarTrainingSessionModels.decodePayloadBytes(fileName, payloadHex.hexToBytes()).toHex()
+        }.getOrNull()
+    }
+
     fun trainingSessionDeleteParentPath(referencePath: String): String {
         return PolarTrainingSessionModels.deleteParentPath(referencePath)
     }
