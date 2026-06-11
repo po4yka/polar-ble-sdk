@@ -1910,6 +1910,7 @@ final class PolarBleApiImplTests: XCTestCase {
     }
 
     func test_doFirstTimeUse_userIdWriteFailurePropagatesWithoutTerminateNotifications() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         let birthDate = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: DateComponents(year: 1991, month: 2, day: 3)))
         let config = PolarFirstTimeUseConfig(
             gender: .male,
