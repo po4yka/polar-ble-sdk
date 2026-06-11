@@ -488,6 +488,14 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func trainingSessionPayloadMalformed(fileName: String, payload: Data) -> Bool {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.trainingSessionPayloadMalformed(fileName: fileName, payloadHex: payload.hexString())
+        #else
+        return false
+        #endif
+    }
+
     static func trainingSessionDeleteParentPath(referencePath: String) -> String {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.trainingSessionDeleteParentPath(referencePath: referencePath)

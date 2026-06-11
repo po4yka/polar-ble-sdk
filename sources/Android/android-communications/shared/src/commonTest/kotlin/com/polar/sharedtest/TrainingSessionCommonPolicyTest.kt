@@ -191,6 +191,71 @@ class TrainingSessionCommonPolicyTest {
     }
 
     @Test
+    fun trainingSessionDecodedPayloadParserProjectsCommonSummaryFieldsFromProtobufBytes() {
+        val payload = protobufBytes {
+            stringField(4, "Polar 360")
+            messageField(5) {
+                varintField(1, 1)
+                varintField(2, 2)
+                varintField(3, 3)
+            }
+            fixed32Field(6, 12.0f.toBits())
+            varintField(7, 400)
+        }
+
+        val response = PolarTrainingSessionModels.parseDecodedPayloadResponse("TSESS.BPB", payload)
+
+        assertEquals("trainingSessionSummary", response.kind)
+        assertEquals("Polar 360", response.payload.modelName)
+        assertEquals(3723, response.payload.durationSeconds)
+        assertEquals(12, response.payload.distanceMeters)
+        assertEquals(400, response.payload.calories)
+        assertEquals(false, response.malformed)
+    }
+
+    @Test
+    fun trainingSessionDecodedPayloadParserProjectsSamplesAndAdvancedHeartRateFieldsFromProtobufBytes() {
+        val samplesPayload = protobufBytes {
+            packedVarintField(2, listOf(120, 125, 130))
+        }
+        val advancedPayload = protobufBytes {
+            messageField(1) {
+                varintField(1, 1)
+                packedVarintField(5, listOf(zigZag32(131), zigZag32(132), zigZag32(133)))
+            }
+            messageField(1) {
+                varintField(1, 3)
+                packedVarintField(5, listOf(zigZag32(222)))
+            }
+        }
+
+        val samples = PolarTrainingSessionModels.parseDecodedPayloadResponse("SAMPLES.BPB", samplesPayload)
+        val advanced = PolarTrainingSessionModels.parseDecodedPayloadResponse("SAMPLES2.GZB", advancedPayload)
+
+        assertEquals(listOf(120, 125, 130), samples.payload.heartRateSamples)
+        assertEquals(
+            listOf(
+                PolarTrainingIntervalledSampleList("HEART_RATE", listOf(131, 132, 133)),
+                PolarTrainingIntervalledSampleList("ALTITUDE", listOf(222))
+            ),
+            advanced.payload.intervalledSampleLists
+        )
+        assertEquals(false, samples.malformed)
+        assertEquals(false, advanced.malformed)
+    }
+
+    @Test
+    fun trainingSessionDecodedPayloadParserMarksMalformedProtobufWithoutThrowing() {
+        val malformed = byteArrayOf(((4 shl 3) or 2).toByte(), 5, 'P'.code.toByte())
+
+        val response = PolarTrainingSessionModels.parseDecodedPayloadResponse("TSESS.BPB", malformed)
+
+        assertEquals("trainingSessionSummary", response.kind)
+        assertEquals(true, response.malformed)
+        assertEquals(3, response.byteSize)
+    }
+
+    @Test
     fun trainingSessionReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
         val vector = loadGoldenVectorText("sdk/training-session/training-session-readiness.json")
         val input = vector.objectValue("input")
@@ -414,6 +479,66 @@ class TrainingSessionCommonPolicyTest {
         val encoding: String,
         val fields: List<String>
     )
+
+    private class ProtobufBuilder {
+        private val bytes = mutableListOf<Byte>()
+
+        fun varintField(fieldNumber: Int, value: Int) {
+            writeVarint(((fieldNumber shl 3) or 0).toLong())
+            writeVarint(value.toLong())
+        }
+
+        fun stringField(fieldNumber: Int, value: String) {
+            lengthDelimitedField(fieldNumber, value.encodeToByteArray().toList())
+        }
+
+        fun messageField(fieldNumber: Int, block: ProtobufBuilder.() -> Unit) {
+            lengthDelimitedField(fieldNumber, ProtobufBuilder().apply(block).build().toList())
+        }
+
+        fun packedVarintField(fieldNumber: Int, values: List<Int>) {
+            val packed = ProtobufBuilder().apply { values.forEach { writeVarint(it.toLong()) } }.build().toList()
+            lengthDelimitedField(fieldNumber, packed)
+        }
+
+        fun fixed32Field(fieldNumber: Int, value: Int) {
+            writeVarint(((fieldNumber shl 3) or 5).toLong())
+            bytes += (value and 0xff).toByte()
+            bytes += ((value ushr 8) and 0xff).toByte()
+            bytes += ((value ushr 16) and 0xff).toByte()
+            bytes += ((value ushr 24) and 0xff).toByte()
+        }
+
+        fun build(): ByteArray {
+            return bytes.toByteArray()
+        }
+
+        private fun lengthDelimitedField(fieldNumber: Int, value: List<Byte>) {
+            writeVarint(((fieldNumber shl 3) or 2).toLong())
+            writeVarint(value.size.toLong())
+            bytes += value
+        }
+
+        private fun writeVarint(value: Long) {
+            var current = value
+            while (true) {
+                if ((current and 0x7f.inv().toLong()) == 0L) {
+                    bytes += current.toByte()
+                    return
+                }
+                bytes += (((current and 0x7f) or 0x80).toByte())
+                current = current ushr 7
+            }
+        }
+    }
+
+    private fun protobufBytes(block: ProtobufBuilder.() -> Unit): ByteArray {
+        return ProtobufBuilder().apply(block).build()
+    }
+
+    private fun zigZag32(value: Int): Int {
+        return (value shl 1) xor (value shr 31)
+    }
 
     private companion object {
         const val ROOT_PATH = "/U/0/"

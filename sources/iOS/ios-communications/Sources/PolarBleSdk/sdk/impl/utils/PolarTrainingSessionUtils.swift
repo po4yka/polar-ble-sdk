@@ -276,6 +276,9 @@ internal class PolarTrainingSessionUtils {
         var samples: Data_PbExerciseSamples?
         var samples2: Data_PbExerciseSamples2?
         for (type, data) in dataResults {
+            if PolarRuntimePlanner.trainingSessionPayloadMalformed(fileName: type.deviceFileName, payload: data) {
+                continue
+            }
             switch trainingSessionPayloadParserCase(fileName: type.deviceFileName)?.parser {
             case "PbExerciseBase": summary = try? Data_PbExerciseBase(serializedBytes: data)
             case "PbExerciseRouteSamples": route = try? Data_PbExerciseRouteSamples(serializedBytes: data)

@@ -203,6 +203,10 @@ internal object PolarTrainingSessionUtils {
         for ((type, data) in results) {
             if (data.isEmpty()) continue
             try {
+                if (PolarRuntimePlannerAdapter.trainingSessionPayloadMalformed(type.deviceFileName, data)) {
+                    BleLogger.e(TAG, "  Failed to parse $type: shared protobuf preflight marked payload malformed")
+                    continue
+                }
                 when (PolarRuntimePlannerAdapter.trainingSessionPayloadParser(type.deviceFileName)) {
                     "PbExerciseBase" -> summary = Training.PbExerciseBase.parseFrom(data)
                     "PbExerciseRouteSamples" ->

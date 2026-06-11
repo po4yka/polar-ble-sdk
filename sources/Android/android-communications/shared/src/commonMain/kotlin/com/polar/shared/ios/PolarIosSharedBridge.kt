@@ -374,6 +374,12 @@ object PolarIosSharedBridge {
         }.getOrNull()
     }
 
+    fun trainingSessionPayloadMalformed(fileName: String, payloadHex: String): Boolean {
+        return runCatching {
+            PolarTrainingSessionModels.parseDecodedPayloadResponse(fileName, payloadHex.hexToBytes()).malformed
+        }.getOrDefault(true)
+    }
+
     fun trainingSessionDeleteParentPath(referencePath: String): String {
         return PolarTrainingSessionModels.deleteParentPath(referencePath)
     }

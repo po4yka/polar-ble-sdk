@@ -131,6 +131,26 @@ object PolarTrainingSessionModels {
         }
     }
 
+    fun parseDecodedPayloadResponse(fileName: String, payload: ByteArray): PolarTrainingPayloadResponse {
+        val parserCase = payloadParserCase(fileName)
+        val kind = payloadKind(fileName)
+        return runCatching {
+            PolarTrainingPayloadResponse(
+                kind = kind,
+                fileName = fileName,
+                byteSize = payload.size,
+                payload = parserCase?.let { parsePayloadFields(it.parser, payload) } ?: PolarTrainingPayloadFields()
+            )
+        }.getOrElse {
+            PolarTrainingPayloadResponse(
+                kind = kind,
+                fileName = fileName,
+                byteSize = payload.size,
+                malformed = true
+            )
+        }
+    }
+
     fun payloadFetchOrder(reference: PolarTrainingSessionReference): List<String> {
         return listOf(reference.path) + reference.exercises.flatMap { exercise ->
             val basePath = exercise.androidPath.substringBeforeLast("/")
@@ -243,6 +263,122 @@ object PolarTrainingSessionModels {
             else -> return null
         }
         return value.takeIf { PolarTimeUtils.basicDateRange(it, it).isNotEmpty() }
+    }
+
+    private fun payloadKind(fileName: String): String {
+        return when (fileName) {
+            "TSESS.BPB" -> "trainingSessionSummary"
+            "BASE.BPB" -> "exerciseSummary"
+            "ROUTE.BPB" -> "route"
+            "ROUTE.GZB" -> "routeGzip"
+            "ROUTE2.BPB" -> "routeAdvanced"
+            "ROUTE2.GZB" -> "routeAdvancedGzip"
+            "SAMPLES.BPB" -> "samples"
+            "SAMPLES.GZB" -> "samplesGzip"
+            "SAMPLES2.GZB" -> "samplesAdvancedGzip"
+            else -> "unknown"
+        }
+    }
+
+    private fun parsePayloadFields(parser: String, payload: ByteArray): PolarTrainingPayloadFields {
+        return when (parser) {
+            "PbTrainingSession" -> parseTrainingSessionSummary(payload)
+            "PbExerciseSamples" -> parseExerciseSamples(payload)
+            "PbExerciseSamples2" -> parseExerciseSamples2(payload)
+            else -> {
+                PolarTrainingProtobufReader(payload).forEachField { _, wireType, reader -> reader.skip(wireType) }
+                PolarTrainingPayloadFields()
+            }
+        }
+    }
+
+    private fun parseTrainingSessionSummary(payload: ByteArray): PolarTrainingPayloadFields {
+        var modelName: String? = null
+        var durationSeconds: Int? = null
+        var distanceMeters: Int? = null
+        var calories: Int? = null
+        PolarTrainingProtobufReader(payload).forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                4 -> modelName = reader.readStringField(wireType)
+                5 -> reader.readLengthDelimitedField(wireType) { durationSeconds = it.readDurationSeconds() }
+                6 -> distanceMeters = reader.readFloatField(wireType).toInt()
+                7 -> calories = reader.readVarintField(wireType).toInt()
+                else -> reader.skip(wireType)
+            }
+        }
+        return PolarTrainingPayloadFields(
+            modelName = modelName,
+            durationSeconds = durationSeconds,
+            distanceMeters = distanceMeters,
+            calories = calories
+        )
+    }
+
+    private fun parseExerciseSamples(payload: ByteArray): PolarTrainingPayloadFields {
+        val heartRateSamples = mutableListOf<Int>()
+        PolarTrainingProtobufReader(payload).forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                2 -> heartRateSamples += reader.readUInt32RepeatedField(wireType)
+                else -> reader.skip(wireType)
+            }
+        }
+        return PolarTrainingPayloadFields(heartRateSamples = heartRateSamples)
+    }
+
+    private fun parseExerciseSamples2(payload: ByteArray): PolarTrainingPayloadFields {
+        val sampleLists = mutableListOf<PolarTrainingIntervalledSampleList>()
+        PolarTrainingProtobufReader(payload).forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                1 -> reader.readLengthDelimitedField(wireType) { sampleLists += it.readIntervalledSample2List() }
+                else -> reader.skip(wireType)
+            }
+        }
+        return PolarTrainingPayloadFields(intervalledSampleLists = sampleLists)
+    }
+
+    private fun PolarTrainingProtobufReader.readDurationSeconds(): Int {
+        var hours = 0
+        var minutes = 0
+        var seconds = 0
+        forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                1 -> hours = reader.readVarintField(wireType).toInt()
+                2 -> minutes = reader.readVarintField(wireType).toInt()
+                3 -> seconds = reader.readVarintField(wireType).toInt()
+                else -> reader.skip(wireType)
+            }
+        }
+        return hours * 3600 + minutes * 60 + seconds
+    }
+
+    private fun PolarTrainingProtobufReader.readIntervalledSample2List(): PolarTrainingIntervalledSampleList {
+        var sampleType = "UNDEFINED"
+        val heartRateSamples = mutableListOf<Int>()
+        forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                1 -> sampleType = sampleTypeName(reader.readVarintField(wireType).toInt())
+                5 -> heartRateSamples += reader.readSInt32RepeatedField(wireType)
+                else -> reader.skip(wireType)
+            }
+        }
+        return PolarTrainingIntervalledSampleList(sampleType = sampleType, heartRateSamples = heartRateSamples)
+    }
+
+    private fun sampleTypeName(value: Int): String {
+        return when (value) {
+            1 -> "HEART_RATE"
+            2 -> "CADENCE"
+            3 -> "ALTITUDE"
+            5 -> "TEMPERATURE"
+            6 -> "SPEED"
+            7 -> "DISTANCE"
+            8 -> "STRIDE_LENGTH"
+            10 -> "FORWARD_ACCELERATION"
+            11 -> "MOVING_TYPE"
+            16 -> "RR_INTERVAL"
+            17 -> "ACCELERATION_MAD"
+            else -> "UNDEFINED"
+        }
     }
 
     private data class MutableTrainingSessionReference(
