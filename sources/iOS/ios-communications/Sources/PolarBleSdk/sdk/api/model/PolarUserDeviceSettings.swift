@@ -147,6 +147,27 @@ public class PolarUserDeviceSettings {
     }
 
     static func toProto(userDeviceSettings: PolarUserDeviceSettings) -> Data_PbUserDeviceSettings {
+        var sharedFields: [String: String] = [
+            "deviceLocation": String(userDeviceSettings.deviceLocation.toInt()),
+            "automaticTrainingDetectionSensitivity": String(userDeviceSettings.automaticTrainingDetectionSensitivity ?? 50),
+            "minimumTrainingDurationSeconds": String(userDeviceSettings.minimumTrainingDurationSeconds ?? 600)
+        ]
+        if let usbConnectionMode = userDeviceSettings.usbConnectionMode {
+            sharedFields["usbConnectionMode"] = String(usbConnectionMode == .ON)
+        }
+        if let telemetryEnabled = userDeviceSettings.telemetryEnabled {
+            sharedFields["telemetryEnabled"] = String(telemetryEnabled)
+        }
+        if let automaticTrainingDetectionMode = userDeviceSettings.automaticTrainingDetectionMode {
+            sharedFields["automaticTrainingDetectionMode"] = String(automaticTrainingDetectionMode == .ON)
+        }
+        if let autosFilesEnabled = userDeviceSettings.autosFilesEnabled {
+            sharedFields["autosFilesEnabled"] = String(autosFilesEnabled)
+        }
+        if let sharedData = PolarUserDeviceSettingsRuntimePlanner.buildProtoData(fields: sharedFields, date: Date()),
+           let sharedProto = try? Data_PbUserDeviceSettings(serializedBytes: sharedData) {
+            return sharedProto
+        }
 
         var proto = Data_PbUserDeviceSettings()
         var generalSettings = Data_PbUserDeviceGeneralSettings()
@@ -199,6 +220,34 @@ public class PolarUserDeviceSettings {
 
     static func fromProto(pbUserDeviceSettings: Data_PbUserDeviceSettings) -> PolarUserDeviceSettingsResult {
         var result = PolarUserDeviceSettingsResult()
+        if let data = try? pbUserDeviceSettings.serializedData(),
+           let sharedFields = PolarUserDeviceSettingsRuntimePlanner.parseProtoFields(data: data) {
+            if let deviceLocation = sharedFields["deviceLocation"].flatMap(Int.init),
+               let sharedName = PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: deviceLocation),
+               let sharedLocation = PolarUserDeviceSettings.DeviceLocation(rawValue: sharedName) {
+                result.deviceLocation = sharedLocation
+            }
+            if let usbConnectionMode = sharedFields["usbConnectionMode"] {
+                result.usbConnectionMode = boolField(usbConnectionMode).map { $0 ? .ON : .OFF }
+            }
+            if let automaticTrainingDetectionMode = sharedFields["automaticTrainingDetectionMode"] {
+                result.automaticTrainingDetectionMode = boolField(automaticTrainingDetectionMode).map { $0 ? .ON : .OFF }
+            }
+            if let sensitivity = sharedFields["automaticTrainingDetectionSensitivity"].flatMap(UInt32.init) {
+                result.automaticTrainingDetectionSensitivity = sensitivity
+            }
+            if let minimumDuration = sharedFields["minimumTrainingDurationSeconds"].flatMap(UInt32.init) {
+                result.minimumTrainingDurationSeconds = minimumDuration
+            }
+            if let telemetryEnabled = sharedFields["telemetryEnabled"].flatMap(Bool.init) {
+                result.telemetryEnabled = telemetryEnabled
+            }
+            if let autosFilesEnabled = sharedFields["autosFilesEnabled"].flatMap(Bool.init) {
+                result.autosFilesEnabled = autosFilesEnabled
+            }
+            return result
+        }
+
         #if canImport(PolarBleSdkShared)
         if let sharedName = PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: pbUserDeviceSettings.generalSettings.deviceLocation.rawValue),
            let sharedLocation = PolarUserDeviceSettings.DeviceLocation(rawValue: sharedName) {
@@ -274,6 +323,14 @@ public class PolarUserDeviceSettings {
             items.append(PolarUserDeviceSettings.getStringValue(deviceLocationIndex: item.toInt()))
         }
         return items
+    }
+}
+
+private func boolField(_ value: String) -> Bool? {
+    switch value {
+    case "true": return true
+    case "false": return false
+    default: return nil
     }
 }
 

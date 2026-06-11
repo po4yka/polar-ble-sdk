@@ -164,6 +164,48 @@ enum PolarUserDeviceSettingsRuntimePlanner {
         #endif
     }
 
+    static func parseProtoFields(data: Data) -> [String: String]? {
+        #if canImport(PolarBleSdkShared)
+        return keyValueFields(PolarIosSharedBridge.shared.userDeviceSettingsParseProtoBytesCsv(protoHex: data.hexString()) ?? "")
+        #else
+        return nil
+        #endif
+    }
+
+    static func buildProtoData(fields: [String: String], date: Date, includeTelemetry: Bool = true) -> Data? {
+        #if canImport(PolarBleSdkShared)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: date)
+        guard let year = components.year,
+              let month = components.month,
+              let day = components.day,
+              let hour = components.hour,
+              let minute = components.minute,
+              let second = components.second else {
+            return nil
+        }
+        let millis = (components.nanosecond ?? 0) / 1_000_000
+        guard let hex = PolarIosSharedBridge.shared.userDeviceSettingsBuildProtoBytesHex(
+            fieldsCsv: csvFields(fields),
+            year: Int32(year),
+            month: Int32(month),
+            day: Int32(day),
+            hour: Int32(hour),
+            minute: Int32(minute),
+            seconds: Int32(second),
+            millis: Int32(millis),
+            trusted: true,
+            includeTelemetry: includeTelemetry
+        ) else {
+            return nil
+        }
+        return Data(hexString: hex)
+        #else
+        return nil
+        #endif
+    }
+
     private static func operations(_ csv: String) -> [(command: Protocol_PbPFtpOperation.Command, path: String)] {
         return csv.split(separator: ",").compactMap { plannedOperation in
             let parts = plannedOperation.split(separator: ":", maxSplits: 1).map(String.init)
@@ -178,5 +220,57 @@ enum PolarUserDeviceSettingsRuntimePlanner {
 
     private static func csvValues(_ csv: String) -> [String] {
         return csv.split(separator: ",").map(String.init)
+    }
+
+    private static func keyValueFields(_ csv: String) -> [String: String]? {
+        if csv.isEmpty {
+            return [:]
+        }
+        var fields: [String: String] = [:]
+        for field in csv.split(separator: ",").map(String.init) {
+            let parts = field.split(separator: "=", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else {
+                return nil
+            }
+            fields[parts[0]] = parts[1]
+        }
+        return fields
+    }
+
+    private static func csvFields(_ fields: [String: String]) -> String {
+        let order = [
+            "deviceLocation",
+            "usbConnectionMode",
+            "automaticTrainingDetectionMode",
+            "automaticTrainingDetectionSensitivity",
+            "minimumTrainingDurationSeconds",
+            "telemetryEnabled",
+            "autosFilesEnabled"
+        ]
+        return order.compactMap { key in
+            fields[key].map { "\(key)=\($0)" }
+        }.joined(separator: ",")
+    }
+}
+
+private extension Data {
+    init(hexString: String) {
+        var bytes: [UInt8] = []
+        bytes.reserveCapacity(hexString.count / 2)
+        var index = hexString.startIndex
+        while index < hexString.endIndex {
+            let next = hexString.index(index, offsetBy: 2)
+            guard let byte = UInt8(hexString[index..<next], radix: 16) else {
+                self.init()
+                return
+            }
+            bytes.append(byte)
+            index = next
+        }
+        self.init(bytes)
+    }
+
+    func hexString() -> String {
+        return map { String(format: "%02x", $0) }.joined()
     }
 }

@@ -57,6 +57,28 @@ final class PolarUserDeviceSettingsUtilsTest: XCTestCase {
         XCTAssertEqual(.off, PolarUserDeviceSettings.automaticMeasurementState(enabled: false))
     }
 
+    func testSharedUserDeviceSettingsProtoCodecRoundTripsMappedFields() throws {
+        var fields = [
+            "deviceLocation": "\(PbDeviceLocation.deviceLocationWristRight.rawValue)",
+            "usbConnectionMode": "true",
+            "automaticTrainingDetectionMode": "false",
+            "automaticTrainingDetectionSensitivity": "40",
+            "minimumTrainingDurationSeconds": "120",
+            "telemetryEnabled": "true",
+            "autosFilesEnabled": "false"
+        ]
+        let data = try XCTUnwrap(PolarUserDeviceSettingsRuntimePlanner.buildProtoData(fields: fields, date: Date(timeIntervalSince1970: 0)), "shared build")
+        let proto = try Data_PbUserDeviceSettings(serializedBytes: data)
+        let parsed = try XCTUnwrap(PolarUserDeviceSettingsRuntimePlanner.parseProtoFields(data: try proto.serializedData()), "shared parse")
+
+        XCTAssertEqual(fields, parsed)
+
+        fields.removeValue(forKey: "telemetryEnabled")
+        let noTelemetryData = try XCTUnwrap(PolarUserDeviceSettingsRuntimePlanner.buildProtoData(fields: fields, date: Date(timeIntervalSince1970: 0), includeTelemetry: false), "shared build without telemetry")
+        let noTelemetryProto = try Data_PbUserDeviceSettings(serializedBytes: noTelemetryData)
+        XCTAssertFalse(noTelemetryProto.hasTelemetrySettings)
+    }
+
     // MARK: - Request encoding
 
     func testGetUserDeviceSettings_sendsRequestWithCorrectPath() async throws {
@@ -277,7 +299,7 @@ private let USER_DEVICE_SETTINGS_MODEL_READINESS_FAMILIES = [
     "encoder-owned-trusted-last-modified",
     "explicit-telemetry-write-policy",
     "platform-default-divergence",
-    "protobuf-byte-ownership-deferral",
+    "mapped-protobuf-byte-codec",
     "platform-user-device-settings-vector-references",
     "compile-verification-gate"
 ]

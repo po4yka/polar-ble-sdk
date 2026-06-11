@@ -85,7 +85,9 @@ import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarTrainingReadinessName
+import com.polar.shared.sdk.PolarUserDeviceSettingsFields
 import com.polar.shared.sdk.PolarUserDeviceSettingsModels
+import com.polar.shared.sdk.PolarUserDeviceSettingsTimestamp
 import com.polar.shared.sdk.PolarWatchFaceConfigFlatBuffer
 import com.polar.shared.sdk.PolarWatchFaceComplicationName
 import com.polar.shared.sdk.PolarWatchFaceFields
@@ -1261,6 +1263,49 @@ object PolarIosSharedBridge {
         return PolarUserDeviceSettingsModels.daylightSavingPayloadFields().joinToString(separator = ",")
     }
 
+    fun userDeviceSettingsParseProtoBytesCsv(protoHex: String): String? {
+        return runCatching {
+            val fields = PolarUserDeviceSettingsModels.parseProtoBytes(protoHex.hexToBytes())
+            buildList {
+                fields.deviceLocation?.let { add("deviceLocation=$it") }
+                fields.usbConnectionMode?.let { add("usbConnectionMode=$it") }
+                fields.automaticTrainingDetectionMode?.let { add("automaticTrainingDetectionMode=$it") }
+                fields.automaticTrainingDetectionSensitivity?.let { add("automaticTrainingDetectionSensitivity=$it") }
+                fields.minimumTrainingDurationSeconds?.let { add("minimumTrainingDurationSeconds=$it") }
+                fields.telemetryEnabled?.let { add("telemetryEnabled=$it") }
+                fields.autosFilesEnabled?.let { add("autosFilesEnabled=$it") }
+            }.joinToString(separator = ",")
+        }.getOrNull()
+    }
+
+    fun userDeviceSettingsBuildProtoBytesHex(fieldsCsv: String, year: Int, month: Int, day: Int, hour: Int, minute: Int, seconds: Int, millis: Int, trusted: Boolean, includeTelemetry: Boolean): String? {
+        return runCatching {
+            val fields = fieldsCsv.csvKeyValueFields()
+            PolarUserDeviceSettingsModels.buildProtoBytes(
+                model = PolarUserDeviceSettingsFields(
+                    deviceLocation = fields["deviceLocation"]?.toInt(),
+                    usbConnectionMode = fields["usbConnectionMode"]?.toBooleanStrictOrNull(),
+                    automaticTrainingDetectionMode = fields["automaticTrainingDetectionMode"]?.toBooleanStrictOrNull(),
+                    automaticTrainingDetectionSensitivity = fields["automaticTrainingDetectionSensitivity"]?.toInt(),
+                    minimumTrainingDurationSeconds = fields["minimumTrainingDurationSeconds"]?.toInt(),
+                    telemetryEnabled = fields["telemetryEnabled"]?.toBooleanStrictOrNull(),
+                    autosFilesEnabled = fields["autosFilesEnabled"]?.toBooleanStrictOrNull()
+                ),
+                timestamp = PolarUserDeviceSettingsTimestamp(
+                    year = year,
+                    month = month,
+                    day = day,
+                    hour = hour,
+                    minute = minute,
+                    seconds = seconds,
+                    millis = millis,
+                    trusted = trusted
+                ),
+                includeTelemetry = includeTelemetry
+            ).toHex()
+        }.getOrNull()
+    }
+
     fun firstTimeUseTrainingBackgroundName(value: Int): String? {
         return PolarFirstTimeUseTrainingBackgroundName.fromValue(value)?.name
     }
@@ -2226,6 +2271,17 @@ object PolarIosSharedBridge {
     private fun String.csvFields(): List<String> {
         if (isEmpty()) return emptyList()
         return split(",").map { it.trim() }
+    }
+
+    private fun String.csvKeyValueFields(): Map<String, String> {
+        return csvFields().mapNotNull { field ->
+            val separator = field.indexOf('=')
+            if (separator < 0) {
+                null
+            } else {
+                field.substring(0, separator) to field.substring(separator + 1)
+            }
+        }.toMap()
     }
 
     private fun String.lineMap(): Map<String, String> {

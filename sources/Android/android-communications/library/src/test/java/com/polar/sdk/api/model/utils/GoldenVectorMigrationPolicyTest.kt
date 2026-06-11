@@ -4045,7 +4045,7 @@ class GoldenVectorMigrationPolicyTest {
         val BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = mapOf(
             "KmpFullCoverageTddBacklog.md" to listOf(
                 "add real common protobuf/gzip production dependencies",
-                "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android consumption",
+                "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
                 "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
                 "shared-common-aes-production-decryption",
                 "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
@@ -4055,13 +4055,13 @@ class GoldenVectorMigrationPolicyTest {
             "KmpCoverageInventory.md" to listOf(
                 "REST event compressed payload decoding now uses shared KMP platform actual codecs while generic iOS `Data.deflated`/`Data.inflated` remains platform-specific.",
                 "linked iOS `PolarRestServiceProjectionPlanner` now consume shared REST JSON parsing",
-                "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android consumption",
+                "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
                 "Keep iOS nil-on-truncation compatibility adapter-owned if required while common parsing uses typed malformed-script errors.",
                 "semantic and codec-ownership/readiness policy executable"
             ),
             "KmpPreMigrationRemainingWork.md" to listOf(
                 "Add real common protobuf/gzip dependencies",
-                "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android consumption",
+                "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
                 "training-session payload parsing",
                 "PMD AES ECB/no-padding decryption now lives in shared common production code",
                 "watch-face FlatBuffer input/output construction lives in shared common production code",
