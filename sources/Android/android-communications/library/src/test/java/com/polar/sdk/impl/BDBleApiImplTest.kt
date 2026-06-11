@@ -1273,6 +1273,121 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `updateFirmware maps final set time failure to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "h10")
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val setTimeFailure = RuntimeException("set local time failed")
+        coEvery { client.request(any()) } returns ByteArrayOutputStream().apply { write(deviceInfo.toByteArray()) }
+        coEvery { client.query(any(), any()) } answers {
+            if (firstArg<Int>() == PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE) throw setTimeFailure
+            ByteArrayOutputStream()
+        }
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flowOf(2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Setting device time") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateCompletedSuccessfully })
+        val failed = statuses.last() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(statuses.toString(), failed.details.contains("set local time failed"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware maps final restart failure to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        val requestResponses = ArrayDeque(listOf(deviceInfo.toByteArray(), emptyDirectory))
+        val restartFailure = RuntimeException("restart notification failed")
+        var resetNotifications = 0
+        coEvery { client.request(any()) } answers {
+            ByteArrayOutputStream().apply { write(if (requestResponses.isEmpty()) emptyDirectory else requestResponses.removeFirst()) }
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } answers {
+            if (firstArg<Int>() == PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal && ++resetNotifications == 2) {
+                throw restartFailure
+            }
+            Unit
+        }
+        coEvery { client.write(any(), any()) } returns flowOf(2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Restarting device") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateCompletedSuccessfully })
+        val failed = statuses.last() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(statuses.toString(), failed.details.contains("restart notification failed"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware keeps success when final stop sync fails`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "360")
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        val requestResponses = ArrayDeque(listOf(deviceInfo.toByteArray(), emptyDirectory))
+        val stopSyncFailure = RuntimeException("stop sync notification failed")
+        val notificationIds = mutableListOf<Int>()
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { BlePolarDeviceCapabilitiesUtility.isDeviceSensor("360") } returns true
+        coEvery { client.request(any()) } answers {
+            ByteArrayOutputStream().apply { write(if (requestResponses.isEmpty()) emptyDirectory else requestResponses.removeFirst()) }
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(capture(notificationIds), any()) } answers {
+            if (firstArg<Int>() == PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE) {
+                throw stopSyncFailure
+            }
+            Unit
+        }
+        coEvery { client.write(any(), any()) } returns flowOf(2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Stopping sync") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateFailed })
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateCompletedSuccessfully("Firmware update to 9.9.9 completed successfully"), statuses.last())
+        Assert.assertTrue(notificationIds.toString(), notificationIds.contains(PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
     fun `updateFirmware with direct firmware url keeps success when backup restore write fails after firmware write`() = runTest {
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
