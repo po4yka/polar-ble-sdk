@@ -158,7 +158,7 @@ RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = {
     "RestFacadeRuntimePolicyCommonTest.kt",
     "RestRequestTransportPolicyCommonTest.kt",
     "response-error platform mapping",
-    "empty-success policy",
+    "empty-success policy pinned through shared transport planning plus platform parse/decode compatibility",
     "facade-level public error compatibility assertions",
     "additional delegated REST operations before shared REST runtime delegation"
   ],
