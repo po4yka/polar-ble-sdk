@@ -93,7 +93,20 @@ pod install --project-directory=sources/iOS/ios-communications
 pod lib lint PolarBleSdk.podspec --allow-warnings
 ```
 
-`swift package describe` proves only that the SwiftPM manifest remains valid. During the compatibility phase, SwiftPM iOS and SwiftPM/watchOS do not link `PolarBleSdkShared.framework`; they use the Swift fallback code behind `#if canImport(PolarBleSdkShared)`. CocoaPods and the Xcode workspace are the supported Apple shared-consumption paths until a checked-in or downloaded `PolarBleSdkShared.xcframework` strategy is added.
+`swift package describe` proves only that the SwiftPM manifest remains valid. On a clean checkout, SwiftPM iOS and SwiftPM/watchOS do not link shared KMP; they use the Swift fallback code behind `#if canImport(PolarBleSdkShared)`. The explicit SwiftPM/watchOS shared-consumption path is `PolarBleSdkShared.xcframework` through the conditional `Package.swift` `binaryTarget`, which is active only after the XCFramework exists locally or after a release manifest points to a remote URL/checksum artifact. Validate packaging intent without building native frameworks with:
+
+```bash
+sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh --dry-run --output /tmp/polar-spm-xcframework
+```
+
+Validate the local-output artifact path before claiming SwiftPM/watchOS shared consumption with:
+
+```bash
+sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh --configuration Debug
+swift package describe
+```
+
+For release artifacts, run the same script with `--zip-output`, record the printed `swift package compute-checksum` value, and use a `binaryTarget(url:checksum:)` entry that points at the zipped `PolarBleSdkShared.xcframework`. Do not claim SwiftPM/watchOS shared consumption until the package manifest resolves with the binary target present and an iOS/watchOS SwiftPM build or equivalent package integration gate has run against that artifact. CocoaPods and the Xcode workspace remain supported through `PolarBleSdkShared.framework` built by `sources/iOS/ios-communications/scripts/build_kmp_ios_framework.sh`.
 
 ## Documentation And Fixture Gates
 

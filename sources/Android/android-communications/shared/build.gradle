@@ -9,7 +9,7 @@ kotlin {
         minSdk = 26
         withHostTest {}
     }
-    [iosX64(), iosArm64(), iosSimulatorArm64()].each { target ->
+    [iosX64(), iosArm64(), iosSimulatorArm64(), watchosX64(), watchosArm64(), watchosSimulatorArm64()].each { target ->
         target.binaries {
             framework {
                 baseName = 'PolarBleSdkShared'

@@ -2516,8 +2516,8 @@ class GoldenVectorMigrationPolicyTest {
         if (!sharedBuild.contains("android {")) {
             violations += "shared/build.gradle must declare the AGP 9 Android KMP target"
         }
-        if (!sharedBuild.contains("iosX64()") || !sharedBuild.contains("iosArm64()") || !sharedBuild.contains("iosSimulatorArm64()")) {
-            violations += "shared/build.gradle must declare iosX64, iosArm64, and iosSimulatorArm64"
+        if (!sharedBuild.contains("iosX64()") || !sharedBuild.contains("iosArm64()") || !sharedBuild.contains("iosSimulatorArm64()") || !sharedBuild.contains("watchosX64()") || !sharedBuild.contains("watchosArm64()") || !sharedBuild.contains("watchosSimulatorArm64()")) {
+            violations += "shared/build.gradle must declare iOS and watchOS KMP framework targets"
         }
         if (!sharedBuild.contains("namespace = 'com.polar.shared'") || !Regex("minSdk(?:Version)?\\s*(?:=)?\\s*26").containsMatchIn(sharedBuild)) {
             violations += "shared/build.gradle must declare Android namespace and minSdk 26"
@@ -2553,6 +2553,8 @@ class GoldenVectorMigrationPolicyTest {
         val checklist = root.resolve("documentation/KmpMigrationChecklist.md").readText()
         val validationCommands = root.resolve("documentation/KmpValidationCommands.md").readText()
         val consumptionDocFile = root.resolve("documentation/KmpSharedArtifactConsumption.md")
+        val packageSwift = root.resolve("Package.swift").readText()
+        val packageScript = root.resolve("sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh")
         val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle").readText()
         val completedItems = CHECKED_CHECKLIST_ITEM.findAll(checklist)
             .map { match -> match.groupValues[1].trimEnd('.') }
@@ -2570,7 +2572,13 @@ class GoldenVectorMigrationPolicyTest {
         if (!sharedBuild.contains("baseName = 'PolarBleSdkShared'") || !sharedBuild.contains("isStatic = true")) {
             violations += "shared/build.gradle must define the static PolarBleSdkShared framework artifact"
         }
-        if (!validationCommands.contains(":shared:bundleAndroidMainAar") || !validationCommands.contains(":shared:linkDebugFrameworkIosX64")) {
+        if (packageSwift.contains("PolarBleSdkShared") && (!packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework"))) {
+            violations += "Package.swift must use an explicit PolarBleSdkShared.xcframework binaryTarget for SwiftPM shared consumption"
+        }
+        if (!packageScript.isFile || !packageScript.canExecute()) {
+            violations += "package_kmp_xcframework.sh must exist and be executable"
+        }
+        if (!validationCommands.contains(":shared:bundleAndroidMainAar") || !validationCommands.contains(":shared:linkDebugFrameworkIosX64") || !validationCommands.contains("package_kmp_xcframework.sh --dry-run")) {
             violations += "KmpValidationCommands.md must document shared artifact smoke gates"
         }
         if (!completedItems.contains("Document how shared artifacts are consumed by Android and iOS modules")) {
@@ -3967,6 +3975,12 @@ class GoldenVectorMigrationPolicyTest {
             "polar-ble-sdk-shared.aar",
             "SwiftPM/watchOS",
             "fallback-only",
+            "PolarBleSdkShared.xcframework",
+            "binaryTarget",
+            "checksum",
+            "package_kmp_xcframework.sh",
+            "local-output",
+            "Do not claim SwiftPM/watchOS shared consumption",
             "rollback path for every shared-module adoption step"
         )
         val PLATFORM_OWNED_COVERAGE_ROWS = mapOf(
