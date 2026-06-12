@@ -1,7 +1,11 @@
 // Copyright © 2026 Polar Electro Oy. All rights reserved.
 
 import XCTest
+import Foundation
 @testable import PolarBleSdk
+
+private let EXERCISE_SESSION_READINESS_COMMON_DECISION = "Exercise-session migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS exercise-session tests continue to pin sport-profile ID mapping, unknown sport-profile fallback, offline exercise command planning, offline exercise file read/remove paths, device-info path planning, protobuf construction boundaries, status-result platform boundaries, public error mapping boundaries, platform vector references, and compile verification before broader exercise execution moves."
+private let EXERCISE_SESSION_READINESS_FAMILIES = ["sport-profile-id-mapping", "unknown-sport-profile-fallback", "offline-exercise-start-command-planning", "offline-exercise-stop-command-planning", "offline-exercise-status-command-planning", "offline-exercise-file-read-remove-paths", "offline-exercise-device-info-path", "protobuf-construction-platform-boundary", "status-result-platform-boundary", "public-error-mapping-boundary", "platform-exercise-session-vector-reference-gate", "compile-verification-gate"]
 
 final class PolarOfflineExerciseV2Tests: XCTestCase {
 
@@ -304,6 +308,25 @@ final class PolarOfflineExerciseV2Tests: XCTestCase {
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif
+    }
+
+    func testExerciseSessionReadinessManifestIsPinnedBeforeOfflineExerciseMigration() throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/exercise-session/exercise-session-readiness.json")
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any])
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any])
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+
+        XCTAssertEqual(manifest["id"] as? String, "exercise-session-readiness")
+        XCTAssertEqual(input["kind"] as? String, "exerciseSessionReadiness")
+        XCTAssertEqual(requiredFamilies, EXERCISE_SESSION_READINESS_FAMILIES)
+        XCTAssertEqual(coveredFamilies, EXERCISE_SESSION_READINESS_FAMILIES)
+        XCTAssertEqual(expected["commonDecision"] as? String, EXERCISE_SESSION_READINESS_COMMON_DECISION)
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.api.model.PolarExerciseSessionTest", "com.polar.sdk.impl.PolarOfflineExerciseV2ApiImplTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarOfflineExerciseV2Tests"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.ExerciseSessionModelsCommonPolicyTest"])
     }
 
     func test_exerciseEntry_path_structure() throws {

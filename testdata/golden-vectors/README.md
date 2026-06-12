@@ -21,6 +21,7 @@ testdata/golden-vectors/sdk/daily-summary/
 testdata/golden-vectors/sdk/device-capabilities/
 testdata/golden-vectors/sdk/disk-space/
 testdata/golden-vectors/sdk/disk-time-runtime/
+testdata/golden-vectors/sdk/exercise-session/
 testdata/golden-vectors/sdk/fake-transport/
 testdata/golden-vectors/sdk/feature-availability/
 testdata/golden-vectors/sdk/file-utils/

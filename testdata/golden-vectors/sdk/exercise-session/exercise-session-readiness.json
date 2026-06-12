@@ -1,0 +1,59 @@
+{
+  "id": "exercise-session-readiness",
+  "area": "sdk.exercise-session",
+  "case": "exercise_session_readiness",
+  "source": "Android, iOS, and shared exercise-session sport-profile mapping plus offline exercise facade command/file-operation characterization before KMP migration",
+  "description": "Pins exercise-session behavior families that must remain covered before broader live/offline exercise model or facade execution moves into shared KMP code.",
+  "input": {
+    "kind": "exerciseSessionReadiness",
+    "requiredBehaviorFamilies": [
+      "sport-profile-id-mapping",
+      "unknown-sport-profile-fallback",
+      "offline-exercise-start-command-planning",
+      "offline-exercise-stop-command-planning",
+      "offline-exercise-status-command-planning",
+      "offline-exercise-file-read-remove-paths",
+      "offline-exercise-device-info-path",
+      "protobuf-construction-platform-boundary",
+      "status-result-platform-boundary",
+      "public-error-mapping-boundary",
+      "platform-exercise-session-vector-reference-gate",
+      "compile-verification-gate"
+    ]
+  },
+  "expected": {
+    "coveredBehaviorFamilies": [
+      "sport-profile-id-mapping",
+      "unknown-sport-profile-fallback",
+      "offline-exercise-start-command-planning",
+      "offline-exercise-stop-command-planning",
+      "offline-exercise-status-command-planning",
+      "offline-exercise-file-read-remove-paths",
+      "offline-exercise-device-info-path",
+      "protobuf-construction-platform-boundary",
+      "status-result-platform-boundary",
+      "public-error-mapping-boundary",
+      "platform-exercise-session-vector-reference-gate",
+      "compile-verification-gate"
+    ],
+    "commonDecision": "Exercise-session migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS exercise-session tests continue to pin sport-profile ID mapping, unknown sport-profile fallback, offline exercise command planning, offline exercise file read/remove paths, device-info path planning, protobuf construction boundaries, status-result platform boundaries, public error mapping boundaries, platform vector references, and compile verification before broader exercise execution moves."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.api.model.PolarExerciseSessionTest",
+      "com.polar.sdk.impl.PolarOfflineExerciseV2ApiImplTest"
+    ],
+    "ios": [
+      "PolarOfflineExerciseV2Tests"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.ExerciseSessionModelsCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest gates exercise-session sport-profile lookup and offline exercise command/file planning only. Live/offline exercise protobuf construction, status result mapping, filesystem capability gates, BLE/PSFTP transport execution, SwiftPM/watchOS fallback, and public error translation remain platform-owned until a later runtime slice deliberately migrates execution."
+}

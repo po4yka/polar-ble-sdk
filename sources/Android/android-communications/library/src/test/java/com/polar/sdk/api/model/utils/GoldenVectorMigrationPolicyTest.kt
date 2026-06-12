@@ -1311,6 +1311,35 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
+    fun `exercise session migration vectors have executable shared common policy coverage`() {
+        val root = findRepositoryRoot()
+        val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/ExerciseSessionModelsCommonPolicyTest.kt")
+        val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
+        val readme = root.resolve("testdata/golden-vectors/sdk/exercise-session/README.md").readText()
+        val violations = mutableListOf<String>()
+
+        if (!commonTest.isFile) {
+            violations += commonTest.relativeTo(root).path
+        } else {
+            val commonTestText = commonTest.readText()
+            EXERCISE_SESSION_COMMON_POLICY_REQUIRED_TERMS
+                .filterNot { term -> commonTestText.contains(term) }
+                .mapTo(violations) { term -> "${commonTest.relativeTo(root).path}: missing exercise-session common policy term $term" }
+        }
+        if (!inventory.contains("ExerciseSessionModelsCommonPolicyTest.kt") || !inventory.contains("exercise-session-readiness.json")) {
+            violations += "KmpCoverageInventory.md must mention ExerciseSessionModelsCommonPolicyTest.kt and exercise-session-readiness.json in the exercise-session row"
+        }
+        if (!readme.contains("ExerciseSessionModelsCommonPolicyTest.kt")) {
+            violations += "sdk/exercise-session/README.md must mention executable shared exercise-session policy coverage"
+        }
+
+        assertTrue(
+            "Exercise-session migration vectors must have executable shared common policy coverage before exercise model or facade execution moves to KMP: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
     fun `KMP documentation keeps validation commands discoverable`() {
         val root = findRepositoryRoot()
         val missingLinks = KMP_DOCS_THAT_MUST_LINK_VALIDATION
@@ -3728,6 +3757,26 @@ class GoldenVectorMigrationPolicyTest {
             "platform-sd-log-vector-reference-gate",
             "compile-verification-gate",
             "SD-log migration may proceed only after this readiness manifest is executable from shared commonTest"
+        )
+        val EXERCISE_SESSION_COMMON_POLICY_REQUIRED_TERMS = listOf(
+            "exerciseSportProfileMappingPreservesPublicIdsAndUnknownFallback",
+            "exerciseSessionReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+            "sdk/exercise-session/exercise-session-readiness.json",
+            "exercise-session-readiness",
+            "exerciseSessionReadiness",
+            "sport-profile-id-mapping",
+            "unknown-sport-profile-fallback",
+            "offline-exercise-start-command-planning",
+            "offline-exercise-stop-command-planning",
+            "offline-exercise-status-command-planning",
+            "offline-exercise-file-read-remove-paths",
+            "offline-exercise-device-info-path",
+            "protobuf-construction-platform-boundary",
+            "status-result-platform-boundary",
+            "public-error-mapping-boundary",
+            "platform-exercise-session-vector-reference-gate",
+            "compile-verification-gate",
+            "Exercise-session migration may proceed only after this readiness manifest is executable from shared commonTest"
         )
         val FIRST_TIME_USE_COMMON_POLICY_REQUIRED_TERMS = listOf(
             "firstTimeUseEnumMappingsPreservePublicPhysicalConfigValues",
