@@ -45,6 +45,7 @@ class OfflineTriggerRuntimePolicyCommonTest {
         assertEquals(REQUIRED_TRIGGER_RUNTIME_SCENARIOS, expectedCases.keys.toList())
         assertEquals(TRIGGER_RUNTIME_COMMON_DECISION, expected.stringValue("commonDecision"))
         assertEquals("shared-common-test", vector.objectValue("execution").stringValue("status"))
+        assertEquals(TRIGGER_RUNTIME_CANCELLATION_DEFERRAL_REASON, vector.objectValue("execution").stringValue("reason"))
         assertEquals("executable shared commonTest covers typed trigger runtime steps before platform facade behavior moves", vector.objectValue("platformExpectations").stringValue("common"))
         val cleanupEvidence = expected.objectValue("platformCleanupEvidence")
         assertEquals("android-stale-wrong-command-response-discard", cleanupEvidence.objectValue("android").stringValue("id"))
@@ -166,6 +167,7 @@ class OfflineTriggerRuntimePolicyCommonTest {
         assertEquals("offline-trigger-runtime-matrix", expected.stringValue("policy"))
         assertEquals(TRIGGER_RUNTIME_COMMON_DECISION, expected.stringValue("commonDecision"))
         assertEquals("shared-common-test", policy.objectValue("execution").stringValue("status"))
+        assertEquals(TRIGGER_RUNTIME_CANCELLATION_DEFERRAL_REASON, policy.objectValue("execution").stringValue("reason"))
         assertEquals("executable shared commonTest covers typed trigger runtime steps before platform facade behavior moves", policy.objectValue("platformExpectations").stringValue("common"))
         assertEquals("BDBleApiImplTest pins public facade get/set mapping, secret propagation, and set/get error propagation; BlePmdClientTest pins Android byte-level PMD packet framing with length-prefixed enabled trigger settings and stale wrong-command response discard during offline-trigger status reads", policy.objectValue("platformExpectations").stringValue("android"))
         assertEquals("PolarBleApiImplTests pins public facade get/set mapping, secret propagation, set-mode error propagation, and get-status error propagation; BlePmdClientTest pins iOS byte-level PMD packet framing without Android's enabled-trigger length prefix and pre-command PMD response queue clearing", policy.objectValue("platformExpectations").stringValue("ios"))
@@ -294,6 +296,7 @@ class OfflineTriggerRuntimePolicyCommonTest {
             "compile-verification-gate"
         )
         const val TRIGGER_RUNTIME_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
+        const val TRIGGER_RUNTIME_CANCELLATION_DEFERRAL_REASON = "Shared commonTest now asserts get/set trigger orchestration steps through the common fake transport, Android plus iOS facade tests pin public get/set mapping, secret propagation, and error propagation, and platform PMD adapter tests pin the Android/iOS packet-framing split plus response-queue cleanup policy. Cancellation remains a production-delegation gate because current offline-trigger operations are synchronous control-point commands without stream observers or cancellable fake-runtime tasks."
         const val TRIGGER_RUNTIME_READINESS_COMMON_DECISION = "Offline trigger runtime migration may proceed only after trigger-runtime-policy.json and this readiness manifest are executable from shared commonTest, platform facade tests continue to reference the same policy vector, packet-framing differences are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
         const val TRIGGER_RUNTIME_NOTES = "Android serializes enabled trigger settings with an explicit length byte before setting and secret bytes, while current iOS appends setting and secret bytes directly. Android discards stale PMD control-point responses with an unexpected command byte during offline-trigger status reads; iOS clears the response queue before transmitting a new control-point command. KMP must choose a shared packet and queue-cleanup contract or preserve these platform splits behind platform adapters."
     }

@@ -904,6 +904,7 @@ FAKE_TRANSPORT_COMMON_OFFLINE_TRIGGER_RUNTIME_TEST_REQUIRED_TERMS = [
   "setSetting",
   "control-point-error",
   "transport-error",
+  "Cancellation remains a production-delegation gate because current offline-trigger operations are synchronous control-point commands without stream observers or cancellable fake-runtime tasks.",
   "ScriptedCommonFakeTransport",
   "CommonFakeTransportCommand",
   "enabledFeatures",
