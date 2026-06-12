@@ -7,7 +7,7 @@ import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
 import com.polar.androidcommunications.testrules.BleLoggerTestRule
-import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import org.hamcrest.Matchers
 import org.junit.Assert
 import org.junit.Rule
@@ -134,13 +134,21 @@ internal class OfflineHrDataTest {
         )
 
         val offlineHrData = OfflineHrData.parseDataFromDataFrame(dataFrame)
-        val sharedSamples = PolarSensorDataParser.parseOfflineHr(dataFrame.toPolarSharedFrame())
+        val plannedSamples = PolarRuntimePlannerAdapter.pmdOfflineHrSamples(
+            frameType = dataFrame.frameType.id.toInt(),
+            compressed = dataFrame.isCompressedFrame,
+            timeStamp = dataFrame.timeStamp,
+            previousTimeStamp = dataFrame.previousTimeStamp,
+            factor = dataFrame.factor,
+            sampleRate = dataFrame.sampleRate,
+            dataContent = dataFrame.dataContent
+        )
 
-        Assert.assertEquals(sharedSamples.size, offlineHrData.hrSamples.size)
-        sharedSamples.zip(offlineHrData.hrSamples).forEach { (shared, platform) ->
-            Assert.assertEquals(shared.hr, platform.hr)
-            Assert.assertEquals(shared.ppgQuality, platform.ppgQuality)
-            Assert.assertEquals(shared.correctedHr, platform.correctedHr)
+        Assert.assertEquals(plannedSamples.size, offlineHrData.hrSamples.size)
+        plannedSamples.zip(offlineHrData.hrSamples).forEach { (planned, platform) ->
+            Assert.assertEquals(planned.hr, platform.hr)
+            Assert.assertEquals(planned.ppgQuality, platform.ppgQuality)
+            Assert.assertEquals(planned.correctedHr, platform.correctedHr)
         }
     }
 
