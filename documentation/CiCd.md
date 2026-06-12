@@ -8,7 +8,7 @@ This repository uses GitHub Actions for pull-request validation, nightly validat
 |---|---|---|
 | `PR Checks` | Pull requests and pushes to `master`, except product-doc-only and issue-template-only changes | Runs repository policy checks, Android unit tests, shared KMP checks, and iOS XCTest. |
 | `Nightly Validation` | Daily schedule and manual dispatch | Runs the same validation without path skipping and uploads diagnostic artifacts. |
-| `Release Artifacts` | Manual dispatch and version tags | Builds Android AAR, shared KMP Android/iOS artifacts, validates Swift Package and podspec surfaces, and uploads artifacts without publishing. |
+| `Release Artifacts` | Manual dispatch and version tags | Builds Android AAR, shared KMP Android/iOS artifacts, validates Android shared Gradle module metadata in a temporary local repository, validates Swift Package and podspec surfaces, and uploads artifacts without publishing. |
 
 ## Pull Request Gates
 
@@ -18,7 +18,7 @@ Product documentation under `documentation/products/` and issue-template-only ch
 
 ## Artifact Policy
 
-Release automation is artifact-only. It does not publish to Maven, CocoaPods, Swift Package registries, GitHub Pages, or any external package host. Release artifacts are uploaded to the workflow run with limited retention and must be reviewed before any manual publication step outside CI.
+Release automation is artifact-only. It does not publish to Maven, CocoaPods, Swift Package registries, GitHub Pages, or any external package host. Android shared Gradle module metadata validation publishes only to a temporary local repository through `scripts/verify_android_shared_maven_publication.sh`; that repository is discarded and is not a release destination. Release artifacts are uploaded to the workflow run with limited retention and must be reviewed before any manual publication step outside CI.
 
 Generated API documentation under `docs/polar-sdk-android` and `docs/polar-sdk-ios` remains checked-in release output. CI fails when those directories change outside an explicit release documentation regeneration change.
 
@@ -36,6 +36,11 @@ cd sources/Android/android-communications
 ./gradlew :library:testSdkDebugUnitTest --no-daemon --warning-mode all
 ./gradlew :shared:jvmTest :shared:compileAndroidMain :shared:compileAndroidHostTest :shared:compileKotlinMetadata --no-daemon --warning-mode all
 ./gradlew :shared:compileKotlinIosX64 :shared:linkDebugFrameworkIosX64 --no-daemon --warning-mode all
+```
+
+```bash
+scripts/verify_android_example_aar_consumption.sh
+scripts/verify_android_shared_maven_publication.sh
 ```
 
 ```bash

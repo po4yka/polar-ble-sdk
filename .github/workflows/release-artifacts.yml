@@ -42,6 +42,9 @@ jobs:
       - name: Verify Android example consumes release AARs
         run: scripts/verify_android_example_aar_consumption.sh
 
+      - name: Verify shared Gradle metadata publication locally
+        run: scripts/verify_android_shared_maven_publication.sh
+
       - name: Stage Android artifacts
         run: |
           mkdir -p /tmp/polar-release-artifacts/android

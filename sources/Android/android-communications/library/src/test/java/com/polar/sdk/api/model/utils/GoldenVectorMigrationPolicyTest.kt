@@ -2572,6 +2572,9 @@ class GoldenVectorMigrationPolicyTest {
         if (!sharedBuild.contains("baseName = 'PolarBleSdkShared'") || !sharedBuild.contains("isStatic = true")) {
             violations += "shared/build.gradle must define the static PolarBleSdkShared framework artifact"
         }
+        if (!sharedBuild.contains("maven-publish") || !sharedBuild.contains("polar-ble-sdk-shared") || !sharedBuild.contains("PolarSharedLocal")) {
+            violations += "shared/build.gradle must define shared Gradle metadata publication for temporary local repository validation"
+        }
         if (packageSwift.contains("PolarBleSdkShared") && (!packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework"))) {
             violations += "Package.swift must use an explicit PolarBleSdkShared.xcframework binaryTarget for SwiftPM shared consumption"
         }
@@ -2580,6 +2583,12 @@ class GoldenVectorMigrationPolicyTest {
         }
         if (!validationCommands.contains(":shared:bundleAndroidMainAar") || !validationCommands.contains(":shared:linkDebugFrameworkIosX64") || !validationCommands.contains("package_kmp_xcframework.sh --dry-run")) {
             violations += "KmpValidationCommands.md must document shared artifact smoke gates"
+        }
+        if (!validationCommands.contains("scripts/verify_android_shared_maven_publication.sh")) {
+            violations += "KmpValidationCommands.md must document shared Maven publication validation"
+        }
+        if (!root.resolve("scripts/verify_android_shared_maven_publication.sh").let { it.isFile && it.canExecute() }) {
+            violations += "verify_android_shared_maven_publication.sh must exist and be executable"
         }
         if (!completedItems.contains("Document how shared artifacts are consumed by Android and iOS modules")) {
             violations += "KmpMigrationChecklist.md must mark shared artifact consumption documentation complete"
@@ -3973,6 +3982,11 @@ class GoldenVectorMigrationPolicyTest {
             "may depend on shared code only when a behavior slice",
             "scripts/verify_android_example_aar_consumption.sh",
             "polar-ble-sdk-shared.aar",
+            "two-AAR compatibility model",
+            "Gradle module metadata",
+            "artifact-only",
+            "scripts/verify_android_shared_maven_publication.sh",
+            "temporary local repository",
             "SwiftPM/watchOS",
             "fallback-only",
             "PolarBleSdkShared.xcframework",

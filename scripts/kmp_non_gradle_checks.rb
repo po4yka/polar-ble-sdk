@@ -1460,6 +1460,11 @@ SHARED_CONSUMPTION_REQUIRED_TERMS = [
   "may depend on shared code only when a behavior slice",
   "scripts/verify_android_example_aar_consumption.sh",
   "polar-ble-sdk-shared.aar",
+  "two-AAR compatibility model",
+  "Gradle module metadata",
+  "artifact-only",
+  "scripts/verify_android_shared_maven_publication.sh",
+  "temporary local repository",
   "SwiftPM/watchOS",
   "fallback-only",
   "PolarBleSdkShared.xcframework",
@@ -2727,8 +2732,18 @@ end
 unless shared_build.include?("baseName = 'PolarBleSdkShared'") && shared_build.include?("isStatic = true")
   errors << "sources/Android/android-communications/shared/build.gradle: must define static PolarBleSdkShared framework artifact"
 end
+unless shared_build.include?("maven-publish") && shared_build.include?("polar-ble-sdk-shared") && shared_build.include?("PolarSharedLocal")
+  errors << "sources/Android/android-communications/shared/build.gradle: must define shared Gradle metadata publication for temporary local repository validation"
+end
 unless validation_commands.include?(":shared:bundleAndroidMainAar") && validation_commands.include?(":shared:linkDebugFrameworkIosX64") && validation_commands.include?("package_kmp_xcframework.sh --dry-run")
   errors << "documentation/KmpValidationCommands.md: must document shared artifact smoke gates"
+end
+unless validation_commands.include?("scripts/verify_android_shared_maven_publication.sh")
+  errors << "documentation/KmpValidationCommands.md: must document shared Maven publication validation"
+end
+shared_publication_script = File.join(ROOT, "scripts/verify_android_shared_maven_publication.sh")
+unless File.file?(shared_publication_script) && File.executable?(shared_publication_script)
+  errors << "scripts/verify_android_shared_maven_publication.sh: missing executable shared Maven publication verification script"
 end
 package_script = File.join(ROOT, "sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh")
 unless File.file?(package_script) && File.executable?(package_script)
