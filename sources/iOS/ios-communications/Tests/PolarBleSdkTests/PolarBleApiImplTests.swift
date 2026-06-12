@@ -17,6 +17,7 @@ private let STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traver
 private let DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
 private let USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
 private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+private let FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
 private let REST_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
 private let FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
@@ -24,6 +25,7 @@ private let COMMAND_RUNTIME_POLICY_OPERATION_IDS = ["h10-start-recording", "h10-
 private let DISK_TIME_RUNTIME_POLICY_OPERATION_IDS = ["get-disk-space", "get-local-time", "get-local-time-with-zone", "set-local-time-v2", "set-local-time-h10", "set-local-time-failure", "get-local-time-failure", "get-local-time-with-zone-failure", "get-disk-space-failure"]
 private let STORED_DATA_CLEANUP_POLICY_SCENARIO_IDS = ["telemetry-root-trc-bin-filter", "sdlogs-extension-filter", "activity-prune-empty-parents", "automatic-sample-embedded-day-filter", "sdlogs-list-failure-platform-policy", "telemetry-list-failure-platform-policy"]
 private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS = ["get-user-device-settings", "get-user-device-settings-read-failure", "set-user-device-settings", "set-user-device-settings-write-failure", "set-telemetry-enabled", "set-telemetry-read-failure", "set-telemetry-write-failure", "set-user-device-location", "set-user-device-location-read-failure", "set-user-device-location-write-failure", "set-usb-connection-mode", "set-usb-connection-mode-read-failure", "set-usb-connection-mode-write-failure", "set-automatic-training-detection", "set-automatic-training-detection-read-failure", "set-automatic-training-detection-write-failure", "set-automatic-ohr-measurement", "set-automatic-ohr-measurement-read-failure", "set-automatic-ohr-measurement-write-failure", "set-daylight-saving-time"]
+private let FIRST_TIME_USE_READINESS_FAMILIES = ["gender-enum-projection", "training-background-enum-projection", "typical-day-enum-projection", "unknown-enum-null-boundary", "physical-config-read-write-paths", "user-id-read-write-paths", "write-progress-policy-gate", "sync-sequencing-platform-boundary", "protobuf-construction-platform-boundary", "public-error-mapping-boundary", "platform-first-time-use-vector-reference-gate", "compile-verification-gate"]
 private let REST_FACADE_RUNTIME_POLICY_OPERATION_IDS = ["list-rest-api-services-success", "get-rest-api-description-success", "list-rest-api-services-request-failure", "get-rest-api-description-request-failure", "list-rest-api-services-response-error", "get-rest-api-description-response-error", "list-rest-api-services-empty-success", "list-rest-api-services-malformed-success", "get-rest-api-description-empty-success", "get-rest-api-description-malformed-success"]
 private let FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS = ["read-low-level-file-success", "read-low-level-file-empty-success", "read-low-level-file-request-failure", "read-low-level-file-response-error", "write-low-level-file-success", "write-low-level-file-progress-success", "write-low-level-file-stream-failure", "write-low-level-file-response-error", "delete-low-level-file-success", "delete-low-level-file-request-failure", "delete-low-level-file-response-error"]
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS = ["set-trigger-success-with-secret", "set-trigger-mode-error", "set-trigger-status-read-error", "set-trigger-setting-error", "get-trigger-success", "get-trigger-transport-error"]
@@ -1921,6 +1923,25 @@ final class PolarBleApiImplTests: XCTestCase {
         let physicalConfigWriteOperation = PolarBleApiImpl.firstTimeUsePhysicalConfigWriteOperation()
         XCTAssertEqual(physicalConfigWriteOperation.command, .put)
         XCTAssertEqual(physicalConfigWriteOperation.path, PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH)
+    }
+
+    func testFirstTimeUseReadinessManifestIsPinnedBeforeFacadeMigration() throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/first-time-use/first-time-use-readiness.json")
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any])
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any])
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+
+        XCTAssertEqual(manifest["id"] as? String, "first-time-use-readiness")
+        XCTAssertEqual(input["kind"] as? String, "firstTimeUseReadiness")
+        XCTAssertEqual(requiredFamilies, FIRST_TIME_USE_READINESS_FAMILIES)
+        XCTAssertEqual(coveredFamilies, FIRST_TIME_USE_READINESS_FAMILIES)
+        XCTAssertEqual(expected["commonDecision"] as? String, FIRST_TIME_USE_READINESS_COMMON_DECISION)
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.api.model.PolarFirstTimeUseConfigTest", "com.polar.sdk.impl.BDBleApiImplTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarBleApiImplTests"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.FirstTimeUseModelsCommonPolicyTest"])
     }
 
     func test_doFirstTimeUse_userIdWriteFailurePropagatesWithoutTerminateNotifications() throws {

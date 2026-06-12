@@ -1253,6 +1253,35 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
+    fun `first time use migration vectors have executable shared common policy coverage`() {
+        val root = findRepositoryRoot()
+        val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/FirstTimeUseModelsCommonPolicyTest.kt")
+        val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
+        val readme = root.resolve("testdata/golden-vectors/sdk/first-time-use/README.md").readText()
+        val violations = mutableListOf<String>()
+
+        if (!commonTest.isFile) {
+            violations += commonTest.relativeTo(root).path
+        } else {
+            val commonTestText = commonTest.readText()
+            FIRST_TIME_USE_COMMON_POLICY_REQUIRED_TERMS
+                .filterNot { term -> commonTestText.contains(term) }
+                .mapTo(violations) { term -> "${commonTest.relativeTo(root).path}: missing first-time-use common policy term $term" }
+        }
+        if (!inventory.contains("FirstTimeUseModelsCommonPolicyTest.kt") || !inventory.contains("first-time-use-readiness.json")) {
+            violations += "KmpCoverageInventory.md must mention FirstTimeUseModelsCommonPolicyTest.kt and first-time-use-readiness.json in the first-time-use row"
+        }
+        if (!readme.contains("FirstTimeUseModelsCommonPolicyTest")) {
+            violations += "sdk/first-time-use/README.md must mention executable shared first-time-use policy coverage"
+        }
+
+        assertTrue(
+            "First-time-use migration vectors must have executable shared common policy coverage before FTU model or facade execution moves to KMP: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
     fun `KMP documentation keeps validation commands discoverable`() {
         val root = findRepositoryRoot()
         val missingLinks = KMP_DOCS_THAT_MUST_LINK_VALIDATION
@@ -3651,6 +3680,26 @@ class GoldenVectorMigrationPolicyTest {
             "lastModifiedTrusted",
             "parseProtoBytes",
             "buildProtoBytes"
+        )
+        val FIRST_TIME_USE_COMMON_POLICY_REQUIRED_TERMS = listOf(
+            "firstTimeUseEnumMappingsPreservePublicPhysicalConfigValues",
+            "firstTimeUseReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+            "sdk/first-time-use/first-time-use-readiness.json",
+            "first-time-use-readiness",
+            "firstTimeUseReadiness",
+            "gender-enum-projection",
+            "training-background-enum-projection",
+            "typical-day-enum-projection",
+            "unknown-enum-null-boundary",
+            "physical-config-read-write-paths",
+            "user-id-read-write-paths",
+            "write-progress-policy-gate",
+            "sync-sequencing-platform-boundary",
+            "protobuf-construction-platform-boundary",
+            "public-error-mapping-boundary",
+            "platform-first-time-use-vector-reference-gate",
+            "compile-verification-gate",
+            "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest"
         )
         val SHARED_CONSUMPTION_REQUIRED_TERMS = listOf(
             "implementation project(':shared')",

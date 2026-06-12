@@ -24,6 +24,7 @@ testdata/golden-vectors/sdk/disk-time-runtime/
 testdata/golden-vectors/sdk/fake-transport/
 testdata/golden-vectors/sdk/feature-availability/
 testdata/golden-vectors/sdk/file-utils/
+testdata/golden-vectors/sdk/first-time-use/
 testdata/golden-vectors/sdk/firmware-update/
 testdata/golden-vectors/sdk/kvtx/
 testdata/golden-vectors/sdk/nightly-recharge/

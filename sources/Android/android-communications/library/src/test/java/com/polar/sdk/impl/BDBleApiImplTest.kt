@@ -3083,6 +3083,25 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `first time use readiness manifest is pinned before facade migration`() {
+        val manifest = loadSdkGoldenVector("sdk/first-time-use/first-time-use-readiness.json")
+        val input = manifest.getAsJsonObject("input")
+        val expected = manifest.getAsJsonObject("expected")
+        val consumerTests = manifest.getAsJsonObject("consumerTests")
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+
+        Assert.assertEquals("first-time-use-readiness", manifest.get("id").asString)
+        Assert.assertEquals("firstTimeUseReadiness", input.get("kind").asString)
+        Assert.assertEquals(FIRST_TIME_USE_READINESS_FAMILIES, requiredFamilies)
+        Assert.assertEquals(FIRST_TIME_USE_READINESS_FAMILIES, coveredFamilies)
+        Assert.assertEquals(FIRST_TIME_USE_READINESS_COMMON_DECISION, expected.get("commonDecision").asString)
+        Assert.assertEquals(listOf("com.polar.sdk.api.model.PolarFirstTimeUseConfigTest", "com.polar.sdk.impl.BDBleApiImplTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("PolarBleApiImplTests"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.FirstTimeUseModelsCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    @Test
     fun `H10 exercise file headers use shared file facade planning`() {
         val path = "/EXERCISE/E0000001.BPB"
 
@@ -5360,6 +5379,21 @@ class BDBleApiImplTest {
         const val DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
         const val USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
         const val USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+        const val FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
+        val FIRST_TIME_USE_READINESS_FAMILIES = listOf(
+            "gender-enum-projection",
+            "training-background-enum-projection",
+            "typical-day-enum-projection",
+            "unknown-enum-null-boundary",
+            "physical-config-read-write-paths",
+            "user-id-read-write-paths",
+            "write-progress-policy-gate",
+            "sync-sequencing-platform-boundary",
+            "protobuf-construction-platform-boundary",
+            "public-error-mapping-boundary",
+            "platform-first-time-use-vector-reference-gate",
+            "compile-verification-gate"
+        )
         val COMMAND_RUNTIME_POLICY_OPERATION_IDS = listOf(
             "h10-start-recording",
             "h10-start-recording-query-failure",
