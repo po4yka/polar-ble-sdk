@@ -1,13 +1,13 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
-import com.polar.shared.pmd.PolarPmdControlPoint
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 class PmdControlPointResponse(data: ByteArray) {
     companion object {
         const val CONTROL_POINT_RESPONSE_CODE = 0xF0.toByte()
     }
 
-    private val parsed = PolarPmdControlPoint.parseControlPointResponse(data).response ?: throw IndexOutOfBoundsException("invalidPMDData")
+    private val parsed = PolarRuntimePlannerAdapter.pmdControlPointResponse(data)
 
     val responseCode: Byte = parsed.responseCode.toByte()
     val opCode: PmdControlPointCommandClientToService = PmdControlPointCommandClientToService.values()[parsed.opCodeValue]

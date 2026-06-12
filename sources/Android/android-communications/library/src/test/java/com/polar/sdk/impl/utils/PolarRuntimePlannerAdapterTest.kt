@@ -200,6 +200,33 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `PMD control point enum helpers route through Android runtime adapter`() {
+        val response = PolarRuntimePlannerAdapter.pmdControlPointResponse(
+            byteArrayOf(
+                0xF0.toByte(),
+                0x02.toByte(),
+                0x00.toByte(),
+                0x00.toByte(),
+                0x01.toByte(),
+                0x7F.toByte()
+            )
+        )
+
+        Assert.assertEquals("ECG", PolarRuntimePlannerAdapter.pmdMeasurementTypeNameFromMaskedId(0x00.toByte()))
+        Assert.assertEquals("MAG", PolarRuntimePlannerAdapter.pmdMeasurementTypeNameFromMaskedId(0x06.toByte()))
+        Assert.assertNull(PolarRuntimePlannerAdapter.pmdMeasurementTypeNameFromMaskedId(0x3F.toByte()))
+        Assert.assertEquals(0, PolarRuntimePlannerAdapter.pmdRecordingTypeBitField("ONLINE"))
+        Assert.assertEquals(0x80, PolarRuntimePlannerAdapter.pmdRecordingTypeBitField("OFFLINE"))
+        Assert.assertEquals(3, PolarRuntimePlannerAdapter.pmdActiveMeasurementBits(0xC0.toByte()))
+        Assert.assertEquals(0xF0, response.responseCode)
+        Assert.assertEquals(2, response.opCodeValue)
+        Assert.assertEquals(0, response.measurementType)
+        Assert.assertEquals(0, response.statusValue)
+        Assert.assertEquals(true, response.more)
+        Assert.assertArrayEquals(byteArrayOf(0x7F.toByte()), response.parameters)
+    }
+
+    @Test
     fun `shared command query plans select Android protobuf query ids`() {
         val cases = listOf(
             "h10-start-recording" to ("REQUEST_START_RECORDING" to PftpRequest.PbPFtpQuery.REQUEST_START_RECORDING_VALUE),

@@ -1,13 +1,13 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
-import com.polar.shared.pmd.PolarPmdRecordingType
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 enum class PmdRecordingType(val numVal: UByte) {
     ONLINE(0u),
     OFFLINE(1u);
 
     fun asBitField(): UByte {
-        return toSharedType().asBitField().toUByte()
+        return PolarRuntimePlannerAdapter.pmdRecordingTypeBitField(name).toUByte()
     }
 
     companion object {
@@ -22,8 +22,4 @@ enum class PmdRecordingType(val numVal: UByte) {
             return ONLINE
         }
     }
-}
-
-private fun PmdRecordingType.toSharedType(): PolarPmdRecordingType {
-    return PolarPmdRecordingType.valueOf(name)
 }

@@ -1,6 +1,6 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
-import com.polar.shared.pmd.PolarPmdMeasurementTypeName
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 enum class PmdMeasurementType(val numVal: UByte) {
     ECG(0u),
@@ -29,8 +29,8 @@ enum class PmdMeasurementType(val numVal: UByte) {
 
     internal companion object {
         fun fromId(id: Byte): PmdMeasurementType {
-            return PolarPmdMeasurementTypeName.fromMaskedId(id.toInt())?.let { sharedType ->
-                values().firstOrNull { it.sharedName == sharedType.name }
+            return PolarRuntimePlannerAdapter.pmdMeasurementTypeNameFromMaskedId(id)?.let { sharedTypeName ->
+                values().firstOrNull { it.sharedName == sharedTypeName }
             } ?: UNKNOWN_TYPE
         }
 

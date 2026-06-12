@@ -24,7 +24,9 @@ import com.polar.shared.runtime.PolarOfflineTriggerTransport
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.device.PolarDeviceId
+import com.polar.shared.pmd.PolarPmdControlPoint
 import com.polar.shared.pmd.PolarPmdMeasurementTypeName
+import com.polar.shared.pmd.PolarPmdRecordingType
 import com.polar.shared.pmd.sensors.PolarGnssCoordinateSample
 import com.polar.shared.pmd.sensors.PolarGnssLocationSample
 import com.polar.shared.pmd.sensors.PolarGnssNmeaSample
@@ -96,6 +98,14 @@ internal object PolarRuntimePlannerAdapter {
         val fileName: String,
         val dataHex: String,
         val writeResult: String = "success"
+    )
+    data class PlannedPmdControlPointResponse(
+        val responseCode: Int,
+        val opCodeValue: Int,
+        val measurementType: Int,
+        val statusValue: Int,
+        val more: Boolean,
+        val parameters: ByteArray
     )
     data class BackupTraversalPlan(
         val path: String,
@@ -340,6 +350,30 @@ internal object PolarRuntimePlannerAdapter {
 
     fun pmdMeasurementTypeNameFromRawValue(value: Int): String? {
         return PolarPmdMeasurementTypeName.fromRawValue(value)?.name
+    }
+
+    fun pmdMeasurementTypeNameFromMaskedId(id: Byte): String? {
+        return PolarPmdMeasurementTypeName.fromMaskedId(id.toInt())?.name
+    }
+
+    fun pmdRecordingTypeBitField(recordingTypeName: String): Int {
+        return PolarPmdRecordingType.valueOf(recordingTypeName).asBitField()
+    }
+
+    fun pmdActiveMeasurementBits(responseByte: Byte): Int {
+        return PolarPmdControlPoint.parseActiveMeasurement(responseByte.toInt() and 0xFF).activeBits
+    }
+
+    fun pmdControlPointResponse(data: ByteArray): PlannedPmdControlPointResponse {
+        val parsed = PolarPmdControlPoint.parseControlPointResponse(data).response ?: throw IndexOutOfBoundsException("invalidPMDData")
+        return PlannedPmdControlPointResponse(
+            responseCode = parsed.responseCode,
+            opCodeValue = parsed.opCodeValue,
+            measurementType = parsed.measurementType,
+            statusValue = parsed.statusValue,
+            more = parsed.more,
+            parameters = parsed.parameters
+        )
     }
 
     fun locationDataProjection(samples: List<PlannedGnssLocationSample>): List<PlannedLocationDataProjectionSample> {
