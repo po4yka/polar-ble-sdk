@@ -369,6 +369,26 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "shared FlatBuffer byte output construction"
   ]
 }.freeze
+GENERATED_TRAINING_PROTO_PUBLIC_MODEL_TERMS = [
+  "fi.polar.remote.representation.protobuf.TrainingSession",
+  "fi.polar.remote.representation.protobuf.Training.",
+  "fi.polar.remote.representation.protobuf.ExerciseRouteSamples",
+  "fi.polar.remote.representation.protobuf.ExerciseRouteSamples2",
+  "fi.polar.remote.representation.protobuf.ExerciseSamples",
+  "fi.polar.remote.representation.protobuf.ExerciseSamples2",
+  "TrainingSession.PbTrainingSession",
+  "Training.PbExerciseBase",
+  "ExerciseRouteSamples.PbExerciseRouteSamples",
+  "ExerciseRouteSamples2.PbExerciseRouteSamples2",
+  "ExerciseSamples.PbExerciseSamples",
+  "ExerciseSamples2.PbExerciseSamples2",
+  "Data_PbTrainingSession",
+  "Data_PbExerciseBase",
+  "Data_PbExerciseRouteSamples",
+  "Data_PbExerciseRouteSamples2",
+  "Data_PbExerciseSamples",
+  "Data_PbExerciseSamples2"
+].freeze
 FAKE_TRANSPORT_REQUIRED_OPERATIONS = %w[read write subscribe unsubscribe].freeze
 FAKE_TRANSPORT_REQUIRED_OUTCOMES = %w[Bytes TransportError ResponseError Timeout Complete].freeze
 FAKE_TRANSPORT_TEST_REQUIRED_TERMS = [
@@ -2716,6 +2736,14 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS.each do |artifact, required_terms|
   artifact_text = artifact_path && File.file?(artifact_path) ? File.read(artifact_path) : ""
   required_terms.each do |term|
     errors << "#{artifact}: missing byte-level common dependency deferral term #{term}" unless artifact_text.include?(term)
+  end
+end
+Dir[File.join(ROOT, "sources/Android/android-communications/shared/src/commonMain/kotlin/**/*.kt")].each do |path|
+  text = File.read(path)
+  GENERATED_TRAINING_PROTO_PUBLIC_MODEL_TERMS.each do |term|
+    next unless text.include?(term)
+
+    errors << "#{relative(path)}: references generated training protobuf public model term #{term}; shared common training-session code must keep generated public protobuf object reconstruction platform-owned until an explicit DTO/reconstruction strategy exists"
   end
 end
 

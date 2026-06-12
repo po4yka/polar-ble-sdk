@@ -2287,6 +2287,46 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
+    fun `training session generated public protobuf reconstruction stays out of shared common production`() {
+        val root = findRepositoryRoot()
+        val sharedMain = root.resolve("sources/Android/android-communications/shared/src/commonMain/kotlin")
+        val generatedTrainingProtoTerms = listOf(
+            "fi.polar.remote.representation.protobuf.TrainingSession",
+            "fi.polar.remote.representation.protobuf.Training.",
+            "fi.polar.remote.representation.protobuf.ExerciseRouteSamples",
+            "fi.polar.remote.representation.protobuf.ExerciseRouteSamples2",
+            "fi.polar.remote.representation.protobuf.ExerciseSamples",
+            "fi.polar.remote.representation.protobuf.ExerciseSamples2",
+            "TrainingSession.PbTrainingSession",
+            "Training.PbExerciseBase",
+            "ExerciseRouteSamples.PbExerciseRouteSamples",
+            "ExerciseRouteSamples2.PbExerciseRouteSamples2",
+            "ExerciseSamples.PbExerciseSamples",
+            "ExerciseSamples2.PbExerciseSamples2",
+            "Data_PbTrainingSession",
+            "Data_PbExerciseBase",
+            "Data_PbExerciseRouteSamples",
+            "Data_PbExerciseRouteSamples2",
+            "Data_PbExerciseSamples",
+            "Data_PbExerciseSamples2"
+        )
+        val violations = sharedMain.walkTopDown()
+            .filter { file -> file.isFile && file.extension == "kt" }
+            .flatMap { file ->
+                val text = file.readText()
+                generatedTrainingProtoTerms
+                    .filter { term -> text.contains(term) }
+                    .map { term -> "${file.relativeTo(root).path} references generated training protobuf public model term $term" }
+            }
+            .toList()
+
+        assertTrue(
+            "Shared common training-session code may parse selected protobuf fields, but generated public protobuf object reconstruction must stay platform-owned until the DTO/reconstruction strategy is explicit: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
     fun `KMP common vector helper remains gated until shared common tests exist`() {
         val root = findRepositoryRoot()
         val checklist = root.resolve("documentation/KmpMigrationChecklist.md").readText()
