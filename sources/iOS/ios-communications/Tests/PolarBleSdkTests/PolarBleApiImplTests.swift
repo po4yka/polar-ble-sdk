@@ -573,6 +573,20 @@ final class PolarBleApiImplTests: XCTestCase {
         )
     }
 
+    private func assertRestServiceMappingReadinessContains(_ vectorTerm: String, file: StaticString = #filePath, line: UInt = #line) throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/rest-service/rest-service-mapping-readiness.json")
+        let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any], file: file, line: line)
+        let input = try XCTUnwrap(vector["input"] as? [String: Any], file: file, line: line)
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any], file: file, line: line)
+        let requiredBehaviorFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String], file: file, line: line)
+        let coveredBehaviorFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String], file: file, line: line)
+
+        XCTAssertEqual("rest-service-mapping-readiness", vector["id"] as? String, file: file, line: line)
+        XCTAssertEqual("restServiceMappingReadiness", input["kind"] as? String, file: file, line: line)
+        XCTAssertTrue(requiredBehaviorFamilies.contains(vectorTerm), "Missing REST service mapping readiness term \(vectorTerm)", file: file, line: line)
+        XCTAssertTrue(coveredBehaviorFamilies.contains(vectorTerm), "Missing covered REST service mapping readiness term \(vectorTerm)", file: file, line: line)
+    }
+
     private func assertFileFacadeRuntimePolicyVectorContains(_ vectorTerm: String, file: StaticString = #filePath, line: UInt = #line) throws {
         let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/file-utils/file-facade-runtime-policy.json")
         let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any], file: file, line: line)
@@ -1963,6 +1977,7 @@ final class PolarBleApiImplTests: XCTestCase {
     }
 
     func test_stopSleepRecording_usesSharedSleepRestPaths() throws {
+        try assertRestServiceMappingReadinessContains("sleep-rest-action-path-planning")
         v2MockClient.requestReturnValue = .success(Data())
         v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
             continuation.yield(0)

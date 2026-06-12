@@ -3192,6 +3192,7 @@ class BDBleApiImplTest {
 
     @Test
     fun `stopSleepRecording uses shared sleep REST stop path`() = runTest {
+        assertRestServiceMappingReadinessContains("sleep-rest-action-path-planning")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
         val (client, _) = mockPsFtpConnection(deviceId)
@@ -4910,6 +4911,19 @@ class BDBleApiImplTest {
         Assert.assertEquals("fake-rest-facade-runtime-policy", vector.getAsJsonObject("execution").get("kind").asString)
         Assert.assertEquals("public-facade-psftp-request-capture", vector.getAsJsonObject("execution").get("transport").asString)
         Assert.assertEquals(REST_FACADE_RUNTIME_POLICY_COMMON_DECISION, vector.get("commonDecision").asString)
+    }
+
+    private fun assertRestServiceMappingReadinessContains(vectorTerm: String) {
+        val vector = loadSdkGoldenVector("sdk/rest-service/rest-service-mapping-readiness.json")
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val requiredBehaviorFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredBehaviorFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+
+        Assert.assertEquals("rest-service-mapping-readiness", vector.get("id").asString)
+        Assert.assertEquals("restServiceMappingReadiness", input.get("kind").asString)
+        Assert.assertTrue("Missing REST service mapping readiness term $vectorTerm", requiredBehaviorFamilies.contains(vectorTerm))
+        Assert.assertTrue("Missing covered REST service mapping readiness term $vectorTerm", coveredBehaviorFamilies.contains(vectorTerm))
     }
 
     @Test
