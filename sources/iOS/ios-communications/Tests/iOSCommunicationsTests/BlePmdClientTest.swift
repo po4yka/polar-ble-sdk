@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import iOSCommunications
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS = ["set-trigger-success-with-secret", "set-trigger-mode-error", "set-trigger-status-read-error", "set-trigger-setting-error", "get-trigger-success", "get-trigger-transport-error"]
@@ -19,6 +22,16 @@ class BlePmdClientTest: XCTestCase {
     override func tearDownWithError() throws {
         mockGattServiceTransmitterImpl = nil
         blePmdClient = nil
+    }
+
+    func testPmdRecordingTypeBitfieldsDelegateToSharedKmpPolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(0x00, PmdControlPointRuntimePlanner.recordingTypeBitField(name: "ONLINE"))
+        XCTAssertEqual(0x80, PmdControlPointRuntimePlanner.recordingTypeBitField(name: "OFFLINE"))
+        XCTAssertEqual(0x00, PmdControlPointRuntimePlanner.recordingTypeBitField(name: "UNKNOWN"))
+        #endif
+        XCTAssertEqual(0x00, PmdRecordingType.online.asBitField())
+        XCTAssertEqual(0x80, PmdRecordingType.offline.asBitField())
     }
 
     func testProcessControlPointResponseWhenStatusIsSuccess() throws {
@@ -175,6 +188,9 @@ class BlePmdClientTest: XCTestCase {
     func testPmdControlPointResponseGoldenVectorsMatchIOSCommunicationsBehavior() throws {
         let vectors = try loadControlPointGoldenVectors()
         XCTAssertFalse(vectors.isEmpty, "Expected PMD control-point golden vectors")
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("240,1,2,0,0,ffffff", PmdControlPointRuntimePlanner.responseFields(responseHex: "f001020000ffffff"))
+        #endif
 
         for vector in vectors {
             let id = vector["id"] as? String ?? "unknown-vector"
@@ -192,6 +208,14 @@ class BlePmdClientTest: XCTestCase {
             XCTAssertEqual(try XCTUnwrap(expected["more"] as? Bool, id), response.more, id)
             XCTAssertEqual(try XCTUnwrap(expected["parametersHex"] as? String, id), response.parameters.asData.hexString, id)
         }
+    }
+
+    func testPmdControlPointResponseKeepsIOSFallbackForErrorPayloadBytes() throws {
+        let response = PmdControlPointResponse(Data([0xF0, PmdControlPointCommandClientToService.GET_MEASUREMENT_SETTINGS, PmdMeasurementType.acc.rawValue, UInt8(PmdResponseCode.errorInvalidLength.rawValue), 0x01, 0xAA]))
+
+        XCTAssertEqual(PmdResponseCode.errorInvalidLength, response.errorCode)
+        XCTAssertTrue(response.more)
+        XCTAssertEqual("aa", response.parameters.asData.hexString)
     }
 
     func testPmdControlPointResponseGoldenVectorsFollowNeutralKmpVectorShape() throws {

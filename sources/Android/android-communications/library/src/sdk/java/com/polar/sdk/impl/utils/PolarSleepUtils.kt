@@ -10,15 +10,21 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private const val ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private const val SLEEP_DIRECTORY = "SLEEP/"
-private const val SLEEP_PROTO = "SLEEPRES.BPB"
-private const val NRST_DIRECTORY = "NSTRESUL/"
-private const val NRST_PROTO = "NSTRCONT.BPB"
 private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ENGLISH)
 private const val TAG = "PolarSleepUtils"
 
 internal object PolarSleepUtils {
+    internal fun sleepDataReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val path = PolarRuntimePlannerAdapter.sleepAnalysisPath(date.format(dateFormatter))
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("sleep-read-analysis", "GET", path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
+
+    internal fun sleepSkinTemperatureReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val path = PolarRuntimePlannerAdapter.sleepSkinTemperaturePath(date.format(dateFormatter))
+        val plan = PolarRuntimePlannerAdapter.planFileFacade("sleep-read-skin-temperature", "GET", path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
 
     /**
      * Read sleep data for a given date.
@@ -37,13 +43,9 @@ internal object PolarSleepUtils {
     private suspend fun readSleepData(client: BlePsFtpClient, date: LocalDate): PolarSleepAnalysisResult {
         BleLogger.d(TAG, "readSleepData: $date")
         return try {
-            val sleepFilePath = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/${SLEEP_DIRECTORY}${SLEEP_PROTO}"
+            val readOperation = sleepDataReadOperation(date)
             val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                    .setPath(sleepFilePath)
-                    .build()
-                    .toByteArray()
+                PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
             )
             val proto = SleepanalysisResult.PbSleepAnalysisResult.parseFrom(response.toByteArray())
             PolarSleepAnalysisResult(
@@ -56,16 +58,16 @@ internal object PolarSleepUtils {
                 if (proto.hasAlarmTime()) {
                     PolarTimeUtils.pbLocalDateTimeToZonedDateTime(proto.alarmTime)
                 } else null,
-                proto.sleepStartOffsetSeconds ?: null,
-                proto.sleepEndOffsetSeconds ?: null,
+                PolarRuntimePlannerAdapter.sleepStartOffsetSeconds(proto.sleepStartOffsetSeconds),
+                PolarRuntimePlannerAdapter.sleepEndOffsetSeconds(proto.sleepEndOffsetSeconds),
                 if (proto.hasUserSleepRating()) {
                     SleepRating.from(proto.userSleepRating.number)
                 } else null,
-                proto.recordingDevice.deviceId ?: null,
-                proto.batteryRanOut ?: null,
+                proto.recordingDevice.deviceId,
+                proto.batteryRanOut,
                 fromPbSleepCyclesList(proto.sleepCyclesList),
-                PolarTimeUtils.pbDateToLocalDate(proto.sleepResultDate) ?: null,
-                if (proto.hasOriginalSleepRange()) {
+                PolarTimeUtils.pbDateToLocalDate(proto.sleepResultDate),
+                if (PolarRuntimePlannerAdapter.shouldIncludeOriginalSleepRange(proto.hasOriginalSleepRange())) {
                     fromPbOriginalSleepRange(proto.originalSleepRange)
                 } else null,
                 null
@@ -91,16 +93,12 @@ internal object PolarSleepUtils {
         BleLogger.d(TAG, "readSleepSkinTemperatureResult: $date")
         return try {
             val result = sleepAnalysisResult
-            val sleepFilePath = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/${NRST_DIRECTORY}${NRST_PROTO}"
+            val readOperation = sleepSkinTemperatureReadOperation(date)
             val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                    .setPath(sleepFilePath)
-                    .build()
-                    .toByteArray()
+                PolarRuntimePlannerAdapter.fileOperationBytes(readOperation)
             )
             val proto = SleepSkinTemperatureResult.PbSleepSkinTemperatureResult.parseFrom(response.toByteArray())
-            if (proto.hasSleepDate()) {
+            if (PolarRuntimePlannerAdapter.shouldIncludeSleepSkinTemperatureResult(proto.hasSleepDate())) {
                 result.sleepSkinTemperatureResult = fromPbSleepSkinTemperatureResult(proto)
             }
             result

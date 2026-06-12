@@ -4,12 +4,12 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClien
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient.PmdDataFieldEncoding
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrameUtils
-import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import java.lang.Float.intBitsToFloat
 
 internal class TemperatureData {
 
-    data class TemperatureSample internal constructor(
+    data class TemperatureSample(
         // timeStamp ns since epoch time
         val timeStamp: ULong,
         // Sample contains signed temperature value in celcius
@@ -25,8 +25,16 @@ internal class TemperatureData {
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): TemperatureData {
             val temperatureData = TemperatureData()
-            PolarSensorDataParser.parseTemperature(frame.toPolarSharedFrame()).forEach { sample ->
-                temperatureData.temperatureSamples.add(TemperatureSample(timeStamp = sample.timeStamp, temperature = sample.temperature))
+            PolarRuntimePlannerAdapter.pmdTemperatureSamples(
+                frameType = frame.frameType.id.toInt(),
+                compressed = frame.isCompressedFrame,
+                timeStamp = frame.timeStamp,
+                previousTimeStamp = frame.previousTimeStamp,
+                factor = frame.factor,
+                sampleRate = frame.sampleRate,
+                dataContent = frame.dataContent
+            ).forEach { sample ->
+                temperatureData.temperatureSamples.add(TemperatureSample(timeStamp = sample.timeStamp, temperature = sample.value))
             }
             return temperatureData
         }

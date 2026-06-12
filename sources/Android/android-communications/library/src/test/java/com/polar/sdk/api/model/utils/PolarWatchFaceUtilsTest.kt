@@ -8,6 +8,7 @@ import com.polar.sdk.impl.utils.PolarWatchFaceUtils
 import com.polar.sdk.impl.utils.WatchfaceConfigFields
 import org.junit.Assert.*
 import org.junit.Test
+import protocol.PftpRequest
 import java.io.File
 import java.io.FileReader
 import java.nio.ByteBuffer
@@ -170,6 +171,12 @@ class PolarWatchFaceUtilsTest {
     }
 
     @Test
+    fun `watch face KVTX headers use shared file facade planning`() {
+        assertEquals(PftpRequest.PbPFtpOperation.Command.GET to "/SYS/KVTX", PolarWatchFaceUtils.watchFaceReadOperation())
+        assertEquals(PftpRequest.PbPFtpOperation.Command.PUT to "/SYS/KVTX", PolarWatchFaceUtils.watchFaceWriteOperation())
+    }
+
+    @Test
     fun watchFaceGoldenVectors_matchAndroidBehavior() {
         val vectors = loadWatchFaceVectors()
         assertTrue("Expected watch-face golden vectors", vectors.isNotEmpty())
@@ -308,6 +315,8 @@ class PolarWatchFaceUtilsTest {
             "unknown-complication-raw-id-preservation",
             "unknown-complication-null-lookup-policy",
             "malformed-too-short-defaulting",
+            "flatbuffer-byte-input-parser",
+            "flatbuffer-byte-output-shared-code",
             "kvtx-wrapper-metadata",
             "platform-watch-face-vector-reference-gate",
             "compile-verification-gate"
@@ -315,7 +324,7 @@ class PolarWatchFaceUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, KVTX wrapper metadata, and the shared tests are compile-verified.",
+            "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, shared FlatBuffer byte input parsing, shared FlatBuffer byte output construction, KVTX wrapper metadata, and the shared tests are compile-verified.",
             expected.get("commonDecision").asString
         )
         val consumerTests = vector.getAsJsonObject("consumerTests")

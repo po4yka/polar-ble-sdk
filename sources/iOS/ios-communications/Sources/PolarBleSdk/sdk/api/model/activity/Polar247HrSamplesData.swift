@@ -1,6 +1,9 @@
 ///  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public struct Polar247HrSamplesData: Codable {
     
@@ -40,6 +43,12 @@ public struct Polar247HrSamplesData: Codable {
         }
 
         static func getByValue(value: Data_PbMeasTriggerType) -> AutomaticSampleTriggerType {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarActivityRuntimePlanner.automaticHrTriggerName(value: Int(value.rawValue)),
+               let sharedTrigger = AutomaticSampleTriggerType(sharedName: sharedName) {
+                return sharedTrigger
+            }
+            #endif
 
             switch value {
                 case .triggerTypeHighActivity: return .highActivity
@@ -64,3 +73,17 @@ public struct Polar247HrSamplesData: Codable {
         return hrSamples
     }
 }
+
+#if canImport(PolarBleSdkShared)
+private extension Polar247HrSamplesData.AutomaticSampleTriggerType {
+    init?(sharedName: String) {
+        switch sharedName {
+        case "TRIGGER_TYPE_HIGH_ACTIVITY": self = .highActivity
+        case "TRIGGER_TYPE_LOW_ACTIVITY": self = .lowActivity
+        case "TRIGGER_TYPE_TIMED": self = .timed
+        case "TRIGGER_TYPE_MANUAL": self = .manual
+        default: return nil
+        }
+    }
+}
+#endif

@@ -114,6 +114,8 @@ final class PolarFileUtilsTest: XCTestCase {
         ]
         mockClient.requestReturnValueClosure = { header in
             let op = try Protocol_PbPFtpOperation(serializedBytes: header)
+            XCTAssertEqual(op.command, .get)
+            XCTAssertEqual(op.path, "/U/0/20260101/")
             let dir = Protocol_PbPFtpDirectory.with { $0.entries = responses[op.path, default: []] }
             return try dir.serializedData()
         }
@@ -134,6 +136,7 @@ final class PolarFileUtilsTest: XCTestCase {
         ]
         mockClient.requestReturnValueClosure = { header in
             let op = try Protocol_PbPFtpOperation(serializedBytes: header)
+            XCTAssertEqual(op.command, .get)
             let dir = Protocol_PbPFtpDirectory.with { $0.entries = responses[op.path, default: []] }
             return try dir.serializedData()
         }
@@ -369,6 +372,8 @@ final class PolarFileUtilsTest: XCTestCase {
     }
 
     func testFileUtilityGoldenVectorsListExpectedPaths() async throws {
+        XCTAssertEqual(PolarRuntimePlanner.normalizeFileListFolderPath("U/0"), "/U/0/")
+        XCTAssertEqual(PolarRuntimePlanner.normalizeFileListFolderPath(""), "/")
         for vector in try loadFileUtilityGoldenVectors() {
             let id = try XCTUnwrap(vector["id"] as? String)
             let input = try XCTUnwrap(vector["input"] as? [String: Any], id)
@@ -540,9 +545,9 @@ final class PolarFileUtilsTest: XCTestCase {
         XCTAssertNotNil(vector["execution"], "runtime-error-policy")
         XCTAssertEqual(expectedCaseIds, FILE_RUNTIME_ERROR_POLICY_CASE_IDS, "runtime-error-policy")
         XCTAssertEqual(expected["migrationRequirement"] as? String, FILE_RUNTIME_ERROR_MIGRATION_REQUIREMENT, "runtime-error-policy")
-        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "runtime-error-policy"), ["com.polar.sdk.api.model.utils.PolarFileUtilsTest", "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "runtime-error-policy"), ["com.polar.sdk.api.model.utils.PolarFileUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "runtime-error-policy"), ["PolarFileUtilsTest"])
-        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "runtime-error-policy"), ["com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "runtime-error-policy"), ["com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"])
     }
 
     func testRuntimeErrorReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
@@ -731,7 +736,7 @@ private let FILE_RUNTIME_ERROR_READINESS_FAMILIES = [
     "write-file-payload-capture-before-stream-error",
     "delete-file-response-error-status-message",
     "command-path-capture-for-every-operation",
-    "facade-error-mapping-deferred",
+    "facade-error-mapping-pinned",
     "platform-runtime-vector-reference-gate",
     "compile-verification-gate"
 ]
@@ -746,7 +751,7 @@ private let FILE_RUNTIME_ERROR_POLICY_CASE_IDS = [
 
 private let FILE_RUNTIME_ERROR_MIGRATION_REQUIREMENT = "Before moving file utility orchestration into common KMP code, implement fake PFTP request and write-stream tests that cover malformed directory payloads, request-level transport errors, response-error status mapping, and write-stream failures after the PUT header is prepared."
 
-private let FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping, and the shared tests are compile-verified."
+private let FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified."
 
 private let FILE_FACADE_RUNTIME_OPERATION_IDS = [
     "read-low-level-file-success",

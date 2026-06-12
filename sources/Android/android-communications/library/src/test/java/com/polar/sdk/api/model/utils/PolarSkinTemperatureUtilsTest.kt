@@ -7,6 +7,7 @@ import com.polar.sdk.api.model.PolarSkinTemperatureDataSample
 import com.polar.sdk.api.model.PolarSkinTemperatureResult
 import com.polar.sdk.api.model.SkinTemperatureMeasurementType
 import com.polar.sdk.api.model.SkinTemperatureSensorLocation
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarSkinTemperatureUtils
 import com.polar.services.datamodels.protobuf.TemperatureMeasurement
 import com.polar.services.datamodels.protobuf.TemperatureMeasurement.TemperatureMeasurementSample
@@ -18,6 +19,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import protocol.PftpRequest
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileReader
@@ -26,6 +28,17 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class PolarSkinTemperatureUtilsTest {
+
+    @Test
+    fun `skin temperature read header uses shared file facade planning`() {
+        val date = LocalDate.of(2026, 1, 2)
+
+        assertEquals("/U/0/20260102/SKINTEMP/TEMPCONT.BPB", PolarRuntimePlannerAdapter.skinTemperaturePath("20260102"))
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/SKINTEMP/TEMPCONT.BPB",
+            PolarSkinTemperatureUtils.skinTemperatureReadOperation(date)
+        )
+    }
 
     @Test
     fun `readSkinTemperatureData() should return skin temperature data`() = runTest {
@@ -89,6 +102,19 @@ class PolarSkinTemperatureUtilsTest {
 
         // Assert
         assertNull(result)
+    }
+
+    @Test
+    fun `skin temperature public enum lookup delegates known values to shared model and preserves unknown null policy`() {
+        assertEquals(SkinTemperatureMeasurementType.TM_SKIN_TEMPERATURE, SkinTemperatureMeasurementType.from(Types.TemperatureMeasurementType.TM_SKIN_TEMPERATURE.number))
+        assertEquals(SkinTemperatureMeasurementType.TM_CORE_TEMPERATURE, SkinTemperatureMeasurementType.from(Types.TemperatureMeasurementType.TM_CORE_TEMPERATURE.number))
+        assertNull(SkinTemperatureMeasurementType.from(Types.TemperatureMeasurementType.TM_UNKNOWN.number))
+        assertNull(SkinTemperatureMeasurementType.from(99))
+
+        assertEquals(SkinTemperatureSensorLocation.SL_DISTAL, SkinTemperatureSensorLocation.from(Types.SensorLocation.SL_DISTAL.number))
+        assertEquals(SkinTemperatureSensorLocation.SL_PROXIMAL, SkinTemperatureSensorLocation.from(Types.SensorLocation.SL_PROXIMAL.number))
+        assertNull(SkinTemperatureSensorLocation.from(Types.SensorLocation.SL_UNKNOWN.number))
+        assertNull(SkinTemperatureSensorLocation.from(99))
     }
 
     @Test

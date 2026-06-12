@@ -13,6 +13,14 @@ class PolarNightlyRechargeUtilsTests: XCTestCase {
         mockClient = nil
     }
 
+    func testNightlyRechargeReadHeaderUsesSharedFileFacadePlanning() throws {
+        let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
+
+        let operation = PolarNightlyRechargeUtils.nightlyRechargeReadOperation(date: date)
+        XCTAssertEqual(operation.command, .get)
+        XCTAssertEqual(operation.path, "/U/0/20260102/NR/NR.BPB")
+    }
+
     func testReadNightlyRechargeData_shouldReturnNightlyRechargeData() async throws {
         // Arrange
         let dateFormatter = DateFormatter()

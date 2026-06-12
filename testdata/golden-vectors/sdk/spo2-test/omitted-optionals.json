@@ -16,7 +16,7 @@
   },
   "platformExpectations": {
     "android": {
-      "recordingDevice": "",
+      "recordingDevice": null,
       "testTime": "2026-04-08 08:39:06",
       "timeZoneOffsetMinutes": 180,
       "testStatus": "PASSED",

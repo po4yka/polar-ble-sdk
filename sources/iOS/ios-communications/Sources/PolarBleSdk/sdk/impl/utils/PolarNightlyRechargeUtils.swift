@@ -1,6 +1,9 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
 private let NIGHTLY_RECOVERY_DIRECTORY = "NR/"
@@ -16,12 +19,24 @@ private let TAG = "PolarNightlyRechargeUtils"
 internal class PolarNightlyRechargeUtils {
     enum PolarNightlyRechargeError: Error { case missingOrInvalidRecoveryDate }
 
+    static func nightlyRechargeReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        let path = nightlyRechargePath(day: dateFormat.string(from: date))
+        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "nightly-recharge-read", command: "GET", path: path) {
+            return plannedOperation
+        }
+        return (.get, path)
+    }
+
+    private static func nightlyRechargePath(day: String) -> String {
+        return PolarNightlyRechargeRuntimePlanner.nightlyRechargePath(day: day) ?? "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(NIGHTLY_RECOVERY_DIRECTORY)\(NIGHTLY_RECOVERY_PROTO)"
+    }
+
     static func readNightlyRechargeData(client: BlePsFtpClient, date: Date) async -> PolarNightlyRechargeData? {
         BleLogger.trace(TAG, "readNightlyRechargeData: \(date)")
-        let filePath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(NIGHTLY_RECOVERY_DIRECTORY)\(NIGHTLY_RECOVERY_PROTO)"
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = filePath }
+        let plannedOperation = nightlyRechargeReadOperation(date: date)
+        let filePath = plannedOperation.path
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let recoveryStatus = try Data_PbNightlyRecoveryStatus(serializedBytes: Data(response))
             guard let recoveryDate = try? PolarTimeUtils.pbDateToDateComponents(pbDate: recoveryStatus.sleepResultDate) else {
                 throw PolarNightlyRechargeError.missingOrInvalidRecoveryDate
@@ -46,5 +61,15 @@ internal class PolarNightlyRechargeUtils {
             BleLogger.error("readNightlyRechargeData() failed for path: \(filePath), error: \(error)")
             return nil
         }
+    }
+}
+
+enum PolarNightlyRechargeRuntimePlanner {
+    static func nightlyRechargePath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.nightlyRechargePath(day: day)
+        #else
+        return nil
+        #endif
     }
 }

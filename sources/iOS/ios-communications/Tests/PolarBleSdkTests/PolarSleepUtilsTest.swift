@@ -18,6 +18,18 @@ class PolarSleepUtilsTests: XCTestCase {
         mockClient = nil
     }
 
+    func testSleepReadHeadersUseSharedFileFacadePlanning() throws {
+        let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
+
+        let sleepOperation = PolarSleepUtils.sleepDataReadOperation(date: date)
+        XCTAssertEqual(sleepOperation.command, .get)
+        XCTAssertEqual(sleepOperation.path, "/U/0/20260102/SLEEP/SLEEPRES.BPB")
+
+        let skinTemperatureOperation = PolarSleepUtils.sleepSkinTemperatureReadOperation(date: date)
+        XCTAssertEqual(skinTemperatureOperation.command, .get)
+        XCTAssertEqual(skinTemperatureOperation.path, "/U/0/20260102/NSTRESUL/NSTRCONT.BPB")
+    }
+
     func testReadSleepDataFromDayDirectory_SuccessfulResponse() async throws {
         // Arrange
         let date = Date()
@@ -122,7 +134,13 @@ class PolarSleepUtilsTests: XCTestCase {
         XCTAssertEqual(sleepData.sleepWakePhases.first?.state, mockSleepData.sleepWakePhases.first?.state)
     }
 
-    func testSleepOffsetGoldenVectorsPreserveIOSPolicy() async throws {
+    func testSleepRatingProtoMappingUsesSharedKnownValuesAndPreservesUnknownNilPolicy() {
+        XCTAssertEqual(.SLEPT_WELL, PolarSleepData.SleepRating.optionalFromProtoValue(value: PbSleepUserRating.pbSleptWell.rawValue))
+        XCTAssertEqual(.SLEPT_UNDEFINED, PolarSleepData.SleepRating.getByValue(value: 99))
+        XCTAssertNil(PolarSleepData.SleepRating.optionalFromProtoValue(value: 99))
+    }
+
+    func testSleepOffsetGoldenVectorsUseSharedLinkedIOSPolicy() async throws {
         let vector = try loadSleepGoldenVector(id: "sleep-offset-platform-policy")
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expectedByPlatform = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -224,12 +242,11 @@ class PolarSleepUtilsTests: XCTestCase {
         }
     }
 
-    func testPartialNightGoldenVectorsPreserveIOSOmittedOptionalPolicy() async throws {
+    func testPartialNightGoldenVectorsUseSharedBackedOmittedOptionalPolicy() async throws {
         let vector = try loadSleepGoldenVector(id: "partial-night-omitted-optionals")
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expectedByScope = try XCTUnwrap(vector["expected"] as? [String: Any])
         let commonExpected = try XCTUnwrap(expectedByScope["common"] as? [String: Any])
-        let iosExpected = try XCTUnwrap(expectedByScope["ios"] as? [String: Any])
         let sleepResultDate = try XCTUnwrap(input["sleepResultDate"] as? [String: Any])
         let sleepProto = Data_PbSleepAnalysisResult.with {
             $0.sleepStartTime = pbLocalDateTime(hour: 23, minute: 0, second: 0, day: 5, month: 5, year: 2024, timeZoneOffset: 180)
@@ -262,17 +279,10 @@ class PolarSleepUtilsTests: XCTestCase {
         XCTAssertEqual(sleepData.sleepResultDate?.year, 2024)
         XCTAssertEqual(sleepData.sleepResultDate?.month, 5)
         XCTAssertEqual(sleepData.sleepResultDate?.day, 6)
-        let expectedSkinTemperature = try XCTUnwrap(iosExpected["sleepSkinTemperatureResult"] as? [String: Any])
-        let skinTemperature = try XCTUnwrap(sleepData.sleepSkinTemperatureResult)
-        XCTAssertEqual(skinTemperature.sleepResultDate == nil, expectedSkinTemperature["sleepResultDate"] is NSNull)
-        XCTAssertEqual(skinTemperature.sleepSkinTemperatureCelsius, Float(try XCTUnwrap(expectedSkinTemperature["sleepSkinTemperatureCelsius"] as? Double)), accuracy: 0.0001)
-        XCTAssertEqual(skinTemperature.deviationFromBaseLine, Float(try XCTUnwrap(expectedSkinTemperature["deviationFromBaseLine"] as? Double)), accuracy: 0.0001)
+        XCTAssertNil(sleepData.sleepSkinTemperatureResult)
         XCTAssertNil(sleepData.deviceId)
         XCTAssertNil(sleepData.batteryRanOut)
-        let expectedOriginalRange = try XCTUnwrap(iosExpected["originalSleepRange"] as? [String: Any])
-        XCTAssertNotNil(sleepData.originalSleepRange)
-        XCTAssertEqual(sleepData.originalSleepRange?.startTime == nil, expectedOriginalRange["startTime"] is NSNull)
-        XCTAssertEqual(sleepData.originalSleepRange?.endTime == nil, expectedOriginalRange["endTime"] is NSNull)
+        XCTAssertNil(sleepData.originalSleepRange)
     }
 
     func testSleepGoldenVectorsFollowNeutralKmpShape() throws {

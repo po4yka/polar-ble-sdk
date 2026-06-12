@@ -19,6 +19,8 @@ import com.polar.sdk.api.errors.PolarNotificationNotEnabled
 import com.polar.sdk.api.errors.PolarServiceNotAvailable
 import java.util.UUID
 
+private val ANDROID_BLUETOOTH_ADDRESS_REGEX = Regex("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
+
 internal object PolarServiceClientUtils {
 
     @Throws(Throwable::class)
@@ -89,12 +91,17 @@ internal object PolarServiceClientUtils {
 
     @Throws(PolarInvalidArgument::class)
     internal fun fetchSession(identifier: String, listener: BleDeviceListener?): BleDeviceSession? {
-        if (identifier.matches(Regex("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"))) {
-            return sessionByAddress(identifier, listener)
-        } else if (identifier.matches(Regex("([0-9a-fA-F]){6,8}"))) {
-            return sessionByDeviceId(identifier, listener)
+        return when (PolarRuntimePlannerAdapter.identifierClassification(identifier)) {
+            "platformSpecific" -> {
+                if (identifier.matches(ANDROID_BLUETOOTH_ADDRESS_REGEX)) {
+                    sessionByAddress(identifier, listener)
+                } else {
+                    throw PolarInvalidArgument()
+                }
+            }
+            "deviceId" -> sessionByDeviceId(identifier, listener)
+            else -> throw PolarInvalidArgument()
         }
-        throw PolarInvalidArgument()
     }
 
     internal fun getRSSIValue(deviceId: String, listener: BleDeviceListener?): Int {

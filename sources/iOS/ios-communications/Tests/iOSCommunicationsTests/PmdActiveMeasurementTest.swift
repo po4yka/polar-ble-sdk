@@ -1,9 +1,28 @@
 //  Copyright © 2026 Polar. All rights reserved.
 
 import XCTest
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 @testable import iOSCommunications
 
 final class PmdActiveMeasurementTest: XCTestCase {
+    func testPmdMeasurementTypeLookupDelegatesKnownIdsToSharedBridgeWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("ACC", PmdControlPointRuntimePlanner.measurementTypeName(id: 0xC2))
+        XCTAssertNil(PmdControlPointRuntimePlanner.measurementTypeName(id: 4))
+        #endif
+        XCTAssertEqual(.ecg, PmdMeasurementType.fromId(id: 0))
+        XCTAssertEqual(.acc, PmdMeasurementType.fromId(id: 0xC2))
+        XCTAssertEqual(.gyro, PmdMeasurementType.fromId(id: 5))
+        XCTAssertEqual(.mgn, PmdMeasurementType.fromId(id: 6))
+        XCTAssertEqual(.skinTemperature, PmdMeasurementType.fromId(id: 7))
+        XCTAssertEqual(.offline_recording, PmdMeasurementType.fromId(id: 13))
+        XCTAssertEqual(.offline_hr, PmdMeasurementType.fromId(id: 14))
+        XCTAssertEqual(.unknown_type, PmdMeasurementType.fromId(id: 4))
+        XCTAssertEqual(.unknown_type, PmdMeasurementType.fromId(id: 0xFF))
+    }
+
     func testPmdActiveMeasurementGoldenVectorsMatchIOSCommunicationsBehavior() throws {
         let vectors = try loadActiveMeasurementGoldenVectors()
         XCTAssertFalse(vectors.isEmpty, "Expected PMD active-measurement golden vectors")

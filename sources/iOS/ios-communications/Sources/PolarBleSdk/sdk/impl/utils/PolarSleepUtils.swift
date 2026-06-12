@@ -1,6 +1,9 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
 private let SLEEP_DIRECTORY = "SLEEP/"
@@ -16,6 +19,27 @@ private let dateFormat: DateFormatter = {
 private let TAG = "PolarSleepUtils"
 
 internal class PolarSleepUtils {
+    static func sleepDataReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        let path = sleepAnalysisPath(day: dateFormat.string(from: date))
+        return fileReadOperation(id: "sleep-read-analysis", path: path) ?? (.get, path)
+    }
+
+    static func sleepSkinTemperatureReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        let path = sleepSkinTemperaturePath(day: dateFormat.string(from: date))
+        return fileReadOperation(id: "sleep-read-skin-temperature", path: path) ?? (.get, path)
+    }
+
+    private static func fileReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
+        return PolarRuntimePlanner.fileFacadeOperation(id: id, command: "GET", path: path)
+    }
+
+    private static func sleepAnalysisPath(day: String) -> String {
+        return PolarSleepRuntimePlanner.sleepAnalysisPath(day: day) ?? "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(SLEEP_DIRECTORY)\(SLEEP_PROTO)"
+    }
+
+    private static func sleepSkinTemperaturePath(day: String) -> String {
+        return PolarSleepRuntimePlanner.sleepSkinTemperaturePath(day: day) ?? "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(NRST_DIRECTORY)\(NRST_PROTO)"
+    }
 
     static func readSleepFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> PolarSleepData.PolarSleepAnalysisResult {
         var result = try await readSleepData(client: client, date: date)
@@ -25,10 +49,10 @@ internal class PolarSleepUtils {
 
     static func readSleepData(client: BlePsFtpClient, date: Date) async throws -> PolarSleepData.PolarSleepAnalysisResult {
         BleLogger.trace(TAG, "readSleepFromDayDirectory: \(date)")
-        let sleepDataFilePath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(SLEEP_DIRECTORY)\(SLEEP_PROTO)"
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = sleepDataFilePath }
+        let plannedOperation = sleepDataReadOperation(date: date)
+        let sleepDataFilePath = plannedOperation.path
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbSleepAnalysisResult(serializedBytes: Data(response))
             return PolarSleepData.PolarSleepAnalysisResult(
                 sleepStartTime: try PolarTimeUtils.pbLocalDateTimeToDate(pbLocalDateTime: proto.sleepStartTime),
@@ -38,14 +62,14 @@ internal class PolarSleepUtils {
                 sleepWakePhases: PolarSleepData.fromPbSleepwakePhasesListProto(pbSleepwakePhasesList: proto.sleepwakePhases),
                 snoozeTime: try PolarSleepData.convertSnoozeTimeListToLocalTime(snoozeTimeList: proto.snoozeTime),
                 alarmTime: proto.hasAlarmTime ? try PolarTimeUtils.pbLocalDateTimeToDate(pbLocalDateTime: proto.alarmTime) : nil,
-                sleepStartOffsetSeconds: proto.sleepStartOffsetSeconds,
-                sleepEndOffsetSeconds: proto.sleepStartOffsetSeconds,
-                userSleepRating: proto.hasUserSleepRating ? PolarSleepData.SleepRating(rawValue: proto.userSleepRating.rawValue) : nil,
+                sleepStartOffsetSeconds: sharedSleepStartOffsetSeconds(proto.sleepStartOffsetSeconds),
+                sleepEndOffsetSeconds: sharedSleepEndOffsetSeconds(startOffsetSeconds: proto.sleepStartOffsetSeconds, endOffsetSeconds: proto.sleepEndOffsetSeconds),
+                userSleepRating: proto.hasUserSleepRating ? PolarSleepData.SleepRating.optionalFromProtoValue(value: proto.userSleepRating.rawValue) : nil,
                 deviceId: proto.hasRecordingDevice ? proto.recordingDevice.deviceID : nil,
                 batteryRanOut: proto.hasBatteryRanOut ? proto.batteryRanOut : nil,
                 sleepCycles: PolarSleepData.fromPbSleepCyclesList(pbSleepCyclesList: proto.sleepCycles),
                 sleepResultDate: try PolarTimeUtils.pbDateToDateComponents(pbDate: proto.sleepResultDate),
-                originalSleepRange: try PolarSleepData.fromPbOriginalSleepRange(pbOriginalSleepRange: proto.originalSleepRange)
+                originalSleepRange: sharedShouldIncludeOriginalSleepRange(proto.hasOriginalSleepRange) ? try PolarSleepData.fromPbOriginalSleepRange(pbOriginalSleepRange: proto.originalSleepRange) : nil
             )
         } catch {
             BleLogger.trace("readSleepFromDayDirectory() failed for path: \(sleepDataFilePath), error: \(error). No sleep data?")
@@ -58,18 +82,102 @@ internal class PolarSleepUtils {
         }
     }
 
+    private static func sharedSleepStartOffsetSeconds(_ value: Int32) -> Int32 {
+        return PolarSleepRuntimePlanner.sleepStartOffsetSeconds(value) ?? value
+    }
+
+    private static func sharedSleepEndOffsetSeconds(startOffsetSeconds: Int32, endOffsetSeconds: Int32) -> Int32 {
+        return PolarSleepRuntimePlanner.sleepEndOffsetSeconds(endOffsetSeconds) ?? startOffsetSeconds
+    }
+
+    private static func sharedShouldIncludeOriginalSleepRange(_ hasOriginalSleepRange: Bool) -> Bool {
+        return PolarSleepRuntimePlanner.shouldIncludeOriginalSleepRange(hasOriginalSleepRange) ?? true
+    }
+
+    private static func sharedShouldIncludeSleepSkinTemperatureResult(_ hasSleepDate: Bool) -> Bool {
+        return PolarSleepRuntimePlanner.shouldIncludeSleepSkinTemperatureResult(hasSleepDate) ?? true
+    }
+
     static func readSleepSkinTemperatureResult(client: BlePsFtpClient, date: Date, sleepAnalysisResult: PolarSleepData.PolarSleepAnalysisResult) async throws -> PolarSleepData.PolarSleepAnalysisResult {
         BleLogger.trace(TAG, "readSleepSkinTemperature: \(date)")
         var result = sleepAnalysisResult
-        let filePath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(NRST_DIRECTORY)\(NRST_PROTO)"
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = filePath }
+        let plannedOperation = sleepSkinTemperatureReadOperation(date: date)
+        let filePath = plannedOperation.path
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbSleepSkinTemperatureResult(serializedBytes: Data(response))
-            result.sleepSkinTemperatureResult = try PolarSleepData.fromPbSleepTemperatureResult(pbSleepTemperatureResult: proto)
+            if sharedShouldIncludeSleepSkinTemperatureResult(proto.hasSleepDate) {
+                result.sleepSkinTemperatureResult = try PolarSleepData.fromPbSleepTemperatureResult(pbSleepTemperatureResult: proto)
+            }
         } catch {
             BleLogger.trace("readSleepSkinTemperature() failed for path: \(filePath), error: \(error). No sleep skin temperature data?")
         }
         return result
+    }
+}
+
+enum PolarSleepRuntimePlanner {
+    static func sleepAnalysisPath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepAnalysisPath(day: day)
+        #else
+        return nil
+        #endif
+    }
+
+    static func sleepSkinTemperaturePath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepSkinTemperaturePath(day: day)
+        #else
+        return nil
+        #endif
+    }
+
+    static func sleepStartOffsetSeconds(_ value: Int32) -> Int32? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepStartOffsetSeconds(value: value)
+        #else
+        return nil
+        #endif
+    }
+
+    static func sleepEndOffsetSeconds(_ value: Int32) -> Int32? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepEndOffsetSeconds(value: value)
+        #else
+        return nil
+        #endif
+    }
+
+    static func shouldIncludeOriginalSleepRange(_ hasOriginalSleepRange: Bool) -> Bool? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.shouldIncludeOriginalSleepRange(hasOriginalSleepRange: hasOriginalSleepRange)
+        #else
+        return nil
+        #endif
+    }
+
+    static func shouldIncludeSleepSkinTemperatureResult(_ hasSleepDate: Bool) -> Bool? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.shouldIncludeSleepSkinTemperatureResult(hasSleepDate: hasSleepDate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func sleepWakeStateName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepWakeStateName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func sleepRatingName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.sleepRatingName(value: Int32(value))
+        #else
+        return nil
+        #endif
     }
 }

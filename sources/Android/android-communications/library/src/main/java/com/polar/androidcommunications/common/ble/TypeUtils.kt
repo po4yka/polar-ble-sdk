@@ -1,30 +1,30 @@
 package com.polar.androidcommunications.common.ble
 
-import com.polar.shared.ble.PolarTypeUtils
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 object TypeUtils {
 
     fun convertArrayToUnsignedByte(data: ByteArray): UByte {
         BleUtils.validate(data.size == 1, "Array other than 1 cannot be converted to UByte. Input data size was " + data.size)
-        return PolarTypeUtils.requireUnsignedByte(data).toUByte()
+        return PolarRuntimePlannerAdapter.convertArrayToUnsignedByte(data)
     }
 
     fun convertArrayToUnsignedInt(data: ByteArray, offset: Int, length: Int): UInt {
-        return convertArrayToUnsignedInt(data.copyOfRange(offset, offset + length))
+        return PolarRuntimePlannerAdapter.convertArrayToUnsignedInt(data, offset, length)
     }
 
     fun convertArrayToUnsignedInt(data: ByteArray): UInt {
         BleUtils.validate(data.size in 1..4, "Array bigger than 4 cannot be converted to UInt. Input data size was " + data.size)
-        return PolarTypeUtils.requireUnsignedInt(data).toUInt()
+        return PolarRuntimePlannerAdapter.convertArrayToUnsignedInt(data)
     }
 
     fun convertArrayToUnsignedLong(data: ByteArray, offset: Int, length: Int): ULong {
-        return convertArrayToUnsignedLong(data.copyOfRange(offset, offset + length))
+        return PolarRuntimePlannerAdapter.convertArrayToUnsignedLong(data, offset, length)
     }
 
     fun convertArrayToUnsignedLong(data: ByteArray): ULong {
         BleUtils.validate(data.size in 1..8, "Array bigger than 8 cannot be converted to ULong. Input data size was " + data.size)
-        return PolarTypeUtils.requireUnsignedLong(data).toULong()
+        return PolarRuntimePlannerAdapter.convertArrayToUnsignedLong(data)
     }
 
     fun convertArrayToSignedInt(data: ByteArray, offset: Int, length: Int): Int {
@@ -33,15 +33,10 @@ object TypeUtils {
 
     fun convertArrayToSignedInt(data: ByteArray): Int {
         BleUtils.validate(data.size in 1..4, "Array bigger than 4 cannot be converted to Int. Input data size was " + data.size)
-        var result = PolarTypeUtils.requireUnsignedInt(data).toUInt()
-        if (data.last() < 0) {
-            val mask: UInt = 0xFFFFFFFFu shl data.size * 8
-            result = result or mask
-        }
-        return result.toInt()
+        return PolarRuntimePlannerAdapter.convertArrayToSignedInt(data)
     }
 
     fun convertUnsignedByteToInt(byte: Byte): Int {
-        return PolarTypeUtils.convertUnsignedByteToInt(byte)
+        return PolarRuntimePlannerAdapter.convertUnsignedByteToInt(byte)
     }
 }

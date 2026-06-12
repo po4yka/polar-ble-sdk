@@ -9,21 +9,25 @@ import Foundation
 
 private let REST_FACADE_RUNTIME_READINESS_COMMON_DECISION = "REST facade runtime migration may proceed only after rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified."
 private let FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION = "File facade runtime migration may proceed only after file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
-private let COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+private let COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
 private let STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup migration may proceed only after cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
 private let DISK_TIME_RUNTIME_READINESS_COMMON_DECISION = "Disk/time facade runtime migration may proceed only after disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
-private let COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
+private let COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10/exercise command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
 private let STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
 private let DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
-private let USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, read-failure no-write and write-failure-after-payload behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
-private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+private let USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+private let SD_LOG_READINESS_COMMON_DECISION = "SD-log migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS SD-log facade tests continue to pin trigger and magnetometer-frequency enum projection, unknown enum boundaries, SD-log config file paths, write-progress policy, session-notification boundaries, protobuf construction boundaries, optional field presence, public error mapping boundaries, platform vector references, and compile verification before broader SD-log execution moves."
+private let FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
 private let REST_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
 private let FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
-private let COMMAND_RUNTIME_POLICY_OPERATION_IDS = ["h10-start-recording", "h10-start-recording-query-failure", "h10-stop-recording", "h10-stop-recording-query-failure", "h10-recording-status", "h10-recording-status-query-failure", "factory-reset", "factory-reset-notification-failure", "factory-reset-preserve-pairing", "factory-reset-preserve-pairing-notification-failure", "restart", "restart-notification-failure", "warehouse-sleep", "warehouse-sleep-notification-failure", "turn-device-off", "turn-device-off-notification-failure", "sync-start-success", "sync-start-query-failure", "sync-stop-success", "sync-stop-notification-failure"]
+private let COMMAND_RUNTIME_POLICY_OPERATION_IDS = ["h10-start-recording", "h10-start-recording-query-failure", "h10-stop-recording", "h10-stop-recording-query-failure", "h10-recording-status", "h10-recording-status-query-failure", "live-exercise-start", "live-exercise-pause", "live-exercise-resume", "live-exercise-stop", "live-exercise-status", "offline-exercise-v2-start", "offline-exercise-v2-stop", "offline-exercise-v2-status", "factory-reset", "factory-reset-notification-failure", "factory-reset-preserve-pairing", "factory-reset-preserve-pairing-notification-failure", "restart", "restart-notification-failure", "warehouse-sleep", "warehouse-sleep-notification-failure", "turn-device-off", "turn-device-off-notification-failure", "sync-start-success", "sync-start-query-failure", "sync-stop-success", "sync-stop-notification-failure"]
 private let DISK_TIME_RUNTIME_POLICY_OPERATION_IDS = ["get-disk-space", "get-local-time", "get-local-time-with-zone", "set-local-time-v2", "set-local-time-h10", "set-local-time-failure", "get-local-time-failure", "get-local-time-with-zone-failure", "get-disk-space-failure"]
 private let STORED_DATA_CLEANUP_POLICY_SCENARIO_IDS = ["telemetry-root-trc-bin-filter", "sdlogs-extension-filter", "activity-prune-empty-parents", "automatic-sample-embedded-day-filter", "sdlogs-list-failure-platform-policy", "telemetry-list-failure-platform-policy"]
-private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS = ["get-user-device-settings", "get-user-device-settings-read-failure", "set-telemetry-enabled", "set-telemetry-read-failure", "set-telemetry-write-failure", "set-user-device-location", "set-user-device-location-write-failure", "set-usb-connection-mode", "set-usb-connection-mode-write-failure", "set-automatic-training-detection", "set-automatic-training-detection-write-failure", "set-automatic-ohr-measurement", "set-automatic-ohr-measurement-write-failure", "set-daylight-saving-time"]
+private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS = ["get-user-device-settings", "get-user-device-settings-read-failure", "set-user-device-settings", "set-user-device-settings-write-failure", "set-telemetry-enabled", "set-telemetry-read-failure", "set-telemetry-write-failure", "set-user-device-location", "set-user-device-location-read-failure", "set-user-device-location-write-failure", "set-usb-connection-mode", "set-usb-connection-mode-read-failure", "set-usb-connection-mode-write-failure", "set-automatic-training-detection", "set-automatic-training-detection-read-failure", "set-automatic-training-detection-write-failure", "set-automatic-ohr-measurement", "set-automatic-ohr-measurement-read-failure", "set-automatic-ohr-measurement-write-failure", "set-daylight-saving-time"]
+private let SD_LOG_READINESS_FAMILIES = ["log-trigger-enum-projection", "magnetometer-frequency-enum-projection", "unknown-enum-null-boundary", "sd-log-config-read-write-paths", "write-progress-policy-gate", "session-notification-platform-boundary", "protobuf-construction-platform-boundary", "optional-field-presence-boundary", "public-error-mapping-boundary", "platform-sd-log-vector-reference-gate", "compile-verification-gate"]
+private let FIRST_TIME_USE_READINESS_FAMILIES = ["gender-enum-projection", "training-background-enum-projection", "typical-day-enum-projection", "unknown-enum-null-boundary", "physical-config-read-write-paths", "user-id-read-write-paths", "write-progress-policy-gate", "sync-sequencing-platform-boundary", "protobuf-construction-platform-boundary", "public-error-mapping-boundary", "platform-first-time-use-vector-reference-gate", "compile-verification-gate"]
 private let REST_FACADE_RUNTIME_POLICY_OPERATION_IDS = ["list-rest-api-services-success", "get-rest-api-description-success", "list-rest-api-services-request-failure", "get-rest-api-description-request-failure", "list-rest-api-services-response-error", "get-rest-api-description-response-error", "list-rest-api-services-empty-success", "list-rest-api-services-malformed-success", "get-rest-api-description-empty-success", "get-rest-api-description-malformed-success"]
 private let FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS = ["read-low-level-file-success", "read-low-level-file-empty-success", "read-low-level-file-request-failure", "read-low-level-file-response-error", "write-low-level-file-success", "write-low-level-file-progress-success", "write-low-level-file-stream-failure", "write-low-level-file-response-error", "delete-low-level-file-success", "delete-low-level-file-request-failure", "delete-low-level-file-response-error"]
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_SCENARIO_IDS = ["set-trigger-success-with-secret", "set-trigger-mode-error", "set-trigger-status-read-error", "set-trigger-setting-error", "get-trigger-success", "get-trigger-transport-error"]
@@ -66,6 +70,7 @@ final class PolarBleApiImplTests: XCTestCase {
         v2MockClient = nil; v2MockSession = nil; v2Api = nil
         h10MockClient = nil; h10MockSession = nil; h10Api = nil
         cancellables.removeAll()
+        PolarFirmwareUpdateUtils.packageExtractor = ZipFirmwarePackageExtractor()
     }
 
     // MARK: - Helpers
@@ -293,6 +298,14 @@ final class PolarBleApiImplTests: XCTestCase {
                 "h10-recording-stop-query-failure",
                 "h10-recording-status-query",
                 "h10-recording-status-query-failure",
+                "live-exercise-start-query",
+                "live-exercise-pause-query",
+                "live-exercise-resume-query",
+                "live-exercise-stop-query",
+                "live-exercise-status-query",
+                "offline-exercise-v2-start-query",
+                "offline-exercise-v2-stop-query",
+                "offline-exercise-v2-status-query",
                 "factory-reset-flags",
                 "factory-reset-notification-failure",
                 "preserve-pairing-reset-flags",
@@ -451,15 +464,22 @@ final class PolarBleApiImplTests: XCTestCase {
                 "settings-path-gate",
                 "settings-read-success",
                 "settings-read-failure-no-write",
+                "whole-settings-direct-write",
+                "whole-settings-write-failure-after-payload",
                 "telemetry-read-then-write",
+                "telemetry-read-failure-no-write",
                 "telemetry-write-failure-after-payload",
                 "device-location-read-then-write",
+                "device-location-read-failure-no-write",
                 "device-location-write-failure-after-payload",
                 "usb-connection-mode-read-then-write",
+                "usb-connection-mode-read-failure-no-write",
                 "usb-connection-mode-write-failure-after-payload",
                 "automatic-training-detection-read-then-write",
+                "automatic-training-detection-read-failure-no-write",
                 "automatic-training-detection-write-failure-after-payload",
                 "automatic-ohr-measurement-read-then-write",
+                "automatic-ohr-measurement-read-failure-no-write",
                 "automatic-ohr-measurement-write-failure-after-payload",
                 "daylight-saving-payload-shape",
                 "protobuf-field-preservation-gate",
@@ -555,6 +575,20 @@ final class PolarBleApiImplTests: XCTestCase {
             iosConsumers: ["PolarBleApiImplTests"],
             commonPrototypeConsumers: ["com.polar.sharedtest.RestFacadeRuntimePolicyCommonTest"]
         )
+    }
+
+    private func assertRestServiceMappingReadinessContains(_ vectorTerm: String, file: StaticString = #filePath, line: UInt = #line) throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/rest-service/rest-service-mapping-readiness.json")
+        let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any], file: file, line: line)
+        let input = try XCTUnwrap(vector["input"] as? [String: Any], file: file, line: line)
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any], file: file, line: line)
+        let requiredBehaviorFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String], file: file, line: line)
+        let coveredBehaviorFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String], file: file, line: line)
+
+        XCTAssertEqual("rest-service-mapping-readiness", vector["id"] as? String, file: file, line: line)
+        XCTAssertEqual("restServiceMappingReadiness", input["kind"] as? String, file: file, line: line)
+        XCTAssertTrue(requiredBehaviorFamilies.contains(vectorTerm), "Missing REST service mapping readiness term \(vectorTerm)", file: file, line: line)
+        XCTAssertTrue(coveredBehaviorFamilies.contains(vectorTerm), "Missing covered REST service mapping readiness term \(vectorTerm)", file: file, line: line)
     }
 
     private func assertFileFacadeRuntimePolicyVectorContains(_ vectorTerm: String, file: StaticString = #filePath, line: UInt = #line) throws {
@@ -666,7 +700,7 @@ final class PolarBleApiImplTests: XCTestCase {
                 "enabled-feature-projection",
                 "excluded-feature-projection",
                 "platform-packet-split",
-                "facade-error-mapping-deferred",
+                "facade-error-mapping-pinned",
                 "compile-verification-gate"
             ]
         )
@@ -827,6 +861,18 @@ final class PolarBleApiImplTests: XCTestCase {
         return results
     }
 
+    private func collectAllAsyncWithCompletionError<T>(_ stream: AsyncThrowingStream<T, Error>, timeout: TimeInterval = 5) throws -> ([T], Error?) {
+        return try awaitSingleAsync({
+            var results: [T] = []
+            do {
+                for try await value in stream { results.append(value) }
+                return (results, nil)
+            } catch {
+                return (results, error)
+            }
+        }, timeout: timeout)
+    }
+
     private func data(from stream: InputStream) throws -> Data {
         stream.open()
         defer { stream.close() }
@@ -914,8 +960,15 @@ final class PolarBleApiImplTests: XCTestCase {
     func test_setLocalTime_h10FileSystem_sendsOneQuery() throws {
         try assertDiskTimeRuntimePolicyVectorContains("set-local-time-h10")
         h10MockClient.queryReturnValue = .success(Data())
-        try awaitVoidAsync { [self] in try await h10Api.setLocalTime(deviceId, time: Date(), zone: TimeZone(secondsFromGMT: 0)!) }
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = try XCTUnwrap(utcCalendar.date(from: DateComponents(timeZone: TimeZone(secondsFromGMT: 0), year: 2026, month: 4, day: 13, hour: 10, minute: 30, second: 15)))
+        try awaitVoidAsync { [self] in try await h10Api.setLocalTime(deviceId, time: date, zone: TimeZone(secondsFromGMT: 7200)!) }
         XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.setLocalTime.rawValue)
+        let localTimeParamsData = try XCTUnwrap(h10MockClient.queryCalls.first?.parameters) as Data
+        let localTimeParams = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: localTimeParamsData)
+        XCTAssertEqual(localTimeParams.time.hour, 12)
+        XCTAssertEqual(localTimeParams.tzOffset, 120)
     }
 
     func test_setLocalTime_h10FileSystem_queryError_propagatesError() throws {
@@ -935,11 +988,22 @@ final class PolarBleApiImplTests: XCTestCase {
     func test_setLocalTime_polarFileSystemV2_sendsTwoQueries() throws {
         try assertDiskTimeRuntimePolicyVectorContains("set-local-time-v2")
         for _ in 0..<2 { v2MockClient.queryReturnValues.append(.success(Data())) }
-        try awaitVoidAsync { [self] in try await v2Api.setLocalTime(deviceId, time: Date(), zone: TimeZone(secondsFromGMT: 3600)!) }
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = try XCTUnwrap(utcCalendar.date(from: DateComponents(timeZone: TimeZone(secondsFromGMT: 0), year: 2026, month: 4, day: 13, hour: 10, minute: 30, second: 15)))
+        try awaitVoidAsync { [self] in try await v2Api.setLocalTime(deviceId, time: date, zone: TimeZone(secondsFromGMT: 7200)!) }
         XCTAssertEqual(v2MockClient.queryCalls.count, 2)
         let ids = v2MockClient.queryCalls.map { $0.id }
         XCTAssertTrue(ids.contains(Protocol_PbPFtpQuery.setLocalTime.rawValue))
         XCTAssertTrue(ids.contains(Protocol_PbPFtpQuery.setSystemTime.rawValue))
+        let systemTimeParamsData = try XCTUnwrap(v2MockClient.queryCalls.first { $0.id == Protocol_PbPFtpQuery.setSystemTime.rawValue }?.parameters) as Data
+        let localTimeParamsData = try XCTUnwrap(v2MockClient.queryCalls.first { $0.id == Protocol_PbPFtpQuery.setLocalTime.rawValue }?.parameters) as Data
+        let systemTimeParams = try Protocol_PbPFtpSetSystemTimeParams(serializedBytes: systemTimeParamsData)
+        let localTimeParams = try Protocol_PbPFtpSetLocalTimeParams(serializedBytes: localTimeParamsData)
+        XCTAssertEqual(systemTimeParams.time.hour, 10)
+        XCTAssertTrue(systemTimeParams.trusted)
+        XCTAssertEqual(localTimeParams.time.hour, 12)
+        XCTAssertEqual(localTimeParams.tzOffset, 120)
     }
 
     // MARK: - setTelemetryEnabled
@@ -1042,7 +1106,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(.put, writeOperation.command)
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
-        XCTAssertEqual(.deviceLocationWristRight, writtenSettings.generalSettings.deviceLocation)
+        XCTAssertEqual(sharedDeviceLocation(PbDeviceLocation.deviceLocationWristRight.rawValue), writtenSettings.generalSettings.deviceLocation)
         XCTAssertTrue(writtenSettings.hasTelemetrySettings)
         XCTAssertTrue(writtenSettings.telemetrySettings.hasTelemetryEnabled)
         XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
@@ -1072,8 +1136,26 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(.put, writeOperation.command)
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
-        XCTAssertEqual(.deviceLocationWristLeft, writtenSettings.generalSettings.deviceLocation)
+        XCTAssertEqual(sharedDeviceLocation(PbDeviceLocation.deviceLocationWristLeft.rawValue), writtenSettings.generalSettings.deviceLocation)
         XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    func test_setUserDeviceLocation_propagatesCurrentSettingsReadFailureWithoutWrite() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-location-read-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7027, userInfo: [NSLocalizedDescriptionKey: "location settings read failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setUserDeviceLocation(deviceId, location: PbDeviceLocation.deviceLocationWristLeft.rawValue) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertTrue(v2MockClient.writeCalls.isEmpty)
     }
 
     // MARK: - setUsbConnectionMode
@@ -1104,7 +1186,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
         XCTAssertTrue(writtenSettings.hasUsbConnectionSettings)
-        XCTAssertEqual(.on, writtenSettings.usbConnectionSettings.mode)
+        XCTAssertEqual(PolarUserDeviceSettings.UsbConnectionMode.ON.toProto(), writtenSettings.usbConnectionSettings.mode)
         XCTAssertEqual(.deviceLocationWristLeft, writtenSettings.generalSettings.deviceLocation)
         XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
     }
@@ -1130,7 +1212,25 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(.put, writeOperation.command)
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
-        XCTAssertEqual(.off, writtenSettings.usbConnectionSettings.mode)
+        XCTAssertEqual(PolarUserDeviceSettings.UsbConnectionMode.OFF.toProto(), writtenSettings.usbConnectionSettings.mode)
+    }
+
+    func test_setUsbConnectionMode_propagatesCurrentSettingsReadFailureWithoutWrite() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-usb-connection-mode-read-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7017, userInfo: [NSLocalizedDescriptionKey: "USB settings read failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setUsbConnectionMode(deviceId, enabled: false) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertTrue(v2MockClient.writeCalls.isEmpty)
     }
 
     // MARK: - setAutomaticTrainingDetectionSettings
@@ -1162,7 +1262,7 @@ final class PolarBleApiImplTests: XCTestCase {
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
         XCTAssertTrue(writtenSettings.hasAutomaticMeasurementSettings)
         let atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
-        XCTAssertEqual(.on, atdSettings.state)
+        XCTAssertEqual(PolarUserDeviceSettings.AutomaticTrainingDetectionMode.ON.toProto(), atdSettings.state)
         XCTAssertEqual(77, atdSettings.sensitivity)
         XCTAssertEqual(300, atdSettings.minimumTrainingDurationSeconds)
         XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
@@ -1190,9 +1290,27 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
         let atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
-        XCTAssertEqual(.off, atdSettings.state)
+        XCTAssertEqual(PolarUserDeviceSettings.AutomaticTrainingDetectionMode.OFF.toProto(), atdSettings.state)
         XCTAssertEqual(11, atdSettings.sensitivity)
         XCTAssertEqual(120, atdSettings.minimumTrainingDurationSeconds)
+    }
+
+    func test_setAutomaticTrainingDetectionSettings_propagatesCurrentSettingsReadFailureWithoutWrite() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-training-detection-read-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7018, userInfo: [NSLocalizedDescriptionKey: "automatic training detection read failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setAutomaticTrainingDetectionSettings(deviceId, mode: false, sensitivity: 11, minimumDuration: 120) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertTrue(v2MockClient.writeCalls.isEmpty)
     }
 
     // MARK: - setAutomaticOHRMeasurementEnabled
@@ -1250,6 +1368,84 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
         let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
         XCTAssertEqual(.off, writtenSettings.automaticMeasurementSettings.automaticOhrMeasurement.state)
+    }
+
+    func test_setAutomaticOHRMeasurementEnabled_propagatesCurrentSettingsReadFailureWithoutWrite() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-ohr-measurement-read-failure")
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7022, userInfo: [NSLocalizedDescriptionKey: "automatic OHR read failed"])
+        v2MockClient.requestReturnValue = .failure(transportError)
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setAutomaticOHRMeasurementEnabled(deviceId, enabled: false) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        XCTAssertTrue(v2MockClient.writeCalls.isEmpty)
+    }
+
+    // MARK: - setPolarUserDeviceSettings
+
+    func test_setPolarUserDeviceSettings_writesWholeSettingsPayloadThroughSharedPathPlanning() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings")
+        let settings = PolarUserDeviceSettings()
+        settings.deviceLocation = .WRIST_RIGHT
+        settings.usbConnectionMode = .ON
+        settings.telemetryEnabled = true
+        settings.automaticTrainingDetectionMode = .OFF
+        settings.automaticTrainingDetectionSensitivity = 22
+        settings.minimumTrainingDurationSeconds = 300
+        settings.autosFilesEnabled = false
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.setPolarUserDeviceSettings(deviceId, polarUserDeviceSettings: settings) }
+
+        XCTAssertTrue(v2MockClient.requestCalls.isEmpty)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertEqual(sharedDeviceLocation(PbDeviceLocation.deviceLocationWristRight.rawValue), writtenSettings.generalSettings.deviceLocation)
+        XCTAssertEqual(PolarUserDeviceSettings.UsbConnectionMode.ON.toProto(), writtenSettings.usbConnectionSettings.mode)
+        XCTAssertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+        let atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
+        XCTAssertEqual(PolarUserDeviceSettings.AutomaticTrainingDetectionMode.OFF.toProto(), atdSettings.state)
+        XCTAssertEqual(22, atdSettings.sensitivity)
+        XCTAssertEqual(300, atdSettings.minimumTrainingDurationSeconds)
+        XCTAssertEqual(.off, writtenSettings.automaticMeasurementSettings.automaticOhrMeasurement.state)
+    }
+
+    func test_setPolarUserDeviceSettings_propagatesWriteFailureAfterWholeSettingsPayloadIsPrepared() throws {
+        try assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings-write-failure")
+        let settings = PolarUserDeviceSettings()
+        settings.deviceLocation = .WRIST_LEFT
+        settings.telemetryEnabled = false
+        let transportError = NSError(domain: "PolarBleApiImplTests", code: 7031, userInfo: [NSLocalizedDescriptionKey: "whole settings write failed"])
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: transportError)
+        }
+
+        let error = awaitErrorAsync { [self] in try await v2Api.setPolarUserDeviceSettings(deviceId, polarUserDeviceSettings: settings) }
+
+        XCTAssertNotNil(error)
+        XCTAssertEqual((error as NSError?)?.domain, transportError.domain)
+        XCTAssertEqual((error as NSError?)?.code, transportError.code)
+        XCTAssertTrue(v2MockClient.requestCalls.isEmpty)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, writeOperation.path)
+        let writtenSettings = try Data_PbUserDeviceSettings(serializedBytes: try data(from: v2MockClient.writeCalls[0].data))
+        XCTAssertEqual(sharedDeviceLocation(PbDeviceLocation.deviceLocationWristLeft.rawValue), writtenSettings.generalSettings.deviceLocation)
+        XCTAssertFalse(writtenSettings.telemetrySettings.telemetryEnabled)
     }
 
     // MARK: - getPolarUserDeviceSettings
@@ -1397,7 +1593,19 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(Data([LedConfig.LED_ANIMATION_ENABLE_BYTE, LedConfig.LED_ANIMATION_DISABLE_BYTE]), try data(from: v2MockClient.writeCalls[0].data))
     }
 
+    func test_setLedConfig_headersUseSharedFileFacadePlanning() {
+        let writeOperation = PolarBleApiImpl.ledConfigWriteOperation()
+
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(LedConfig.LED_CONFIG_FILENAME, writeOperation.path)
+        XCTAssertEqual(
+            Data([LedConfig.LED_ANIMATION_ENABLE_BYTE, LedConfig.LED_ANIMATION_DISABLE_BYTE]),
+            PolarRuntimePlanner.ledConfigPayload(sdkModeLedEnabled: true, ppiModeLedEnabled: false)
+        )
+    }
+
     func test_setLedConfig_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7010, userInfo: [NSLocalizedDescriptionKey: "led config write failed"])
         v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
             continuation.finish(throwing: transportError)
@@ -1418,6 +1626,8 @@ final class PolarBleApiImplTests: XCTestCase {
     // MARK: - SD log configuration
 
     func test_getSDLogConfiguration_readsConfigAndWrapsSessionNotifications() throws {
+        let plannedStartNotifications = try XCTUnwrap(PolarRuntimePlanner.commandSyncStartNotifications(id: "sync-start-success"))
+        let plannedStopNotifications = try XCTUnwrap(PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success"))
         var proto = Data_PbSensorDataLog()
         proto.ohrLogEnabled = true
         proto.ppiLogEnabled = false
@@ -1430,8 +1640,10 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(false, result.ppiLogEnabled)
         XCTAssertEqual(Data_PbSensorDataLog.PbMagnetometerLogFrequency.magLog10Hz.rawValue, result.magnetometerFrequency)
         XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 2)
+        XCTAssertEqual(plannedStartNotifications.first, v2MockClient.sendNotificationCalls[0].notification)
         XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, v2MockClient.sendNotificationCalls[0].notification)
         XCTAssertNil(v2MockClient.sendNotificationCalls[0].parameters)
+        XCTAssertEqual(plannedStopNotifications.last, v2MockClient.sendNotificationCalls[1].notification)
         XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, v2MockClient.sendNotificationCalls[1].notification)
         XCTAssertNil(v2MockClient.sendNotificationCalls[1].parameters)
         XCTAssertEqual(v2MockClient.requestCalls.count, 1)
@@ -1485,7 +1697,74 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(.magLog10Hz, writtenConfig.magnetometerLogFrequency)
     }
 
+    func test_sdLogConfigEnumMappingPreservesProtoValues() throws {
+        let config = SDLogConfig(
+            ppiLogEnabled: nil,
+            accelerationLogEnabled: nil,
+            caloriesLogEnabled: nil,
+            gpsLogEnabled: nil,
+            gpsNmeaLogEnabled: nil,
+            magnetometerLogEnabled: nil,
+            tapLogEnabled: nil,
+            barometerLogEnabled: nil,
+            gyroscopeLogEnabled: nil,
+            sleepLogEnabled: nil,
+            slopeLogEnabled: nil,
+            ambientLightLogEnabled: nil,
+            tlrLogEnabled: nil,
+            ondemandLogEnabled: nil,
+            capsenseLogEnabled: nil,
+            fusionLogEnabled: nil,
+            metLogEnabled: nil,
+            ohrLogEnabled: nil,
+            verticalAccLogEnabled: nil,
+            amdLogEnabled: nil,
+            skinTemperatureLogEnabled: nil,
+            compassLogEnabled: nil,
+            speed3DLogEnabled: nil,
+            logTrigger: Data_PbSensorDataLog.PbLogTrigger.logTriggerExercise.rawValue,
+            magnetometerFrequency: Data_PbSensorDataLog.PbMagnetometerLogFrequency.magLog100Hz.rawValue
+        )
+
+        let proto = SDLogConfig.toProto(sdLogConfig: config)
+
+        XCTAssertEqual(.logTriggerExercise, proto.logTrigger)
+        XCTAssertEqual(2, proto.logTrigger.rawValue)
+        XCTAssertEqual(.magLog100Hz, proto.magnetometerLogFrequency)
+        XCTAssertEqual(3, proto.magnetometerLogFrequency.rawValue)
+    }
+
+    func testSdLogConfigFileHeadersUseSharedFileFacadePlanning() {
+        let readOperation = PolarBleApiImpl.sdLogConfigReadOperation()
+        XCTAssertEqual(readOperation.command, .get)
+        XCTAssertEqual(readOperation.path, SERVICE_DATALOG_CONFIG_FILEPATH)
+
+        let writeOperation = PolarBleApiImpl.sdLogConfigWriteOperation()
+        XCTAssertEqual(writeOperation.command, .put)
+        XCTAssertEqual(writeOperation.path, SERVICE_DATALOG_CONFIG_FILEPATH)
+    }
+
+    func testSdLogReadinessManifestIsPinnedBeforeFacadeMigration() throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/sd-log/sd-log-readiness.json")
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any])
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any])
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+
+        XCTAssertEqual(manifest["id"] as? String, "sd-log-readiness")
+        XCTAssertEqual(input["kind"] as? String, "sdLogReadiness")
+        XCTAssertEqual(requiredFamilies, SD_LOG_READINESS_FAMILIES)
+        XCTAssertEqual(coveredFamilies, SD_LOG_READINESS_FAMILIES)
+        XCTAssertEqual(expected["commonDecision"] as? String, SD_LOG_READINESS_COMMON_DECISION)
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.impl.BDBleApiImplTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarBleApiImplTests"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.SdLogModelsCommonPolicyTest"])
+    }
+
     func test_setSDLogConfiguration_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7022, userInfo: [NSLocalizedDescriptionKey: "sd log write failed"])
         v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
             continuation.finish(throwing: transportError)
@@ -1576,6 +1855,36 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH, requestOperation.path)
     }
 
+    func test_firstTimeUsePhysicalConfigEnumMappingPreservesProtoValues() throws {
+        let birthDate = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: DateComponents(year: 1990, month: 1, day: 2)))
+        let config = PolarFirstTimeUseConfig(
+            gender: .female,
+            birthDate: birthDate,
+            height: 170.0,
+            weight: 65.0,
+            maxHeartRate: 185,
+            vo2Max: 45,
+            restingHeartRate: 52,
+            trainingBackground: .semiPro,
+            deviceTime: "2026-05-31T12:00:00Z",
+            typicalDay: .mostlyMoving,
+            sleepGoalMinutes: 480
+        )
+
+        let proto = try XCTUnwrap(config.toProto())
+
+        XCTAssertEqual(Data_PbUserGender.Gender.female, proto.gender.value)
+        XCTAssertEqual(2, proto.gender.value.rawValue)
+        XCTAssertEqual(Data_PbUserTrainingBackground.TrainingBackground.semiPro, proto.trainingBackground.value)
+        XCTAssertEqual(50, proto.trainingBackground.value.rawValue)
+        XCTAssertEqual(Data_PbUserTypicalDay.TypicalDay.mostlyMoving, proto.typicalDay.value)
+        XCTAssertEqual(3, proto.typicalDay.value.rawValue)
+        let physicalConfiguration = proto.toPolarPhysicalConfiguration()
+        XCTAssertEqual(.female, physicalConfiguration.gender)
+        XCTAssertEqual(PolarFirstTimeUseConfig.TrainingBackground.semiPro.rawValue, physicalConfiguration.trainingBackground)
+        XCTAssertEqual(.mostlyMoving, physicalConfiguration.typicalDay)
+    }
+
     func test_getUserPhysicalConfiguration_returnsNilWhenPhysicalDataFileIsMissing() throws {
         v2MockClient.requestReturnValueClosure = { _ in throw BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.noSuchFileOrDirectory.rawValue) }
 
@@ -1619,7 +1928,45 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(stopSyncParams.completed)
     }
 
+    func testFirstTimeUseFileHeadersUseSharedFileFacadePlanning() {
+        let userIdReadOperation = PolarBleApiImpl.firstTimeUseUserIdReadOperation()
+        XCTAssertEqual(userIdReadOperation.command, .get)
+        XCTAssertEqual(userIdReadOperation.path, UserIdentifierType.USER_IDENTIFIER_FILENAME)
+
+        let userIdWriteOperation = PolarBleApiImpl.firstTimeUseUserIdWriteOperation()
+        XCTAssertEqual(userIdWriteOperation.command, .put)
+        XCTAssertEqual(userIdWriteOperation.path, UserIdentifierType.USER_IDENTIFIER_FILENAME)
+
+        let physicalConfigReadOperation = PolarBleApiImpl.firstTimeUsePhysicalConfigReadOperation()
+        XCTAssertEqual(physicalConfigReadOperation.command, .get)
+        XCTAssertEqual(physicalConfigReadOperation.path, PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH)
+
+        let physicalConfigWriteOperation = PolarBleApiImpl.firstTimeUsePhysicalConfigWriteOperation()
+        XCTAssertEqual(physicalConfigWriteOperation.command, .put)
+        XCTAssertEqual(physicalConfigWriteOperation.path, PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH)
+    }
+
+    func testFirstTimeUseReadinessManifestIsPinnedBeforeFacadeMigration() throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/first-time-use/first-time-use-readiness.json")
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any])
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any])
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+
+        XCTAssertEqual(manifest["id"] as? String, "first-time-use-readiness")
+        XCTAssertEqual(input["kind"] as? String, "firstTimeUseReadiness")
+        XCTAssertEqual(requiredFamilies, FIRST_TIME_USE_READINESS_FAMILIES)
+        XCTAssertEqual(coveredFamilies, FIRST_TIME_USE_READINESS_FAMILIES)
+        XCTAssertEqual(expected["commonDecision"] as? String, FIRST_TIME_USE_READINESS_COMMON_DECISION)
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.api.model.PolarFirstTimeUseConfigTest", "com.polar.sdk.impl.BDBleApiImplTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarBleApiImplTests"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.FirstTimeUseModelsCommonPolicyTest"])
+    }
+
     func test_doFirstTimeUse_userIdWriteFailurePropagatesWithoutTerminateNotifications() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         let birthDate = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: DateComponents(year: 1991, month: 2, day: 3)))
         let config = PolarFirstTimeUseConfig(
             gender: .male,
@@ -1671,7 +2018,29 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(Data("{\"enabled\":true}".utf8), try data(from: v2MockClient.writeCalls[0].data))
     }
 
+    func test_stopSleepRecording_usesSharedSleepRestPaths() throws {
+        try assertRestServiceMappingReadinessContains("sleep-rest-action-path-planning")
+        v2MockClient.requestReturnValue = .success(Data())
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(0)
+            continuation.finish()
+        }
+
+        try awaitVoidAsync { [self] in try await v2Api.stopSleepRecording(identifier: deviceId) }
+
+        XCTAssertEqual(v2MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(PolarRuntimePlanner.sleepRestApiPath(), requestOperation.path)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        let writeOperation = try Protocol_PbPFtpOperation(serializedBytes: v2MockClient.writeCalls[0].header as Data)
+        XCTAssertEqual(.put, writeOperation.command)
+        XCTAssertEqual(PolarRuntimePlanner.stopSleepRecordingPath(), writeOperation.path)
+        XCTAssertEqual(Data("{}".utf8), try data(from: v2MockClient.writeCalls[0].data))
+    }
+
     func test_putNotification_writeError_propagatesErrorAfterPayloadIsPrepared() throws {
+        try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         let transportError = NSError(domain: "PolarBleApiImplTests", code: 7012, userInfo: [NSLocalizedDescriptionKey: "REST notification write failed"])
         v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
             continuation.finish(throwing: transportError)
@@ -1910,6 +2279,1790 @@ final class PolarBleApiImplTests: XCTestCase {
         let operations = try v2MockClient.requestCalls.map { try Protocol_PbPFtpOperation(serializedBytes: $0) }
         XCTAssertEqual([.get, .remove], operations.map { $0.command })
         XCTAssertEqual(["/", "/TRC10.BIN"], operations.map { $0.path })
+    }
+
+    func test_storedDataCleanupFilterHelpersUseSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: "TRC10.BIN", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: "ABC10.BIN", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: "TRC10.TXT", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: "A.SLG", includeSuffixes: [".SLG", ".TXT"]))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataEntryMatchesFilter(entry: "C.BPB", includeSuffixes: [".SLG", ".TXT"]))
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue, entry: "20260530/", cutoffFolder: "20260531"))
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue, entry: "ACTIVITY.BPB"))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue, entry: "USERID.BPB"))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue, entry: "HIST.BPB"))
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: PolarStoredDataType.StoredDataType.AUTO_SAMPLE.rawValue, entry: "AUTOS001.BPB"))
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: PolarStoredDataType.StoredDataType.SDLOGS.rawValue, entry: "A.SLG"))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: PolarStoredDataType.StoredDataType.SDLOGS.rawValue, entry: "C.BPB"))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: PolarStoredDataType.StoredDataType.UNDEFINED.rawValue, entry: "20260530/"))
+        XCTAssertEqual(true, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue))
+        XCTAssertEqual(false, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.AUTO_SAMPLE.rawValue))
+        XCTAssertEqual(false, PolarRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.SDLOGS.rawValue))
+        XCTAssertEqual("/U/0/", PolarRuntimePlanner.storedDataCleanupRootPath(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue, defaultRoot: "/U/0/"))
+        XCTAssertEqual("/U/0/AUTOS", PolarRuntimePlanner.storedDataCleanupRootPath(dataType: PolarStoredDataType.StoredDataType.AUTO_SAMPLE.rawValue, defaultRoot: "/U/0/"))
+        XCTAssertEqual("/SDLOGS", PolarRuntimePlanner.storedDataCleanupRootPath(dataType: PolarStoredDataType.StoredDataType.SDLOGS.rawValue, defaultRoot: "/U/0/"))
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260530", cutoffDate: "20260531"))
+        XCTAssertEqual(true, PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260531", cutoffDate: "20260531"))
+        XCTAssertEqual(false, PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260601", cutoffDate: "20260531"))
+        XCTAssertEqual(["/U/0/20260530/ACT/", "/U/0/20260530/"], PolarRuntimePlanner.storedDataEmptyParentDirectories(filePath: "/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash: true))
+        XCTAssertEqual(["/TRC10.BIN"], PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/", entries: ["TRC10.BIN", "ABC10.BIN", "TRC10.TXT"], includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(["/SDLOGS/A.SLG", "/SDLOGS/B.TXT"], PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/SDLOGS", entries: ["A.SLG", "B.TXT", "C.BPB"], includeSuffixes: [".SLG", ".TXT"]))
+        XCTAssertEqual(["/U/0/20260530/ACT/ACTIVITY.BPB"], PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/U/0/", entries: ["20260530/ACT/ACTIVITY.BPB"]))
+        XCTAssertEqual(["/U/0/AUTOS/20260530/AUTOS001.BPB"], PolarRuntimePlanner.storedDataCleanupRemovePaths(kind: "filterDirectoryEntries", rootPath: "/U/0/AUTOS", entries: ["20260530/AUTOS001.BPB"]))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func test_runtimePlannerSurfacesSharedTerminalDecisionsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarRuntimePlanner.commandQuery(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.requestRecordingStatus.rawValue, PolarRuntimePlanner.commandQueryValue(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.startExercise.rawValue, PolarRuntimePlanner.commandQueryValue(id: "live-exercise-start", query: "START_EXERCISE", parameters: ["sportProfileId=\(PolarExerciseSession.SportProfile.running.rawValue)"]))
+        XCTAssertEqual(Protocol_PbPFtpQuery.pauseExercise.rawValue, PolarRuntimePlanner.commandQueryValue(id: "live-exercise-pause", query: "PAUSE_EXERCISE"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.resumeExercise.rawValue, PolarRuntimePlanner.commandQueryValue(id: "live-exercise-resume", query: "RESUME_EXERCISE"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.stopExercise.rawValue, PolarRuntimePlanner.commandQueryValue(id: "live-exercise-stop", query: "STOP_EXERCISE", parameters: ["save=true"]))
+        XCTAssertEqual(Protocol_PbPFtpQuery.getExerciseStatus.rawValue, PolarRuntimePlanner.commandQueryValue(id: "live-exercise-status", query: "GET_EXERCISE_STATUS"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.prepareFirmwareUpdate.rawValue, PolarRuntimePlanner.commandQueryValue(id: "firmware-prepare-update", query: "PREPARE_FIRMWARE_UPDATE", parameters: ["file=SYSUPDAT.IMG"]))
+        XCTAssertEqual("success", PolarRuntimePlanner.commandReset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, PolarRuntimePlanner.commandResetNotification(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
+        XCTAssertEqual("success", PolarRuntimePlanner.commandSyncStart(id: "sync-start-success"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.requestSynchronization.rawValue, PolarRuntimePlanner.commandSyncStartQueryValue(id: "sync-start-success"))
+        XCTAssertEqual([
+            Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue,
+            Protocol_PbPFtpHostToDevNotification.startSync.rawValue
+        ], PolarRuntimePlanner.commandSyncStartNotifications(id: "sync-start-success"))
+        XCTAssertEqual("success", PolarRuntimePlanner.commandSyncStop(id: "sync-stop-success"))
+        XCTAssertEqual([
+            Protocol_PbPFtpHostToDevNotification.stopSync.rawValue,
+            Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
+        ], PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success"))
+        XCTAssertEqual("EXERCISE_STATUS", PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Protocol_PbPFtpDevToHostNotification.exerciseStatus.rawValue))
+        XCTAssertEqual("PbPftpDHExerciseStatus", PolarRuntimePlanner.d2hNotificationPlan(notificationId: Protocol_PbPFtpDevToHostNotification.exerciseStatus.rawValue, parametersHex: "0a020802")?.parsedProtoName)
+        XCTAssertEqual("success", PolarRuntimePlanner.diskTimeQuery(id: "get-disk-space", query: "GET_DISK_SPACE"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.getDiskSpace.rawValue, PolarRuntimePlanner.diskTimeQueryValue(id: "get-disk-space", query: "GET_DISK_SPACE"))
+        XCTAssertEqual("success", PolarRuntimePlanner.setLocalTimeV2(systemTimeHour: 12, localTimeHour: 14))
+        XCTAssertEqual([
+            Protocol_PbPFtpQuery.setSystemTime.rawValue,
+            Protocol_PbPFtpQuery.setLocalTime.rawValue
+        ], PolarRuntimePlanner.setLocalTimeV2QueryValues(systemTimeHour: 12, localTimeHour: 14))
+        XCTAssertEqual("success", PolarRuntimePlanner.setLocalTimeH10(localTimeHour: 14))
+        XCTAssertEqual([Protocol_PbPFtpQuery.setLocalTime.rawValue], PolarRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: 14))
+        XCTAssertEqual("success", PolarRuntimePlanner.restFacadeGet(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json"))
+        XCTAssertEqual(.get, PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")?.command)
+        XCTAssertEqual("/REST/SERVICE.API", PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")?.path)
+        XCTAssertEqual("requires-empty-response-policy", PolarRuntimePlanner.restRequestTransportGet(path: "/REST/SERVICE.API", payloadHex: ""))
+        XCTAssertEqual("/REST/SLEEP.API", PolarRuntimePlanner.sleepRestApiPath())
+        XCTAssertEqual("/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]", PolarRuntimePlanner.sleepRecordingStateSubscribePath())
+        XCTAssertEqual("/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording", PolarRuntimePlanner.stopSleepRecordingPath())
+        XCTAssertEqual("success", PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102"))
+        XCTAssertEqual(.put, PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102")?.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102")?.path)
+        XCTAssertEqual(.get, PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: "/U/0/CUSTOM.BIN")?.command)
+        XCTAssertEqual(.remove, PolarRuntimePlanner.fileFacadeOperation(id: "delete-low-level-file-success", command: "REMOVE", path: "/U/0/CUSTOM.BIN")?.command)
+        XCTAssertEqual("transport-error", PolarRuntimePlanner.fileRuntimeError(operation: "readFile", path: "/U/0/CUSTOM.BIN", error: NSError(domain: "PolarBleApiImplTests", code: 1)))
+        XCTAssertEqual("success", PolarRuntimePlanner.userDeviceSettings(id: "set-user-device-settings", kind: "write", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["protobufPayload=platform-built"]))
+        XCTAssertEqual([.get, .put], PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-telemetry-enabled", kind: "readThenWrite", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["telemetryEnabled=true"])?.map { $0.command })
+        XCTAssertEqual(["/U/0/S/UDEVSET.BPB", "/U/0/S/UDEVSET.BPB"], PolarRuntimePlanner.userDeviceSettingsOperations(id: "set-telemetry-enabled", kind: "readThenWrite", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["telemetryEnabled=true"])?.map { $0.path })
+        XCTAssertEqual("WRIST_RIGHT", PolarRuntimePlanner.userDeviceSettingsDeviceLocationName(value: PbDeviceLocation.deviceLocationWristRight.rawValue))
+        XCTAssertEqual("ON", PolarRuntimePlanner.userDeviceSettingsUsbConnectionModeName(enabled: true))
+        XCTAssertEqual("OFF", PolarRuntimePlanner.userDeviceSettingsAutomaticTrainingDetectionModeName(enabled: false))
+        XCTAssertEqual("success", PolarRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
+        XCTAssertEqual("platform-path-split", PolarRuntimePlanner.storedDataCleanup(kind: "activityPrune", rootPath: "/U/0"))
+        XCTAssertEqual("success", PolarRuntimePlanner.storedDataCleanup(kind: "automaticSamplePrune", rootPath: "/U/0/AUTOS", cutoffDate: "20260531"))
+        XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
+        XCTAssertEqual("success", PolarRuntimePlanner.offlineTriggerGet(currentTypes: ["ACC:enabled"]))
+        XCTAssertEqual(["setMode:TRIGGER_SYSTEM_START", "getStatus", "setSetting:ACC:enabled:settings:secret", "setSetting:GYRO:disabled", "setSetting:OFFLINE_HR:enabled:no-settings:secret"], PolarRuntimePlanner.offlineTriggerSetCommands(currentTypes: ["ACC", "GYRO", "OFFLINE_HR"], desiredTypes: ["ACC:settings", "HR:no-settings"], secretPresent: true))
+        XCTAssertEqual(["ACC", "HR"], PolarRuntimePlanner.offlineTriggerEnabledFeatures(currentTypes: ["ACC:enabled", "GYRO:enabled", "OFFLINE_HR:enabled"]))
+        XCTAssertEqual("success", PolarRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "completed"], firmwareFiles: ["BTUPDAT.BIN", "SYSUPDAT.IMG"]))
+        XCTAssertEqual("success", PolarRuntimePlanner.backupRestore(path: "/U/0/BACKUP.TXT", payloadHex: "0102"))
+        XCTAssertEqual(.put, PolarRuntimePlanner.backupRestoreOperation(path: "/U/0/BACKUP.TXT", payloadHex: "0102")?.command)
+        XCTAssertEqual("/U/0/BACKUP.TXT", PolarRuntimePlanner.backupRestoreOperation(path: "/U/0/BACKUP.TXT", payloadHex: "0102")?.path)
+        XCTAssertEqual("/U/0/S/UDEVSET.BPB", PolarFirmwareBackupRuntimePlanner.backupTraversalRootPath("/U/*/S/UDEVSET.BPB"))
+        XCTAssertEqual("success", PolarRuntimePlanner.psFtpWriteAck(payloadSize: 2))
+        XCTAssertEqual("gattDisconnected", PolarRuntimePlanner.streamSubscription(target: "stream", startConnected: false, checkConnection: true))
+        XCTAssertEqual("stream", PolarRuntimePlanner.streamConsumerCancellation(target: "stream"))
+        XCTAssertEqual("linkLost", PolarRuntimePlanner.streamDisconnect(target: "stream", error: "linkLost"))
+        XCTAssertEqual(1, PolarRuntimePlanner.streamDuplicateCompletion(target: "stream"))
+        XCTAssertEqual(0, PolarRuntimePlanner.streamPostCompletionEmission(target: "stream", value: "value"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func test_fileFacadeRuntimePlannerMapsSharedOperationCommandsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarFileFacadeRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102"))
+        let putOperation = PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: "/U/0/CUSTOM.BIN", payloadHex: "0102")
+        XCTAssertEqual(.put, putOperation?.command)
+        XCTAssertEqual("/U/0/CUSTOM.BIN", putOperation?.path)
+        XCTAssertEqual(.get, PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: "/U/0/CUSTOM.BIN")?.command)
+        XCTAssertEqual(.remove, PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "delete-low-level-file-success", command: "REMOVE", path: "/U/0/CUSTOM.BIN")?.command)
+        XCTAssertNil(PolarFileFacadeRuntimePlanner.fileFacadeOperation(id: "unsupported-file-operation", command: "UNSUPPORTED", path: "/U/0/CUSTOM.BIN"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func test_fileRuntimePlannerSurfacesSharedErrorAndWritePolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let error = NSError(domain: "PolarBleApiImplTests", code: 1)
+        XCTAssertEqual("transport-error", PolarFileRuntimePlanner.runtimeError(operation: "readFile", path: "/U/0/CUSTOM.BIN", error: error))
+        XCTAssertEqual([0, 1, 2], PolarFileRuntimePlanner.psFtpWriteProgress(payloadSize: 2))
+        XCTAssertEqual("success", PolarFileRuntimePlanner.psFtpWriteAck(payloadSize: 2))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func test_commandRuntimePlannerMapsSharedQueriesAndNotificationsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarCommandRuntimePlanner.query(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.requestRecordingStatus.rawValue, PolarCommandRuntimePlanner.queryValue(id: "h10-recording-status", query: "REQUEST_RECORDING_STATUS"))
+        XCTAssertEqual("success", PolarCommandRuntimePlanner.reset(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.reset.rawValue, PolarCommandRuntimePlanner.resetNotification(id: "restart", sleep: false, factoryDefaults: false, otaFirmwareUpdate: false))
+        let resetFields = PolarCommandRuntimePlanner.resetFields(id: "warehouse-sleep", sleep: true, factoryDefaults: true, otaFirmwareUpdate: false)
+        XCTAssertTrue(resetFields.sleep)
+        XCTAssertTrue(resetFields.factoryDefaults)
+        XCTAssertFalse(resetFields.otaFirmwareUpdate)
+        let h10Fields = PolarCommandRuntimePlanner.h10StartRecordingFields(id: "h10-start-recording", sampleDataIdentifier: "myExercise", sampleType: "SAMPLE_TYPE_HEART_RATE", recordingIntervalSeconds: 1)
+        XCTAssertEqual("myExercise", h10Fields.sampleDataIdentifier)
+        XCTAssertEqual("SAMPLE_TYPE_HEART_RATE", h10Fields.sampleType)
+        XCTAssertEqual(1, h10Fields.recordingIntervalSeconds)
+        XCTAssertTrue(PolarCommandRuntimePlanner.syncStopNotificationCompleted(id: "sync-stop-success"))
+        XCTAssertEqual([
+            Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue,
+            Protocol_PbPFtpHostToDevNotification.startSync.rawValue
+        ], PolarCommandRuntimePlanner.syncStartNotifications(id: "sync-start-success"))
+        XCTAssertEqual([
+            Protocol_PbPFtpHostToDevNotification.stopSync.rawValue,
+            Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue
+        ], PolarCommandRuntimePlanner.syncStopNotifications(id: "sync-stop-success"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func test_diskTimeRuntimePlannerMapsSharedQueriesWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarDiskTimeRuntimePlanner.query(id: "get-disk-space", query: "GET_DISK_SPACE"))
+        XCTAssertEqual(Protocol_PbPFtpQuery.getDiskSpace.rawValue, PolarDiskTimeRuntimePlanner.queryValue(id: "get-disk-space", query: "GET_DISK_SPACE"))
+        XCTAssertEqual("success", PolarDiskTimeRuntimePlanner.setLocalTimeV2(systemTimeHour: 12, localTimeHour: 14))
+        XCTAssertEqual([
+            Protocol_PbPFtpQuery.setSystemTime.rawValue,
+            Protocol_PbPFtpQuery.setLocalTime.rawValue
+        ], PolarDiskTimeRuntimePlanner.setLocalTimeV2QueryValues(systemTimeHour: 12, localTimeHour: 14))
+        XCTAssertEqual("success", PolarDiskTimeRuntimePlanner.setLocalTimeH10(localTimeHour: 14))
+        XCTAssertEqual([Protocol_PbPFtpQuery.setLocalTime.rawValue], PolarDiskTimeRuntimePlanner.setLocalTimeH10QueryValues(localTimeHour: 14))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func test_restFacadeRuntimePlannerMapsSharedGetOperationWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarRestFacadeRuntimePlanner.get(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json"))
+        let operation = PolarRestFacadeRuntimePlanner.getOperation(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")
+        XCTAssertEqual(.get, operation?.command)
+        XCTAssertEqual("/REST/SERVICE.API", operation?.path)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func test_userDeviceSettingsRuntimePlannerMapsSharedOperationsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarUserDeviceSettingsRuntimePlanner.plan(id: "set-user-device-settings", kind: "write", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["protobufPayload=platform-built"]))
+        let operations = PolarUserDeviceSettingsRuntimePlanner.operations(id: "set-telemetry-enabled", kind: "readThenWrite", path: "/U/0/S/UDEVSET.BPB", payloadFields: ["telemetryEnabled=true"])
+        XCTAssertEqual([.get, .put], operations?.map { $0.command })
+        XCTAssertEqual(["/U/0/S/UDEVSET.BPB", "/U/0/S/UDEVSET.BPB"], operations?.map { $0.path })
+        XCTAssertEqual(DEVICE_SETTINGS_FILE_PATH, PolarUserDeviceSettingsRuntimePlanner.settingsPath(fileSystemType: "polarFileSystemV2", unknownSettingsPath: nil))
+        XCTAssertEqual(SENSOR_SETTINGS_FILE_PATH, PolarUserDeviceSettingsRuntimePlanner.settingsPath(fileSystemType: "h10FileSystem", unknownSettingsPath: nil))
+        XCTAssertNil(PolarUserDeviceSettingsRuntimePlanner.settingsPath(fileSystemType: "unknownFileSystem", unknownSettingsPath: nil))
+        XCTAssertEqual(SENSOR_SETTINGS_FILE_PATH, PolarUserDeviceSettingsRuntimePlanner.settingsPath(fileSystemType: "unknownFileSystem", unknownSettingsPath: SENSOR_SETTINGS_FILE_PATH))
+        XCTAssertEqual("WRIST_RIGHT", PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: PbDeviceLocation.deviceLocationWristRight.rawValue))
+        XCTAssertEqual("ON", PolarUserDeviceSettingsRuntimePlanner.usbConnectionModeName(enabled: true))
+        XCTAssertEqual("OFF", PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionModeName(enabled: false))
+        XCTAssertEqual(["protobufPayload=platform-built"], PolarUserDeviceSettingsRuntimePlanner.protobufPayloadFields())
+        XCTAssertEqual(["telemetryEnabled=true"], PolarUserDeviceSettingsRuntimePlanner.telemetryPayloadFields(enabled: true))
+        XCTAssertEqual(["deviceLocation=WRIST_RIGHT"], PolarUserDeviceSettingsRuntimePlanner.deviceLocationPayloadFields(value: PbDeviceLocation.deviceLocationWristRight.rawValue))
+        XCTAssertEqual(["usbConnectionMode=ON"], PolarUserDeviceSettingsRuntimePlanner.usbConnectionModePayloadFields(enabled: true))
+        XCTAssertEqual(["automaticTrainingDetectionMode=ON", "automaticTrainingDetectionSensitivity=77", "minimumTrainingDurationSeconds=300"], PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionPayloadFields(enabled: true, sensitivity: 77, minimumDurationSeconds: 300))
+        XCTAssertEqual(["automaticOhrMeasurement=ALWAYS_ON"], PolarUserDeviceSettingsRuntimePlanner.automaticOhrPayloadFields(enabled: true))
+        XCTAssertEqual(["daylightSaving.nextDaylightSavingTime=present", "daylightSaving.offset=nonzero"], PolarUserDeviceSettingsRuntimePlanner.daylightSavingPayloadFields())
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func test_firmwareBackupRuntimePlannerMapsSharedWorkflowAndOperationsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(["TCHUPDAT.BIN", "APPUPDAT.BIN", "BTUPDAT.BIN", "SYSUPDAT.IMG"], PolarFirmwareBackupRuntimePlanner.orderFirmwareFiles(["TCHUPDAT.BIN", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN"]))
+        XCTAssertEqual("success", PolarFirmwareBackupRuntimePlanner.firmwareWorkflow(id: "write-package-success-with-system-update-last", statuses: ["preparingDeviceForFwUpdate", "completed"], firmwareFiles: ["BTUPDAT.BIN", "SYSUPDAT.IMG"]))
+        XCTAssertEqual("retryable-server-failure", PolarFirmwareBackupRuntimePlanner.firmwareRetryableServerFailureTerminalError())
+        XCTAssertEqual("client-request-failure", PolarFirmwareBackupRuntimePlanner.firmwareClientRequestFailureTerminalError())
+        XCTAssertEqual("success", PolarFirmwareBackupRuntimePlanner.backupRestore(path: "/U/0/BACKUP.TXT", payloadHex: "0102"))
+        let operation = PolarFirmwareBackupRuntimePlanner.backupRestoreOperation(path: "/U/0/BACKUP.TXT", payloadHex: "0102")
+        XCTAssertEqual(.put, operation?.command)
+        XCTAssertEqual("/U/0/BACKUP.TXT", operation?.path)
+        XCTAssertEqual("/SYSUPDAT.IMG", PolarFirmwareBackupRuntimePlanner.firmwareSystemUpdateFilePath())
+        XCTAssertEqual(["/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB", "/U/0/USERID.BPB"], PolarFirmwareBackupRuntimePlanner.defaultBackupPaths())
+        XCTAssertEqual("/U/0/S/UDEVSET.BPB", PolarFirmwareBackupRuntimePlanner.backupTraversalRootPath("/U/*/S/UDEVSET.BPB"))
+        XCTAssertEqual("cancelled", PolarFirmwareBackupRuntimePlanner.firmwarePackageFetchCancellationTerminalError())
+        XCTAssertEqual("success-rebooting", PolarFirmwareBackupRuntimePlanner.firmwareWriteTerminal(errorCode: 1, fileName: "/SYSUPDAT.IMG"))
+        XCTAssertEqual("propagate-error", PolarFirmwareBackupRuntimePlanner.firmwareWriteTerminal(errorCode: 1, fileName: "BTUPDAT.BIN"))
+        XCTAssertEqual("battery-too-low", PolarFirmwareBackupRuntimePlanner.firmwareWriteTerminal(errorCode: 209, fileName: "/SYSUPDAT.IMG"))
+        XCTAssertEqual("success", PolarFirmwareBackupRuntimePlanner.firmwareSystemUpdateRebootSuccessWorkflow(fileNames: ["/SYSUPDAT.IMG"]))
+        XCTAssertEqual("success", PolarFirmwareBackupRuntimePlanner.firmwareBatteryTooLowTerminalWorkflow(fileNames: ["/SYSUPDAT.IMG"]))
+        XCTAssertEqual("battery-too-low", PolarFirmwareBackupRuntimePlanner.firmwareBatteryTooLowTerminalError(fileNames: ["/SYSUPDAT.IMG"]))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func test_checkFirmwareUpdate_usesFirmwareServiceForAvailableStatus() throws {
+        let packageError = NSError(domain: "firmware-service", code: 500, userInfo: [NSLocalizedDescriptionKey: "package download must not run"])
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageError: packageError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let statuses = try collectAllAsync(v2Api.checkFirmwareUpdate(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .checkFwUpdateAvailable(let version):
+            XCTAssertEqual("9.9.9", version)
+        default:
+            XCTFail("Expected checkFwUpdateAvailable")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
+    func test_checkFirmwareUpdate_mapsHigherServerVersionWithoutPackageUrlToNotAvailableThroughSharedAvailability() throws {
+        let packageError = NSError(domain: "firmware-service", code: 500, userInfo: [NSLocalizedDescriptionKey: "package download must not run"])
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: ""))
+        ], packageError: packageError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        #if canImport(PolarBleSdkShared)
+        XCTAssertFalse(PolarRuntimePlanner.firmwareUpdateIsAvailable(currentVersion: "1.2.0", availableVersion: "9.9.9", fileUrl: ""))
+        #endif
+        let statuses = try collectAllAsync(v2Api.checkFirmwareUpdate(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .checkFwUpdateNotAvailable(let details):
+            XCTAssertEqual("No new firmware available", details)
+        default:
+            XCTFail("Expected checkFwUpdateNotAvailable")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
+    func test_checkFirmwareUpdate_mapsNonHigherServerVersionToNotAvailableThroughSharedComparison() throws {
+        let packageError = NSError(domain: "firmware-service", code: 500, userInfo: [NSLocalizedDescriptionKey: "package download must not run"])
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "1.2.0", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageError: packageError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        #if canImport(PolarBleSdkShared)
+        XCTAssertFalse(PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: "1.2.0", availableVersion: "1.2.0"))
+        #endif
+        let statuses = try collectAllAsync(v2Api.checkFirmwareUpdate(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .checkFwUpdateNotAvailable(let details):
+            XCTAssertEqual("No new firmware available", details)
+        default:
+            XCTFail("Expected checkFwUpdateNotAvailable")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
+    func test_checkFirmwareUpdate_mapsFirmwareServiceFailureToFailedStatus() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 503, userInfo: [NSLocalizedDescriptionKey: "retryable server failure"])
+        let service = FailingCheckFirmwareUpdateService(error: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let statuses = try collectAllAsync(v2Api.checkFirmwareUpdate(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .checkFwUpdateFailed(let details):
+            XCTAssertTrue(details.contains("retryable server failure"), details)
+        default:
+            XCTFail("Expected checkFwUpdateFailed")
+        }
+    }
+
+    func test_checkFirmwareUpdate_mapsClientFirmwareServiceFailureThroughSharedPlan() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 400, userInfo: [NSLocalizedDescriptionKey: "Firmware update request failed"])
+        let service = FailingCheckFirmwareUpdateService(error: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("client-request-failure", PolarRuntimePlanner.firmwareClientRequestFailureTerminalError())
+        #endif
+        let statuses = try collectAllAsync(v2Api.checkFirmwareUpdate(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .checkFwUpdateFailed(let details):
+            XCTAssertTrue(details.contains("Firmware update request failed"), details)
+        default:
+            XCTFail("Expected checkFwUpdateFailed")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
+    func test_updateFirmware_mapsFirmwareServiceFailureToFailedStatusWithoutDownload() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 503, userInfo: [NSLocalizedDescriptionKey: "retryable server failure"])
+        let service = FailingCheckFirmwareUpdateService(error: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("retryable-server-failure", PolarRuntimePlanner.firmwareRetryableServerFailureTerminalError())
+        #endif
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .fwUpdateFailed(let details):
+            XCTAssertTrue(details.contains("retryable server failure"), details)
+        default:
+            XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 3)
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
+    func test_updateFirmware_mapsClientFirmwareServiceFailureThroughSharedPlanWithoutDownload() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 400, userInfo: [NSLocalizedDescriptionKey: "Firmware update request failed"])
+        let service = FailingCheckFirmwareUpdateService(error: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("client-request-failure", PolarRuntimePlanner.firmwareClientRequestFailureTerminalError())
+        #endif
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .fwUpdateFailed(let details):
+            XCTAssertTrue(details.contains("Firmware update request failed"), details)
+        default:
+            XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
+    func test_updateFirmware_retriesRetryableFirmwareCheckFailuresUsingSharedDelayPlan() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 503, userInfo: [NSLocalizedDescriptionKey: "retryable server failure"])
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .failure(firmwareError),
+            .failure(firmwareError),
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: nil, fileUrl: nil))
+        ], packageError: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var delayedMillis: [Int64] = []
+        v2Api.firmwareRetryDelay = { delayMillis in delayedMillis.append(delayMillis) }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .fwUpdateNotAvailable(let details):
+            XCTAssertEqual("Firmware update not available", details)
+        default:
+            XCTFail("Expected fwUpdateNotAvailable")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 3)
+        XCTAssertEqual(delayedMillis, [1000, 2000])
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
+    func test_updateFirmware_doesNotDownloadWhenServerVersionIsNotHigherThroughSharedComparison() throws {
+        let packageError = NSError(domain: "firmware-service", code: 500, userInfo: [NSLocalizedDescriptionKey: "package download must not run"])
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "1.1.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageError: packageError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        #if canImport(PolarBleSdkShared)
+        XCTAssertFalse(PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: "1.2.0", availableVersion: "1.1.9"))
+        #endif
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .fwUpdateNotAvailable(let details):
+            XCTAssertEqual("Firmware update not available", details)
+        default:
+            XCTFail("Expected fwUpdateNotAvailable")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertTrue(service.packageDownloadUrls.isEmpty)
+    }
+
+    func test_updateFirmware_mapsPackageDownloadFailureToFailedStatusBeforeDeviceWrites() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 503, userInfo: [NSLocalizedDescriptionKey: "package download failed"])
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageError: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 2)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to 9.9.9", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        switch statuses[1] {
+        case .fwUpdateFailed(let details):
+            XCTAssertTrue(details.contains("package download failed"), details)
+        default:
+            XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertTrue(writeRequests.isEmpty)
+        XCTAssertTrue(completionError?.localizedDescription.contains("package download failed") == true)
+    }
+
+    func test_updateFirmwareFromUrl_mapsPackageDownloadFailureBeforeDeviceWrites() throws {
+        let firmwareError = NSError(domain: "firmware-service", code: 503, userInfo: [NSLocalizedDescriptionKey: "package download failed"])
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageError: firmwareError)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!))
+
+        XCTAssertEqual(statuses.count, 2)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to manual-fw.zip", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        switch statuses[1] {
+        case .fwUpdateFailed(let details):
+            XCTAssertTrue(details.contains("package download failed"), details)
+        default:
+            XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
+    func test_updateFirmwareFromUrl_emitsSharedWriteProgressBeforeSuccess() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(1)
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValue = .success(try emptyDirectory.serializedData())
+        v2MockClient.queryReturnValue = .success(Data())
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        let progress = statuses.compactMap { status -> String? in
+            if case .writingFwUpdatePackage(let details) = status, details.contains("Writing firmware update file") {
+                return details
+            }
+            return nil
+        }
+        XCTAssertEqual(progress, [
+            "Writing firmware update file SYSUPDAT.IMG, (50%) bytes written: 1/2",
+            "Writing firmware update file SYSUPDAT.IMG, (100%) bytes written: 2/2"
+        ])
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateFailed = status { return true }
+            return false
+        }, "\(statuses)")
+        XCTAssertTrue(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully(let details) = status { return details == "Firmware update to manual-fw.zip completed successfully" }
+            return false
+        }, "\(statuses)")
+        XCTAssertNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(writeRequests.map { $0.identifier }, [deviceId])
+        XCTAssertEqual(writeRequests.map { $0.path }, ["/SYSUPDAT.IMG"])
+        XCTAssertEqual(writeRequests.map { $0.data }, [firmwareFile])
+    }
+
+    func test_updateFirmware_emitsSharedWriteProgressAfterFirmwareCheckBeforeSuccess() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(1)
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValueClosure = { headerData in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: headerData)
+            if operation.path == "/DEVICE.BPB" {
+                return try proto.serializedData()
+            }
+            return try emptyDirectory.serializedData()
+        }
+        v2MockClient.queryReturnValue = .success(Data())
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 45)
+
+        let progress = statuses.compactMap { status -> String? in
+            if case .writingFwUpdatePackage(let details) = status, details.contains("Writing firmware update file") {
+                return details
+            }
+            return nil
+        }
+        XCTAssertEqual(progress, [
+            "Writing firmware update file SYSUPDAT.IMG, (50%) bytes written: 1/2",
+            "Writing firmware update file SYSUPDAT.IMG, (100%) bytes written: 2/2"
+        ])
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateFailed = status { return true }
+            return false
+        }, "\(statuses)")
+        XCTAssertTrue(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully(let details) = status { return details == "Firmware update to 9.9.9 completed successfully" }
+            return false
+        }, "\(statuses)")
+        XCTAssertNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(writeRequests.map { $0.identifier }, [deviceId])
+        XCTAssertEqual(writeRequests.map { $0.path }, ["/SYSUPDAT.IMG"])
+        XCTAssertEqual(writeRequests.map { $0.data }, [firmwareFile])
+    }
+
+    func test_updateFirmwareFromUrl_mapsEmptyFirmwarePackageToNotAvailableBeforeDeviceWrites() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["readme.txt": Data([0x01])])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!))
+
+        XCTAssertEqual(statuses.count, 2)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to manual-fw.zip", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        switch statuses[1] {
+        case .fwUpdateNotAvailable(let details):
+            XCTAssertEqual("Can not update, firmware files were not available", details)
+        default:
+            XCTFail("Expected fwUpdateNotAvailable")
+        }
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
+    func test_updateFirmwareFromUrl_mapsInvalidFirmwarePackageToNotAvailableBeforeDeviceWrites() throws {
+        let firmwarePackage = Data([0x01, 0x02, 0x03])
+        let extractor = FacadeFirmwarePackageExtractor(result: nil)
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!))
+
+        XCTAssertEqual(statuses.count, 2)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to manual-fw.zip", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        switch statuses[1] {
+        case .fwUpdateNotAvailable(let details):
+            XCTAssertEqual("Can not update, firmware files were not available", details)
+        default:
+            XCTFail("Expected fwUpdateNotAvailable")
+        }
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
+    func test_updateFirmware_mapsEmptyFirmwarePackageToNotAvailableBeforeDeviceWrites() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["readme.txt": Data([0x01])])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 2)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to 9.9.9", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        switch statuses[1] {
+        case .fwUpdateNotAvailable(let details):
+            XCTAssertEqual("Can not update, firmware files were not available", details)
+        default:
+            XCTFail("Expected fwUpdateNotAvailable")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
+    func test_updateFirmware_mapsInvalidFirmwarePackageToNotAvailableBeforeDeviceWrites() throws {
+        let firmwarePackage = Data([0x01, 0x02, 0x03])
+        let extractor = FacadeFirmwarePackageExtractor(result: nil)
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let statuses = try collectAllAsync(v2Api.updateFirmware(deviceId))
+
+        XCTAssertEqual(statuses.count, 2)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to 9.9.9", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        switch statuses[1] {
+        case .fwUpdateNotAvailable(let details):
+            XCTAssertEqual("Can not update, firmware files were not available", details)
+        default:
+            XCTFail("Expected fwUpdateNotAvailable")
+        }
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
+    func test_updateFirmware_cancellationDuringPackageDownloadStopsBeforeDeviceWrites() throws {
+        let packageDownloadStarted = expectation(description: "package download started")
+        let packageDownloadCancelled = expectation(description: "package download cancelled")
+        let collectionFinished = expectation(description: "collection finished")
+        let service = CancellableFirmwareUpdateService(
+            response: PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"),
+            packageDownloadStarted: packageDownloadStarted,
+            packageDownloadCancelled: packageDownloadCancelled
+        )
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        v2MockClient.requestReturnValue = .success(try proto.serializedData())
+        var statuses: [FirmwareUpdateStatus] = []
+
+        let task = Task {
+            defer { collectionFinished.fulfill() }
+            do {
+                for try await status in v2Api.updateFirmware(deviceId) {
+                    statuses.append(status)
+                }
+            } catch is CancellationError {
+            } catch {
+            }
+        }
+        wait(for: [packageDownloadStarted], timeout: 2)
+        task.cancel()
+        wait(for: [packageDownloadCancelled, collectionFinished], timeout: 2)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .fetchingFwUpdatePackage = status { return true }
+            return false
+        })
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
+    func test_updateFirmwareFromUrl_cancellationDuringPackageDownloadStopsBeforeDeviceWrites() throws {
+        let packageDownloadStarted = expectation(description: "package download started")
+        let packageDownloadCancelled = expectation(description: "package download cancelled")
+        let collectionFinished = expectation(description: "collection finished")
+        let service = CancellableFirmwareUpdateService(
+            response: PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"),
+            packageDownloadStarted: packageDownloadStarted,
+            packageDownloadCancelled: packageDownloadCancelled
+        )
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        v2Api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier, path, data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+        var statuses: [FirmwareUpdateStatus] = []
+
+        let task = Task {
+            defer { collectionFinished.fulfill() }
+            do {
+                for try await status in v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!) {
+                    statuses.append(status)
+                }
+            } catch is CancellationError {
+            } catch {
+            }
+        }
+        wait(for: [packageDownloadStarted], timeout: 2)
+        task.cancel()
+        wait(for: [packageDownloadCancelled, collectionFinished], timeout: 2)
+
+        XCTAssertEqual(statuses.count, 1)
+        switch statuses[0] {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to manual-fw.zip", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertTrue(writeRequests.isEmpty)
+    }
+
+    func test_updateFirmware_mapsBatteryTooLowWriteTerminalToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValues = [
+            .success(try proto.serializedData()),
+            .success(try emptyDirectory.serializedData())
+        ]
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.batteryTooLow.rawValue))
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 15)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .preparingDeviceForFwUpdate(let details) = status { return details == "Reconnecting after factory reset" }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("Battery too low to perform firmware update"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+    }
+
+    func test_updateFirmwareFromUrl_mapsBatteryTooLowWriteTerminalToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValues = [
+            .success(try emptyDirectory.serializedData())
+        ]
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.batteryTooLow.rawValue))
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 15)
+
+        switch statuses.first {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to manual-fw.zip", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        XCTAssertTrue(statuses.contains { status in
+            if case .preparingDeviceForFwUpdate(let details) = status { return details == "Reconnecting after factory reset" }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("Battery too low to perform firmware update"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+    }
+
+    func test_updateFirmwareFromUrl_treatsSystemUpdateRebootWriteTerminalAsSuccess() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValues = [
+            .success(try emptyDirectory.serializedData())
+        ]
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.rebooting.rawValue))
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        switch statuses.first {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to manual-fw.zip", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Waiting for device to update to manual-fw.zip" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateFailed = status { return true }
+            return false
+        }, "\(statuses)")
+        switch statuses.last {
+        case .fwUpdateCompletedSuccessfully(let details):
+            XCTAssertEqual(details, "Firmware update to manual-fw.zip completed successfully")
+        default:
+            XCTFail("Expected fwUpdateCompletedSuccessfully")
+        }
+        XCTAssertNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+    }
+
+    func test_updateFirmwareFromUrl_mapsNonSystemRebootWriteTerminalToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["BTUPDAT.BIN": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValues = [
+            .success(try emptyDirectory.serializedData())
+        ]
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.rebooting.rawValue))
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 15)
+
+        switch statuses.first {
+        case .fetchingFwUpdatePackage(let details):
+            XCTAssertEqual("Fetching firmware package to manual-fw.zip", details)
+        default:
+            XCTFail("Expected fetchingFwUpdatePackage")
+        }
+        XCTAssertTrue(statuses.contains { status in
+            if case .preparingDeviceForFwUpdate(let details) = status { return details == "Reconnecting after factory reset" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.localizedCaseInsensitiveContains("reboot"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+    }
+
+    func test_updateFirmware_treatsSystemUpdateRebootWriteTerminalAsSuccess() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValues = [
+            .success(try proto.serializedData()),
+            .success(try emptyDirectory.serializedData())
+        ]
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.rebooting.rawValue))
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Waiting for device to update to 9.9.9" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateFailed = status { return true }
+            return false
+        }, "\(statuses)")
+        switch statuses.last {
+        case .fwUpdateCompletedSuccessfully(let details):
+            XCTAssertEqual(details, "Firmware update to 9.9.9 completed successfully")
+        default:
+            XCTFail("Expected fwUpdateCompletedSuccessfully")
+        }
+        XCTAssertNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+    }
+
+    func test_updateFirmware_mapsNonSystemRebootWriteTerminalToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["BTUPDAT.BIN": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValues = [
+            .success(try proto.serializedData()),
+            .success(try emptyDirectory.serializedData())
+        ]
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.finish(throwing: BlePsFtpException.responseError(errorCode: Protocol_PbPFtpError.rebooting.rawValue))
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 15)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .preparingDeviceForFwUpdate(let details) = status { return details == "Reconnecting after factory reset" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.localizedCaseInsensitiveContains("reboot"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+    }
+
+    func test_updateFirmware_mapsBackupRestoreWriteFailureToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let backupFilePath = "/U/0/S/UDEVSET.BPB"
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let rootDirectory = Protocol_PbPFtpDirectory.with {
+            $0.entries = [
+                Protocol_PbPFtpEntry.with {
+                    $0.name = "BACKUP.TXT"
+                    $0.size = 24
+                }
+            ]
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValueClosure = { headerData in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: headerData)
+            switch operation.path {
+            case "/DEVICE.BPB":
+                return try proto.serializedData()
+            case "/SYS/":
+                return try rootDirectory.serializedData()
+            case "/SYS/BACKUP.TXT":
+                return Data("\(backupFilePath)\n".utf8)
+            case backupFilePath:
+                return Data([0x0A, 0x0B])
+            default:
+                return try emptyDirectory.serializedData()
+            }
+        }
+        v2MockClient.writeReturnValues = [
+            AsyncThrowingStream { continuation in
+                continuation.yield(UInt(firmwareFile.count))
+                continuation.finish()
+            },
+            AsyncThrowingStream { continuation in
+                continuation.finish(throwing: NSError(domain: "PolarBleApiImplTests", code: 20, userInfo: [NSLocalizedDescriptionKey: "restore write failed"]))
+            }
+        ]
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Restoring backup to device" }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("PolarBackupManager"), details)
+        XCTAssertTrue(details.contains(backupFilePath), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        let writePaths = try v2MockClient.writeCalls.map { try Protocol_PbPFtpOperation(serializedBytes: $0.header as Data).path }
+        XCTAssertTrue(writePaths.contains("/SYSUPDAT.IMG"), "\(writePaths)")
+        XCTAssertTrue(writePaths.contains(backupFilePath), "\(writePaths)")
+    }
+
+    func test_updateFirmwareFromUrl_mapsBackupRestoreWriteFailureToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let backupFilePath = "/U/0/S/UDEVSET.BPB"
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let rootDirectory = Protocol_PbPFtpDirectory.with {
+            $0.entries = [
+                Protocol_PbPFtpEntry.with {
+                    $0.name = "BACKUP.TXT"
+                    $0.size = 24
+                }
+            ]
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValueClosure = { data in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: data as Data)
+            switch operation.path {
+            case "/SYS/":
+                return try rootDirectory.serializedData()
+            case "/SYS/BACKUP.TXT":
+                return Data("\(backupFilePath)\n".utf8)
+            case backupFilePath:
+                return Data([0x0A, 0x0B])
+            default:
+                return try emptyDirectory.serializedData()
+            }
+        }
+        v2MockClient.writeReturnValues = [
+            AsyncThrowingStream { continuation in
+                continuation.yield(UInt(firmwareFile.count))
+                continuation.finish()
+            },
+            AsyncThrowingStream { continuation in
+                continuation.finish(throwing: NSError(domain: "PolarBleApiImplTests", code: 20, userInfo: [NSLocalizedDescriptionKey: "restore write failed"]))
+            }
+        ]
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Restoring backup to device" }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("PolarBackupManager"), details)
+        XCTAssertTrue(details.contains(backupFilePath), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        let writePaths = try v2MockClient.writeCalls.map { try Protocol_PbPFtpOperation(serializedBytes: $0.header as Data).path }
+        XCTAssertTrue(writePaths.contains("/SYSUPDAT.IMG"), "\(writePaths)")
+        XCTAssertTrue(writePaths.contains(backupFilePath), "\(writePaths)")
+    }
+
+    func test_updateFirmware_mapsFinalSetTimeFailureToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let setTimeError = NSError(domain: "PolarBleApiImplTests", code: 7007, userInfo: [NSLocalizedDescriptionKey: "set local time failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValueClosure = { headerData in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: headerData)
+            if operation.path == "/DEVICE.BPB" {
+                return try proto.serializedData()
+            }
+            return try emptyDirectory.serializedData()
+        }
+        v2MockClient.queryReturnValueClosure = { id, _ in
+            if id == Protocol_PbPFtpQuery.setLocalTime.rawValue {
+                throw setTimeError
+            }
+            return Data()
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Setting device time" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("set local time failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertTrue(v2MockClient.queryCalls.contains { $0.id == Protocol_PbPFtpQuery.setLocalTime.rawValue })
+    }
+
+    func test_updateFirmware_mapsFinalRestartFailureToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let restartError = NSError(domain: "PolarBleApiImplTests", code: 7008, userInfo: [NSLocalizedDescriptionKey: "restart notification failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValueClosure = { headerData in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: headerData)
+            if operation.path == "/DEVICE.BPB" {
+                return try proto.serializedData()
+            }
+            return try emptyDirectory.serializedData()
+        }
+        v2MockClient.queryReturnValue = .success(Data())
+        var resetNotifications = 0
+        v2MockClient.sendNotificationClosure = { id, _ in
+            if id == Protocol_PbPFtpHostToDevNotification.reset.rawValue {
+                resetNotifications += 1
+                if resetNotifications == 2 {
+                    throw restartError
+                }
+            }
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Restarting device" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("restart notification failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(resetNotifications, 2)
+    }
+
+    func test_updateFirmware_mapsFinalStopSyncFailureToFailedStatus() throws {
+        BlePolarDeviceCapabilitiesUtility.resetAndInitializeForTesting(
+            deviceFileSystemTypes: ["360": .polarFileSystemV2],
+            deviceIsSensor: ["360": true],
+            defaultFileSystemType: .polarFileSystemV2
+        )
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let stopSyncError = NSError(domain: "PolarBleApiImplTests", code: 7009, userInfo: [NSLocalizedDescriptionKey: "stop sync notification failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "9.9.9", fileUrl: "https://example.invalid/fw.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00112233.01"
+        }
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValueClosure = { headerData in
+            let operation = try Protocol_PbPFtpOperation(serializedBytes: headerData)
+            if operation.path == "/DEVICE.BPB" {
+                return try proto.serializedData()
+            }
+            return try emptyDirectory.serializedData()
+        }
+        v2MockClient.queryReturnValue = .success(Data())
+        v2MockClient.sendNotificationClosure = { id, _ in
+            if id == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue {
+                throw stopSyncError
+            }
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Stopping sync" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("stop sync notification failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertTrue(v2MockClient.sendNotificationCalls.contains { $0.notification == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue })
+    }
+
+    func test_updateFirmwareFromUrl_mapsFinalSetTimeFailureToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let setTimeError = NSError(domain: "PolarBleApiImplTests", code: 7007, userInfo: [NSLocalizedDescriptionKey: "set local time failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValue = .success(try emptyDirectory.serializedData())
+        v2MockClient.queryReturnValueClosure = { id, _ in
+            if id == Protocol_PbPFtpQuery.setLocalTime.rawValue {
+                throw setTimeError
+            }
+            return Data()
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Setting device time" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("set local time failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertTrue(v2MockClient.queryCalls.contains { $0.id == Protocol_PbPFtpQuery.setLocalTime.rawValue })
+    }
+
+    func test_updateFirmwareFromUrl_mapsFinalRestartFailureToFailedStatus() throws {
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let restartError = NSError(domain: "PolarBleApiImplTests", code: 7008, userInfo: [NSLocalizedDescriptionKey: "restart notification failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValue = .success(try emptyDirectory.serializedData())
+        v2MockClient.queryReturnValue = .success(Data())
+        var resetNotifications = 0
+        v2MockClient.sendNotificationClosure = { id, _ in
+            if id == Protocol_PbPFtpHostToDevNotification.reset.rawValue {
+                resetNotifications += 1
+                if resetNotifications == 2 {
+                    throw restartError
+                }
+            }
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Restarting device" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("restart notification failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(resetNotifications, 2)
+    }
+
+    func test_updateFirmwareFromUrl_mapsFinalStopSyncFailureToFailedStatus() throws {
+        BlePolarDeviceCapabilitiesUtility.resetAndInitializeForTesting(
+            deviceFileSystemTypes: ["360": .polarFileSystemV2],
+            deviceIsSensor: ["360": true],
+            defaultFileSystemType: .polarFileSystemV2
+        )
+        let firmwarePackage = Data([0x50, 0x4B, 0x03, 0x04])
+        let firmwareFile = Data([0x01, 0x02])
+        let stopSyncError = NSError(domain: "PolarBleApiImplTests", code: 7009, userInfo: [NSLocalizedDescriptionKey: "stop sync notification failed"])
+        let extractor = FacadeFirmwarePackageExtractor(result: ["SYSUPDAT.IMG": firmwareFile])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+        let service = FailingCheckFirmwareUpdateService(checkResults: [
+            .success(PolarBleSdk.FirmwareUpdateResponse(version: "unused", fileUrl: "https://example.invalid/unused.zip"))
+        ], packageData: firmwarePackage)
+        v2Api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        v2MockSession.state = .sessionOpen
+        let emptyDirectory = Protocol_PbPFtpDirectory()
+        v2MockClient.requestReturnValue = .success(try emptyDirectory.serializedData())
+        v2MockClient.queryReturnValue = .success(Data())
+        v2MockClient.sendNotificationClosure = { id, _ in
+            if id == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue {
+                throw stopSyncError
+            }
+        }
+        v2MockClient.writeReturnValue = AsyncThrowingStream { continuation in
+            continuation.yield(UInt(firmwareFile.count))
+            continuation.finish()
+        }
+
+        let (statuses, completionError) = try collectAllAsyncWithCompletionError(v2Api.updateFirmware(deviceId, fromFirmwareURL: URL(string: "https://example.invalid/manual-fw.zip")!), timeout: 45)
+
+        XCTAssertTrue(statuses.contains { status in
+            if case .finalizingFwUpdate(let details) = status { return details == "Stopping sync" }
+            return false
+        }, "\(statuses)")
+        XCTAssertFalse(statuses.contains { status in
+            if case .fwUpdateCompletedSuccessfully = status { return true }
+            return false
+        }, "\(statuses)")
+        guard case .fwUpdateFailed(let details) = statuses.last else {
+            return XCTFail("Expected fwUpdateFailed")
+        }
+        XCTAssertTrue(details.contains("stop sync notification failed"), details)
+        XCTAssertNotNil(completionError)
+        XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
+        XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
+        XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
+        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertTrue(v2MockClient.sendNotificationCalls.contains { $0.notification == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue })
+    }
+
+    func test_storedDataOfflineRuntimePlannerMapsSharedDecisionsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "filterDirectoryEntries", rootPath: "/"))
+        XCTAssertEqual(true, PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: "TRC10.BIN", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(false, PolarStoredDataOfflineRuntimePlanner.storedDataEntryMatchesFilter(entry: "TRC10.TXT", includePrefixes: ["TRC"], includeSuffixes: [".BIN"]))
+        XCTAssertEqual(true, PolarStoredDataOfflineRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue, entry: "20260530/", cutoffFolder: "20260531"))
+        XCTAssertEqual(false, PolarStoredDataOfflineRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue, entry: "USERID.BPB"))
+        XCTAssertEqual(true, PolarStoredDataOfflineRuntimePlanner.storedDataCleanupDirectoryEntryMatches(dataType: PolarStoredDataType.StoredDataType.SDLOGS.rawValue, entry: "A.SLG"))
+        XCTAssertEqual(true, PolarStoredDataOfflineRuntimePlanner.shouldPruneStoredDataEmptyParents(dataType: PolarStoredDataType.StoredDataType.ACTIVITY.rawValue))
+        XCTAssertEqual(true, PolarStoredDataOfflineRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260531", cutoffDate: "20260531"))
+        XCTAssertEqual(false, PolarStoredDataOfflineRuntimePlanner.storedDataDateIsOnOrBefore(day: "20260601", cutoffDate: "20260531"))
+        XCTAssertEqual(["/U/0/20260530/ACT/", "/U/0/20260530/"], PolarStoredDataOfflineRuntimePlanner.storedDataEmptyParentDirectories(filePath: "/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash: true))
+        XCTAssertEqual("platform-path-split", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "activityPrune", rootPath: "/U/0"))
+        XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.storedDataCleanup(kind: "automaticSamplePrune", rootPath: "/U/0/AUTOS", cutoffDate: "20260531"))
+        XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerSet(currentTypes: ["acc"], desiredTypes: ["acc"], secretPresent: true))
+        XCTAssertEqual("success", PolarStoredDataOfflineRuntimePlanner.offlineTriggerGet(currentTypes: ["ACC:enabled"]))
+        XCTAssertEqual(["setMode:TRIGGER_SYSTEM_START", "getStatus", "setSetting:ACC:enabled:settings:secret", "setSetting:GYRO:disabled", "setSetting:OFFLINE_HR:enabled:no-settings:secret"], PolarStoredDataOfflineRuntimePlanner.offlineTriggerSetCommands(currentTypes: ["ACC", "GYRO", "OFFLINE_HR"], desiredTypes: ["ACC:settings", "HR:no-settings"], secretPresent: true))
+        XCTAssertEqual(["ACC", "HR"], PolarStoredDataOfflineRuntimePlanner.offlineTriggerEnabledFeatures(currentTypes: ["ACC:enabled", "GYRO:enabled", "OFFLINE_HR:enabled"]))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func test_streamRuntimePlannerSurfacesSharedEdgeDecisionsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("gattDisconnected", PolarStreamRuntimePlanner.subscription(target: "stream", startConnected: false, checkConnection: true))
+        XCTAssertEqual("stream", PolarStreamRuntimePlanner.consumerCancellation(target: "stream"))
+        XCTAssertEqual("linkLost", PolarStreamRuntimePlanner.disconnect(target: "stream", error: "linkLost"))
+        XCTAssertEqual(1, PolarStreamRuntimePlanner.duplicateCompletion(target: "stream"))
+        XCTAssertEqual(0, PolarStreamRuntimePlanner.postCompletionEmission(target: "stream", value: "value"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func test_deleteTelemetryData_listFailurePropagatesError() throws {
@@ -2444,6 +4597,31 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(stopSyncParams?.completed == true)
     }
 
+    func test_sendTerminateSessionNotification_usesSharedSyncStopTerminateNotification() throws {
+        try assertCommandRuntimePolicyVectorContains("sync-stop-success")
+        let plannedNotifications = try XCTUnwrap(PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success"))
+
+        try awaitVoidAsync { [self] in try await v2Api.sendTerminateSessionNotification(identifier: deviceId) }
+
+        XCTAssertEqual(1, v2MockClient.sendNotificationCalls.count)
+        XCTAssertEqual(plannedNotifications.last, v2MockClient.sendNotificationCalls[0].notification)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        XCTAssertNil(v2MockClient.sendNotificationCalls[0].parameters)
+    }
+
+    func test_sendStopSyncNotification_usesSharedSyncStopNotificationWithCompletedParams() throws {
+        try assertCommandRuntimePolicyVectorContains("sync-stop-success")
+        let plannedNotifications = try XCTUnwrap(PolarRuntimePlanner.commandSyncStopNotifications(id: "sync-stop-success"))
+
+        try awaitVoidAsync { [self] in try await v2Api.sendStopSyncNotification(identifier: deviceId) }
+
+        XCTAssertEqual(1, v2MockClient.sendNotificationCalls.count)
+        XCTAssertEqual(plannedNotifications.first, v2MockClient.sendNotificationCalls[0].notification)
+        XCTAssertEqual(Protocol_PbPFtpHostToDevNotification.stopSync.rawValue, v2MockClient.sendNotificationCalls[0].notification)
+        let stopSyncParams = try Protocol_PbPFtpStopSyncParams(serializedBytes: try XCTUnwrap(v2MockClient.sendNotificationCalls[0].parameters) as Data)
+        XCTAssertTrue(stopSyncParams.completed)
+    }
+
     // MARK: - multi-BLE connection mode
 
     func test_setMultiBLEConnectionMode_sendsConfigureCommandWithEnableValue() throws {
@@ -2560,7 +4738,7 @@ final class PolarBleApiImplTests: XCTestCase {
         let statusData = Data([
             0x01,
             0x01, PmdMeasurementType.acc.rawValue, 0x04, 0x00, 0x01, 0x34, 0x00,
-            0x00, PmdMeasurementType.gyro.rawValue,
+            0x01, PmdMeasurementType.gyro.rawValue, 0x00,
             0x01, PmdMeasurementType.offline_hr.rawValue, 0x00
         ])
         let (successApi, successGatt) = makePmdApi { [self] packet in
@@ -2637,6 +4815,7 @@ final class PolarBleApiImplTests: XCTestCase {
     // MARK: - stopRecording
 
     func test_stopRecording_h10Device_sendsRequestStopRecordingQuery() throws {
+        try assertCommandRuntimePolicyVectorContains("h10-stop-recording")
         h10MockClient.queryReturnValue = .success(Data())
         try awaitVoidAsync { [self] in try await h10Api.stopRecording(deviceId) }
         XCTAssertEqual(h10MockClient.queryCalls.first?.id, Protocol_PbPFtpQuery.requestStopRecording.rawValue)
@@ -2667,6 +4846,7 @@ final class PolarBleApiImplTests: XCTestCase {
     // MARK: - requestRecordingStatus
 
     func test_requestRecordingStatus_h10Device_returnsDecodedStatus() throws {
+        try assertCommandRuntimePolicyVectorContains("h10-recording-status")
         var proto = Protocol_PbRequestRecordingStatusResult()
         proto.recordingOn = true; proto.sampleDataIdentifier = "exercise123"
         h10MockClient.queryReturnValue = .success(try proto.serializedData())
@@ -2815,11 +4995,55 @@ final class PolarBleApiImplTests: XCTestCase {
         searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
         var receivedError: Error?
         let exp = XCTestExpectation(description: "error")
+        let expected = NSError(domain: "test", code: 99)
         searchApi.searchForDevice(withRequiredDeviceNamePrefix: nil)
             .sink(receiveCompletion: { if case .failure(let e) = $0 { receivedError = e }; exp.fulfill() },
                   receiveValue: { _ in }).store(in: &cancellables)
-        searchApi.searchSubject.send(completion: .failure(NSError(domain: "test", code: 99)))
-        wait(for: [exp], timeout: 2); XCTAssertNotNil(receivedError)
+        searchApi.searchSubject.send(completion: .failure(expected))
+        wait(for: [exp], timeout: 2)
+        let error = receivedError as NSError?
+        XCTAssertEqual(error?.domain, expected.domain)
+        XCTAssertEqual(error?.code, expected.code)
+    }
+
+    func test_searchForDevice_valueBeforeSourceError_preservesValueAndErrorIdentity() throws {
+        searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
+        var received: [PolarDeviceInfo] = []
+        var receivedError: Error?
+        let valueExp = XCTestExpectation(description: "value")
+        let errorExp = XCTestExpectation(description: "error")
+        let expected = NSError(domain: "test", code: 100)
+        searchApi.searchForDevice(withRequiredDeviceNamePrefix: nil)
+            .sink(receiveCompletion: { if case .failure(let e) = $0 { receivedError = e }; errorExp.fulfill() },
+                  receiveValue: { received.append($0); valueExp.fulfill() })
+            .store(in: &cancellables)
+        searchApi.searchSubject.send(makeSession(name: "Polar H10 AABBCCDD", deviceIdUntouched: "AABBCCDD"))
+        searchApi.searchSubject.send(completion: .failure(expected))
+        wait(for: [valueExp, errorExp], timeout: 2)
+        XCTAssertEqual(try XCTUnwrap(received.first).deviceId, "AABBCCDD")
+        let error = receivedError as NSError?
+        XCTAssertEqual(error?.domain, expected.domain)
+        XCTAssertEqual(error?.code, expected.code)
+    }
+
+    func test_searchForDevice_valueBeforeGattDisconnected_preservesValueAndDisconnectError() throws {
+        searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
+        var received: [PolarDeviceInfo] = []
+        var receivedError: Error?
+        let valueExp = XCTestExpectation(description: "value")
+        let errorExp = XCTestExpectation(description: "error")
+        searchApi.searchForDevice(withRequiredDeviceNamePrefix: nil)
+            .sink(receiveCompletion: { if case .failure(let e) = $0 { receivedError = e }; errorExp.fulfill() },
+                  receiveValue: { received.append($0); valueExp.fulfill() })
+            .store(in: &cancellables)
+        searchApi.searchSubject.send(makeSession(name: "Polar H10 AABBCCDD", deviceIdUntouched: "AABBCCDD"))
+        searchApi.searchSubject.send(completion: .failure(BleGattException.gattDisconnected))
+        wait(for: [valueExp, errorExp], timeout: 2)
+        XCTAssertEqual(try XCTUnwrap(received.first).deviceId, "AABBCCDD")
+        if case BleGattException.gattDisconnected? = receivedError as? BleGattException {
+        } else {
+            XCTFail("Expected gattDisconnected, got \(String(describing: receivedError))")
+        }
     }
 
     func test_searchForDevice_completesWhenSubjectCompletes() {
@@ -2829,6 +5053,35 @@ final class PolarBleApiImplTests: XCTestCase {
             .sink(receiveCompletion: { _ in exp.fulfill() }, receiveValue: { _ in }).store(in: &cancellables)
         searchApi.searchSubject.send(completion: .finished)
         wait(for: [exp], timeout: 2)
+    }
+
+    func test_searchForDevice_ignoresValuesAfterCompletion() {
+        searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
+        var received: [PolarDeviceInfo] = []
+        let completed = XCTestExpectation(description: "completed")
+        searchApi.searchForDevice(withRequiredDeviceNamePrefix: nil)
+            .sink(receiveCompletion: { _ in completed.fulfill() },
+                  receiveValue: { received.append($0) })
+            .store(in: &cancellables)
+        searchApi.searchSubject.send(makeSession(name: "Polar H10 AABBCCDD", deviceIdUntouched: "AABBCCDD"))
+        searchApi.searchSubject.send(completion: .finished)
+        wait(for: [completed], timeout: 2)
+        searchApi.searchSubject.send(makeSession(name: "Polar H10 BBBB0002", deviceIdUntouched: "BBBB0002"))
+
+        let settled = XCTestExpectation(description: "settled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { settled.fulfill() }
+        wait(for: [settled], timeout: 1)
+        XCTAssertEqual(received.map { $0.deviceId }, ["AABBCCDD"])
+    }
+
+    func test_searchForDevice_cancellationCancelsSearchSubscription() {
+        searchApi = MockSearchBleApiImpl(mockDeviceSession: v2MockSession)
+        let cancellable = searchApi.searchForDevice(withRequiredDeviceNamePrefix: nil)
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+
+        cancellable.cancel()
+
+        XCTAssertEqual(searchApi.searchCancellationCount, 1)
     }
 
     func test_searchForDevice_multipleMatchingSessions_emitsAll() {
@@ -3199,12 +5452,72 @@ final class PolarBleApiImplTests: XCTestCase {
     func test_startListenForPolarHrBroadcasts_errorFromSource_propagatesError() {
         hrBroadcastApi = MockHrBroadcastBleApiImpl(mockDeviceSession: v2MockSession)
         var receivedError: Error?; let exp = XCTestExpectation(description: "error")
+        let expected = NSError(domain: "test", code: 5)
         Task {
             do { for try await _ in hrBroadcastApi.startListenForPolarHrBroadcasts(nil) {} }
             catch { receivedError = error; exp.fulfill() }
         }
-        hrBroadcastApi.searchSubject.send(completion: .failure(NSError(domain: "test", code: 5)))
-        wait(for: [exp], timeout: 2); XCTAssertNotNil(receivedError)
+        hrBroadcastApi.searchSubject.send(completion: .failure(expected))
+        wait(for: [exp], timeout: 2)
+        let error = receivedError as NSError?
+        XCTAssertEqual(error?.domain, expected.domain)
+        XCTAssertEqual(error?.code, expected.code)
+    }
+
+    func test_startListenForPolarHrBroadcasts_valueBeforeSourceError_preservesValueAndErrorIdentity() throws {
+        hrBroadcastApi = MockHrBroadcastBleApiImpl(mockDeviceSession: v2MockSession)
+        var received: [PolarHrBroadcastData] = []
+        var receivedError: Error?
+        let valueExp = XCTestExpectation(description: "value")
+        let errorExp = XCTestExpectation(description: "error")
+        let expected = NSError(domain: "test", code: 6)
+        Task {
+            do {
+                for try await value in hrBroadcastApi.startListenForPolarHrBroadcasts(nil) {
+                    received.append(value)
+                    valueExp.fulfill()
+                }
+            } catch {
+                receivedError = error
+                errorExp.fulfill()
+            }
+        }
+        hrBroadcastApi.searchSubject.send(makeHrSession(deviceIdUntouched: "AABBCCDD", hr: 96))
+        hrBroadcastApi.searchSubject.send(completion: .failure(expected))
+        wait(for: [valueExp, errorExp], timeout: 2)
+        XCTAssertEqual(try XCTUnwrap(received.first).hr, 96)
+        XCTAssertEqual(try XCTUnwrap(received.first).deviceInfo.deviceId, "AABBCCDD")
+        let error = receivedError as NSError?
+        XCTAssertEqual(error?.domain, expected.domain)
+        XCTAssertEqual(error?.code, expected.code)
+    }
+
+    func test_startListenForPolarHrBroadcasts_valueBeforeGattDisconnected_preservesValueAndDisconnectError() throws {
+        hrBroadcastApi = MockHrBroadcastBleApiImpl(mockDeviceSession: v2MockSession)
+        var received: [PolarHrBroadcastData] = []
+        var receivedError: Error?
+        let valueExp = XCTestExpectation(description: "value")
+        let errorExp = XCTestExpectation(description: "error")
+        Task {
+            do {
+                for try await value in hrBroadcastApi.startListenForPolarHrBroadcasts(nil) {
+                    received.append(value)
+                    valueExp.fulfill()
+                }
+            } catch {
+                receivedError = error
+                errorExp.fulfill()
+            }
+        }
+        hrBroadcastApi.searchSubject.send(makeHrSession(deviceIdUntouched: "AABBCCDD", hr: 96))
+        hrBroadcastApi.searchSubject.send(completion: .failure(BleGattException.gattDisconnected))
+        wait(for: [valueExp, errorExp], timeout: 2)
+        XCTAssertEqual(try XCTUnwrap(received.first).hr, 96)
+        XCTAssertEqual(try XCTUnwrap(received.first).deviceInfo.deviceId, "AABBCCDD")
+        if case BleGattException.gattDisconnected? = receivedError as? BleGattException {
+        } else {
+            XCTFail("Expected gattDisconnected, got \(String(describing: receivedError))")
+        }
     }
 
     func test_startListenForPolarHrBroadcasts_completesWhenSourceCompletes() {
@@ -3216,6 +5529,50 @@ final class PolarBleApiImplTests: XCTestCase {
         }
         hrBroadcastApi.searchSubject.send(completion: .finished)
         wait(for: [exp], timeout: 2)
+    }
+
+    func test_startListenForPolarHrBroadcasts_ignoresValuesAfterCompletion() {
+        hrBroadcastApi = MockHrBroadcastBleApiImpl(mockDeviceSession: v2MockSession)
+        var received: [PolarHrBroadcastData] = []
+        let firstValue = XCTestExpectation(description: "first")
+        let completed = XCTestExpectation(description: "completed")
+        Task {
+            for try await value in hrBroadcastApi.startListenForPolarHrBroadcasts(nil) {
+                received.append(value)
+                firstValue.fulfill()
+            }
+            completed.fulfill()
+        }
+        hrBroadcastApi.searchSubject.send(makeHrSession(deviceIdUntouched: "AABBCCDD", hr: 96))
+        wait(for: [firstValue], timeout: 2)
+        hrBroadcastApi.searchSubject.send(completion: .finished)
+        wait(for: [completed], timeout: 2)
+        hrBroadcastApi.searchSubject.send(makeHrSession(deviceIdUntouched: "BBBB0002", hr: 88))
+
+        let settled = XCTestExpectation(description: "settled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { settled.fulfill() }
+        wait(for: [settled], timeout: 1)
+        XCTAssertEqual(received.map { $0.deviceInfo.deviceId }, ["AABBCCDD"])
+        XCTAssertEqual(received.map { $0.hr }, [96])
+    }
+
+    func test_startListenForPolarHrBroadcasts_cancellationTerminatesSearchStream() {
+        hrBroadcastApi = MockHrBroadcastBleApiImpl(mockDeviceSession: v2MockSession)
+        let received = XCTestExpectation(description: "received")
+        let task = Task {
+            for try await _ in hrBroadcastApi.startListenForPolarHrBroadcasts(nil) {
+                received.fulfill()
+            }
+        }
+
+        hrBroadcastApi.searchSubject.send(makeHrSession(deviceIdUntouched: "AAAA0001"))
+        wait(for: [received], timeout: 2)
+        task.cancel()
+
+        let cancelled = XCTestExpectation(description: "cancelled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { cancelled.fulfill() }
+        wait(for: [cancelled], timeout: 1)
+        XCTAssertEqual(hrBroadcastApi.streamCancellationCount, 1)
     }
 
     // MARK: - PMD helpers (shared by requestStreamSettings / requestFullStreamSettings /
@@ -3798,6 +6155,32 @@ final class PolarBleApiImplTests: XCTestCase {
         }
     }
 
+    func testOfflineRecordingFileHeadersUseSharedFileFacadePlanning() {
+        let pmdFilesOperation = PolarBleApiImpl.offlineRecordingPmdFilesReadOperation()
+        XCTAssertEqual(pmdFilesOperation.command, .get)
+        XCTAssertEqual(pmdFilesOperation.path, "/PMDFILES.TXT")
+
+        let fileOperation = PolarBleApiImpl.offlineRecordingFileReadOperation(path: "/U/0/20240615/R/103000/ACC.REC")
+        XCTAssertEqual(fileOperation.command, .get)
+        XCTAssertEqual(fileOperation.path, "/U/0/20240615/R/103000/ACC.REC")
+
+        let directoryOperation = PolarBleApiImpl.offlineRecordingDirectoryReadOperation(path: "/U/0/20240615/R/103000/")
+        XCTAssertEqual(directoryOperation.command, .get)
+        XCTAssertEqual(directoryOperation.path, "/U/0/20240615/R/103000/")
+    }
+
+    func testGenericDirectoryHeadersUseSharedFileFacadePlanning() {
+        let directoryOperation = PolarBleApiImpl.genericDirectoryReadOperation(path: "/U/0/")
+        XCTAssertEqual(directoryOperation.command, .get)
+        XCTAssertEqual(directoryOperation.path, "/U/0/")
+    }
+
+    func testFirmwareWriteHeadersUseSharedFileFacadePlanning() {
+        let writeOperation = PolarBleApiImpl.firmwareFileWriteOperation(path: "SYSUPDAT.IMG")
+        XCTAssertEqual(writeOperation.command, .put)
+        XCTAssertEqual(writeOperation.path, "SYSUPDAT.IMG")
+    }
+
     // MARK: - listOfflineRecordings tests
 
     func test_listOfflineRecordings_sessionNotReady_propagatesError() {
@@ -3925,5 +6308,126 @@ final class PolarBleApiImplTests: XCTestCase {
 
         // Assert
         XCTAssertEqual(h10MockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: h10MockClient.requestCalls[0])
+        XCTAssertEqual(.remove, requestOperation.command)
+        XCTAssertEqual(entry.path, requestOperation.path)
+    }
+
+    func testH10ExerciseFileHeadersUseSharedFileFacadePlanning() {
+        let path = "/EXERCISE/E0000001.BPB"
+
+        let fetchOperation = PolarBleApiImpl.h10ExerciseFetchOperation(path: path)
+        XCTAssertEqual(fetchOperation.command, .get)
+        XCTAssertEqual(fetchOperation.path, path)
+
+        let removeOperation = PolarBleApiImpl.h10ExerciseRemoveOperation(path: path)
+        XCTAssertEqual(removeOperation.command, .remove)
+        XCTAssertEqual(removeOperation.path, path)
+    }
+
+    private func sharedDeviceLocation(_ value: Int) -> PbDeviceLocation {
+        if let sharedName = PolarRuntimePlanner.userDeviceSettingsDeviceLocationName(value: value) {
+            return PbDeviceLocation(rawValue: PolarUserDeviceSettings.getDeviceLocation(deviceLocation: sharedName).toInt())!
+        }
+        return PbDeviceLocation(rawValue: value)!
+    }
+}
+
+private final class FailingCheckFirmwareUpdateService: PolarBleSdk.FirmwareUpdateServicing {
+    private let packageError: Error
+    private let packageData: Data?
+    private var checkResults: [Result<PolarBleSdk.FirmwareUpdateResponse, Error>]
+    private(set) var checkFirmwareUpdateRequests: [PolarBleSdk.FirmwareUpdateRequest] = []
+    private(set) var packageDownloadUrls: [String] = []
+
+    init(error: Error) {
+        self.packageError = error
+        self.packageData = nil
+        self.checkResults = [.failure(error)]
+    }
+
+    init(checkResults: [Result<PolarBleSdk.FirmwareUpdateResponse, Error>], packageError: Error) {
+        precondition(!checkResults.isEmpty)
+        self.checkResults = checkResults
+        self.packageError = packageError
+        self.packageData = nil
+    }
+
+    init(checkResults: [Result<PolarBleSdk.FirmwareUpdateResponse, Error>], packageData: Data) {
+        precondition(!checkResults.isEmpty)
+        self.checkResults = checkResults
+        self.packageData = packageData
+        self.packageError = NSError(domain: "firmware-service", code: 500, userInfo: [NSLocalizedDescriptionKey: "package download failed"])
+    }
+
+    func checkFirmwareUpdate(firmwareUpdateRequest: PolarBleSdk.FirmwareUpdateRequest, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        checkFirmwareUpdateRequests.append(firmwareUpdateRequest)
+        if checkResults.count > 1 {
+            completion(checkResults.removeFirst())
+        } else {
+            completion(checkResults[0])
+        }
+    }
+
+    func checkFirmwareUpdateFromFirmwareUrl(_ url: URL, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        completion(.failure(packageError))
+    }
+
+    func getFirmwareUpdatePackage(url: String) async throws -> Data? {
+        packageDownloadUrls.append(url)
+        if let packageData = packageData {
+            return packageData
+        }
+        throw packageError
+    }
+}
+
+private final class FacadeFirmwarePackageExtractor: FirmwarePackageExtracting {
+    private let result: [String: Data]?
+    private(set) var zippedPackages: [Data] = []
+
+    init(result: [String: Data]?) {
+        self.result = result
+    }
+
+    func unzipFirmwarePackage(zippedData: Data) -> [String: Data]? {
+        zippedPackages.append(zippedData)
+        return result
+    }
+}
+
+private final class CancellableFirmwareUpdateService: PolarBleSdk.FirmwareUpdateServicing {
+    private let response: PolarBleSdk.FirmwareUpdateResponse
+    private let packageDownloadStarted: XCTestExpectation
+    private let packageDownloadCancelled: XCTestExpectation
+    private(set) var checkFirmwareUpdateRequests: [PolarBleSdk.FirmwareUpdateRequest] = []
+    private(set) var packageDownloadUrls: [String] = []
+
+    init(response: PolarBleSdk.FirmwareUpdateResponse, packageDownloadStarted: XCTestExpectation, packageDownloadCancelled: XCTestExpectation) {
+        self.response = response
+        self.packageDownloadStarted = packageDownloadStarted
+        self.packageDownloadCancelled = packageDownloadCancelled
+    }
+
+    func checkFirmwareUpdate(firmwareUpdateRequest: PolarBleSdk.FirmwareUpdateRequest, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        checkFirmwareUpdateRequests.append(firmwareUpdateRequest)
+        completion(.success(response))
+    }
+
+    func checkFirmwareUpdateFromFirmwareUrl(_ url: URL, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        completion(.success(response))
+    }
+
+    func getFirmwareUpdatePackage(url: String) async throws -> Data? {
+        packageDownloadUrls.append(url)
+        packageDownloadStarted.fulfill()
+        do {
+            while true {
+                try await Task.sleep(nanoseconds: 10_000_000)
+            }
+        } catch is CancellationError {
+            packageDownloadCancelled.fulfill()
+            throw CancellationError()
+        }
     }
 }

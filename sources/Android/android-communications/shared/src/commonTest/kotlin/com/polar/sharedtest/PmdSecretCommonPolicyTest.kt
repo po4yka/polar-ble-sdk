@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.pmd.PolarPmdSecret
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -14,11 +15,12 @@ class PmdSecretCommonPolicyTest {
 
             when (input.stringValue("operation")) {
                 "serialize" -> {
-                    val secret = CommonSecret.from(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
-                    assertEquals(expected.stringValue("serializedHex"), secret.serialize(), caseId)
+                    val secret = PolarPmdSecret.from(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
+                    assertEquals(expected.stringValue("serializedHex"), secret.serializeHex(), caseId)
+                    assertEquals(expected.stringValue("serializedHex"), secret.serializeBytes().toHexString(), "$caseId bytes")
                 }
                 "construct" -> {
-                    val actualError = CommonSecret.validate(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
+                    val actualError = PolarPmdSecret.validate(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
                     assertEquals("invalidSecurityKey", actualError, caseId)
                     assertEquals(REQUIRED_COMMON_DECISIONS.getValue(caseId), expected.stringValue("commonDecision"), caseId)
                 }
@@ -33,14 +35,9 @@ class PmdSecretCommonPolicyTest {
                     }
                 }
                 "decrypt" -> {
-                    val secret = CommonSecret.from(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
+                    val secret = PolarPmdSecret.from(input.stringValue("strategy"), hexToBytes(input.stringValue("keyHex")))
                     val cipherHex = input.stringValue("cipherHex")
-                    val decryptedHex = when (secret.strategy) {
-                        "NONE" -> cipherHex
-                        "XOR" -> xorDecrypt(cipherHex, secret.key)
-                        "AES128", "AES256" -> expected.stringValue("decryptedHex")
-                        else -> error("Unexpected strategy ${secret.strategy}")
-                    }
+                    val decryptedHex = secret.decryptHex(hexToBytes(cipherHex))
                     assertEquals(expected.stringValue("decryptedHex"), decryptedHex, caseId)
                     if (secret.strategy.startsWith("AES")) {
                         assertEquals(0, hexToBytes(cipherHex).size % 16, "$caseId AES vectors must use block-aligned ECB/no-padding payloads")
@@ -74,70 +71,7 @@ class PmdSecretCommonPolicyTest {
     }
 
     private fun strategyFromByte(hex: String): String {
-        return when (hexToBytes(hex).firstOrNull()?.toInt()?.and(0xFF)) {
-            0 -> "NONE"
-            1 -> "XOR"
-            2 -> "AES128"
-            3 -> "AES256"
-            else -> "unknownSecurityStrategy"
-        }
-    }
-
-    private fun xorDecrypt(cipherHex: String, key: ByteArray): String {
-        val keyByte = key.first().toInt() and 0xFF
-        return hexToBytes(cipherHex).joinToString(separator = "") { byte ->
-            ((byte.toInt() and 0xFF) xor keyByte).toHexByte()
-        }
-    }
-
-    private fun Int.toHexByte(): String {
-        val value = this and 0xFF
-        return "${(value / 16).toHexDigit()}${(value % 16).toHexDigit()}"
-    }
-
-    private fun Int.toHexDigit(): Char {
-        return if (this < 10) '0' + this else 'a' + (this - 10)
-    }
-
-    private data class CommonSecret(
-        val strategy: String,
-        val key: ByteArray
-    ) {
-        fun serialize(): String {
-            return "0601${strategyByte().toHexByte()}${key.toHexString()}"
-        }
-
-        private fun strategyByte(): Int {
-            return when (strategy) {
-                "NONE" -> 0
-                "XOR" -> 1
-                "AES128" -> 2
-                "AES256" -> 3
-                else -> error("Unexpected strategy $strategy")
-            }
-        }
-
-        companion object {
-            fun from(strategy: String, key: ByteArray): CommonSecret {
-                validate(strategy, key)?.let { validationError -> error(validationError) }
-                return CommonSecret(strategy, key)
-            }
-
-            fun validate(strategy: String, key: ByteArray): String? {
-                val valid = when (strategy) {
-                    "NONE" -> key.isEmpty()
-                    "XOR" -> key.isNotEmpty()
-                    "AES128" -> key.size == 16
-                    "AES256" -> key.size == 32
-                    else -> false
-                }
-                return if (valid) null else "invalidSecurityKey"
-            }
-        }
-    }
-
-    private fun ByteArray.toHexString(): String {
-        return joinToString(separator = "") { byte -> (byte.toInt() and 0xFF).toHexByte() }
+        return PolarPmdSecret.strategyNameFromByte(hexToBytes(hex).firstOrNull()?.toInt() ?: -1) ?: "unknownSecurityStrategy"
     }
 
     private fun String.stringArrayValue(field: String): List<String> {
@@ -172,8 +106,10 @@ class PmdSecretCommonPolicyTest {
             "aes256-key-validation",
             "none-decryption-policy",
             "xor-decryption-policy",
+            "shared-none-xor-production-decryption",
             "aes-fixture-pinning",
             "aes-block-alignment-gate",
+            "shared-common-aes-production-decryption",
             "platform-pmd-secret-vector-reference-gate",
             "compile-verification-gate"
         )
@@ -184,6 +120,6 @@ class PmdSecretCommonPolicyTest {
             "pmd-secret-invalid-xor-empty-key" to "XOR must reject an empty key because decrypt reads the first key byte.",
             "pmd-secret-strategy-from-byte-unknown" to "Unknown strategy bytes must be rejected deterministically."
         )
-        const val PMD_SECRET_READINESS_DECISION = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, NONE and XOR decryption, AES fixture pinning, AES block-alignment gating, and compile verification remain explicit before production secret strategy code moves."
+        const val PMD_SECRET_READINESS_DECISION = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, shared production NONE/XOR decryption, AES fixture pinning, AES block-alignment gating, shared common AES production decryption, and compile verification remain explicit before remaining fallback removal moves."
     }
 }

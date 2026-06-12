@@ -6,7 +6,8 @@ object PolarOfflineRecordingModels {
         return when (baseName) {
             "ACC" -> PolarOfflineRecordingMeasurementType.ACC
             "GYRO" -> PolarOfflineRecordingMeasurementType.GYRO
-            "MAG" -> PolarOfflineRecordingMeasurementType.MAGNETOMETER
+            "MAG",
+            "MAGNETOMETER" -> PolarOfflineRecordingMeasurementType.MAGNETOMETER
             "PPG" -> PolarOfflineRecordingMeasurementType.PPG
             "PPI" -> PolarOfflineRecordingMeasurementType.PPI
             "HR" -> PolarOfflineRecordingMeasurementType.OFFLINE_HR

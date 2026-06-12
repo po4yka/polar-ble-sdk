@@ -8,6 +8,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpU
 import com.polar.sdk.api.PolarD2HNotificationData
 import com.polar.sdk.api.PolarDeviceToHostNotification
 import com.polar.sdk.impl.utils.observeDeviceToHostNotifications
+import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
@@ -218,6 +219,16 @@ class PolarD2HNotificationsUtilsTest {
     }
 
     @Test
+    fun `public notification type lookup delegates known ids to shared model and preserves unknown null policy`() {
+        assertEquals(PolarDeviceToHostNotification.FILESYSTEM_MODIFIED, PolarDeviceToHostNotification.fromValue(0))
+        assertEquals(PolarDeviceToHostNotification.SYNC_REQUIRED, PolarDeviceToHostNotification.fromValue(PbPFtpDevToHostNotification.SYNC_REQUIRED.number))
+        assertEquals(PolarDeviceToHostNotification.STOP_GPS_MEASUREMENT, PolarDeviceToHostNotification.fromValue(PbPFtpDevToHostNotification.STOP_GPS_MEASUREMENT.number))
+        assertEquals(PolarDeviceToHostNotification.EXERCISE_STATUS, PolarDeviceToHostNotification.fromValue(19))
+        assertNull(PolarDeviceToHostNotification.fromValue(6))
+        assertNull(PolarDeviceToHostNotification.fromValue(999))
+    }
+
+    @Test
     fun `test filters unknown notification types`() = runTest {
         assertD2HStreamRuntimePolicyVectorContains("unknown-notification-between-known-values-is-filtered")
         // Arrange
@@ -410,6 +421,25 @@ class PolarD2HNotificationsUtilsTest {
     }
 
     @Test
+    fun `test failed notification subscribe propagates error without emitted values`() = runTest {
+        assertD2HStreamRuntimePolicyVectorContains("failed-subscribe-does-not-register-observer")
+        val subscribeError = IllegalStateException("service missing")
+        every { mockClient.waitForNotification() } returns flow { throw subscribeError }
+
+        val results = mutableListOf<PolarD2HNotificationData>()
+        val thrown = try {
+            mockClient.observeDeviceToHostNotifications("test-device-id").collect { results.add(it) }
+            fail("Expected failed D2H subscription")
+            null
+        } catch (error: IllegalStateException) {
+            error
+        }
+
+        assertEquals(subscribeError, thrown)
+        assertTrue("Failed D2H subscribe must not emit stale values", results.isEmpty())
+    }
+
+    @Test
     fun d2hNotificationGoldenVectors_matchAndroidBehavior() = runTest {
         val vectors = loadD2HNotificationVectors()
         assertTrue("Expected D2H notification golden vectors", vectors.isNotEmpty())
@@ -453,6 +483,11 @@ class PolarD2HNotificationsUtilsTest {
                 }
                 if (!expectedEvent.has("parametersHex") && !input.has("notifications")) {
                     assertArrayEquals(caseId, input.get("parametersHex").asString.hexToByteArray(), result.parameters)
+                }
+                val parametersHex = expectedEvent.get("parametersHex")?.asString ?: input.get("parametersHex")?.asString ?: ""
+                val sharedProtoName = PolarD2hRuntimePlanning.parsedProtoName(expectedEvent.get("notificationType").asString, parametersHex)
+                if (sharedProtoName != null) {
+                    assertEquals(caseId, expectedEvent.get("parsedProto").asString, sharedProtoName)
                 }
                 assertParsedParameters(caseId, expectedEvent, result.parsedParameters)
             }

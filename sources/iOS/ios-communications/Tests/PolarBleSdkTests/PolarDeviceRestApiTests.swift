@@ -43,6 +43,21 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         XCTAssertEqual(result.pathsForServices?["ui_states"], "/REST/UISTATES.API")
         XCTAssertEqual(result.pathsForServices?["training"], "/REST/TRAINING.API")
     }
+
+    func testRestServiceProjectionUsesSharedKmpWhenLinked() throws {
+        let serviceJson = #"{"services":{"ui_states":"/REST/UISTATES.API","training":"/REST/TRAINING.API"}}"#
+        let serviceList = try JSONDecoder().decode(PolarDeviceRestApiServices.self, from: try XCTUnwrap(serviceJson.data(using: .utf8)))
+
+        XCTAssertEqual(Set(["ui_states", "training"]), Set(serviceList.serviceNames))
+        XCTAssertEqual(Set(["/REST/UISTATES.API", "/REST/TRAINING.API"]), Set(serviceList.servicePaths))
+
+        let descriptionJson = #"{"events":["lap_data"],"cmd":{"subscribe":"./REST/TRAINING.API?cmd=subscribe&event="},"lap_data":{"details":["sport","duration"],"triggers":["manual"]}}"#
+        let description = try JSONDecoder().decode(PolarDeviceRestApiServiceDescription.self, from: try XCTUnwrap(descriptionJson.data(using: .utf8)))
+        XCTAssertEqual(["subscribe"], description.actionNames)
+        XCTAssertEqual(["./REST/TRAINING.API?cmd=subscribe&event="], description.actionPaths)
+        XCTAssertEqual(["sport", "duration"], description.eventDetails(for: "lap_data"))
+        XCTAssertEqual(["manual"], description.eventTriggers(for: "lap_data"))
+    }
     
     func testConvertsLapSummaryExampleJson() throws {
         
@@ -261,7 +276,7 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
     func testReceivesRestApiEventWhenUncompressed() async throws {
         
         // Arrange
-        let notificationParameters = self.testNotificationParameters(compressed: false).map { [$0] }
+        let notificationParameters = self.testNotificationParameters(compressed: false).map { $0.isEmpty ? [] : [$0] }
         let notifications = self.testNotificationParameters(compressed: false).map {
             (self.restApiEventNotifiationId, [$0], false)
         }
@@ -307,6 +322,21 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         XCTAssertEqual(result, notificationParameters)
     }
 
+    func testReceivesRestApiEventUsesSharedD2hPlannerToSelectRestEvents() async throws {
+        let payload = #"{"path":"/v1/users","operation":"created"}"#.data(using: .utf8)!
+        XCTAssertEqual("REST_API_EVENT", PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Protocol_PbPFtpDevToHostNotification.restApiEvent.rawValue))
+        XCTAssertEqual("FILESYSTEM_MODIFIED", PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Protocol_PbPFtpDevToHostNotification.filesystemModified.rawValue))
+        mockClient.receiveNotificationCalls.append((Protocol_PbPFtpDevToHostNotification.filesystemModified.rawValue, [Data([0x0a, 0x02, 0x08, 0x02])], false))
+        mockClient.receiveNotificationCalls.append((restApiEventNotifiationId, [payload], false))
+
+        var result: [[Data]] = []
+        for try await batch in mockClient.receiveRestApiEventData(identifier: UUID().uuidString) {
+            result.append(batch)
+        }
+
+        XCTAssertEqual([[payload]], result)
+    }
+
     func testRestServiceGoldenVectorsMapJsonToPublicModels() throws {
         let vectors = try loadRestServiceGoldenVectors()
         XCTAssertFalse(vectors.isEmpty, "Expected REST service golden vectors")
@@ -327,13 +357,13 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
                     XCTAssertThrowsError(try JSONDecoder().decode(PolarDeviceRestApiServices.self, from: data), caseId)
                     continue
                 }
-                let model = try JSONDecoder().decode(PolarDeviceRestApiServices.self, from: data)
+                let model = try PolarRestServiceProjectionPlanner.serviceList(jsonData: data)
                 try assertServiceList(model, expected: iosExpected(expected), id: caseId)
             case "serviceDescription":
                 let jsonObject = try XCTUnwrap(input["json"] as? [String: Any], caseId)
                 let data = try JSONSerialization.data(withJSONObject: jsonObject)
                 let expected = try XCTUnwrap(vector["expected"] as? [String: Any], caseId)
-                let model = try JSONDecoder().decode(PolarDeviceRestApiServiceDescription.self, from: data)
+                let model = try PolarRestServiceProjectionPlanner.serviceDescription(jsonData: data)
                 try assertServiceDescription(model, expected: expected, id: caseId)
             case "restEventCompression":
                 continue
@@ -429,9 +459,9 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         XCTAssertEqual(requestIds, REST_REQUEST_TRANSPORT_POLICY_CASE_IDS, "rest-request-transport-policy")
         XCTAssertEqual(expectedCaseIds, REST_REQUEST_TRANSPORT_POLICY_CASE_IDS, "rest-request-transport-policy")
         XCTAssertEqual(expected["migrationRequirement"] as? String, REST_REQUEST_TRANSPORT_MIGRATION_REQUIREMENT, "rest-request-transport-policy")
-        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "rest-request-transport-policy"), ["com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest", "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "rest-request-transport-policy"), ["com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "rest-request-transport-policy"), ["PolarDeviceRestApiTests"])
-        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "rest-request-transport-policy"), ["com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.RestRequestTransportPolicyCommonTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "rest-request-transport-policy"), ["com.polar.sharedtest.RestRequestTransportPolicyCommonTest"])
     }
 
     func testRestRequestTransportReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
@@ -556,7 +586,7 @@ private let REST_REQUEST_TRANSPORT_READINESS_FAMILIES = [
     "response-error-payload-message",
     "empty-successful-response-policy-gate",
     "fake-pftp-request-harness-gate",
-    "facade-error-mapping-deferred",
+    "facade-error-mapping-pinned",
     "platform-transport-vector-reference-gate",
     "compile-verification-gate"
 ]
@@ -570,7 +600,7 @@ private let REST_REQUEST_TRANSPORT_POLICY_CASE_IDS = [
 
 private let REST_REQUEST_TRANSPORT_MIGRATION_REQUIREMENT = "Before moving REST request orchestration into common KMP code, implement a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads."
 
-private let REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping remains explicit, and the shared tests are compile-verified."
+private let REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping stays pinned through rest-facade-runtime-policy.json, and the shared tests are compile-verified."
 
 private let REST_EVENT_COMPRESSION_READINESS_FAMILIES = [
     "uncompressed-batch-payload-preservation",
@@ -580,17 +610,18 @@ private let REST_EVENT_COMPRESSION_READINESS_FAMILIES = [
     "ios-deflate-codec-reference-gate",
     "malformed-compressed-payload-platform-split",
     "notification-payload-order-gate",
-    "normalize-or-preserve-codec-decision-gate",
+    "shared-platform-actual-codec-gate",
     "platform-event-vector-reference-gate",
     "compile-verification-gate"
 ]
 
-private let REST_EVENT_COMPRESSION_READINESS_COMMON_DECISION = "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior is deliberately normalized or deliberately preserved, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
+private let REST_EVENT_COMPRESSION_READINESS_COMMON_DECISION = "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior are preserved through shared KMP platform actual codecs, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
 
 private let REST_SERVICE_MAPPING_READINESS_FAMILIES = [
     "service-list-name-path-mapping",
     "service-list-empty-defaults",
     "service-description-action-event-mapping",
+    "sleep-rest-action-path-planning",
     "service-description-empty-defaults",
     "wrong-type-services-platform-split",
     "unknown-field-ignore-policy",

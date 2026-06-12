@@ -3,7 +3,7 @@
   "area": "sdk-command-runtime",
   "case": "reset_sync_h10_command_policy",
   "source": "BDBleApiImplTest and PolarBleApiImplTests public facade command characterization",
-  "description": "Pins H10 recording PSFTP queries, reset notification flag payloads, and sync start/stop sequencing before these public facade command families can delegate to a shared KMP runtime.",
+  "description": "Pins H10 recording PSFTP queries, live/offline exercise command queries, reset notification flag payloads, and sync start/stop sequencing before these public facade command families can delegate to a shared KMP runtime.",
   "input": {
     "operations": [
       {
@@ -52,6 +52,62 @@
         "query": "REQUEST_RECORDING_STATUS",
         "parameters": [],
         "error": "recording-status-query-failed"
+      },
+      {
+        "id": "live-exercise-start",
+        "kind": "query",
+        "query": "START_EXERCISE",
+        "parameters": [
+          "sportProfileId=1"
+        ]
+      },
+      {
+        "id": "live-exercise-pause",
+        "kind": "query",
+        "query": "PAUSE_EXERCISE",
+        "parameters": []
+      },
+      {
+        "id": "live-exercise-resume",
+        "kind": "query",
+        "query": "RESUME_EXERCISE",
+        "parameters": []
+      },
+      {
+        "id": "live-exercise-stop",
+        "kind": "query",
+        "query": "STOP_EXERCISE",
+        "parameters": [
+          "save=true"
+        ]
+      },
+      {
+        "id": "live-exercise-status",
+        "kind": "query",
+        "query": "GET_EXERCISE_STATUS",
+        "parameters": []
+      },
+      {
+        "id": "offline-exercise-v2-start",
+        "kind": "query",
+        "query": "START_DM_EXERCISE",
+        "parameters": [
+          "sportProfileId=1"
+        ]
+      },
+      {
+        "id": "offline-exercise-v2-stop",
+        "kind": "query",
+        "query": "STOP_EXERCISE",
+        "parameters": [
+          "save=true"
+        ]
+      },
+      {
+        "id": "offline-exercise-v2-status",
+        "kind": "query",
+        "query": "GET_EXERCISE_STATUS",
+        "parameters": []
       },
       {
         "id": "factory-reset",
@@ -211,6 +267,70 @@
           "terminal": "transport-error"
         },
         {
+          "id": "live-exercise-start",
+          "commands": [
+            "query:START_EXERCISE",
+            "parameter:sportProfileId=1"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "live-exercise-pause",
+          "commands": [
+            "query:PAUSE_EXERCISE",
+            "parameters:none"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "live-exercise-resume",
+          "commands": [
+            "query:RESUME_EXERCISE",
+            "parameters:none"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "live-exercise-stop",
+          "commands": [
+            "query:STOP_EXERCISE",
+            "parameter:save=true"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "live-exercise-status",
+          "commands": [
+            "query:GET_EXERCISE_STATUS",
+            "parameters:none"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "offline-exercise-v2-start",
+          "commands": [
+            "query:START_DM_EXERCISE",
+            "parameter:sportProfileId=1"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "offline-exercise-v2-stop",
+          "commands": [
+            "query:STOP_EXERCISE",
+            "parameter:save=true"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "offline-exercise-v2-status",
+          "commands": [
+            "query:GET_EXERCISE_STATUS",
+            "parameters:none"
+          ],
+          "terminal": "success"
+        },
+        {
           "id": "factory-reset",
           "commands": [
             "notification:RESET",
@@ -345,7 +465,7 @@
         }
       ]
     },
-    "commonDecision": "A shared command runtime may own query/notification planning only after H10 query failure propagation, reset notification failure propagation, platform-specific sync error handling, and sync failure semantics are explicitly preserved or intentionally reconciled."
+    "commonDecision": "A shared command runtime may own query/notification planning only after H10 query failure propagation, live/offline exercise query planning, reset notification failure propagation, platform-specific sync error handling, and sync failure semantics are explicitly preserved or intentionally reconciled."
   },
   "platformExpectations": {
     "android": {
@@ -379,6 +499,6 @@
     "transport": "public-facade-command-capture",
     "wallClockSafe": true
   },
-  "commonDecision": "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates.",
-  "notes": "Android and iOS agree on the command/query IDs, H10 query failure propagation, reset payload flags, and reset notification failure propagation. Sync start and stop error handling intentionally differs today, so the KMP migration must keep this vector as a decision gate rather than silently choosing one platform behavior."
+  "commonDecision": "Promote reset/H10/exercise command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates.",
+  "notes": "Android and iOS agree on the command/query IDs, H10 query failure propagation, exercise query planning, reset payload flags, and reset notification failure propagation. Sync start and stop error handling intentionally differs today, so the KMP migration must keep this vector as a decision gate rather than silently choosing one platform behavior."
 }

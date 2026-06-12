@@ -1,9 +1,5 @@
 import Foundation
 
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
-
 /// A thread-safe container that manages multiple AsyncThrowingStream continuations.
 final class StreamContinuationList<T>: @unchecked Sendable {
     private let lock = NSLock()
@@ -19,8 +15,8 @@ final class StreamContinuationList<T>: @unchecked Sendable {
         initialValues: [T] = []
     ) -> AsyncThrowingStream<T, Error> {
         let connected = transport?.isConnected() ?? false
-        planRuntimeStreamSubscription(target: "stream", startConnected: connected, checkConnection: checkConnection)
-        if checkConnection && !connected {
+        let plannedTerminal = planRuntimeStreamSubscription(target: "stream", startConnected: connected, checkConnection: checkConnection)
+        if plannedTerminal == "gattDisconnected" || (plannedTerminal == nil && checkConnection && !connected) {
             return AsyncThrowingStream { $0.finish(throwing: BleGattException.gattDisconnected) }
         }
         let id = UUID()
@@ -34,7 +30,7 @@ final class StreamContinuationList<T>: @unchecked Sendable {
         entries.append((id: id, cont: capturedCont))
         lock.unlock()
         capturedCont.onTermination = { [weak self] _ in
-            planRuntimeStreamConsumerCancellation(target: "stream")
+            guard planRuntimeStreamConsumerCancellation(target: "stream") else { return }
             guard let self else { return }
             self.lock.lock()
             self.entries.removeAll { $0.id == id }
@@ -45,7 +41,7 @@ final class StreamContinuationList<T>: @unchecked Sendable {
 
     /// Yield a value to all active streams.
     func yield(_ value: T) {
-        if isEmpty { planRuntimeStreamPostCompletionEmission(target: "stream", value: "value") }
+        if isEmpty && planRuntimeStreamPostCompletionEmission(target: "stream", value: "value") == 0 { return }
         lock.lock()
         let current = entries
         lock.unlock()
@@ -54,17 +50,19 @@ final class StreamContinuationList<T>: @unchecked Sendable {
 
     /// Finish all active streams successfully, then remove them.
     func finish() {
-        planRuntimeStreamDuplicateCompletion(target: "stream")
+        let completionEvents = planRuntimeStreamDuplicateCompletion(target: "stream")
         lock.lock()
         let current = entries
         entries.removeAll()
         lock.unlock()
+        guard completionEvents > 0 || !current.isEmpty else { return }
         current.forEach { $0.cont.finish() }
     }
 
     /// Finish all active streams with the given error, then remove them.
     func finish(throwing error: Error) {
-        planRuntimeStreamDisconnect(target: "stream", error: String(describing: type(of: error)))
+        let errorName = String(describing: type(of: error))
+        guard planRuntimeStreamDisconnect(target: "stream", error: errorName) else { return }
         lock.lock()
         let current = entries
         entries.removeAll()
@@ -112,8 +110,8 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
         checkConnection: Bool
     ) -> AsyncThrowingStream<T, Error> {
         let connected = transport?.isConnected() ?? false
-        planRuntimeStreamSubscription(target: "stream", startConnected: connected, checkConnection: checkConnection)
-        if checkConnection && !connected {
+        let plannedTerminal = planRuntimeStreamSubscription(target: "stream", startConnected: connected, checkConnection: checkConnection)
+        if plannedTerminal == "gattDisconnected" || (plannedTerminal == nil && checkConnection && !connected) {
             return AsyncThrowingStream { $0.finish(throwing: BleGattException.gattDisconnected) }
         }
         let id = UUID()
@@ -129,7 +127,8 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
 
     /// Immediately terminates all active consumers with `error` and cancels the upstream.
     func finish(throwing error: Error) {
-        planRuntimeStreamDisconnect(target: "stream", error: String(describing: type(of: error)))
+        let errorName = String(describing: type(of: error))
+        guard planRuntimeStreamDisconnect(target: "stream", error: errorName) else { return }
         lock.lock()
         let current = consumers; consumers.removeAll()
         let task = upstreamTask; upstreamTask = nil
@@ -141,7 +140,7 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
     // MARK: - Private
 
     private func remove(id: UUID) {
-        planRuntimeStreamConsumerCancellation(target: "stream")
+        guard planRuntimeStreamConsumerCancellation(target: "stream") else { return }
         lock.lock()
         consumers.removeAll { $0.id == id }
         let shouldCancel = consumers.isEmpty
@@ -156,55 +155,55 @@ final class MulticastAsyncStream<T>: @unchecked Sendable {
             guard let self else { return }
             do {
                 for try await value in self.makeUpstream() {
-                    self.lock.lock()
-                    let current = self.consumers
-                    self.lock.unlock()
-                    if current.isEmpty { planRuntimeStreamPostCompletionEmission(target: "stream", value: "value") }
+                    let current = self.lock.withLock { self.consumers }
+                    if current.isEmpty && planRuntimeStreamPostCompletionEmission(target: "stream", value: "value") == 0 { continue }
                     current.forEach { $0.cont.yield(value) }
                 }
-                self.lock.lock()
-                let current = self.consumers; self.consumers.removeAll(); self.upstreamTask = nil
-                self.lock.unlock()
-                planRuntimeStreamDuplicateCompletion(target: "stream")
+                let current = self.lock.withLock {
+                    let current = self.consumers
+                    self.consumers.removeAll()
+                    self.upstreamTask = nil
+                    return current
+                }
+                let completionEvents = planRuntimeStreamDuplicateCompletion(target: "stream")
+                guard completionEvents > 0 || !current.isEmpty else { return }
                 current.forEach { $0.cont.finish() }
             } catch {
                 guard !(error is CancellationError) else { return }
-                self.lock.lock()
-                let current = self.consumers; self.consumers.removeAll(); self.upstreamTask = nil
-                self.lock.unlock()
-                planRuntimeStreamDisconnect(target: "stream", error: String(describing: type(of: error)))
+                let current = self.lock.withLock {
+                    let current = self.consumers
+                    self.consumers.removeAll()
+                    self.upstreamTask = nil
+                    return current
+                }
+                let errorName = String(describing: type(of: error))
+                guard planRuntimeStreamDisconnect(target: "stream", error: errorName) else { return }
                 current.forEach { $0.cont.finish(throwing: error) }
             }
         }
     }
 }
 
-private func planRuntimeStreamSubscription(target: String, startConnected: Bool, checkConnection: Bool) {
-    #if canImport(PolarBleSdkShared)
-    _ = PolarIosSharedBridge.shared.planRuntimeStreamSubscription(target: target, startConnected: startConnected, checkConnection: checkConnection)
-    #endif
+private func planRuntimeStreamSubscription(target: String, startConnected: Bool, checkConnection: Bool) -> String? {
+    let planned = PolarRuntimePlanner.streamSubscription(target: target, startConnected: startConnected, checkConnection: checkConnection)
+    return planned == "platform-owned" ? nil : planned
 }
 
-private func planRuntimeStreamConsumerCancellation(target: String) {
-    #if canImport(PolarBleSdkShared)
-    _ = PolarIosSharedBridge.shared.planRuntimeStreamConsumerCancellation(target: target)
-    #endif
+private func planRuntimeStreamConsumerCancellation(target: String) -> Bool {
+    let planned = PolarRuntimePlanner.streamConsumerCancellation(target: target)
+    if planned == "platform-owned" { return true }
+    return planned.split(separator: ",").contains(Substring(target))
 }
 
-private func planRuntimeStreamDisconnect(target: String, error: String) {
-    #if canImport(PolarBleSdkShared)
-    _ = PolarIosSharedBridge.shared.planRuntimeStreamDisconnect(target: target, error: error)
-    #endif
+private func planRuntimeStreamDisconnect(target: String, error: String) -> Bool {
+    let planned = PolarRuntimePlanner.streamDisconnect(target: target, error: error)
+    return planned == "platform-owned" || planned == error
 }
 
-private func planRuntimeStreamDuplicateCompletion(target: String) {
-    #if canImport(PolarBleSdkShared)
-    _ = PolarIosSharedBridge.shared.planRuntimeStreamDuplicateCompletion(target: target)
-    #endif
+private func planRuntimeStreamDuplicateCompletion(target: String) -> Int {
+    return PolarRuntimePlanner.streamDuplicateCompletion(target: target)
 }
 
-private func planRuntimeStreamPostCompletionEmission(target: String, value: String) {
-    #if canImport(PolarBleSdkShared)
-    _ = PolarIosSharedBridge.shared.planRuntimeStreamPostCompletionEmission(target: target, value: value)
-    #endif
+private func planRuntimeStreamPostCompletionEmission(target: String, value: String) -> Int {
+    return PolarRuntimePlanner.streamPostCompletionEmission(target: target, value: value)
 }

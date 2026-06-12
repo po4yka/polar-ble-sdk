@@ -1,12 +1,12 @@
 package com.polar.androidcommunications.api.ble.model.advertisement
 
 import androidx.annotation.VisibleForTesting
-import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceIdUtility
-import com.polar.androidcommunications.api.ble.model.polar.PolarAdvDataUtility.getDeviceModelNameFromAdvLocalName
 import com.polar.androidcommunications.api.ble.model.polar.PolarAdvDataUtility.isValidDevice
 import com.polar.androidcommunications.common.ble.BleUtils.AD_TYPE
 import com.polar.androidcommunications.common.ble.BleUtils.EVENT_TYPE
-import java.util.*
+import com.polar.sdk.api.model.PolarSdkModelAdapter
+import java.util.ArrayList
+import java.util.HashMap
 
 class BleAdvertisementContent {
 
@@ -128,25 +128,10 @@ class BleAdvertisementContent {
         var didContainHrData = false
         if (advertisementData.containsKey(AD_TYPE.GAP_ADTYPE_MANUFACTURER_SPECIFIC)) {
             val content = advertisementData[AD_TYPE.GAP_ADTYPE_MANUFACTURER_SPECIFIC]
-            if (content != null && content.size > 3 && content[0] == 0x6B.toByte() && content[1] == 0x00.toByte()) {
-                var offset = 2
-                while (offset < content.size) {
-                    when (content[offset].toInt() and 0x40) {
-                        0 -> {
-                            if (offset + 3 <= content.size) {
-                                val subset = Arrays.copyOfRange(content, offset, content.size)
-                                polarHrAdvertisement.processPolarManufacturerData(subset)
-                                didContainHrData = true
-                            }
-                            offset += 5
-                        }
-                        0x40 -> {
-                            // gpb data, no handling for now
-                            offset += 1
-                            if (offset < content.size) offset += (content[offset].toInt() and 0x000000FF) + 1 else offset = content.size
-                        }
-                        else -> offset = content.size
-                    }
+            if (content != null) {
+                PolarSdkModelAdapter.polarManufacturerHrPayloads(content).forEach { payload ->
+                    polarHrAdvertisement.processPolarManufacturerData(payload)
+                    didContainHrData = true
                 }
             }
         }
@@ -174,11 +159,11 @@ class BleAdvertisementContent {
         if (name.isNotEmpty() && this.name != name) {
             this.name = name
             if (isValidDevice(name, advertisementDeviceNamePrefix)) {
-                polarDeviceType = getDeviceModelNameFromAdvLocalName(name, advertisementDeviceNamePrefix)
                 val nameSplit = name.split(" ").toTypedArray()
-                polarDeviceId = nameSplit[nameSplit.size - 1]
-                if (polarDeviceId.length == 7) {
-                    polarDeviceId = BlePolarDeviceIdUtility.assemblyFullPolarDeviceId(nameSplit[nameSplit.size - 1])
+                val parsed = PolarSdkModelAdapter.parseAdvertisementLocalName(name, advertisementDeviceNamePrefix)
+                polarDeviceType = parsed.deviceType
+                polarDeviceId = parsed.deviceId
+                if (nameSplit[nameSplit.size - 1].length == 7) {
                     this.name = "Polar $polarDeviceType $polarDeviceId"
                 }
                 polarDeviceIdInt = try {

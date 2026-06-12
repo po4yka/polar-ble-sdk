@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import PolarBleSdk
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let DISK_SPACE_READINESS_POLICY_VECTOR_PATHS = [
     "sdk/disk-space/typical-fragments.json",
@@ -61,6 +64,26 @@ final class PolarDiskSpaceDataTest: XCTestCase {
             XCTAssertEqual(try number(expected, "totalSpace", id: id), result.totalSpace, id)
             XCTAssertEqual(try number(expected, "freeSpace", id: id), result.freeSpace, id)
         }
+    }
+
+    func testDiskSpaceMappingUsesSharedBridgeWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(1048576, UInt64(PolarDiskSpaceRuntimePlanner.totalSpace(fragmentSize: 512, totalFragments: 2048, freeFragments: 1024)))
+        XCTAssertEqual(524288, UInt64(PolarDiskSpaceRuntimePlanner.freeSpace(fragmentSize: 512, totalFragments: 2048, freeFragments: 1024)))
+        XCTAssertEqual(8589934590, UInt64(PolarDiskSpaceRuntimePlanner.totalSpace(fragmentSize: 4294967295, totalFragments: 2, freeFragments: 1)))
+
+        let proto = Protocol_PbPFtpDiskSpaceResult.with {
+            $0.fragmentSize = UInt32.max
+            $0.totalFragments = 2
+            $0.freeFragments = 1
+        }
+        let result = PolarDiskSpaceData.fromProto(proto: proto)
+
+        XCTAssertEqual(8589934590, result.totalSpace)
+        XCTAssertEqual(4294967295, result.freeSpace)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testMalformedProtobufVectorsFailToParse() throws {

@@ -14,6 +14,7 @@ import com.polar.sdk.api.model.PolarExerciseData
 import com.polar.sdk.api.model.PolarExerciseEntry
 import com.polar.sdk.api.model.PolarExerciseSession
 import com.polar.sdk.impl.utils.PolarFileUtils
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarServiceClientUtils
 import fi.polar.remote.representation.protobuf.Device
 import fi.polar.remote.representation.protobuf.ExerciseSamples.PbExerciseSamples
@@ -40,6 +41,27 @@ class PolarOfflineExerciseV2ApiImpl(
         private const val TAG = "PolarOfflineExerciseV2Api"
         private const val DEVICE_INFO_PATH = "/DEVICE.BPB"
         private const val DM_EXERCISE_CAPABILITY = "dm_exercise"
+
+        internal fun offlineExerciseFetchOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return offlineExerciseFileOperation("offline-exercise-fetch", "GET", path)
+        }
+
+        internal fun offlineExerciseRemoveOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return offlineExerciseFileOperation("offline-exercise-remove", "REMOVE", path)
+        }
+
+        internal fun offlineExerciseDeviceInfoReadOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            return offlineExerciseFileOperation("offline-exercise-read-device-info", "GET", DEVICE_INFO_PATH)
+        }
+
+        private fun offlineExerciseFileOperation(
+            id: String,
+            command: String,
+            path: String
+        ): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+            val plan = PolarRuntimePlannerAdapter.planFileFacade(id, command, path)
+            return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+        }
     }
 
     override suspend fun startOfflineExerciseV2(
@@ -58,10 +80,12 @@ class PolarOfflineExerciseV2ApiImpl(
             .setSportIdentifier(sportIdentifier)
             .build()
 
-        val outputStream = client.query(
-            PftpRequest.PbPFtpQuery.START_DM_EXERCISE_VALUE,
-            params.toByteArray()
+        val plan = PolarRuntimePlannerAdapter.planCommandQuery(
+            id = "offline-exercise-v2-start",
+            query = "START_DM_EXERCISE",
+            parameters = listOf("sportProfileId=${sportProfile.id}")
         )
+        val outputStream = client.query(PolarRuntimePlannerAdapter.queryValue(plan), params.toByteArray())
 
         val proto = PftpResponse.PbPftpStartDmExerciseResult.parseFrom(outputStream.toByteArray())
 
@@ -96,10 +120,12 @@ class PolarOfflineExerciseV2ApiImpl(
             .setSave(true)
             .build()
 
-        client.query(
-            PftpRequest.PbPFtpQuery.STOP_EXERCISE_VALUE,
-            params.toByteArray()
+        val plan = PolarRuntimePlannerAdapter.planCommandQuery(
+            id = "offline-exercise-v2-stop",
+            query = "STOP_EXERCISE",
+            parameters = listOf("save=true")
         )
+        client.query(PolarRuntimePlannerAdapter.queryValue(plan), params.toByteArray())
     }
 
     override suspend fun getOfflineExerciseStatusV2(identifier: String): Boolean {
@@ -107,10 +133,8 @@ class PolarOfflineExerciseV2ApiImpl(
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as? BlePsFtpClient
             ?: throw PolarServiceNotAvailable()
 
-        val bytes = client.query(
-            PftpRequest.PbPFtpQuery.GET_EXERCISE_STATUS_VALUE,
-            byteArrayOf()
-        )
+        val plan = PolarRuntimePlannerAdapter.planCommandQuery("offline-exercise-v2-status", "GET_EXERCISE_STATUS")
+        val bytes = client.query(PolarRuntimePlannerAdapter.queryValue(plan), byteArrayOf())
 
         val proto = PftpResponse.PbPftpGetExerciseStatusResult.parseFrom(bytes.toByteArray())
         return proto.exerciseType ==
@@ -166,12 +190,10 @@ class PolarOfflineExerciseV2ApiImpl(
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as? BlePsFtpClient
             ?: throw PolarServiceNotAvailable()
 
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-            .setPath(entry.path)
+        val fetchOperation = offlineExerciseFetchOperation(entry.path)
 
         return try {
-            val byteArrayOutputStream = client.request(builder.build().toByteArray())
+            val byteArrayOutputStream = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fetchOperation))
             val samples = PbExerciseSamples.parseFrom(byteArrayOutputStream.toByteArray())
             if (samples.hasRrSamples()) {
                 PolarExerciseData(samples.recordingInterval.seconds, samples.rrSamples.rrIntervalsList)
@@ -196,12 +218,10 @@ class PolarOfflineExerciseV2ApiImpl(
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as? BlePsFtpClient
             ?: throw PolarServiceNotAvailable()
 
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PftpRequest.PbPFtpOperation.Command.REMOVE)
-            .setPath(entry.path)
+        val removeOperation = offlineExerciseRemoveOperation(entry.path)
 
         try {
-            client.request(builder.build().toByteArray())
+            client.request(PolarRuntimePlannerAdapter.fileOperationBytes(removeOperation))
         } catch (throwable: Throwable) {
             throw handleError(throwable)
         }
@@ -240,12 +260,10 @@ class PolarOfflineExerciseV2ApiImpl(
      * Reads DEVICE.BPB to check if "dm_exercise" is in the capabilities list.
      */
     private suspend fun checkDmExerciseSupport(client: BlePsFtpClient): Boolean {
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-            .setPath(DEVICE_INFO_PATH)
+        val deviceInfoOperation = offlineExerciseDeviceInfoReadOperation()
 
         return try {
-            val byteArrayOutputStream = client.request(builder.build().toByteArray())
+            val byteArrayOutputStream = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(deviceInfoOperation))
             val deviceInfo = Device.PbDeviceInfo.parseFrom(byteArrayOutputStream.toByteArray())
             deviceInfo.capabilitiesList.contains(DM_EXERCISE_CAPABILITY)
         } catch (error: Throwable) {

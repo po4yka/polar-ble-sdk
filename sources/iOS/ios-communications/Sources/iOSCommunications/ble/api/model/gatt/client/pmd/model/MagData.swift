@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class MagData {
     let timeStamp: UInt64
@@ -21,6 +24,10 @@ public class MagData {
         case good = 3
         
         static func getById(id: Int) -> CalibrationStatus {
+            if let sharedName = MagDataRuntimePlanner.calibrationStatusName(id: Int32(id)),
+               let sharedStatus = CalibrationStatus(sharedName: sharedName) {
+                return sharedStatus
+            }
             guard let status = CalibrationStatus(rawValue: id) else {
                 BleLogger.error("Invalid CalibrationStatus ID: \(id)")
                 return notAvailable
@@ -58,6 +65,11 @@ public class MagData {
     }
     
     private static func dataFromCompressedType0(frame: PmdDataFrame) throws -> MagData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedCompressedData(frame: frame) {
+            return sharedData
+        }
+        #endif
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_0_CHANNELS_IN_SAMPLE, resolution: TYPE_0_SAMPLE_SIZE_IN_BITS)
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
         
@@ -82,6 +94,11 @@ public class MagData {
     }
     
     private static func dataFromCompressedType1(frame: PmdDataFrame) throws -> MagData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedCompressedData(frame: frame) {
+            return sharedData
+        }
+        #endif
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_1_CHANNELS_IN_SAMPLE, resolution: TYPE_1_SAMPLE_SIZE_IN_BITS)
         
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
@@ -96,5 +113,88 @@ public class MagData {
             magSamples.append( MagSample( timeStamp: timeStamps[index], x: x, y: y, z: z, calibrationStatus: status))
         }
         return MagData(timeStamp: frame.timeStamp, samples: magSamples)
+    }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedCompressedData(frame: PmdDataFrame) -> MagData? {
+        guard frame.isCompressedFrame,
+              frame.frameType == .type_0 || frame.frameType == .type_1,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = MagDataRuntimePlanner.compressedSamples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> MagSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 5,
+                  let timeStamp = UInt64(fields[0]),
+                  let x = Float(fields[1]),
+                  let y = Float(fields[2]),
+                  let z = Float(fields[3]),
+                  let calibrationStatus = CalibrationStatus(sharedName: String(fields[4])) else {
+                return nil
+            }
+            return MagSample(timeStamp: timeStamp, x: x, y: y, z: z, calibrationStatus: calibrationStatus)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return MagData(timeStamp: frame.timeStamp, samples: samples)
+    }
+
+    private static func sharedDataFrameHex(frame: PmdDataFrame) -> String {
+        var data = Data([frame.measurementType.rawValue])
+        var littleEndianTimestamp = frame.timeStamp.littleEndian
+        withUnsafeBytes(of: &littleEndianTimestamp) { data.append(contentsOf: $0) }
+        let frameTypeByte = frame.frameType.rawValue | (frame.isCompressedFrame ? 0x80 : 0)
+        data.append(frameTypeByte)
+        data.append(frame.dataContent)
+        return data.map { String(format: "%02x", $0) }.joined()
+    }
+    #endif
+}
+
+enum MagDataRuntimePlanner {
+    static func calibrationStatusName(id: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.magCalibrationStatusName(id: id)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedSamples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.magCompressedSamples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+}
+
+private extension MagData.CalibrationStatus {
+    init?(sharedName: String) {
+        switch sharedName {
+        case "NOT_AVAILABLE":
+            self = .notAvailable
+        case "UNKNOWN":
+            self = .unknown
+        case "POOR":
+            self = .poor
+        case "OK":
+            self = .ok
+        case "GOOD":
+            self = .good
+        default:
+            return nil
+        }
     }
 }

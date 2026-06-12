@@ -1,13 +1,12 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let TAG = "PolarDeviceBackup"
 private let ARABICA_SYS_FOLDER = "/SYS/"
-private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private let USER_WILD_CARD_ROOT_FOLDER = "/U/*/"
-private let WILD_CARD_CHARACTER = "*"
-
 public class PolarBackupManager {
 
     public struct BackupFileData {
@@ -30,9 +29,11 @@ public class PolarBackupManager {
 
     public func backupDevice() async throws -> [BackupFileData] {
         BleLogger.trace("backupDevice() called")
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = ARABICA_SYS_FOLDER }
+        let rootOperation = PolarRuntimePlanner.fileFacadeOperation(id: "backup-read-root-directory", command: "GET", path: ARABICA_SYS_FOLDER)
+        let operation = rootOperation ?? (.get, ARABICA_SYS_FOLDER)
+        try ensureFileFacadeRuntimePlan(id: "backup-read-root-directory", command: "GET", path: ARABICA_SYS_FOLDER)
         do {
-            let content = try await client.request(try operation.serializedBytes())
+            let content = try await client.request(try PolarRuntimePlanner.fileOperationBytes(operation))
             let parentDirEntries = try Protocol_PbPFtpDirectory(serializedBytes: content as Data)
             let entries = parentDirEntries.entries.map { ARABICA_SYS_FOLDER + $0.name }
             var backupDirectories: [String] = []
@@ -51,17 +52,13 @@ public class PolarBackupManager {
                     let bytesRead = stream.read(buffer, maxLength: bufferSize)
                     if bytesRead > 0, let chunk = String(bytesNoCopy: buffer, length: bytesRead, encoding: .utf8, freeWhenDone: false) {
                         accumulatedString += chunk
-                        while let range = accumulatedString.range(of: "\n") {
-                            let line = String(accumulatedString[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
-                            backupDirectories.append(line)
-                            accumulatedString.removeSubrange(..<range.upperBound)
-                        }
                     }
                 }
+                backupDirectories.append(contentsOf: PolarRuntimePlanner.parseBackupTextForIos(accumulatedString))
             } else {
                 BleLogger.error("No BACKUP.TXT found, using default backup directories")
             }
-            addDefaultBackupDirectories(to: &backupDirectories)
+            backupDirectories = PolarRuntimePlanner.backupRootPaths(backupDirectories)
             BleLogger.trace("Backup directories found: \(backupDirectories)")
             var result = [BackupFileData]()
             for dir in backupDirectories {
@@ -77,23 +74,27 @@ public class PolarBackupManager {
         }
     }
 
-    private func addDefaultBackupDirectories(to directories: inout [String]) {
-        let defaults = ["/U/*/S/PHYSDATA.BPB", "/U/*/S/UDEVSET.BPB", "/U/*/S/PREFS.BPB", "/U/*/USERID.BPB"]
-        for dir in defaults { if !directories.contains(dir) { directories.append(dir) } }
-    }
-
     public func restoreBackup(backupFiles: [BackupFileData]) async throws {
         BleLogger.trace("Starting backup restoration for \(backupFiles.count) files")
         var failedFiles: [(fileName: String, error: Error)] = []
-        for backupFileData in backupFiles {
+        let restoreInputs = backupFiles.map { backupFileData in
+            (
+                directory: backupFileData.directory,
+                fileName: backupFileData.fileName,
+                payloadHex: backupFileData.data.map { String(format: "%02x", $0) }.joined()
+            )
+        }
+        let plannedWrites = PolarRuntimePlanner.backupRestoreWrites(restoreInputs)
+        for (backupFileData, plannedWrite) in zip(backupFiles, plannedWrites) {
             BleLogger.trace("Restoring: \(backupFileData.fileName)")
             do {
-                var operation = Protocol_PbPFtpOperation()
-                operation.command = .put
-                operation.path = backupFileData.directory + backupFileData.fileName
-                PolarRuntimePlanner.backupRestore(path: operation.path, payloadHex: backupFileData.data.map { String(format: "%02x", $0) }.joined())
-                let header = try operation.serializedData() as NSData
+                let operation = (command: plannedWrite.command, path: plannedWrite.path)
+                if plannedWrite.payloadHex != backupFileData.data.map({ String(format: "%02x", $0) }).joined() {
+                    BleLogger.error("Shared backup restore payload plan differs for \(backupFileData.directory)\(backupFileData.fileName)")
+                }
+                let header = try PolarRuntimePlanner.fileOperationBytes(operation) as NSData
                 let dataStream = InputStream(data: backupFileData.data)
+                try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: backupFileData.data.count)
                 for try await bytes in client.write(header, data: dataStream) {
                     BleLogger.trace("Writing firmware update file: \(backupFileData.directory)\(backupFileData.fileName), bytes to write: \(bytes)")
                 }
@@ -116,10 +117,10 @@ public class PolarBackupManager {
     }
 
     private func loadFile(path: String) async throws -> [UInt8] {
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
-        let data = try await client.request(try operation.serializedBytes())
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "backup-read-file", command: "GET", path: path)
+        let operation = plannedOperation ?? (.get, path)
+        try ensureFileFacadeRuntimePlan(id: "backup-read-file", command: "GET", path: path)
+        let data = try await client.request(try PolarRuntimePlanner.fileOperationBytes(operation))
         return [UInt8](data)
     }
 
@@ -128,11 +129,13 @@ public class PolarBackupManager {
         var result = [BackupFileData]()
         for directoryPath in directoryPaths {
             guard !directoryPath.isEmpty else { continue }
-            let path = directoryPath.replacingOccurrences(of: USER_WILD_CARD_ROOT_FOLDER, with: ARABICA_USER_ROOT_FOLDER)
-            if path.contains(WILD_CARD_CHARACTER) {
-                let rootPath = path.components(separatedBy: WILD_CARD_CHARACTER).first ?? ""
+            let traversalPlan = PolarFirmwareBackupRuntimePlanner.backupTraversalPlan(directoryPath)
+            let path = traversalPlan.path
+            if let rootPath = traversalPlan.wildcardRootPath {
                 let entries = try await fetchRecursively(path: rootPath)
-                let subdirs = entries.filter { $0.folderPath.isFolder }.map { rootPath + $0.name }
+                let subdirs = entries.filter { entry in
+                    entry.folderPath.isFolder && (traversalPlan.wildcardSubFolder == nil || entry.name == traversalPlan.wildcardSubFolder)
+                }.map { rootPath + $0.name }
                 for subdir in subdirs {
                     let files = try await backUpDirectories([subdir])
                     result.append(contentsOf: files)
@@ -144,9 +147,8 @@ public class PolarBackupManager {
             } else {
                 do {
                     let data = try await loadFile(path: path)
-                    let file = (path as NSString).lastPathComponent
-                    let filePath = (path as NSString).deletingLastPathComponent + "/"
-                    result.append(BackupFileData(data: Data(data), directory: filePath, fileName: file))
+                    let filePath = PolarRuntimePlanner.backupFilePath(path)
+                    result.append(BackupFileData(data: Data(data), directory: filePath.directory, fileName: filePath.fileName))
                 } catch {
                     BleLogger.error("Error loading file: \(path), error: \(error)")
                 }
@@ -156,10 +158,10 @@ public class PolarBackupManager {
     }
 
     private func fetchRecursively(path: String) async throws -> [DeviceFolderEntry] {
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
-        let request = try operation.serializedData()
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "backup-read-directory", command: "GET", path: path)
+        let operation = plannedOperation ?? (.get, path)
+        try ensureFileFacadeRuntimePlan(id: "backup-read-directory", command: "GET", path: path)
+        let request = try PolarRuntimePlanner.fileOperationBytes(operation)
         var entries = [DeviceFolderEntry]()
         do {
             let data = try await client.request(request)
@@ -175,6 +177,13 @@ public class PolarBackupManager {
             BleLogger.error("fetchRecursively() error: \(error)")
         }
         return entries
+    }
+
+    private func ensureFileFacadeRuntimePlan(id: String, command: String, path: String, payloadHex: String = "") throws {
+        let terminal = PolarRuntimePlanner.fileFacade(id: id, command: command, path: path, payloadHex: payloadHex)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "Backup file facade planning failed: \(terminal)")
+        }
     }
 
     private func loadSubDirectories(path: String) async throws -> [String] {

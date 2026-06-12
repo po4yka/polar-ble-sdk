@@ -3,12 +3,12 @@ package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient.PmdDataFieldEncoding
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
-import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import java.lang.Float.intBitsToFloat
 
 internal class GyrData {
 
-    internal data class GyrSample internal constructor(
+    internal data class GyrSample(
         val timeStamp: ULong,
         // Sample contains signed x,y,z axis values in deg/sec
         val x: Float,
@@ -29,7 +29,15 @@ internal class GyrData {
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): GyrData {
             val gyrData = GyrData()
-            PolarSensorDataParser.parseGyr(frame.toPolarSharedFrame()).forEach { sample ->
+            PolarRuntimePlannerAdapter.pmdGyrSamples(
+                frameType = frame.frameType.id.toInt(),
+                compressed = frame.isCompressedFrame,
+                timeStamp = frame.timeStamp,
+                previousTimeStamp = frame.previousTimeStamp,
+                factor = frame.factor,
+                sampleRate = frame.sampleRate,
+                dataContent = frame.dataContent
+            ).forEach { sample ->
                 gyrData.gyrSamples.add(GyrSample(timeStamp = sample.timeStamp, x = sample.x, y = sample.y, z = sample.z))
             }
             return gyrData

@@ -1,0 +1,3 @@
+# Exercise-Session Golden Vectors
+
+These vectors characterize exercise-session sport-profile mapping and offline exercise facade-operation readiness before broader KMP migration. `exercise-session-readiness.json` is consumed by `ExerciseSessionModelsCommonPolicyTest.kt`, `PolarExerciseSessionTest.kt`, `PolarOfflineExerciseV2ApiImplTest.kt`, and `PolarOfflineExerciseV2Tests.swift` to keep Android, iOS, and shared KMP coverage aligned while protobuf construction, status-result mapping, filesystem capability gates, BLE/PSFTP transport execution, SwiftPM/watchOS fallback, and public error translation stay platform-owned.

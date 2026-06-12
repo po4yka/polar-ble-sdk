@@ -2,7 +2,29 @@
 
 import Foundation
 
-class FirmwareUpdateApi {
+protocol FirmwareUpdateDataTask {
+    func resume()
+}
+
+extension URLSessionDataTask: FirmwareUpdateDataTask {}
+
+protocol FirmwareUpdateNetworkTransport {
+    func firmwareDataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> FirmwareUpdateDataTask
+}
+
+protocol FirmwareUpdateServicing {
+    func checkFirmwareUpdate(firmwareUpdateRequest: FirmwareUpdateRequest, completion: @escaping (Result<FirmwareUpdateResponse, Error>) -> Void)
+    func checkFirmwareUpdateFromFirmwareUrl(_ url: URL, completion: @escaping (Result<FirmwareUpdateResponse, Error>) -> Void)
+    func getFirmwareUpdatePackage(url: String) async throws -> Data?
+}
+
+extension URLSession: FirmwareUpdateNetworkTransport {
+    func firmwareDataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> FirmwareUpdateDataTask {
+        dataTask(with: request, completionHandler: completionHandler)
+    }
+}
+
+class FirmwareUpdateApi: FirmwareUpdateServicing {
 
     enum Failure: Error {
         case responseParseError
@@ -16,6 +38,11 @@ class FirmwareUpdateApi {
     }
 
     let baseURL = "https://firmware-management.polar.com"
+    private let transport: FirmwareUpdateNetworkTransport
+
+    init(transport: FirmwareUpdateNetworkTransport = URLSession.shared) {
+        self.transport = transport
+    }
 
     func checkFirmwareUpdate(firmwareUpdateRequest: FirmwareUpdateRequest, completion: @escaping (Result<FirmwareUpdateResponse, Error>) -> Void) {
         let url = "\(baseURL)/api/v1/firmware-update/check"
@@ -26,39 +53,46 @@ class FirmwareUpdateApi {
         taskRequest.httpBody = try? JSONEncoder().encode(firmwareUpdateRequest)
         let request = taskRequest
 
-        URLSession.shared.dataTask(with: request) { (data, response, error) in
+        transport.firmwareDataTask(with: request) { (data, response, error) in
             Task { @MainActor in
                 BleLogger.trace("Request URL: \(String(describing: request.url))")
                 BleLogger.trace("Request Method: \(request.httpMethod ?? "N/A")")
                 BleLogger.trace("Request Headers: \(request.allHTTPHeaderFields ?? [:])")
                 BleLogger.trace("Request Body: \(String(describing: firmwareUpdateRequest))")
 
-                if let data = data {
-                    BleLogger.trace("Response Data: \(String(data: data, encoding: .utf8) ?? "N/A")")
-                    if let statusCode = (response as? HTTPURLResponse)?.statusCode {
-                        switch statusCode {
-                        case 204:
-                            var fwResponse = FirmwareUpdateResponse(version: nil, fileUrl: nil)
-                            fwResponse.statusCode = statusCode
-                            completion(.success(fwResponse))
-                            return
-                        case 400..<500:
-                            BleLogger.error("Client error: (\(statusCode))")
-                            return
-                        case 500..<600:
-                            BleLogger.error("Server error: (\(statusCode))")
-                        default:
-                            BleLogger.error("Response status code: (\(statusCode))")
-                        }
-                        if var fwResponse = try? JSONDecoder().decode(FirmwareUpdateResponse.self, from: data) {
-                            fwResponse.statusCode = statusCode
-                            completion(.success(fwResponse))
-                        } else {
-                            completion(.failure(Failure.responseParseError))
-                        }
-                    } else {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                guard let data = data else {
+                    completion(.failure(Failure.requestFailed))
+                    return
+                }
+                BleLogger.trace("Response Data: \(String(data: data, encoding: .utf8) ?? "N/A")")
+                if let statusCode = (response as? HTTPURLResponse)?.statusCode {
+                    switch statusCode {
+                    case 204:
+                        var fwResponse = FirmwareUpdateResponse(version: nil, fileUrl: nil)
+                        fwResponse.statusCode = statusCode
+                        completion(.success(fwResponse))
+                        return
+                    case 400..<500:
+                        BleLogger.error("Client error: (\(statusCode))")
                         completion(.failure(Failure.requestFailed))
+                        return
+                    case 500..<600:
+                        BleLogger.error("Server error: (\(statusCode))")
+                    default:
+                        BleLogger.error("Response status code: (\(statusCode))")
                     }
+                    if var fwResponse = try? JSONDecoder().decode(FirmwareUpdateResponse.self, from: data) {
+                        fwResponse.statusCode = statusCode
+                        completion(.success(fwResponse))
+                    } else {
+                        completion(.failure(Failure.responseParseError))
+                    }
+                } else {
+                    completion(.failure(Failure.requestFailed))
                 }
             }
         }.resume()
@@ -73,7 +107,7 @@ class FirmwareUpdateApi {
         }
         var request = URLRequest(url: url)
         request.httpMethod = "HEAD"
-        URLSession.shared.dataTask(with: request) { (data, response, error) in
+        transport.firmwareDataTask(with: request) { (data, response, error) in
             Task { @MainActor in
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
                 let responseWithUrl = FirmwareUpdateResponse(version: "custom(\(file))", fileUrl: url.absoluteString, statusCode: statusCode)
@@ -85,7 +119,7 @@ class FirmwareUpdateApi {
     /// Download firmware update package from the given URL.
     func getFirmwareUpdatePackage(url: String) async throws -> Data? {
         return try await withCheckedThrowingContinuation { continuation in
-            URLSession.shared.dataTask(with: URLRequest(url: URL(string: url)!)) { (data, _, error) in
+            transport.firmwareDataTask(with: URLRequest(url: URL(string: url)!)) { (data, _, error) in
                 if let error = error {
                     continuation.resume(throwing: error)
                 } else {

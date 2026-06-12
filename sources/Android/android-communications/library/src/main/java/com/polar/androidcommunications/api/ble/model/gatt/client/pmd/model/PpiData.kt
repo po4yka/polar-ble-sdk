@@ -2,10 +2,10 @@ package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.common.ble.TypeUtils
-import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 internal class PpiData {
-    data class PpiSample internal constructor(
+    data class PpiSample(
         val hr: Int,
         val ppInMs: Int,
         val ppErrorEstimate: Int,
@@ -20,7 +20,15 @@ internal class PpiData {
     companion object {
         fun parseDataFromDataFrame(frame: PmdDataFrame): PpiData {
             val ppiData = PpiData()
-            PolarSensorDataParser.parsePpi(frame.toPolarSharedFrame()).forEach { sample ->
+            PolarRuntimePlannerAdapter.pmdPpiSamples(
+                frameType = frame.frameType.id.toInt(),
+                compressed = frame.isCompressedFrame,
+                timeStamp = frame.timeStamp,
+                previousTimeStamp = frame.previousTimeStamp,
+                factor = frame.factor,
+                sampleRate = frame.sampleRate,
+                dataContent = frame.dataContent
+            ).forEach { sample ->
                 ppiData.ppiSamples.add(
                     PpiSample(
                         hr = sample.hr,

@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import PolarBleSdk
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 class PolarTestUtilsTests: XCTestCase {
 
@@ -110,6 +113,18 @@ class PolarTestUtilsTests: XCTestCase {
     }
 
     // MARK: - Correct paths are requested
+
+    func testSpo2TestReadHeadersUseSharedFileFacadePlanning() throws {
+        let date = makeDate(year: 2026, month: 4, day: 13)
+
+        let directoryOperation = PolarTestUtils.spo2TestDirectoryReadOperation(date: date)
+        XCTAssertEqual(directoryOperation.command, .get)
+        XCTAssertEqual(directoryOperation.path, "/U/0/20260413/SPO2TEST/")
+
+        let fileOperation = PolarTestUtils.spo2TestFileReadOperation(directoryPath: "/U/0/20260413/SPO2TEST/", subDirectoryName: "142507/")
+        XCTAssertEqual(fileOperation.command, .get)
+        XCTAssertEqual(fileOperation.path, "/U/0/20260413/SPO2TEST/142507/SPO2TRES.BPB")
+    }
 
     func testReadSpo2TestFromDayDirectory_CorrectPathsRequested() async throws {
         // Arrange
@@ -287,6 +302,53 @@ class PolarTestUtilsTests: XCTestCase {
         XCTAssertNil(PolarSpo2TestData.Spo2TestTriggerType(rawValue: 99))
     }
 
+    func testSpo2PublicModelEnumMappingDelegatesKnownValuesToSharedBridgeWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(PolarIosSharedBridge.shared.spo2TestStatus(value: 0), "passed")
+        XCTAssertEqual(PolarSpo2TestData.Spo2TestStatus.fromSharedOrRaw(value: 0), .passed)
+        XCTAssertEqual(PolarIosSharedBridge.shared.spo2Class(value: 3), "normal")
+        XCTAssertEqual(PolarSpo2TestData.Spo2Class.fromSharedOrRaw(value: 3), .normal)
+        XCTAssertEqual(PolarIosSharedBridge.shared.spo2DeviationFromBaseline(value: 3), "aboveUsual")
+        XCTAssertEqual(PolarSpo2TestData.DeviationFromBaseline.fromSharedOrRaw(value: 3), .aboveUsual)
+        XCTAssertEqual(PolarIosSharedBridge.shared.spo2TriggerType(value: 1), "automatic")
+        XCTAssertEqual(PolarSpo2TestData.Spo2TestTriggerType.fromSharedOrRaw(value: 1), .automatic)
+        XCTAssertNil(PolarSpo2TestData.Spo2Class.fromSharedOrRaw(value: 99))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked for this target")
+        #endif
+    }
+
+    func testSpo2ProjectionUsesSharedIosPublicShapePolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let fields = PolarIosSharedBridge.shared.spo2ProjectionFields(
+            date: "2026-04-14",
+            timeDirName: "063751",
+            recordingDevice: "0004BF3D",
+            timeZoneOffsetMinutes: 180,
+            testStatus: 0,
+            bloodOxygenPercent: "96",
+            spo2Class: "3",
+            spo2ValueDeviationFromBaseline: "2",
+            spo2QualityAveragePercent: "99.0",
+            averageHeartRateBpm: "66",
+            heartRateVariabilityMs: "79.97114",
+            spo2HrvDeviationFromBaseline: "3",
+            altitudeMeters: "18.13582",
+            triggerType: "1"
+        ).split(separator: "\u{1F}", omittingEmptySubsequences: false).map(String.init)
+
+        XCTAssertEqual(fields.count, 11)
+        XCTAssertEqual(fields[0], "0004BF3D")
+        XCTAssertEqual(fields[1], "passed")
+        XCTAssertEqual(fields[3], "normal")
+        XCTAssertEqual(fields[4], "usual")
+        XCTAssertEqual(fields[8], "aboveUsual")
+        XCTAssertEqual(fields[10], "automatic")
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked for this target")
+        #endif
+    }
+
     // MARK: - Round-trip: each Spo2TestStatus from proto
 
     func testAllSpo2TestStatuses_RoundTripFromProto() async throws {
@@ -388,6 +450,7 @@ class PolarTestUtilsTests: XCTestCase {
             "full-passed-normal-field-mapping",
             "optional-protobuf-presence-preservation",
             "empty-recording-device-normalization",
+            "time-directory-name-parsing",
             "nullable-trigger-type-policy",
             "android-no-trigger-field-platform-reference",
             "ios-trigger-field-platform-reference",
@@ -397,7 +460,7 @@ class PolarTestUtilsTests: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, time-directory parsing remains shared and compile-verified, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.api.model.utils.PolarTestUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarTestUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.Spo2CommonPolicyTest"])

@@ -14,6 +14,23 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
         mockClient = nil
     }
 
+    func testAutomaticSampleReadHeadersUseSharedFileFacadePlanning() {
+        let directoryOperation = PolarAutomaticSamplesUtils.automaticSamplesDirectoryReadOperation()
+        XCTAssertEqual(directoryOperation.command, .get)
+        XCTAssertEqual(directoryOperation.path, "/U/0/AUTOS/")
+
+        let fileOperation = PolarAutomaticSamplesUtils.automaticSamplesFileReadOperation(fileName: "AUTOS001.BPB")
+        XCTAssertEqual(fileOperation.command, .get)
+        XCTAssertEqual(fileOperation.path, "/U/0/AUTOS/AUTOS001.BPB")
+    }
+
+    func testPpiSampleStatusMappingIgnoresHighBitsThroughSharedKmpPolicy() {
+        let status = Polar247PPiSamplesData.PPiSampleStatus.fromStatusByte(byte: 0xFF)
+        XCTAssertEqual(status.skinContact, .SKIN_CONTACT_DETECTED)
+        XCTAssertEqual(status.movement, .MOVING_DETECTED)
+        XCTAssertEqual(status.intervalStatus, .INTERVAL_DENOTES_OFFLINE_PERIOD)
+    }
+
     func testRead247HrSamples_SuccessfulResponse() async throws {
         // Arrange
         let calendar = Calendar(identifier: .gregorian)
@@ -326,6 +343,18 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
         }
     }
 
+    func testPpiStatusValueHelpersPreservePublicMapping() {
+        XCTAssertEqual(.NO_SKIN_CONTACT, Polar247PPiSamplesData.SkinContact.getByValue(value: 0))
+        XCTAssertEqual(.SKIN_CONTACT_DETECTED, Polar247PPiSamplesData.SkinContact.getByValue(value: 1))
+        XCTAssertNil(Polar247PPiSamplesData.SkinContact.getByValue(value: 2))
+        XCTAssertEqual(.NO_MOVING_DETECTED, Polar247PPiSamplesData.Movement.getByValue(value: 0))
+        XCTAssertEqual(.MOVING_DETECTED, Polar247PPiSamplesData.Movement.getByValue(value: 1))
+        XCTAssertNil(Polar247PPiSamplesData.Movement.getByValue(value: 2))
+        XCTAssertEqual(.INTERVAL_IS_ONLINE, Polar247PPiSamplesData.IntervalStatus.getByValue(value: 0))
+        XCTAssertEqual(.INTERVAL_DENOTES_OFFLINE_PERIOD, Polar247PPiSamplesData.IntervalStatus.getByValue(value: 1))
+        XCTAssertNil(Polar247PPiSamplesData.IntervalStatus.getByValue(value: 2))
+    }
+
     func testAutomaticSampleGoldenVectorsFollowNeutralKmpShape() throws {
         for vector in try loadAutomaticSampleGoldenVectors() {
             let id = try XCTUnwrap(vector["id"] as? String)
@@ -374,12 +403,15 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
             "daily-summary-request-path",
             "daily-summary-scalar-projection",
             "daily-summary-duration-projection",
+            "unsupported-field-deferral",
+            "public-model-shape-gate",
+            "facade-request-error-boundary",
             "platform-activity-vector-reference-gate",
             "compile-verification-gate"
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, and compile verification remain explicit before production model mapping moves.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), [
             "com.polar.sdk.api.model.utils.PolarActivityUtilsTest",
             "com.polar.sdk.api.model.utils.PolarAutomaticSamplesUtilsTest"

@@ -78,22 +78,32 @@ PUBLIC_FACADE_OPERATION_FAMILIES = [
   "Offline trigger runtime"
 ].freeze
 FIRMWARE_FACADE_GATE_REQUIRED_TERMS = [
-  "facade gate open",
+  "facade compatibility pinned",
   "PolarFirmwareUpdateUtilsTest.kt",
-  "FirmwareUpdateCommonFakeWorkflowTest.kt",
   "PolarFirmwareUpdateUtilsTest.swift",
+  "FirmwareUpdateApi(transport:)",
+  "firmwareUpdateApiFactory",
+  "PolarFirmwareUpdateUtils.packageExtractor",
+  "firmwareFileWriteStreamFactory",
+  "shared finalization step planning",
   "workflow-runtime-policy.json",
   "FirmwareWorkflowRuntimePolicyCommonTest.kt",
   "injectable production dependencies",
   "facade progress",
   "cleanup",
   "cancellation",
+  "multi-BLE host-state restoration",
+  "automatic reconnection restoration",
+  "final set-time failure mapping",
+  "final restart failure mapping",
+  "final stop-sync platform split",
   "retry scheduling",
-  "error-mapping tests before delegation"
+  "public error translation adapter-owned"
 ].freeze
-FACADE_GATE_OPEN_REQUIRED_TERMS = {
+FACADE_GATE_OPEN_REQUIRED_TERMS = {}.freeze
+RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = {
   "User device settings writes and reads" => [
-    "facade gate open",
+    "facade read/write error mapping pinned",
     "BDBleApiImplTest.kt",
     "PolarUserDeviceSettingsTest.kt",
     "UserDeviceSettingsCommonPolicyTest.kt",
@@ -101,42 +111,56 @@ FACADE_GATE_OPEN_REQUIRED_TERMS = {
     "PolarUserDeviceSettingsUtilsTest.swift",
     "settings-runtime-policy.json",
     "UserDeviceSettingsRuntimePolicyCommonTest.kt",
-    "protobuf serialization",
-    "platform defaults",
-    "daylight-saving time source",
-    "public error mapping before delegation"
+    "read-failure no-write",
+    "write-failure-after-payload",
+    "daylight-saving payload shape",
+    "facade-error mapping gate",
+    "protobuf parser/builder ownership",
+    "public error translation adapter-owned"
   ],
   "Stored data cleanup and deletion workflows" => [
-    "facade gate open",
+    "facade list-failure/path split pinned",
     "BDBleApiImplTest.kt",
     "PolarBleApiImplTests.swift",
     "cleanup-workflow-policy.json",
     "StoredDataCleanupRuntimePolicyCommonTest.kt",
-    "facade compatibility tests",
-    "cleanup error/path splits before delegation"
+    "SDLOGS list-failure swallowing",
+    "SDLOGS list-failure propagation",
+    "empty-parent pruning",
+    "facade-error mapping gate",
+    "directory listing",
+    "automatic-sample protobuf date reads",
+    "public error translation adapter-owned"
   ],
   "Reset sync notification and H10 recording commands" => [
-    "facade gate open",
+    "facade sync-failure split pinned",
     "BDBleApiImplTest.kt",
     "PolarBleApiImplTests.swift",
     "reset-sync-h10-command-policy.json",
     "CommandRuntimePolicyCommonTest.kt",
-    "platform facade success/error compatibility tests",
-    "sync failure splits before delegation"
+    "H10 recording start/stop/status query payloads and query failures",
+    "Android sync-start/sync-stop failure compatibility",
+    "iOS sync-start/sync-stop failure propagation",
+    "facade-error mapping gate",
+    "protobuf builders",
+    "BLE transport calls",
+    "sync failure split translation",
+    "public error mapping adapter-owned"
   ],
-  "Firmware update workflow" => FIRMWARE_FACADE_GATE_REQUIRED_TERMS
-}.freeze
-RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = {
   "REST service discovery and description" => [
-    "facade response-error pinned",
+    "facade response-error and sleep action paths pinned",
     "BDBleApiImplTest.kt",
     "PolarBleApiImplTests.swift",
     "rest-facade-runtime-policy.json",
     "rest-request-transport-policy.json",
+    "rest-service-mapping-readiness.json",
     "RestFacadeRuntimePolicyCommonTest.kt",
+    "RestServiceMappingCommonPolicyTest.kt",
     "RestRequestTransportPolicyCommonTest.kt",
     "response-error platform mapping",
-    "empty-success policy",
+    "empty-success policy pinned through shared transport planning plus platform parse/decode compatibility",
+    "shared sleep REST action-path planning",
+    "sleep REST action-path vector references",
     "facade-level public error compatibility assertions",
     "additional delegated REST operations before shared REST runtime delegation"
   ],
@@ -174,7 +198,8 @@ RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = {
     "OfflineTriggerRuntimePolicyCommonTest.kt",
     "response-queue cleanup split explicit",
     "cancellation coverage only if production shared delegation introduces cancellable tasks, observers, or streams"
-  ]
+  ],
+  "Firmware update workflow" => FIRMWARE_FACADE_GATE_REQUIRED_TERMS
 }.freeze
 PSFTP_TIMEOUT_LEDGER_REQUIRED_TERMS = {
   "Timeout without notification" => [
@@ -207,23 +232,23 @@ FAKE_TRANSPORT_PRE_MIGRATION_GATE_REQUIRED_TERMS = [
   "A runtime test must assert observer cleanup or cancellation propagation whenever it opens a stream, registers a listener, or starts an internal task."
 ].freeze
 GNSS_LOCATION_OWNERSHIP_COMMON_POLICY_REQUIRED_TERMS = [
-  "gnssLocationGoldenVectorsPinAndroidOwnedParserPolicyBeforeCommonMigration",
-  "gnssLocationReadinessManifestNamesEveryPreMigrationOwnershipFamily",
-  "GNSS_LOCATION_ANDROID_OWNED_VECTORS",
+  "gnssLocationGoldenVectorsPinSharedParserPolicyWithAndroidProductionDelegation",
+  "gnssLocationReadinessManifestNamesEverySharedParserDelegationFamily",
+  "GNSS_LOCATION_SHARED_PARSER_VECTORS",
   "protocol/sensors/gnss-location-readiness.json",
   "gnss-location-readiness",
-  "androidOwnedPreMigrationCharacterization",
+  "sharedParserAndroidProductionDelegation",
   "protocol/sensors/gnss-location-raw-type0-coordinate.json",
   "protocol/sensors/gnss-location-raw-type1-satellite-dilution.json",
   "protocol/sensors/gnss-location-raw-type2-satellite-summary.json",
   "protocol/sensors/gnss-location-raw-type3-nmea.json",
-  "android-owned-raw-type0-coordinate",
-  "android-owned-raw-type1-satellite-dilution",
-  "android-owned-raw-type2-satellite-summary",
-  "android-owned-raw-type3-nmea",
+  "shared-parser-raw-type0-coordinate",
+  "shared-parser-raw-type1-satellite-dilution",
+  "shared-parser-raw-type2-satellite-summary",
+  "shared-parser-raw-type3-nmea",
+  "android-production-delegation",
   "non-ios-parser-ownership",
-  "non-common-parser-ownership",
-  "future-shared-parser-parity-gate",
+  "shared-parser-parity-gate",
   "compile-verification-gate",
   "coordinate",
   "satelliteDilution",
@@ -232,7 +257,7 @@ GNSS_LOCATION_OWNERSHIP_COMMON_POLICY_REQUIRED_TERMS = [
   "consumerTests.hasStringArray(\"ios\")",
   "platforms.booleanValue(\"ios\")",
   "platforms.booleanValue(\"common\")",
-  "PROTOCOL_ONLY_MIGRATION_OWNERSHIP"
+  "SHARED_GNSS_LOCATION_MIGRATION_OWNERSHIP"
 ].freeze
 FAKE_TRANSPORT_HARNESS_DESCRIPTION_REQUIRED_TERMS = [
   "deterministic command capture",
@@ -259,37 +284,51 @@ SHARED_COMMON_PRODUCTION_CODEC_DEPENDENCY_TERMS = [
   "gzip",
   "zlib",
   "compression",
+  "gson",
+  "moshi",
   "okio",
   "kotlinx-io"
 ].freeze
 BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   "KmpFullCoverageTddBacklog.md" => [
-    "add real common protobuf/gzip production dependencies",
-    "full AES implementation ownership still must be chosen",
-    "add byte-level shared codec vectors before moving gzip/deflate behavior into common code",
-    "byte-identical output",
+    "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
+    "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
+    "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
+    "shared-common-aes-production-decryption",
+    "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
+    "training-session gzip payload decompression now uses shared KMP platform actuals",
+    "Watch-face FlatBuffer byte input parsing and output construction now live in shared production code",
     "KVTX"
   ],
   "KmpCoverageInventory.md" => [
-    "Keep generic iOS `Data.deflated`/`Data.inflated` platform-specific unless a future shared REST codec deliberately standardizes gzip/zlib behavior for KMP common code.",
+    "REST event compressed payload decoding now uses shared KMP platform actual codecs while generic iOS `Data.deflated`/`Data.inflated` remains platform-specific.",
+    "linked iOS `PolarRestServiceProjectionPlanner` now consume shared REST JSON parsing",
+    "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
     "Keep iOS nil-on-truncation compatibility adapter-owned if required while common parsing uses typed malformed-script errors.",
     "semantic and codec-ownership/readiness policy executable"
   ],
   "KmpPreMigrationRemainingWork.md" => [
-    "Add real common protobuf/gzip/crypto/codec dependencies",
-    "training-session payload parsing",
-    "PMD AES secret handling",
-    "compression helpers",
-    "shared FlatBuffer/KVTX byte-identical output decision"
+    "Generated public protobuf object reconstruction remains platform-owned",
+    "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
+    "training-session payloads",
+    "Training-session gzip payload decoding now uses shared KMP platform actuals",
+    "PMD AES ECB/no-padding decryption now lives in shared common production code",
+    "watch-face FlatBuffer input/output construction lives in shared common production code",
+    "training-session deferral artifacts"
   ],
   "payload-read-policy.json" => [
     "byteLevelParserGate",
-    "add-common-protobuf-and-gzip-parser-dependencies-before-byte-level-payload-migration",
-    "deferred-until-common-protobuf-and-gzip-parser-exist"
+    "selected-common-protobuf-field-parser-active-before-generated-model-reconstruction",
+    "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred",
+    "readPlan",
+    "publicModelReadPlanPolicy",
+    "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects"
   ],
   "payload-parser-policy.json" => [
-    "Before moving byte-level training payload parsing to common code, add production common protobuf and gzip dependencies",
-    "without claiming common byte decoding is implemented",
+    "Selected training payload protobuf field parsing now executes in shared KMP",
+    "generated public protobuf object construction remains platform-owned",
+    "shared selected-field parser policy",
+    "publicModelSlot",
     "training-session-summary-protobuf",
     "exercise-summary-protobuf",
     "route-protobuf",
@@ -302,22 +341,54 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "gzip-protobuf"
   ],
   "training-session-readiness.json" => [
-    "byte-level-parser-dependency-gate",
-    "real byte-level protobuf/gzip decoding remains deferred until common production parser dependencies exist and are compile-verified"
+    "selected-protobuf-field-parser-ownership",
+    "shared-gzip-payload-codec",
+    "public-model-read-plan",
+    "generated-public-protobuf-construction-boundary",
+    "public-model-slot-planning",
+    "public-generated-model-reconstruction-boundary",
+    "shared selected protobuf field parsing",
+    "shared public-model read planning",
+    "generated public protobuf construction boundaries",
+    "generated public protobuf model reconstruction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered"
   ],
   "secret-readiness.json" => [
     "AES block-alignment gating",
-    "production common AES provider selection remains an explicit implementation gate rather than a test-only shortcut"
+    "shared-common-aes-production-decryption",
+    "shared production code owns NONE/XOR decryption and shared common AES ECB/no-padding decryption"
   ],
   "rest-event-compression-readiness.json" => [
     "android-gzip-codec-reference-gate",
     "ios-deflate-codec-reference-gate",
-    "normalize-or-preserve-codec-decision-gate"
+    "shared-platform-actual-codec-gate"
   ],
   "watch-face-readiness.json" => [
-    "byte-identical FlatBuffer output remains platform-specific unless production shared FlatBuffer builders are deliberately introduced and compile-verified"
+    "flatbuffer-byte-input-parser",
+    "flatbuffer-byte-output-shared-code",
+    "shared FlatBuffer byte input parsing",
+    "shared FlatBuffer byte output construction"
   ]
 }.freeze
+GENERATED_TRAINING_PROTO_PUBLIC_MODEL_TERMS = [
+  "fi.polar.remote.representation.protobuf.TrainingSession",
+  "fi.polar.remote.representation.protobuf.Training.",
+  "fi.polar.remote.representation.protobuf.ExerciseRouteSamples",
+  "fi.polar.remote.representation.protobuf.ExerciseRouteSamples2",
+  "fi.polar.remote.representation.protobuf.ExerciseSamples",
+  "fi.polar.remote.representation.protobuf.ExerciseSamples2",
+  "TrainingSession.PbTrainingSession",
+  "Training.PbExerciseBase",
+  "ExerciseRouteSamples.PbExerciseRouteSamples",
+  "ExerciseRouteSamples2.PbExerciseRouteSamples2",
+  "ExerciseSamples.PbExerciseSamples",
+  "ExerciseSamples2.PbExerciseSamples2",
+  "Data_PbTrainingSession",
+  "Data_PbExerciseBase",
+  "Data_PbExerciseRouteSamples",
+  "Data_PbExerciseRouteSamples2",
+  "Data_PbExerciseSamples",
+  "Data_PbExerciseSamples2"
+].freeze
 FAKE_TRANSPORT_REQUIRED_OPERATIONS = %w[read write subscribe unsubscribe].freeze
 FAKE_TRANSPORT_REQUIRED_OUTCOMES = %w[Bytes TransportError ResponseError Timeout Complete].freeze
 FAKE_TRANSPORT_TEST_REQUIRED_TERMS = [
@@ -383,6 +454,7 @@ FAKE_TRANSPORT_COMMON_TEST_REQUIRED_TERMS = [
 ].freeze
 FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS = [
   "resetSyncH10CommandPolicyVectorDefinesExecutableCommonCommandPlanning",
+  "resetSyncH10CommandVectorRunsThroughCommonFakeTransportFacadeShape",
   "resetSyncH10CommandReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/command-runtime/reset-sync-h10-command-policy.json",
   "sdk/command-runtime/reset-sync-h10-command-readiness.json",
@@ -401,6 +473,20 @@ FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS = [
   "h10-recording-status-query-failure",
   "REQUEST_RECORDING_STATUS",
   "recording-status-query-failed",
+  "live-exercise-start",
+  "START_EXERCISE",
+  "live-exercise-pause",
+  "PAUSE_EXERCISE",
+  "live-exercise-resume",
+  "RESUME_EXERCISE",
+  "live-exercise-stop",
+  "STOP_EXERCISE",
+  "live-exercise-status",
+  "GET_EXERCISE_STATUS",
+  "offline-exercise-v2-start",
+  "START_DM_EXERCISE",
+  "offline-exercise-v2-stop",
+  "offline-exercise-v2-status",
   "queryFailure",
   "transport-error",
   "factory-reset-notification-failure",
@@ -416,6 +502,8 @@ FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS = [
   "sync-stop-success",
   "sync-stop-notification-failure",
   "platform-split",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "syncStartQueryFailure",
   "syncStopNotificationFailure",
   "h10-recording-start-query",
@@ -424,6 +512,14 @@ FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS = [
   "h10-recording-stop-query-failure",
   "h10-recording-status-query",
   "h10-recording-status-query-failure",
+  "live-exercise-start-query",
+  "live-exercise-pause-query",
+  "live-exercise-resume-query",
+  "live-exercise-stop-query",
+  "live-exercise-status-query",
+  "offline-exercise-v2-start-query",
+  "offline-exercise-v2-stop-query",
+  "offline-exercise-v2-status-query",
   "factory-reset-flags",
   "preserve-pairing-reset-flags",
   "preserve-pairing-reset-notification-failure",
@@ -439,6 +535,13 @@ FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS = [
 ].freeze
 FAKE_TRANSPORT_COMMON_STORED_DATA_CLEANUP_RUNTIME_TEST_REQUIRED_TERMS = [
   "cleanupWorkflowPolicyVectorDefinesExecutableCommonTraversalAndPlatformSplits",
+  "cleanupWorkflowVectorRunsThroughCommonFakeTransportFacadeShape",
+  "cleanupWorkflowVectorRunsThroughCommonFakeTraversalRuntime",
+  "CommonStoredDataCleanupFakeTraversalRuntime",
+  "CleanupExecution",
+  "readCommands",
+  "removeCommands",
+  "REMOVE_EMPTY_DIRECTORY:/U/0/20260530/ACT",
   "cleanupWorkflowReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/stored-data-cleanup/cleanup-workflow-policy.json",
   "sdk/stored-data-cleanup/cleanup-workflow-readiness.json",
@@ -455,6 +558,8 @@ FAKE_TRANSPORT_COMMON_STORED_DATA_CLEANUP_RUNTIME_TEST_REQUIRED_TERMS = [
   "AUTOS001.BPB",
   "platform-path-split",
   "platform-split",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "sdlogsListFailure",
   "activityEmptyParentRemovePath",
   "telemetry-trc-filter",
@@ -462,10 +567,12 @@ FAKE_TRANSPORT_COMMON_STORED_DATA_CLEANUP_RUNTIME_TEST_REQUIRED_TERMS = [
   "empty-parent-path-platform-split",
   "facade-error-mapping-gate",
   "compile-verified",
-  "FakeStoredDataCleanupRuntime"
+  "storedDataDateIsOnOrBefore",
+  "PolarWorkflowRuntimePlanning.planStoredDataCleanup"
 ].freeze
 FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS = [
   "diskTimeQueryPolicyVectorDefinesExecutableCommonQueryPlanning",
+  "diskTimeQueryVectorRunsThroughCommonFakeTransportFacadeShape",
   "diskTimeQueryReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/disk-time-runtime/disk-time-query-policy.json",
   "sdk/disk-time-runtime/disk-time-query-readiness.json",
@@ -486,6 +593,8 @@ FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS = [
   "get-local-time-with-zone-failure",
   "get-disk-space-failure",
   "transport-error",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "disk-space-query",
   "local-time-query",
   "local-time-with-zone-query",
@@ -500,6 +609,7 @@ FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS = [
 ].freeze
 FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = [
   "userDeviceSettingsRuntimePolicyVectorDefinesExecutableCommonReadWritePlanning",
+  "userDeviceSettingsRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
   "userDeviceSettingsRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/user-device-settings-runtime/settings-runtime-policy.json",
   "sdk/user-device-settings-runtime/settings-runtime-readiness.json",
@@ -508,18 +618,25 @@ FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = [
   "/U/0/S/UDEVSET.BPB",
   "get-user-device-settings",
   "get-user-device-settings-read-failure",
+  "set-user-device-settings",
+  "set-user-device-settings-write-failure",
   "set-telemetry-enabled",
   "set-telemetry-read-failure",
   "set-telemetry-write-failure",
   "set-user-device-location",
+  "set-user-device-location-read-failure",
   "set-user-device-location-write-failure",
   "set-usb-connection-mode",
+  "set-usb-connection-mode-read-failure",
   "set-usb-connection-mode-write-failure",
   "set-automatic-training-detection",
+  "set-automatic-training-detection-read-failure",
   "set-automatic-training-detection-write-failure",
   "set-automatic-ohr-measurement",
+  "set-automatic-ohr-measurement-read-failure",
   "set-automatic-ohr-measurement-write-failure",
   "set-daylight-saving-time",
+  "protobufPayload=platform-built",
   "telemetryEnabled=true",
   "deviceLocation=WRIST_RIGHT",
   "usbConnectionMode=ON",
@@ -529,8 +646,17 @@ FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = [
   "automaticOhrMeasurement=ALWAYS_ON",
   "daylightSaving.nextDaylightSavingTime=present",
   "transport-error-after-payload",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "read-failure no-write behavior",
   "settings-read-failure-no-write",
+  "telemetry-read-failure-no-write",
+  "device-location-read-failure-no-write",
+  "usb-connection-mode-read-failure-no-write",
+  "automatic-training-detection-read-failure-no-write",
+  "automatic-ohr-measurement-read-failure-no-write",
+  "whole-settings-direct-write",
+  "whole-settings-write-failure-after-payload",
   "telemetry-write-failure-after-payload",
   "usb-connection-mode-write-failure-after-payload",
   "automatic-training-detection-read-then-write",
@@ -543,13 +669,13 @@ FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = [
   "planUserDeviceSettings"
 ].freeze
 FAKE_TRANSPORT_COMMON_REST_RUNTIME_TEST_REQUIRED_TERMS = [
-  "restRequestTransportPolicyVectorRunsThroughCommonFakeTransport",
+  "restRequestTransportPolicyVectorRunsThroughProductionCommonPlanner",
   "restRequestTransportReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "rest-request-transport-policy",
   "sdk/rest-service/rest-request-transport-policy.json",
   "sdk/rest-service/rest-request-transport-readiness.json",
   "rest-request-transport-readiness",
-  "ScriptedCommonFakeTransport",
+  "PolarRuntimeOrchestration.planRestRequestTransport",
   "service-list-request-error-payload",
   "service-description-request-error-payload",
   "service-list-empty-transport-response",
@@ -558,23 +684,23 @@ FAKE_TRANSPORT_COMMON_REST_RUNTIME_TEST_REQUIRED_TERMS = [
   "empty-successful-response-policy-gate",
   "response-error-payload-status",
   "response-error-payload-message",
-  "facade-error-mapping-deferred",
+  "facade-error-mapping-pinned",
   "compile-verification-gate",
-  "toPftpCommand"
+  "PolarRestRequestTransportOperation"
 ].freeze
 FAKE_TRANSPORT_COMMON_FILE_RUNTIME_TEST_REQUIRED_TERMS = [
   "fileListingGoldenVectorsDefineExecutableCommonTraversalPolicy",
   "sdk/file-utils/list-files-shallow-all.json",
   "sdk/file-utils/list-files-recursive-filtered.json",
   "entry-name-contains-dot",
-  "fileReadWriteDeleteGoldenVectorRunsThroughCommonFakeTransport",
+  "fileReadWriteDeleteGoldenVectorRunsThroughProductionFileFacadePlanner",
   "sdk/file-utils/file-read-write-delete-operations.json",
-  "fileRuntimeErrorPolicyVectorRunsThroughCommonFakeTransport",
+  "fileRuntimeErrorPolicyVectorRunsThroughProductionCommonPlanner",
   "fileRuntimeErrorReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/file-utils/runtime-error-policy.json",
   "sdk/file-utils/runtime-error-readiness.json",
   "runtime-error-readiness",
-  "ScriptedCommonFakeTransport",
+  "PolarRuntimeOrchestration.planFileFacade",
   "directory-list-response-error-103",
   "directory-list-malformed-payload",
   "read-file-transport-error",
@@ -587,13 +713,16 @@ FAKE_TRANSPORT_COMMON_FILE_RUNTIME_TEST_REQUIRED_TERMS = [
   "directory-missing-status-103",
   "directory-malformed-payload-parse-failure",
   "write-file-payload-capture-before-stream-error",
-  "facade-error-mapping-deferred",
+  "facade-error-mapping-pinned",
   "compile-verification-gate",
-  "toPftpCommand"
+  "PolarRuntimeOrchestration.planFileRuntimeError"
 ].freeze
 FAKE_TRANSPORT_COMMON_FILE_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
   "fileFacadeRuntimePolicyVectorDefinesExecutableCommonCommandPlanning",
+  "fileFacadeRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
   "fileFacadeRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+  "ledConfigPayloadPlanningPreservesSdkAndPpiByteOrder",
+  "ledConfigPayloadBytes",
   "sdk/file-utils/file-facade-runtime-policy.json",
   "sdk/file-utils/file-facade-runtime-readiness.json",
   "file-facade-runtime-policy",
@@ -629,6 +758,8 @@ FAKE_TRANSPORT_COMMON_FILE_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
   "pftp-response-error-code",
   "device-error-wrapper",
   "write-stream-error-after-payload",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "file-read-write-delete-operations.json",
   "runtime-error-policy.json",
   "list-files-shallow-all.json",
@@ -652,6 +783,7 @@ FAKE_TRANSPORT_COMMON_FILE_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
 ].freeze
 FAKE_TRANSPORT_COMMON_REST_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
   "restFacadeRuntimePolicyVectorDefinesExecutableCommonRequestPlanning",
+  "restFacadeRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
   "restFacadeRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/rest-service/rest-facade-runtime-policy.json",
   "sdk/rest-service/rest-facade-runtime-readiness.json",
@@ -693,6 +825,8 @@ FAKE_TRANSPORT_COMMON_REST_FACADE_RUNTIME_TEST_REQUIRED_TERMS = [
   "malformed-json",
   "json-parse-failure",
   "json-decoder-failure",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "rest-request-transport-policy.json",
   "service-list-request-path",
   "service-description-action-field-mapping",
@@ -716,6 +850,10 @@ FAKE_TRANSPORT_COMMON_REST_SERVICE_MAPPING_TEST_REQUIRED_TERMS = [
   "restServiceListGoldenVectorsDefineExecutableCommonMappingPolicy",
   "restServiceDescriptionGoldenVectorsDefineExecutableCommonMappingPolicy",
   "restServiceListWrongTypeGoldenVectorPinsPlatformSplitBeforeCommonDecoderMigration",
+  "PolarRestServiceList",
+  "PolarRestServiceDescription",
+  "PolarRestServiceModels.serviceList",
+  "PolarRestServiceModels.serviceDescription",
   "restServiceMappingReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/rest-service/rest-service-mapping-readiness.json",
   "rest-service-mapping-readiness",
@@ -750,13 +888,22 @@ FAKE_TRANSPORT_COMMON_REST_EVENT_COMPRESSION_TEST_REQUIRED_TERMS = [
   "android-gzip-codec-reference-gate",
   "ios-deflate-codec-reference-gate",
   "malformed-compressed-payload-platform-split",
-  "normalize-or-preserve-codec-decision-gate",
+  "shared-platform-actual-codec-gate",
   "compile-verification-gate",
+  "PolarRestEventCompressionCodec",
   "GZIPInputStream",
-  "normalize or explicitly preserve this platform split"
+  "shared KMP platform actual codecs"
 ].freeze
 FAKE_TRANSPORT_COMMON_BACKUP_UTILITY_TEST_REQUIRED_TERMS = [
   "backupExpansionAndRestoreWritesGoldenVectorDefinesExecutableCommonPolicy",
+  "backupWorkflowRunsThroughCommonFakeTraversalAndRestoreHarness",
+  "CommonBackupFakeRuntime",
+  "backupTraversalRootPath",
+  "backupTraversalPlan",
+  "directoryEntries",
+  "readCommands",
+  "restorePayloads",
+  "GET:/SYS/BACKUP.TXT",
   "restoreFailureGoldenVectorPinsPlatformSplitBeforeCommonWorkflowMigration",
   "backupWorkflowReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/backup-utils/backup-expansion-and-restore-writes.json",
@@ -771,14 +918,15 @@ FAKE_TRANSPORT_COMMON_BACKUP_UTILITY_TEST_REQUIRED_TERMS = [
   "restore-failure-aggregation-decision-gate",
   "compile-verification-gate",
   "choose whether restore failure aggregation belongs in shared code",
-  "ScriptedCommonFakeTransport"
+  "PolarWorkflowRuntimePlanning.planBackupRestore"
 ].freeze
 FAKE_TRANSPORT_COMMON_OFFLINE_TRIGGER_RUNTIME_TEST_REQUIRED_TERMS = [
-  "offlineTriggerRuntimePolicyVectorRunsThroughCommonFakeTransport",
+  "offlineTriggerRuntimePolicyVectorRunsThroughProductionCommonPlanner",
+  "offlineTriggerRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
   "offlineTriggerRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/offline-recording/trigger-runtime-policy.json",
   "sdk/offline-recording/trigger-runtime-readiness.json",
-  "ScriptedCommonFakeTransport",
+  "PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime",
   "set-trigger-success-with-secret",
   "set-trigger-mode-error",
   "set-trigger-status-read-error",
@@ -789,11 +937,14 @@ FAKE_TRANSPORT_COMMON_OFFLINE_TRIGGER_RUNTIME_TEST_REQUIRED_TERMS = [
   "setSetting",
   "control-point-error",
   "transport-error",
+  "Cancellation remains a production-delegation gate because current offline-trigger operations are synchronous control-point commands without stream observers or cancellable fake-runtime tasks.",
+  "ScriptedCommonFakeTransport",
+  "CommonFakeTransportCommand",
   "enabledFeatures",
   "typed-set-mode",
   "settings-write",
   "optional-secret-attachment",
-  "facade-error-mapping-deferred",
+  "facade-error-mapping-pinned",
   "compile-verified",
   "explicit length byte"
 ].freeze
@@ -823,11 +974,18 @@ FAKE_TRANSPORT_COMMON_FIRMWARE_UTILITY_TEST_REQUIRED_TERMS = [
   "SYSUPDAT.IMG"
 ].freeze
 FAKE_TRANSPORT_COMMON_FIRMWARE_WORKFLOW_TEST_REQUIRED_TERMS = [
-  "firmwareWorkflowRuntimePolicyVectorRunsThroughCommonFakeWorkflow",
+  "firmwareWorkflowRuntimePolicyVectorRunsThroughProductionCommonPlanner",
+  "firmwareWorkflowRuntimeVectorRunsThroughCommonFakeDependencies",
   "firmwareWorkflowRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+  "firmwarePackagePayloadSelectionKeepsAndroidReadmeSkipPolicyInSharedPlanning",
+  "firmwareRebootWaitSelectionUsesSharedSystemUpdateFilePolicy",
+  "firmwareAvailabilityFailureRetryClassificationUsesSharedPolicy",
+  "firmwareUpdateAvailabilityRequiresHigherVersionAndPackageUrl",
   "sdk/firmware-update/workflow-runtime-policy.json",
   "sdk/firmware-update/workflow-runtime-readiness.json",
-  "ScriptedCommonFakeTransport",
+  "PolarWorkflowRuntimePlanning.planFirmwareWorkflow",
+  "firmwareAvailabilityFailureIsRetryable",
+  "firmwareUpdateIsAvailable",
   "check-update-not-available",
   "check-update-available",
   "download-failure",
@@ -837,11 +995,27 @@ FAKE_TRANSPORT_COMMON_FIRMWARE_WORKFLOW_TEST_REQUIRED_TERMS = [
   "retryable-server-failure",
   "write-package-success-with-system-update-last",
   "system-update-reboot-response-is-success",
+  "non-system-reboot-response-is-terminal-failure",
+  "propagate-error",
   "SYSUPDAT.IMG",
   "rebooting",
   "battery-too-low-response-is-terminal-failure",
   "battery-too-low",
   "retryable server failure",
+  "CommonFirmwareFakeNetwork",
+  "CommonFirmwareFakePackageDownloader",
+  "CommonFirmwareFakeZipStore",
+  "CommonFirmwareFakeBleWriter",
+  "CommonFakeRetryScheduler",
+  "firmwarePayloadsByPath",
+  "firmwareArtifacts",
+  "firmwarePackageEntryIsPayload",
+  "firmwareFileTriggersRebootWait",
+  "bleWritePayloads",
+  "payloadsByPath",
+  "bleWriteProgressEvents",
+  "progressEvents",
+  "payloadHex.length / 2",
   "fake-network-availability",
   "fake-filesystem-zip-extraction",
   "ble-write-progress",
@@ -871,10 +1045,19 @@ FAKE_TRANSPORT_COMMON_PSFTP_RUNTIME_TEST_REQUIRED_TERMS = [
   "initial-silence",
   "wait-notification-has-no-built-in-initial-silence-timeout",
   "commonFakeNotificationRuntimeConsumerTimeoutCleansObserverWithVirtualClock",
-  "FakeNotificationTimeoutRuntime",
+  "PolarWorkflowRuntimePlanning.planConsumerTimeoutObserverCleanup",
   "consumerTimeout",
   "activeObserverCount",
   "cleanupCallbackCount",
+  "commonFakePsFtpHarnessPinsInitialSilenceTimeoutCleanupWithoutLeakedOperation",
+  "CommonFakePsFtpRuntimeHarness",
+  "descriptorEnabled",
+  "independentD2hChannelPackets",
+  "independentMtuChannelWrites",
+  "pendingOperationCount",
+  "operationScopeCleanupEvents",
+  "scanner-pause",
+  "scanner-resume",
   "commonFakeNotificationRuntimePinsRfc76ErrorAndTransportStatusPlatformSplit",
   "sdk/psftp-notifications/notification-error-policy.json",
   "rfc76-error-first-frame",
@@ -883,12 +1066,15 @@ FAKE_TRANSPORT_COMMON_PSFTP_RUNTIME_TEST_REQUIRED_TERMS = [
   "Nonzero transport status is a current platform split",
   "sdk/psftp-notifications/notification-continuation-timeout-policy.json",
   "missing-last-frame-after-more",
+  "commonFakePsFtpHarnessPinsContinuationTimeoutCleanupWithoutLeakedOperation",
   "commonFakeWriteRuntimePinsPlatformProgressSplitBeforeSharedPolicyChoice",
   "sdk/psftp-response/write-success-progress.json",
   "android-currently-emits-negative-header-overhead-progress-before-payload-count-while-ios-emits-initial-zero-header-progress-and-final-payload-count",
   "sdk/psftp-response/write-interruption-error-policy.json",
   "sdk/psftp-response/write-transport-failure-policy.json",
   "sdk/psftp-response/write-ack-timeout-policy.json",
+  "commonFakePsFtpHarnessPinsWriteAckTimeoutCleanupWithoutLeakedOperation",
+  "writeAckCount",
   "psFtpRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
   "sdk/psftp-response/psftp-runtime-readiness.json",
   "psftp-runtime-readiness",
@@ -1049,6 +1235,32 @@ PLATFORM_OWNED_COVERAGE_ROWS = {
   "Android Bluedroid host behavior" => ["Platform-specific", "Do not migrate to common code"],
   "iOS CoreBluetooth host behavior" => ["Platform-specific", "Do not migrate to common code"]
 }.freeze
+FEATURE_AVAILABILITY_VECTOR_REQUIRED_TERMS = [
+  "feature_availability_readiness",
+  "service-and-capability-gates",
+  "feature-name-normalization",
+  "h10-filesystem-capability-only-gate",
+  "unknown-feature-pass-through",
+  "platform-client-readiness-boundary",
+  "commonRuntimePrototype"
+].freeze
+FEATURE_AVAILABILITY_DOC_REQUIRED_TERMS = [
+  "feature-availability-readiness.json",
+  "FeatureAvailabilityCommonPolicyTest.kt",
+  "PolarRuntimePlannerAdapterTest.kt",
+  "PolarDataUtilsTest.swift",
+  "GATT client lookup",
+  "`clientReady` waits",
+  "PMD feature reads",
+  "public callback/error behavior"
+].freeze
+FEATURE_AVAILABILITY_TEST_REQUIRED_TERMS = [
+  "firmware-update-requires-psftp-and-firmware-capability",
+  "offline-exercise-v2-uses-h10-filesystem-capability-without-service-gate",
+  "unknown-feature-has-no-shared-preconditions",
+  "platform-client-readiness-boundary",
+  "SDK feature availability migration owns only deterministic service and capability preconditions"
+].freeze
 FULL_COVERAGE_EXIT_CRITERIA_TERMS = [
   "Every row marked `Partial` has either new tests, documented platform-specific ownership, or a migration deferral note.",
   "Every parser that moves to KMP has shared golden vectors covering valid, invalid, empty, boundary, and unknown-value cases.",
@@ -1175,7 +1387,32 @@ PLATFORM_OWNED_BACKLOG_REQUIRED_TERMS = [
   "Platform-owned gaps: Android Bluedroid host behavior, iOS CoreBluetooth host behavior, GATT client host interactions, and platform identifier routing should stay platform-specific unless a future slice defines a pure codec or deterministic state machine contract.",
   "BLE device lifecycle and GATT clients: keep platform-owned unless a slice extracts a pure codec or deterministic state machine with common fake-transport tests."
 ].freeze
+CURRENT_SHARED_POLICY_STATE_REQUIRED_TERMS = [
+  "## Current Shared-Policy State",
+  "runtime-pinned Android/iOS facade compatibility evidence in `KmpFakeTransportTestPlan.md`",
+  "New runtime/facade work should add operation-specific Android facade tests, iOS facade tests, and shared fake-transport tests only when a later production delegation slice introduces a new operation family",
+  "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
+  "BLE/session/GATT host behavior stays platform-owned unless a later slice defines a pure codec or deterministic state-machine contract"
+].freeze
+STALE_SHARED_POLICY_BACKLOG_TERMS = [
+  "## Remaining Shared-Policy Gaps",
+  "production shared delegation still needs remaining facade compatibility tests",
+  "Runtime/facade gaps:"
+].freeze
 STALE_SHARED_RUNTIME_VECTOR_NOTES = ["still need dedicated fake-transport vectors", "future fake-transport vectors"].freeze
+PMD_SENSOR_RUNTIME_ADAPTER_METHODS = %w[
+  pmdAccSamples
+  pmdEcgSamples
+  pmdGnssLocationSamples
+  pmdGyrSamples
+  pmdMagSamples
+  pmdOfflineHrSamples
+  pmdPpgSamples
+  pmdPpiSamples
+  pmdPressureSamples
+  pmdSkinTemperatureSamples
+  pmdTemperatureSamples
+].freeze
 COVERED_SENSOR_READINESS_MANIFESTS = {
   "protocol/sensors/acc-readiness.json" => "coveredByPreMigrationCharacterization",
   "protocol/sensors/ecg-readiness.json" => "coveredByPreMigrationCharacterization",
@@ -1898,6 +2135,12 @@ backlog = File.read(File.join(ROOT, "documentation/KmpFullCoverageTddBacklog.md"
 PLATFORM_OWNED_BACKLOG_REQUIRED_TERMS.each do |term|
   errors << "documentation/KmpFullCoverageTddBacklog.md: missing platform-owned boundary term #{term}" unless backlog.include?(term)
 end
+CURRENT_SHARED_POLICY_STATE_REQUIRED_TERMS.each do |term|
+  errors << "documentation/KmpFullCoverageTddBacklog.md: missing current shared-policy state term #{term}" unless backlog.include?(term)
+end
+STALE_SHARED_POLICY_BACKLOG_TERMS.each do |term|
+  errors << "documentation/KmpFullCoverageTddBacklog.md: stale remaining shared-policy gap term still present #{term}" if backlog.include?(term)
+end
 
 existing_kotlin_tests = Dir[File.join(ROOT, "sources/Android/android-communications/**/*.kt")].select { |path| File.file?(path) && File.basename(path).end_with?("Test.kt") }.map { |path| File.basename(path) }.to_set
 migration_readme_terms = required_term_constants["MIGRATION_README_TERMS"] || []
@@ -1946,6 +2189,27 @@ PLATFORM_OWNED_COVERAGE_ROWS.each do |behavior, terms|
   combined = "#{row[3]} #{row[4]} #{coverage_inventory}"
   terms.each do |term|
     errors << "documentation/KmpCoverageInventory.md: #{behavior}: missing platform-owned boundary term #{term}" unless combined.include?(term)
+  end
+end
+feature_availability_vector = File.read(File.join(ROOT, "testdata/golden-vectors/sdk/feature-availability/feature-availability-readiness.json"))
+feature_availability_docs = [
+  "documentation/KmpCoverageInventory.md",
+  "documentation/KmpFakeTransportTestPlan.md",
+  "documentation/KmpFullCoverageTddBacklog.md",
+  "documentation/KmpPreMigrationRemainingWork.md"
+].map { |path| File.read(File.join(ROOT, path)) }.join("\n")
+feature_availability_shared_test = File.read(File.join(ROOT, "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/FeatureAvailabilityCommonPolicyTest.kt"))
+feature_availability_android_test = File.read(File.join(ROOT, "sources/Android/android-communications/library/src/test/java/com/polar/sdk/impl/utils/PolarRuntimePlannerAdapterTest.kt"))
+feature_availability_ios_test = File.read(File.join(ROOT, "sources/iOS/ios-communications/Tests/PolarBleSdkTests/PolarDataUtilsTest.swift"))
+FEATURE_AVAILABILITY_VECTOR_REQUIRED_TERMS.each do |term|
+  errors << "testdata/golden-vectors/sdk/feature-availability/feature-availability-readiness.json: missing feature-availability term #{term}" unless feature_availability_vector.include?(term)
+end
+FEATURE_AVAILABILITY_DOC_REQUIRED_TERMS.each do |term|
+  errors << "KMP feature-availability docs: missing #{term}" unless feature_availability_docs.include?(term)
+end
+FEATURE_AVAILABILITY_TEST_REQUIRED_TERMS.each do |term|
+  unless feature_availability_shared_test.include?(term) && feature_availability_android_test.include?(term) && feature_availability_ios_test.include?(term)
+    errors << "Feature availability shared/Android/iOS tests must all assert #{term}"
   end
 end
 full_coverage_exit_section = coverage_inventory.split("## Full-Coverage Exit Criteria Before Migration", 2)[1] || ""
@@ -2361,19 +2625,35 @@ device_id_common_main = File.join(ROOT, "sources/Android/android-communications/
 device_id_common_test = File.join(ROOT, "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DeviceIdCommonPolicyTest.kt")
 android_device_id_utility = File.join(ROOT, "sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/polar/BlePolarDeviceIdUtility.kt")
 android_device_uuid = File.join(ROOT, "sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarDeviceUuid.kt")
+android_sdk_model_adapter = File.join(ROOT, "sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarSdkModelAdapter.kt")
 ios_shared_bridge = File.join(ROOT, "sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/ios/PolarIosSharedBridge.kt")
 ios_device_id_utility = File.join(ROOT, "sources/iOS/ios-communications/Sources/iOSCommunications/ble/api/model/polar/BlePolarDeviceIdUtility.swift")
 ios_device_uuid = File.join(ROOT, "sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/api/model/PolarDeviceUuid.swift")
 ios_time_utils = File.join(ROOT, "sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarTimeUtils.swift")
 ios_kmp_script = File.join(ROOT, "sources/iOS/ios-communications/scripts/build_kmp_ios_framework.sh")
+android_device_uuid_shared_route = File.file?(android_device_uuid) &&
+                                   (
+                                     File.read(android_device_uuid).include?("PolarDeviceId.uuidFromDeviceId") ||
+                                     (
+                                       File.read(android_device_uuid).include?("PolarSdkModelAdapter.uuidFromDeviceId") &&
+                                       File.file?(android_sdk_model_adapter) &&
+                                       File.read(android_sdk_model_adapter).include?("PolarDeviceId.uuidFromDeviceId")
+                                     )
+                                   )
 device_id_slice_migrated = File.file?(device_id_common_main) &&
                            File.read(device_id_common_main).include?("object PolarDeviceId") &&
                            File.file?(device_id_common_test) &&
                            File.read(device_id_common_test).include?("PolarDeviceId.uuidFromDeviceId") &&
                            File.file?(android_device_id_utility) &&
-                           File.read(android_device_id_utility).include?("PolarDeviceId.assembleFull") &&
-                           File.file?(android_device_uuid) &&
-                           File.read(android_device_uuid).include?("PolarDeviceId.uuidFromDeviceId")
+                           (
+                             File.read(android_device_id_utility).include?("PolarDeviceId.assembleFull") ||
+                             (
+                               File.read(android_device_id_utility).include?("PolarSdkModelAdapter.assembleFullDeviceId") &&
+                               File.file?(android_sdk_model_adapter) &&
+                               File.read(android_sdk_model_adapter).include?("PolarDeviceId.assembleFull")
+                             )
+                           ) &&
+                           android_device_uuid_shared_route
 ios_shared_consumption_migrated = File.file?(ios_shared_bridge) &&
                                   File.read(ios_shared_bridge).include?("object PolarIosSharedBridge") &&
                                   File.read(ios_shared_bridge).include?("PolarDeviceId.uuidFromDeviceId") &&
@@ -2462,6 +2742,8 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS.each do |artifact, required_terms|
                     File.join(ROOT, "testdata/golden-vectors/sdk/training-session/payload-parser-policy.json")
                   when "training-session-readiness.json"
                     File.join(ROOT, "testdata/golden-vectors/sdk/training-session/training-session-readiness.json")
+                  when "settings-model-readiness.json"
+                    File.join(ROOT, "testdata/golden-vectors/sdk/user-device-settings/settings-model-readiness.json")
                   when "secret-readiness.json"
                     File.join(ROOT, "testdata/golden-vectors/protocol/pmd/secret-readiness.json")
                   when "rest-event-compression-readiness.json"
@@ -2472,6 +2754,14 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS.each do |artifact, required_terms|
   artifact_text = artifact_path && File.file?(artifact_path) ? File.read(artifact_path) : ""
   required_terms.each do |term|
     errors << "#{artifact}: missing byte-level common dependency deferral term #{term}" unless artifact_text.include?(term)
+  end
+end
+Dir[File.join(ROOT, "sources/Android/android-communications/shared/src/commonMain/kotlin/**/*.kt")].each do |path|
+  text = File.read(path)
+  GENERATED_TRAINING_PROTO_PUBLIC_MODEL_TERMS.each do |term|
+    next unless text.include?(term)
+
+    errors << "#{relative(path)}: references generated training protobuf public model term #{term}; shared common training-session code must keep generated public protobuf object reconstruction platform-owned until an explicit DTO/reconstruction strategy exists"
   end
 end
 
@@ -2586,6 +2876,22 @@ Dir[File.join(common_main_root, "**/*.kt")].sort.each do |path|
 end
 COMMON_MAIN_PORTABILITY_PLAN_TERMS.each do |term|
   errors << "documentation/KmpMigrationPlan.md: missing commonMain portability term #{term}" unless migration_plan.include?(term)
+end
+
+pmd_model_root = File.join(ROOT, "sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/gatt/client/pmd/model")
+Dir[File.join(pmd_model_root, "**/*.kt")].sort.each do |path|
+  relative_path = relative(path)
+  File.readlines(path).each_with_index do |line, index|
+    next unless line.start_with?("import com.polar.shared")
+
+    errors << "#{relative_path}:#{index + 1}: Android PMD model production parser must use PolarRuntimePlannerAdapter instead of direct shared import: #{line.strip}"
+  end
+end
+retired_pmd_frame_adapter = File.join(pmd_model_root, "PolarSharedPmdFrameAdapter.kt")
+errors << "#{relative(retired_pmd_frame_adapter)}: retired Android PMD shared frame adapter must not be reintroduced" if File.exist?(retired_pmd_frame_adapter)
+runtime_planner_adapter = File.read(File.join(ROOT, "sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/impl/utils/PolarRuntimePlannerAdapter.kt"))
+PMD_SENSOR_RUNTIME_ADAPTER_METHODS.each do |method|
+  errors << "PolarRuntimePlannerAdapter.kt: missing PMD sensor parser bridge method #{method}" unless runtime_planner_adapter.include?("fun #{method}(")
 end
 
 fail_with(errors)

@@ -1,6 +1,7 @@
 // Copyright © 2026 Polar Electro Oy. All rights reserved.
 package com.polar.sdk.api
 
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -68,7 +69,9 @@ enum class PolarDeviceToHostNotification(val value: Int) {
 
     companion object {
         fun fromValue(value: Int): PolarDeviceToHostNotification? {
-            return values().find { it.value == value }
+            return PolarSdkModelAdapter.d2hNotificationTypeName(value)?.let { sharedName ->
+                entries.firstOrNull { notification -> notification.name == sharedName }
+            }
         }
     }
 }

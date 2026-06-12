@@ -1,6 +1,8 @@
 // Copyright © 2023 Polar Electro Oy. All rights reserved.
 package com.polar.sdk.impl
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.BleDeviceListener
 import com.polar.androidcommunications.api.ble.model.BleDeviceSession
 import com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContent
@@ -11,6 +13,7 @@ import com.polar.sdk.api.errors.PolarDeviceNotFound
 import com.polar.sdk.api.errors.PolarServiceNotAvailable
 import com.polar.sdk.api.model.PolarExerciseEntry
 import com.polar.sdk.api.model.PolarExerciseSession
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import fi.polar.remote.representation.protobuf.ExerciseSamples.PbExerciseSamples
 import fi.polar.remote.representation.protobuf.Structures
 import fi.polar.remote.representation.protobuf.Types
@@ -22,6 +25,7 @@ import org.junit.Test
 import protocol.PftpRequest
 import protocol.PftpResponse
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -405,6 +409,73 @@ class PolarOfflineExerciseV2ApiImplTest {
     }
 
     @Test
+    fun `offline exercise file headers use shared file facade planning`() {
+        val path = "/U/0/20260225/E/123456/SAMPLES.BPB"
+
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to path,
+            PolarOfflineExerciseV2ApiImpl.offlineExerciseFetchOperation(path)
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.REMOVE to path,
+            PolarOfflineExerciseV2ApiImpl.offlineExerciseRemoveOperation(path)
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/DEVICE.BPB",
+            PolarOfflineExerciseV2ApiImpl.offlineExerciseDeviceInfoReadOperation()
+        )
+    }
+
+    @Test
+    fun `offline exercise command queries use shared command planning`() {
+        Assert.assertEquals(
+            PftpRequest.PbPFtpQuery.START_DM_EXERCISE_VALUE,
+            PolarRuntimePlannerAdapter.queryValue(
+                PolarRuntimePlannerAdapter.planCommandQuery(
+                    id = "offline-exercise-v2-start",
+                    query = "START_DM_EXERCISE",
+                    parameters = listOf("sportProfileId=${PolarExerciseSession.SportProfile.RUNNING.id}")
+                )
+            )
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpQuery.STOP_EXERCISE_VALUE,
+            PolarRuntimePlannerAdapter.queryValue(
+                PolarRuntimePlannerAdapter.planCommandQuery(
+                    id = "offline-exercise-v2-stop",
+                    query = "STOP_EXERCISE",
+                    parameters = listOf("save=true")
+                )
+            )
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpQuery.GET_EXERCISE_STATUS_VALUE,
+            PolarRuntimePlannerAdapter.queryValue(
+                PolarRuntimePlannerAdapter.planCommandQuery("offline-exercise-v2-status", "GET_EXERCISE_STATUS")
+            )
+        )
+    }
+
+    @Test
+    fun `exercise session readiness manifest is pinned before offline exercise facade migration`() {
+        val manifest = loadExerciseSessionReadinessManifest()
+        val input = manifest.getAsJsonObject("input")
+        val expected = manifest.getAsJsonObject("expected")
+        val consumerTests = manifest.getAsJsonObject("consumerTests")
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+
+        Assert.assertEquals("exercise-session-readiness", manifest.get("id").asString)
+        Assert.assertEquals("exerciseSessionReadiness", input.get("kind").asString)
+        Assert.assertEquals(EXERCISE_SESSION_READINESS_FAMILIES, requiredFamilies)
+        Assert.assertEquals(EXERCISE_SESSION_READINESS_FAMILIES, coveredFamilies)
+        Assert.assertEquals(EXERCISE_SESSION_READINESS_COMMON_DECISION, expected.get("commonDecision").asString)
+        Assert.assertEquals(listOf("com.polar.sdk.api.model.PolarExerciseSessionTest", "com.polar.sdk.impl.PolarOfflineExerciseV2ApiImplTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("PolarOfflineExerciseV2Tests"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.ExerciseSessionModelsCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    @Test
     fun `test StartResult enum values`() {
         // Arrange
         // Act
@@ -458,5 +529,36 @@ class PolarOfflineExerciseV2ApiImplTest {
         every { client.isServiceDiscovered } returns false
 
         return Triple(client, listener, session)
+    }
+
+    private fun loadExerciseSessionReadinessManifest(): JsonObject {
+        return JsonParser().parse(
+            findRepositoryRoot()
+                .resolve("testdata/golden-vectors/sdk/exercise-session/exercise-session-readiness.json")
+                .readText()
+        ).asJsonObject
+    }
+
+    private fun findRepositoryRoot(): File {
+        return generateSequence(File(requireNotNull(System.getProperty("user.dir"))).absoluteFile) { file -> file.parentFile }
+            .first { file -> File(file, "testdata/golden-vectors/schema/golden-vector.schema.json").isFile }
+    }
+
+    private companion object {
+        val EXERCISE_SESSION_READINESS_FAMILIES = listOf(
+            "sport-profile-id-mapping",
+            "unknown-sport-profile-fallback",
+            "offline-exercise-start-command-planning",
+            "offline-exercise-stop-command-planning",
+            "offline-exercise-status-command-planning",
+            "offline-exercise-file-read-remove-paths",
+            "offline-exercise-device-info-path",
+            "protobuf-construction-platform-boundary",
+            "status-result-platform-boundary",
+            "public-error-mapping-boundary",
+            "platform-exercise-session-vector-reference-gate",
+            "compile-verification-gate"
+        )
+        const val EXERCISE_SESSION_READINESS_COMMON_DECISION = "Exercise-session migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS exercise-session tests continue to pin sport-profile ID mapping, unknown sport-profile fallback, offline exercise command planning, offline exercise file read/remove paths, device-info path planning, protobuf construction boundaries, status-result platform boundaries, public error mapping boundaries, platform vector references, and compile verification before broader exercise execution moves."
     }
 }

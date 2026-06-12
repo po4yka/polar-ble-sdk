@@ -183,6 +183,62 @@
       "/U/0/20250101/E/101200/00/SAMPLES.GZB",
       "/U/0/20250101/E/101200/00/SAMPLES2.GZB"
     ],
+    "readPlan": [
+      {
+        "path": "/U/0/20250101/E/101200/TSESS.BPB",
+        "fileName": "TSESS.BPB",
+        "publicModelSlot": "sessionSummary",
+        "exerciseIndex": null
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/BASE.BPB",
+        "fileName": "BASE.BPB",
+        "publicModelSlot": "exerciseSummary",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/ROUTE.BPB",
+        "fileName": "ROUTE.BPB",
+        "publicModelSlot": "route",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/ROUTE.GZB",
+        "fileName": "ROUTE.GZB",
+        "publicModelSlot": "route",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/ROUTE2.BPB",
+        "fileName": "ROUTE2.BPB",
+        "publicModelSlot": "routeAdvanced",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/ROUTE2.GZB",
+        "fileName": "ROUTE2.GZB",
+        "publicModelSlot": "routeAdvanced",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/SAMPLES.BPB",
+        "fileName": "SAMPLES.BPB",
+        "publicModelSlot": "samples",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/SAMPLES.GZB",
+        "fileName": "SAMPLES.GZB",
+        "publicModelSlot": "samples",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/SAMPLES2.GZB",
+        "fileName": "SAMPLES2.GZB",
+        "publicModelSlot": "samplesAdvanced",
+        "exerciseIndex": 0
+      }
+    ],
     "progress": {
       "totalBytes": 759,
       "completedBytes": 759,
@@ -240,9 +296,10 @@
       "progressPolicy": "compute-progress-from-reference-file-sizes-and-last-completed-file",
       "malformedPayloadPolicy": "omit-only-the-malformed-component-and-continue-reading-remaining-files",
       "unknownSampleListPolicy": "ignore-unknown-advanced-sample-lists-and-preserve-known-samples",
-      "byteLevelParserGate": "add-common-protobuf-and-gzip-parser-dependencies-before-byte-level-payload-migration",
-      "byteLevelPayloadStatus": "deferred-until-common-protobuf-and-gzip-parser-exist"
+      "publicModelReadPlanPolicy": "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects",
+      "byteLevelParserGate": "selected-common-protobuf-field-parser-active-before-generated-model-reconstruction",
+      "byteLevelPayloadStatus": "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred"
     }
   },
-  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, and unknown advanced sample-list handling. payload-parser-policy.json now pins the parser-family ownership cases; real byte-level protobuf/gzip decoding remains an explicit production gate because the current shared module has no common protobuf or gzip parser dependency."
+  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, and unknown advanced sample-list handling. payload-parser-policy.json now pins parser-family ownership; gzip payload decompression, selected protobuf field parsing, malformed payload isolation, and deterministic public-model read planning are owned by shared KMP, while generated public protobuf object reconstruction remains platform-owned until a broader shared DTO strategy is added."
 }

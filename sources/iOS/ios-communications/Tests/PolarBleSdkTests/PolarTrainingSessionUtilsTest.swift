@@ -18,6 +18,127 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         cancellables.removeAll()
     }
 
+    func testTrainingSessionReadAndDeleteHeadersUseSharedFileFacadePlanning() throws {
+        let reference = PolarTrainingSessionReference(
+            date: try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2, hour: 12, minute: 34, second: 56).date),
+            path: "/U/0/20260102/E/123456/TSESS.BPB",
+            trainingDataTypes: [.trainingSessionSummary],
+            exercises: [],
+            fileSize: 1024
+        )
+
+        let summaryOperation = PolarTrainingSessionUtils.trainingSessionSummaryReadOperation(path: reference.path)
+        XCTAssertEqual(summaryOperation.command, .get)
+        XCTAssertEqual(summaryOperation.path, "/U/0/20260102/E/123456/TSESS.BPB")
+
+        let exerciseOperation = PolarTrainingSessionUtils.trainingSessionExerciseFileReadOperation(path: "/U/0/20260102/E/123456/00/BASE.BPB")
+        XCTAssertEqual(exerciseOperation.command, .get)
+        XCTAssertEqual(exerciseOperation.path, "/U/0/20260102/E/123456/00/BASE.BPB")
+
+        let directoryOperation = PolarTrainingSessionUtils.trainingSessionDirectoryReadOperation(path: "/U/0/20260102/E/123456/")
+        XCTAssertEqual(directoryOperation.command, .get)
+        XCTAssertEqual(directoryOperation.path, "/U/0/20260102/E/123456/")
+
+        let parentOperation = PolarTrainingSessionUtils.trainingSessionDeleteParentReadOperation(reference: reference)
+        XCTAssertEqual(parentOperation.command, .get)
+        XCTAssertEqual(parentOperation.path, "/U/0/20260102/E/")
+
+        let removeWholeDayOperation = PolarTrainingSessionUtils.trainingSessionDeleteRemoveOperation(reference: reference, parentEntryCount: 1)
+        XCTAssertEqual(removeWholeDayOperation.command, .remove)
+        XCTAssertEqual(removeWholeDayOperation.path, "/U/0/20260102/E/")
+
+        let removeSessionOperation = PolarTrainingSessionUtils.trainingSessionDeleteRemoveOperation(reference: reference, parentEntryCount: 2)
+        XCTAssertEqual(removeSessionOperation.command, .remove)
+        XCTAssertEqual(removeSessionOperation.path, "/U/0/20260102/E/123456/")
+    }
+
+    func testTrainingSessionFileClassificationUsesSharedBridgeWhenLinked() async throws {
+        let date = "20250101"
+        let time = "123000"
+        let responses: [String: [Protocol_PbPFtpEntry]] = [
+            "/U/0/": [.with { $0.name = "\(date)/"; $0.size = 0 }],
+            "/U/0/\(date)/": [.with { $0.name = "E/"; $0.size = 0 }],
+            "/U/0/\(date)/E/": [.with { $0.name = "\(time)/"; $0.size = 0 }],
+            "/U/0/\(date)/E/\(time)/": [
+                .with { $0.name = "TSESS.BPB"; $0.size = 1024 },
+                .with { $0.name = "00/"; $0.size = 0 }
+            ],
+            "/U/0/\(date)/E/\(time)/00/": [
+                .with { $0.name = "BASE.BPB"; $0.size = 2048 },
+                .with { $0.name = "SAMPLES2.GZB"; $0.size = 4096 }
+            ]
+        ]
+        mockClient.requestReturnValueClosure = { header in
+            let op = try Protocol_PbPFtpOperation(serializedBytes: header)
+            return try Protocol_PbPFtpDirectory.with { $0.entries = responses[op.path, default: []] }.serializedData()
+        }
+
+        let references = try await PolarTrainingSessionUtils.getTrainingSessionReferences(client: mockClient)
+
+        XCTAssertEqual(references.first?.trainingDataTypes, [.trainingSessionSummary])
+        XCTAssertEqual(references.first?.exercises.first?.exerciseDataTypes, [.exerciseSummary, .samplesAdvancedFormatGzip])
+    }
+
+    func testTrainingSessionExerciseFilenamesUseSharedBridgeWhenLinked() throws {
+        XCTAssertEqual(PolarExerciseDataTypes.exerciseSummary.rawValue, "BASE.BPB")
+        XCTAssertEqual(PolarExerciseDataTypes.samplesAdvancedFormatGzip.rawValue, "SAMPLES2.GZB")
+        XCTAssertEqual(PolarTrainingSessionUtils.trainingSessionExerciseDataTypeFileName(dataType: .exerciseSummary), PolarExerciseDataTypes.exerciseSummary.rawValue)
+        XCTAssertEqual(PolarTrainingSessionUtils.trainingSessionExerciseDataTypeFileName(dataType: .samplesAdvancedFormatGzip), PolarExerciseDataTypes.samplesAdvancedFormatGzip.rawValue)
+    }
+
+    func testTrainingSessionPayloadFetchOrderUsesSharedPlanner() throws {
+        let reference = PolarTrainingSessionReference(
+            date: try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2, hour: 12, minute: 34, second: 56).date),
+            path: "/U/0/20260102/E/123456/TSESS.BPB",
+            trainingDataTypes: [.trainingSessionSummary],
+            exercises: [
+                PolarExercise(
+                    index: 0,
+                    path: "/U/0/20260102/E/123456/00",
+                    exerciseDataTypes: [.exerciseSummary, .route, .routeGzip, .samplesAdvancedFormatGzip],
+                    fileSizes: [
+                        "BASE.BPB": 10,
+                        "ROUTE.BPB": 20,
+                        "ROUTE.GZB": 30,
+                        "SAMPLES2.GZB": 40
+                    ]
+                )
+            ],
+            fileSize: 100
+        )
+
+        XCTAssertEqual(
+            [
+                "/U/0/20260102/E/123456/TSESS.BPB",
+                "/U/0/20260102/E/123456/00/BASE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.GZB",
+                "/U/0/20260102/E/123456/00/SAMPLES2.GZB"
+            ],
+            PolarTrainingSessionUtils.trainingSessionPayloadFetchOrder(reference: reference)
+        )
+        let readPlan = PolarTrainingSessionUtils.trainingSessionPayloadReadPlan(reference: reference)
+        XCTAssertEqual(readPlan.map(\.path), [
+            "/U/0/20260102/E/123456/TSESS.BPB",
+            "/U/0/20260102/E/123456/00/BASE.BPB",
+            "/U/0/20260102/E/123456/00/ROUTE.BPB",
+            "/U/0/20260102/E/123456/00/ROUTE.GZB",
+            "/U/0/20260102/E/123456/00/SAMPLES2.GZB"
+        ])
+        XCTAssertEqual(readPlan.map(\.fileName), ["TSESS.BPB", "BASE.BPB", "ROUTE.BPB", "ROUTE.GZB", "SAMPLES2.GZB"])
+        XCTAssertEqual(readPlan.map(\.publicModelSlot), ["sessionSummary", "exerciseSummary", "route", "route", "samplesAdvanced"])
+        XCTAssertEqual(readPlan.map(\.exerciseIndex), [nil, 0, 0, 0, 0])
+    }
+
+    func testTrainingSessionProgressPercentUsesSharedClampPolicy() throws {
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionProgressPercent(completedBytes: 0, totalBytes: 0), 0)
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionProgressPercent(completedBytes: 25, totalBytes: 100), 25)
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionProgressPercent(completedBytes: 125, totalBytes: 100), 100)
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionProgressPercent(completedBytes: -5, totalBytes: 100), 0)
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionReferenceDateMatches(date: "2024-02-29", fromDate: "2024-02-28", toDate: "2024-03-01"), true)
+        XCTAssertEqual(PolarRuntimePlanner.trainingSessionReferenceDateMatches(date: "2024-03-02", fromDate: "2024-02-28", toDate: "2024-03-01"), false)
+    }
+
     // MARK: - Helpers
 
     private func awaitFirst<T>(_ publisher: AnyPublisher<T, Error>, timeout: TimeInterval = 5) throws -> T? {
@@ -224,16 +345,62 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         XCTAssertEqual(prototypeCases.compactMap { $0["id"] as? String }, TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS, "payload-parser-policy")
         for (inputCase, prototypeCase) in zip(cases, prototypeCases) {
             let id = try XCTUnwrap(inputCase["id"] as? String, "payload-parser-policy")
+            let fileName = try XCTUnwrap(inputCase["fileName"] as? String, id)
+            let planned = try XCTUnwrap(PolarTrainingSessionUtils.trainingSessionPayloadParserCase(fileName: fileName), id)
             XCTAssertEqual(inputCase["parser"] as? String, prototypeCase["parser"] as? String, id)
             XCTAssertEqual(inputCase["encoding"] as? String, prototypeCase["encoding"] as? String, id)
+            XCTAssertEqual(inputCase["publicModelSlot"] as? String, prototypeCase["publicModelSlot"] as? String, id)
             XCTAssertEqual(inputCase["expectedFields"] as? [String], prototypeCase["fields"] as? [String], id)
+            XCTAssertEqual(planned.parser, inputCase["parser"] as? String, id)
+            XCTAssertEqual(planned.encoding, inputCase["encoding"] as? String, id)
+            XCTAssertEqual(PolarTrainingSessionUtils.trainingSessionPayloadEncoding(fileName: fileName), inputCase["encoding"] as? String, id)
+            XCTAssertEqual(PolarTrainingSessionUtils.trainingSessionPublicModelSlot(fileName: fileName), inputCase["publicModelSlot"] as? String, id)
         }
         XCTAssertEqual(cases.filter { ($0["encoding"] as? String) == "gzip-protobuf" }.count, 4, "payload-parser-policy")
-        XCTAssertEqual(commonParserPrototype["status"] as? String, "executable shared parser-policy coverage; byte decoding remains gated on common protobuf and gzip dependencies", "payload-parser-policy")
+        XCTAssertEqual(cases.compactMap { $0["publicModelSlot"] as? String }, ["sessionSummary", "exerciseSummary", "route", "route", "routeAdvanced", "routeAdvanced", "samples", "samples", "samplesAdvanced"], "payload-parser-policy")
+        XCTAssertEqual(commonParserPrototype["status"] as? String, "executable shared parser-policy coverage; gzip decoding is shared and protobuf parsing remains gated on common protobuf dependencies", "payload-parser-policy")
         XCTAssertEqual(expected["commonDecision"] as? String, TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION, "payload-parser-policy")
         XCTAssertEqual(consumerTests["android"] as? [String], ["com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"], "payload-parser-policy")
         XCTAssertEqual(consumerTests["ios"] as? [String], ["PolarTrainingSessionUtilsTest"], "payload-parser-policy")
         XCTAssertEqual(consumerTests["commonPrototype"] as? [String], ["com.polar.sharedtest.TrainingSessionCommonPolicyTest"], "payload-parser-policy")
+    }
+
+    func testTrainingSessionGzipPayloadDecodingDelegatesToSharedCodecAndPreservesMalformedThrowing() throws {
+        let compressed = try data(hex: "1f8b0800d7bd2a6a02ff2b294acccccbcc4bd72d4e2d2ececccfd34dafca2cd02d48acccc94f4c0100a58206c51d000000")
+        let expected = Data("training-session-gzip-payload".utf8)
+        let decoded = try PolarTrainingSessionUtils.decodePayload(fileName: "ROUTE.GZB", data: compressed)
+
+        XCTAssertEqual(decoded, expected)
+        XCTAssertEqual(try PolarTrainingSessionUtils.decodePayload(fileName: "BASE.BPB", data: expected), expected)
+        XCTAssertThrowsError(try PolarTrainingSessionUtils.decodePayload(fileName: "ROUTE.GZB", data: Data([0x01, 0x02, 0x03])))
+    }
+
+    func testTrainingSessionDecodedProtobufMalformedPreflightUsesSharedBridgeWhenLinked() throws {
+        let validSummaryNameOnly = Data([0x22, 0x01, 0x50])
+        let truncatedSummaryName = Data([0x22, 0x05, 0x50])
+
+        XCTAssertFalse(PolarRuntimePlanner.trainingSessionPayloadMalformed(fileName: "TSESS.BPB", payload: validSummaryNameOnly))
+        XCTAssertTrue(PolarRuntimePlanner.trainingSessionPayloadMalformed(fileName: "TSESS.BPB", payload: truncatedSummaryName))
+    }
+
+    func testTrainingSessionPayloadReadResultUsesSharedBridgeWhenLinked() throws {
+        let referenceText = [
+            "R|2026-01-02T12:34:56|/U/0/20260102/E/123456/TSESS.BPB|TRAINING_SESSION_SUMMARY|12",
+            "E|0|/U/0/20260102/E/123456/00/BASE.BPB|/U/0/20260102/E/123456/00|SAMPLES|SAMPLES.BPB:2"
+        ].joined(separator: "\n")
+        let result = PolarRuntimePlanner.trainingSessionPayloadReadResult(
+            referenceText: referenceText,
+            responses: [
+                (path: "/U/0/20260102/E/123456/TSESS.BPB", fileName: "TSESS.BPB", payload: Data([0x22, 0x01, 0x50])),
+                (path: "/U/0/20260102/E/123456/00/SAMPLES.BPB", fileName: "SAMPLES.BPB", payload: Data([0x10, 0x78]))
+            ],
+            fetchOrder: [
+                "/U/0/20260102/E/123456/TSESS.BPB",
+                "/U/0/20260102/E/123456/00/SAMPLES.BPB"
+            ]
+        )
+
+        XCTAssertTrue(result.hasPrefix("5|5|100|SAMPLES.BPB|P|0|0|0"), result)
     }
 
     func testTrainingSessionReadinessManifestIsPinnedBeforeMigration() throws {
@@ -265,13 +432,18 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             "unknown-advanced-sample-list-ignoring",
             "known-sample-preservation",
             "payload-parser-family-ownership",
-            "byte-level-parser-dependency-gate",
+            "selected-protobuf-field-parser-ownership",
+            "shared-gzip-payload-codec",
+            "public-model-read-plan",
+            "generated-public-protobuf-construction-boundary",
             "platform-training-session-vector-reference-gate",
+            "public-model-slot-planning",
+            "public-generated-model-reconstruction-boundary",
             "compile-verification-gate"
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, byte-level parser dependency gates, and compile verification remain explicit before production discovery/read orchestration moves.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared selected protobuf field parsing, shared public-model read planning, shared public-model slot planning, generated public protobuf construction boundaries, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.")
     }
 
     func test_readTrainingSession_shouldReturnTrainingSessionDataWithExercises() async throws {
@@ -546,8 +718,18 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
                 XCTAssertEqual(actualExercise.index, try number(expectedExercise, "iosIndex", id: id), "\(id) exercise \(exerciseIndex) index")
                 XCTAssertEqual(actualExercise.path, try XCTUnwrap(expectedExercise["iosPath"] as? String, id), "\(id) exercise \(exerciseIndex) path")
                 XCTAssertEqual(actualExercise.exerciseDataTypes.map(\.rawValue), try XCTUnwrap(expectedExercise["exerciseDataTypes"] as? [String], id).map { androidExerciseTypeToIOSRawValue($0) }, "\(id) exercise \(exerciseIndex) dataTypes")
+                XCTAssertEqual(actualExercise.fileSizes ?? [:], try fileSizes(expectedExercise, id: id), "\(id) exercise \(exerciseIndex) fileSizes")
             }
         }
+    }
+
+    private func fileSizes(_ fields: [String: Any], id: String) throws -> [String: Int64] {
+        let values = try XCTUnwrap(fields["fileSizes"] as? [String: Any], id)
+        var result: [String: Int64] = [:]
+        for (key, value) in values {
+            result[key] = Int64(try number(["value": value], "value", id: id))
+        }
+        return result
     }
 
     private func buildTrainingSessionReference(from fields: [String: Any]) throws -> PolarTrainingSessionReference {
@@ -671,6 +853,18 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
     private func number(_ object: [String: Any], _ key: String, id: String) throws -> Int {
         return try XCTUnwrap(object[key] as? NSNumber, "\(id) \(key)").intValue
     }
+
+    private func data(hex: String) throws -> Data {
+        var data = Data()
+        var index = hex.startIndex
+        while index < hex.endIndex {
+            let nextIndex = hex.index(index, offsetBy: 2, limitedBy: hex.endIndex) ?? hex.endIndex
+            let byte = try XCTUnwrap(UInt8(hex[index..<nextIndex], radix: 16))
+            data.append(byte)
+            index = nextIndex
+        }
+        return data
+    }
 }
 
 private let TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS = [
@@ -685,4 +879,4 @@ private let TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS = [
     "samples-advanced-gzip-protobuf"
 ]
 
-private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing to common code, add production common protobuf and gzip dependencies that can execute these parser cases against real bytes; until then this vector is the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies that can execute these parser cases against real bytes; gzip decompression and public-model slot planning are now shared KMP production code, and until protobuf parsing moves this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."

@@ -1,6 +1,6 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
-import com.polar.shared.pmd.PolarPmdControlPoint
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 enum class PmdActiveMeasurement(private val bitMask: Int?) {
     ONLINE_MEASUREMENT_ACTIVE(bitMask = 1),
@@ -11,7 +11,7 @@ enum class PmdActiveMeasurement(private val bitMask: Int?) {
 
     companion object {
         fun fromStatusResponse(responseByte: Byte): PmdActiveMeasurement {
-            return when (PolarPmdControlPoint.parseActiveMeasurement(responseByte.toInt() and 0xFF).activeBits) {
+            return when (PolarRuntimePlannerAdapter.pmdActiveMeasurementBits(responseByte)) {
                 ONLINE_MEASUREMENT_ACTIVE.bitMask -> ONLINE_MEASUREMENT_ACTIVE
                 OFFLINE_MEASUREMENT_ACTIVE.bitMask -> OFFLINE_MEASUREMENT_ACTIVE
                 ONLINE_AND_OFFLINE_ACTIVE.bitMask -> ONLINE_AND_OFFLINE_ACTIVE

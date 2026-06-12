@@ -3,7 +3,7 @@
   "area": "sdk.rest-service",
   "case": "rest_event_compression_readiness",
   "source": "REST event compression platform policy and shared codec-ownership prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the REST event notification compression behavior families that must remain covered before event payload decoding delegates to shared KMP code.",
+  "description": "Pins the REST event notification compression behavior families that must remain covered while event payload decoding delegates to shared KMP platform actual codecs.",
   "input": {
     "kind": "restEventCompressionReadiness",
     "policyVectorPath": "sdk/rest-service/rest-event-compression-platform-policy.json",
@@ -15,7 +15,7 @@
       "ios-deflate-codec-reference-gate",
       "malformed-compressed-payload-platform-split",
       "notification-payload-order-gate",
-      "normalize-or-preserve-codec-decision-gate",
+      "shared-platform-actual-codec-gate",
       "platform-event-vector-reference-gate",
       "compile-verification-gate"
     ]
@@ -29,11 +29,11 @@
       "ios-deflate-codec-reference-gate",
       "malformed-compressed-payload-platform-split",
       "notification-payload-order-gate",
-      "normalize-or-preserve-codec-decision-gate",
+      "shared-platform-actual-codec-gate",
       "platform-event-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior is deliberately normalized or deliberately preserved, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
+    "commonDecision": "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior are preserved through shared KMP platform actual codecs, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
   },
   "consumerTests": {
     "android": [
@@ -51,5 +51,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for REST event notification decoding only; the shared codec choice is intentionally unresolved until KMP can either standardize gzip/deflate behavior or preserve the current Android/iOS malformed-payload split behind explicit adapters."
+  "notes": "This readiness manifest is a migration gate for REST event notification decoding only; KMP now owns codec dispatch while platform actuals preserve the Android gzip and iOS zlib behavior plus the existing malformed-payload split."
 }

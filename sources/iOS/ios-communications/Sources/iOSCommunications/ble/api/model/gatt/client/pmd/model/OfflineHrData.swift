@@ -1,6 +1,9 @@
 //  Copyright © 2023 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class OfflineHrData {
     
@@ -29,6 +32,11 @@ public class OfflineHrData {
     }
     
     private static func dataFromRawType0(frame: PmdDataFrame) throws -> OfflineHrData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawData(frame: frame) {
+            return sharedData
+        }
+        #endif
         let offlineHrData = OfflineHrData()
         var offset = 0
         while (offset < frame.dataContent.count) {
@@ -39,6 +47,11 @@ public class OfflineHrData {
     }
 
     private static func dataFromRawType1(frame: PmdDataFrame) throws -> OfflineHrData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawData(frame: frame) {
+            return sharedData
+        }
+        #endif
         let offlineHrData = OfflineHrData()
         var offset = 0
         while (offset < frame.dataContent.count) {
@@ -51,5 +64,62 @@ public class OfflineHrData {
             offset += 1
         }
         return offlineHrData
+    }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedRawData(frame: PmdDataFrame) -> OfflineHrData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_0 || frame.frameType == .type_1,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = OfflineHrDataRuntimePlanner.rawSamples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty || frame.dataContent.isEmpty else {
+            return nil
+        }
+        if sharedRows.isEmpty {
+            return OfflineHrData()
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> OfflineHrSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 3,
+                  let hr = UInt8(fields[0]),
+                  let ppgQuality = UInt8(fields[1]),
+                  let correctedHr = UInt8(fields[2]) else {
+                return nil
+            }
+            return OfflineHrSample(hr: hr, ppgQuality: ppgQuality, correctedHr: correctedHr)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return OfflineHrData(samples: samples)
+    }
+
+    private static func sharedDataFrameHex(frame: PmdDataFrame) -> String {
+        var data = Data([frame.measurementType.rawValue])
+        var littleEndianTimestamp = frame.timeStamp.littleEndian
+        withUnsafeBytes(of: &littleEndianTimestamp) { data.append(contentsOf: $0) }
+        let frameTypeByte = frame.frameType.rawValue | (frame.isCompressedFrame ? 0x80 : 0)
+        data.append(frameTypeByte)
+        data.append(frame.dataContent)
+        return data.map { String(format: "%02x", $0) }.joined()
+    }
+    #endif
+}
+
+enum OfflineHrDataRuntimePlanner {
+    static func rawSamples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.offlineHrRawSamples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
     }
 }

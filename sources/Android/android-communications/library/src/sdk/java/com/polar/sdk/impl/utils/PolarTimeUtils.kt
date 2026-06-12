@@ -1,10 +1,5 @@
 package com.polar.sdk.impl.utils
 
-import com.polar.shared.time.PolarDateFields
-import com.polar.shared.time.PolarDateTimeFields
-import com.polar.shared.time.PolarDurationFields
-import com.polar.shared.time.PolarTimeFields
-import com.polar.shared.time.PolarTimeUtils as SharedPolarTimeUtils
 import com.polar.services.datamodels.protobuf.Types.PbDateProto3
 import fi.polar.remote.representation.protobuf.Types.PbDate
 import fi.polar.remote.representation.protobuf.Types.PbDuration
@@ -30,10 +25,15 @@ internal object PolarTimeUtils {
 
     fun javaLocalDateTimeToPbPftpSetLocalTime(localDateTime: LocalDateTime): PftpRequest.PbPFtpSetLocalTimeParams {
         return toPbPftpSetLocalTimeParams(
-            PolarDateTimeFields(
-                date = PolarDateFields(localDateTime.year, localDateTime.monthValue, localDateTime.dayOfMonth),
-                time = PolarTimeFields(localDateTime.hour, localDateTime.minute, localDateTime.second, (localDateTime.nano / 1_000_000) % 1000),
-                timeZoneOffsetMinutes = SharedPolarTimeUtils.secondsToMinutes(localDateTime.atZone(ZoneId.systemDefault()).offset.totalSeconds)
+            PolarRuntimePlannerAdapter.dateTimeFields(
+                year = localDateTime.year,
+                month = localDateTime.monthValue,
+                day = localDateTime.dayOfMonth,
+                hour = localDateTime.hour,
+                minute = localDateTime.minute,
+                second = localDateTime.second,
+                millis = (localDateTime.nano / 1_000_000) % 1000,
+                timeZoneOffsetMinutes = PolarRuntimePlannerAdapter.secondsToMinutes(localDateTime.atZone(ZoneId.systemDefault()).offset.totalSeconds)
             )
         )
     }
@@ -59,7 +59,7 @@ internal object PolarTimeUtils {
             pbLocalTime.time.hour,
             pbLocalTime.time.minute,
             pbLocalTime.time.seconds,
-            SharedPolarTimeUtils.millisToNanos(pbLocalTime.time.millis),
+            PolarRuntimePlannerAdapter.millisToNanos(pbLocalTime.time.millis),
             zoneOffset
         )
         return Calendar.getInstance(TimeZone.getTimeZone(zoneOffset)).apply {
@@ -76,7 +76,7 @@ internal object PolarTimeUtils {
             pbLocalTime.time.hour,
             pbLocalTime.time.minute,
             pbLocalTime.time.seconds,
-            SharedPolarTimeUtils.millisToNanos(pbLocalTime.time.millis),
+            PolarRuntimePlannerAdapter.millisToNanos(pbLocalTime.time.millis),
             zoneId
         ).toLocalDateTime()
     }
@@ -90,7 +90,7 @@ internal object PolarTimeUtils {
             pbLocalTime.time.hour,
             pbLocalTime.time.minute,
             pbLocalTime.time.seconds,
-            SharedPolarTimeUtils.millisToNanos(pbLocalTime.time.millis),
+            PolarRuntimePlannerAdapter.millisToNanos(pbLocalTime.time.millis),
             zoneOffset
         )
     }
@@ -104,7 +104,7 @@ internal object PolarTimeUtils {
             pbDateTime.time.hour,
             pbDateTime.time.minute,
             pbDateTime.time.seconds,
-            SharedPolarTimeUtils.millisToNanos(pbDateTime.time.millis),
+            PolarRuntimePlannerAdapter.millisToNanos(pbDateTime.time.millis),
             zoneId
         )
     }
@@ -126,7 +126,7 @@ internal object PolarTimeUtils {
             pbDateTime.time.hour,
             pbDateTime.time.minute,
             pbDateTime.time.seconds,
-            SharedPolarTimeUtils.millisToNanos(pbDateTime.time.millis)
+            PolarRuntimePlannerAdapter.millisToNanos(pbDateTime.time.millis)
         ).atZone(tz).toLocalDateTime()
     }
 
@@ -138,7 +138,7 @@ internal object PolarTimeUtils {
             pbDateTime.time.hour,
             pbDateTime.time.minute,
             pbDateTime.time.seconds,
-            SharedPolarTimeUtils.millisToNanos(pbDateTime.time.millis)
+            PolarRuntimePlannerAdapter.millisToNanos(pbDateTime.time.millis)
         )
     }
 
@@ -150,7 +150,7 @@ internal object PolarTimeUtils {
             pbSystemDateTime.time.hour,
             pbSystemDateTime.time.minute,
             pbSystemDateTime.time.seconds,
-            SharedPolarTimeUtils.millisToNanos(pbSystemDateTime.time.millis)
+            PolarRuntimePlannerAdapter.millisToNanos(pbSystemDateTime.time.millis)
         )
     }
 
@@ -162,7 +162,7 @@ internal object PolarTimeUtils {
             pbSystemDateTime.time.hour,
             pbSystemDateTime.time.minute,
             pbSystemDateTime.time.seconds,
-            SharedPolarTimeUtils.millisToNanos(pbSystemDateTime.time.millis),
+            PolarRuntimePlannerAdapter.millisToNanos(pbSystemDateTime.time.millis),
             ZoneOffset.UTC
         )
     }
@@ -176,15 +176,13 @@ internal object PolarTimeUtils {
             pbTime.hour,
             pbTime.minute,
             pbTime.seconds,
-            SharedPolarTimeUtils.millisToNanos(pbTime.millis)
+            PolarRuntimePlannerAdapter.millisToNanos(pbTime.millis)
         )
     }
 
     // Returns duration in milliseconds
     fun pbDurationToInt(pbDuration: PbDuration): Int {
-        return SharedPolarTimeUtils.durationToMillis(
-            PolarDurationFields(pbDuration.hours, pbDuration.minutes, pbDuration.seconds, pbDuration.millis)
-        )
+        return PolarRuntimePlannerAdapter.durationMillis(pbDuration.hours, pbDuration.minutes, pbDuration.seconds, pbDuration.millis)
     }
 
     fun pbDateToLocalDate(pbDate: PbDateProto3): LocalDate {
@@ -195,19 +193,15 @@ internal object PolarTimeUtils {
         )
     }
 
-    private fun Calendar.localDateTimeFields(): PolarDateTimeFields {
-        return PolarDateTimeFields(
-            date = PolarDateFields(
-                year = this[Calendar.YEAR],
-                month = this[Calendar.MONTH] + 1,
-                day = this[Calendar.DAY_OF_MONTH]
-            ),
-            time = PolarTimeFields(
-                hour = this[Calendar.HOUR_OF_DAY],
-                minute = this[Calendar.MINUTE],
-                second = this[Calendar.SECOND],
-                millis = this[Calendar.MILLISECOND]
-            ),
+    private fun Calendar.localDateTimeFields(): PolarRuntimePlannerAdapter.PlannedDateTimeFields {
+        return PolarRuntimePlannerAdapter.dateTimeFields(
+            year = this[Calendar.YEAR],
+            month = this[Calendar.MONTH] + 1,
+            day = this[Calendar.DAY_OF_MONTH],
+            hour = this[Calendar.HOUR_OF_DAY],
+            minute = this[Calendar.MINUTE],
+            second = this[Calendar.SECOND],
+            millis = this[Calendar.MILLISECOND],
             timeZoneOffsetMinutes = TimeUnit.MINUTES.convert(
                 this[Calendar.ZONE_OFFSET].toLong() + this[Calendar.DST_OFFSET].toLong(),
                 TimeUnit.MILLISECONDS
@@ -215,15 +209,20 @@ internal object PolarTimeUtils {
         )
     }
 
-    private fun ZonedDateTime.systemDateTimeFields(): PolarDateTimeFields {
-        return PolarDateTimeFields(
-            date = PolarDateFields(year, monthValue, dayOfMonth),
-            time = PolarTimeFields(hour, minute, second, nano / 1_000_000),
+    private fun ZonedDateTime.systemDateTimeFields(): PolarRuntimePlannerAdapter.PlannedDateTimeFields {
+        return PolarRuntimePlannerAdapter.dateTimeFields(
+            year = year,
+            month = monthValue,
+            day = dayOfMonth,
+            hour = hour,
+            minute = minute,
+            second = second,
+            millis = nano / 1_000_000,
             trusted = true
         )
     }
 
-    private fun toPbPftpSetLocalTimeParams(fields: PolarDateTimeFields): PftpRequest.PbPFtpSetLocalTimeParams {
+    private fun toPbPftpSetLocalTimeParams(fields: PolarRuntimePlannerAdapter.PlannedDateTimeFields): PftpRequest.PbPFtpSetLocalTimeParams {
         return PftpRequest.PbPFtpSetLocalTimeParams.newBuilder()
             .setDate(fields.date.toPbDate())
             .setTime(fields.time.toPbTime())
@@ -231,7 +230,7 @@ internal object PolarTimeUtils {
             .build()
     }
 
-    private fun toPbPftpSetSystemTimeParams(fields: PolarDateTimeFields): PftpRequest.PbPFtpSetSystemTimeParams {
+    private fun toPbPftpSetSystemTimeParams(fields: PolarRuntimePlannerAdapter.PlannedDateTimeFields): PftpRequest.PbPFtpSetSystemTimeParams {
         return PftpRequest.PbPFtpSetSystemTimeParams.newBuilder()
             .setDate(fields.date.toPbDate())
             .setTime(fields.time.toPbTime())
@@ -239,7 +238,7 @@ internal object PolarTimeUtils {
             .build()
     }
 
-    private fun toPbSystemDateTime(fields: PolarDateTimeFields): PbSystemDateTime {
+    private fun toPbSystemDateTime(fields: PolarRuntimePlannerAdapter.PlannedDateTimeFields): PbSystemDateTime {
         return PbSystemDateTime.newBuilder()
             .setDate(fields.date.toPbDate())
             .setTime(fields.time.toPbTime())
@@ -247,14 +246,14 @@ internal object PolarTimeUtils {
             .build()
     }
 
-    private fun PolarDateFields.toPbDate(): PbDate.Builder {
+    private fun PolarRuntimePlannerAdapter.PlannedDateFields.toPbDate(): PbDate.Builder {
         return PbDate.newBuilder()
             .setYear(year)
             .setMonth(month)
             .setDay(day)
     }
 
-    private fun PolarTimeFields.toPbTime(): PbTime.Builder {
+    private fun PolarRuntimePlannerAdapter.PlannedTimeFields.toPbTime(): PbTime.Builder {
         return PbTime.newBuilder()
             .setHour(hour)
             .setMinute(minute)

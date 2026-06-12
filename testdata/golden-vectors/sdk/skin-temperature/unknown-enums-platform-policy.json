@@ -37,8 +37,8 @@
       ]
     },
     "ios": {
-      "sensorLocation": "SL_UNKNOWN",
-      "measurementType": "TM_UNKNOWN",
+      "sensorLocation": null,
+      "measurementType": null,
       "samples": [
         {
           "recordingTimeDeltaMs": 500,
@@ -47,7 +47,7 @@
       ]
     },
     "commonDecision": {
-      "unknownEnumPolicy": "choose-null-or-explicit-unknown-before-shared-model-migration"
+      "unknownEnumPolicy": "map-unrecognized-measurement-and-sensor-location-to-null-in-shared-models"
     }
   },
   "consumerTests": {
@@ -66,5 +66,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Unknown measurement type and sensor location currently map to null on Android and UNKNOWN on iOS."
+  "notes": "Unknown measurement type and sensor location map to null in shared-backed Android and linked iOS public models; non-shared iOS fallback still maps them to UNKNOWN."
 }

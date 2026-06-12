@@ -1,6 +1,9 @@
 
 import Foundation
 import CoreBluetooth
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 
 public class BleAdvertisementContent {
@@ -46,8 +49,9 @@ public class BleAdvertisementContent {
                 polarDeviceType = PolarAdvDataUtility.getDeviceNameFromAdvLocalName(advLocalName: name, withPrefixToTrim: advertisingDeviceNamePrefix)
                 if let devId = name.split(separator: " ").map(String.init).last {
                     polarDeviceIdUntouched = devId
-                    if let deviceId = UInt32(devId, radix: 16) {
-                        polarDeviceId = BlePolarDeviceIdUtility.assemblyFullPolarDeviceId(deviceId, width: devId.count)
+                    let sharedDeviceId = BleAdvertisementRuntimePlanner.localNameDeviceId(localName: name, deviceNamePrefix: advertisingDeviceNamePrefix, fallback: devId, useShared: !polarDeviceType.isEmpty)
+                    if let deviceId = UInt32(sharedDeviceId, radix: 16) {
+                        polarDeviceId = BlePolarDeviceIdUtility.assemblyFullPolarDeviceId(deviceId, width: sharedDeviceId.count)
                         polarDeviceIdInt = BlePolarDeviceIdUtility.polarDeviceIdToInt(polarDeviceId)
                         polarDeviceIdIntUntouched = BlePolarDeviceIdUtility.polarDeviceIdToInt(polarDeviceIdUntouched)
                     }
@@ -58,7 +62,16 @@ public class BleAdvertisementContent {
     
     func processManufacturerData(_ advertisementData: [String : Any]) {
         var didContainHrData = false
-        if let manData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data, manData.count >= 2 {
+        if let manData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data, let sharedPayloads = BleAdvertisementRuntimePlanner.polarHrAdvertisementPayloads(manufacturerData: manData) {
+            for payload in sharedPayloads {
+                polarHrAdvertisementData.processPolarManufacturerData(payload)
+                didContainHrData = true
+            }
+            if !didContainHrData {
+                polarHrAdvertisementData.resetToDefault()
+            }
+            return
+        } else if let manData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data, manData.count >= 2 {
             var manufacturer: Int16 = 0
             memcpy(&manufacturer, (manData as NSData).bytes, 2)
             if manufacturer == 0x006B {
@@ -104,3 +117,46 @@ public class BleAdvertisementContent {
         advData.removeAll()
     }
 }
+
+private enum BleAdvertisementRuntimePlanner {
+    static func localNameDeviceId(localName: String, deviceNamePrefix: String, fallback: String, useShared: Bool) -> String {
+        #if canImport(PolarBleSdkShared)
+        guard useShared else { return fallback }
+        return PolarIosSharedBridge.shared.advertisementLocalNameDeviceId(localName: localName, deviceNamePrefix: deviceNamePrefix)
+        #else
+        return fallback
+        #endif
+    }
+
+    static func polarHrAdvertisementPayloads(manufacturerData: Data) -> [Data]? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.polarHrAdvertisementPayloadsHex(manufacturerDataHex: manufacturerData.hexString)
+            .split(separator: "|")
+            .compactMap { Data(hexBytes: String($0)) }
+        #else
+        return nil
+        #endif
+    }
+}
+
+#if canImport(PolarBleSdkShared)
+private extension Data {
+    var hexString: String {
+        return map { String(format: "%02x", $0) }.joined()
+    }
+
+    init?(hexBytes: String) {
+        guard hexBytes.count % 2 == 0 else { return nil }
+        var bytes: [UInt8] = []
+        bytes.reserveCapacity(hexBytes.count / 2)
+        var index = hexBytes.startIndex
+        while index < hexBytes.endIndex {
+            let next = hexBytes.index(index, offsetBy: 2)
+            guard let byte = UInt8(hexBytes[index..<next], radix: 16) else { return nil }
+            bytes.append(byte)
+            index = next
+        }
+        self.init(bytes)
+    }
+}
+#endif

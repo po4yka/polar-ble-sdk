@@ -19,7 +19,7 @@
       "enabled-feature-projection",
       "excluded-feature-projection",
       "platform-packet-split",
-      "facade-error-mapping-deferred",
+      "facade-error-mapping-pinned",
       "compile-verification-gate"
     ]
   },
@@ -36,7 +36,7 @@
       "enabled-feature-projection",
       "excluded-feature-projection",
       "platform-packet-split",
-      "facade-error-mapping-deferred",
+      "facade-error-mapping-pinned",
       "compile-verification-gate"
     ],
     "commonDecision": "Offline trigger runtime migration may proceed only after trigger-runtime-policy.json and this readiness manifest are executable from shared commonTest, platform facade tests continue to reference the same policy vector, packet-framing differences are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified.",
@@ -61,5 +61,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for runtime behavior-family completeness only; byte-level PMD adapter framing, cancellation, cleanup, public facade error mapping, and compile verification remain required before production offline trigger runtime code moves to shared KMP."
+  "notes": "This readiness manifest is a migration gate for runtime behavior-family completeness only; byte-level PMD adapter framing and public facade error mapping are pinned through trigger-runtime-policy.json consumers, while cancellation, cleanup, and compile verification remain required before production offline trigger runtime code moves to shared KMP."
 }

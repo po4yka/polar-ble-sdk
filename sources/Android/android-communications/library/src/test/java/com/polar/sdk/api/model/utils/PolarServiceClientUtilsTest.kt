@@ -481,6 +481,21 @@ class PolarServiceClientUtilsTest {
     }
 
     @Test
+    fun `fetchSession rejects iOS UUID even though shared classifies it platform-specific`() {
+        val listener = mockk<BleDeviceListener>()
+        val session = mockk<BleDeviceSession>()
+        val advContent = mockk<BleAdvertisementContent>()
+        every { listener.deviceSessions() } returns setOf(session)
+        every { session.address } returns "123E4567-E89B-12D3-A456-426614174000"
+        every { session.advertisementContent } returns advContent
+        every { advContent.polarDeviceId } returns "E123456F"
+
+        Assert.assertThrows(PolarInvalidArgument::class.java) {
+            PolarServiceClientUtils.fetchSession("123E4567-E89B-12D3-A456-426614174000", listener)
+        }
+    }
+
+    @Test
     fun testFetchSessionThrows_when_device_disconnected() {
         // Arrange
         val deviceId = "E123456F"

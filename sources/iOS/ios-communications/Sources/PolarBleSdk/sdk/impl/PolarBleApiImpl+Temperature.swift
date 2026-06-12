@@ -12,13 +12,10 @@ extension PolarBleApiImpl: PolarTemperatureApi {
             throw PolarErrors.serviceNotFound
         }
         var results: [PolarSkinTemperatureData.PolarSkinTemperatureResult] = []
-        let calendar = Calendar.current
-        var currentDate = fromDate
-        while currentDate <= toDate {
-            if let skinTemp = await PolarSkinTemperatureUtils.readSkinTemperatureData(client: client, date: currentDate) {
+        for date in PolarTimeUtils.basicDateRange(fromDate: fromDate, toDate: toDate) {
+            if let skinTemp = await PolarSkinTemperatureUtils.readSkinTemperatureData(client: client, date: date) {
                 results.append(skinTemp)
             }
-            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
         }
         return results
     }

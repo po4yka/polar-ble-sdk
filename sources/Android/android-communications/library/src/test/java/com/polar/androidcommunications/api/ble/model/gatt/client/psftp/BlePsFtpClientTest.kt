@@ -136,6 +136,13 @@ internal class BlePsFtpClientTest {
     }
 
     @Test
+    fun `write timeout selection delegates extended sync package policy to shared runtime`() {
+        assertEquals(900L, blePsFtpClient.getWriteTimeoutForFilePath("/SYNCPART.TGZ"))
+        assertEquals(900L, blePsFtpClient.getWriteTimeoutForFilePath("/SYNCPART.TGZ/part0"))
+        assertEquals(90L, blePsFtpClient.getWriteTimeoutForFilePath("/U/0/S/UDEVSET.BPB"))
+    }
+
+    @Test
     fun `psftp response golden vectors reassemble request responses`() = runTest {
         val vector = loadPsFtpResponseVector("request-response-reassembly")
         val requestHeader = vector.getAsJsonObject("input").get("requestHeaderHex").asString.hexToByteArray()
@@ -437,6 +444,32 @@ internal class BlePsFtpClientTest {
     }
 
     @Test
+    fun `psftp notification continuation timeout executes with injected protocol timeout`() {
+        val vector = loadPsFtpNotificationVector("notification-continuation-timeout-policy")
+        val testCase = vector.getAsJsonObject("input").getAsJsonArray("cases").first().asJsonObject
+        val packet = testCase.getAsJsonArray("packets").first().asJsonObject
+        val expected = vector.getAsJsonObject("expected").getAsJsonObject("android")
+        val client = BlePsFtpClient(mockGattTxInterface)
+        client.protocolTimeoutSeconds = 1
+        client.descriptorWritten(RFC77_PFTP_D2H_CHARACTERISTIC, true, BleGattBase.ATT_SUCCESS)
+        client.processServiceData(RFC77_PFTP_D2H_CHARACTERISTIC, packet.get("frameHex").asString.hexToByteArray(), packet.get("status").asInt, true)
+
+        val thrown = Assert.assertThrows(Exception::class.java) {
+            runBlocking {
+                withTimeout(2_000) {
+                    client.waitForNotification().first()
+                }
+            }
+        }
+
+        assertEquals(vector.get("id").asString, expected.get("outcome").asString, "throwsNotificationReceiveFailed")
+        expected.getAsJsonArray("causeMessageContains").forEach { expectedText ->
+            Assert.assertTrue(vector.get("id").asString, throwableChainContains(thrown, expectedText.asString))
+        }
+        client.reset()
+    }
+
+    @Test
     fun `psftp notification golden vectors follow neutral KMP vector shape`() {
         loadPsFtpNotificationVectors().forEach { vector ->
             assertNeutralKmpVectorShape(vector)
@@ -460,18 +493,51 @@ internal class BlePsFtpClientTest {
     }
 
     @Test
+    fun `psftp write ack timeout executes with injected protocol timeout`() {
+        val vector = loadPsFtpResponseVector("write-ack-timeout-policy")
+        val input = vector.getAsJsonObject("input")
+        val header = buildPftpOperationHeader(input.get("command").asString, input.get("path").asString)
+        val payload = input.get("payloadHex").asString.hexToByteArray()
+        val expected = vector.getAsJsonObject("expected").getAsJsonObject("android")
+        val client = BlePsFtpClient(mockGattTxInterface)
+        client.protocolTimeoutSeconds = 1
+        client.descriptorWritten(RFC77_PFTP_MTU_CHARACTERISTIC, true, BleGattBase.ATT_SUCCESS)
+        client.setMtuSize(4)
+        client.setPacketsCount(1)
+
+        every { mockGattTxInterface.gattClientRequestStopScanning() } returns Unit
+        every { mockGattTxInterface.gattClientResumeScanning() } returns Unit
+        every { mockGattTxInterface.transmitMessage(RFC77_PFTP_SERVICE, RFC77_PFTP_MTU_CHARACTERISTIC, any(), any()) } returns Unit
+
+        val thrown = Assert.assertThrows(BlePsFtpUtils.PftpOperationTimeout::class.java) {
+            runBlocking {
+                withTimeout(2_000) {
+                    client.write(header, ByteArrayInputStream(payload)).toList()
+                }
+            }
+        }
+
+        assertEquals(vector.get("id").asString, expected.get("outcome").asString, "throwsOperationTimeout")
+        expected.getAsJsonArray("messageContains").forEach { expectedText ->
+            Assert.assertTrue(vector.get("id").asString, throwableChainContains(thrown, expectedText.asString))
+        }
+        verify(exactly = 1) { mockGattTxInterface.gattClientResumeScanning() }
+        client.reset()
+    }
+
+    @Test
     fun `psftp timeout planning vectors require fake clock before shared runtime migration`() {
         assertFakeClockPlanningVector(
             vector = loadPsFtpNotificationVector("notification-continuation-timeout-policy"),
-            androidExecution = "planned-fake-clock-or-injectable-timeout-required",
-            iosExecution = "planned-fake-clock-or-injectable-timeout-required",
+            androidExecution = "injectable-timeout-unit-test",
+            iosExecution = "injectable-timeout-xctest",
             commonExecution = "shared-common-test",
             expectedCaseIds = NOTIFICATION_CONTINUATION_TIMEOUT_CASE_IDS
         )
         assertFakeClockPlanningVector(
             vector = loadPsFtpResponseVector("write-ack-timeout-policy"),
-            androidExecution = "planned-fake-clock-or-injectable-timeout-required",
-            iosExecution = "planned-fake-clock-or-injectable-timeout-required",
+            androidExecution = "injectable-timeout-unit-test",
+            iosExecution = "injectable-timeout-xctest",
             commonExecution = "shared-common-test"
         )
     }
@@ -604,6 +670,15 @@ internal class BlePsFtpClientTest {
         assertEquals(id, commonExecution, execution.get("common").asString)
         val commonDecision = vector.getAsJsonObject("platformExpectations").getAsJsonObject("commonDecision")
         Assert.assertTrue(id, commonDecision.get("errorPolicy").asString.isNotBlank())
+    }
+
+    private fun throwableChainContains(throwable: Throwable, expectedText: String): Boolean {
+        var current: Throwable? = throwable
+        while (current != null) {
+            if (current.message?.contains(expectedText) == true) return true
+            current = current.cause
+        }
+        return false
     }
 
     private fun buildPftpOperationHeader(command: String, path: String): ByteArray {

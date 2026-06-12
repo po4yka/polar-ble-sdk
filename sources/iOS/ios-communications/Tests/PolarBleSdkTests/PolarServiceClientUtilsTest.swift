@@ -77,6 +77,18 @@ final class PolarServiceClientUtilsTest: XCTestCase {
         }
     }
 
+    func testFetchSession_rejectsAndroidBluetoothAddressEvenThoughSharedClassifiesItPlatformSpecific() {
+        let address = "00:11:22:33:44:55"
+        let session = makeSession(address: UUID())
+        sut.stubbedSessions = [session]
+
+        XCTAssertThrowsError(try sut.fetchSession(address)) { error in
+            guard case PolarErrors.invalidArgument = error else {
+                return XCTFail("Expected invalidArgument, got \(error)")
+            }
+        }
+    }
+
     func testIdentifierRoutingGoldenVectorsMatchIOSBehavior() throws {
         let vectors = try loadIdentifierRoutingGoldenVectors()
         XCTAssertFalse(vectors.isEmpty, "Expected identifier routing golden vectors")

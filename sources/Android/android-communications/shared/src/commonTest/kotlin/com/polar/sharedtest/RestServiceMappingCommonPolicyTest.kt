@@ -1,9 +1,23 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarRestServiceModels
+import com.polar.shared.sdk.PolarRestServiceDescription
+import com.polar.shared.sdk.PolarRestServiceList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class RestServiceMappingCommonPolicyTest {
+    @Test
+    fun sleepRestFacadePathsUseSharedPolicy() {
+        val manifest = loadGoldenVectorText("sdk/rest-service/rest-service-mapping-readiness.json")
+
+        assertEquals("/REST/SLEEP.API", PolarRestServiceModels.sleepApiPath())
+        assertEquals("/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]", PolarRestServiceModels.sleepRecordingStateSubscribePath())
+        assertEquals("/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording", PolarRestServiceModels.stopSleepRecordingPath())
+        assertEquals(true, manifest.stringArrayContains("requiredBehaviorFamilies", "sleep-rest-action-path-planning"))
+        assertEquals(true, manifest.stringArrayContains("coveredBehaviorFamilies", "sleep-rest-action-path-planning"))
+    }
+
     @Test
     fun restServiceListGoldenVectorsDefineExecutableCommonMappingPolicy() {
         listOf(
@@ -44,6 +58,8 @@ class RestServiceMappingCommonPolicyTest {
                 actions.objectEntries().forEach { action ->
                     assertEquals(action.value, description.actions[action.key], "${vector.stringValue("id")} action ${action.key}")
                 }
+                assertEquals(actions.objectEntries().map { action -> action.key }, description.actionNames, "${vector.stringValue("id")} action names")
+                assertEquals(actions.objectEntries().map { action -> action.value }, description.actionPaths, "${vector.stringValue("id")} action paths")
             }
             expected.objectValue("eventDetails").objectEntries().forEach { event ->
                 assertEquals(event.value.stringArrayItems(), description.details[event.key] ?: emptyList(), "${vector.stringValue("id")} details ${event.key}")
@@ -107,19 +123,12 @@ class RestServiceMappingCommonPolicyTest {
         assertEquals(listOf("com.polar.sharedtest.RestServiceMappingCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
-    private fun parseServiceList(json: String): RestServiceList {
-        val services = json.optionalObjectValue("services") ?: return RestServiceList(emptyMap())
-        return RestServiceList(services.objectEntries().associate { entry -> entry.key to entry.value })
+    private fun parseServiceList(json: String): PolarRestServiceList {
+        return PolarRestServiceModels.serviceListJson(json)
     }
 
-    private fun parseServiceDescription(json: String): RestServiceDescription {
-        val events = json.optionalStringArrayValue("events") ?: emptyList()
-        val endpoints = json.optionalStringArrayValue("endpoints") ?: emptyList()
-        val actions = json.optionalObjectValue("cmd")?.objectEntries()?.associate { action -> action.key to action.value } ?: emptyMap()
-        val topLevelObjects = json.objectEntries().associate { entry -> entry.key to entry.value }
-        val details = events.associateWith { event -> topLevelObjects[event]?.optionalStringArrayValue("details") ?: emptyList() }
-        val triggers = events.associateWith { event -> topLevelObjects[event]?.optionalStringArrayValue("triggers") ?: emptyList() }
-        return RestServiceDescription(events, endpoints, actions, details, triggers)
+    private fun parseServiceDescription(json: String): PolarRestServiceDescription {
+        return PolarRestServiceModels.serviceDescriptionJson(json)
     }
 
     private fun String.optionalObjectValue(field: String): String? {
@@ -162,6 +171,10 @@ class RestServiceMappingCommonPolicyTest {
         return Regex("\"([^\"]*)\"").findAll(this).map { it.groupValues[1] }.toList()
     }
 
+    private fun String.stringArrayMapValue(): Map<String, List<String>> {
+        return objectEntries().associate { entry -> entry.key to entry.value.stringArrayItems() }
+    }
+
     private fun String.booleanValue(field: String): Boolean {
         return Regex("\"$field\"\\s*:\\s*(true|false)").find(this)?.groupValues?.get(1)?.let { value -> value == "true" } ?: error("Missing boolean field $field in $this")
     }
@@ -193,24 +206,6 @@ class RestServiceMappingCommonPolicyTest {
         error("Unbalanced $open$close block")
     }
 
-    private data class RestServiceList(
-        val pathsForServices: Map<String, String>
-    ) {
-        val names: List<String>
-            get() = pathsForServices.keys.toList()
-
-        val paths: List<String>
-            get() = pathsForServices.values.toList()
-    }
-
-    private data class RestServiceDescription(
-        val events: List<String>,
-        val endpoints: List<String>,
-        val actions: Map<String, String>,
-        val details: Map<String, List<String>>,
-        val triggers: Map<String, List<String>>
-    )
-
     private data class JsonEntry(
         val key: String,
         val value: String
@@ -228,6 +223,7 @@ class RestServiceMappingCommonPolicyTest {
             "service-list-name-path-mapping",
             "service-list-empty-defaults",
             "service-description-action-event-mapping",
+            "sleep-rest-action-path-planning",
             "service-description-empty-defaults",
             "wrong-type-services-platform-split",
             "unknown-field-ignore-policy",

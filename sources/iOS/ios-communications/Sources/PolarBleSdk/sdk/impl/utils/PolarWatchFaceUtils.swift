@@ -1,6 +1,9 @@
 // Copyright 2026 Polar Electro Oy. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let TAG = "PolarWatchFaceUtils"
 
@@ -34,6 +37,18 @@ internal enum PolarWatchFaceUtils {
     private static let FB_FIELD_FONTFACE_ID:            Int = 5
     private static let FB_TABLE_FIELD_COUNT:            Int = 6
 
+    static func watchFaceReadOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return watchFaceOperation(id: "watch-face-read-kvtx", command: "GET") ?? (.get, KVTX_FILE_PATH)
+    }
+
+    static func watchFaceWriteOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return watchFaceOperation(id: "watch-face-write-kvtx", command: "PUT") ?? (.put, KVTX_FILE_PATH)
+    }
+
+    private static func watchFaceOperation(id: String, command: String) -> (command: Protocol_PbPFtpOperation.Command, path: String)? {
+        return PolarRuntimePlanner.fileFacadeOperation(id: id, command: command, path: KVTX_FILE_PATH)
+    }
+
     // MARK: - Public API
 
     /// Build a KVTXScript (WRITE_BYTES + COMMIT) carrying a full WatchfaceConfig FlatBuffer.
@@ -50,6 +65,11 @@ internal enum PolarWatchFaceUtils {
 
     /// Build a WatchfaceConfig FlatBuffer preserving all fields from `fields`.
     static func buildWatchFaceConfigFlatBuffer(fields: WatchfaceConfigFields) -> [UInt8] {
+        if let sharedHex = PolarWatchFaceRuntimePlanner.buildFlatBufferHex(fields: fields),
+           let sharedBytes = bytes(fromHex: sharedHex) {
+            return sharedBytes
+        }
+
         let builder = FlatBufferBuilder(initialSize: 256)
 
         // Build complication_ids vector first
@@ -94,10 +114,13 @@ internal enum PolarWatchFaceUtils {
     // MARK: - FlatBuffer decode
 
     static func parseWatchFaceConfigFlatBuffer(raw: [UInt8]) -> WatchfaceConfigFields {
-        let empty = WatchfaceConfigFields()
+        let empty = sharedWatchfaceConfigFields()
         guard raw.count >= 4 else {
             BleLogger.trace("\(TAG): parseWatchFaceConfigFlatBuffer: too short (\(raw.count) bytes), returning defaults")
             return empty
+        }
+        if let shared = PolarWatchFaceRuntimePlanner.parseFlatBufferCsv(rawHex: raw.hexString()).flatMap(parseSharedWatchfaceConfigFields) {
+            return shared
         }
 
         func u16At(_ p: Int) -> Int {
@@ -202,6 +225,70 @@ internal enum PolarWatchFaceUtils {
             return raw[rootOffset + fo]
         }()
 
+        return sharedWatchfaceConfigFields(
+            timeStyleId: timeStyleId,
+            complicationLayoutId: complicationLayoutId,
+            backgroundStyleId: backgroundStyleId,
+            accentColor: accentColor,
+            complicationIds: complicationIds,
+            fontfaceId: fontfaceId
+        )
+    }
+
+    private static func parseSharedWatchfaceConfigFields(_ csv: String) -> WatchfaceConfigFields? {
+        let fields = csv.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
+        guard fields.count == 6,
+              let timeStyleId = UInt16(fields[0]),
+              let complicationLayoutId = UInt16(fields[1]),
+              let backgroundStyleId = UInt16(fields[2]),
+              let accentColor = UInt32(fields[3]),
+              let fontfaceId = UInt8(fields[5]) else {
+            return nil
+        }
+        let complicationIds = fields[4].isEmpty ? [] : fields[4].split(separator: ";").compactMap { Int32($0) }
+        return WatchfaceConfigFields(
+            timeStyleId: timeStyleId,
+            complicationLayoutId: complicationLayoutId,
+            backgroundStyleId: backgroundStyleId,
+            accentColor: accentColor,
+            complicationIds: complicationIds,
+            fontfaceId: fontfaceId
+        )
+    }
+
+    private static func sharedWatchfaceConfigFields(
+        timeStyleId: UInt16 = 0,
+        complicationLayoutId: UInt16 = 0,
+        backgroundStyleId: UInt16 = 0,
+        accentColor: UInt32 = 0,
+        complicationIds: [Int32] = [],
+        fontfaceId: UInt8 = 0
+    ) -> WatchfaceConfigFields {
+        if let fields = PolarWatchFaceRuntimePlanner.fieldsCsv(
+            timeStyleId: timeStyleId,
+            complicationLayoutId: complicationLayoutId,
+            backgroundStyleId: backgroundStyleId,
+            accentColor: accentColor,
+            complicationIds: complicationIds,
+            fontfaceId: fontfaceId
+        )?.split(separator: ",", omittingEmptySubsequences: false).map(String.init) {
+            if fields.count == 6,
+               let sharedTimeStyleId = UInt16(fields[0]),
+               let sharedComplicationLayoutId = UInt16(fields[1]),
+               let sharedBackgroundStyleId = UInt16(fields[2]),
+               let sharedAccentColor = UInt32(fields[3]),
+               let sharedFontfaceId = UInt8(fields[5]) {
+                let sharedComplicationIds = fields[4].isEmpty ? [] : fields[4].split(separator: ";").compactMap { Int32($0) }
+                return WatchfaceConfigFields(
+                    timeStyleId: sharedTimeStyleId,
+                    complicationLayoutId: sharedComplicationLayoutId,
+                    backgroundStyleId: sharedBackgroundStyleId,
+                    accentColor: sharedAccentColor,
+                    complicationIds: sharedComplicationIds,
+                    fontfaceId: sharedFontfaceId
+                )
+            }
+        }
         return WatchfaceConfigFields(
             timeStyleId: timeStyleId,
             complicationLayoutId: complicationLayoutId,
@@ -220,11 +307,9 @@ internal enum PolarWatchFaceUtils {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = KVTX_FILE_PATH
+        let plannedOperation = watchFaceReadOperation()
         BleLogger.trace("\(TAG): readWatchFaceConfigFields: GET \(KVTX_FILE_PATH)")
-        let requestData = try operation.serializedData()
+        let requestData = try PolarRuntimePlanner.fileOperationBytes(plannedOperation)
         let responseData = try await client.request(requestData)
         let bytes = [UInt8](responseData)
         BleLogger.trace("\(TAG): readWatchFaceConfigFields: received \(bytes.count) bytes")
@@ -250,11 +335,30 @@ internal enum PolarWatchFaceUtils {
         let kvtxScript = buildKvtxScript(fields: existingFields)
         BleLogger.trace("\(TAG): writeWatchFaceComplicationInts: PUT \(kvtxScript.count) bytes to \(KVTX_FILE_PATH)")
 
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = .put
-        operation.path = KVTX_FILE_PATH
-        let proto = try operation.serializedData()
+        let plannedOperation = watchFaceWriteOperation()
+        let proto = try PolarRuntimePlanner.fileOperationBytes(plannedOperation)
         let inputStream = InputStream(data: Data(kvtxScript))
+        try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: kvtxScript.count)
         for try await _ in client.write(proto as NSData, data: inputStream) {}
     }
+}
+
+private extension Array where Element == UInt8 {
+    func hexString() -> String {
+        return map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+private func bytes(fromHex hex: String) -> [UInt8]? {
+    guard hex.count.isMultiple(of: 2) else { return nil }
+    var bytes: [UInt8] = []
+    bytes.reserveCapacity(hex.count / 2)
+    var index = hex.startIndex
+    while index < hex.endIndex {
+        let next = hex.index(index, offsetBy: 2)
+        guard let byte = UInt8(hex[index..<next], radix: 16) else { return nil }
+        bytes.append(byte)
+        index = next
+    }
+    return bytes
 }

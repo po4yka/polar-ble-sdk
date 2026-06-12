@@ -3,6 +3,9 @@
 //
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class PolarStoredDataType {
     
@@ -20,6 +23,12 @@ public class PolarStoredDataType {
         case SKINTEMP = "SKINTEMP"
         
         public func toInt() -> Int {
+            #if canImport(PolarBleSdkShared)
+            if let sharedValue = PolarStoredDataOfflineRuntimePlanner.storedDataTypeValue(name: String(describing: self)) {
+                return Int(truncating: sharedValue)
+            }
+            #endif
+
             let allValues: NSArray = StoredDataType.allCases as NSArray
             let result: Int = allValues.index(of: self)
             return result
@@ -41,6 +50,12 @@ public class PolarStoredDataType {
     }
     
     public static func getStringValue(dataTypeLocationIndex: Int) -> String {
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarStoredDataOfflineRuntimePlanner.storedDataTypeName(value: dataTypeLocationIndex) {
+            return sharedName
+        }
+        #endif
+
         return String(describing: StoredDataType.allCases[dataTypeLocationIndex])
     }
     
@@ -54,6 +69,14 @@ public class PolarStoredDataType {
     }
     
     public static func getValue(name: String) -> StoredDataType {
+        #if canImport(PolarBleSdkShared)
+        if let sharedValue = PolarStoredDataOfflineRuntimePlanner.storedDataTypeValue(name: name) {
+            let sharedIndex = Int(truncating: sharedValue)
+            if StoredDataType.allCases.indices.contains(sharedIndex) {
+                return StoredDataType.allCases[sharedIndex]
+            }
+        }
+        #endif
         
         for value in StoredDataType.allCases {
             if (name.compare("\(value)") == .orderedSame) {

@@ -6,6 +6,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.BleHrClient.Com
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils.PFTP_SERVICE_16BIT_UUID
 import com.polar.androidcommunications.common.ble.BleUtils
 import com.polar.androidcommunications.testrules.BleLoggerTestRule
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
@@ -126,6 +127,20 @@ internal class BleAdvertisementContentTest {
         bleAdvertisementContent.processAdvManufacturerData(gpbAndHr, bleAdvertisementContent.polarHrAdvertisement)
         Assert.assertNotNull(bleAdvertisementContent.polarHrAdvertisement)
         Assert.assertTrue(bleAdvertisementContent.polarHrAdvertisement.isPresent)
+    }
+
+    @Test
+    fun `manufacturer HR payload extraction delegates to shared KMP policy`() {
+        val gpbAndHrManufacturerData = byteArrayOf(
+            0x6b.toByte(), 0x00.toByte(),
+            0x72.toByte(), 0x08.toByte(), 0x97.toByte(), 0xc9.toByte(), 0xc3.toByte(), 0x00.toByte(), 0x00.toByte(),
+            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x7a.toByte(), 0x01.toByte(), 0x03.toByte(), 0x33.toByte(),
+            0x00.toByte(), 0x00.toByte()
+        )
+        val malformedGpbMissingLength = byteArrayOf(0x6b.toByte(), 0x00.toByte(), 0x40.toByte())
+
+        Assert.assertArrayEquals(byteArrayOf(0x33.toByte(), 0x00.toByte(), 0x00.toByte()), PolarSdkModelAdapter.polarManufacturerHrPayloads(gpbAndHrManufacturerData).single())
+        Assert.assertTrue(PolarSdkModelAdapter.polarManufacturerHrPayloads(malformedGpbMissingLength).isEmpty())
     }
 
     @Test

@@ -66,7 +66,7 @@
       "public Android and iOS facade error shape after shared runtime mapping"
     ],
     "commonRuntimePrototype": {
-      "status": "executable shared commonTest plus Android-hosted prototype",
+      "status": "executable shared commonTest",
       "cases": [
         {
           "id": "directory-list-response-error-103",
@@ -110,20 +110,18 @@
   },
   "consumerTests": {
     "android": [
-      "com.polar.sdk.api.model.utils.PolarFileUtilsTest",
-      "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"
+      "com.polar.sdk.api.model.utils.PolarFileUtilsTest"
     ],
     "ios": [
       "PolarFileUtilsTest"
     ],
     "commonPrototype": [
-      "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest",
       "com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"
     ]
   },
   "platformExpectations": {
-    "android": "planned facade-level fake-transport characterization for public error mapping",
-    "ios": "planned facade-level fake-transport characterization for public error mapping",
+    "android": "BDBleApiImplTest and file-facade-runtime-policy.json pin Android public low-level file response-error object/name mapping, empty-read success, write-stream failure, and delete request failure behavior",
+    "ios": "PolarBleApiImplTests and file-facade-runtime-policy.json pin iOS public low-level file response-error code mapping, empty-read success, write-stream failure, and delete request failure behavior",
     "common": "executable shared commonTest covers file command capture and typed runtime errors before facade mapping moves"
   },
   "platforms": {
@@ -133,7 +131,7 @@
   },
   "execution": {
     "status": "shared-common-test",
-    "reason": "Shared commonTest now asserts command capture, malformed directory payload handling, directory-missing status 103, request transport errors, response errors, and write-stream failures through the common fake transport; platform facade tests still need public error mapping before production file orchestration delegates to shared code."
+    "reason": "Shared commonTest now asserts command capture, malformed directory payload handling, directory-missing status 103, request transport errors, response errors, and write-stream failures through the common fake transport; Android and iOS public facade tests pin low-level file error mapping and empty-read behavior before production file orchestration delegates to shared code."
   },
-  "notes": "This vector complements executable file read/write/delete and directory-listing vectors with shared commonTest runtime checks. Public Android and iOS facade error mapping remains a migration gate before production file orchestration delegates to shared code."
+  "notes": "This vector complements executable file read/write/delete and directory-listing vectors with shared commonTest runtime checks plus Android and iOS public low-level file facade compatibility through file-facade-runtime-policy.json; directory traversal and additional file workflows still need their own facade compatibility before production file orchestration delegates to shared code."
 }

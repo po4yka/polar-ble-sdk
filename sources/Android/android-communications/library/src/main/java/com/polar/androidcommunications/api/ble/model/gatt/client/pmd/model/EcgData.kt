@@ -5,15 +5,13 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFram
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame.PmdDataFrameType
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrameUtils
 import com.polar.androidcommunications.common.ble.TypeUtils
-import com.polar.shared.pmd.sensors.PolarEcgType0Sample
-import com.polar.shared.pmd.sensors.PolarEcgType3Sample
-import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 sealed class EcgDataSample
 
 internal class EcgData {
 
-    data class EcgSample internal constructor(
+    data class EcgSample(
         val timeStamp: ULong,
         val microVolts: Int,
         val overSampling: Boolean = false,
@@ -23,7 +21,7 @@ internal class EcgData {
         val paceDataTag: Byte = 0,
     ) : EcgDataSample()
 
-    data class EcgSampleFrameType3 internal constructor(
+    data class EcgSampleFrameType3(
         val timeStamp: ULong,
         val data0: Int,
         val data1: Int,
@@ -44,9 +42,17 @@ internal class EcgData {
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): EcgData {
             val ecgData = EcgData()
-            PolarSensorDataParser.parseEcg(frame.toPolarSharedFrame()).forEach { sample ->
+            PolarRuntimePlannerAdapter.pmdEcgSamples(
+                frameType = frame.frameType.id.toInt(),
+                compressed = frame.isCompressedFrame,
+                timeStamp = frame.timeStamp,
+                previousTimeStamp = frame.previousTimeStamp,
+                factor = frame.factor,
+                sampleRate = frame.sampleRate,
+                dataContent = frame.dataContent
+            ).forEach { sample ->
                 when (sample) {
-                    is PolarEcgType0Sample -> ecgData.ecgSamples.add(
+                    is PolarRuntimePlannerAdapter.PlannedEcgType0Sample -> ecgData.ecgSamples.add(
                         EcgSample(
                             timeStamp = sample.timeStamp,
                             microVolts = sample.microVolts,
@@ -57,7 +63,7 @@ internal class EcgData {
                             paceDataTag = sample.paceDataTag
                         )
                     )
-                    is PolarEcgType3Sample -> ecgData.ecgSamples.add(
+                    is PolarRuntimePlannerAdapter.PlannedEcgType3Sample -> ecgData.ecgSamples.add(
                         EcgSampleFrameType3(
                             timeStamp = sample.timeStamp,
                             data0 = sample.data0,

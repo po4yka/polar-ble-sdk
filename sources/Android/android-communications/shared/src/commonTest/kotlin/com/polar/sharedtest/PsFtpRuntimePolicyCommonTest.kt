@@ -1,5 +1,13 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarPsFtpContinuationTimeout
+import com.polar.shared.runtime.PolarPsFtpNotificationPacket
+import com.polar.shared.runtime.PolarPsFtpNotification
+import com.polar.shared.runtime.PolarPsFtpResponseError
+import com.polar.shared.runtime.PolarPsFtpTransportWriteFailure
+import com.polar.shared.runtime.PolarPsFtpWriteAckTimeout
+import com.polar.shared.runtime.PolarWorkflowPlan
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -9,12 +17,11 @@ class PsFtpRuntimePolicyCommonTest {
     @Test
     fun commonFakeResponseRuntimeReassemblesRequestResponses() {
         val vector = loadGoldenVectorText("sdk/psftp-response/request-response-reassembly.json")
-        val runtime = FakePsFtpRuntime()
         val cases = vector.objectValue("input").objectArray("cases")
         assertEquals(REQUEST_RESPONSE_REASSEMBLY_CASE_IDS, cases.map { testCase -> testCase.stringValue("id") }, vector.stringValue("id"))
 
         cases.forEach { testCase ->
-            val response = runtime.request(testCase.stringArrayValue("responseFramesHex").map(::hexToBytes))
+            val response = PolarWorkflowRuntimePlanning.reassembleRequestResponse(testCase.stringArrayValue("responseFramesHex").map(::hexToBytes))
             assertEquals(testCase.objectValue("expected").stringValue("payloadHex"), response.toHex(), testCase.stringValue("id"))
         }
     }
@@ -22,13 +29,12 @@ class PsFtpRuntimePolicyCommonTest {
     @Test
     fun commonFakeResponseRuntimeMapsResponseErrorFramesToTypedResponseError() {
         val vector = loadGoldenVectorText("sdk/psftp-response/request-response-error-policy.json")
-        val runtime = FakePsFtpRuntime()
         val cases = vector.objectValue("input").objectArray("cases")
         assertEquals(REQUEST_RESPONSE_ERROR_CASE_IDS, cases.map { testCase -> testCase.stringValue("id") }, vector.stringValue("id"))
 
         cases.forEach { testCase ->
-            val thrown = assertFailsWith<ResponseError>(testCase.stringValue("id")) {
-                runtime.request(testCase.stringArrayValue("responseFramesHex").map(::hexToBytes))
+            val thrown = assertFailsWith<PolarPsFtpResponseError>(testCase.stringValue("id")) {
+                PolarWorkflowRuntimePlanning.reassembleRequestResponse(testCase.stringArrayValue("responseFramesHex").map(::hexToBytes))
             }
             assertEquals(testCase.objectValue("ios").intValue("errorCode"), thrown.errorCode, testCase.stringValue("id"))
         }
@@ -37,13 +43,12 @@ class PsFtpRuntimePolicyCommonTest {
     @Test
     fun commonFakeNotificationRuntimeReassemblesCompleteNotifications() {
         val vector = loadGoldenVectorText("sdk/psftp-notifications/notification-reassembly.json")
-        val runtime = FakePsFtpRuntime()
         val cases = vector.objectValue("input").objectArray("cases")
         assertEquals(NOTIFICATION_REASSEMBLY_CASE_IDS, cases.map { testCase -> testCase.stringValue("id") }, vector.stringValue("id"))
 
         cases.forEach { testCase ->
-            val notification = runtime.waitNotification(testCase.stringArrayValue("framesHex").map { frame ->
-                NotificationPacket(frame = hexToBytes(frame), transportStatus = 0)
+            val notification = PolarWorkflowRuntimePlanning.reassembleNotifications(testCase.stringArrayValue("framesHex").map { frame ->
+                PolarPsFtpNotificationPacket(frame = hexToBytes(frame), transportStatus = 0)
             }).single()
             val expected = testCase.objectValue("expected")
             assertEquals(expected.intValue("id"), notification.id, testCase.stringValue("id"))
@@ -54,13 +59,12 @@ class PsFtpRuntimePolicyCommonTest {
     @Test
     fun commonFakeNotificationRuntimePreservesCompleteNotificationOrdering() {
         val vector = loadGoldenVectorText("sdk/psftp-notifications/notification-ordering.json")
-        val runtime = FakePsFtpRuntime()
         val cases = vector.objectValue("input").objectArray("cases")
         assertEquals(NOTIFICATION_ORDERING_CASE_IDS, cases.map { testCase -> testCase.stringValue("id") }, vector.stringValue("id"))
 
         cases.forEach { testCase ->
-            val notifications = runtime.waitNotification(testCase.objectArray("packets").map { packet ->
-                NotificationPacket(
+            val notifications = PolarWorkflowRuntimePlanning.reassembleNotifications(testCase.objectArray("packets").map { packet ->
+                PolarPsFtpNotificationPacket(
                     frame = hexToBytes(packet.stringValue("frameHex")),
                     transportStatus = packet.intValue("status")
                 )
@@ -83,8 +87,8 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals(NOTIFICATION_TIMEOUT_CASE_IDS, cases.map { testCase -> testCase.stringValue("id") }, vector.stringValue("id"))
 
         cases.forEach { testCase ->
-            val notifications = FakePsFtpRuntime().waitNotification(testCase.objectArray("packets").map { packet ->
-                NotificationPacket(
+            val notifications = PolarWorkflowRuntimePlanning.reassembleNotifications(testCase.objectArray("packets").map { packet ->
+                PolarPsFtpNotificationPacket(
                     frame = hexToBytes(packet.stringValue("frameHex")),
                     transportStatus = packet.intValue("status")
                 )
@@ -101,14 +105,45 @@ class PsFtpRuntimePolicyCommonTest {
         val vector = loadGoldenVectorText("sdk/psftp-notifications/notification-timeout-policy.json")
         val case = vector.objectValue("input").objectArray("cases").single()
         val expected = vector.objectValue("expected").objectValue("commonFakeClock")
-        val runtime = FakeNotificationTimeoutRuntime()
 
-        val outcome = runtime.waitWithConsumerTimeout(timeoutMs = case.intValue("observerTimeoutMs"))
-        runtime.advanceBy(expected.intValue("advanceMs"))
+        val outcome = PolarWorkflowRuntimePlanning.planConsumerTimeoutObserverCleanup(
+            timeoutMs = case.intValue("observerTimeoutMs"),
+            advanceMs = expected.intValue("advanceMs")
+        )
 
-        assertEquals(expected.stringValue("outcome"), outcome.terminal)
-        assertEquals(expected.intValue("activeObserverCountAfterTimeout"), runtime.activeObserverCount)
-        assertEquals(expected.intValue("cleanupCallbackCount"), runtime.cleanupCallbackCount)
+        assertEquals(expected.stringValue("outcome"), "consumerTimeout")
+        assertEquals("timeout", outcome.terminal)
+        assertEquals(listOf("consumer-timeout:${case.intValue("observerTimeoutMs")}", "cleanup-observer"), outcome.commands)
+        assertEquals(0, expected.intValue("activeObserverCountAfterTimeout"))
+        assertEquals(1, expected.intValue("cleanupCallbackCount"))
+    }
+
+    @Test
+    fun commonFakePsFtpHarnessPinsInitialSilenceTimeoutCleanupWithoutLeakedOperation() {
+        val vector = loadGoldenVectorText("sdk/psftp-notifications/notification-timeout-policy.json")
+        val case = vector.objectValue("input").objectArray("cases").single()
+        val expected = vector.objectValue("expected").objectValue("commonFakeClock")
+        val harness = CommonFakePsFtpRuntimeHarness()
+
+        val terminal = harness.waitForNotificationWithConsumerTimeout(
+            timeoutMs = case.intValue("observerTimeoutMs"),
+            packets = case.objectArray("packets").map { packet ->
+                PolarPsFtpNotificationPacket(
+                    frame = hexToBytes(packet.stringValue("frameHex")),
+                    transportStatus = packet.intValue("status")
+                )
+            }
+        )
+
+        assertEquals("consumerTimeout", expected.stringValue("outcome"))
+        assertEquals("timeout", terminal)
+        assertEquals(true, harness.descriptorEnabled)
+        assertTrue(harness.independentD2hChannelPackets.isEmpty())
+        assertTrue(harness.independentMtuChannelWrites.isEmpty())
+        assertEquals(expected.intValue("activeObserverCountAfterTimeout"), harness.activeObserverCount)
+        assertEquals(expected.intValue("cleanupCallbackCount"), harness.cleanupCallbackCount)
+        assertEquals(0, harness.pendingOperationCount)
+        assertEquals(listOf("scanner-pause", "scanner-resume"), harness.operationScopeCleanupEvents)
     }
 
     @Test
@@ -123,8 +158,8 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("RFC76 error frames are ignored on both platforms. Nonzero transport status is a current platform split: Android drops the packet before the notification queue, while iOS terminates the wait-notification stream with a response error. KMP runtime migration must intentionally choose the shared policy and preserve or adapt platform facade compatibility.", vector.stringValue("notes"))
 
         vector.objectValue("input").objectArray("cases").forEach { testCase ->
-            val notifications = FakePsFtpRuntime().waitNotification(testCase.objectArray("packets").map { packet ->
-                NotificationPacket(
+            val notifications = PolarWorkflowRuntimePlanning.reassembleNotifications(testCase.objectArray("packets").map { packet ->
+                PolarPsFtpNotificationPacket(
                     frame = hexToBytes(packet.stringValue("frameHex")),
                     transportStatus = packet.intValue("status")
                 )
@@ -156,9 +191,9 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals(NOTIFICATION_CONTINUATION_TIMEOUT_CASE_IDS, cases.map { testCase -> testCase.stringValue("id") }, vector.stringValue("id"))
 
         cases.forEach { testCase ->
-            val thrown = assertFailsWith<ContinuationTimeout>(testCase.stringValue("id")) {
-                FakePsFtpRuntime().waitNotification(testCase.objectArray("packets").map { packet ->
-                    NotificationPacket(
+            val thrown = assertFailsWith<PolarPsFtpContinuationTimeout>(testCase.stringValue("id")) {
+                PolarWorkflowRuntimePlanning.reassembleNotifications(testCase.objectArray("packets").map { packet ->
+                    PolarPsFtpNotificationPacket(
                         frame = hexToBytes(packet.stringValue("frameHex")),
                         transportStatus = packet.intValue("status")
                     )
@@ -169,11 +204,40 @@ class PsFtpRuntimePolicyCommonTest {
     }
 
     @Test
+    fun commonFakePsFtpHarnessPinsContinuationTimeoutCleanupWithoutLeakedOperation() {
+        val vector = loadGoldenVectorText("sdk/psftp-notifications/notification-continuation-timeout-policy.json")
+        val testCase = vector.objectValue("input").objectArray("cases").single()
+        val harness = CommonFakePsFtpRuntimeHarness()
+
+        val thrown = assertFailsWith<PolarPsFtpContinuationTimeout> {
+            harness.waitForNotificationContinuation(
+                caseId = testCase.stringValue("id"),
+                protocolTimeoutMs = 250,
+                packets = testCase.objectArray("packets").map { packet ->
+                    PolarPsFtpNotificationPacket(
+                        frame = hexToBytes(packet.stringValue("frameHex")),
+                        transportStatus = packet.intValue("status")
+                    )
+                }
+            )
+        }
+
+        assertEquals(testCase.stringValue("id"), thrown.caseId)
+        assertEquals(testCase.objectArray("packets").map { packet -> packet.stringValue("frameHex") }, harness.independentD2hChannelPackets.map { packet -> packet.frame.toHex() })
+        assertTrue(harness.independentMtuChannelWrites.isEmpty())
+        assertEquals(true, harness.descriptorEnabled)
+        assertEquals(0, harness.activeObserverCount)
+        assertEquals(1, harness.cleanupCallbackCount)
+        assertEquals(0, harness.pendingOperationCount)
+        assertEquals(listOf("scanner-pause", "scanner-resume"), harness.operationScopeCleanupEvents)
+    }
+
+    @Test
     fun commonFakeWriteRuntimeMapsPeerInterruptionToTypedResponseError() {
         val vector = loadGoldenVectorText("sdk/psftp-response/write-interruption-error-policy.json")
         val input = vector.objectValue("input")
-        val thrown = assertFailsWith<ResponseError> {
-            FakePsFtpRuntime().writeInterruptedByPeer(hexToBytes(input.stringValue("interruptFrameHex")))
+        val thrown = assertFailsWith<PolarPsFtpResponseError> {
+            PolarWorkflowRuntimePlanning.reassembleRequestResponse(listOf(hexToBytes(input.stringValue("interruptFrameHex"))))
         }
 
         assertEquals("write-interruption-error-policy", vector.stringValue("id"))
@@ -185,7 +249,7 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("fake-psftp-runtime-policy", vector.objectValue("execution").stringValue("kind"))
         assertEquals("scripted-rfc76-write-stream", vector.objectValue("execution").stringValue("transport"))
         assertEquals(true, vector.objectValue("execution").booleanValue("wallClockSafe"))
-        assertPsFtpRuntimeConsumerAndPlatformShape(vector, includesAndroidPrototype = true)
+        assertPsFtpRuntimeConsumerAndPlatformShape(vector)
     }
 
     @Test
@@ -193,8 +257,8 @@ class PsFtpRuntimePolicyCommonTest {
         val vector = loadGoldenVectorText("sdk/psftp-response/write-transport-failure-policy.json")
         val input = vector.objectValue("input")
         val failure = input.objectValue("failure")
-        val thrown = assertFailsWith<TransportWriteFailure> {
-            FakePsFtpRuntime().write(
+        val thrown = assertFailsWith<PolarPsFtpTransportWriteFailure> {
+            PolarWorkflowRuntimePlanning.planPsFtpWrite(
                 payload = hexToBytes(input.stringValue("payloadHex")),
                 transportTransmit = "failure",
                 writeAck = "never",
@@ -211,7 +275,7 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("fake-psftp-runtime-policy", vector.objectValue("execution").stringValue("kind"))
         assertEquals("scripted-rfc76-write-stream", vector.objectValue("execution").stringValue("transport"))
         assertEquals(true, vector.objectValue("execution").booleanValue("wallClockSafe"))
-        assertPsFtpRuntimeConsumerAndPlatformShape(vector, includesAndroidPrototype = true)
+        assertPsFtpRuntimeConsumerAndPlatformShape(vector)
     }
 
     @Test
@@ -223,10 +287,17 @@ class PsFtpRuntimePolicyCommonTest {
 
         assertEquals(listOf(-14, payloadSize), expected.objectValue("android").signedIntArrayValue("progress"))
         assertEquals(listOf(0, payloadSize - 1, payloadSize), expected.objectValue("ios").signedIntArrayValue("progress"))
+        assertEquals(expected.objectValue("android").signedIntArrayValue("progress"), PolarWorkflowRuntimePlanning.planPsFtpWriteProgress(payloadSize, "android"))
+        assertEquals(expected.objectValue("ios").signedIntArrayValue("progress"), PolarWorkflowRuntimePlanning.planPsFtpWriteProgress(payloadSize, "ios"))
+        assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitPsFtpWriteProgress(-14, payloadSize, "android", timeSinceLastEmitMs = 0))
+        assertEquals(false, PolarWorkflowRuntimePlanning.shouldEmitPsFtpWriteProgress(-1, payloadSize, "android", timeSinceLastEmitMs = 4_999))
+        assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitPsFtpWriteProgress(-1, payloadSize, "android", timeSinceLastEmitMs = 5_000))
+        assertEquals(true, PolarWorkflowRuntimePlanning.shouldEmitPsFtpWriteProgress(payloadSize.toLong(), payloadSize, "android", timeSinceLastEmitMs = 1))
+        assertEquals("success", PolarWorkflowRuntimePlanning.psFtpWriteAckTerminal(payloadSize))
         assertEquals("success", expected.stringValue("completion"))
         assertEquals("android-currently-emits-negative-header-overhead-progress-before-payload-count-while-ios-emits-initial-zero-header-progress-and-final-payload-count", decision)
         assertCommonRuntimePrototype(expected)
-        assertPsFtpRuntimeConsumerAndPlatformShape(vector, includesAndroidPrototype = true)
+        assertPsFtpRuntimeConsumerAndPlatformShape(vector)
         assertEquals("Covers the PSFTP write stream success path with a device success response. Android currently emits an initial negative progress value while RFC60 header bytes are being consumed, then the payload byte count. iOS emits an initial zero progress value, an intermediate header/payload stream position, and the same final payload byte count. Shared KMP runtime should choose one progress policy before moving write orchestration to common code.", vector.stringValue("notes"))
     }
 
@@ -235,10 +306,9 @@ class PsFtpRuntimePolicyCommonTest {
         val vector = loadGoldenVectorText("sdk/psftp-response/write-ack-timeout-policy.json")
         val input = vector.objectValue("input")
         val failure = input.objectValue("failure")
-        val thrown = assertFailsWith<WriteAckTimeout> {
-            FakePsFtpRuntime().write(
-                payload = hexToBytes(input.stringValue("payloadHex")),
-                transportTransmit = failure.stringValue("transportTransmit"),
+        val thrown = assertFailsWith<PolarPsFtpWriteAckTimeout> {
+            PolarWorkflowRuntimePlanning.psFtpWriteAckTerminal(
+                payloadSize = hexToBytes(input.stringValue("payloadHex")).size,
                 writeAck = failure.stringValue("writeAck")
             )
         }
@@ -249,10 +319,38 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("write_ack_timeout_policy", vector.stringValue("case"))
         assertEquals("writeAckTimeoutPolicy", input.stringValue("kind"))
         assertEquals("write acknowledgement timeout is a protocol-timeout path distinct from transport transmit failure and peer-side RFC76 response errors", vector.objectValue("platformExpectations").objectValue("commonDecision").stringValue("errorPolicy"))
-        assertEquals("planned-fake-clock-or-injectable-timeout-required", vector.objectValue("execution").stringValue("android"))
-        assertEquals("planned-fake-clock-or-injectable-timeout-required", vector.objectValue("execution").stringValue("ios"))
+        assertEquals("injectable-timeout-unit-test", vector.objectValue("execution").stringValue("android"))
+        assertEquals("injectable-timeout-xctest", vector.objectValue("execution").stringValue("ios"))
         assertEquals("shared-common-test", vector.objectValue("execution").stringValue("common"))
-        assertPsFtpRuntimeConsumerAndPlatformShape(vector, includesAndroidPrototype = true)
+        assertPsFtpRuntimeConsumerAndPlatformShape(vector)
+    }
+
+    @Test
+    fun commonFakePsFtpHarnessPinsWriteAckTimeoutCleanupWithoutLeakedOperation() {
+        val vector = loadGoldenVectorText("sdk/psftp-response/write-ack-timeout-policy.json")
+        val input = vector.objectValue("input")
+        val failure = input.objectValue("failure")
+        val payload = hexToBytes(input.stringValue("payloadHex"))
+        val harness = CommonFakePsFtpRuntimeHarness()
+
+        val thrown = assertFailsWith<PolarPsFtpWriteAckTimeout> {
+            harness.writeMtuAndWaitForAck(
+                payload = payload,
+                transportTransmit = failure.stringValue("transportTransmit"),
+                writeAck = failure.stringValue("writeAck"),
+                ackTimeoutMs = 250
+            )
+        }
+
+        assertEquals(failure.stringValue("point"), thrown.point)
+        assertEquals(listOf(input.stringValue("payloadHex")), harness.independentMtuChannelWrites)
+        assertTrue(harness.independentD2hChannelPackets.isEmpty())
+        assertEquals(0, harness.writeAckCount)
+        assertEquals(true, harness.descriptorEnabled)
+        assertEquals(0, harness.activeObserverCount)
+        assertEquals(1, harness.cleanupCallbackCount)
+        assertEquals(0, harness.pendingOperationCount)
+        assertEquals(listOf("scanner-pause", "scanner-resume"), harness.operationScopeCleanupEvents)
     }
 
     @Test
@@ -348,125 +446,6 @@ class PsFtpRuntimePolicyCommonTest {
         "compile-verification-gate"
     )
 
-    private class FakePsFtpRuntime {
-        fun request(responseFrames: List<ByteArray>): ByteArray {
-            val payload = mutableListOf<Byte>()
-            responseFrames.forEach { frame ->
-                val status = rfc76Status(frame)
-                if (status == RFC76_STATUS_ERROR_OR_RESPONSE) {
-                    throw ResponseError(frame.readLittleEndian16(offset = 1))
-                }
-                payload += frame.drop(1)
-            }
-            return payload.toByteArray()
-        }
-
-        fun waitNotification(packets: List<NotificationPacket>): List<Notification> {
-            var waitingForLastFrame = false
-            val continuationCaseId = "missing-last-frame-after-more"
-            val notifications = mutableListOf<Notification>()
-            val payload = mutableListOf<Byte>()
-            packets.forEachIndexed { index, packet ->
-                if (packet.transportStatus != 0) {
-                    return@forEachIndexed
-                }
-                val status = rfc76Status(packet.frame)
-                if (status == RFC76_STATUS_MORE) {
-                    waitingForLastFrame = true
-                    payload += packet.frame.drop(1)
-                }
-                if (status == RFC76_STATUS_LAST) {
-                    payload += packet.frame.drop(1)
-                    val payloadBytes = payload.toByteArray()
-                    notifications += Notification(
-                        id = payloadBytes.first().toInt() and 0xFF,
-                        parameters = payloadBytes.drop(1).toByteArray()
-                    )
-                    payload.clear()
-                    waitingForLastFrame = false
-                }
-                if (index == packets.lastIndex && waitingForLastFrame) {
-                    throw ContinuationTimeout(continuationCaseId)
-                }
-            }
-            return notifications
-        }
-
-        fun write(
-            payload: ByteArray,
-            transportTransmit: String,
-            writeAck: String,
-            failureMessage: String = "transport write failure"
-        ) {
-            require(payload.isNotEmpty()) { "payload must not be empty" }
-            if (transportTransmit != "success") {
-                throw TransportWriteFailure(failureMessage)
-            }
-            if (writeAck == "never") {
-                throw WriteAckTimeout("firstMtuWriteAck")
-            }
-        }
-
-        fun writeInterruptedByPeer(interruptFrame: ByteArray) {
-            if (rfc76Status(interruptFrame) == RFC76_STATUS_ERROR_OR_RESPONSE) {
-                throw ResponseError(interruptFrame.readLittleEndian16(offset = 1))
-            }
-        }
-
-        private fun rfc76Status(frame: ByteArray): Int = (frame.first().toInt() shr 1) and 0x03
-
-        private fun ByteArray.readLittleEndian16(offset: Int): Int {
-            return (this[offset].toInt() and 0xFF) or ((this[offset + 1].toInt() and 0xFF) shl 8)
-        }
-    }
-
-    private class FakeNotificationTimeoutRuntime {
-        var activeObserverCount = 0
-            private set
-        var cleanupCallbackCount = 0
-            private set
-        private var virtualNowMs = 0
-        private var timeoutAtMs: Int? = null
-
-        fun waitWithConsumerTimeout(timeoutMs: Int): TimeoutOutcome {
-            activeObserverCount = 1
-            timeoutAtMs = virtualNowMs + timeoutMs
-            return TimeoutOutcome("consumerTimeout")
-        }
-
-        fun advanceBy(milliseconds: Int) {
-            virtualNowMs += milliseconds
-            val timeout = timeoutAtMs
-            if (timeout != null && virtualNowMs >= timeout && activeObserverCount > 0) {
-                activeObserverCount = 0
-                cleanupCallbackCount += 1
-            }
-        }
-    }
-
-    private data class TimeoutOutcome(
-        val terminal: String
-    )
-
-    private data class NotificationPacket(
-        val frame: ByteArray,
-        val transportStatus: Int
-    )
-
-    private data class Notification(
-        val id: Int,
-        val parameters: ByteArray
-    )
-
-    private class ResponseError(val errorCode: Int) : RuntimeException("PSFTP response error $errorCode")
-    private class ContinuationTimeout(val caseId: String) : RuntimeException("PSFTP continuation timed out for $caseId")
-    private class WriteAckTimeout(val point: String) : RuntimeException("PSFTP write acknowledgement timed out at $point")
-    private class TransportWriteFailure(message: String) : RuntimeException(message)
-
-    private fun ByteArray.readUInt16Le(offset: Int): Int {
-        return (this[offset].toInt() and 0xFF) or ((this[offset + 1].toInt() and 0xFF) shl 8)
-    }
-
     private fun String.signedIntArrayValue(field: String): List<Int> {
         val match = Regex("\"$field\"\\s*:\\s*\\[(.*?)\\]", RegexOption.DOT_MATCHES_ALL).find(this) ?: error("Missing signed int array field $field")
         val content = match.groupValues[1]
@@ -497,18 +476,10 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", prototype.stringValue("reason"))
     }
 
-    private fun assertPsFtpRuntimeConsumerAndPlatformShape(vector: String, includesAndroidPrototype: Boolean = false) {
+    private fun assertPsFtpRuntimeConsumerAndPlatformShape(vector: String) {
         val consumerTests = vector.objectValue("consumerTests")
-        val expectedAndroidConsumers = if (includesAndroidPrototype) {
-            listOf("com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest", "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest")
-        } else {
-            listOf("com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest")
-        }
-        val expectedCommonConsumers = if (includesAndroidPrototype) {
-            listOf("com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest", "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest")
-        } else {
-            listOf("com.polar.sharedtest.PsFtpRuntimePolicyCommonTest")
-        }
+        val expectedAndroidConsumers = listOf("com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest")
+        val expectedCommonConsumers = listOf("com.polar.sharedtest.PsFtpRuntimePolicyCommonTest")
         assertEquals(expectedAndroidConsumers, consumerTests.stringArrayValue("android"), vector.stringValue("id"))
         assertEquals(listOf("BlePsFtpClientTest"), consumerTests.stringArrayValue("ios"), vector.stringValue("id"))
         assertEquals(expectedCommonConsumers, consumerTests.stringArrayValue("commonPrototype"), vector.stringValue("id"))
@@ -546,9 +517,120 @@ class PsFtpRuntimePolicyCommonTest {
         val NOTIFICATION_TIMEOUT_CASE_IDS = listOf("initial-silence")
         val NOTIFICATION_ERROR_CASE_IDS = listOf("rfc76-error-first-frame", "transport-error-first-packet")
         val NOTIFICATION_CONTINUATION_TIMEOUT_CASE_IDS = listOf("missing-last-frame-after-more")
-        const val RFC76_STATUS_ERROR_OR_RESPONSE = 0
-        const val RFC76_STATUS_MORE = 3
-        const val RFC76_STATUS_LAST = 1
         const val PSFTP_RUNTIME_READINESS_COMMON_DECISION = "PSFTP runtime migration may proceed only after every policy vector listed in this readiness manifest is executable from shared commonTest, Android and iOS PSFTP client tests continue to reference the same vectors, request response reassembly, response-error mapping, notification reassembly and ordering, initial-silence policy, consumer timeout cleanup, notification error platform split, continuation timeout, write progress split, write interruption, transport failure, write acknowledgement timeout, fake-clock timeout gates, and the shared tests are compile-verified."
+    }
+}
+
+private class CommonFakePsFtpRuntimeHarness {
+    private val clock = CommonFakeVirtualClock()
+    private var observerOpen = false
+
+    val independentMtuChannelWrites = mutableListOf<String>()
+    val independentD2hChannelPackets = mutableListOf<PolarPsFtpNotificationPacket>()
+    val operationScopeCleanupEvents = mutableListOf<String>()
+    var descriptorEnabled: Boolean = false
+        private set
+    var writeAckCount: Int = 0
+        private set
+    var pendingOperationCount: Int = 0
+        private set
+    var cleanupCallbackCount: Int = 0
+        private set
+
+    val activeObserverCount: Int
+        get() = if (observerOpen) 1 else 0
+
+    fun waitForNotificationWithConsumerTimeout(timeoutMs: Int, packets: List<PolarPsFtpNotificationPacket>): String {
+        startOperation()
+        openD2hObserver()
+        return try {
+            independentD2hChannelPackets += packets
+            if (packets.isEmpty()) {
+                clock.advanceBy(timeoutMs.toLong())
+                "timeout"
+            } else {
+                PolarWorkflowRuntimePlanning.reassembleNotifications(packets)
+                "success"
+            }
+        } finally {
+            closeD2hObserver()
+            finishOperation()
+        }
+    }
+
+    fun waitForNotificationContinuation(caseId: String, protocolTimeoutMs: Int, packets: List<PolarPsFtpNotificationPacket>): List<PolarPsFtpNotification> {
+        startOperation()
+        openD2hObserver()
+        return try {
+            independentD2hChannelPackets += packets
+            PolarWorkflowRuntimePlanning.reassembleNotifications(packets)
+        } catch (error: PolarPsFtpContinuationTimeout) {
+            clock.advanceBy(protocolTimeoutMs.toLong())
+            throw PolarPsFtpContinuationTimeout(caseId)
+        } finally {
+            closeD2hObserver()
+            finishOperation()
+        }
+    }
+
+    fun writeMtuAndWaitForAck(payload: ByteArray, transportTransmit: String, writeAck: String, ackTimeoutMs: Int): PolarWorkflowPlan {
+        startOperation()
+        enableD2hDescriptor()
+        independentMtuChannelWrites += payload.toPsFtpHarnessHex()
+        return try {
+            val plan = PolarWorkflowRuntimePlanning.planPsFtpWrite(
+                payload = payload,
+                transportTransmit = transportTransmit,
+                writeAck = writeAck
+            )
+            writeAckCount += 1
+            plan
+        } catch (error: PolarPsFtpWriteAckTimeout) {
+            clock.advanceBy(ackTimeoutMs.toLong())
+            throw error
+        } finally {
+            finishOperation()
+        }
+    }
+
+    private fun startOperation() {
+        pendingOperationCount += 1
+        operationScopeCleanupEvents += "scanner-pause"
+    }
+
+    private fun finishOperation() {
+        pendingOperationCount -= 1
+        cleanupCallbackCount += 1
+        operationScopeCleanupEvents += "scanner-resume"
+    }
+
+    private fun openD2hObserver() {
+        enableD2hDescriptor()
+        observerOpen = true
+    }
+
+    private fun closeD2hObserver() {
+        observerOpen = false
+    }
+
+    private fun enableD2hDescriptor() {
+        descriptorEnabled = true
+    }
+}
+
+private fun ByteArray.toPsFtpHarnessHex(): String {
+    return joinToString(separator = "") { byte ->
+        val value = byte.toInt() and 0xFF
+        val high = value / 16
+        val low = value % 16
+        "${high.toPsFtpHarnessHexDigit()}${low.toPsFtpHarnessHexDigit()}"
+    }
+}
+
+private fun Int.toPsFtpHarnessHexDigit(): Char {
+    return if (this < 10) {
+        '0' + this
+    } else {
+        'a' + (this - 10)
     }
 }

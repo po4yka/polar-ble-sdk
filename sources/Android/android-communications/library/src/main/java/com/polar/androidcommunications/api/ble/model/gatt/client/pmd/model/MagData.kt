@@ -2,8 +2,7 @@ package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
-import com.polar.shared.pmd.sensors.PolarMagCalibrationStatus
-import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 internal class MagData() {
 
@@ -16,16 +15,12 @@ internal class MagData() {
 
         companion object {
             fun getById(id: Int): CalibrationStatus {
-                return try {
-                    values().first { it.id == id }
-                } catch (e: NoSuchElementException) {
-                    NOT_AVAILABLE
-                }
+                return PolarRuntimePlannerAdapter.pmdMagCalibrationStatusNameFromId(id).toAndroidCalibrationStatus()
             }
         }
     }
 
-    data class MagSample internal constructor(
+    data class MagSample(
         val timeStamp: ULong = 0uL,
         // Sample contains signed x,y,z axis values in Gauss
         val x: Float,
@@ -47,22 +42,30 @@ internal class MagData() {
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): MagData {
             val magData = MagData()
-            PolarSensorDataParser.parseMag(frame.toPolarSharedFrame()).forEach { sample ->
+            PolarRuntimePlannerAdapter.pmdMagSamples(
+                frameType = frame.frameType.id.toInt(),
+                compressed = frame.isCompressedFrame,
+                timeStamp = frame.timeStamp,
+                previousTimeStamp = frame.previousTimeStamp,
+                factor = frame.factor,
+                sampleRate = frame.sampleRate,
+                dataContent = frame.dataContent
+            ).forEach { sample ->
                 magData.magSamples.add(
                     MagSample(
                         timeStamp = sample.timeStamp,
                         x = sample.x,
                         y = sample.y,
                         z = sample.z,
-                        calibrationStatus = sample.calibrationStatus.toAndroidCalibrationStatus()
+                        calibrationStatus = sample.calibrationStatusName!!.toAndroidCalibrationStatus()
                     )
                 )
             }
             return magData
         }
 
-        private fun PolarMagCalibrationStatus.toAndroidCalibrationStatus(): CalibrationStatus {
-            return CalibrationStatus.getById(id)
+        private fun String.toAndroidCalibrationStatus(): CalibrationStatus {
+            return CalibrationStatus.valueOf(this)
         }
 
         private fun dataCompressedFromType0(frame: PmdDataFrame): MagData {

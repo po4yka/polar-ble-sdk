@@ -148,6 +148,37 @@ final class PolarWatchFaceUtilsTests: XCTestCase {
             let resolved = PolarWatchFaceComplication.fromId(complication.id)
             XCTAssertEqual(resolved, complication, "fromId should resolve \(complication)")
         }
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("HEART_RATE", PolarWatchFaceRuntimePlanner.complicationName(id: PolarWatchFaceComplication.heartRate.id))
+        #endif
+    }
+
+    func testWatchFaceRuntimePlannerMapsSemanticFieldsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let fields = try XCTUnwrap(PolarWatchFaceRuntimePlanner.fieldsCsv(
+            timeStyleId: 3,
+            complicationLayoutId: 7,
+            backgroundStyleId: 2,
+            accentColor: 0xFF_CC_88_00,
+            complicationIds: [
+                PolarWatchFaceComplication.heartRate.id,
+                PolarWatchFaceComplication.spo2.id,
+                PolarWatchFaceComplication.activity.id
+            ],
+            fontfaceId: 1
+        ))
+        XCTAssertEqual("3,7,2,4291594240,\(PolarWatchFaceComplication.heartRate.id);\(PolarWatchFaceComplication.spo2.id);\(PolarWatchFaceComplication.activity.id),1", fields)
+        #endif
+    }
+
+    func testWatchFaceKvtxHeadersUseSharedFileFacadePlanning() {
+        let readOperation = PolarWatchFaceUtils.watchFaceReadOperation()
+        XCTAssertEqual(readOperation.command, .get)
+        XCTAssertEqual(readOperation.path, "/SYS/KVTX")
+
+        let writeOperation = PolarWatchFaceUtils.watchFaceWriteOperation()
+        XCTAssertEqual(writeOperation.command, .put)
+        XCTAssertEqual(writeOperation.path, "/SYS/KVTX")
     }
 
     // MARK: - Preserve existing non-complication fields on write
@@ -284,13 +315,15 @@ final class PolarWatchFaceUtilsTests: XCTestCase {
             "unknown-complication-raw-id-preservation",
             "unknown-complication-null-lookup-policy",
             "malformed-too-short-defaulting",
+            "flatbuffer-byte-input-parser",
+            "flatbuffer-byte-output-shared-code",
             "kvtx-wrapper-metadata",
             "platform-watch-face-vector-reference-gate",
             "compile-verification-gate"
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, KVTX wrapper metadata, and the shared tests are compile-verified.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, shared FlatBuffer byte input parsing, shared FlatBuffer byte output construction, KVTX wrapper metadata, and the shared tests are compile-verified.")
         let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any], "watch-face-readiness.json")
         let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], "watch-face-readiness.json")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "watch-face-readiness.json"), ["com.polar.sdk.api.model.utils.PolarWatchFaceUtilsTest"])

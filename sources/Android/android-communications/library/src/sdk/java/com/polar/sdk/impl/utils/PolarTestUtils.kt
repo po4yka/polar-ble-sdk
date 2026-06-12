@@ -10,13 +10,9 @@ import com.polar.services.datamodels.protobuf.Spo2TestResult
 import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-private const val ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private const val SPO2_TEST_DIRECTORY = "SPO2TEST/"
-private const val SPO2_TEST_PROTO = "SPO2TRES.BPB"
 private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 private val testTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 private const val TAG = "PolarTestUtils"
@@ -28,6 +24,18 @@ private const val TAG = "PolarTestUtils"
 data class Spo2TestEntry(val date: LocalDate, val timeDirName: String, val protoBytes: ByteArray)
 
 internal object PolarTestUtils {
+    internal fun spo2TestDirectoryReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return spo2TestReadOperation("spo2-test-read-directory", PolarRuntimePlannerAdapter.spo2TestDirectoryPath(date.format(dateFormatter)))
+    }
+
+    internal fun spo2TestFileReadOperation(directoryPath: String, subDirectoryName: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return spo2TestReadOperation("spo2-test-read-file", PolarRuntimePlannerAdapter.spo2TestResultPath(directoryPath, subDirectoryName))
+    }
+
+    private fun spo2TestReadOperation(id: String, path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val plan = PolarRuntimePlannerAdapter.planFileFacade(id, "GET", path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
 
     /**
      * Read and return all SPO2 test proto entries for a given date.
@@ -37,16 +45,11 @@ internal object PolarTestUtils {
      */
     suspend fun readSpo2TestProtoFromDayDirectory(client: BlePsFtpClient, date: LocalDate): List<Spo2TestEntry> {
         BleLogger.d(TAG, "readSpo2TestProtoFromDayDirectory: $date")
-        val spo2TestDirPath = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$SPO2_TEST_DIRECTORY"
+        val directoryOperation = spo2TestDirectoryReadOperation(date)
+        val spo2TestDirPath = directoryOperation.second
 
         return try {
-            val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                    .setPath(spo2TestDirPath)
-                    .build()
-                    .toByteArray()
-            )
+            val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(directoryOperation))
 
             val dir = PbPFtpDirectory.parseFrom(response.toByteArray())
             val timeSubDirs = dir.entriesList.filter { it.name.endsWith("/") }
@@ -59,15 +62,10 @@ internal object PolarTestUtils {
             val results = mutableListOf<Spo2TestEntry>()
             for (subDir in timeSubDirs) {
                 val timeDirName = subDir.name.trimEnd('/')
-                val filePath = "$spo2TestDirPath${subDir.name}$SPO2_TEST_PROTO"
+                val fileOperation = spo2TestFileReadOperation(spo2TestDirPath, subDir.name)
+                val filePath = fileOperation.second
                 try {
-                    val fileResponse = client.request(
-                        PftpRequest.PbPFtpOperation.newBuilder()
-                            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                            .setPath(filePath)
-                            .build()
-                            .toByteArray()
-                    )
+                    val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
                     results.add(Spo2TestEntry(date = date, timeDirName = timeDirName, protoBytes = fileResponse.toByteArray()))
                 } catch (error: Throwable) {
                     BleLogger.w(TAG, "No SPO2 test proto at $filePath: $error")
@@ -93,32 +91,73 @@ internal object PolarTestUtils {
         val tzOffsetMinutes = proto.timeZoneOffset
         val testTime = dateTimeFromFolderNames(date, timeDirName)
             ?: if (proto.testTime != 0L) {
-                val localDateTime = java.time.Instant.ofEpochMilli(proto.testTime.toLong())
+                val localDateTime = java.time.Instant.ofEpochMilli(proto.testTime)
                     .atOffset(ZoneOffset.ofTotalSeconds(tzOffsetMinutes * 60))
                     .toLocalDateTime()
                 testTimeFormatter.format(localDateTime)
             } else null
-        return PolarSpo2TestData(
+        val projection = PolarRuntimePlannerAdapter.spo2TestDataProjection(
+            date = date.toString(),
+            timeDirName = timeDirName,
             recordingDevice = proto.recordingDevice,
-            testTime = testTime,
             timeZoneOffsetMinutes = tzOffsetMinutes,
-            testStatus = Spo2TestStatus.from(proto.testStatus.number),
+            testStatus = proto.testStatus.number,
             bloodOxygenPercent = if (proto.hasBloodOxygenPercent()) proto.bloodOxygenPercent else null,
-            spo2Class = if (proto.hasSpo2Class()) Spo2Class.from(proto.spo2Class.number) else null,
-            spo2ValueDeviationFromBaseline = if (proto.hasSpo2ValueDeviationFromBaseline()) DeviationFromBaseline.from(proto.spo2ValueDeviationFromBaseline.number) else null,
+            spo2Class = if (proto.hasSpo2Class()) proto.spo2Class.number else null,
+            spo2ValueDeviationFromBaseline = if (proto.hasSpo2ValueDeviationFromBaseline()) proto.spo2ValueDeviationFromBaseline.number else null,
             spo2QualityAveragePercent = if (proto.hasSpo2QualityAveragePercent()) proto.spo2QualityAveragePercent else null,
-            averageHeartRateBpm = if (proto.hasAverageHeartRateBpm()) proto.averageHeartRateBpm.toUInt() else null,
+            averageHeartRateBpm = if (proto.hasAverageHeartRateBpm()) proto.averageHeartRateBpm else null,
             heartRateVariabilityMs = if (proto.hasHeartRateVariabilityMs()) proto.heartRateVariabilityMs else null,
-            spo2HrvDeviationFromBaseline = if (proto.hasSpo2HrvDeviationFromBaseline()) DeviationFromBaseline.from(proto.spo2HrvDeviationFromBaseline.number) else null,
+            spo2HrvDeviationFromBaseline = if (proto.hasSpo2HrvDeviationFromBaseline()) proto.spo2HrvDeviationFromBaseline.number else null,
             altitudeMeters = if (proto.hasAltitudeMeters()) proto.altitudeMeters else null
+        )
+        return PolarSpo2TestData(
+            recordingDevice = projection.recordingDevice,
+            testTime = testTime,
+            timeZoneOffsetMinutes = projection.timeZoneOffsetMinutes,
+            testStatus = projection.testStatus?.toSpo2TestStatus(),
+            bloodOxygenPercent = projection.bloodOxygenPercent,
+            spo2Class = projection.spo2Class?.toSpo2Class(),
+            spo2ValueDeviationFromBaseline = projection.spo2ValueDeviationFromBaseline?.toDeviationFromBaseline(),
+            spo2QualityAveragePercent = projection.spo2QualityAveragePercent,
+            averageHeartRateBpm = projection.averageHeartRateBpm?.toUInt(),
+            heartRateVariabilityMs = projection.heartRateVariabilityMs,
+            spo2HrvDeviationFromBaseline = projection.spo2HrvDeviationFromBaseline?.toDeviationFromBaseline(),
+            altitudeMeters = projection.altitudeMeters
         )
     }
 
     internal fun dateTimeFromFolderNames(date: LocalDate, timeDirName: String): String? {
-        if (timeDirName.length != 6) return null
-        val hh = timeDirName.substring(0, 2).toIntOrNull() ?: return null
-        val mm = timeDirName.substring(2, 4).toIntOrNull() ?: return null
-        val ss = timeDirName.substring(4, 6).toIntOrNull() ?: return null
-        return testTimeFormatter.format(LocalDateTime.of(date.year, date.monthValue, date.dayOfMonth, hh, mm, ss))
+        return PolarRuntimePlannerAdapter.spo2TestTimeFromFolderNames(date.toString(), timeDirName)
+    }
+
+    private fun String.toSpo2TestStatus(): Spo2TestStatus? {
+        return when (this) {
+            "passed" -> Spo2TestStatus.PASSED
+            "inconclusiveTooLowQualityInSamples" -> Spo2TestStatus.INCONCLUSIVE_TOO_LOW_QUALITY_IN_SAMPLES
+            "inconclusiveTooLowOverallQuality" -> Spo2TestStatus.INCONCLUSIVE_TOO_LOW_OVERALL_QUALITY
+            "inconclusiveTooManyMissingSamples" -> Spo2TestStatus.INCONCLUSIVE_TOO_MANY_MISSING_SAMPLES
+            else -> null
+        }
+    }
+
+    private fun String.toSpo2Class(): Spo2Class? {
+        return when (this) {
+            "unknown" -> Spo2Class.UNKNOWN
+            "veryLow" -> Spo2Class.VERY_LOW
+            "low" -> Spo2Class.LOW
+            "normal" -> Spo2Class.NORMAL
+            else -> null
+        }
+    }
+
+    private fun String.toDeviationFromBaseline(): DeviationFromBaseline? {
+        return when (this) {
+            "noBaseline" -> DeviationFromBaseline.NO_BASELINE
+            "belowUsual" -> DeviationFromBaseline.BELOW_USUAL
+            "usual" -> DeviationFromBaseline.USUAL
+            "aboveUsual" -> DeviationFromBaseline.ABOVE_USUAL
+            else -> null
+        }
     }
 }

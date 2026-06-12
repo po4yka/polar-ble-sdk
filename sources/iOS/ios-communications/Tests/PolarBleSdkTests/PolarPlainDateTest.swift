@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import PolarBleSdk
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 final class PolarPlainDateTest: XCTestCase {
 
@@ -24,6 +27,10 @@ final class PolarPlainDateTest: XCTestCase {
     func testInitFromString_validDate_descriptionRoundtrips() {
         let date = PolarPlainDate(from: "2022-03-02", calendar: utcCalendar)
         XCTAssertEqual("2022-03-02", date?.description)
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("2022,3,2", PolarPlainDateRuntimePlanner.plainDateFieldsCsv(value: "2022-03-02"))
+        XCTAssertEqual("2022-03-02", PolarPlainDateRuntimePlanner.formatPlainDate(year: 2022, month: 3, day: 2))
+        #endif
     }
 
     func testInitFromString_leapDay_succeeds() {

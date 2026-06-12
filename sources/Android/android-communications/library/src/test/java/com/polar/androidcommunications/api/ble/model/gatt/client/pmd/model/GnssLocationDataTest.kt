@@ -365,22 +365,22 @@ internal class GnssLocationDataTest {
 
         Assert.assertEquals("gnss-location-readiness", manifest.get("id").asString)
         Assert.assertEquals("gnssLocationReadiness", input.get("kind").asString)
-        Assert.assertEquals("androidOwnedPreMigrationCharacterization", expected.get("migrationReadiness").asString)
+        Assert.assertEquals("sharedParserAndroidProductionDelegation", expected.get("migrationReadiness").asString)
         Assert.assertEquals(GNSS_LOCATION_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths)
         val expectedBehaviorFamilies = listOf(
-            "android-owned-raw-type0-coordinate",
-            "android-owned-raw-type1-satellite-dilution",
-            "android-owned-raw-type2-satellite-summary",
-            "android-owned-raw-type3-nmea",
+            "shared-parser-raw-type0-coordinate",
+            "shared-parser-raw-type1-satellite-dilution",
+            "shared-parser-raw-type2-satellite-summary",
+            "shared-parser-raw-type3-nmea",
+            "android-production-delegation",
             "non-ios-parser-ownership",
-            "non-common-parser-ownership",
-            "future-shared-parser-parity-gate",
+            "shared-parser-parity-gate",
             "compile-verification-gate"
         )
         Assert.assertEquals(expectedBehaviorFamilies, requiredBehaviorFamilies)
         Assert.assertEquals(expectedBehaviorFamilies, coveredBehaviorFamilies)
         Assert.assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GnssLocationDataTest"), consumerTests.getAsJsonArray("android").map { it.asString })
-        Assert.assertFalse("GNSS readiness remains Android-owned and must not declare iOS consumer ownership", consumerTests.has("ios"))
+        Assert.assertFalse("GNSS readiness remains no-iOS and must not declare iOS consumer ownership", consumerTests.has("ios"))
         Assert.assertEquals(listOf("com.polar.sharedtest.GnssLocationOwnershipCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
         Assert.assertTrue(platforms.get("android").asBoolean)
         Assert.assertEquals(false, platforms.get("ios").asBoolean)

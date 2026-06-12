@@ -6,6 +6,8 @@ import android.content.IntentFilter
 import android.os.ParcelUuid
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.polar.androidcommunications.api.ble.BleDeviceListener
+import com.polar.androidcommunications.api.ble.exceptions.BleDisconnected
 import com.polar.androidcommunications.api.ble.model.BleDeviceSession
 import com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContent
 import com.polar.androidcommunications.api.ble.model.gatt.client.BleBattClient
@@ -25,6 +27,11 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSecret
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSetting
 import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtility
 import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtility.Companion.getFileSystemType
+import com.polar.androidcommunications.common.ble.BleUtils.AD_TYPE
+import com.polar.androidcommunications.common.ble.BleUtils.EVENT_TYPE
+import com.polar.androidcommunications.http.fwu.FirmwareUpdateApi
+import com.polar.androidcommunications.http.fwu.FirmwareUpdateRequest
+import com.polar.androidcommunications.http.fwu.FirmwareUpdateResponse
 import com.polar.sdk.api.model.PolarUserDeviceSettings
 import com.polar.androidcommunications.enpoints.ble.bluedroid.host.BDScanCallback
 import com.polar.shared.runtime.PolarFileFacadeOperation
@@ -32,10 +39,15 @@ import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarRestFacadeOperation
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
+import com.polar.shared.sdk.PolarSdLogMagnetometerFrequencyName
+import com.polar.shared.sdk.PolarSdLogTriggerName
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.PolarH10OfflineExerciseApi
 import com.polar.sdk.api.errors.PolarBleSdkInstanceException
 import com.polar.sdk.api.errors.PolarOperationNotSupported
+import com.polar.sdk.api.model.CheckFirmwareUpdateStatus
+import com.polar.sdk.api.model.FirmwareUpdateStatus
 import com.polar.sdk.api.model.LedConfig
 import com.polar.sdk.api.model.LogConfig
 import com.polar.sdk.api.model.PolarFirstTimeUseConfig
@@ -50,15 +62,19 @@ import com.polar.sdk.api.model.toProto
 import com.polar.sdk.api.model.restapi.actionPaths
 import com.polar.sdk.api.model.restapi.events
 import com.polar.sdk.impl.BDBleApiImpl
+import com.polar.sdk.impl.planSetLocalTimeV2ForCurrentZone
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import data.SensorDataLog.PbSensorDataLog
 import protocol.PftpError.PbPFtpError
 import com.polar.sdk.impl.utils.PolarServiceClientUtils
+import fi.polar.remote.representation.protobuf.Device
 import fi.polar.remote.representation.protobuf.Types.PbDate
 import fi.polar.remote.representation.protobuf.Types.PbDeviceLocation
 import fi.polar.remote.representation.protobuf.Types.PbDuration
 import fi.polar.remote.representation.protobuf.Types.PbSampleType
 import fi.polar.remote.representation.protobuf.Types.PbSystemDateTime
 import fi.polar.remote.representation.protobuf.Types.PbTime
+import fi.polar.remote.representation.protobuf.Structures.PbVersion
 import fi.polar.remote.representation.protobuf.AutomaticSamples.PbAutomaticSampleSessions
 import fi.polar.remote.representation.protobuf.UserIds.PbUserIdentifier
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceGeneralSettings
@@ -69,6 +85,7 @@ import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUsbConnectio
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbAutomaticMeasurementSettings
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbAutomaticTrainingDetectionSettings
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -79,9 +96,16 @@ import io.mockk.runs
 import io.mockk.unmockkConstructor
 import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
+import okhttp3.ResponseBody
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -89,6 +113,7 @@ import org.junit.Test
 import protocol.PftpNotification
 import protocol.PftpRequest
 import protocol.PftpResponse
+import retrofit2.Response
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -97,6 +122,8 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.TimeZone
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class BDBleApiImplTest {
 
@@ -182,6 +209,1416 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun searchForDevice_filtersByPrefixAndMapsFacadeStreamOutput() = runTest {
+        val polarSession = searchSession(
+            name = "Polar 360 AABBCCDD",
+            address = "AA:BB:CC:DD:EE:01",
+            rssi = -55,
+            services = byteArrayOf(0x0D, 0x18, 0xEE.toByte(), 0xFE.toByte())
+        )
+        val nonPolarSession = searchSession(name = "Garmin Device 1234", address = "AA:BB:CC:DD:EE:02", rssi = -65)
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flowOf(nonPolarSession, polarSession)
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType("360") } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        val values = api.searchForDevice(withDeviceNameFilterPrefix = "Polar").toList()
+
+        Assert.assertEquals(1, values.size)
+        val value = values.single()
+        Assert.assertEquals("AABBCCDD", value.deviceId)
+        Assert.assertEquals("AA:BB:CC:DD:EE:01", value.address)
+        Assert.assertEquals(-55, value.rssi)
+        Assert.assertEquals("Polar 360 AABBCCDD", value.name)
+        Assert.assertTrue(value.isConnectable)
+        Assert.assertTrue(value.hasHeartRateService)
+        Assert.assertTrue(value.hasFileSystemService)
+        Assert.assertTrue(value.hasSAGRFCFileSystem)
+    }
+
+    @Test
+    fun searchForDevice_collectorCancellationCancelsListenerSearchStream() = runTest {
+        var upstreamCancelled = false
+        val session = searchSession(name = "Polar H10 AABBCCDD")
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow {
+            try {
+                emit(session)
+                awaitCancellation()
+            } finally {
+                upstreamCancelled = true
+            }
+        }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+        val values = mutableListOf<String>()
+
+        val collection = launch {
+            api.searchForDevice(withDeviceNameFilterPrefix = "Polar").collect { values.add(it.deviceId) }
+        }
+        testScheduler.advanceUntilIdle()
+        collection.cancelAndJoin()
+
+        Assert.assertEquals(listOf("AABBCCDD"), values)
+        Assert.assertTrue(upstreamCancelled)
+    }
+
+    @Test
+    fun searchForDevice_propagatesListenerSearchError() = runTest {
+        val expected = IllegalStateException("scan failed")
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow { throw expected }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        try {
+            api.searchForDevice(withDeviceNameFilterPrefix = "Polar").toList()
+            Assert.fail("Expected listener search error")
+        } catch (error: IllegalStateException) {
+            Assert.assertEquals(expected, error)
+        }
+    }
+
+    @Test
+    fun searchForDevice_emitsMatchingValuesBeforeListenerSearchError() = runTest {
+        val expected = IllegalStateException("scan failed after value")
+        val session = searchSession(name = "Polar H10 AABBCCDD")
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow {
+            emit(session)
+            throw expected
+        }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+        val deviceIds = mutableListOf<String>()
+
+        try {
+            api.searchForDevice(withDeviceNameFilterPrefix = "Polar").collect { deviceIds.add(it.deviceId) }
+            Assert.fail("Expected listener search error")
+        } catch (error: IllegalStateException) {
+            Assert.assertEquals(expected, error)
+        }
+
+        Assert.assertEquals(listOf("AABBCCDD"), deviceIds)
+    }
+
+    @Test
+    fun searchForDevice_emitsMatchingValuesBeforeDisconnectError() = runTest {
+        val session = searchSession(name = "Polar H10 AABBCCDD")
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow {
+            emit(session)
+            throw BleDisconnected()
+        }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+        val deviceIds = mutableListOf<String>()
+
+        try {
+            api.searchForDevice(withDeviceNameFilterPrefix = "Polar").collect { deviceIds.add(it.deviceId) }
+            Assert.fail("Expected disconnect error")
+        } catch (error: BleDisconnected) {
+            Assert.assertEquals(BleDisconnected().toString(), error.toString())
+        }
+
+        Assert.assertEquals(listOf("AABBCCDD"), deviceIds)
+    }
+
+    @Test
+    fun searchForDevice_emitsMatchingValuesBeforeListenerSearchCompletion() = runTest {
+        val session = searchSession(name = "Polar H10 AABBCCDD")
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flowOf(session)
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        val values = api.searchForDevice(withDeviceNameFilterPrefix = "Polar").toList()
+
+        Assert.assertEquals(listOf("AABBCCDD"), values.map { it.deviceId })
+    }
+
+    @Test
+    fun startListenForPolarHrBroadcasts_filtersDeviceIdsAndMapsUpdatedHrAdvertisement() = runTest {
+        val matchingSession = searchSession(
+            name = "Polar H10 AABBCCDD",
+            address = "AA:BB:CC:DD:EE:03",
+            rssi = -50,
+            hrPayload = byteArrayOf(0xE3.toByte(), 0xFE.toByte(), 95, 96)
+        )
+        val otherSession = searchSession(
+            name = "Polar H10 11223344",
+            address = "AA:BB:CC:DD:EE:04",
+            rssi = -60,
+            hrPayload = byteArrayOf(0xE7.toByte(), 0xFE.toByte(), 88, 89)
+        )
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flowOf(otherSession, matchingSession)
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        val values = api.startListenForPolarHrBroadcasts(setOf("AABBCCDD")).toList()
+
+        Assert.assertEquals(1, values.size)
+        val value = values.single()
+        Assert.assertEquals("AABBCCDD", value.polarDeviceInfo.deviceId)
+        Assert.assertEquals("AA:BB:CC:DD:EE:03", value.polarDeviceInfo.address)
+        Assert.assertEquals(-50, value.polarDeviceInfo.rssi)
+        Assert.assertEquals("Polar H10 AABBCCDD", value.polarDeviceInfo.name)
+        Assert.assertTrue(value.polarDeviceInfo.isConnectable)
+        Assert.assertEquals(96, value.hr)
+        Assert.assertTrue(value.batteryStatus)
+    }
+
+    @Test
+    fun startListenForPolarHrBroadcasts_collectorCancellationCancelsListenerSearchStream() = runTest {
+        var upstreamCancelled = false
+        val session = searchSession(
+            name = "Polar H10 AABBCCDD",
+            hrPayload = byteArrayOf(0xE3.toByte(), 0xFE.toByte(), 95, 96)
+        )
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow {
+            try {
+                emit(session)
+                awaitCancellation()
+            } finally {
+                upstreamCancelled = true
+            }
+        }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+        val values = mutableListOf<Int>()
+
+        val collection = launch {
+            api.startListenForPolarHrBroadcasts(null).collect { values.add(it.hr) }
+        }
+        testScheduler.advanceUntilIdle()
+        collection.cancelAndJoin()
+
+        Assert.assertEquals(listOf(96), values)
+        Assert.assertTrue(upstreamCancelled)
+    }
+
+    @Test
+    fun startListenForPolarHrBroadcasts_propagatesListenerSearchError() = runTest {
+        val expected = IllegalStateException("scan failed")
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow { throw expected }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        try {
+            api.startListenForPolarHrBroadcasts(null).toList()
+            Assert.fail("Expected listener search error")
+        } catch (error: IllegalStateException) {
+            Assert.assertEquals(expected, error)
+        }
+    }
+
+    @Test
+    fun startListenForPolarHrBroadcasts_emitsValuesBeforeListenerSearchError() = runTest {
+        val expected = IllegalStateException("scan failed after value")
+        val session = searchSession(
+            name = "Polar H10 AABBCCDD",
+            hrPayload = byteArrayOf(0xE3.toByte(), 0xFE.toByte(), 95, 96)
+        )
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow {
+            emit(session)
+            throw expected
+        }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+        val hrs = mutableListOf<Int>()
+        val deviceIds = mutableListOf<String>()
+
+        try {
+            api.startListenForPolarHrBroadcasts(null).collect {
+                hrs.add(it.hr)
+                deviceIds.add(it.polarDeviceInfo.deviceId)
+            }
+            Assert.fail("Expected listener search error")
+        } catch (error: IllegalStateException) {
+            Assert.assertEquals(expected, error)
+        }
+
+        Assert.assertEquals(listOf(96), hrs)
+        Assert.assertEquals(listOf("AABBCCDD"), deviceIds)
+    }
+
+    @Test
+    fun startListenForPolarHrBroadcasts_emitsValuesBeforeDisconnectError() = runTest {
+        val session = searchSession(
+            name = "Polar H10 AABBCCDD",
+            hrPayload = byteArrayOf(0xE3.toByte(), 0xFE.toByte(), 95, 96)
+        )
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flow {
+            emit(session)
+            throw BleDisconnected()
+        }
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+        val hrs = mutableListOf<Int>()
+        val deviceIds = mutableListOf<String>()
+
+        try {
+            api.startListenForPolarHrBroadcasts(null).collect {
+                hrs.add(it.hr)
+                deviceIds.add(it.polarDeviceInfo.deviceId)
+            }
+            Assert.fail("Expected disconnect error")
+        } catch (error: BleDisconnected) {
+            Assert.assertEquals(BleDisconnected().toString(), error.toString())
+        }
+
+        Assert.assertEquals(listOf(96), hrs)
+        Assert.assertEquals(listOf("AABBCCDD"), deviceIds)
+    }
+
+    @Test
+    fun startListenForPolarHrBroadcasts_emitsValuesBeforeListenerSearchCompletion() = runTest {
+        val session = searchSession(
+            name = "Polar H10 AABBCCDD",
+            hrPayload = byteArrayOf(0xE3.toByte(), 0xFE.toByte(), 95, 96)
+        )
+        val listener = mockk<BleDeviceListener>(relaxed = true)
+        every { listener.search(false) } returns flowOf(session)
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)).withListener(listener)
+
+        val values = api.startListenForPolarHrBroadcasts(null).toList()
+
+        Assert.assertEquals(listOf(96), values.map { it.hr })
+        Assert.assertEquals(listOf("AABBCCDD"), values.map { it.polarDeviceInfo.deviceId })
+    }
+
+    @Test
+    fun `checkFirmwareUpdate uses injected firmware API`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip"))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.checkFirmwareUpdate(deviceId).toList()
+
+        Assert.assertEquals(listOf(CheckFirmwareUpdateStatus.CheckFwUpdateAvailable("9.9.9")), statuses)
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        val request = firmwareApi.checkRequests.single()
+        Assert.assertEquals("polar-sensor-data-collector-android", request.clientId)
+        Assert.assertEquals("1.2.0", request.firmwareVersion)
+        Assert.assertEquals("00112233.01", request.hardwareCode)
+    }
+
+    @Test
+    fun `checkFirmwareUpdate maps higher server version without package url to not available through shared availability`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", ""))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.checkFirmwareUpdate(deviceId).toList()
+
+        Assert.assertEquals(listOf(CheckFirmwareUpdateStatus.CheckFwUpdateNotAvailable("No fw update available, device firmware version 1.2.0")), statuses)
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+    }
+
+    @Test
+    fun `checkFirmwareUpdate maps injected retryable server failure to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.error(503, mockk<ResponseBody>(relaxed = true))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.checkFirmwareUpdate(deviceId).toList()
+
+        Assert.assertEquals(1, statuses.size)
+        val failed = statuses.single() as CheckFirmwareUpdateStatus.CheckFwUpdateFailed
+        Assert.assertEquals("Unexpected response code: 503", failed.details)
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `checkFirmwareUpdate maps injected client request failure through shared terminal plan`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.error(400, mockk<ResponseBody>(relaxed = true))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.checkFirmwareUpdate(deviceId).toList()
+
+        Assert.assertEquals("client-request-failure", PolarRuntimePlannerAdapter.planFirmwareWorkflow(id = "client-request-failure", statuses = listOf("fwUpdateFailed")).terminalError)
+        Assert.assertEquals(1, statuses.size)
+        val failed = statuses.single() as CheckFirmwareUpdateStatus.CheckFwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.startsWith("Bad request to firmware update API:"))
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware maps injected firmware check failure to failed status without download`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.error(503, mockk<ResponseBody>(relaxed = true))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(1, statuses.size)
+        val failed = statuses.single() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertEquals("Unexpected response code: 503", failed.details)
+        Assert.assertEquals(3, firmwareApi.checkRequests.size)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware maps injected client request failure through shared terminal plan without retry or download`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.error(400, mockk<ResponseBody>(relaxed = true))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals("client-request-failure", PolarRuntimePlannerAdapter.planFirmwareWorkflow(id = "client-request-failure", statuses = listOf("fwUpdateFailed")).terminalError)
+        Assert.assertEquals(1, statuses.size)
+        val failed = statuses.single() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.startsWith("Bad request to firmware update API:"))
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware retries retryable firmware check failures using shared delay plan`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val delayedMillis = mutableListOf<Long>()
+        api.firmwareRetryDelay = { delayMillis -> delayedMillis.add(delayMillis) }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponses = listOf(
+                Response.error(503, mockk<ResponseBody>(relaxed = true)),
+                Response.error(503, mockk<ResponseBody>(relaxed = true)),
+                Response.success(FirmwareUpdateResponse("1.0.0", "https://example.invalid/fw.zip"))
+            )
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(1, statuses.size)
+        val notAvailable = statuses.single() as FirmwareUpdateStatus.FwUpdateNotAvailable
+        Assert.assertEquals("Firmware update not available", notAvailable.details)
+        Assert.assertEquals(3, firmwareApi.checkRequests.size)
+        Assert.assertEquals(listOf(1000L, 2000L), delayedMillis)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware restores multi BLE mode after no update early return`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, psFtpSession) = mockPsFtpConnection(deviceId)
+        val (pfcClient, pfcSession) = mockPfcConnection(deviceId)
+        every { PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, any()) } returns psFtpSession
+        every { PolarServiceClientUtils.sessionPsPfcClientReady(deviceId, any()) } returns pfcSession
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val pfcOperations = mutableListOf<String>()
+        coEvery { pfcClient.sendControlPointCommand(PfcMessage.PFC_REQUEST_MULTI_CONNECTION_SETTING, null) } answers {
+            pfcOperations += "request"
+            BlePfcClient.PfcResponse(byteArrayOf(0, PfcMessage.PFC_REQUEST_MULTI_CONNECTION_SETTING.numVal.toByte(), 1, 1))
+        }
+        coEvery { pfcClient.sendControlPointCommand(PfcMessage.PFC_CONFIGURE_MULTI_CONNECTION_SETTING, any<Int>()) } answers {
+            pfcOperations += "configure:${secondArg<Int>()}"
+            BlePfcClient.PfcResponse(byteArrayOf(0, PfcMessage.PFC_CONFIGURE_MULTI_CONNECTION_SETTING.numVal.toByte(), 1))
+        }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("1.2.0", "https://example.invalid/fw.zip"))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(listOf(FirmwareUpdateStatus.FwUpdateNotAvailable("Firmware update not available")), statuses)
+        Assert.assertEquals(listOf("request", "configure:0", "configure:1"), pfcOperations)
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware restores automatic reconnection after no update early return`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("1.2.0", "https://example.invalid/fw.zip"))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+        api.setAutomaticReconnection(false)
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(listOf(FirmwareUpdateStatus.FwUpdateNotAvailable("Firmware update not available")), statuses)
+        Assert.assertEquals(false, automaticReconnection(api))
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(emptyList<String>(), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware maps package download failure to failed status before device writes`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        coEvery { client.write(any(), any()) } returns flowOf(0)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip"))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(3, statuses.size)
+        Assert.assertTrue(statuses[0] is FirmwareUpdateStatus.FetchingFwUpdatePackage)
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to 9.9.9"), statuses[1])
+        val failed = statuses[2] as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.contains("backup not available"))
+        Assert.assertTrue(failed.details, failed.details.contains("Package download is not used by this test"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+        coVerify(exactly = 0) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url maps package download failure before device writes`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flowOf(0)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip"))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertEquals(FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Preparing for firmware update"), statuses[0])
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to manual-fw.zip"), statuses[1])
+        val failed = statuses[2] as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.contains("backup not available"))
+        Assert.assertTrue(failed.details, failed.details.contains("Package download is not used by this test"))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+        coVerify(exactly = 0) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url maps empty package to not available before device writes`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flowOf(0)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageBytes = firmwareZip("readme.txt" to byteArrayOf(0x01))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertEquals(FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Preparing for firmware update"), statuses[0])
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to manual-fw.zip"), statuses[1])
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateNotAvailable("Can not update, firmware files were not available"), statuses[2])
+        val failed = statuses[3] as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.contains("backup not available"))
+        Assert.assertTrue(failed.details, failed.details.contains("Firmware files were not available"))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+        coVerify(exactly = 0) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url maps invalid package to not available before device writes`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flowOf(0)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageBytes = byteArrayOf(0x01, 0x02, 0x03)
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertEquals(FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Preparing for firmware update"), statuses[0])
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to manual-fw.zip"), statuses[1])
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateNotAvailable("Can not update, firmware files were not available"), statuses[2])
+        val failed = statuses[3] as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.contains("backup not available"))
+        Assert.assertTrue(failed.details, failed.details.contains("Firmware files were not available"))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+        coVerify(exactly = 0) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware maps empty firmware package to not available before device writes`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        coEvery { client.write(any(), any()) } returns flowOf(0)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("readme.txt" to byteArrayOf(0x01))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(4, statuses.size)
+        Assert.assertTrue(statuses[0] is FirmwareUpdateStatus.FetchingFwUpdatePackage)
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to 9.9.9"), statuses[1])
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateNotAvailable("Can not update, firmware files were not available"), statuses[2])
+        val failed = statuses[3] as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.contains("Firmware files were not available"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+        coVerify(exactly = 0) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware maps invalid firmware package to not available before device writes`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        coEvery { client.write(any(), any()) } returns flowOf(0)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = byteArrayOf(0x01, 0x02, 0x03)
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertEquals(4, statuses.size)
+        Assert.assertTrue(statuses[0] is FirmwareUpdateStatus.FetchingFwUpdatePackage)
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to 9.9.9"), statuses[1])
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateNotAvailable("Can not update, firmware files were not available"), statuses[2])
+        val failed = statuses[3] as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(failed.details, failed.details.contains("Firmware files were not available"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+        coVerify(exactly = 0) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware cancellation during package download stops before device writes`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.request(any()) } returns deviceInfoBytes
+        coEvery { client.write(any(), any()) } returns flowOf(0)
+        val packageDownloadStarted = CompletableDeferred<Unit>()
+        val packageDownloadCancelled = CompletableDeferred<Unit>()
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageDownloadStarted = packageDownloadStarted,
+            packageDownloadCancelled = packageDownloadCancelled
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+        val statuses = mutableListOf<FirmwareUpdateStatus>()
+
+        val collection = launch {
+            api.updateFirmware(deviceId).toList(statuses)
+        }
+        withTimeout(1_000) { packageDownloadStarted.await() }
+        collection.cancelAndJoin()
+        withTimeout(1_000) { packageDownloadCancelled.await() }
+
+        Assert.assertTrue(statuses.any { it is FirmwareUpdateStatus.FetchingFwUpdatePackage })
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+        coVerify(exactly = 0) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url cancellation during package download stops before device writes`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flowOf(0)
+        val packageDownloadStarted = CompletableDeferred<Unit>()
+        val packageDownloadCancelled = CompletableDeferred<Unit>()
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageDownloadStarted = packageDownloadStarted,
+            packageDownloadCancelled = packageDownloadCancelled
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+        val statuses = mutableListOf<FirmwareUpdateStatus>()
+
+        val collection = launch {
+            api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList(statuses)
+        }
+        withTimeout(1_000) { packageDownloadStarted.await() }
+        collection.cancelAndJoin()
+        withTimeout(1_000) { packageDownloadCancelled.await() }
+
+        Assert.assertEquals(listOf(FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Preparing for firmware update"), FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to manual-fw.zip")), statuses)
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+        coVerify(exactly = 0) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware maps battery too low write terminal to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }.toByteArray()
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        val requestResponses = ArrayDeque(listOf(deviceInfoBytes, emptyDirectory))
+        coEvery { client.request(any()) } answers {
+            ByteArrayOutputStream().apply { write(if (requestResponses.isEmpty()) emptyDirectory else requestResponses.removeFirst()) }
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flow {
+            throw BlePsFtpUtils.PftpResponseError("Battery too low", PbPFtpError.BATTERY_TOO_LOW_VALUE)
+        }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Reconnecting after factory reset") })
+        val failed = statuses.last() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(statuses.toString(), failed.details.contains("Battery too low to perform firmware update"))
+        Assert.assertTrue(statuses.toString(), failed.details.contains("backup restored"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+        coVerify(atLeast = 1) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url maps battery too low write terminal to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        coEvery { client.request(any()) } returns ByteArrayOutputStream().apply { write(emptyDirectory) }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flow {
+            throw BlePsFtpUtils.PftpResponseError("Battery too low", PbPFtpError.BATTERY_TOO_LOW_VALUE)
+        }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertEquals(FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Preparing for firmware update"), statuses[0])
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to manual-fw.zip"), statuses[1])
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Reconnecting after factory reset") })
+        val failed = statuses.last() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(statuses.toString(), failed.details.contains("Battery too low to perform firmware update"))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+        coVerify(atLeast = 1) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url treats system update reboot write terminal as success`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        coEvery { client.request(any()) } returns ByteArrayOutputStream().apply { write(emptyDirectory) }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flow {
+            throw BlePsFtpUtils.PftpResponseError("Rebooting", PbPFtpError.REBOOTING_VALUE)
+        }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertEquals(FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Preparing for firmware update"), statuses[0])
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to manual-fw.zip"), statuses[1])
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Reconnecting after updating to manual-fw.zip") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateFailed })
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateCompletedSuccessfully("Firmware update to manual-fw.zip completed successfully"), statuses.last())
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+        coVerify(atLeast = 1) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url maps non system reboot write terminal to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        coEvery { client.request(any()) } returns ByteArrayOutputStream().apply { write(emptyDirectory) }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flow {
+            throw BlePsFtpUtils.PftpResponseError("Rebooting", PbPFtpError.REBOOTING_VALUE)
+        }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageBytes = firmwareZip("BTUPDAT.BIN" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertEquals(FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Preparing for firmware update"), statuses[0])
+        Assert.assertEquals(FirmwareUpdateStatus.FetchingFwUpdatePackage("Fetching firmware package to manual-fw.zip"), statuses[1])
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Reconnecting after factory reset") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateCompletedSuccessfully })
+        val failed = statuses.last() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(statuses.toString(), failed.details.contains("Rebooting"))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+        coVerify(atLeast = 1) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url emits shared write progress before success`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        val writeHeaders = mutableListOf<ByteArray>()
+        coEvery { client.request(any()) } returns ByteArrayOutputStream().apply { write(emptyDirectory) }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(capture(writeHeaders), any()) } returns flowOf(1L, 2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        val progress = statuses.filterIsInstance<FirmwareUpdateStatus.WritingFwUpdatePackage>().map { it.details }
+        Assert.assertEquals(
+            listOf(
+                "Writing firmware update file SYSUPDAT.IMG (50%), bytes written: 1/2",
+                "Writing firmware update file SYSUPDAT.IMG (100%), bytes written: 2/2"
+            ),
+            progress
+        )
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateFailed })
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateCompletedSuccessfully("Firmware update to manual-fw.zip completed successfully"), statuses.last())
+        val writePaths = writeHeaders.map { PftpRequest.PbPFtpOperation.parseFrom(it).path }
+        Assert.assertEquals("/SYSUPDAT.IMG", writePaths.first())
+        Assert.assertTrue(writePaths.toString(), writePaths.contains("/U/0/S/UDEVSET.BPB"))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware emits shared write progress after firmware check before success`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        val writeHeaders = mutableListOf<ByteArray>()
+        coEvery { client.request(any()) } answers {
+            val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+            ByteArrayOutputStream().apply {
+                write(if (operation.path == "/DEVICE.BPB") deviceInfo.toByteArray() else emptyDirectory)
+            }
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(capture(writeHeaders), any()) } returns flowOf(1L, 2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        val progress = statuses.filterIsInstance<FirmwareUpdateStatus.WritingFwUpdatePackage>().map { it.details }
+        Assert.assertEquals(
+            listOf(
+                "Writing firmware update file SYSUPDAT.IMG (50%), bytes written: 1/2",
+                "Writing firmware update file SYSUPDAT.IMG (100%), bytes written: 2/2"
+            ),
+            progress
+        )
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateFailed })
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateCompletedSuccessfully("Firmware update to 9.9.9 completed successfully"), statuses.last())
+        val writePaths = writeHeaders.map { PftpRequest.PbPFtpOperation.parseFrom(it).path }
+        Assert.assertEquals("/SYSUPDAT.IMG", writePaths.first())
+        Assert.assertTrue(writePaths.toString(), writePaths.contains("/U/0/S/UDEVSET.BPB"))
+        Assert.assertEquals(1, firmwareApi.checkRequests.size)
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware treats system update reboot write terminal as success`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }.toByteArray()
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        val requestResponses = ArrayDeque(listOf(deviceInfoBytes, emptyDirectory))
+        coEvery { client.request(any()) } answers {
+            ByteArrayOutputStream().apply { write(if (requestResponses.isEmpty()) emptyDirectory else requestResponses.removeFirst()) }
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flow {
+            throw BlePsFtpUtils.PftpResponseError("Rebooting", PbPFtpError.REBOOTING_VALUE)
+        }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Reconnecting after updating to 9.9.9") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateFailed })
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateCompletedSuccessfully("Firmware update to 9.9.9 completed successfully"), statuses.last())
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+        coVerify(atLeast = 1) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware maps non system reboot write terminal to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val deviceInfoBytes = ByteArrayOutputStream().apply {
+            deviceInfo.writeTo(this)
+        }.toByteArray()
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        val requestResponses = ArrayDeque(listOf(deviceInfoBytes, emptyDirectory))
+        coEvery { client.request(any()) } answers {
+            ByteArrayOutputStream().apply { write(if (requestResponses.isEmpty()) emptyDirectory else requestResponses.removeFirst()) }
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flow {
+            throw BlePsFtpUtils.PftpResponseError("Rebooting", PbPFtpError.REBOOTING_VALUE)
+        }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("BTUPDAT.BIN" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.PreparingDeviceForFwUpdate("Reconnecting after factory reset") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateCompletedSuccessfully })
+        val failed = statuses.last() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(statuses.toString(), failed.details.contains("Rebooting"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+        coVerify(atLeast = 1) { client.write(any(), any()) }
+    }
+
+    @Test
+    fun `updateFirmware keeps success when backup restore write fails after firmware write`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val rootDirectory = PftpResponse.PbPFtpDirectory.newBuilder()
+            .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("BACKUP.TXT").setSize(24L))
+            .build()
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        coEvery { client.request(any()) } answers {
+            val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+            val responseBytes = when (operation.path) {
+                "/DEVICE.BPB" -> deviceInfo.toByteArray()
+                "/SYS/" -> rootDirectory.toByteArray()
+                "/SYS/BACKUP.TXT" -> "/U/0/S/UDEVSET.BPB\n".toByteArray()
+                "/U/0/S/UDEVSET.BPB" -> byteArrayOf(0x0A, 0x0B)
+                else -> emptyDirectory
+            }
+            ByteArrayOutputStream().apply { write(responseBytes) }
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        val writeHeaders = mutableListOf<ByteArray>()
+        coEvery { client.write(capture(writeHeaders), any()) } answers {
+            val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+            if (operation.path == "/U/0/S/UDEVSET.BPB") {
+                flow { throw RuntimeException("restore write failed") }
+            } else {
+                flowOf(2L)
+            }
+        }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Restoring backup on device") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateFailed })
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateCompletedSuccessfully("Firmware update to 9.9.9 completed successfully"), statuses.last())
+        val writePaths = writeHeaders.map { PftpRequest.PbPFtpOperation.parseFrom(it).path }
+        Assert.assertTrue(writePaths.toString(), writePaths.contains("/SYSUPDAT.IMG"))
+        Assert.assertTrue(writePaths.toString(), writePaths.contains("/U/0/S/UDEVSET.BPB"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware maps final set time failure to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "h10")
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val setTimeFailure = RuntimeException("set local time failed")
+        coEvery { client.request(any()) } returns ByteArrayOutputStream().apply { write(deviceInfo.toByteArray()) }
+        coEvery { client.query(any(), any()) } answers {
+            if (firstArg<Int>() == PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE) throw setTimeFailure
+            ByteArrayOutputStream()
+        }
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flowOf(2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Setting device time") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateCompletedSuccessfully })
+        val failed = statuses.last() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(statuses.toString(), failed.details.contains("set local time failed"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware maps final restart failure to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        val requestResponses = ArrayDeque(listOf(deviceInfo.toByteArray(), emptyDirectory))
+        val restartFailure = RuntimeException("restart notification failed")
+        var resetNotifications = 0
+        coEvery { client.request(any()) } answers {
+            ByteArrayOutputStream().apply { write(if (requestResponses.isEmpty()) emptyDirectory else requestResponses.removeFirst()) }
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } answers {
+            if (firstArg<Int>() == PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal && ++resetNotifications == 2) {
+                throw restartFailure
+            }
+            Unit
+        }
+        coEvery { client.write(any(), any()) } returns flowOf(2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Restarting device") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateCompletedSuccessfully })
+        val failed = statuses.last() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(statuses.toString(), failed.details.contains("restart notification failed"))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware keeps success when final stop sync fails`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "360")
+        val deviceInfo = Device.PbDeviceInfo.newBuilder()
+            .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
+            .setModelName("Model")
+            .setHardwareCode("00112233.01")
+            .build()
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        val requestResponses = ArrayDeque(listOf(deviceInfo.toByteArray(), emptyDirectory))
+        val stopSyncFailure = RuntimeException("stop sync notification failed")
+        val notificationIds = mutableListOf<Int>()
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { BlePolarDeviceCapabilitiesUtility.isDeviceSensor("360") } returns true
+        coEvery { client.request(any()) } answers {
+            ByteArrayOutputStream().apply { write(if (requestResponses.isEmpty()) emptyDirectory else requestResponses.removeFirst()) }
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(capture(notificationIds), any()) } answers {
+            if (firstArg<Int>() == PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE) {
+                throw stopSyncFailure
+            }
+            Unit
+        }
+        coEvery { client.write(any(), any()) } returns flowOf(2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("9.9.9", "https://example.invalid/fw.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId).toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Stopping sync") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateFailed })
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateCompletedSuccessfully("Firmware update to 9.9.9 completed successfully"), statuses.last())
+        Assert.assertTrue(notificationIds.toString(), notificationIds.contains(PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE))
+        Assert.assertEquals(listOf("https://example.invalid/fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url keeps success when backup restore write fails after firmware write`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val rootDirectory = PftpResponse.PbPFtpDirectory.newBuilder()
+            .addEntries(PftpResponse.PbPFtpEntry.newBuilder().setName("BACKUP.TXT").setSize(24L))
+            .build()
+        val emptyDirectory = PftpResponse.PbPFtpDirectory.newBuilder().build().toByteArray()
+        coEvery { client.request(any()) } answers {
+            val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+            val responseBytes = when (operation.path) {
+                "/SYS/" -> rootDirectory.toByteArray()
+                "/SYS/BACKUP.TXT" -> "/U/0/S/UDEVSET.BPB\n".toByteArray()
+                "/U/0/S/UDEVSET.BPB" -> byteArrayOf(0x0A, 0x0B)
+                else -> emptyDirectory
+            }
+            ByteArrayOutputStream().apply { write(responseBytes) }
+        }
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        val writeHeaders = mutableListOf<ByteArray>()
+        coEvery { client.write(capture(writeHeaders), any()) } answers {
+            val operation = PftpRequest.PbPFtpOperation.parseFrom(firstArg<ByteArray>())
+            if (operation.path == "/U/0/S/UDEVSET.BPB") {
+                flow { throw RuntimeException("restore write failed") }
+            } else {
+                flowOf(2L)
+            }
+        }
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Restoring backup on device") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateFailed })
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateCompletedSuccessfully("Firmware update to manual-fw.zip completed successfully"), statuses.last())
+        val writePaths = writeHeaders.map { PftpRequest.PbPFtpOperation.parseFrom(it).path }
+        Assert.assertTrue(writePaths.toString(), writePaths.contains("/SYSUPDAT.IMG"))
+        Assert.assertTrue(writePaths.toString(), writePaths.contains("/U/0/S/UDEVSET.BPB"))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url maps final set time failure to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "h10")
+        val setTimeFailure = RuntimeException("set local time failed")
+        coEvery { client.request(any()) } returns ByteArrayOutputStream()
+        coEvery { client.query(any(), any()) } answers {
+            if (firstArg<Int>() == PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE) throw setTimeFailure
+            ByteArrayOutputStream()
+        }
+        coEvery { client.sendNotification(any(), any()) } returns Unit
+        coEvery { client.write(any(), any()) } returns flowOf(2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Setting device time") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateCompletedSuccessfully })
+        val failed = statuses.last() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(statuses.toString(), failed.details.contains("set local time failed"))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url maps final restart failure to failed status`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val restartFailure = RuntimeException("restart notification failed")
+        var resetNotifications = 0
+        coEvery { client.request(any()) } returns ByteArrayOutputStream()
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(any(), any()) } answers {
+            if (firstArg<Int>() == PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal && ++resetNotifications == 2) {
+                throw restartFailure
+            }
+            Unit
+        }
+        coEvery { client.write(any(), any()) } returns flowOf(2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Restarting device") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateCompletedSuccessfully })
+        val failed = statuses.last() as FirmwareUpdateStatus.FwUpdateFailed
+        Assert.assertTrue(statuses.toString(), failed.details.contains("restart notification failed"))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `updateFirmware with direct firmware url keeps success when final stop sync fails`() = runTest {
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
+        val (client, _) = mockPsFtpConnection(deviceId, polarDeviceType = "360")
+        val stopSyncFailure = RuntimeException("stop sync notification failed")
+        val notificationIds = mutableListOf<Int>()
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { BlePolarDeviceCapabilitiesUtility.isDeviceSensor("360") } returns true
+        coEvery { client.request(any()) } returns ByteArrayOutputStream()
+        coEvery { client.query(any(), any()) } returns ByteArrayOutputStream()
+        coEvery { client.sendNotification(capture(notificationIds), any()) } answers {
+            if (firstArg<Int>() == PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE) {
+                throw stopSyncFailure
+            }
+            Unit
+        }
+        coEvery { client.write(any(), any()) } returns flowOf(2L)
+        val firmwareApi = CapturingFirmwareUpdateApi(
+            checkResponse = Response.success(FirmwareUpdateResponse("unused", "https://example.invalid/unused.zip")),
+            packageBytes = firmwareZip("SYSUPDAT.IMG" to byteArrayOf(0x01, 0x02))
+        )
+        api.firmwareUpdateApiFactory = { firmwareApi }
+
+        val statuses = api.updateFirmware(deviceId, "https://example.invalid/manual-fw.zip").toList()
+
+        Assert.assertTrue(statuses.toString(), statuses.any { it == FirmwareUpdateStatus.FinalizingFwUpdate("Stopping sync") })
+        Assert.assertFalse(statuses.toString(), statuses.any { it is FirmwareUpdateStatus.FwUpdateFailed })
+        Assert.assertEquals(FirmwareUpdateStatus.FwUpdateCompletedSuccessfully("Firmware update to manual-fw.zip completed successfully"), statuses.last())
+        Assert.assertTrue(notificationIds.toString(), notificationIds.contains(PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE))
+        Assert.assertTrue(firmwareApi.checkRequests.isEmpty())
+        Assert.assertEquals(listOf("https://example.invalid/manual-fw.zip"), firmwareApi.packageUrls)
+    }
+
+    @Test
+    fun `activity data readiness device type uses shared advertisement local name parsing`() {
+        Assert.assertEquals("GritX Pro", BDBleApiImpl.activityCapabilityDeviceType("Polar GritX Pro aa123459"))
+        Assert.assertEquals("Custom Strap", BDBleApiImpl.activityCapabilityDeviceType("Custom Strap aa123459"))
+    }
+
+    @Test
     fun `setLocalTime sends different UTC and local time values for non-UTC timezone`() = runTest {
         assertDiskTimeRuntimePolicyVectorContains("set-local-time-v2")
         // Arrange
@@ -196,11 +1633,13 @@ class BDBleApiImplTest {
 
         val capturedQueryIds = mutableListOf<Int>()
         val capturedQueryParams = mutableListOf<ByteArray?>()
+        var plannedCommands: List<String> = emptyList()
         coEvery { client.query(capture(capturedQueryIds), captureNullable(capturedQueryParams)) } returns ByteArrayOutputStream()
 
         try {
             // Act
             api.setLocalTime(deviceId, localDateTime)
+            plannedCommands = planSetLocalTimeV2ForCurrentZone(localDateTime).commands
         } finally {
             TimeZone.setDefault(originalTz)
             unmockkObject(PolarServiceClientUtils)
@@ -222,6 +1661,16 @@ class BDBleApiImplTest {
             "Local time and UTC system time must differ for a non-UTC timezone",
             localTimeParams.time.hour,
             systemTimeParams.time.hour
+        )
+        Assert.assertEquals(
+            listOf(
+                "query:SET_SYSTEM_TIME",
+                "field:systemTimeHour=10",
+                "field:systemTimeTrusted=true",
+                "query:SET_LOCAL_TIME",
+                "field:localTimeHour=12"
+            ),
+            plannedCommands
         )
         Assert.assertTrue("System time must be marked as trusted", systemTimeParams.trusted)
     }
@@ -351,20 +1800,33 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `setDaylightSavingTime sends set local time query with current local timestamp`() = runTest {
+    fun `setDaylightSavingTime sends set local time query with platform current local timestamp`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-daylight-saving-time")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
         val (client, _) = mockPsFtpConnection(deviceId)
         val queryIds = mutableListOf<Int>()
         val queryParams = mutableListOf<ByteArray?>()
+        val currentPlatformTime = LocalDateTime.of(2026, 6, 7, 8, 9, 10, 123_000_000)
         coEvery { client.query(capture(queryIds), captureNullable(queryParams)) } returns ByteArrayOutputStream()
 
-        api.setDaylightSavingTime(deviceId)
+        mockkStatic(LocalDateTime::class)
+        every { LocalDateTime.now() } returns currentPlatformTime
+        try {
+            api.setDaylightSavingTime(deviceId)
+        } finally {
+            unmockkStatic(LocalDateTime::class)
+        }
 
         Assert.assertEquals(listOf(PftpRequest.PbPFtpQuery.SET_LOCAL_TIME_VALUE), queryIds)
         val params = PftpRequest.PbPFtpSetLocalTimeParams.parseFrom(queryParams.single())
-        Assert.assertTrue(params.hasDate())
-        Assert.assertTrue(params.hasTime())
+        Assert.assertEquals(2026, params.date.year)
+        Assert.assertEquals(6, params.date.month)
+        Assert.assertEquals(7, params.date.day)
+        Assert.assertEquals(8, params.time.hour)
+        Assert.assertEquals(9, params.time.minute)
+        Assert.assertEquals(10, params.time.seconds)
+        Assert.assertEquals(123, params.time.millis)
     }
 
     @Test
@@ -460,6 +1922,7 @@ class BDBleApiImplTest {
 
     @Test
     fun `stopRecording sends request stop recording query`() = runTest {
+        assertCommandRuntimePolicyVectorContains("h10-stop-recording")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
         mockRecordingSupported()
@@ -498,6 +1961,7 @@ class BDBleApiImplTest {
 
     @Test
     fun `requestRecordingStatus decodes fake query response`() = runTest {
+        assertCommandRuntimePolicyVectorContains("h10-recording-status")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
         mockRecordingSupported()
@@ -686,7 +2150,7 @@ class BDBleApiImplTest {
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
-        Assert.assertEquals(PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT, writtenSettings.generalSettings.deviceLocation)
+        Assert.assertEquals(sharedDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT.number), writtenSettings.generalSettings.deviceLocation)
         Assert.assertTrue(writtenSettings.hasTelemetrySettings())
         Assert.assertTrue(writtenSettings.telemetrySettings.hasTelemetryEnabled())
         Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
@@ -733,8 +2197,32 @@ class BDBleApiImplTest {
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
-        Assert.assertEquals(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT, writtenSettings.generalSettings.deviceLocation)
+        Assert.assertEquals(sharedDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT.number), writtenSettings.generalSettings.deviceLocation)
         Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
+    }
+
+    @Test
+    fun `setUserDeviceLocation propagates current settings read failure without write`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-location-read-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("location settings read failed")
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(any(), any()) } throws transportError
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        try {
+            api.setUserDeviceLocation(deviceId, PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT.number)
+            Assert.fail("Expected location settings read failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertTrue(writeHeaders.isEmpty())
+        Assert.assertTrue(writePayloads.isEmpty())
     }
 
     @Test
@@ -780,7 +2268,7 @@ class BDBleApiImplTest {
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
         Assert.assertTrue(writtenSettings.hasUsbConnectionSettings())
-        Assert.assertEquals(PbUsbConnectionSettings.PbUsbConnectionMode.ON, writtenSettings.usbConnectionSettings.mode)
+        Assert.assertEquals(sharedUsbConnectionMode(true), writtenSettings.usbConnectionSettings.mode)
         Assert.assertEquals(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT, writtenSettings.generalSettings.deviceLocation)
         Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
     }
@@ -822,7 +2310,31 @@ class BDBleApiImplTest {
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
-        Assert.assertEquals(PbUsbConnectionSettings.PbUsbConnectionMode.OFF, writtenSettings.usbConnectionSettings.mode)
+        Assert.assertEquals(sharedUsbConnectionMode(false), writtenSettings.usbConnectionSettings.mode)
+    }
+
+    @Test
+    fun `setUsbConnectionMode propagates current settings read failure without write`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-usb-connection-mode-read-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("USB settings read failed")
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(any(), any()) } throws transportError
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        try {
+            api.setUsbConnectionMode(deviceId, false)
+            Assert.fail("Expected USB settings read failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertTrue(writeHeaders.isEmpty())
+        Assert.assertTrue(writePayloads.isEmpty())
     }
 
     @Test
@@ -873,7 +2385,7 @@ class BDBleApiImplTest {
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
         Assert.assertTrue(writtenSettings.hasAutomaticMeasurementSettings())
         val atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
-        Assert.assertEquals(PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.ON, atdSettings.state)
+        Assert.assertEquals(sharedAutomaticTrainingDetectionState(true), atdSettings.state)
         Assert.assertEquals(77, atdSettings.sensitivity)
         Assert.assertEquals(300, atdSettings.minimumTrainingDurationSeconds)
         Assert.assertTrue(writtenSettings.telemetrySettings.telemetryEnabled)
@@ -916,9 +2428,33 @@ class BDBleApiImplTest {
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
         val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
         val atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
-        Assert.assertEquals(PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.OFF, atdSettings.state)
+        Assert.assertEquals(sharedAutomaticTrainingDetectionState(false), atdSettings.state)
         Assert.assertEquals(11, atdSettings.sensitivity)
         Assert.assertEquals(120, atdSettings.minimumTrainingDurationSeconds)
+    }
+
+    @Test
+    fun `setAutomaticTrainingDetectionSettings propagates current settings read failure without write`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-training-detection-read-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("automatic training detection read failed")
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(any(), any()) } throws transportError
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        try {
+            api.setAutomaticTrainingDetectionSettings(deviceId, false, 11, 120)
+            Assert.fail("Expected automatic training detection read failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertTrue(writeHeaders.isEmpty())
+        Assert.assertTrue(writePayloads.isEmpty())
     }
 
     @Test
@@ -1009,6 +2545,30 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `setAutomaticOHRMeasurementEnabled propagates current settings read failure without write`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-automatic-ohr-measurement-read-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("automatic OHR read failed")
+
+        mockPolarFileSystemV2()
+        coEvery { client.request(any(), any()) } throws transportError
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        try {
+            api.setAutomaticOHRMeasurementEnabled(deviceId, enabled = false)
+            Assert.fail("Expected automatic OHR read failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertTrue(writeHeaders.isEmpty())
+        Assert.assertTrue(writePayloads.isEmpty())
+    }
+
+    @Test
     fun `getUserDeviceSettings reads current settings from fake transport`() = runTest {
         assertUserDeviceSettingsRuntimePolicyVectorContains("get-user-device-settings")
         val deviceId = "E123456F"
@@ -1069,6 +2629,79 @@ class BDBleApiImplTest {
         val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, requestOperation.command)
         Assert.assertEquals("/U/0/S/UDEVSET.BPB", requestOperation.path)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun `setUserDeviceSettings writes whole settings payload through shared path planning`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val settings = PolarUserDeviceSettings(
+            deviceLocation = PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT.number,
+            usbConnectionMode = true,
+            telemetryEnabled = true,
+            automaticTrainingDetectionMode = false,
+            automaticTrainingDetectionSensitivity = 22,
+            minimumTrainingDurationSeconds = 300,
+            autosFilesEnabled = false
+        )
+
+        mockPolarFileSystemV2()
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.setUserDeviceSettings(deviceId, settings)
+
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertEquals(sharedDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_RIGHT.number), writtenSettings.generalSettings.deviceLocation)
+        Assert.assertEquals(sharedUsbConnectionMode(true), writtenSettings.usbConnectionSettings.mode)
+        val atdSettings = writtenSettings.automaticMeasurementSettings.automaticTrainingDetectionSettings
+        Assert.assertEquals(sharedAutomaticTrainingDetectionState(false), atdSettings.state)
+        Assert.assertEquals(22, atdSettings.sensitivity)
+        Assert.assertEquals(300, atdSettings.minimumTrainingDurationSeconds)
+        Assert.assertEquals(PbAutomaticMeasurementSettings.PbAutomaticMeasurementState.OFF, writtenSettings.automaticMeasurementSettings.automaticOhrMeasurement.state)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun `setUserDeviceSettings propagates write failure after whole settings payload is prepared`() = runTest {
+        assertUserDeviceSettingsRuntimePolicyVectorContains("set-user-device-settings-write-failure")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        val transportError = RuntimeException("whole settings write failed")
+        val settings = PolarUserDeviceSettings(
+            deviceLocation = PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT.number,
+            telemetryEnabled = false
+        )
+
+        mockPolarFileSystemV2()
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flow { throw transportError }
+
+        try {
+            api.setUserDeviceSettings(deviceId, settings)
+            Assert.fail("Expected whole settings write failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals("/U/0/S/UDEVSET.BPB", writeOperation.path)
+        val writtenSettings = PbUserDeviceSettings.parseFrom(writePayloads.single()!!.readBytes())
+        Assert.assertEquals(sharedDeviceLocation(PbDeviceLocation.DEVICE_LOCATION_WRIST_LEFT.number), writtenSettings.generalSettings.deviceLocation)
+        Assert.assertFalse(writtenSettings.telemetrySettings.telemetryEnabled)
     }
 
     @Test
@@ -1140,7 +2773,42 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `setLedConfig headers use shared file facade planning`() {
+        val writeOperation = BDBleApiImpl.ledConfigWriteOperation()
+
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.first)
+        Assert.assertEquals(LedConfig.LED_CONFIG_FILENAME, writeOperation.second)
+        Assert.assertArrayEquals(
+            byteArrayOf(LedConfig.LED_ANIMATION_ENABLE_BYTE, LedConfig.LED_ANIMATION_DISABLE_BYTE),
+            PolarRuntimePlannerAdapter.ledConfigPayloadBytes(sdkModeLedEnabled = true, ppiModeLedEnabled = false)
+        )
+    }
+
+    @Test
+    fun `offline recording headers use shared file facade planning`() {
+        val fileOperation = BDBleApiImpl.offlineRecordingFileReadOperation("/U/0/20240615/R/103000/ACC.REC")
+        val directoryOperation = BDBleApiImpl.offlineRecordingDirectoryReadOperation("/U/0/20240615/R/103000/")
+        val removeOperation = BDBleApiImpl.offlineRecordingRemoveOperation("/U/0/20240615/R/103000/ACC.REC")
+
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, fileOperation.first)
+        Assert.assertEquals("/U/0/20240615/R/103000/ACC.REC", fileOperation.second)
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.GET, directoryOperation.first)
+        Assert.assertEquals("/U/0/20240615/R/103000/", directoryOperation.second)
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE, removeOperation.first)
+        Assert.assertEquals("/U/0/20240615/R/103000/ACC.REC", removeOperation.second)
+    }
+
+    @Test
+    fun `stored data date folder removal header uses shared file facade planning`() {
+        val removeOperation = BDBleApiImpl.storedDataDateFolderRemoveOperation("/U/0/20260530")
+
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE, removeOperation.first)
+        Assert.assertEquals("/U/0/20260530", removeOperation.second)
+    }
+
+    @Test
     fun `setLedConfig propagates write failure after payload is prepared`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_LED_ANIMATION))
         val (client, _) = mockPsFtpConnection(deviceId)
@@ -1223,7 +2891,57 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `LogConfig maps known SD log enum values through shared KMP`() {
+        val trigger = PbSensorDataLog.PbLogTrigger.valueOf(PolarSdLogTriggerName.fromValue(2)!!.name)
+        val magnetometerFrequency = PbSensorDataLog.PbMagnetometerLogFrequency.valueOf(PolarSdLogMagnetometerFrequencyName.fromValue(3)!!.name)
+        val proto = PbSensorDataLog.newBuilder()
+            .setLogTrigger(trigger)
+            .setMagnetometerLogFrequency(magnetometerFrequency)
+            .build()
+
+        val config = LogConfig.fromBytes(proto.toByteArray())
+
+        Assert.assertEquals(PbSensorDataLog.PbLogTrigger.LOG_TRIGGER_EXERCISE, config.logTriggerSettings)
+        Assert.assertEquals(PbSensorDataLog.PbMagnetometerLogFrequency.MAG_LOG_100HZ, config.magnetometerFrequency)
+        val encoded = config.toProto()
+        Assert.assertEquals(PbSensorDataLog.PbLogTrigger.LOG_TRIGGER_EXERCISE, encoded.logTrigger)
+        Assert.assertEquals(PbSensorDataLog.PbMagnetometerLogFrequency.MAG_LOG_100HZ, encoded.magnetometerLogFrequency)
+    }
+
+    @Test
+    fun `LogConfig file headers use shared file facade planning`() {
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to LogConfig.LOG_CONFIG_FILENAME,
+            BDBleApiImpl.sdLogConfigReadOperation()
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.PUT to LogConfig.LOG_CONFIG_FILENAME,
+            BDBleApiImpl.sdLogConfigWriteOperation()
+        )
+    }
+
+    @Test
+    fun `sd log readiness manifest is pinned before facade migration`() {
+        val manifest = loadSdkGoldenVector("sdk/sd-log/sd-log-readiness.json")
+        val input = manifest.getAsJsonObject("input")
+        val expected = manifest.getAsJsonObject("expected")
+        val consumerTests = manifest.getAsJsonObject("consumerTests")
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+
+        Assert.assertEquals("sd-log-readiness", manifest.get("id").asString)
+        Assert.assertEquals("sdLogReadiness", input.get("kind").asString)
+        Assert.assertEquals(SD_LOG_READINESS_FAMILIES, requiredFamilies)
+        Assert.assertEquals(SD_LOG_READINESS_FAMILIES, coveredFamilies)
+        Assert.assertEquals(SD_LOG_READINESS_COMMON_DECISION, expected.get("commonDecision").asString)
+        Assert.assertEquals(listOf("com.polar.sdk.impl.BDBleApiImplTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("PolarBleApiImplTests"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.SdLogModelsCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    @Test
     fun `setLogConfig propagates write failure after payload is prepared`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
         val (client, _) = mockPsFtpConnection(deviceId)
@@ -1364,7 +3082,69 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `first time use file headers use shared file facade planning`() {
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME,
+            BDBleApiImpl.firstTimeUsePhysicalConfigReadOperation()
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.PUT to PolarFirstTimeUseConfig.FTU_CONFIG_FILENAME,
+            BDBleApiImpl.firstTimeUsePhysicalConfigWriteOperation()
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to UserIdentifierType.USER_IDENTIFIER_FILENAME,
+            BDBleApiImpl.firstTimeUseUserIdReadOperation()
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.PUT to UserIdentifierType.USER_IDENTIFIER_FILENAME,
+            BDBleApiImpl.firstTimeUseUserIdWriteOperation()
+        )
+    }
+
+    @Test
+    fun `first time use readiness manifest is pinned before facade migration`() {
+        val manifest = loadSdkGoldenVector("sdk/first-time-use/first-time-use-readiness.json")
+        val input = manifest.getAsJsonObject("input")
+        val expected = manifest.getAsJsonObject("expected")
+        val consumerTests = manifest.getAsJsonObject("consumerTests")
+        val requiredFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+
+        Assert.assertEquals("first-time-use-readiness", manifest.get("id").asString)
+        Assert.assertEquals("firstTimeUseReadiness", input.get("kind").asString)
+        Assert.assertEquals(FIRST_TIME_USE_READINESS_FAMILIES, requiredFamilies)
+        Assert.assertEquals(FIRST_TIME_USE_READINESS_FAMILIES, coveredFamilies)
+        Assert.assertEquals(FIRST_TIME_USE_READINESS_COMMON_DECISION, expected.get("commonDecision").asString)
+        Assert.assertEquals(listOf("com.polar.sdk.api.model.PolarFirstTimeUseConfigTest", "com.polar.sdk.impl.BDBleApiImplTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("PolarBleApiImplTests"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.FirstTimeUseModelsCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    @Test
+    fun `H10 exercise file headers use shared file facade planning`() {
+        val path = "/EXERCISE/E0000001.BPB"
+
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to path,
+            BDBleApiImpl.h10ExerciseFetchOperation(path)
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.REMOVE to path,
+            BDBleApiImpl.h10ExerciseRemoveOperation(path)
+        )
+    }
+
+    @Test
+    fun `offline recording PMDFILES header uses shared file facade planning`() {
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/PMDFILES.TXT",
+            BDBleApiImpl.offlineRecordingPmdFilesReadOperation()
+        )
+    }
+
+    @Test
     fun `doFirstTimeUse terminates sync and propagates physical config write failure`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
         val (client, _) = mockPsFtpConnection(deviceId)
@@ -1449,7 +3229,28 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `stopSleepRecording uses shared sleep REST stop path`() = runTest {
+        assertRestServiceMappingReadinessContains("sleep-rest-action-path-planning")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPsFtpConnection(deviceId)
+        val writeHeaders = mutableListOf<ByteArray>()
+        val writePayloads = mutableListOf<ByteArrayInputStream?>()
+        every { client.write(capture(writeHeaders), captureNullable(writePayloads)) } returns flowOf(0L)
+
+        api.stopSleepRecording(deviceId)
+
+        Assert.assertEquals(1, writeHeaders.size)
+        Assert.assertEquals(1, writePayloads.size)
+        val writeOperation = PftpRequest.PbPFtpOperation.parseFrom(writeHeaders.single())
+        Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.PUT, writeOperation.command)
+        Assert.assertEquals(PolarRuntimePlannerAdapter.stopSleepRecordingPath(), writeOperation.path)
+        Assert.assertArrayEquals("{}".toByteArray(), writePayloads.single()!!.readBytes())
+    }
+
+    @Test
     fun `putNotification propagates write failure after payload is prepared`() = runTest {
+        assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         val deviceId = "E123456F"
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
         val (client, _) = mockPsFtpConnection(deviceId)
@@ -2190,7 +3991,7 @@ class BDBleApiImplTest {
             api.getRestApiDescription(deviceId, "/REST/SLEEP.API")
             Assert.fail("Expected REST service description empty response to fail parsing")
         } catch (error: Exception) {
-            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+            assertRestJsonParseFailure(error)
         }
         Assert.assertEquals(1, requestHeaders.size)
         val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
@@ -2214,7 +4015,7 @@ class BDBleApiImplTest {
             api.getRestApiDescription(deviceId, "/REST/SLEEP.API")
             Assert.fail("Expected REST service description malformed response to fail parsing")
         } catch (error: Exception) {
-            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+            assertRestJsonParseFailure(error)
         }
         Assert.assertEquals(1, requestHeaders.size)
         val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
@@ -2284,7 +4085,7 @@ class BDBleApiImplTest {
             api.listRestApiServices(deviceId)
             Assert.fail("Expected REST service list empty response to fail parsing")
         } catch (error: Exception) {
-            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+            assertRestJsonParseFailure(error)
         }
         Assert.assertEquals(1, requestHeaders.size)
         val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
@@ -2308,7 +4109,7 @@ class BDBleApiImplTest {
             api.listRestApiServices(deviceId)
             Assert.fail("Expected REST service list malformed response to fail parsing")
         } catch (error: Exception) {
-            Assert.assertTrue(error is NullPointerException || error is com.google.gson.JsonSyntaxException)
+            assertRestJsonParseFailure(error)
         }
         Assert.assertEquals(1, requestHeaders.size)
         val requestOperation = PftpRequest.PbPFtpOperation.parseFrom(requestHeaders.single())
@@ -2746,7 +4547,7 @@ class BDBleApiImplTest {
                     PmdOfflineRecTriggerStatus.TRIGGER_ENABLED,
                     PmdSetting(byteArrayOf(0x00, 0x01, 0x34, 0x00))
                 ),
-                PmdMeasurementType.GYRO to Pair(PmdOfflineRecTriggerStatus.TRIGGER_DISABLED, null),
+                PmdMeasurementType.GYRO to Pair(PmdOfflineRecTriggerStatus.TRIGGER_ENABLED, null),
                 PmdMeasurementType.OFFLINE_HR to Pair(PmdOfflineRecTriggerStatus.TRIGGER_ENABLED, null)
             )
         )
@@ -2789,6 +4590,12 @@ class BDBleApiImplTest {
         every { PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, any()) } returns session
 
         return Pair(client, session)
+    }
+
+    private fun automaticReconnection(api: BDBleApiImpl): Boolean? {
+        val method = BDBleApiImpl::class.java.getDeclaredMethod("getAutomaticReconnection")
+        method.isAccessible = true
+        return method.invoke(api) as Boolean?
     }
 
     private fun mockPmdConnection(deviceId: String): Pair<BlePMDClient, BleDeviceSession> {
@@ -2873,6 +4680,14 @@ class BDBleApiImplTest {
                 "h10-recording-stop-query-failure",
                 "h10-recording-status-query",
                 "h10-recording-status-query-failure",
+                "live-exercise-start-query",
+                "live-exercise-pause-query",
+                "live-exercise-resume-query",
+                "live-exercise-stop-query",
+                "live-exercise-status-query",
+                "offline-exercise-v2-start-query",
+                "offline-exercise-v2-stop-query",
+                "offline-exercise-v2-status-query",
                 "factory-reset-flags",
                 "factory-reset-notification-failure",
                 "preserve-pairing-reset-flags",
@@ -2940,6 +4755,33 @@ class BDBleApiImplTest {
             androidConsumers = listOf("com.polar.sdk.impl.BDBleApiImplTest"),
             iosConsumers = listOf("PolarBleApiImplTests"),
             commonPrototypeConsumers = listOf("com.polar.sharedtest.StoredDataCleanupRuntimePolicyCommonTest")
+        )
+    }
+
+    @Test
+    fun `stored data cleanup parent pruning uses shared path split policy`() {
+        Assert.assertEquals("/SDLOGS", PolarRuntimePlannerAdapter.storedDataCleanupRootPath(PolarBleApi.PolarStoredDataType.SDLOGS.type, "/U/0"))
+        Assert.assertEquals("/U/0/AUTOS", PolarRuntimePlannerAdapter.storedDataCleanupRootPath(PolarBleApi.PolarStoredDataType.AUTO_SAMPLE.type, "/U/0"))
+        Assert.assertEquals("/U/0", PolarRuntimePlannerAdapter.storedDataCleanupRootPath(PolarBleApi.PolarStoredDataType.ACTIVITY.type, "/U/0"))
+        Assert.assertEquals(
+            listOf(
+                PftpRequest.PbPFtpOperation.Command.GET to "/SDLOGS",
+                PftpRequest.PbPFtpOperation.Command.REMOVE to "/SDLOGS/A.SLG"
+            ),
+            PolarRuntimePlannerAdapter.planStoredDataCleanupOperations(
+                kind = "filterDirectoryEntries",
+                rootPath = "/SDLOGS",
+                entries = listOf("A.SLG", "C.BPB"),
+                includeSuffixes = listOf(".SLG", ".TXT")
+            )
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/20260530/ACT/ACTIVITY.BPB",
+            PolarRuntimePlannerAdapter.planStoredDataCleanupRemoveOperation("/U/0", "/U/0/20260530/ACT/ACTIVITY.BPB")
+        )
+        Assert.assertEquals(
+            listOf("/U/0/20260530/ACT", "/U/0/20260530"),
+            PolarWorkflowRuntimePlanning.storedDataEmptyParentDirectories("/U/0/20260530/ACT/ACTIVITY.BPB", trailingSlash = false)
         )
     }
 
@@ -3024,15 +4866,22 @@ class BDBleApiImplTest {
                 "settings-path-gate",
                 "settings-read-success",
                 "settings-read-failure-no-write",
+                "whole-settings-direct-write",
+                "whole-settings-write-failure-after-payload",
                 "telemetry-read-then-write",
+                "telemetry-read-failure-no-write",
                 "telemetry-write-failure-after-payload",
                 "device-location-read-then-write",
+                "device-location-read-failure-no-write",
                 "device-location-write-failure-after-payload",
                 "usb-connection-mode-read-then-write",
+                "usb-connection-mode-read-failure-no-write",
                 "usb-connection-mode-write-failure-after-payload",
                 "automatic-training-detection-read-then-write",
+                "automatic-training-detection-read-failure-no-write",
                 "automatic-training-detection-write-failure-after-payload",
                 "automatic-ohr-measurement-read-then-write",
+                "automatic-ohr-measurement-read-failure-no-write",
                 "automatic-ohr-measurement-write-failure-after-payload",
                 "daylight-saving-payload-shape",
                 "protobuf-field-preservation-gate",
@@ -3100,6 +4949,19 @@ class BDBleApiImplTest {
         Assert.assertEquals("fake-rest-facade-runtime-policy", vector.getAsJsonObject("execution").get("kind").asString)
         Assert.assertEquals("public-facade-psftp-request-capture", vector.getAsJsonObject("execution").get("transport").asString)
         Assert.assertEquals(REST_FACADE_RUNTIME_POLICY_COMMON_DECISION, vector.get("commonDecision").asString)
+    }
+
+    private fun assertRestServiceMappingReadinessContains(vectorTerm: String) {
+        val vector = loadSdkGoldenVector("sdk/rest-service/rest-service-mapping-readiness.json")
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val requiredBehaviorFamilies = input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString }
+        val coveredBehaviorFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
+
+        Assert.assertEquals("rest-service-mapping-readiness", vector.get("id").asString)
+        Assert.assertEquals("restServiceMappingReadiness", input.get("kind").asString)
+        Assert.assertTrue("Missing REST service mapping readiness term $vectorTerm", requiredBehaviorFamilies.contains(vectorTerm))
+        Assert.assertTrue("Missing covered REST service mapping readiness term $vectorTerm", coveredBehaviorFamilies.contains(vectorTerm))
     }
 
     @Test
@@ -3258,7 +5120,7 @@ class BDBleApiImplTest {
                 "enabled-feature-projection",
                 "excluded-feature-projection",
                 "platform-packet-split",
-                "facade-error-mapping-deferred",
+                "facade-error-mapping-pinned",
                 "compile-verification-gate"
             )
         )
@@ -3462,15 +5324,109 @@ class BDBleApiImplTest {
             .build()
     }
 
+    private fun sharedAutomaticTrainingDetectionState(enabled: Boolean): PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState {
+        val sharedName = PolarRuntimePlannerAdapter.userDeviceSettingsAutomaticTrainingDetectionModeName(enabled)
+            ?: error("Missing shared automatic training detection state for $enabled")
+        return PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.valueOf(sharedName)
+    }
+
+    private fun sharedUsbConnectionMode(enabled: Boolean): PbUsbConnectionSettings.PbUsbConnectionMode {
+        val sharedName = PolarRuntimePlannerAdapter.userDeviceSettingsUsbConnectionModeName(enabled)
+            ?: error("Missing shared USB connection mode for $enabled")
+        return PbUsbConnectionSettings.PbUsbConnectionMode.valueOf(sharedName)
+    }
+
+    private fun sharedDeviceLocation(value: Int): PbDeviceLocation {
+        val sharedValue = PolarRuntimePlannerAdapter.userDeviceSettingsDeviceLocationName(value)
+            ?.let(PolarRuntimePlannerAdapter::userDeviceSettingsDeviceLocationValue)
+            ?: error("Missing shared device location for $value")
+        return PbDeviceLocation.forNumber(sharedValue)
+    }
+
+    private fun assertRestJsonParseFailure(error: Exception) {
+        Assert.assertTrue(
+            "Expected REST JSON parse failure, got ${error::class.qualifiedName}: ${error.message}",
+            error is NullPointerException ||
+                error is com.google.gson.JsonSyntaxException ||
+                error is IllegalArgumentException ||
+                error::class.qualifiedName?.startsWith("kotlinx.serialization.") == true
+        )
+    }
+
+    private fun BDBleApiImpl.withListener(listener: BleDeviceListener): BDBleApiImpl {
+        val field = BDBleApiImpl::class.java.getDeclaredField("listener")
+        field.isAccessible = true
+        field.set(this, listener)
+        return this
+    }
+
+    private fun searchSession(
+        name: String,
+        address: String = "AA:BB:CC:DD:EE:FF",
+        rssi: Int = -60,
+        services: ByteArray = ByteArray(0),
+        hrPayload: ByteArray? = null
+    ): BleDeviceSession {
+        val advertisement = BleAdvertisementContent().apply {
+            val data = hashMapOf<AD_TYPE, ByteArray>(
+                AD_TYPE.GAP_ADTYPE_LOCAL_NAME_COMPLETE to name.toByteArray()
+            )
+            if (services.isNotEmpty()) {
+                data[AD_TYPE.GAP_ADTYPE_16BIT_COMPLETE] = services
+            }
+            processAdvertisementData(data, EVENT_TYPE.ADV_IND, rssi)
+        }
+        hrPayload?.let(advertisement.polarHrAdvertisement::processPolarManufacturerData)
+        val session = mockk<BleDeviceSession>()
+        every { session.advertisementContent } returns advertisement
+        every { session.address } returns address
+        every { session.rssi } returns rssi
+        every { session.name } returns advertisement.name
+        every { session.polarDeviceId } returns advertisement.polarDeviceId
+        every { session.polarDeviceType } returns advertisement.polarDeviceType
+        every { session.isConnectableAdvertisement } returns true
+        every { session.blePolarHrAdvertisement } returns advertisement.polarHrAdvertisement
+        return session
+    }
+
     private companion object {
-        const val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+        const val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
         const val STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup migration may proceed only after cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
         const val DISK_TIME_RUNTIME_READINESS_COMMON_DECISION = "Disk/time facade runtime migration may proceed only after disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
-        const val COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
+        const val COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10/exercise command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
         const val STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
         const val DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
-        const val USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, read-failure no-write and write-failure-after-payload behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
-        const val USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+        const val USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+        const val USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+        const val SD_LOG_READINESS_COMMON_DECISION = "SD-log migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS SD-log facade tests continue to pin trigger and magnetometer-frequency enum projection, unknown enum boundaries, SD-log config file paths, write-progress policy, session-notification boundaries, protobuf construction boundaries, optional field presence, public error mapping boundaries, platform vector references, and compile verification before broader SD-log execution moves."
+        const val FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
+        val SD_LOG_READINESS_FAMILIES = listOf(
+            "log-trigger-enum-projection",
+            "magnetometer-frequency-enum-projection",
+            "unknown-enum-null-boundary",
+            "sd-log-config-read-write-paths",
+            "write-progress-policy-gate",
+            "session-notification-platform-boundary",
+            "protobuf-construction-platform-boundary",
+            "optional-field-presence-boundary",
+            "public-error-mapping-boundary",
+            "platform-sd-log-vector-reference-gate",
+            "compile-verification-gate"
+        )
+        val FIRST_TIME_USE_READINESS_FAMILIES = listOf(
+            "gender-enum-projection",
+            "training-background-enum-projection",
+            "typical-day-enum-projection",
+            "unknown-enum-null-boundary",
+            "physical-config-read-write-paths",
+            "user-id-read-write-paths",
+            "write-progress-policy-gate",
+            "sync-sequencing-platform-boundary",
+            "protobuf-construction-platform-boundary",
+            "public-error-mapping-boundary",
+            "platform-first-time-use-vector-reference-gate",
+            "compile-verification-gate"
+        )
         val COMMAND_RUNTIME_POLICY_OPERATION_IDS = listOf(
             "h10-start-recording",
             "h10-start-recording-query-failure",
@@ -3478,6 +5434,14 @@ class BDBleApiImplTest {
             "h10-stop-recording-query-failure",
             "h10-recording-status",
             "h10-recording-status-query-failure",
+            "live-exercise-start",
+            "live-exercise-pause",
+            "live-exercise-resume",
+            "live-exercise-stop",
+            "live-exercise-status",
+            "offline-exercise-v2-start",
+            "offline-exercise-v2-stop",
+            "offline-exercise-v2-status",
             "factory-reset",
             "factory-reset-notification-failure",
             "factory-reset-preserve-pairing",
@@ -3515,16 +5479,22 @@ class BDBleApiImplTest {
         val USER_DEVICE_SETTINGS_RUNTIME_POLICY_OPERATION_IDS = listOf(
             "get-user-device-settings",
             "get-user-device-settings-read-failure",
+            "set-user-device-settings",
+            "set-user-device-settings-write-failure",
             "set-telemetry-enabled",
             "set-telemetry-read-failure",
             "set-telemetry-write-failure",
             "set-user-device-location",
+            "set-user-device-location-read-failure",
             "set-user-device-location-write-failure",
             "set-usb-connection-mode",
+            "set-usb-connection-mode-read-failure",
             "set-usb-connection-mode-write-failure",
             "set-automatic-training-detection",
+            "set-automatic-training-detection-read-failure",
             "set-automatic-training-detection-write-failure",
             "set-automatic-ohr-measurement",
+            "set-automatic-ohr-measurement-read-failure",
             "set-automatic-ohr-measurement-write-failure",
             "set-daylight-saving-time"
         )
@@ -3567,4 +5537,79 @@ class BDBleApiImplTest {
             "get-trigger-transport-error"
         )
     }
+}
+
+private class CapturingFirmwareUpdateApi : FirmwareUpdateApi {
+    private val checkResponses: MutableList<Response<FirmwareUpdateResponse>>
+    private val packageBytes: ByteArray?
+    private val packageDownloadStarted: CompletableDeferred<Unit>?
+    private val packageDownloadCancelled: CompletableDeferred<Unit>?
+    val checkRequests = mutableListOf<FirmwareUpdateRequest>()
+    val packageUrls = mutableListOf<String>()
+
+    constructor(
+        checkResponse: Response<FirmwareUpdateResponse>,
+        packageBytes: ByteArray? = null,
+        packageDownloadStarted: CompletableDeferred<Unit>? = null,
+        packageDownloadCancelled: CompletableDeferred<Unit>? = null
+    ) {
+        this.checkResponses = mutableListOf(checkResponse)
+        this.packageBytes = packageBytes
+        this.packageDownloadStarted = packageDownloadStarted
+        this.packageDownloadCancelled = packageDownloadCancelled
+    }
+
+    constructor(
+        checkResponses: List<Response<FirmwareUpdateResponse>>,
+        packageBytes: ByteArray? = null,
+        packageDownloadStarted: CompletableDeferred<Unit>? = null,
+        packageDownloadCancelled: CompletableDeferred<Unit>? = null
+    ) {
+        require(checkResponses.isNotEmpty())
+        this.checkResponses = checkResponses.toMutableList()
+        this.packageBytes = packageBytes
+        this.packageDownloadStarted = packageDownloadStarted
+        this.packageDownloadCancelled = packageDownloadCancelled
+    }
+
+    override suspend fun checkFirmwareUpdate(firmwareUpdateRequest: FirmwareUpdateRequest): Response<FirmwareUpdateResponse> {
+        checkRequests.add(firmwareUpdateRequest)
+        return if (checkResponses.size > 1) {
+            checkResponses.removeAt(0)
+        } else {
+            checkResponses.first()
+        }
+    }
+
+    override suspend fun getFirmwareUpdatePackage(url: String): ResponseBody {
+        packageUrls.add(url)
+        if (packageDownloadStarted != null) {
+            packageDownloadStarted.complete(Unit)
+            try {
+                awaitCancellation()
+            } finally {
+                packageDownloadCancelled?.complete(Unit)
+            }
+        }
+        packageBytes?.let { return byteArrayResponseBody(it) }
+        throw UnsupportedOperationException("Package download is not used by this test")
+    }
+}
+
+private fun firmwareZip(vararg entries: Pair<String, ByteArray>): ByteArray {
+    val output = ByteArrayOutputStream()
+    ZipOutputStream(output).use { zip ->
+        entries.forEach { (name, bytes) ->
+            zip.putNextEntry(ZipEntry(name))
+            zip.write(bytes)
+            zip.closeEntry()
+        }
+    }
+    return output.toByteArray()
+}
+
+private fun byteArrayResponseBody(bytes: ByteArray): ResponseBody = object : ResponseBody() {
+    override fun contentType() = null
+    override fun contentLength() = bytes.size.toLong()
+    override fun source() = okio.Buffer().write(bytes)
 }

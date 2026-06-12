@@ -16,6 +16,7 @@ import com.polar.sdk.api.model.restapi.endpoints
 import com.polar.sdk.api.model.restapi.eventDetailsFor
 import com.polar.sdk.api.model.restapi.eventTriggersFor
 import com.polar.sdk.api.model.restapi.events
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.receiveRestApiEventData
 import io.mockk.every
 import io.mockk.mockk
@@ -75,6 +76,25 @@ class PolarDeviceRestApiUtilsTest {
         payloads.forEachIndexed { index, payload ->
             assertArrayEquals(payload, result[index])
         }
+    }
+
+    @Test
+    fun receiveRestApiEventData_usesSharedD2hPlannerToSelectRestEvents() = runTest {
+        val payload = """{"path":"/v1/users","operation":"created"}""".toByteArray()
+        assertEquals("REST_API_EVENT", PolarRuntimePlannerAdapter.d2hNotificationTypeName(PbPFtpDevToHostNotification.REST_API_EVENT_VALUE))
+        assertEquals(
+            "FILESYSTEM_MODIFIED",
+            PolarRuntimePlannerAdapter.d2hNotificationTypeName(PbPFtpDevToHostNotification.FILESYSTEM_MODIFIED_VALUE)
+        )
+        every { mockClient.waitForNotification() } returns flowOf(
+            d2hNotification(PbPFtpDevToHostNotification.FILESYSTEM_MODIFIED_VALUE, byteArrayOf(0x0a, 0x02, 0x08, 0x02)),
+            restApiNotification(listOf(payload), uncompressed = true)
+        )
+
+        val result = mockClient.receiveRestApiEventData("device-id").first()
+
+        assertEquals(1, result.size)
+        assertArrayEquals(payload, result.first())
     }
 
     @Test
@@ -167,9 +187,9 @@ class PolarDeviceRestApiUtilsTest {
         assertEquals(REST_REQUEST_TRANSPORT_SCENARIO_IDS, input.getAsJsonArray("requests").map { it.asJsonObject.get("id").asString })
         assertEquals(REST_REQUEST_TRANSPORT_SCENARIO_IDS, commonRuntimePrototype.getAsJsonArray("cases").map { it.asJsonObject.get("id").asString })
         assertEquals(REST_REQUEST_TRANSPORT_MIGRATION_REQUIREMENT, expected.get("migrationRequirement").asString)
-        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest", "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         assertEquals(listOf("PolarDeviceRestApiTests"), consumerTests.getAsJsonArray("ios").map { it.asString })
-        assertEquals(listOf("com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.RestRequestTransportPolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+        assertEquals(listOf("com.polar.sharedtest.RestRequestTransportPolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
     }
 
     @Test
@@ -240,10 +260,14 @@ class PolarDeviceRestApiUtilsTest {
             .setUncompressed(uncompressed)
             .addAllEvent(payloads.map { ByteString.copyFrom(it) })
             .build()
+        return d2hNotification(PbPFtpDevToHostNotification.REST_API_EVENT_VALUE, event.toByteArray())
+    }
+
+    private fun d2hNotification(notificationId: Int, parameters: ByteArray): BlePsFtpUtils.PftpNotificationMessage {
         return BlePsFtpUtils.PftpNotificationMessage().apply {
-            id = PbPFtpDevToHostNotification.REST_API_EVENT_VALUE
+            id = notificationId
             byteArrayOutputStream = ByteArrayOutputStream().apply {
-                write(event.toByteArray())
+                write(parameters)
             }
         }
     }
@@ -268,6 +292,9 @@ class PolarDeviceRestApiUtilsTest {
         assertEquals("$caseId events", expected.getAsJsonArray("events").map { it.asString }, actual.events)
         assertEquals("$caseId endpoints", expected.getAsJsonArray("endpoints").map { it.asString }, actual.endpoints)
         assertEquals("$caseId actions", expectedActions, actual.actions)
+        assertEquals("$caseId shared projection events", actual.sharedProjection.events, actual.events)
+        assertEquals("$caseId shared projection endpoints", actual.sharedProjection.endpoints, actual.endpoints)
+        assertEquals("$caseId shared projection actions", actual.sharedProjection.actions, actual.actions)
         assertEquals("$caseId actionNames", expectedActions.keys, actual.actionNames.toSet())
         assertEquals("$caseId actionPaths", expectedActions.values.toSet(), actual.actionPaths.toSet())
         expected.getAsJsonObject("eventDetails").entrySet().forEach { entry ->
@@ -327,7 +354,7 @@ class PolarDeviceRestApiUtilsTest {
             "response-error-payload-message",
             "empty-successful-response-policy-gate",
             "fake-pftp-request-harness-gate",
-            "facade-error-mapping-deferred",
+            "facade-error-mapping-pinned",
             "platform-transport-vector-reference-gate",
             "compile-verification-gate"
         )
@@ -341,7 +368,7 @@ class PolarDeviceRestApiUtilsTest {
 
         const val REST_REQUEST_TRANSPORT_MIGRATION_REQUIREMENT = "Before moving REST request orchestration into common KMP code, implement a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads."
 
-        const val REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping remains explicit, and the shared tests are compile-verified."
+        const val REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping stays pinned through rest-facade-runtime-policy.json, and the shared tests are compile-verified."
 
         val REST_EVENT_COMPRESSION_READINESS_FAMILIES = listOf(
             "uncompressed-batch-payload-preservation",
@@ -351,17 +378,18 @@ class PolarDeviceRestApiUtilsTest {
             "ios-deflate-codec-reference-gate",
             "malformed-compressed-payload-platform-split",
             "notification-payload-order-gate",
-            "normalize-or-preserve-codec-decision-gate",
+            "shared-platform-actual-codec-gate",
             "platform-event-vector-reference-gate",
             "compile-verification-gate"
         )
 
-        const val REST_EVENT_COMPRESSION_READINESS_COMMON_DECISION = "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior is deliberately normalized or deliberately preserved, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
+        const val REST_EVENT_COMPRESSION_READINESS_COMMON_DECISION = "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior are preserved through shared KMP platform actual codecs, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
 
         val REST_SERVICE_MAPPING_READINESS_FAMILIES = listOf(
             "service-list-name-path-mapping",
             "service-list-empty-defaults",
             "service-description-action-event-mapping",
+            "sleep-rest-action-path-planning",
             "service-description-empty-defaults",
             "wrong-type-services-platform-split",
             "unknown-field-ignore-policy",

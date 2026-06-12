@@ -2,6 +2,9 @@
 
 import Foundation
 import Combine
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 extension BlePsFtpClient {
 
@@ -10,13 +13,13 @@ extension BlePsFtpClient {
             Task {
                 do {
                     for try await notification in self.waitNotification() {
-                        guard notification.id == Protocol_PbPFtpDevToHostNotification.restApiEvent.rawValue else { continue }
+                        guard PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Int(notification.id)) == "REST_API_EVENT" else { continue }
                         guard let params = try? Protocol_PbPftpDHRestApiEvent(serializedBytes: notification.parameters as Data) else { continue }
                         let events: [Data]
                         if params.hasUncompressed && params.uncompressed {
-                            events = params.event
+                            events = PolarRestEventRuntimePlanner.uncompressedPayloads(params.event) ?? params.event
                         } else {
-                            events = params.event.compactMap { data in
+                            events = PolarRestEventRuntimePlanner.compressedPayloads(params.event) ?? params.event.compactMap { data in
                                 guard let uncompressedData = data.inflated() else {
                                     BleLogger.trace_hex("Failed to decompress API event parameters, data: ", data: data)
                                     return data
@@ -51,5 +54,66 @@ extension BlePsFtpClient {
                 }
             }
         }
+    }
+}
+
+private enum PolarRestEventRuntimePlanner {
+    static func uncompressedPayloads(_ payloads: [Data]) -> [Data]? {
+        #if canImport(PolarBleSdkShared)
+        let encoded = payloads.map { $0.map { String(format: "%02x", $0) }.joined() }.joined(separator: ",")
+        let sharedHex = uncompressedPayloadsHex(payloadsHex: encoded)
+        return decodePayloadsHex(sharedHex, expectedCount: payloads.count)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedPayloads(_ payloads: [Data]) -> [Data]? {
+        #if canImport(PolarBleSdkShared)
+        let encoded = payloads.map { $0.map { String(format: "%02x", $0) }.joined() }.joined(separator: ",")
+        let sharedHex = compressedPayloadsHex(payloadsHex: encoded)
+        return decodePayloadsHex(sharedHex, expectedCount: payloads.count)
+        #else
+        return nil
+        #endif
+    }
+
+    private static func uncompressedPayloadsHex(payloadsHex: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.restUncompressedEventPayloadsHex(payloadsHex: payloadsHex)
+        #else
+        return ""
+        #endif
+    }
+
+    private static func compressedPayloadsHex(payloadsHex: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.restCompressedEventPayloadsHex(payloadsHex: payloadsHex)
+        #else
+        return ""
+        #endif
+    }
+
+    private static func decodePayloadsHex(_ sharedHex: String, expectedCount: Int) -> [Data] {
+        if sharedHex.isEmpty {
+            return expectedCount == 0 ? [] : Array(repeating: Data(), count: expectedCount)
+        }
+        return sharedHex
+            .split(separator: "|", omittingEmptySubsequences: false)
+            .map { Data(hexString: String($0)) }
+    }
+}
+
+private extension Data {
+    init(hexString: String) {
+        var bytes: [UInt8] = []
+        bytes.reserveCapacity(hexString.count / 2)
+        var index = hexString.startIndex
+        while index < hexString.endIndex {
+            let nextIndex = hexString.index(index, offsetBy: 2)
+            bytes.append(UInt8(hexString[index..<nextIndex], radix: 16) ?? 0)
+            index = nextIndex
+        }
+        self.init(bytes)
     }
 }

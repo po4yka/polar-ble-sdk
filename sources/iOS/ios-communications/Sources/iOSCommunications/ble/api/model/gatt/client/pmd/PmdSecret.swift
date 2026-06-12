@@ -3,6 +3,9 @@
 import Foundation
 import CryptoKit
 import CommonCrypto
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public struct PmdSecret: @unchecked Sendable {
     let strategy: SecurityStrategy
@@ -38,6 +41,12 @@ public struct PmdSecret: @unchecked Sendable {
     }
     
     func serializeToPmdSettings() -> Data {
+        #if canImport(PolarBleSdkShared)
+        if let sharedHex = PmdSecretRuntimePlanner.settingsHex(strategy: strategy.sharedName, keyHex: key.hexString),
+           let shared = Data(hexBytes: sharedHex) {
+            return shared
+        }
+        #endif
         switch(self.strategy) {
         case .none:
             let securitySetting = PmdSetting.PmdSettingType.security.rawValue
@@ -66,6 +75,12 @@ public struct PmdSecret: @unchecked Sendable {
     }
     
     func decryptArray(cipherArray: Data) throws -> Data {
+        #if canImport(PolarBleSdkShared)
+        if let sharedHex = PmdSecretRuntimePlanner.decryptHex(strategy: strategy.sharedName, keyHex: key.hexString, cipherHex: cipherArray.hexString),
+           let shared = Data(hexBytes: sharedHex) {
+            return shared
+        }
+        #endif
         switch(self.strategy) {
         case .none:
             return cipherArray
@@ -109,6 +124,12 @@ public struct PmdSecret: @unchecked Sendable {
         case aes256 = 3
         
         static func fromByte(strategyByte: UInt8) throws -> SecurityStrategy {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PmdSecretRuntimePlanner.strategyName(strategyByte: Int32(strategyByte)),
+               let sharedStrategy = SecurityStrategy(sharedName: sharedName) {
+                return sharedStrategy
+            }
+            #endif
             switch(strategyByte) {
             case SecurityStrategy.none.rawValue:
                 return SecurityStrategy.none
@@ -124,3 +145,72 @@ public struct PmdSecret: @unchecked Sendable {
         }
     }
 }
+
+enum PmdSecretRuntimePlanner {
+    static func settingsHex(strategy: String, keyHex: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdSecretSettingsHex(strategy: strategy, keyHex: keyHex)
+        #else
+        return nil
+        #endif
+    }
+
+    static func decryptHex(strategy: String, keyHex: String, cipherHex: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdSecretDecryptHex(strategy: strategy, keyHex: keyHex, cipherHex: cipherHex)
+        #else
+        return nil
+        #endif
+    }
+
+    static func strategyName(strategyByte: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.pmdSecretStrategyName(strategyByte: strategyByte)
+        #else
+        return nil
+        #endif
+    }
+}
+
+#if canImport(PolarBleSdkShared)
+private extension PmdSecret.SecurityStrategy {
+    var sharedName: String {
+        switch self {
+        case .none: return "NONE"
+        case .xor: return "XOR"
+        case .aes128: return "AES128"
+        case .aes256: return "AES256"
+        }
+    }
+
+    init?(sharedName: String) {
+        switch sharedName {
+        case "NONE": self = .none
+        case "XOR": self = .xor
+        case "AES128": self = .aes128
+        case "AES256": self = .aes256
+        default: return nil
+        }
+    }
+}
+
+private extension Data {
+    var hexString: String {
+        return map { String(format: "%02x", $0) }.joined()
+    }
+
+    init?(hexBytes: String) {
+        guard hexBytes.count % 2 == 0 else { return nil }
+        var bytes: [UInt8] = []
+        bytes.reserveCapacity(hexBytes.count / 2)
+        var index = hexBytes.startIndex
+        while index < hexBytes.endIndex {
+            let next = hexBytes.index(index, offsetBy: 2)
+            guard let byte = UInt8(hexBytes[index..<next], radix: 16) else { return nil }
+            bytes.append(byte)
+            index = next
+        }
+        self.init(bytes)
+    }
+}
+#endif

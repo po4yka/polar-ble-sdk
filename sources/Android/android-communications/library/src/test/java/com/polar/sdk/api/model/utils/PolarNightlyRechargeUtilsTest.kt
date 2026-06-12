@@ -7,6 +7,7 @@ import fi.polar.remote.representation.protobuf.Types.PbSystemDateTime
 import fi.polar.remote.representation.protobuf.Types.PbTime
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.sleep.PolarNightlyRechargeData
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarNightlyRechargeUtils
 import fi.polar.remote.representation.protobuf.NightlyRecovery
 import io.mockk.coEvery
@@ -30,6 +31,17 @@ import java.util.*
 class PolarNightlyRechargeUtilsTest {
 
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+
+    @Test
+    fun `nightly recharge read header uses shared file facade planning`() {
+        val date = LocalDate.of(2026, 1, 2)
+
+        assertEquals("/U/0/20260102/NR/NR.BPB", PolarRuntimePlannerAdapter.nightlyRechargePath("20260102"))
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/NR/NR.BPB",
+            PolarNightlyRechargeUtils.nightlyRechargeReadOperation(date)
+        )
+    }
 
     @Test
     fun `readNightlyRechargeData() should return nightly recharge data`() = runTest {

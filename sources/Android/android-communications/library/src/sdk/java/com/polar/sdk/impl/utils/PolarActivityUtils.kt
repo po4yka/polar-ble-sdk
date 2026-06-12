@@ -25,10 +25,6 @@ import java.io.ByteArrayOutputStream
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-private const val ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private const val ACTIVITY_DIRECTORY = "ACT/"
-private const val DAILY_SUMMARY_DIRECTORY = "DSUM/"
-private const val DAILY_SUMMARY_PROTO = "DSUM.BPB"
 private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 private const val TAG = "PolarActivityUtils"
 
@@ -37,13 +33,29 @@ enum class CaloriesType {
 }
 
 internal object PolarActivityUtils {
+    internal fun activityDirectoryReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return activityReadOperation("activity-read-directory", PolarRuntimePlannerAdapter.activityDirectoryPath(date.format(dateFormatter)))
+    }
+
+    internal fun activitySampleFileReadOperation(path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return activityReadOperation("activity-read-sample-file", path)
+    }
+
+    internal fun dailySummaryReadOperation(date: LocalDate): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return activityReadOperation("daily-summary-read", PolarRuntimePlannerAdapter.dailySummaryPath(date.format(dateFormatter)))
+    }
+
+    private fun activityReadOperation(id: String, path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val plan = PolarRuntimePlannerAdapter.planFileFacade(id, "GET", path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
 
     /**
      * Read step count for given [date].
      */
     suspend fun readStepsFromDayDirectory(client: BlePsFtpClient, date: LocalDate): Int {
         BleLogger.d(TAG, "readStepsFromDayDirectory: $date")
-        val activityFileDir = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$ACTIVITY_DIRECTORY"
+        val activityFileDir = activityDirectoryReadOperation(date).second
 
         return try {
             val files = listFiles(client, activityFileDir) { entry ->
@@ -60,13 +72,8 @@ internal object PolarActivityUtils {
             var stepCount = 0
             for (file in files) {
                 try {
-                    val response = client.request(
-                        PftpRequest.PbPFtpOperation.newBuilder()
-                            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                            .setPath(file)
-                            .build()
-                            .toByteArray()
-                    )
+                    val fileOperation = activitySampleFileReadOperation(file)
+                    val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
                     val proto = ActivitySamples.PbActivitySamples.parseFrom(response.toByteArray())
                     stepCount += proto.stepsSamplesList.sum()
                 } catch (error: Throwable) {
@@ -83,16 +90,11 @@ internal object PolarActivityUtils {
 
     suspend fun readDistanceFromDayDirectory(client: BlePsFtpClient, date: LocalDate): Float {
         BleLogger.d(TAG, "readDistanceFromDayDirectory: $date")
-        val dailySummaryFilePath =
-            "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$DAILY_SUMMARY_DIRECTORY$DAILY_SUMMARY_PROTO"
+        val dailySummaryOperation = dailySummaryReadOperation(date)
+        val dailySummaryFilePath = dailySummaryOperation.second
         var distance = 0F
         try {
-            val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                    .setPath(dailySummaryFilePath)
-                    .build()
-                    .toByteArray())
+            val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(dailySummaryOperation))
             distance = DailySummary.PbDailySummary.parseFrom(response.toByteArray()).activityDistance
         } catch (error: Throwable) {
             BleLogger.w(TAG, "readDistanceFromDayDirectory() failed for path: $dailySummaryFilePath, error: $error")
@@ -102,16 +104,10 @@ internal object PolarActivityUtils {
 
     suspend fun readActiveTimeFromDayDirectory(client: BlePsFtpClient, date: LocalDate): PolarActiveTimeData {
         BleLogger.d(TAG, "readActiveTimeFromDayDirectory: $date")
-        val dailySummaryFilePath =
-            "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$DAILY_SUMMARY_DIRECTORY$DAILY_SUMMARY_PROTO"
+        val dailySummaryOperation = dailySummaryReadOperation(date)
+        val dailySummaryFilePath = dailySummaryOperation.second
         return try {
-            val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                    .setPath(dailySummaryFilePath)
-                    .build()
-                    .toByteArray()
-            )
+            val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(dailySummaryOperation))
             val proto = DailySummary.PbDailySummary.parseFrom(response.toByteArray())
             PolarActiveTimeData(
                 date = date,
@@ -136,16 +132,10 @@ internal object PolarActivityUtils {
         caloriesType: CaloriesType
     ): Int {
         BleLogger.d(TAG, "readSpecificCaloriesFromDayDirectory: $date, type: $caloriesType")
-        val dailySummaryFilePath =
-            "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$DAILY_SUMMARY_DIRECTORY$DAILY_SUMMARY_PROTO"
+        val dailySummaryOperation = dailySummaryReadOperation(date)
+        val dailySummaryFilePath = dailySummaryOperation.second
         return try {
-            val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                    .setPath(dailySummaryFilePath)
-                    .build()
-                    .toByteArray()
-            )
+            val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(dailySummaryOperation))
             val proto = DailySummary.PbDailySummary.parseFrom(response.toByteArray())
             when (caloriesType) {
                 CaloriesType.ACTIVITY -> proto.activityCalories
@@ -166,7 +156,7 @@ internal object PolarActivityUtils {
         date: LocalDate
     ): PolarActivitySamplesDayData {
         BleLogger.d(TAG, "readActivitySamplesDataFromDayDirectory: $date")
-        val activityFileDir = "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$ACTIVITY_DIRECTORY"
+        val activityFileDir = activityDirectoryReadOperation(date).second
         val dayData = PolarActivitySamplesDayData()
         val sampleList = mutableListOf<PolarActivitySamplesData>()
 
@@ -184,13 +174,8 @@ internal object PolarActivityUtils {
 
             for (file in files) {
                 try {
-                    val response = client.request(
-                        PftpRequest.PbPFtpOperation.newBuilder()
-                            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                            .setPath(file)
-                            .build()
-                            .toByteArray()
-                    )
+                    val fileOperation = activitySampleFileReadOperation(file)
+                    val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
                     val proto = ActivitySamples.PbActivitySamples.parseFrom(response.toByteArray())
                     val activitySamplesData = PolarActivitySamplesData().apply {
                         startTime = PolarTimeUtils.pbLocalDateTimeToLocalDateTime(proto.startTime)
@@ -223,16 +208,10 @@ internal object PolarActivityUtils {
         date: LocalDate
     ): PolarDailySummaryData {
         BleLogger.d(TAG, "readDailySummaryDataFromDayDirectory: $date")
-        val dailySummaryFilePath =
-            "$ARABICA_USER_ROOT_FOLDER${date.format(dateFormatter)}/$DAILY_SUMMARY_DIRECTORY$DAILY_SUMMARY_PROTO"
+        val dailySummaryOperation = dailySummaryReadOperation(date)
+        val dailySummaryFilePath = dailySummaryOperation.second
         return try {
-            val response = client.request(
-                PftpRequest.PbPFtpOperation.newBuilder()
-                    .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                    .setPath(dailySummaryFilePath)
-                    .build()
-                    .toByteArray()
-            )
+            val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(dailySummaryOperation))
             val proto = DailySummary.PbDailySummary.parseFrom(response.toByteArray())
             parsePbDailySummary(proto)
         } catch (error: Throwable) {
@@ -246,9 +225,7 @@ internal object PolarActivityUtils {
         folderPath: String = "/",
         condition: PolarFileUtils.FetchRecursiveCondition
     ): Flow<String> {
-        var path = folderPath
-        if (path.firstOrNull() != '/') path = "/$path"
-        if (path.lastOrNull() != '/') path = "$path/"
+        val path = PolarRuntimePlannerAdapter.normalizeFileListFolderPath(folderPath)
 
         return fetchRecursively(client, path, condition)
             .map { it.first }
@@ -263,18 +240,14 @@ internal object PolarActivityUtils {
         path: String,
         condition: PolarFileUtils.FetchRecursiveCondition
     ): Flow<Pair<String, Long>> = flow {
-        val byteArrayOutputStream: ByteArrayOutputStream = client.request(
-            PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                .setPath(path)
-                .build()
-                .toByteArray()
-        )
+        val readOperation = activityReadOperation("activity-read-recursive-directory", path)
+        val plannedPath = readOperation.second
+        val byteArrayOutputStream: ByteArrayOutputStream = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(readOperation))
         val dir = PbPFtpDirectory.parseFrom(byteArrayOutputStream.toByteArray())
 
         for (entry in dir.entriesList) {
             if (condition.include(entry.name)) {
-                val entryPath = path + entry.name
+                val entryPath = plannedPath + entry.name
                 if (entryPath.endsWith("/")) {
                     emitAll(fetchRecursively(client, entryPath, condition))
                 } else {

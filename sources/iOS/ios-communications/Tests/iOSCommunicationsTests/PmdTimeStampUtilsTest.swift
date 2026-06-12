@@ -199,7 +199,7 @@ final class PmdTimeStampUtilsTest: XCTestCase {
         self.measure {
             // Act
             do {
-                try PmdTimeStampUtils.getTimeStamps(
+                _ = try PmdTimeStampUtils.getTimeStamps(
                     previousFrameTimeStamp: previousTimeStamp,
                     frameTimeStamp: timeStamp,
                     samplesSize: samplesSize,

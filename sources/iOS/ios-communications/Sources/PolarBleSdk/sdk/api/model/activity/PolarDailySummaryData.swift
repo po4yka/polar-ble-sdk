@@ -2,6 +2,9 @@
 
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public var polarDailySummary: PolarDailySummary?
 
@@ -87,6 +90,12 @@ public enum PolarDailyBalanceFeedBack: String, Codable {
     case YOU_SEEM_TO_BE_STRAINED = "YOU_SEEM_TO_BE_STRAINED"
     
     static func getByValue(value: Data_PbDailySummary) -> PolarDailyBalanceFeedBack {
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarActivityRuntimePlanner.dailyBalanceFeedbackName(value: Int(value.dailyBalanceFeedback.rawValue)),
+           let sharedFeedback = PolarDailyBalanceFeedBack(rawValue: sharedName) {
+            return sharedFeedback
+        }
+        #endif
         switch value.dailyBalanceFeedback {
         case .dbNotCalculated:
             return .NOT_CALCULATED
@@ -133,6 +142,12 @@ public enum PolarReadinessForSpeedAndStrengthTraining: String, Codable {
     case NOT_RECOVERED_AND_INJURY_AND_ILLNESS_RISK_CAUSED_BY_CARDIO_TRAINING = "NOT_RECOVERED_AND_INJURY_AND_ILLNESS_RISK_CAUSED_BY_CARDIO_TRAINING"
     
     static func getByValue(value: Data_PbDailySummary) -> PolarReadinessForSpeedAndStrengthTraining {
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarActivityRuntimePlanner.trainingReadinessName(value: Int(value.readinessForSpeedAndStrengthTraining.rawValue)),
+           let sharedReadiness = PolarReadinessForSpeedAndStrengthTraining(rawValue: sharedName) {
+            return sharedReadiness
+        }
+        #endif
         
         switch value.readinessForSpeedAndStrengthTraining {
         case .rsstNotCalculated:

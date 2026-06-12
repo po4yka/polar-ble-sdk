@@ -4,17 +4,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClien
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrameUtils
 import com.polar.androidcommunications.common.ble.TypeUtils
-import com.polar.shared.pmd.sensors.PolarPpgSportIdSample
-import com.polar.shared.pmd.sensors.PolarPpgType0Sample
-import com.polar.shared.pmd.sensors.PolarPpgType10Sample
-import com.polar.shared.pmd.sensors.PolarPpgType13Sample
-import com.polar.shared.pmd.sensors.PolarPpgType14Sample
-import com.polar.shared.pmd.sensors.PolarPpgType4Sample
-import com.polar.shared.pmd.sensors.PolarPpgType5Sample
-import com.polar.shared.pmd.sensors.PolarPpgType7Sample
-import com.polar.shared.pmd.sensors.PolarPpgType8Sample
-import com.polar.shared.pmd.sensors.PolarPpgType9Sample
-import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import java.nio.ByteBuffer
 import kotlin.experimental.and
 
@@ -25,21 +15,21 @@ internal sealed class PpgDataSample
 
 internal class PpgData {
     // PPG Data Sample 0
-    data class PpgDataFrameType0 internal constructor(
+    data class PpgDataFrameType0(
         val timeStamp: ULong,
         val ppgDataSamples: List<Int>,
         val ambientSample: Int
     ) : PpgDataSample()
 
     // PPG Data Sample 3
-    data class PpgDataFrameType8 internal constructor(
+    data class PpgDataFrameType8(
         val timeStamp: ULong,
         val ppgDataSamples: List<Int>,
         val statusBits: List<Int>
     ) : PpgDataSample()
 
     // PPG Data frame type 4
-    data class PpgDataFrameType4 internal constructor(
+    data class PpgDataFrameType4(
         val timeStamp: ULong,
         val numIntTs: List<UInt>,
         val channel1GainTs: List<UInt>,
@@ -47,26 +37,26 @@ internal class PpgData {
     ) : PpgDataSample()
 
     // PPG Data frame type 5
-    data class PpgDataFrameType5 internal constructor(
+    data class PpgDataFrameType5(
         val timeStamp: ULong,
         val operationMode: UInt
     ) : PpgDataSample()
 
     // PPG Data Sample 2
-    data class PpgDataFrameType7 internal constructor(
+    data class PpgDataFrameType7(
         val timeStamp: ULong,
         val ppgDataSamples: List<Int>,
         val statusBits: List<Int>
     ) : PpgDataSample()
 
-    data class PpgDataFrameType9 internal constructor(
+    data class PpgDataFrameType9(
         val timeStamp: ULong,
         val numIntTs: List<UInt>,
         val channel1GainTs: List<UInt>,
         val channel2GainTs: List<UInt>
     ) : PpgDataSample()
 
-    data class PpgDataFrameType10 internal constructor(
+    data class PpgDataFrameType10(
         val timeStamp: ULong,
         val greenSamples: List<Int>,
         val redSamples: List<Int>,
@@ -74,14 +64,14 @@ internal class PpgData {
         val statusBits: List<Int>
     ) : PpgDataSample()
 
-    data class PpgDataFrameType13 internal constructor(
+    data class PpgDataFrameType13(
         val timeStamp: ULong,
         val ppgChannel0: List<Int>,
         val ppgChannel1: List<Int>,
         val statusBits: List<Int>
     ) : PpgDataSample()
 
-    data class PpgDataFrameType14 internal constructor(
+    data class PpgDataFrameType14(
         val timeStamp: ULong,
         val numIntTs1: List<UInt>,
         val channel1GainTs1: List<UInt>,
@@ -89,7 +79,7 @@ internal class PpgData {
     ) : PpgDataSample()
 
     // PPG Data Sport Id
-    data class PpgDataSampleSportId internal constructor(
+    data class PpgDataSampleSportId(
         val timeStamp: ULong,
         val sportId: ULong
     ) : PpgDataSample()
@@ -161,18 +151,26 @@ internal class PpgData {
                 }
             }
             val ppgData = PpgData()
-            PolarSensorDataParser.parsePpg(frame.toPolarSharedFrame()).forEach { sample ->
+            PolarRuntimePlannerAdapter.pmdPpgSamples(
+                frameType = frame.frameType.id.toInt(),
+                compressed = frame.isCompressedFrame,
+                timeStamp = frame.timeStamp,
+                previousTimeStamp = frame.previousTimeStamp,
+                factor = frame.factor,
+                sampleRate = frame.sampleRate,
+                dataContent = frame.dataContent
+            ).forEach { sample ->
                 when (sample) {
-                    is PolarPpgType0Sample -> ppgData.ppgSamples.add(PpgDataFrameType0(sample.timeStamp, sample.ppgDataSamples, sample.ambientSample))
-                    is PolarPpgType4Sample -> ppgData.ppgSamples.add(PpgDataFrameType4(sample.timeStamp, sample.numIntTs, sample.channel1GainTs, sample.channel2GainTs))
-                    is PolarPpgType5Sample -> ppgData.ppgSamples.add(PpgDataFrameType5(sample.timeStamp, sample.operationMode))
-                    is PolarPpgType7Sample -> ppgData.ppgSamples.add(PpgDataFrameType7(sample.timeStamp, sample.ppgDataSamples, sample.statusBits))
-                    is PolarPpgType8Sample -> ppgData.ppgSamples.add(PpgDataFrameType8(sample.timeStamp, sample.ppgDataSamples, sample.statusBits))
-                    is PolarPpgType9Sample -> ppgData.ppgSamples.add(PpgDataFrameType9(sample.timeStamp, sample.numIntTs, sample.channel1GainTs, sample.channel2GainTs))
-                    is PolarPpgType10Sample -> ppgData.ppgSamples.add(PpgDataFrameType10(sample.timeStamp, sample.greenSamples, sample.redSamples, sample.irSamples, sample.statusBits))
-                    is PolarPpgType13Sample -> ppgData.ppgSamples.add(PpgDataFrameType13(sample.timeStamp, sample.ppgChannel0, sample.ppgChannel1, sample.statusBits))
-                    is PolarPpgType14Sample -> ppgData.ppgSamples.add(PpgDataFrameType14(sample.timeStamp, sample.numIntTs1, sample.channel1GainTs1, sample.channel2GainTs1))
-                    is PolarPpgSportIdSample -> ppgData.ppgSamples.add(PpgDataSampleSportId(sample.timeStamp, sample.sportId))
+                    is PolarRuntimePlannerAdapter.PlannedPpgType0Sample -> ppgData.ppgSamples.add(PpgDataFrameType0(sample.timeStamp, sample.ppgDataSamples, sample.ambientSample))
+                    is PolarRuntimePlannerAdapter.PlannedPpgType4Sample -> ppgData.ppgSamples.add(PpgDataFrameType4(sample.timeStamp, sample.numIntTs, sample.channel1GainTs, sample.channel2GainTs))
+                    is PolarRuntimePlannerAdapter.PlannedPpgType5Sample -> ppgData.ppgSamples.add(PpgDataFrameType5(sample.timeStamp, sample.operationMode))
+                    is PolarRuntimePlannerAdapter.PlannedPpgType7Sample -> ppgData.ppgSamples.add(PpgDataFrameType7(sample.timeStamp, sample.ppgDataSamples, sample.statusBits))
+                    is PolarRuntimePlannerAdapter.PlannedPpgType8Sample -> ppgData.ppgSamples.add(PpgDataFrameType8(sample.timeStamp, sample.ppgDataSamples, sample.statusBits))
+                    is PolarRuntimePlannerAdapter.PlannedPpgType9Sample -> ppgData.ppgSamples.add(PpgDataFrameType9(sample.timeStamp, sample.numIntTs, sample.channel1GainTs, sample.channel2GainTs))
+                    is PolarRuntimePlannerAdapter.PlannedPpgType10Sample -> ppgData.ppgSamples.add(PpgDataFrameType10(sample.timeStamp, sample.greenSamples, sample.redSamples, sample.irSamples, sample.statusBits))
+                    is PolarRuntimePlannerAdapter.PlannedPpgType13Sample -> ppgData.ppgSamples.add(PpgDataFrameType13(sample.timeStamp, sample.ppgChannel0, sample.ppgChannel1, sample.statusBits))
+                    is PolarRuntimePlannerAdapter.PlannedPpgType14Sample -> ppgData.ppgSamples.add(PpgDataFrameType14(sample.timeStamp, sample.numIntTs1, sample.channel1GainTs1, sample.channel2GainTs1))
+                    is PolarRuntimePlannerAdapter.PlannedPpgSportIdSample -> ppgData.ppgSamples.add(PpgDataSampleSportId(sample.timeStamp, sample.sportId))
                 }
             }
             return ppgData

@@ -1,6 +1,9 @@
 // Copyright 2026 Polar Electro Oy. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 /// Identifiers for individual watch face complications.
 public enum PolarWatchFaceComplication: CaseIterable {
@@ -75,6 +78,10 @@ public enum PolarWatchFaceComplication: CaseIterable {
 
     /// Resolve a complication by its integer id (Java `String.hashCode()`).
     public static func fromId(_ id: Int32) -> PolarWatchFaceComplication? {
+        if let sharedName = PolarWatchFaceRuntimePlanner.complicationName(id: id),
+           let sharedComplication = PolarWatchFaceComplication(sharedName: sharedName) {
+            return sharedComplication
+        }
         return allCases.first { $0.id == id }
     }
 }
@@ -89,3 +96,91 @@ public struct PolarWatchFaceConfig {
     }
 }
 
+enum PolarWatchFaceRuntimePlanner {
+    static func complicationName(id: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.watchFaceComplicationName(id: id)
+        #else
+        return nil
+        #endif
+    }
+
+    static func fieldsCsv(
+        timeStyleId: UInt16,
+        complicationLayoutId: UInt16,
+        backgroundStyleId: UInt16,
+        accentColor: UInt32,
+        complicationIds: [Int32],
+        fontfaceId: UInt8
+    ) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.watchFaceFieldsCsv(
+            timeStyleId: Int32(timeStyleId),
+            complicationLayoutId: Int32(complicationLayoutId),
+            backgroundStyleId: Int32(backgroundStyleId),
+            accentColor: Int64(accentColor),
+            complicationIdsCsv: complicationIds.map(String.init).joined(separator: ","),
+            fontfaceId: Int32(fontfaceId)
+        )
+        #else
+        return nil
+        #endif
+    }
+
+    static func parseFlatBufferCsv(rawHex: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.parseWatchFaceConfigFlatBufferHex(rawHex: rawHex)
+        #else
+        return nil
+        #endif
+    }
+
+    static func buildFlatBufferHex(fields: WatchfaceConfigFields) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.buildWatchFaceConfigFlatBufferHex(
+            timeStyleId: Int32(fields.timeStyleId),
+            complicationLayoutId: Int32(fields.complicationLayoutId),
+            backgroundStyleId: Int32(fields.backgroundStyleId),
+            accentColor: Int64(fields.accentColor),
+            complicationIdsCsv: fields.complicationIds.map(String.init).joined(separator: ","),
+            fontfaceId: Int32(fields.fontfaceId)
+        )
+        #else
+        return nil
+        #endif
+    }
+}
+
+private extension PolarWatchFaceComplication {
+    init?(sharedName: String) {
+        switch sharedName {
+        case "ALARM": self = .alarm
+        case "ALTITUDE": self = .altitude
+        case "ACTIVITY": self = .activity
+        case "BATTERY": self = .battery
+        case "BREATHING_EXERCISE": self = .breathingExercise
+        case "CALORIES": self = .calories
+        case "COMPASS": self = .compass
+        case "COUNTDOWN_TIMER": self = .countdownTimer
+        case "DATE": self = .date
+        case "DAYLIGHT": self = .daylight
+        case "ECG": self = .ecg
+        case "EMPTY": self = .empty
+        case "FLASHLIGHT": self = .flashlight
+        case "HEART_RATE": self = .heartRate
+        case "JUMP_TEST": self = .jumpTest
+        case "LATEST_TRAINING": self = .latestTraining
+        case "NAVIGATION": self = .navigation
+        case "NIGHTLY_RECHARGE": self = .nightlyRecharge
+        case "POLAR_LOGO": self = .polarLogo
+        case "SECONDS_ANALOG": self = .secondsAnalog
+        case "SECONDS_DIGITAL": self = .secondsDigital
+        case "SPO2": self = .spo2
+        case "TIMER": self = .timer
+        case "USER_NAME": self = .userName
+        case "WEATHER": self = .weather
+        case "WEEKLY_SUMMARY": self = .weeklySummary
+        default: return nil
+        }
+    }
+}

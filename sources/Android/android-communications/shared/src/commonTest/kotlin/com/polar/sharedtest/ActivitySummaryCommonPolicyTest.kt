@@ -1,5 +1,14 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarAutomaticHrTriggerName
+import com.polar.shared.sdk.PolarActivityClassName
+import com.polar.shared.sdk.PolarActivityModels
+import com.polar.shared.sdk.PolarDailyBalanceFeedbackName
+import com.polar.shared.sdk.PolarPpiIntervalStatusName
+import com.polar.shared.sdk.PolarPpiMovementName
+import com.polar.shared.sdk.PolarPpiSkinContactName
+import com.polar.shared.sdk.PolarPpiStatusNames
+import com.polar.shared.sdk.PolarTrainingReadinessName
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -55,6 +64,8 @@ class ActivitySummaryCommonPolicyTest {
     @Test
     fun automaticSampleGoldenVectorsDefineExecutableCommonTriggerDeltaAndStatusPolicy() {
         val hr = loadGoldenVectorText("sdk/automatic-samples/hr-all-trigger-types.json")
+        assertEquals("/U/0/AUTOS/", PolarActivityModels.automaticSamplesDirectoryPath(), hr.stringValue("id"))
+        assertEquals("/U/0/AUTOS/AUTOS001.BPB", PolarActivityModels.automaticSamplesFilePath("AUTOS001.BPB"), hr.stringValue("id"))
         val hrSamples = hr.objectValue("input").objectValue("proto").objectArray("samples")
         val hrExpectation = hr.objectValue("platformExpectations").objectValue("android").objectArray("samples")
         val triggerMappings = hrSamples.map { sample -> hrTriggerName(sample.intValue("triggerType")) }
@@ -70,6 +81,17 @@ class ActivitySummaryCommonPolicyTest {
         assertEquals(ppiExpectation.intArrayValue("ppiValueList"), cumulativeValues(ppiSample.intArrayValue("ppiDelta")), ppi.stringValue("id"))
         assertEquals(ppiExpectation.intArrayValue("ppiErrorEstimateList"), cumulativeValues(ppiSample.intArrayValue("ppiErrorEstimateDelta")), ppi.stringValue("id"))
         val decodedStatuses = ppiSample.intArrayValue("status").map { decodePpiStatus(it) }
+        assertEquals("NO_SKIN_CONTACT", PolarPpiSkinContactName.fromValue(0)?.name, ppi.stringValue("id"))
+        assertEquals("SKIN_CONTACT_DETECTED", PolarPpiSkinContactName.fromValue(1)?.name, ppi.stringValue("id"))
+        assertEquals("NO_MOVING_DETECTED", PolarPpiMovementName.fromValue(0)?.name, ppi.stringValue("id"))
+        assertEquals("MOVING_DETECTED", PolarPpiMovementName.fromValue(1)?.name, ppi.stringValue("id"))
+        assertEquals("INTERVAL_IS_ONLINE", PolarPpiIntervalStatusName.fromValue(0)?.name, ppi.stringValue("id"))
+        assertEquals("INTERVAL_DENOTES_OFFLINE_PERIOD", PolarPpiIntervalStatusName.fromValue(1)?.name, ppi.stringValue("id"))
+        assertEquals(
+            listOf("SKIN_CONTACT_DETECTED", "NO_SKIN_CONTACT", "MOVING_DETECTED", "NO_MOVING_DETECTED", "INTERVAL_DENOTES_OFFLINE_PERIOD", "INTERVAL_IS_ONLINE"),
+            PPI_STATUS_POLICY_TERMS,
+            ppi.stringValue("id")
+        )
         val expectedStatuses = ppiExpectation.objectArray("statusList").map { status ->
             PpiStatus(
                 skinContact = status.stringValue("skinContact"),
@@ -88,15 +110,17 @@ class ActivitySummaryCommonPolicyTest {
         val proto = input.objectValue("proto")
         val expected = vector.objectValue("expected")
 
-        assertEquals(input.stringValue("expectedPath"), dsumPath(input.stringValue("requestDate")), vector.stringValue("id"))
+        assertEquals(input.stringValue("expectedPath"), PolarActivityModels.dailySummaryPath(input.stringValue("requestDate").replace("-", "")), vector.stringValue("id"))
+        assertEquals("/U/0/20260102/ACT/", PolarActivityModels.activityDirectoryPath("20260102"), vector.stringValue("id"))
+        assertEquals("/U/0/20260102/DSUM/DSUM.BPB", PolarActivityModels.dailySummaryPath("20260102"), vector.stringValue("id"))
         assertEquals(expected.stringValue("date"), dateString(proto.objectValue("date")), vector.stringValue("id"))
         assertEquals(expected.intValue("activityCalories"), proto.intValue("activityCalories"), vector.stringValue("id"))
         assertEquals(expected.intValue("trainingCalories"), proto.intValue("trainingCalories"), vector.stringValue("id"))
         assertEquals(expected.intValue("bmrCalories"), proto.intValue("bmrCalories"), vector.stringValue("id"))
         assertEquals(expected.intValue("steps"), proto.intValue("steps"), vector.stringValue("id"))
         assertDoubleEquals(expected.doubleValue("activityDistance"), proto.doubleValue("activityDistance"), vector.stringValue("id"))
-        assertEquals(expected.stringValue("dailyBalanceFeedback"), proto.stringValue("dailyBalanceFeedback").removePrefix("DB_"), vector.stringValue("id"))
-        assertEquals(expected.stringValue("readinessForSpeedAndStrengthTraining"), proto.stringValue("readinessForSpeedAndStrengthTraining").removePrefix("RSST_B4_"), vector.stringValue("id"))
+        assertEquals(expected.stringValue("dailyBalanceFeedback"), dailyBalanceFeedbackName(proto.stringValue("dailyBalanceFeedback")), vector.stringValue("id"))
+        assertEquals(expected.stringValue("readinessForSpeedAndStrengthTraining"), trainingReadinessName(proto.stringValue("readinessForSpeedAndStrengthTraining")), vector.stringValue("id"))
         val goalExpected = expected.objectValue("activityGoalSummary")
         val goalProto = proto.objectValue("activityGoalSummary")
         assertDoubleEquals(goalExpected.doubleValue("activityGoal"), goalProto.doubleValue("activityGoal"), vector.stringValue("id"))
@@ -144,21 +168,38 @@ class ActivitySummaryCommonPolicyTest {
             stepSamples = proto.intArrayValue("stepsSamples"),
             activityInfo = proto.objectArray("activityInfo").map { info ->
                 ActivityInfo(
-                    activityClass = info.stringValue("value"),
+                    activityClass = activityClassName(info.stringValue("value")),
                     factor = info.doubleValue("factor")
                 )
             }
         )
     }
 
-    private fun hrTriggerName(value: Int): String {
-        return when (value) {
-            1 -> "TRIGGER_TYPE_HIGH_ACTIVITY"
-            2 -> "TRIGGER_TYPE_LOW_ACTIVITY"
-            3 -> "TRIGGER_TYPE_TIMED"
-            4 -> "TRIGGER_TYPE_MANUAL"
-            else -> "TRIGGER_TYPE_UNKNOWN"
+    private fun activityClassName(protoName: String): String {
+        val value = when (protoName) {
+            "SLEEP" -> 1
+            "SEDENTARY" -> 2
+            "LIGHT" -> 3
+            "CONTINUOUS_MODERATE" -> 4
+            "INTERMITTENT_MODERATE" -> 5
+            "CONTINUOUS_VIGOROUS" -> 6
+            "INTERMITTENT_VIGOROUS" -> 7
+            "NON_WEAR" -> 8
+            else -> error("Unexpected activity class $protoName")
         }
+        return PolarActivityClassName.fromValue(value)?.name ?: error("Unexpected activity class value $value")
+    }
+
+    private fun dailyBalanceFeedbackName(protoName: String): String {
+        return PolarDailyBalanceFeedbackName.valueOf(protoName.removePrefix("DB_")).name
+    }
+
+    private fun trainingReadinessName(protoName: String): String {
+        return PolarTrainingReadinessName.valueOf(protoName.removePrefix("RSST_B4_")).name
+    }
+
+    private fun hrTriggerName(value: Int): String {
+        return PolarAutomaticHrTriggerName.fromValue(value)?.name ?: "TRIGGER_TYPE_UNKNOWN"
     }
 
     private fun cumulativeValues(deltas: List<Int>): List<Int> {
@@ -170,15 +211,8 @@ class ActivitySummaryCommonPolicyTest {
     }
 
     private fun decodePpiStatus(value: Int): PpiStatus {
-        return PpiStatus(
-            skinContact = if ((value and 1) != 0) "SKIN_CONTACT_DETECTED" else "NO_SKIN_CONTACT",
-            movement = if ((value and 2) != 0) "MOVING_DETECTED" else "NO_MOVING_DETECTED",
-            intervalStatus = if ((value and 4) != 0) "INTERVAL_DENOTES_OFFLINE_PERIOD" else "INTERVAL_IS_ONLINE"
-        )
-    }
-
-    private fun dsumPath(requestDate: String): String {
-        return "/U/0/${requestDate.replace("-", "")}/DSUM/DSUM.BPB"
+        val status = PolarPpiStatusNames.fromStatusByte(value) ?: error("Unexpected PPI status $value")
+        return PpiStatus(status.skinContact, status.movement, status.intervalStatus)
     }
 
     private fun localDateTimeString(dateTime: String): String {
@@ -279,9 +313,13 @@ class ActivitySummaryCommonPolicyTest {
             "daily-summary-request-path",
             "daily-summary-scalar-projection",
             "daily-summary-duration-projection",
+            "unsupported-field-deferral",
+            "public-model-shape-gate",
+            "facade-request-error-boundary",
             "platform-activity-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val ACTIVITY_SUMMARY_READINESS_COMMON_DECISION = "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, and compile verification remain explicit before production model mapping moves."
+        const val ACTIVITY_SUMMARY_READINESS_COMMON_DECISION = "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves."
+        val PPI_STATUS_POLICY_TERMS = listOf("SKIN_CONTACT_DETECTED", "NO_SKIN_CONTACT", "MOVING_DETECTED", "NO_MOVING_DETECTED", "INTERVAL_DENOTES_OFFLINE_PERIOD", "INTERVAL_IS_ONLINE")
     }
 }

@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class PpgData {
     let timeStamp: UInt64
@@ -139,6 +142,11 @@ public class PpgData {
     }
 
     private static func dataFromRawType0(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawType0Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         var offset = 0
         let step = TYPE_0_SAMPLE_SIZE_IN_BYTES
         let samplesSize = Int(Double(frame.dataContent.count) / Double(step * TYPE_0_CHANNELS_IN_SAMPLE))
@@ -163,8 +171,60 @@ public class PpgData {
         
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamples)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedRawType0Data(frame: PmdDataFrame) -> PpgData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_0,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpgDataRuntimePlanner.rawType0Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 3,
+                  let timeStamp = UInt64(fields[0]),
+                  let ambientSample = Int32(fields[2]) else {
+                return nil
+            }
+            let ppgDataSamples = fields[1].split(separator: ";").compactMap { Int32($0) }
+            guard ppgDataSamples.count == 3 else {
+                return nil
+            }
+            return PpgDataFrameType0(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: ppgDataSamples, ambientSample: ambientSample)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+
+    private static func sharedDataFrameHex(frame: PmdDataFrame) -> String {
+        var data = Data([frame.measurementType.rawValue])
+        var littleEndianTimestamp = frame.timeStamp.littleEndian
+        withUnsafeBytes(of: &littleEndianTimestamp) { data.append(contentsOf: $0) }
+        let frameTypeByte = frame.frameType.rawValue | (frame.isCompressedFrame ? 0x80 : 0)
+        data.append(frameTypeByte)
+        data.append(frame.dataContent)
+        return data.map { String(format: "%02x", $0) }.joined()
+    }
+    #endif
     
     private static func dataFromRawType4(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawType4Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         
         let samplesSize = Int(Double(frame.dataContent.count) / Double(TYPE_4_SAMPLE_SIZE_IN_BYTES))
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samplesSize), sampleRate: frame.sampleRate)
@@ -202,8 +262,57 @@ public class PpgData {
         
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamples)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedRawType4Data(frame: PmdDataFrame) -> PpgData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_4,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpgDataRuntimePlanner.rawType4Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.flatMap { row -> [PpgSample] in
+            let fields = row.split(separator: ",")
+            guard fields.count == 4,
+                  let timeStamp = UInt64(fields[0]) else {
+                return []
+            }
+            let numIntTs = fields[1].split(separator: ";").compactMap { Int32($0) }
+            let channel1GainTs = fields[2].split(separator: ";").compactMap { Int32($0) }
+            let channel2GainTs = fields[3].split(separator: ";").compactMap { Int32($0) }
+            guard numIntTs.count == 12,
+                  channel1GainTs.count == 12,
+                  channel2GainTs.count == 12 else {
+                return []
+            }
+            return [
+                PpgDataFrameType4(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: numIntTs),
+                PpgDataFrameType4(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: channel1GainTs),
+                PpgDataFrameType4(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: channel2GainTs)
+            ]
+        }
+        guard samples.count == rowValues.count * 3 else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
     
     private static func dataFromRawType5(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawType5Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         let samplesSize = Int(Double(frame.dataContent.count) / Double(TYPE_0_CHANNELS_IN_SAMPLE))
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samplesSize), sampleRate: frame.sampleRate)
         var ppgSamples = [PpgSample]()
@@ -220,6 +329,11 @@ public class PpgData {
     }
 
     private static func dataFromRawType6(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawType6Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         var ppgSamples = [PpgSample]()
         
         let sportId = TypeUtils.convertArrayToUnsignedInt64(frame.dataContent, offset: 0, size: TYPE_6_SAMPLE_SIZE_IN_BYTES)
@@ -229,8 +343,77 @@ public class PpgData {
         
         return PpgData(timeStamp: timeStamps.first!, samples: ppgSamples)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedRawType5Data(frame: PmdDataFrame) -> PpgData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_5,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpgDataRuntimePlanner.rawType5Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 2,
+                  let timeStamp = UInt64(fields[0]),
+                  let operationMode = UInt64(fields[1]) else {
+                return nil
+            }
+            return PpgDataFrameType5(timeStamp: timeStamp, frameType: frame.frameType, operationMode: operationMode)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+
+    private static func sharedRawType6Data(frame: PmdDataFrame) -> PpgData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_6,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpgDataRuntimePlanner.rawType6Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 2,
+                  let timeStamp = UInt64(fields[0]),
+                  let sportId = Int32(fields[1]) else {
+                return nil
+            }
+            return PpgDataFrameType6(timeStamp: timeStamp, frameType: frame.frameType, sportId: sportId)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
     
     private static func dataFromRawType9(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let shared = sharedRawType9Data(frame: frame) {
+            return shared
+        }
+        #endif
         
         let step = TYPE_0_SAMPLE_SIZE_IN_BYTES
         let samplesSize = Int(Double(frame.dataContent.count) / Double(step * TYPE_0_CHANNELS_IN_SAMPLE))
@@ -270,7 +453,56 @@ public class PpgData {
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamples)
     }
 
+    #if canImport(PolarBleSdkShared)
+    private static func sharedRawType9Data(frame: PmdDataFrame) -> PpgData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_9,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpgDataRuntimePlanner.rawType9Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.flatMap { row -> [PpgSample] in
+            let fields = row.split(separator: ",")
+            guard fields.count == 4,
+                  let timeStamp = UInt64(fields[0]) else {
+                return []
+            }
+            let numIntTs = fields[1].split(separator: ";").compactMap { Int32($0) }
+            let channel1GainTs = fields[2].split(separator: ";").compactMap { Int32($0) }
+            let channel2GainTs = fields[3].split(separator: ";").compactMap { Int32($0) }
+            guard numIntTs.count == 12,
+                  channel1GainTs.count == 12,
+                  channel2GainTs.count == 12 else {
+                return []
+            }
+            return [
+                PpgDataFrameType9(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: numIntTs),
+                PpgDataFrameType9(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: channel1GainTs),
+                PpgDataFrameType9(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: channel2GainTs)
+            ]
+        }
+        guard samples.count == rowValues.count * 3 else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
+
     private static func dataFromRawType14(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawType14Data(frame: frame) {
+            return sharedData
+        }
+        #endif
 
         let samplesSize = Int(Double(frame.dataContent.count) / Double(TYPE_14_SAMPLE_SIZE_IN_BYTES))
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samplesSize), sampleRate: frame.sampleRate)
@@ -308,7 +540,52 @@ public class PpgData {
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamples)
     }
 
+    #if canImport(PolarBleSdkShared)
+    private static func sharedRawType14Data(frame: PmdDataFrame) -> PpgData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_14,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpgDataRuntimePlanner.rawType14Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 4,
+                  let timeStamp = UInt64(fields[0]) else {
+                return nil
+            }
+            let numIntTs = fields[1].split(separator: ";").compactMap { Int32($0) }
+            let channel1GainTs = fields[2].split(separator: ";").compactMap { Int32($0) }
+            let channel2GainTs = fields[3].split(separator: ";").compactMap { Int32($0) }
+            guard !numIntTs.isEmpty,
+                  !channel1GainTs.isEmpty,
+                  !channel2GainTs.isEmpty else {
+                return nil
+            }
+            return PpgDataFrameType14(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: numIntTs + channel1GainTs + channel2GainTs)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
+
     private static func dataFromCompressedType0(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedCompressedType0Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_0_CHANNELS_IN_SAMPLE, resolution: TYPE_0_SAMPLE_SIZE_IN_BITS)
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
         
@@ -322,9 +599,51 @@ public class PpgData {
         }
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamples)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedCompressedType0Data(frame: PmdDataFrame) -> PpgData? {
+        guard frame.isCompressedFrame,
+              frame.frameType == .type_0,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpgDataRuntimePlanner.compressedType0Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 3,
+                  let timeStamp = UInt64(fields[0]),
+                  let ambientSample = Int32(fields[2]) else {
+                return nil
+            }
+            let ppgDataSamples = fields[1].split(separator: ";").compactMap { Int32($0) }
+            guard ppgDataSamples.count == 3 else {
+                return nil
+            }
+            return PpgDataFrameType0(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: ppgDataSamples, ambientSample: ambientSample)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
     
     private static func dataFromCompressedType7(frame: PmdDataFrame) throws -> PpgData {
-            let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_7_CHANNELS_IN_SAMPLE, resolution: TYPE_7_SAMPLE_SIZE_IN_BITS)
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedCompressedType7Data(frame: frame) {
+            return sharedData
+        }
+        #endif
+        let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_7_CHANNELS_IN_SAMPLE, resolution: TYPE_7_SAMPLE_SIZE_IN_BITS)
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
         var ppgSamplesFrameType7 = [PpgSample]()
         var statusBits = [Int8]()
@@ -343,8 +662,49 @@ public class PpgData {
         }
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamplesFrameType7)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedCompressedType7Data(frame: PmdDataFrame) -> PpgData? {
+        guard frame.isCompressedFrame,
+              frame.frameType == .type_7,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpgDataRuntimePlanner.compressedType7Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 2,
+                  let timeStamp = UInt64(fields[0]) else {
+                return nil
+            }
+            let ppgDataSamples = fields[1].split(separator: ";").compactMap { Int32($0) }
+            guard ppgDataSamples.count == 17 else {
+                return nil
+            }
+            return PpgDataFrameType7(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: ppgDataSamples)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
     
     private static func dataFromCompressedType8(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedCompressedType8Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_8_CHANNELS_IN_SAMPLE, resolution: TYPE_8_SAMPLE_SIZE_IN_BITS)
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
         var ppgSamplesFrameType8 = [PpgSample]()
@@ -365,8 +725,51 @@ public class PpgData {
 
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamplesFrameType8)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedCompressedType8Data(frame: PmdDataFrame) -> PpgData? {
+        guard frame.isCompressedFrame,
+              frame.frameType == .type_8,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpgDataRuntimePlanner.compressedType8Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 3,
+                  let timeStamp = UInt64(fields[0]) else {
+                return nil
+            }
+            let ppgDataSamples = fields[1].split(separator: ";").compactMap { Int32($0) }
+            let statusBits = fields[2].split(separator: ";").compactMap { Int8($0) }
+            guard ppgDataSamples.count == 24,
+                  !statusBits.isEmpty else {
+                return nil
+            }
+            return PpgDataFrameType8(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: ppgDataSamples, statusBits: statusBits)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
     
     private static func dataFromCompressedType10(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedCompressedType10Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_10_CHANNELS_IN_SAMPLE, resolution: TYPE_10_SAMPLE_SIZE_IN_BITS)
 
@@ -421,8 +824,55 @@ public class PpgData {
         }
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamples)
     }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedCompressedType10Data(frame: PmdDataFrame) -> PpgData? {
+        guard frame.isCompressedFrame,
+              frame.frameType == .type_10,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpgDataRuntimePlanner.compressedType10IosSamples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 5,
+                  let timeStamp = UInt64(fields[0]) else {
+                return nil
+            }
+            let greenSamples = fields[1].split(separator: ";").compactMap { Int32($0) }
+            let redSamples = fields[2].split(separator: ";").compactMap { Int32($0) }
+            let irSamples = fields[3].split(separator: ";").compactMap { Int32($0) }
+            let statusBits = fields[4].split(separator: ";").compactMap { Int8($0) }
+            guard greenSamples.count == 8,
+                  redSamples.count == 6,
+                  irSamples.count == 6,
+                  statusBits.count == 20 else {
+                return nil
+            }
+            return PpgDataFrameType10(timeStamp: timeStamp, frameType: frame.frameType, greenSamples: greenSamples, redSamples: redSamples, irSamples: irSamples, statusBits: statusBits)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
     
     private static func dataFromCompressedType13(frame: PmdDataFrame) throws -> PpgData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedCompressedType13Data(frame: frame) {
+            return sharedData
+        }
+        #endif
 
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_13_CHANNELS_IN_SAMPLE, resolution: TYPE_13_SAMPLE_SIZE_IN_BITS)
 
@@ -449,5 +899,135 @@ public class PpgData {
             ppgSamplesFrameType13.append( PpgDataFrameType13( timeStamp: timeStamps[index], frameType: frame.frameType, ppgDataSamples: channelSamples, statusBits: statusBits))
         }
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamplesFrameType13)
+    }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedCompressedType13Data(frame: PmdDataFrame) -> PpgData? {
+        guard frame.isCompressedFrame,
+              frame.frameType == .type_13,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpgDataRuntimePlanner.compressedType13Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpgSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 4,
+                  let timeStamp = UInt64(fields[0]) else {
+                return nil
+            }
+            let channel0 = fields[1].split(separator: ";").compactMap { Int32($0) }
+            let channel1 = fields[2].split(separator: ";").compactMap { Int32($0) }
+            let statusBits = fields[3].split(separator: ";").compactMap { Int8($0) }
+            guard !channel0.isEmpty,
+                  !channel1.isEmpty,
+                  !statusBits.isEmpty else {
+                return nil
+            }
+            return PpgDataFrameType13(timeStamp: timeStamp, frameType: frame.frameType, ppgDataSamples: channel0 + channel1, statusBits: statusBits)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpgData(timeStamp: frame.timeStamp, samples: samples)
+    }
+    #endif
+}
+
+enum PpgDataRuntimePlanner {
+    static func rawType0Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func rawType4Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType4Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func rawType5Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType5Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func rawType6Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType6Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func rawType9Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType9Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func rawType14Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgRawType14Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedType0Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgCompressedType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedType7Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgCompressedType7Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedType8Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgCompressedType8Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedType10IosSamples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgCompressedType10IosSamples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
+    }
+
+    static func compressedType13Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppgCompressedType13Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
     }
 }

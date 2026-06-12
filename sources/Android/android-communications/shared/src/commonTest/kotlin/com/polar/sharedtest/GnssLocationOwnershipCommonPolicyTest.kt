@@ -5,8 +5,8 @@ import kotlin.test.assertEquals
 
 class GnssLocationOwnershipCommonPolicyTest {
     @Test
-    fun gnssLocationGoldenVectorsPinAndroidOwnedParserPolicyBeforeCommonMigration() {
-        GNSS_LOCATION_ANDROID_OWNED_VECTORS.forEach { vectorCase ->
+    fun gnssLocationGoldenVectorsPinSharedParserPolicyWithAndroidProductionDelegation() {
+        GNSS_LOCATION_SHARED_PARSER_VECTORS.forEach { vectorCase ->
             val vector = loadGoldenVectorText(vectorCase.relativePath)
             val expected = vector.objectValue("expected")
             val platforms = vector.objectValue("platforms")
@@ -21,15 +21,15 @@ class GnssLocationOwnershipCommonPolicyTest {
             assertEquals(false, expected.booleanValue("compressed"), vectorCase.caseId)
             assertEquals(false, header.compressed, vectorCase.caseId)
             assertEquals(vectorCase.sampleKind, sample.stringValue("sampleKind"), vectorCase.caseId)
-            assertEquals(PROTOCOL_ONLY_MIGRATION_OWNERSHIP, expected.stringValue("migrationOwnership"), vectorCase.caseId)
+            assertEquals(SHARED_GNSS_LOCATION_MIGRATION_OWNERSHIP, expected.stringValue("migrationOwnership"), vectorCase.caseId)
             assertEquals(true, platforms.booleanValue("android"), "${vectorCase.caseId} android ownership")
             assertEquals(false, platforms.booleanValue("ios"), "${vectorCase.caseId} ios ownership")
-            assertEquals(false, platforms.booleanValue("common"), "${vectorCase.caseId} common ownership")
+            assertEquals(true, platforms.booleanValue("common"), "${vectorCase.caseId} common ownership")
         }
     }
 
     @Test
-    fun gnssLocationReadinessManifestNamesEveryPreMigrationOwnershipFamily() {
+    fun gnssLocationReadinessManifestNamesEverySharedParserDelegationFamily() {
         val manifest = loadGoldenVectorText("protocol/sensors/gnss-location-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -40,12 +40,12 @@ class GnssLocationOwnershipCommonPolicyTest {
 
         assertEquals("gnss-location-readiness", manifest.stringValue("id"))
         assertEquals("gnssLocationReadiness", input.stringValue("kind"))
-        assertEquals("androidOwnedPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
-        assertEquals(REQUIRED_GNSS_LOCATION_OWNERSHIP_FAMILIES, requiredBehaviorFamilies)
-        assertEquals(REQUIRED_GNSS_LOCATION_OWNERSHIP_FAMILIES, coveredBehaviorFamilies)
-        assertEquals(GNSS_LOCATION_ANDROID_OWNED_VECTORS.map { it.relativePath }, policyVectorPaths)
+        assertEquals("sharedParserAndroidProductionDelegation", expected.stringValue("migrationReadiness"))
+        assertEquals(REQUIRED_GNSS_LOCATION_SHARED_PARSER_FAMILIES, requiredBehaviorFamilies)
+        assertEquals(REQUIRED_GNSS_LOCATION_SHARED_PARSER_FAMILIES, coveredBehaviorFamilies)
+        assertEquals(GNSS_LOCATION_SHARED_PARSER_VECTORS.map { it.relativePath }, policyVectorPaths)
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GnssLocationDataTest"), consumerTests.stringArrayValue("android"))
-        assertEquals(false, consumerTests.hasStringArray("ios"))
+        assertEquals(false, consumerTests.hasStringArray("ios"), GNSS_LOCATION_IOS_CONSUMER_BOUNDARY)
         assertEquals(listOf("com.polar.sharedtest.GnssLocationOwnershipCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
@@ -92,17 +92,19 @@ class GnssLocationOwnershipCommonPolicyTest {
 
     private companion object {
         const val HEADER_SIZE = 10
-        val REQUIRED_GNSS_LOCATION_OWNERSHIP_FAMILIES = listOf(
-            "android-owned-raw-type0-coordinate",
-            "android-owned-raw-type1-satellite-dilution",
-            "android-owned-raw-type2-satellite-summary",
-            "android-owned-raw-type3-nmea",
+        const val SHARED_GNSS_LOCATION_MIGRATION_OWNERSHIP = "Shared common KMP GNSS/location parser owns raw type 0-3 byte decoding and Android production delegates to it; iOS has no current direct GNSS parser surface."
+        const val GNSS_LOCATION_IOS_CONSUMER_BOUNDARY = "No direct iOS parser surface; gnss-location-readiness intentionally has no iOS consumer."
+        val REQUIRED_GNSS_LOCATION_SHARED_PARSER_FAMILIES = listOf(
+            "shared-parser-raw-type0-coordinate",
+            "shared-parser-raw-type1-satellite-dilution",
+            "shared-parser-raw-type2-satellite-summary",
+            "shared-parser-raw-type3-nmea",
+            "android-production-delegation",
             "non-ios-parser-ownership",
-            "non-common-parser-ownership",
-            "future-shared-parser-parity-gate",
+            "shared-parser-parity-gate",
             "compile-verification-gate"
         )
-        val GNSS_LOCATION_ANDROID_OWNED_VECTORS = listOf(
+        val GNSS_LOCATION_SHARED_PARSER_VECTORS = listOf(
             GnssVectorCase("protocol/sensors/gnss-location-raw-type0-coordinate.json", "gnss-location-raw-type0-coordinate", 0, "coordinate"),
             GnssVectorCase("protocol/sensors/gnss-location-raw-type1-satellite-dilution.json", "gnss-location-raw-type1-satellite-dilution", 1, "satelliteDilution"),
             GnssVectorCase("protocol/sensors/gnss-location-raw-type2-satellite-summary.json", "gnss-location-raw-type2-satellite-summary", 2, "satelliteSummary"),

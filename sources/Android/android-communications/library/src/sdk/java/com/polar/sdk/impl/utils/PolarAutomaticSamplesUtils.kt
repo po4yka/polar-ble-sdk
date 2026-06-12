@@ -9,27 +9,34 @@ import fi.polar.remote.representation.protobuf.AutomaticSamples.PbAutomaticSampl
 import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.regex.Pattern
 
-private const val ARABICA_USER_ROOT_FOLDER = "/U/0/"
-private const val AUTOMATIC_SAMPLES_DIRECTORY = "AUTOS/"
 private const val AUTOMATIC_SAMPLES_PATTERN = "AUTOS\\d{3}\\.BPB"
 private const val TAG = "PolarAutomaticSamplesUtils"
 
 internal object PolarAutomaticSamplesUtils {
+    internal fun automaticSamplesDirectoryReadOperation(): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return automaticSamplesReadOperation("automatic-samples-read-directory", PolarRuntimePlannerAdapter.automaticSamplesDirectoryPath())
+    }
+
+    internal fun automaticSamplesFileReadOperation(fileName: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        return automaticSamplesReadOperation("automatic-samples-read-file", PolarRuntimePlannerAdapter.automaticSamplesFilePath(fileName))
+    }
+
+    private fun automaticSamplesReadOperation(id: String, path: String): Pair<PftpRequest.PbPFtpOperation.Command, String> {
+        val plan = PolarRuntimePlannerAdapter.planFileFacade(id, "GET", path)
+        return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
+    }
 
     /**
      * Read 24/7 heart rate samples for given date range.
      */
     suspend fun read247HrSamples(client: BlePsFtpClient, fromDate: LocalDate, toDate: LocalDate): List<Polar247HrSamplesData> {
         BleLogger.d(TAG, "read247HrSamples: from $fromDate to $toDate")
-        val autoSamplesPath = "$ARABICA_USER_ROOT_FOLDER$AUTOMATIC_SAMPLES_DIRECTORY"
+        val autoSamplesOperation = automaticSamplesDirectoryReadOperation()
 
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-            .setPath(autoSamplesPath)
-
-        val response = client.request(builder.build().toByteArray())
+        val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(autoSamplesOperation))
         val dir = PbPFtpDirectory.parseFrom(response.toByteArray())
         val pattern = Pattern.compile(AUTOMATIC_SAMPLES_PATTERN)
         val filteredFiles = dir.entriesList
@@ -37,17 +44,16 @@ internal object PolarAutomaticSamplesUtils {
             .map { it.name }
 
         val hrSamplesDataList = mutableListOf<Polar247HrSamplesData>()
+        val requestedDays = requestedBasicDays(fromDate, toDate)
 
         for (fileName in filteredFiles) {
-            val filePath = "$autoSamplesPath$fileName"
-            val fileBuilder = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                .setPath(filePath)
+            val fileOperation = automaticSamplesFileReadOperation(fileName)
+            val filePath = fileOperation.second
             BleLogger.d(TAG, "Sending GET request for file: $filePath")
-            val fileResponse = client.request(fileBuilder.build().toByteArray())
+            val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
             val sampleSessions = PbAutomaticSampleSessions.parseFrom(fileResponse.toByteArray())
             val sampleDate = PolarTimeUtils.pbDateToLocalDate(sampleSessions.day)
-            if (sampleDate in fromDate..toDate) {
+            if (sampleDate.format(DateTimeFormatter.BASIC_ISO_DATE) in requestedDays) {
                 hrSamplesDataList.add(Polar247HrSamplesData.fromProto(sampleSessions))
             } else {
                 BleLogger.d(TAG, "Sample date $sampleDate is out of range: $fromDate to $toDate")
@@ -59,13 +65,9 @@ internal object PolarAutomaticSamplesUtils {
 
     suspend fun read247PPiSamples(client: BlePsFtpClient, fromDate: LocalDate, toDate: LocalDate): List<Polar247PPiSamplesData> {
         BleLogger.d(TAG, "read247PPiSamples: from $fromDate to $toDate")
-        val autoSamplesPath = "$ARABICA_USER_ROOT_FOLDER$AUTOMATIC_SAMPLES_DIRECTORY"
+        val autoSamplesOperation = automaticSamplesDirectoryReadOperation()
 
-        val builder = PftpRequest.PbPFtpOperation.newBuilder()
-            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-            .setPath(autoSamplesPath)
-
-        val response = client.request(builder.build().toByteArray())
+        val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(autoSamplesOperation))
         val dir = PbPFtpDirectory.parseFrom(response.toByteArray())
         val pattern = Pattern.compile(AUTOMATIC_SAMPLES_PATTERN)
         val filteredFiles = dir.entriesList
@@ -73,19 +75,18 @@ internal object PolarAutomaticSamplesUtils {
             .map { it.name }
 
         val ppiSamplesDataList = mutableListOf<Polar247PPiSamplesData>()
+        val requestedDays = requestedBasicDays(fromDate, toDate)
 
         for (fileName in filteredFiles) {
-            val filePath = "$autoSamplesPath$fileName"
-            val fileBuilder = PftpRequest.PbPFtpOperation.newBuilder()
-                .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
-                .setPath(filePath)
+            val fileOperation = automaticSamplesFileReadOperation(fileName)
+            val filePath = fileOperation.second
             BleLogger.d(TAG, "Sending GET request for file: $filePath")
-            val fileResponse = client.request(fileBuilder.build().toByteArray())
+            val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
             val sampleSessions = PbAutomaticSampleSessions.parseFrom(fileResponse.toByteArray())
             val sampleDateProto = sampleSessions.day
             val sampleDateForCheck = LocalDate.of(sampleDateProto.year, sampleDateProto.month, sampleDateProto.day)
             for (sample in sampleSessions.ppiSamplesList) {
-                if (sampleDateForCheck in fromDate..toDate) {
+                if (sampleDateForCheck.format(DateTimeFormatter.BASIC_ISO_DATE) in requestedDays) {
                     ppiSamplesDataList.add(Polar247PPiSamplesData(sampleDateForCheck, fromPbPPiDataSamples(sample)))
                 } else {
                     BleLogger.d(TAG, "Sample date $sampleDateForCheck is out of range: $fromDate to $toDate")
@@ -94,5 +95,12 @@ internal object PolarAutomaticSamplesUtils {
         }
 
         return ppiSamplesDataList
+    }
+
+    private fun requestedBasicDays(fromDate: LocalDate, toDate: LocalDate): Set<String> {
+        return PolarRuntimePlannerAdapter.basicDateRange(
+            fromDate.format(DateTimeFormatter.BASIC_ISO_DATE),
+            toDate.format(DateTimeFormatter.BASIC_ISO_DATE)
+        ).toSet()
     }
 }

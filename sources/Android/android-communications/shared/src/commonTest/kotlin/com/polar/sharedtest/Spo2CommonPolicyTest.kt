@@ -1,18 +1,40 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarSpo2Models
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Spo2CommonPolicyTest {
     @Test
     fun spo2GoldenVectorsDefineExecutableCommonOptionalTriggerAndUnknownEnumPolicy() {
+        assertEquals("/U/0/20260413/SPO2TEST/", PolarSpo2Models.testDirectoryPath("20260413"))
+        assertEquals("/U/0/20260413/SPO2TEST/142507/SPO2TRES.BPB", PolarSpo2Models.testResultPath("/U/0/20260413/SPO2TEST/", "142507/"))
+        assertEquals("2026-04-08 08:39:06", PolarSpo2Models.testTimeFromFolderNames("2026-04-08", "083906"))
+        assertEquals("2026-04-08 01:02:03", PolarSpo2Models.testTimeFromFolderNames("2026-04-08", "010203"))
+        assertEquals(null, PolarSpo2Models.testTimeDirectoryParts("0839"))
+        assertEquals(null, PolarSpo2Models.testTimeDirectoryParts("AB3906"))
         SPO2_VECTORS.forEach { relativePath ->
             val vector = loadGoldenVectorText(relativePath)
             val caseId = vector.stringValue("id")
             val input = vector.objectValue("input")
             val proto = input.objectValue("proto")
             val expected = vector.objectValue("expected")
-            val common = mapSpo2(input.stringValue("date"), input.stringValue("timeDirName"), proto)
+            val common = PolarSpo2Models.projectTestData(
+                date = input.stringValue("date"),
+                timeDirName = input.stringValue("timeDirName"),
+                recordingDevice = proto.optionalStringValue("recordingDevice"),
+                timeZoneOffsetMinutes = proto.intValue("timeZoneOffsetMinutes"),
+                testStatus = proto.intValue("testStatus"),
+                bloodOxygenPercent = proto.optionalIntValue("bloodOxygenPercent"),
+                spo2Class = proto.optionalIntValue("spo2Class"),
+                spo2ValueDeviationFromBaseline = proto.optionalIntValue("spo2ValueDeviationFromBaseline"),
+                spo2QualityAveragePercent = proto.optionalFloatValue("spo2QualityAveragePercent"),
+                averageHeartRateBpm = proto.optionalIntValue("averageHeartRateBpm"),
+                heartRateVariabilityMs = proto.optionalFloatValue("heartRateVariabilityMs"),
+                spo2HrvDeviationFromBaseline = proto.optionalIntValue("spo2HrvDeviationFromBaseline"),
+                altitudeMeters = proto.optionalFloatValue("altitudeMeters"),
+                triggerType = proto.optionalIntValue("triggerType")
+            )
 
             assertEquals(expected.stringValue("policy"), common.policy, caseId)
             assertEquals(proto.optionalStringValue("recordingDevice"), common.recordingDevice, "$caseId recordingDevice")
@@ -40,13 +62,53 @@ class Spo2CommonPolicyTest {
             }
 
             if (!caseId.contains("unknown-spo2-class")) {
-                assertEquals(proto.optionalIntValue("spo2Class")?.spo2ClassName(), common.spo2Class, "$caseId spo2Class")
+                assertEquals(proto.optionalIntValue("spo2Class")?.let(PolarSpo2Models::spo2ClassName), common.spo2Class, "$caseId spo2Class")
             }
-            assertEquals(proto.optionalIntValue("spo2ValueDeviationFromBaseline")?.valueDeviationName(), common.spo2ValueDeviationFromBaseline, "$caseId value deviation")
-            assertEquals(proto.optionalIntValue("spo2HrvDeviationFromBaseline")?.hrvDeviationName(), common.spo2HrvDeviationFromBaseline, "$caseId hrv deviation")
-            assertEquals(proto.optionalIntValue("triggerType")?.triggerTypeName(), common.triggerType, "$caseId trigger")
+            assertEquals(proto.optionalIntValue("spo2ValueDeviationFromBaseline")?.let(PolarSpo2Models::deviationFromBaselineName), common.spo2ValueDeviationFromBaseline, "$caseId value deviation")
+            assertEquals(proto.optionalIntValue("spo2HrvDeviationFromBaseline")?.let(PolarSpo2Models::deviationFromBaselineName), common.spo2HrvDeviationFromBaseline, "$caseId hrv deviation")
+            assertEquals(proto.optionalIntValue("triggerType")?.let(PolarSpo2Models::triggerTypeName), common.triggerType, "$caseId trigger")
             assertEquals(input.stringValue("date") + "T" + input.stringValue("timeDirName"), common.sourceDateTimeKey, "$caseId source key")
         }
+    }
+
+    @Test
+    fun spo2PlatformProjectionEntryPointsPreservePublicShapeSplit() {
+        val androidProjection = PolarSpo2Models.projectAndroidTestData(
+            date = "2026-04-14",
+            timeDirName = "063751",
+            recordingDevice = "0004BF3D",
+            timeZoneOffsetMinutes = 180,
+            testStatus = 0,
+            bloodOxygenPercent = 96,
+            spo2Class = 3,
+            spo2ValueDeviationFromBaseline = 2,
+            spo2QualityAveragePercent = 99.0f,
+            averageHeartRateBpm = 66,
+            heartRateVariabilityMs = 79.97114f,
+            spo2HrvDeviationFromBaseline = 3,
+            altitudeMeters = 18.13582f
+        )
+        val iosProjection = PolarSpo2Models.projectIosTestData(
+            date = "2026-04-14",
+            timeDirName = "063751",
+            recordingDevice = "0004BF3D",
+            timeZoneOffsetMinutes = 180,
+            testStatus = 0,
+            bloodOxygenPercent = 96,
+            spo2Class = 3,
+            spo2ValueDeviationFromBaseline = 2,
+            spo2QualityAveragePercent = 99.0f,
+            averageHeartRateBpm = 66,
+            heartRateVariabilityMs = 79.97114f,
+            spo2HrvDeviationFromBaseline = 3,
+            altitudeMeters = 18.13582f,
+            triggerType = 1
+        )
+
+        assertEquals(null, androidProjection.triggerType)
+        assertEquals("automatic", iosProjection.triggerType)
+        assertEquals("map-spo2-proto-fields-to-public-model", androidProjection.policy)
+        assertEquals("map-spo2-trigger-type-when-platform-exposes-it", iosProjection.policy)
     }
 
     @Test
@@ -70,66 +132,6 @@ class Spo2CommonPolicyTest {
         assertEquals(true, platforms.booleanValue("android"), vector.stringValue("id"))
         assertEquals(true, platforms.booleanValue("ios"), vector.stringValue("id"))
         assertEquals(true, platforms.booleanValue("common"), vector.stringValue("id"))
-    }
-
-    private fun mapSpo2(date: String, timeDirName: String, proto: String): Spo2Model {
-        val recordingDevice = proto.optionalStringValue("recordingDevice")?.takeIf { value -> value.isNotEmpty() }
-        return Spo2Model(
-            policy = when {
-                proto.optionalIntValue("spo2Class") == 99 -> "document-spo2-unknown-enum-platform-difference"
-                proto.optionalIntValue("triggerType") != null -> "map-spo2-trigger-type-when-platform-exposes-it"
-                proto.optionalIntValue("bloodOxygenPercent") == null -> "preserve-spo2-optional-field-presence"
-                else -> "map-spo2-proto-fields-to-public-model"
-            },
-            recordingDevice = recordingDevice,
-            sourceDateTimeKey = "${date}T$timeDirName",
-            timeZoneOffsetMinutes = proto.intValue("timeZoneOffsetMinutes"),
-            testStatus = proto.intValue("testStatus").testStatusName(),
-            bloodOxygenPercent = proto.optionalIntValue("bloodOxygenPercent"),
-            spo2Class = proto.optionalIntValue("spo2Class")?.spo2ClassName(),
-            spo2ValueDeviationFromBaseline = proto.optionalIntValue("spo2ValueDeviationFromBaseline")?.valueDeviationName(),
-            spo2QualityAveragePercent = proto.optionalFloatValue("spo2QualityAveragePercent"),
-            averageHeartRateBpm = proto.optionalIntValue("averageHeartRateBpm"),
-            heartRateVariabilityMs = proto.optionalFloatValue("heartRateVariabilityMs"),
-            spo2HrvDeviationFromBaseline = proto.optionalIntValue("spo2HrvDeviationFromBaseline")?.hrvDeviationName(),
-            altitudeMeters = proto.optionalFloatValue("altitudeMeters"),
-            triggerType = proto.optionalIntValue("triggerType")?.triggerTypeName()
-        )
-    }
-
-    private fun Int.testStatusName(): String {
-        return when (this) {
-            0 -> "passed"
-            else -> "unknown"
-        }
-    }
-
-    private fun Int.spo2ClassName(): String? {
-        return when (this) {
-            3 -> "normal"
-            else -> null
-        }
-    }
-
-    private fun Int.valueDeviationName(): String {
-        return when (this) {
-            0 -> "noBaseline"
-            else -> "unknown"
-        }
-    }
-
-    private fun Int.hrvDeviationName(): String {
-        return when (this) {
-            2 -> "usual"
-            else -> "unknown"
-        }
-    }
-
-    private fun Int.triggerTypeName(): String {
-        return when (this) {
-            1 -> "automatic"
-            else -> "unknown"
-        }
     }
 
     private fun String.optionalObjectValue(field: String): String? {
@@ -175,23 +177,6 @@ class Spo2CommonPolicyTest {
         error("Unbalanced $open$close block")
     }
 
-    private data class Spo2Model(
-        val policy: String,
-        val recordingDevice: String?,
-        val sourceDateTimeKey: String,
-        val timeZoneOffsetMinutes: Int,
-        val testStatus: String,
-        val bloodOxygenPercent: Int?,
-        val spo2Class: String?,
-        val spo2ValueDeviationFromBaseline: String?,
-        val spo2QualityAveragePercent: Float?,
-        val averageHeartRateBpm: Int?,
-        val heartRateVariabilityMs: Float?,
-        val spo2HrvDeviationFromBaseline: String?,
-        val altitudeMeters: Float?,
-        val triggerType: String?
-    )
-
     private companion object {
         val SPO2_VECTORS = listOf(
             "sdk/spo2-test/full-passed-normal.json",
@@ -203,6 +188,7 @@ class Spo2CommonPolicyTest {
             "full-passed-normal-field-mapping",
             "optional-protobuf-presence-preservation",
             "empty-recording-device-normalization",
+            "time-directory-name-parsing",
             "nullable-trigger-type-policy",
             "android-no-trigger-field-platform-reference",
             "ios-trigger-field-platform-reference",
@@ -210,6 +196,6 @@ class Spo2CommonPolicyTest {
             "platform-spo2-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val SPO2_READINESS_COMMON_DECISION = "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
+        const val SPO2_READINESS_COMMON_DECISION = "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, time-directory parsing remains shared and compile-verified, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
     }
 }

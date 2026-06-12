@@ -3,20 +3,48 @@
 import XCTest
 import CoreBluetooth
 @testable import PolarBleSdk
-#if canImport(PolarBleSdkShared)
-import PolarBleSdkShared
-#endif
 
 class PolarTimeUtilsTests: XCTestCase {
-    func testProductionTimeUtilityCanUseSharedKmpBridgeWhenLinked() throws {
-        #if canImport(PolarBleSdkShared)
-        XCTAssertEqual(999, PolarIosSharedBridge.shared.nanosToMillis(nanoseconds: 999_000_000))
-        XCTAssertEqual(90_061_002, PolarIosSharedBridge.shared.durationToMillis(hours: 25, minutes: 1, seconds: 1, millis: 2))
-        XCTAssertEqual("01:02:03.04", PolarIosSharedBridge.shared.timeString(hour: 1, minute: 2, second: 3, millis: 4))
-        XCTAssertTrue(PolarIosSharedBridge.shared.isValidPlainDate(value: "2024-02-29"))
-        #else
-        throw XCTSkip("PolarBleSdkShared is not linked in this build")
-        #endif
+    func testProductionTimeUtilityUsesSharedKmpPolicyWhenLinked() throws {
+        XCTAssertEqual(999, PolarTimeUtils.nanosToMillis(nanoseconds: 999_000_000))
+        XCTAssertEqual(90_061_002, PolarTimeUtils.pbDurationToMillis(pbDuration: PbDuration.with {
+            $0.hours = 25
+            $0.minutes = 1
+            $0.seconds = 1
+            $0.millis = 2
+        }))
+        XCTAssertEqual("01:02:03.04", PolarTimeUtils.pbTimeToTimeString(PbTime.with {
+            $0.hour = 1
+            $0.minute = 2
+            $0.seconds = 3
+            $0.millis = 4
+        }))
+        XCTAssertNoThrow(try PolarTimeUtils.pbDateToDate(pbDate: PbDate.with {
+            $0.year = 2024
+            $0.month = 2
+            $0.day = 29
+        }))
+    }
+
+    func testBasicDateRangeUsesSharedInclusivePolicyForIosFacadeLoops() throws {
+        let range = PolarTimeUtils.basicDateRange(
+            fromDate: try makeDate(year: 2024, month: 2, day: 28, hour: 10, minute: 15),
+            toDate: try makeDate(year: 2024, month: 3, day: 1, hour: 10, minute: 15)
+        )
+        XCTAssertEqual(["20240228 10:15:00", "20240229 10:15:00", "20240301 10:15:00"], range.map(formatBasicDateTime))
+        XCTAssertEqual([], PolarTimeUtils.basicDateRange(
+            fromDate: try makeDate(year: 2024, month: 3, day: 2, hour: 10, minute: 15),
+            toDate: try makeDate(year: 2024, month: 3, day: 1, hour: 10, minute: 15)
+        ))
+        let clippedRange = PolarTimeUtils.basicDateRange(
+            fromDate: try makeDate(year: 2024, month: 2, day: 28, hour: 10, minute: 15),
+            toDate: try makeDate(year: 2024, month: 2, day: 29, hour: 9, minute: 15)
+        )
+        XCTAssertEqual(["20240228 10:15:00"], clippedRange.map(formatBasicDateTime))
+        XCTAssertEqual(["20240228", "20240229", "20240301"], PolarTimeUtils.basicDateRangeStrings(
+            fromDate: try makeDate(year: 2024, month: 2, day: 28, hour: 10, minute: 15),
+            toDate: try makeDate(year: 2024, month: 3, day: 1, hour: 10, minute: 15)
+        ))
     }
 
     func testConversionToPftpSystemTimeFromTimeZoneGMT() throws {
@@ -617,6 +645,26 @@ class PolarTimeUtilsTests: XCTestCase {
             throw TestError.dateConversionFromISO8601Error
         }
         return date
+    }
+
+    private func makeDate(year: Int, month: Int, day: Int, hour: Int, minute: Int) throws -> Date {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        components.hour = hour
+        components.minute = minute
+        components.second = 0
+        components.nanosecond = 0
+        return try XCTUnwrap(Calendar.current.date(from: components))
+    }
+
+    private func formatBasicDateTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar.current
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyyMMdd HH:mm:ss"
+        return formatter.string(from: date)
     }
 
     private func objectValue(_ object: [String: Any], _ field: String) throws -> [String: Any] {

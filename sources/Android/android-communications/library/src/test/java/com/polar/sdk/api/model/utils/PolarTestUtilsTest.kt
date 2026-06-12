@@ -7,6 +7,7 @@ import com.polar.sdk.api.model.DeviationFromBaseline
 import com.polar.sdk.api.model.PolarSpo2TestData
 import com.polar.sdk.api.model.Spo2Class
 import com.polar.sdk.api.model.Spo2TestStatus
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarTestUtils
 import com.polar.sdk.impl.utils.Spo2TestEntry
 import com.polar.services.datamodels.protobuf.Spo2TestResult.PbDeviationFromBaseline
@@ -34,6 +35,49 @@ import java.time.format.DateTimeFormatter
 class PolarTestUtilsTest {
 
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+
+    @Test
+    fun `spo2 test read headers use shared file facade planning`() {
+        val date = LocalDate.of(2026, 4, 13)
+
+        assertEquals("/U/0/20260413/SPO2TEST/", PolarRuntimePlannerAdapter.spo2TestDirectoryPath("20260413"))
+        assertEquals("/U/0/20260413/SPO2TEST/142507/SPO2TRES.BPB", PolarRuntimePlannerAdapter.spo2TestResultPath("/U/0/20260413/SPO2TEST/", "142507/"))
+        assertEquals("2026-04-13 14:25:07", PolarRuntimePlannerAdapter.spo2TestTimeFromFolderNames("2026-04-13", "142507"))
+        assertNull(PolarRuntimePlannerAdapter.spo2TestTimeFromFolderNames("2026-04-13", "BADDIR"))
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260413/SPO2TEST/",
+            PolarTestUtils.spo2TestDirectoryReadOperation(date)
+        )
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260413/SPO2TEST/142507/SPO2TRES.BPB",
+            PolarTestUtils.spo2TestFileReadOperation("/U/0/20260413/SPO2TEST/", "142507/")
+        )
+    }
+
+    @Test
+    fun `spo2 projection uses shared Android public shape policy`() {
+        val projection = PolarRuntimePlannerAdapter.spo2TestDataProjection(
+            date = "2026-04-14",
+            timeDirName = "063751",
+            recordingDevice = "0004BF3D",
+            timeZoneOffsetMinutes = 180,
+            testStatus = 0,
+            bloodOxygenPercent = 96,
+            spo2Class = 3,
+            spo2ValueDeviationFromBaseline = 2,
+            spo2QualityAveragePercent = 99.0f,
+            averageHeartRateBpm = 66,
+            heartRateVariabilityMs = 79.97114f,
+            spo2HrvDeviationFromBaseline = 3,
+            altitudeMeters = 18.13582f
+        )
+
+        assertEquals("0004BF3D", projection.recordingDevice)
+        assertEquals("passed", projection.testStatus)
+        assertEquals("normal", projection.spo2Class)
+        assertEquals("usual", projection.spo2ValueDeviationFromBaseline)
+        assertEquals("aboveUsual", projection.spo2HrvDeviationFromBaseline)
+    }
 
     @Test
     fun `readSpo2TestProtoFromDayDirectory() returns one entry per time subdirectory`() = runTest {
@@ -343,6 +387,7 @@ class PolarTestUtilsTest {
             "full-passed-normal-field-mapping",
             "optional-protobuf-presence-preservation",
             "empty-recording-device-normalization",
+            "time-directory-name-parsing",
             "nullable-trigger-type-policy",
             "android-no-trigger-field-platform-reference",
             "ios-trigger-field-platform-reference",
@@ -353,7 +398,7 @@ class PolarTestUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.",
+            "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, time-directory parsing remains shared and compile-verified, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.",
             expected.get("commonDecision").asString
         )
         assertEquals(

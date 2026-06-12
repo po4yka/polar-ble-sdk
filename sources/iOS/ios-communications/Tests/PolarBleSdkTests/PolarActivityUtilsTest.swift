@@ -16,6 +16,22 @@ class PolarActivityUtilsTests: XCTestCase {
         mockClient = nil
     }
 
+    func testActivityReadHeadersUseSharedFileFacadePlanning() throws {
+        let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
+
+        let activityDirectoryOperation = PolarActivityUtils.activityDirectoryReadOperation(date: date)
+        XCTAssertEqual(activityDirectoryOperation.command, .get)
+        XCTAssertEqual(activityDirectoryOperation.path, "/U/0/20260102/ACT/")
+
+        let activitySampleOperation = PolarActivityUtils.activitySampleFileReadOperation(path: "/U/0/20260102/ACT/ASAMPL0.BPB")
+        XCTAssertEqual(activitySampleOperation.command, .get)
+        XCTAssertEqual(activitySampleOperation.path, "/U/0/20260102/ACT/ASAMPL0.BPB")
+
+        let dailySummaryOperation = PolarActivityUtils.dailySummaryReadOperation(date: date)
+        XCTAssertEqual(dailySummaryOperation.command, .get)
+        XCTAssertEqual(dailySummaryOperation.path, "/U/0/20260102/DSUM/DSUM.BPB")
+    }
+
     func testReadStepsFromDayDirectory_SuccessfulResponse() async throws {
         // Arrange
         let mockRecordingDirectoryContent = try Protocol_PbPFtpDirectory.with {
@@ -550,12 +566,15 @@ class PolarActivityUtilsTests: XCTestCase {
             "daily-summary-request-path",
             "daily-summary-scalar-projection",
             "daily-summary-duration-projection",
+            "unsupported-field-deferral",
+            "public-model-shape-gate",
+            "facade-request-error-boundary",
             "platform-activity-vector-reference-gate",
             "compile-verification-gate"
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, and compile verification remain explicit before production model mapping moves.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), [
             "com.polar.sdk.api.model.utils.PolarActivityUtilsTest",
             "com.polar.sdk.api.model.utils.PolarAutomaticSamplesUtilsTest"

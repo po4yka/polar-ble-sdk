@@ -23,6 +23,23 @@
         "error": "user-settings-read-failed"
       },
       {
+        "id": "set-user-device-settings",
+        "kind": "write",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "protobufPayload=platform-built"
+        ]
+      },
+      {
+        "id": "set-user-device-settings-write-failure",
+        "kind": "writeFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "payloadFields": [
+          "protobufPayload=platform-built"
+        ],
+        "error": "whole-settings-write-failed"
+      },
+      {
         "id": "set-telemetry-enabled",
         "kind": "readThenWrite",
         "path": "/U/0/S/UDEVSET.BPB",
@@ -56,6 +73,12 @@
         ]
       },
       {
+        "id": "set-user-device-location-read-failure",
+        "kind": "readFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "error": "location-settings-read-failed"
+      },
+      {
         "id": "set-user-device-location-write-failure",
         "kind": "readThenWriteFailure",
         "path": "/U/0/S/UDEVSET.BPB",
@@ -74,6 +97,12 @@
           "preserve:deviceLocation=WRIST_LEFT",
           "preserve:telemetryEnabled=true"
         ]
+      },
+      {
+        "id": "set-usb-connection-mode-read-failure",
+        "kind": "readFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "error": "usb-settings-read-failed"
       },
       {
         "id": "set-usb-connection-mode-write-failure",
@@ -96,6 +125,12 @@
         ]
       },
       {
+        "id": "set-automatic-training-detection-read-failure",
+        "kind": "readFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "error": "automatic-training-detection-read-failed"
+      },
+      {
         "id": "set-automatic-training-detection-write-failure",
         "kind": "readThenWriteFailure",
         "path": "/U/0/S/UDEVSET.BPB",
@@ -114,6 +149,12 @@
           "automaticOhrMeasurement=ALWAYS_ON",
           "preserve:automaticTrainingDetectionSettings"
         ]
+      },
+      {
+        "id": "set-automatic-ohr-measurement-read-failure",
+        "kind": "readFailure",
+        "path": "/U/0/S/UDEVSET.BPB",
+        "error": "automatic-ohr-read-failed"
       },
       {
         "id": "set-automatic-ohr-measurement-write-failure",
@@ -153,6 +194,22 @@
           "terminal": "transport-error"
         },
         {
+          "id": "set-user-device-settings",
+          "commands": [
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:protobufPayload=platform-built"
+          ],
+          "terminal": "success"
+        },
+        {
+          "id": "set-user-device-settings-write-failure",
+          "commands": [
+            "write:/U/0/S/UDEVSET.BPB",
+            "field:protobufPayload=platform-built"
+          ],
+          "terminal": "transport-error-after-payload"
+        },
+        {
           "id": "set-telemetry-enabled",
           "commands": [
             "read:/U/0/S/UDEVSET.BPB",
@@ -189,6 +246,13 @@
           "terminal": "success"
         },
         {
+          "id": "set-user-device-location-read-failure",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB"
+          ],
+          "terminal": "transport-error"
+        },
+        {
           "id": "set-user-device-location-write-failure",
           "commands": [
             "read:/U/0/S/UDEVSET.BPB",
@@ -208,6 +272,13 @@
             "field:preserve:telemetryEnabled=true"
           ],
           "terminal": "success"
+        },
+        {
+          "id": "set-usb-connection-mode-read-failure",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB"
+          ],
+          "terminal": "transport-error"
         },
         {
           "id": "set-usb-connection-mode-write-failure",
@@ -231,6 +302,13 @@
           "terminal": "success"
         },
         {
+          "id": "set-automatic-training-detection-read-failure",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB"
+          ],
+          "terminal": "transport-error"
+        },
+        {
           "id": "set-automatic-training-detection-write-failure",
           "commands": [
             "read:/U/0/S/UDEVSET.BPB",
@@ -250,6 +328,13 @@
             "field:preserve:automaticTrainingDetectionSettings"
           ],
           "terminal": "success"
+        },
+        {
+          "id": "set-automatic-ohr-measurement-read-failure",
+          "commands": [
+            "read:/U/0/S/UDEVSET.BPB"
+          ],
+          "terminal": "transport-error"
         },
         {
           "id": "set-automatic-ohr-measurement-write-failure",
@@ -272,7 +357,7 @@
         }
       ]
     },
-    "commonDecision": "A shared user-device-settings runtime may own deterministic read-then-write sequencing and payload field planning only after platform facades keep protobuf field preservation, read-failure no-write behavior, and write-failure-after-payload behavior pinned for telemetry, location, USB, automatic-training-detection, and automatic-OHR writes."
+    "commonDecision": "A shared user-device-settings runtime may own deterministic direct-write, read-then-write sequencing, and payload field planning only after platform facades keep protobuf field preservation, read-failure no-write behavior, and write-failure-after-payload behavior pinned for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes."
   },
   "consumerTests": {
     "android": [
@@ -295,6 +380,6 @@
     "transport": "public-facade-psftp-read-write-capture",
     "wallClockSafe": true
   },
-  "commonDecision": "Promote user-device-settings runtime only after read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors.",
-  "notes": "Model/protobuf field mapping remains covered by sdk/user-device-settings vectors. This runtime vector owns PSFTP path usage, get/read failures, read-then-write command planning, writable settings payload fields, daylight-saving write shape, and transport-error terminals."
+  "commonDecision": "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors.",
+  "notes": "Model/protobuf field mapping remains covered by sdk/user-device-settings vectors. This runtime vector owns PSFTP path usage, get/read failures, direct-write command planning, read-then-write command planning, writable settings payload fields, daylight-saving write shape, and transport-error terminals."
 }

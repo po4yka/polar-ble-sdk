@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.ble.PolarAdvertisementModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -14,7 +15,7 @@ class AdvertisementCommonPolicyTest {
             val expected = vector.commonExpectedObject()
 
             input.optionalStringValue("localName")?.let { localName ->
-                val parsed = parseLocalName(
+                val parsed = PolarAdvertisementModels.parseLocalName(
                     localName = localName,
                     deviceNamePrefix = input.optionalStringValue("deviceNamePrefix") ?: "Polar"
                 )
@@ -35,6 +36,9 @@ class AdvertisementCommonPolicyTest {
             input.optionalStringValue("manufacturerDataHex")?.let { manufacturerDataHex ->
                 expected.optionalBooleanValue("hrPresent")?.let { expectedHrPresent ->
                     assertEquals(expectedHrPresent, parseManufacturerHrPresent(hexToBytes(manufacturerDataHex)), caseId)
+                    if (caseId == "manufacturer-hr-sagrfc23") {
+                        assertEquals(listOf("330000"), PolarAdvertisementModels.polarManufacturerHrPayloads(hexToBytes(manufacturerDataHex)).map { it.toHex() }, caseId)
+                    }
                 }
                 expected.optionalStringValue("policy")?.let { policy ->
                     assertEquals(ADVERTISEMENT_MALFORMED_GPB_COMMON_POLICY, policy, caseId)
@@ -86,31 +90,8 @@ class AdvertisementCommonPolicyTest {
         }
     }
 
-    private fun parseLocalName(localName: String, deviceNamePrefix: String): AdvertisementName {
-        val parts = localName.split(" ").filter { part -> part.isNotEmpty() }
-        if (parts.isEmpty()) {
-            return AdvertisementName(name = localName, deviceType = "", deviceId = "")
-        }
-        val isExpectedPrefix = parts.first() == deviceNamePrefix
-        if (!isExpectedPrefix) {
-            return AdvertisementName(name = localName, deviceType = "", deviceId = "")
-        }
-        val idToken = parts.last()
-        val deviceType = parts.drop(1).dropLast(1).joinToString(" ")
-        return AdvertisementName(
-            name = localName,
-            deviceType = deviceType,
-            deviceId = assembleDeviceId(idToken)
-        )
-    }
-
     private fun parseManufacturerHrPresent(bytes: ByteArray): Boolean {
-        if (bytes.size < 3) return false
-        val isPolarCompany = bytes[0] == 0x6b.toByte() && bytes[1] == 0x00.toByte()
-        if (!isPolarCompany) return false
-        return bytes.drop(2).windowed(size = 6, step = 1, partialWindows = false).any { window ->
-            window[0] == 0x7a.toByte() && window[1] == 0x01.toByte()
-        }
+        return PolarAdvertisementModels.polarManufacturerHrPayloads(bytes).isNotEmpty()
     }
 
     private fun parseRssi(sequence: List<Int>): RssiPolicy {
@@ -120,64 +101,6 @@ class AdvertisementCommonPolicyTest {
             rssi = sequence.last(),
             medianRssi = sorted[sorted.size / 2]
         )
-    }
-
-    private fun assembleDeviceId(deviceId: String): String {
-        val numeric = deviceId.hexToLongOrNull() ?: return ""
-        return when (deviceId.length) {
-            6 -> deviceId + "1" + checksum(numeric, width = 6).toUpperHexDigit()
-            7 -> deviceId + checksum(numeric, width = 7).toUpperHexDigit()
-            else -> deviceId
-        }
-    }
-
-    private fun checksum(deviceId: Long, width: Int): Int {
-        var shiftOffset = 0
-        var a2 = 0x01
-        when (width) {
-            8 -> {
-                a2 = ((deviceId shr 4) and 0x0F).toInt()
-                shiftOffset = 8
-            }
-            7 -> {
-                a2 = (deviceId and 0x0F).toInt()
-                shiftOffset = 4
-            }
-        }
-        val a3 = ((deviceId shr shiftOffset) and 0x0F).toInt()
-        val a4 = ((deviceId shr shiftOffset + 4) and 0x0F).toInt()
-        val a5 = ((deviceId shr shiftOffset + 8) and 0x0F).toInt()
-        val a6 = ((deviceId shr shiftOffset + 12) and 0x0F).toInt()
-        val a7 = ((deviceId shr shiftOffset + 16) and 0x0F).toInt()
-        val a8 = ((deviceId shr shiftOffset + 20) and 0x0F).toInt()
-        return (3 * (a2 + a4 + a6 + a8) + a3 + a5 + a7) % 16
-    }
-
-    private fun String.hexToLongOrNull(): Long? {
-        if (isEmpty() || any { char -> char.hexDigitValueOrNull() == null }) return null
-        var result = 0L
-        forEach { char ->
-            result = (result shl 4) or char.hexDigitValueOrNull()!!.toLong()
-        }
-        return result
-    }
-
-    private fun Int.toUpperHexDigit(): String {
-        val digit = if (this < 10) {
-            '0' + this
-        } else {
-            'A' + (this - 10)
-        }
-        return digit.toString()
-    }
-
-    private fun Char.hexDigitValueOrNull(): Int? {
-        return when (this) {
-            in '0'..'9' -> this - '0'
-            in 'a'..'f' -> this - 'a' + 10
-            in 'A'..'F' -> this - 'A' + 10
-            else -> null
-        }
     }
 
     private fun String.optionalObjectValue(field: String): String? {
@@ -239,12 +162,6 @@ class AdvertisementCommonPolicyTest {
         error("Unbalanced $open$close block")
     }
 
-    private data class AdvertisementName(
-        val name: String,
-        val deviceType: String,
-        val deviceId: String
-    )
-
     private data class RssiPolicy(
         val rssi: Int,
         val medianRssi: Int
@@ -287,4 +204,15 @@ class AdvertisementCommonPolicyTest {
         const val ADVERTISEMENT_READINESS_DECISION = "Advertisement parsing migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS advertisement tests continue to reference the same vectors, Polar and custom-prefix local-name parsing, seven-digit device ID assembly, non-Polar local-name platform decisions, manufacturer HR presence and absence, non-Polar and unknown company behavior, unknown Polar segment handling, malformed GPB missing-length and truncated HR-candidate policies, service UUID membership, RSSI median calculation, and compile verification remain explicit before production advertisement parsing moves."
         const val ADVERTISEMENT_MALFORMED_GPB_COMMON_POLICY = "reject or ignore malformed GPB segments deterministically without indexing beyond payload bounds"
     }
+}
+
+private fun ByteArray.toHex(): String {
+    return joinToString(separator = "") { byte ->
+        val value = byte.toInt() and 0xFF
+        "${(value / 16).toHexDigit()}${(value % 16).toHexDigit()}"
+    }
+}
+
+private fun Int.toHexDigit(): Char {
+    return if (this < 10) '0' + this else 'a' + (this - 10)
 }

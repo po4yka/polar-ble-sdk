@@ -34,6 +34,13 @@
         }
       },
       {
+        "fileName": "MAGNETOMETER.REC",
+        "measurementType": {
+          "android": "MAGNETOMETER",
+          "ios": "magnetometer"
+        }
+      },
+      {
         "fileName": "PPG.REC",
         "measurementType": {
           "android": "PPG",

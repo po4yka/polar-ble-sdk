@@ -2,6 +2,9 @@
 
 import Foundation
 import CoreBluetooth
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 /// Lists REST API services and corresponding paths
 ///
@@ -12,15 +15,19 @@ public struct PolarDeviceRestApiServices: Decodable {
     enum CodingKeys: String, CodingKey {
         case pathsForServices = "services"
     }
+
+    init(pathsForServices: [String: String]?) {
+        self.pathsForServices = pathsForServices
+    }
     
     /// Lists REST API service names
     var serviceNames: [String] {
-        Array((pathsForServices ?? [:]).keys)
+        return PolarRestServiceProjectionPlanner.serviceNames(pathsForServices ?? [:])
     }
     
     /// Lists REST API service paths
     var servicePaths: [String] {
-        Array((pathsForServices ?? [:]).values)
+        return PolarRestServiceProjectionPlanner.servicePaths(pathsForServices ?? [:])
     }
 }
 
@@ -39,6 +46,20 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
         init?(stringValue: String) {
             self.stringValue = stringValue
         }
+    }
+
+    init(events: [String], endpoints: [String], actions: [String: String], details: [String: [String]], triggers: [String: [String]]) {
+        var dictionary = Dictionary<String, Decodable>()
+        dictionary["events"] = events
+        dictionary["endpoints"] = endpoints
+        dictionary["cmd"] = actions
+        for eventName in Set(details.keys).union(triggers.keys) {
+            dictionary[eventName] = [
+                "details": details[eventName] ?? [],
+                "triggers": triggers[eventName] ?? []
+            ]
+        }
+        self.dictionary = dictionary
     }
     
     // By conforming to Decodable, this struct can be parsed with JSONDecoder the usual way
@@ -73,12 +94,12 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     
     /// Events that can be acted upon using actions. Actions are returned in `actions` and `actionNames` properties.
     var events: [String] {
-        return dictionary?["events"] as? [String] ?? []
+        return PolarRestServiceProjectionPlanner.events(dictionary?["events"] as? [String] ?? [])
     }
     
     /// Endpoints that can be applied in **endpoint=** parameter in paths from `actions` and `actionPaths`
     var endpoints: [String] {
-        return dictionary?["endpoints"] as? [String] ?? []
+        return PolarRestServiceProjectionPlanner.endpoints(dictionary?["endpoints"] as? [String] ?? [])
     }
     
     /// Actions/commands that can be sent, using put operation of corresponding path string
@@ -90,17 +111,17 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     /// **triggers=[]**: list of triggers may follow equal sign in path, specifying triggering related to action. Triggers are listed using `eventTriggers`.
     /// **endpoint=**: endpoint, listed by `endpoints`, that is related to the action. This can be used in post action paths.
     var actions: [String: String] {
-        return dictionary?["cmd"] as? [String: String] ?? [:]
+        return PolarRestServiceProjectionPlanner.actions(dictionary?["cmd"] as? [String: String] ?? [:])
     }
     
     /// Just the action names from `actions` property
     var actionNames: [String] {
-        return Array(actions.keys)
+        return PolarRestServiceProjectionPlanner.actionNames(actions)
     }
     
     /// Just the action paths from `actions` property
     var actionPaths: [String] {
-        return Array(actions.values)
+        return PolarRestServiceProjectionPlanner.actionPaths(actions)
     }
     
     /// Lists event details that may be requested as returned event parameter values using action
@@ -109,7 +130,8 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     ///      - eventName: the REST API event to get details for
     /// - returns: detail names
     func eventDetails(for eventName: String) -> [String] {
-        return (dictionary?[eventName] as? [String: [String]])?["details"] ?? []
+        let eventDescription = dictionary?[eventName] as? [String: [String]] ?? [:]
+        return PolarRestServiceProjectionPlanner.eventDetails(details: eventDescription["details"] ?? [], triggers: eventDescription["triggers"] ?? [])
     }
     
     /// Lists triggers that may be used as trigger parameter list values when action path contains
@@ -118,7 +140,143 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
     ///      - eventName: the REST API event to get triggers for
     /// - returns: triggers for the events
     func eventTriggers(for eventName: String) -> [String] {
-        return  (dictionary?[eventName] as? [String: [String]])?["triggers"] ?? []
+        let eventDescription = dictionary?[eventName] as? [String: [String]] ?? [:]
+        return PolarRestServiceProjectionPlanner.eventTriggers(details: eventDescription["details"] ?? [], triggers: eventDescription["triggers"] ?? [])
+    }
+}
+
+enum PolarRestServiceProjectionPlanner {
+    static func serviceList(jsonData: Data) throws -> PolarDeviceRestApiServices {
+        #if canImport(PolarBleSdkShared)
+        let jsonPayload = try jsonPayloadString(jsonData)
+        let paths = sharedMap(PolarIosSharedBridge.shared.restServiceJsonPathsForServices(jsonPayload: jsonPayload))
+        return PolarDeviceRestApiServices(pathsForServices: PolarIosSharedBridge.shared.restServiceJsonHasServices(jsonPayload: jsonPayload) ? paths : nil)
+        #else
+        return try JSONDecoder().decode(PolarDeviceRestApiServices.self, from: jsonData)
+        #endif
+    }
+
+    static func serviceDescription(jsonData: Data) throws -> PolarDeviceRestApiServiceDescription {
+        #if canImport(PolarBleSdkShared)
+        let jsonPayload = try jsonPayloadString(jsonData)
+        return PolarDeviceRestApiServiceDescription(
+            events: sharedList(PolarIosSharedBridge.shared.restServiceDescriptionJsonEvents(jsonPayload: jsonPayload)),
+            endpoints: sharedList(PolarIosSharedBridge.shared.restServiceDescriptionJsonEndpoints(jsonPayload: jsonPayload)),
+            actions: sharedMap(PolarIosSharedBridge.shared.restServiceDescriptionJsonActions(jsonPayload: jsonPayload)),
+            details: sharedNestedMap(PolarIosSharedBridge.shared.restServiceDescriptionJsonEventDetails(jsonPayload: jsonPayload)),
+            triggers: sharedNestedMap(PolarIosSharedBridge.shared.restServiceDescriptionJsonEventTriggers(jsonPayload: jsonPayload))
+        )
+        #else
+        return try JSONDecoder().decode(PolarDeviceRestApiServiceDescription.self, from: jsonData)
+        #endif
+    }
+
+    static func serviceNames(_ pathsForServices: [String: String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restServiceNames(entries: pathsForServices.sharedLineMap))
+        #else
+        return Array(pathsForServices.keys)
+        #endif
+    }
+
+    static func servicePaths(_ pathsForServices: [String: String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restServicePaths(entries: pathsForServices.sharedLineMap))
+        #else
+        return Array(pathsForServices.values)
+        #endif
+    }
+
+    static func events(_ events: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restEvents(eventsCsv: events.joined(separator: ",")))
+        #else
+        return events
+        #endif
+    }
+
+    static func endpoints(_ endpoints: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restEndpoints(endpointsCsv: endpoints.joined(separator: ",")))
+        #else
+        return endpoints
+        #endif
+    }
+
+    static func actions(_ actions: [String: String]) -> [String: String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedMap(PolarIosSharedBridge.shared.restActions(entries: actions.sharedLineMap))
+        #else
+        return actions
+        #endif
+    }
+
+    static func actionNames(_ actions: [String: String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restActionNames(entries: actions.sharedLineMap))
+        #else
+        return Array(actions.keys)
+        #endif
+    }
+
+    static func actionPaths(_ actions: [String: String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restActionPaths(entries: actions.sharedLineMap))
+        #else
+        return Array(actions.values)
+        #endif
+    }
+
+    static func eventDetails(details: [String], triggers: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restEventDetails(detailsCsv: details.joined(separator: ","), triggersCsv: triggers.joined(separator: ",")))
+        #else
+        return details
+        #endif
+    }
+
+    static func eventTriggers(details: [String], triggers: [String]) -> [String] {
+        #if canImport(PolarBleSdkShared)
+        return sharedList(PolarIosSharedBridge.shared.restEventTriggers(detailsCsv: details.joined(separator: ","), triggersCsv: triggers.joined(separator: ",")))
+        #else
+        return triggers
+        #endif
+    }
+}
+
+private func jsonPayloadString(_ data: Data) throws -> String {
+    guard let payload = String(data: data, encoding: .utf8) else {
+        throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "REST JSON payload is not valid UTF-8"))
+    }
+    return payload
+}
+
+private func sharedList(_ value: String) -> [String] {
+    if value.isEmpty { return [] }
+    return value.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+}
+
+private func sharedMap(_ value: String) -> [String: String] {
+    if value.isEmpty { return [:] }
+    return Dictionary(uniqueKeysWithValues: value.split(separator: "\n", omittingEmptySubsequences: false).compactMap { line in
+        let parts = line.split(separator: "\t", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
+        guard parts.count == 2 else { return nil }
+        return (parts[0], parts[1])
+    })
+}
+
+private func sharedNestedMap(_ value: String) -> [String: [String]] {
+    if value.isEmpty { return [:] }
+    return Dictionary(uniqueKeysWithValues: value.split(separator: "\n", omittingEmptySubsequences: false).compactMap { line in
+        let parts = line.split(separator: "\t", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
+        guard parts.count == 2 else { return nil }
+        return (parts[0], sharedList(parts[1]))
+    })
+}
+
+private extension Dictionary where Key == String, Value == String {
+    var sharedLineMap: String {
+        return map { key, value in "\(key)\t\(value)" }.joined(separator: "\n")
     }
 }
 
@@ -133,18 +291,18 @@ public protocol PolarRestServiceApi {
 extension PolarBleApiImpl: PolarRestServiceApi {
 
     func listRestApiServices(identifier: String) async throws -> PolarDeviceRestApiServices {
-        PolarRuntimePlanner.restFacadeGet(id: "list-rest-api-services-success", path: "/REST/SERVICE.API", payloadShape: "service-list-json")
-        return try await getJSONDecodableFromPath(identifier: identifier, path: "/REST/SERVICE.API")
+        let serviceApiPath = "/REST/SERVICE.API"
+        let plannedOperation = PolarRuntimePlanner.restFacadeGetOperation(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
+        try ensureRestFacadeRuntimePlan(id: "list-rest-api-services-success", path: serviceApiPath, payloadShape: "service-list-json")
+        let data = try await getDataFromPath(identifier: identifier, path: plannedOperation?.path ?? serviceApiPath)
+        return try PolarRestServiceProjectionPlanner.serviceList(jsonData: data)
     }
 
     func getRestApiDescription(identifier: String, path: String) async throws -> PolarDeviceRestApiServiceDescription {
-        PolarRuntimePlanner.restFacadeGet(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
-        return try await getJSONDecodableFromPath(identifier: identifier, path: path)
-    }
-
-    private func getJSONDecodableFromPath<T: Decodable>(identifier: String, path: String) async throws -> T {
-        let data = try await getDataFromPath(identifier: identifier, path: path)
-        return try JSONDecoder().decode(T.self, from: data)
+        let plannedOperation = PolarRuntimePlanner.restFacadeGetOperation(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
+        try ensureRestFacadeRuntimePlan(id: "get-rest-api-description-success", path: path, payloadShape: "service-description-json")
+        let data = try await getDataFromPath(identifier: identifier, path: plannedOperation?.path ?? path)
+        return try PolarRestServiceProjectionPlanner.serviceDescription(jsonData: data)
     }
 
     private func getDataFromPath(identifier: String, path: String) async throws -> Data {
@@ -152,13 +310,16 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
-        PolarRuntimePlanner.fileFacade(id: "read-low-level-file-success", command: "GET", path: path)
-        let requestData = try operation.serializedData()
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
+        let operation = plannedOperation ?? (command: .get, path: path)
+        try ensureFileFacadeRuntimePlan(id: "read-low-level-file-success", command: "GET", path: path)
+        let requestData = try PolarRuntimePlanner.fileOperationBytes(operation)
         let responseData = try await client.request(requestData)
-        return responseData as Data
+        let data = responseData as Data
+        if data.isEmpty {
+            PolarRuntimePlanner.restRequestTransportGet(path: path, payloadHex: "")
+        }
+        return data
     }
 
     func putNotification(identifier: String, notification: String, path: String) async throws {
@@ -174,13 +335,12 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = command
-        operation.path = path
-        PolarRuntimePlanner.fileFacade(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: data.map { String(format: "%02x", $0) }.joined())
-        _ = PolarRuntimePlanner.psFtpWriteProgress(payloadSize: data.count)
-        PolarRuntimePlanner.psFtpWriteAck(payloadSize: data.count)
-        let proto = try operation.serializedData()
+        let payloadHex = data.map { String(format: "%02x", $0) }.joined()
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
+        let operation = plannedOperation ?? (command: command, path: path)
+        try ensureFileFacadeRuntimePlan(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
+        try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: data.count)
+        let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
         let inputStream = InputStream(data: data)
         // Consume the write stream to completion (ignore progress values)
         do {
@@ -188,6 +348,20 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         } catch {
             PolarRuntimePlanner.fileRuntimeError(operation: "writeFile", path: path, error: error)
             throw error
+        }
+    }
+
+    private func ensureRestFacadeRuntimePlan(id: String, path: String, payloadShape: String) throws {
+        let terminal = PolarRuntimePlanner.restFacadeGet(id: id, path: path, payloadShape: payloadShape)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "REST facade planning failed: \(terminal)")
+        }
+    }
+
+    private func ensureFileFacadeRuntimePlan(id: String, command: String, path: String, payloadHex: String = "") throws {
+        let terminal = PolarRuntimePlanner.fileFacade(id: id, command: command, path: path, payloadHex: payloadHex)
+        guard terminal == "success" || terminal == "platform-owned" else {
+            throw PolarErrors.polarBleSdkInternalException(description: "File facade planning failed: \(terminal)")
         }
     }
 

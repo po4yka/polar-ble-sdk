@@ -16,6 +16,14 @@ class PolarSkinTemperatureUtilsTests: XCTestCase {
     override func tearDownWithError() throws {
         mockClient = nil
     }
+
+    func testSkinTemperatureReadHeaderUsesSharedFileFacadePlanning() throws {
+        let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
+
+        let operation = PolarSkinTemperatureUtils.skinTemperatureReadOperation(date: date)
+        XCTAssertEqual(operation.command, .get)
+        XCTAssertEqual(operation.path, "/U/0/20260102/SKINTEMP/TEMPCONT.BPB")
+    }
     
     func testReadSkinTemperatureDataFromDayDirectory_SuccessfulResponse() async throws {
         // Arrange
@@ -53,6 +61,18 @@ class PolarSkinTemperatureUtilsTests: XCTestCase {
 
         // Assert
         XCTAssertNil(result, "Expected nil when file is not found")
+    }
+
+    func testSkinTemperatureEnumMappingUsesProductionPolicy() async throws {
+        var proto = Data_TemperatureMeasurementPeriod()
+        proto.measurementType = .tmCoreTemperature
+        proto.sensorLocation = .slDistal
+        mockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let result = await PolarSkinTemperatureUtils.readSkinTemperatureData(client: mockClient, date: Date())
+
+        XCTAssertEqual(result?.measurementType, .TM_CORE_TEMPERATURE)
+        XCTAssertEqual(result?.sensorLocation, .SL_DISTAL)
     }
 
     func testSkinTemperatureGoldenVectorsMapProtoToPublicModel() async throws {

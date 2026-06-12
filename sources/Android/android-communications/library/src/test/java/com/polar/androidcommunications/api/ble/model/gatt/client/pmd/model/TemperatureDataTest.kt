@@ -259,8 +259,8 @@ class TemperatureDataTest {
             "unsupported-raw-frame-policy",
             "unsupported-compressed-frame-policy",
             "truncated-raw-sample-policy",
-            "compressed-pressure-one-channel-indexing-deferral",
-            "compressed-temperature-sample-count-deferral",
+            "compressed-pressure-shared-type0-parser",
+            "compressed-temperature-shared-type0-parser",
             "platform-pressure-temperature-vector-reference-gate",
             "compile-verification-gate"
         )

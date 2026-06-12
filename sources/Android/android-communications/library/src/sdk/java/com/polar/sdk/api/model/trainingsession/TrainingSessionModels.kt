@@ -6,6 +6,7 @@ import fi.polar.remote.representation.protobuf.ExerciseSamples
 import fi.polar.remote.representation.protobuf.ExerciseSamples2
 import fi.polar.remote.representation.protobuf.Training
 import fi.polar.remote.representation.protobuf.TrainingSession
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 import java.time.LocalDate
 
 data class PolarTrainingSessionReference(
@@ -38,15 +39,18 @@ data class PolarExercise(
     val fileSizes: Map<String, Long> = emptyMap()
 )
 
-enum class PolarExerciseDataTypes(val deviceFileName: String) {
-    EXERCISE_SUMMARY("BASE.BPB"),
-    ROUTE("ROUTE.BPB"),
-    ROUTE_GZIP("ROUTE.GZB"),
-    ROUTE_ADVANCED_FORMAT("ROUTE2.BPB"),
-    ROUTE_ADVANCED_FORMAT_GZIP("ROUTE2.GZB"),
-    SAMPLES("SAMPLES.BPB"),
-    SAMPLES_GZIP("SAMPLES.GZB"),
-    SAMPLES_ADVANCED_FORMAT_GZIP("SAMPLES2.GZB"),
+enum class PolarExerciseDataTypes {
+    EXERCISE_SUMMARY,
+    ROUTE,
+    ROUTE_GZIP,
+    ROUTE_ADVANCED_FORMAT,
+    ROUTE_ADVANCED_FORMAT_GZIP,
+    SAMPLES,
+    SAMPLES_GZIP,
+    SAMPLES_ADVANCED_FORMAT_GZIP;
+
+    val deviceFileName: String
+        get() = requireNotNull(PolarSdkModelAdapter.trainingSessionExerciseDataTypeFileName(name)) { "Unknown exercise data type $name" }
 }
 
 /**

@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import iOSCommunications
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 final class GyrDataTest: XCTestCase {
     
@@ -70,6 +73,40 @@ final class GyrDataTest: XCTestCase {
         
         XCTAssertEqual(timeStamp, gyroData.timeStamp)
         XCTAssertEqual(timeStamp, gyroData.samples.last?.timeStamp)
+    }
+
+    func testGyrCompressedType0ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "05ffffffffffffff7f80eaff08000d000301df00"
+        let sharedRows = try XCTUnwrap(GyrDataRuntimePlanner.compressedType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let gyrData = try GyrData.parseDataFromDataFrame(frame: dataFrame)
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt64, Float, Float, Float) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt64(fields[0])),
+                try XCTUnwrap(Float(fields[1])),
+                try XCTUnwrap(Float(fields[2])),
+                try XCTUnwrap(Float(fields[3]))
+            )
+        }
+
+        XCTAssertEqual(sharedSamples.count, gyrData.samples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            XCTAssertEqual(sharedSample.0, gyrData.samples[index].timeStamp)
+            XCTAssertEqual(sharedSample.1, gyrData.samples[index].x)
+            XCTAssertEqual(sharedSample.2, gyrData.samples[index].y)
+            XCTAssertEqual(sharedSample.3, gyrData.samples[index].z)
+        }
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testGyrGoldenVectorsMatchIOSCommunicationsBehavior() throws {

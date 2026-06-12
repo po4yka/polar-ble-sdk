@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import XCTest
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 @testable import iOSCommunications
 
 final class AccDataTest: XCTestCase {
@@ -257,6 +260,40 @@ final class AccDataTest: XCTestCase {
         
         XCTAssertEqual(101, accData.samples[0].timeStamp)
         XCTAssertEqual(timeStamp, accData.samples[1].timeStamp)
+    }
+
+    func testAccParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "02660000000000000081f1ff1400f00306017b0f08"
+        let sharedRows = try XCTUnwrap(AccDataRuntimePlanner.samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let accData = try AccData.parseDataFromDataFrame(frame: dataFrame)
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt64, Int32, Int32, Int32) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt64(fields[0])),
+                try XCTUnwrap(Int32(fields[1])),
+                try XCTUnwrap(Int32(fields[2])),
+                try XCTUnwrap(Int32(fields[3]))
+            )
+        }
+
+        XCTAssertEqual(sharedSamples.count, accData.samples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            XCTAssertEqual(sharedSample.0, accData.samples[index].timeStamp)
+            XCTAssertEqual(sharedSample.1, accData.samples[index].x)
+            XCTAssertEqual(sharedSample.2, accData.samples[index].y)
+            XCTAssertEqual(sharedSample.3, accData.samples[index].z)
+        }
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testAccGoldenVectorsMatchIOSCommunicationsBehavior() throws {

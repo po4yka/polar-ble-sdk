@@ -1,7 +1,7 @@
 //  Copyright © 2021 Polar. All rights reserved.
 
 import XCTest
-import iOSCommunications
+@testable import iOSCommunications
 
 private let PSFTP_BYTE_CODEC_READINESS_POLICY_VECTOR_PATHS = [
     "sdk/psftp-rfc76/error-frame-ffff.json",
@@ -25,6 +25,7 @@ private let PSFTP_BYTE_CODEC_READINESS_FAMILIES = [
     "rfc60-query-stream-encoding",
     "rfc60-notification-stream-encoding",
     "android-request-file-data-append-policy",
+    "ios-request-write-frame-splitting",
     "rfc76-mtu-frame-splitting",
     "rfc76-sequence-wrap",
     "platform-codec-vector-reference-gate",
@@ -46,9 +47,20 @@ private let RFC76_FRAME_SPLITTING_CASE_IDS = [
     "sequence-wraps-after-fifteen"
 ]
 
-private let PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
+private let PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
 
 class BlePsFtpUtilityTest: XCTestCase {
+
+    func testWriteTimeoutSelectionDelegatesExtendedSyncPackagePolicyToSharedRuntime() {
+        XCTAssertEqual(900, BlePsFtpUtility.writeTimeoutSeconds(filePath: "/SYNCPART.TGZ", defaultTimeoutSeconds: 90, extendedTimeoutSeconds: 900))
+        XCTAssertEqual(900, BlePsFtpUtility.writeTimeoutSeconds(filePath: "/SYNCPART.TGZ/part0", defaultTimeoutSeconds: 90, extendedTimeoutSeconds: 900))
+        XCTAssertEqual(90, BlePsFtpUtility.writeTimeoutSeconds(filePath: "/U/0/S/UDEVSET.BPB", defaultTimeoutSeconds: 90, extendedTimeoutSeconds: 900))
+    }
+
+    func testWriteAckTerminalDelegatesSuccessClassificationToSharedRuntime() {
+        XCTAssertEqual("success", BlePsFtpUtility.writeAckTerminal(payloadSize: 128, writeAck: "success"))
+        XCTAssertEqual("success", BlePsFtpUtility.writeAckTerminal(payloadSize: 0, writeAck: "success"))
+    }
    
     func test_processSingleFrame() throws {
         // Arrange
@@ -369,6 +381,22 @@ class BlePsFtpUtilityTest: XCTestCase {
             }
             XCTAssertEqual(frames.map { $0.hexString }, expectedFrames, id)
         }
+    }
+
+    func testRequestWriteFrameSplittingUsesSharedKmpBytePolicyWhenLinked() throws {
+        let header = InputStream(data: try Data(hex: "010203"))
+        let payload = InputStream(data: try Data(hex: "aabbccdd"))
+        let sequenceNumber = BlePsFtpUtility.BlePsFtpRfc76SequenceNumber()
+        header.open()
+        payload.open()
+        defer {
+            header.close()
+            payload.close()
+        }
+
+        let frames = BlePsFtpUtility.buildRfc76MessageFrameAll(header, data: payload, mtuSize: 4, sequenceNumber: sequenceNumber)
+
+        XCTAssertEqual(frames.map { $0.hexString }, ["06030001", "170203aa", "23bbccdd"])
     }
 
     func testMessageStreamGoldenVectorsFollowNeutralKmpShape() throws {

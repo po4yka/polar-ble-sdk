@@ -27,6 +27,58 @@ final class PolarUserDeviceSettingsUtilsTest: XCTestCase {
         XCTAssertEqual("/UDEVSET.BPB", SENSOR_SETTINGS_FILE_PATH)
     }
 
+    func testDeviceLocationStringHelpersPreservePublicMapping() {
+        XCTAssertEqual("UNDEFINED", PolarUserDeviceSettings.getStringValue(deviceLocationIndex: 0))
+        XCTAssertEqual("WRIST_LEFT", PolarUserDeviceSettings.getStringValue(deviceLocationIndex: 2))
+        XCTAssertEqual("BIKE_MOUNT", PolarUserDeviceSettings.getStringValue(deviceLocationIndex: 13))
+        XCTAssertEqual(.WRIST_RIGHT, PolarUserDeviceSettings.getDeviceLocation(deviceLocation: "WRIST_RIGHT"))
+        XCTAssertEqual(.UNDEFINED, PolarUserDeviceSettings.getDeviceLocation(deviceLocation: "UNKNOWN_LOCATION"))
+        XCTAssertEqual(PolarUserDeviceSettings.DeviceLocation.allCases.map { $0.rawValue }, PolarUserDeviceSettings.getAllAsString())
+    }
+
+    func testUserDeviceSettingsToProtoWritesAutomaticTrainingDetectionOn() {
+        let model = PolarUserDeviceSettings()
+        model.deviceLocation = .WRIST_LEFT
+        model.automaticTrainingDetectionMode = .ON
+        model.automaticTrainingDetectionSensitivity = 77
+        model.minimumTrainingDurationSeconds = 300
+
+        let proto = PolarUserDeviceSettings.toProto(userDeviceSettings: model)
+
+        XCTAssertTrue(proto.hasAutomaticMeasurementSettings)
+        XCTAssertTrue(proto.automaticMeasurementSettings.hasAutomaticTrainingDetectionSettings)
+        XCTAssertEqual(.on, proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.state)
+        XCTAssertEqual(77, proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.sensitivity)
+        XCTAssertEqual(300, proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.minimumTrainingDurationSeconds)
+    }
+
+    func testAutomaticMeasurementStateMappingPreservesAutosFilesPolicy() {
+        XCTAssertEqual(.alwaysOn, PolarUserDeviceSettings.automaticMeasurementState(enabled: true))
+        XCTAssertEqual(.off, PolarUserDeviceSettings.automaticMeasurementState(enabled: false))
+    }
+
+    func testSharedUserDeviceSettingsProtoCodecRoundTripsMappedFields() throws {
+        var fields = [
+            "deviceLocation": "\(PbDeviceLocation.deviceLocationWristRight.rawValue)",
+            "usbConnectionMode": "true",
+            "automaticTrainingDetectionMode": "false",
+            "automaticTrainingDetectionSensitivity": "40",
+            "minimumTrainingDurationSeconds": "120",
+            "telemetryEnabled": "true",
+            "autosFilesEnabled": "false"
+        ]
+        let data = try XCTUnwrap(PolarUserDeviceSettingsRuntimePlanner.buildProtoData(fields: fields, date: Date(timeIntervalSince1970: 0)), "shared build")
+        let proto = try Data_PbUserDeviceSettings(serializedBytes: data)
+        let parsed = try XCTUnwrap(PolarUserDeviceSettingsRuntimePlanner.parseProtoFields(data: try proto.serializedData()), "shared parse")
+
+        XCTAssertEqual(fields, parsed)
+
+        fields.removeValue(forKey: "telemetryEnabled")
+        let noTelemetryData = try XCTUnwrap(PolarUserDeviceSettingsRuntimePlanner.buildProtoData(fields: fields, date: Date(timeIntervalSince1970: 0), includeTelemetry: false), "shared build without telemetry")
+        let noTelemetryProto = try Data_PbUserDeviceSettings(serializedBytes: noTelemetryData)
+        XCTAssertFalse(noTelemetryProto.hasTelemetrySettings)
+    }
+
     // MARK: - Request encoding
 
     func testGetUserDeviceSettings_sendsRequestWithCorrectPath() async throws {
@@ -247,6 +299,7 @@ private let USER_DEVICE_SETTINGS_MODEL_READINESS_FAMILIES = [
     "encoder-owned-trusted-last-modified",
     "explicit-telemetry-write-policy",
     "platform-default-divergence",
+    "mapped-protobuf-byte-codec",
     "platform-user-device-settings-vector-references",
     "compile-verification-gate"
 ]
@@ -340,7 +393,7 @@ extension PolarUserDeviceSettingsUtilsTest {
             }
             if let autosFilesEnabled = object["autosFilesEnabled"] as? Bool {
                 var ohr = Data_PbAutomaticMeasurementSettings()
-                ohr.state = autosFilesEnabled ? .alwaysOn : .off
+                ohr.state = PolarUserDeviceSettings.automaticMeasurementState(enabled: autosFilesEnabled)
                 proto.automaticMeasurementSettings.automaticOhrMeasurement = ohr
             }
         }
@@ -418,7 +471,7 @@ extension PolarUserDeviceSettingsUtilsTest {
         }
         if let autosFilesEnabled = expected["autosFilesEnabled"] as? Bool {
             XCTAssertTrue(actual.automaticMeasurementSettings.hasAutomaticOhrMeasurement, id)
-            XCTAssertEqual(actual.automaticMeasurementSettings.automaticOhrMeasurement.state, autosFilesEnabled ? .alwaysOn : .off, id)
+            XCTAssertEqual(actual.automaticMeasurementSettings.automaticOhrMeasurement.state, PolarUserDeviceSettings.automaticMeasurementState(enabled: autosFilesEnabled), id)
         }
         if let hasTelemetryEnabled = expected["hasTelemetryEnabled"] as? Bool {
             XCTAssertEqual(actual.hasTelemetrySettings && actual.telemetrySettings.hasTelemetryEnabled, hasTelemetryEnabled, id)

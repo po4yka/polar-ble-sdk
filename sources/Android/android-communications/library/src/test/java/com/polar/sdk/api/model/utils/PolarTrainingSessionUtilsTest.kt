@@ -6,6 +6,7 @@ import com.google.protobuf.ByteString
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionDataTypes
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionReference
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import com.polar.sdk.impl.utils.PolarTrainingSessionUtils
 import fi.polar.remote.representation.protobuf.Structures
 import fi.polar.remote.representation.protobuf.Training
@@ -26,6 +27,7 @@ import junit.framework.TestCase.assertNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertArrayEquals
 import org.junit.Test
 import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
@@ -41,6 +43,113 @@ import java.util.zip.GZIPOutputStream
 class PolarTrainingSessionUtilsTest {
 
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss", Locale.ENGLISH)
+
+    @Test
+    fun `training session read and delete headers use shared file facade planning`() {
+        val reference = PolarTrainingSessionReference(
+            date = LocalDate.of(2026, 1, 2),
+            path = "/U/0/20260102/E/123456/TSESS.BPB",
+            trainingDataTypes = listOf(PolarTrainingSessionDataTypes.TRAINING_SESSION_SUMMARY),
+            exercises = emptyList(),
+            fileSize = 1024L
+        )
+
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/E/123456/TSESS.BPB",
+            PolarTrainingSessionUtils.trainingSessionSummaryReadOperation(reference.path)
+        )
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/E/123456/00/BASE.BPB",
+            PolarTrainingSessionUtils.trainingSessionExerciseFileReadOperation("/U/0/20260102/E/123456/00/BASE.BPB")
+        )
+        assertEquals("/U/0/20260102/E/", PolarRuntimePlannerAdapter.trainingSessionDeleteParentPath(reference.path))
+        assertEquals("/U/0/20260102/E/", PolarRuntimePlannerAdapter.trainingSessionDeleteRemovePath(reference.path, parentEntryCount = 1))
+        assertEquals("/U/0/20260102/E/123456/", PolarRuntimePlannerAdapter.trainingSessionDeleteRemovePath(reference.path, parentEntryCount = 2))
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/E/",
+            PolarTrainingSessionUtils.trainingSessionDeleteParentReadOperation(reference)
+        )
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/20260102/E/",
+            PolarTrainingSessionUtils.trainingSessionDeleteRemoveOperation(reference, parentEntryCount = 1)
+        )
+        assertEquals(
+            PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/20260102/E/123456/",
+            PolarTrainingSessionUtils.trainingSessionDeleteRemoveOperation(reference, parentEntryCount = 2)
+        )
+    }
+
+    @Test
+    fun `training session exercise filenames are delegated to shared mapping`() {
+        assertEquals("/U/0/", PolarRuntimePlannerAdapter.trainingSessionRootPath())
+        PolarExerciseDataTypes.entries.forEach { dataType ->
+            assertEquals(
+                PolarRuntimePlannerAdapter.trainingSessionExerciseDataTypeFileName(dataType.name),
+                dataType.deviceFileName
+            )
+        }
+    }
+
+    @Test
+    fun `training session payload fetch order uses shared planner`() {
+        val reference = PolarTrainingSessionReference(
+            date = LocalDate.of(2026, 1, 2),
+            path = "/U/0/20260102/E/123456/TSESS.BPB",
+            trainingDataTypes = listOf(PolarTrainingSessionDataTypes.TRAINING_SESSION_SUMMARY),
+            exercises = listOf(
+                PolarExercise(
+                    index = 0,
+                    path = "/U/0/20260102/E/123456/00/BASE.BPB",
+                    exerciseDataTypes = listOf(
+                        PolarExerciseDataTypes.EXERCISE_SUMMARY,
+                        PolarExerciseDataTypes.ROUTE,
+                        PolarExerciseDataTypes.ROUTE_GZIP,
+                        PolarExerciseDataTypes.SAMPLES_ADVANCED_FORMAT_GZIP
+                    ),
+                    fileSizes = mapOf(
+                        "BASE.BPB" to 10L,
+                        "ROUTE.BPB" to 20L,
+                        "ROUTE.GZB" to 30L,
+                        "SAMPLES2.GZB" to 40L
+                    )
+                )
+            ),
+            fileSize = 100L
+        )
+
+        assertEquals(
+            listOf(
+                "/U/0/20260102/E/123456/TSESS.BPB",
+                "/U/0/20260102/E/123456/00/BASE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.GZB",
+                "/U/0/20260102/E/123456/00/SAMPLES2.GZB"
+            ),
+            PolarTrainingSessionUtils.trainingSessionPayloadFetchOrder(reference)
+        )
+        val readPlan = PolarTrainingSessionUtils.trainingSessionPayloadReadPlan(reference)
+        assertEquals(
+            listOf(
+                "/U/0/20260102/E/123456/TSESS.BPB",
+                "/U/0/20260102/E/123456/00/BASE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.GZB",
+                "/U/0/20260102/E/123456/00/SAMPLES2.GZB"
+            ),
+            readPlan.map { it.path }
+        )
+        assertEquals(listOf("TSESS.BPB", "BASE.BPB", "ROUTE.BPB", "ROUTE.GZB", "SAMPLES2.GZB"), readPlan.map { it.fileName })
+        assertEquals(listOf("sessionSummary", "exerciseSummary", "route", "route", "samplesAdvanced"), readPlan.map { it.publicModelSlot })
+        assertEquals(listOf(null, 0, 0, 0, 0), readPlan.map { it.exerciseIndex })
+    }
+
+    @Test
+    fun `training session progress percent uses shared clamp policy`() {
+        assertEquals(0, PolarRuntimePlannerAdapter.trainingSessionProgressPercent(0, 0))
+        assertEquals(25, PolarRuntimePlannerAdapter.trainingSessionProgressPercent(25, 100))
+        assertEquals(100, PolarRuntimePlannerAdapter.trainingSessionProgressPercent(125, 100))
+        assertEquals(0, PolarRuntimePlannerAdapter.trainingSessionProgressPercent(-5, 100))
+    }
 
     @Test
     fun `getTrainingSessionReferences() should return all training session references`() = runTest {
@@ -282,14 +391,38 @@ class PolarTrainingSessionUtilsTest {
             val id = inputCase.get("id").asString
             assertEquals(id, inputCase.get("parser").asString, prototypeCase.get("parser").asString)
             assertEquals(id, inputCase.get("encoding").asString, prototypeCase.get("encoding").asString)
+            assertEquals(id, inputCase.get("publicModelSlot").asString, prototypeCase.get("publicModelSlot").asString)
+            assertEquals(id, inputCase.get("encoding").asString, PolarTrainingSessionUtils.trainingSessionPayloadEncoding(inputCase.get("fileName").asString))
+            assertEquals(id, inputCase.get("publicModelSlot").asString, PolarRuntimePlannerAdapter.trainingSessionPublicModelSlot(inputCase.get("fileName").asString))
             assertEquals(id, inputCase.getAsJsonArray("expectedFields").map { it.asString }, prototypeCase.getAsJsonArray("fields").map { it.asString })
         }
         assertEquals(4, cases.count { it.get("encoding").asString == "gzip-protobuf" })
-        assertEquals("executable shared parser-policy coverage; byte decoding remains gated on common protobuf and gzip dependencies", expected.getAsJsonObject("commonParserPrototype").get("status").asString)
+        assertEquals(listOf("sessionSummary", "exerciseSummary", "route", "route", "routeAdvanced", "routeAdvanced", "samples", "samples", "samplesAdvanced"), cases.map { it.get("publicModelSlot").asString })
+        assertEquals("executable shared parser-policy coverage; gzip decoding is shared and protobuf parsing remains gated on common protobuf dependencies", expected.getAsJsonObject("commonParserPrototype").get("status").asString)
         assertEquals(TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION, expected.get("commonDecision").asString)
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         assertEquals(listOf("PolarTrainingSessionUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
         assertEquals(listOf("com.polar.sharedtest.TrainingSessionCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    @Test
+    fun `training session gzip payload decoding delegates to shared codec and preserves android malformed fallback`() {
+        val compressed = "1f8b0800d7bd2a6a02ff2b294acccccbcc4bd72d4e2d2ececccfd34dafca2cd02d48acccc94f4c0100a58206c51d000000".hexToBytes()
+        val expected = "training-session-gzip-payload".toByteArray()
+        val malformed = byteArrayOf(0x01, 0x02, 0x03)
+
+        assertArrayEquals(expected, PolarTrainingSessionUtils.decodePayloadBytes("ROUTE.GZB", compressed))
+        assertArrayEquals(expected, PolarTrainingSessionUtils.decodePayloadBytes("BASE.BPB", expected))
+        assertArrayEquals(malformed, PolarTrainingSessionUtils.decodePayloadBytes("ROUTE.GZB", malformed))
+    }
+
+    @Test
+    fun `training session decoded protobuf malformed preflight delegates to shared parser`() {
+        val validSummaryNameOnly = byteArrayOf(0x22, 0x01, 'P'.code.toByte())
+        val truncatedSummaryName = byteArrayOf(0x22, 0x05, 'P'.code.toByte())
+
+        assertEquals(false, PolarRuntimePlannerAdapter.trainingSessionPayloadMalformed("TSESS.BPB", validSummaryNameOnly))
+        assertEquals(true, PolarRuntimePlannerAdapter.trainingSessionPayloadMalformed("TSESS.BPB", truncatedSummaryName))
     }
 
     @Test
@@ -326,14 +459,19 @@ class PolarTrainingSessionUtilsTest {
             "unknown-advanced-sample-list-ignoring",
             "known-sample-preservation",
             "payload-parser-family-ownership",
-            "byte-level-parser-dependency-gate",
+            "selected-protobuf-field-parser-ownership",
+            "shared-gzip-payload-codec",
+            "public-model-read-plan",
+            "generated-public-protobuf-construction-boundary",
             "platform-training-session-vector-reference-gate",
+            "public-model-slot-planning",
+            "public-generated-model-reconstruction-boundary",
             "compile-verification-gate"
         )
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, byte-level parser dependency gates, and compile verification remain explicit before production discovery/read orchestration moves.",
+            "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared selected protobuf field parsing, shared public-model read planning, shared public-model slot planning, generated public protobuf construction boundaries, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.",
             expected.get("commonDecision").asString
         )
     }
@@ -641,6 +779,13 @@ class PolarTrainingSessionUtilsTest {
         }
     }
 
+    private fun String.hexToBytes(): ByteArray {
+        require(length % 2 == 0) { "Hex string must have even length" }
+        return ByteArray(length / 2) { index ->
+            substring(index * 2, index * 2 + 2).toInt(16).toByte()
+        }
+    }
+
     private companion object {
         val TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS = listOf(
             "training-session-summary-protobuf",
@@ -654,6 +799,6 @@ class PolarTrainingSessionUtilsTest {
             "samples-advanced-gzip-protobuf"
         )
 
-        const val TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing to common code, add production common protobuf and gzip dependencies that can execute these parser cases against real bytes; until then this vector is the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+        const val TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies that can execute these parser cases against real bytes; gzip decompression and public-model slot planning are now shared KMP production code, and until protobuf parsing moves this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
     }
 }

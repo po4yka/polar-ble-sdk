@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import XCTest
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 @testable import iOSCommunications
 
 final class PpgDataTest: XCTestCase {
@@ -67,6 +70,39 @@ final class PpgDataTest: XCTestCase {
         XCTAssertEqual(timeStamp, result.timeStamp)
         XCTAssertEqual(timeStamp, result.samples.last?.timeStamp)
     }
+
+    func testPpgRawType0ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "01009435770000000000010203040506ffff7f000000ffffff0fefef0000800fefef"
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 55))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 55 })
+        let ppgData = try PpgData.parseDataFromDataFrame(frame: dataFrame)
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt64, [Int32], Int32) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt64(fields[0])),
+                fields[1].split(separator: ";").compactMap { Int32($0) },
+                try XCTUnwrap(Int32(fields[2]))
+            )
+        }
+
+        XCTAssertEqual(sharedSamples.count, ppgData.samples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            let sample = try XCTUnwrap(ppgData.samples[index] as? PpgData.PpgDataFrameType0)
+            XCTAssertEqual(sharedSample.0, sample.timeStamp)
+            XCTAssertEqual(sharedSample.1, sample.ppgDataSamples)
+            XCTAssertEqual(sharedSample.2, sample.ambientSample)
+        }
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
     
     func testRawPpgFrameType4() throws {
         // Arrange
@@ -122,6 +158,8 @@ final class PpgDataTest: XCTestCase {
             { _,_ in previousTimeStamp },
             { _ in factor },
             { _ in 13 })
+        let sharedDataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType4Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
 
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
@@ -130,6 +168,12 @@ final class PpgDataTest: XCTestCase {
         let sample2 = result.samples[2] as! PpgData.PpgDataFrameType4
 
         // Assert
+        let sharedFields = try XCTUnwrap(sharedRows.split(separator: "|").first?.split(separator: ",").map(String.init))
+        XCTAssertEqual(4, sharedFields.count)
+        XCTAssertEqual(String(timeStamp), sharedFields[0])
+        XCTAssertEqual(12, sharedFields[1].split(separator: ";").count)
+        XCTAssertEqual(12, sharedFields[2].split(separator: ";").count)
+        XCTAssertEqual(12, sharedFields[3].split(separator: ";").count)
         XCTAssertEqual(3, result.samples.count)
         
         XCTAssertEqual(expectedNumIntTs1, sample0.ppgDataSamples[0])
@@ -216,6 +260,27 @@ final class PpgDataTest: XCTestCase {
         XCTAssertEqual(expectedOperationMode, sample.operationMode)
         XCTAssertEqual(timeStamp, sample.timeStamp)
     }
+
+    func testPpgRawType5ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "01009435770000000005ffffffff"
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType5Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let ppgData = try PpgData.parseDataFromDataFrame(frame: dataFrame)
+        let fields = sharedRows.split(separator: ",")
+        let sample = try XCTUnwrap(ppgData.samples.first as? PpgData.PpgDataFrameType5)
+        XCTAssertEqual(try XCTUnwrap(UInt64(fields[0])), sample.timeStamp)
+        XCTAssertEqual(try XCTUnwrap(UInt64(fields[1])), sample.operationMode)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
     
     func testCompressedPpgFrameType5Throws() throws {
 
@@ -276,6 +341,27 @@ final class PpgDataTest: XCTestCase {
         XCTAssertEqual(1, result.samples.count)
         XCTAssertEqual(expectedSportId, sample.sportId)
         XCTAssertEqual(timeStamp, sample.timeStamp)
+    }
+
+    func testPpgRawType6ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "010094357700000000061b00000000000000"
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType6Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let ppgData = try PpgData.parseDataFromDataFrame(frame: dataFrame)
+        let fields = sharedRows.split(separator: ",")
+        let sample = try XCTUnwrap(ppgData.samples.first as? PpgData.PpgDataFrameType6)
+        XCTAssertEqual(try XCTUnwrap(UInt64(fields[0])), sample.timeStamp)
+        XCTAssertEqual(try XCTUnwrap(Int32(fields[1])), sample.sportId)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
     
     func testCompressedPpgFrameType6ThrowsException() throws {
@@ -385,6 +471,17 @@ final class PpgDataTest: XCTestCase {
             { _,_ in previousTimeStamp },
             { _ in factor },
             { _ in 13 })
+        let dataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.compressedType8Samples(dataFrameHex: dataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
+        let sharedSamples = sharedRows.split(separator: "|")
+        XCTAssertEqual(amountOfSamples, sharedSamples.count)
+        let sharedSample0Fields = sharedSamples[0].split(separator: ",")
+        let sharedSample1Fields = sharedSamples[1].split(separator: ",")
+        XCTAssertEqual("1000000050", String(sharedSample0Fields[0]))
+        XCTAssertEqual(String(timeStamp), String(sharedSample1Fields[0]))
+        XCTAssertEqual(24, sharedSample0Fields[1].split(separator: ";").count)
+        XCTAssertEqual(String(sample0Channel0), String(sharedSample0Fields[1].split(separator: ";")[0]))
+        XCTAssertEqual(String(sample1Channel0), String(sharedSample1Fields[1].split(separator: ";")[0]))
 
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
@@ -486,6 +583,9 @@ final class PpgDataTest: XCTestCase {
             { _,_ in previousTimeStamp },
             { _ in factor },
             { _ in 13 })
+        let sharedDataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType9Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
+        XCTAssertEqual(1, sharedRows.split(separator: "|").count)
 
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
@@ -617,13 +717,30 @@ final class PpgDataTest: XCTestCase {
             { _,_ in previousTimeStamp }  ,
             { _ in factor },
             { _ in 22 })
+        let sharedDataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.compressedType0Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 22))
         
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
         let sample0 = result.samples[0] as! PpgData.PpgDataFrameType0
         let sample1 = result.samples[1] as! PpgData.PpgDataFrameType0
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt64, [Int32], Int32) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt64(try XCTUnwrap(fields.first))),
+                try XCTUnwrap(fields.dropFirst().first).split(separator: ";").compactMap { Int32($0) },
+                try XCTUnwrap(Int32(try XCTUnwrap(fields.last)))
+            )
+        }
         
         // Assert
+        XCTAssertEqual(result.samples.count, sharedSamples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            let sample = try XCTUnwrap(result.samples[index] as? PpgData.PpgDataFrameType0)
+            XCTAssertEqual(sample.timeStamp, sharedSample.0)
+            XCTAssertEqual(sample.ppgDataSamples, sharedSample.1)
+            XCTAssertEqual(sample.ambientSample, sharedSample.2)
+        }
         XCTAssertEqual(amountOfSamples, result.samples.count)
         XCTAssertEqual(3, sample0.ppgDataSamples.count)
         XCTAssertEqual(refSample0Channel0, sample0 .ppgDataSamples[0])
@@ -642,6 +759,33 @@ final class PpgDataTest: XCTestCase {
     
     }
     
+    func testPpgCompressedType7ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "016600000000000000870100000200000300000400000500000600000700000800000900000a00000b00000c00000d00000e00000f0000100000050000"
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.compressedType7Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        let rowValues = sharedRows.split(separator: "|")
+        XCTAssertEqual(1, rowValues.count)
+        let sharedFields = try XCTUnwrap(rowValues.first?.split(separator: ","))
+        XCTAssertEqual("102", sharedFields[0])
+        XCTAssertEqual("1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;5", sharedFields[1])
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let ppgData = try PpgData.parseDataFromDataFrame(frame: dataFrame)
+        XCTAssertEqual(1, ppgData.samples.count)
+        let sample = try XCTUnwrap(ppgData.samples.first as? PpgData.PpgDataFrameType7)
+
+        XCTAssertEqual(UInt64(102), ppgData.timeStamp)
+        XCTAssertEqual(UInt64(102), sample.timeStamp)
+        XCTAssertEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 5], sample.ppgDataSamples)
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func testCompressedPpgFrameType10() throws {
 
         // Arrange
@@ -738,6 +882,8 @@ final class PpgDataTest: XCTestCase {
             { _,_ in previousTimeStamp },
             { _ in 1.0 },
             { _ in 13 })
+        let sharedDataFrameHex = ppgDataFrameContent.map { String(format: "%02x", $0) }.joined()
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.compressedType10IosSamples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: 1.0, sampleRate: 13))
         
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
@@ -748,6 +894,12 @@ final class PpgDataTest: XCTestCase {
         let _ = sample.statusBits?.makeIterator().map { statusString += String($0) }
         
         // Assert
+        let sharedFields = try XCTUnwrap(sharedRows.split(separator: "|").first?.split(separator: ",").map(String.init))
+        XCTAssertEqual(5, sharedFields.count)
+        XCTAssertEqual(String(expectedTimeStamp), sharedFields[0])
+        XCTAssertEqual(expectedGreenSamples, sharedFields[1].split(separator: ";").compactMap { Int32($0) })
+        XCTAssertEqual(expectedRedSamples, sharedFields[2].split(separator: ";").compactMap { Int32($0) })
+        XCTAssertEqual(expectedIrSamples, sharedFields[3].split(separator: ";").compactMap { Int32($0) })
         XCTAssertNotNil(result)
         XCTAssertEqual(expectedStatus, Int32(statusString, radix: 2))
         XCTAssertEqual(7, result.samples.count)
@@ -845,6 +997,8 @@ final class PpgDataTest: XCTestCase {
             { _,_ in previousTimeStamp },
             { _ in 1.0 },
             { _ in 13 })
+        let sharedDataFrameHex = ppgDataFrameContent.map { String(format: "%02x", $0) }.joined()
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.compressedType13Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: 1.0, sampleRate: 13))
 
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
@@ -853,6 +1007,12 @@ final class PpgDataTest: XCTestCase {
         let _ = String(Int32(expectedStatus & 0xFFFFFF), radix: 2).map(String.init).forEach { expectedtatusBits.append(Int8($0)!) }
 
         // Assert
+        let sharedFields = try XCTUnwrap(sharedRows.split(separator: "|").first?.split(separator: ",").map(String.init))
+        XCTAssertEqual(4, sharedFields.count)
+        XCTAssertEqual(String(expectedTimeStamp), sharedFields[0])
+        XCTAssertEqual(String(expectedPPGChannel0), sharedFields[1])
+        XCTAssertEqual(String(expectedPPGChannel1), sharedFields[2])
+        XCTAssertEqual("1;1", sharedFields[3])
         XCTAssertNotNil(result)
         XCTAssertEqual(expectedtatusBits, sample.statusBits)
         XCTAssertEqual(84, result.samples.count)
@@ -917,12 +1077,20 @@ final class PpgDataTest: XCTestCase {
             { _,_ in previousTimeStamp },
             { _ in factor },
             { _ in 13 })
+        let sharedDataFrameHex = (ppgDataFrameHeader + ppgDataFrameContent).map { String(format: "%02x", $0) }.joined()
+        let sharedRows = try XCTUnwrap(PpgDataRuntimePlanner.rawType14Samples(dataFrameHex: sharedDataFrameHex, previousTimeStamp: Int64(previousTimeStamp), factor: factor, sampleRate: 13))
 
         // Act
         let result = try PpgData.parseDataFromDataFrame(frame: dataFrame)
         let sample = result.samples[0] as! PpgData.PpgDataFrameType14
 
         // Assert
+        let sharedFields = sharedRows.split(separator: "|").first?.split(separator: ",")
+        XCTAssertEqual(4, sharedFields?.count)
+        XCTAssertEqual("2000000000", sharedFields?[0])
+        XCTAssertEqual("3", sharedFields?[1])
+        XCTAssertEqual("0", sharedFields?[2])
+        XCTAssertEqual("2", sharedFields?[3])
         XCTAssertEqual(1, result.samples.count)
         XCTAssertEqual(3, sample.ppgDataSamples.count)
         XCTAssertEqual(expectedNumIntTs1, sample.ppgDataSamples[0])

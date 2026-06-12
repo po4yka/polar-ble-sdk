@@ -1,6 +1,12 @@
 package com.polar.sharedtest
 
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
+import com.polar.shared.sdk.PolarTrainingExerciseReference
+import com.polar.shared.sdk.PolarTrainingIntervalledSampleList
+import com.polar.shared.sdk.PolarTrainingPayloadFields
+import com.polar.shared.sdk.PolarTrainingPayloadParserCase
+import com.polar.shared.sdk.PolarTrainingPayloadResponse
+import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -64,15 +70,27 @@ class TrainingSessionCommonPolicyTest {
         val reference = input.objectValue("reference")
         val responses = input.objectValue("responses")
         val expected = vector.objectValue("expected")
-        val fetchOrder = payloadFetchOrder(reference)
-        val result = assemblePayloadReadResult(reference, responses, fetchOrder)
+        val sharedReference = payloadReference(reference)
+        val sharedResponses = payloadResponses(responses)
+        val fetchOrder = PolarTrainingSessionModels.payloadFetchOrder(sharedReference)
+        val readPlan = PolarTrainingSessionModels.payloadReadPlan(sharedReference)
+        val result = PolarTrainingSessionModels.assemblePayloadReadResult(sharedReference, sharedResponses, fetchOrder)
 
         assertEquals(expected.stringArrayValue("fetchOrder"), fetchOrder, vector.stringValue("id"))
+        val expectedReadPlan = expected.objectArray("readPlan")
+        assertEquals(expectedReadPlan.map { it.stringValue("path") }, readPlan.map { it.path }, vector.stringValue("id"))
+        assertEquals(expectedReadPlan.map { it.stringValue("fileName") }, readPlan.map { it.fileName }, vector.stringValue("id"))
+        assertEquals(expectedReadPlan.map { it.stringValue("publicModelSlot") }, readPlan.map { it.publicModelSlot }, vector.stringValue("id"))
+        assertEquals(expectedReadPlan.map { it.optionalIntValue("exerciseIndex") }, readPlan.map { it.exerciseIndex }, vector.stringValue("id"))
+        assertEquals("/U/0/20250101/E/", PolarTrainingSessionModels.deleteParentPath(sharedReference.path), vector.stringValue("id"))
+        assertEquals("/U/0/20250101/E/", PolarTrainingSessionModels.deleteRemovePath(sharedReference.path, parentEntryCount = 1), vector.stringValue("id"))
+        assertEquals("/U/0/20250101/E/101200/", PolarTrainingSessionModels.deleteRemovePath(sharedReference.path, parentEntryCount = 2), vector.stringValue("id"))
         val expectedProgress = expected.objectValue("progress")
         assertEquals(expectedProgress.intValue("totalBytes"), result.totalBytes, vector.stringValue("id"))
         assertEquals(expectedProgress.intValue("completedBytes"), result.completedBytes, vector.stringValue("id"))
         assertEquals(expectedProgress.intValue("progressPercent"), result.progressPercent, vector.stringValue("id"))
         assertEquals(expectedProgress.stringValue("currentFileName"), result.currentFileName, vector.stringValue("id"))
+        assertEquals("SAMPLES2.GZB", PolarTrainingSessionModels.exerciseDataTypeFileName("SAMPLES_ADVANCED_FORMAT_GZIP"), vector.stringValue("id"))
         val expectedSession = expected.objectValue("sessionSummary")
         assertEquals(expectedSession.stringValue("modelName"), result.modelName, vector.stringValue("id"))
         assertEquals(expectedSession.intValue("durationSeconds"), result.durationSeconds, vector.stringValue("id"))
@@ -92,16 +110,70 @@ class TrainingSessionCommonPolicyTest {
         assertEquals("compute-progress-from-reference-file-sizes-and-last-completed-file", commonDecision.stringValue("progressPolicy"), vector.stringValue("id"))
         assertEquals("omit-only-the-malformed-component-and-continue-reading-remaining-files", commonDecision.stringValue("malformedPayloadPolicy"), vector.stringValue("id"))
         assertEquals("ignore-unknown-advanced-sample-lists-and-preserve-known-samples", commonDecision.stringValue("unknownSampleListPolicy"), vector.stringValue("id"))
+        assertEquals("shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects", commonDecision.stringValue("publicModelReadPlanPolicy"), vector.stringValue("id"))
     }
 
     @Test
-    fun trainingSessionByteLevelPayloadParserMigrationRequiresExplicitCommonProtoAndGzipDependencies() {
+    fun trainingSessionPayloadReadResultUsesSharedReadPlanExerciseIndexForUnpaddedAndroidPaths() {
+        val reference = PolarTrainingSessionReference(
+            dateTime = "2025-01-01T10:12:00",
+            date = "2025-01-01",
+            path = "/U/0/20250101/E/101200/TSESS.BPB",
+            trainingDataTypes = listOf("TRAINING_SESSION_SUMMARY"),
+            exercises = listOf(
+                PolarTrainingExerciseReference(
+                    index = 1,
+                    androidPath = "/U/0/20250101/E/101200/1/BASE.BPB",
+                    iosPath = "/U/0/20250101/E/101200/01",
+                    exerciseDataTypes = listOf("SAMPLES"),
+                    fileSizes = mapOf("SAMPLES.BPB" to 3L)
+                )
+            ),
+            fileSize = 6L
+        )
+        val responses = mapOf(
+            "/U/0/20250101/E/101200/TSESS.BPB" to PolarTrainingPayloadResponse(
+                kind = "trainingSessionSummary",
+                fileName = "TSESS.BPB",
+                byteSize = 3,
+                payload = PolarTrainingPayloadFields(modelName = "Polar 360")
+            ),
+            "/U/0/20250101/E/101200/1/SAMPLES.BPB" to PolarTrainingPayloadResponse(
+                kind = "samples",
+                fileName = "SAMPLES.BPB",
+                byteSize = 3,
+                payload = PolarTrainingPayloadFields(heartRateSamples = listOf(120, 121))
+            )
+        )
+
+        val result = PolarTrainingSessionModels.assemblePayloadReadResult(reference, responses)
+
+        assertEquals(1, result.exercises.single().index)
+        assertEquals(listOf(120, 121), result.exercises.single().samplesHeartRate)
+        assertEquals(100, result.progressPercent)
+    }
+
+    @Test
+    fun trainingSessionProgressPercentUsesSharedClampPolicy() {
+        assertEquals(0, PolarTrainingSessionModels.progressPercent(0, 0))
+        assertEquals(25, PolarTrainingSessionModels.progressPercent(25, 100))
+        assertEquals(100, PolarTrainingSessionModels.progressPercent(125, 100))
+        assertEquals(0, PolarTrainingSessionModels.progressPercent(-5, 100))
+        assertEquals(true, PolarTrainingSessionModels.referenceDateMatches("2024-02-29", "2024-02-28", "2024-03-01"))
+        assertEquals(true, PolarTrainingSessionModels.referenceDateMatches("20240229", "20240229", null))
+        assertEquals(false, PolarTrainingSessionModels.referenceDateMatches("2024-03-02", "2024-02-28", "2024-03-01"))
+        assertEquals(false, PolarTrainingSessionModels.referenceDateMatches("2024-02-29", "2024-03-01", "2024-02-28"))
+        assertEquals(false, PolarTrainingSessionModels.referenceDateMatches("2023-02-29", null, null))
+    }
+
+    @Test
+    fun trainingSessionSelectedPayloadParserOwnershipKeepsGeneratedModelBoundaryExplicit() {
         val vector = loadGoldenVectorText("sdk/training-session/payload-read-policy.json")
         val commonDecision = vector.objectValue("platformExpectations").objectValue("commonDecision")
 
-        assertEquals("add-common-protobuf-and-gzip-parser-dependencies-before-byte-level-payload-migration", commonDecision.stringValue("byteLevelParserGate"), vector.stringValue("id"))
-        assertEquals("deferred-until-common-protobuf-and-gzip-parser-exist", commonDecision.stringValue("byteLevelPayloadStatus"), vector.stringValue("id"))
-        assertEquals("This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, and unknown advanced sample-list handling. payload-parser-policy.json now pins the parser-family ownership cases; real byte-level protobuf/gzip decoding remains an explicit production gate because the current shared module has no common protobuf or gzip parser dependency.", vector.stringValue("notes"), vector.stringValue("id"))
+        assertEquals("selected-common-protobuf-field-parser-active-before-generated-model-reconstruction", commonDecision.stringValue("byteLevelParserGate"), vector.stringValue("id"))
+        assertEquals("selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred", commonDecision.stringValue("byteLevelPayloadStatus"), vector.stringValue("id"))
+        assertEquals("This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, and unknown advanced sample-list handling. payload-parser-policy.json now pins parser-family ownership; gzip payload decompression, selected protobuf field parsing, malformed payload isolation, and deterministic public-model read planning are owned by shared KMP, while generated public protobuf object reconstruction remains platform-owned until a broader shared DTO strategy is added.", vector.stringValue("notes"), vector.stringValue("id"))
     }
 
     @Test
@@ -114,8 +186,10 @@ class TrainingSessionCommonPolicyTest {
         val parserCases = vector.objectValue("input").objectArray("cases").map { testCase ->
             ParserCase(
                 id = testCase.stringValue("id"),
+                fileName = testCase.stringValue("fileName"),
                 parser = testCase.stringValue("parser"),
                 encoding = testCase.stringValue("encoding"),
+                publicModelSlot = testCase.stringValue("publicModelSlot"),
                 fields = testCase.stringArrayValue("expectedFields")
             )
         }
@@ -126,10 +200,10 @@ class TrainingSessionCommonPolicyTest {
 
         assertEquals(requiredPayloadParserCaseIds, parserCases.map { parserCase -> parserCase.id }, vector.stringValue("id"))
         assertEquals(requiredPayloadParserCaseIds, expectedCaseList.map { testCase -> testCase.stringValue("id") }, vector.stringValue("id"))
-        assertEquals("executable shared parser-policy coverage; byte decoding remains gated on common protobuf and gzip dependencies", commonParserPrototype.stringValue("status"), vector.stringValue("id"))
-        assertEquals("Before moving byte-level training payload parsing to common code, add production common protobuf and gzip dependencies that can execute these parser cases against real bytes; until then this vector is the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests.", expected.stringValue("commonDecision"), vector.stringValue("id"))
-        assertEquals("This vector converts the existing platform byte-level protobuf/gzip coverage into an executable shared parser-policy gate, without claiming common byte decoding is implemented.", vector.stringValue("commonDecision"), vector.stringValue("id"))
-        assertEquals("The Android and iOS tests currently construct real protobuf and gzip payloads for these parser families. Shared KMP production parser migration still requires real common protobuf/gzip decoding and compile verification.", vector.stringValue("notes"), vector.stringValue("id"))
+        assertEquals("executable shared parser-policy coverage; gzip decoding and selected protobuf field parsing are shared while generated public model reconstruction remains platform-owned", commonParserPrototype.stringValue("status"), vector.stringValue("id"))
+        assertEquals("Selected training payload protobuf field parsing now executes in shared KMP for these parser cases; generated public protobuf object construction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered. Gzip decompression and public-model slot planning are shared KMP production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests.", expected.stringValue("commonDecision"), vector.stringValue("id"))
+        assertEquals("This vector converts the existing platform byte-level protobuf coverage into an executable shared selected-field parser policy, while gzip payload decoding and public-model slot planning are already shared production code.", vector.stringValue("commonDecision"), vector.stringValue("id"))
+        assertEquals("The Android and iOS tests construct real protobuf payloads for these parser families. Shared KMP production now parses selected summary, exercise, route, and sample fields with the portable training protobuf reader, while platform adapters still build the generated public protobuf models until a broader shared DTO/reconstruction strategy is added.", vector.stringValue("notes"), vector.stringValue("id"))
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"), vector.objectValue("consumerTests").stringArrayValue("android"), vector.stringValue("id"))
         assertEquals(listOf("PolarTrainingSessionUtilsTest"), vector.objectValue("consumerTests").stringArrayValue("ios"), vector.stringValue("id"))
         assertEquals(listOf("com.polar.sharedtest.TrainingSessionCommonPolicyTest"), vector.objectValue("consumerTests").stringArrayValue("commonPrototype"), vector.stringValue("id"))
@@ -139,17 +213,150 @@ class TrainingSessionCommonPolicyTest {
 
         parserCases.forEach { parserCase ->
             val expected = expectedCases.getValue(parserCase.id)
+            val planned: PolarTrainingPayloadParserCase = requireNotNull(PolarTrainingSessionModels.payloadParserCase(parserCase.fileName)) { parserCase.id }
 
             assertEquals(expected.stringValue("parser"), parserCase.parser, parserCase.id)
             assertEquals(expected.stringValue("encoding"), parserCase.encoding, parserCase.id)
+            assertEquals(expected.stringValue("publicModelSlot"), parserCase.publicModelSlot, parserCase.id)
             assertEquals(expected.stringArrayValue("fields"), parserCase.fields, parserCase.id)
+            assertEquals(parserCase.parser, planned.parser, parserCase.id)
+            assertEquals(parserCase.encoding, planned.encoding, parserCase.id)
+            assertEquals(parserCase.publicModelSlot, PolarTrainingSessionModels.publicModelSlot(parserCase.fileName), parserCase.id)
         }
 
         val gzipCases = parserCases.filter { parserCase -> parserCase.encoding == "gzip-protobuf" }
         assertEquals(4, gzipCases.size, vector.stringValue("id"))
         assertEquals(listOf("PbTrainingSession", "PbExerciseBase", "PbExerciseRouteSamples", "PbExerciseRouteSamples", "PbExerciseRouteSamples2", "PbExerciseRouteSamples2", "PbExerciseSamples", "PbExerciseSamples", "PbExerciseSamples2"), parserCases.map { parserCase -> parserCase.parser }, vector.stringValue("id"))
         assertEquals(listOf("protobuf", "protobuf", "protobuf", "gzip-protobuf", "protobuf", "gzip-protobuf", "protobuf", "gzip-protobuf", "gzip-protobuf"), parserCases.map { parserCase -> parserCase.encoding }, vector.stringValue("id"))
+        assertEquals(listOf("sessionSummary", "exerciseSummary", "route", "route", "routeAdvanced", "routeAdvanced", "samples", "samples", "samplesAdvanced"), parserCases.map { parserCase -> parserCase.publicModelSlot }, vector.stringValue("id"))
         assertEquals(listOf("sampleType=HEART_RATE", "recordingIntervalMs=1000", "heartRateSamples=131,132,133"), expectedCases.getValue("samples-advanced-gzip-protobuf").stringArrayValue("fields"), vector.stringValue("id"))
+    }
+
+    @Test
+    fun trainingSessionGzipPayloadDecodingUsesSharedCodecForGzipParserCases() {
+        val compressed = hexToBytes("1f8b0800d7bd2a6a02ff2b294acccccbcc4bd72d4e2d2ececccfd34dafca2cd02d48acccc94f4c0100a58206c51d000000")
+        val expected = hexToBytes("747261696e696e672d73657373696f6e2d677a69702d7061796c6f6164")
+
+        assertEquals(expected.toHexString(), PolarTrainingSessionModels.decodePayloadBytes("ROUTE.GZB", compressed).toHexString())
+        assertEquals(expected.toHexString(), PolarTrainingSessionModels.decodePayloadBytes("BASE.BPB", expected).toHexString())
+    }
+
+    @Test
+    fun trainingSessionDecodedPayloadParserProjectsCommonSummaryFieldsFromProtobufBytes() {
+        val payload = protobufBytes {
+            stringField(4, "Polar 360")
+            messageField(5) {
+                varintField(1, 1)
+                varintField(2, 2)
+                varintField(3, 3)
+            }
+            fixed32Field(6, 12.0f.toBits())
+            varintField(7, 400)
+        }
+
+        val response = PolarTrainingSessionModels.parseDecodedPayloadResponse("TSESS.BPB", payload)
+
+        assertEquals("trainingSessionSummary", response.kind)
+        assertEquals("Polar 360", response.payload.modelName)
+        assertEquals(3723, response.payload.durationSeconds)
+        assertEquals(12, response.payload.distanceMeters)
+        assertEquals(400, response.payload.calories)
+        assertEquals(false, response.malformed)
+    }
+
+    @Test
+    fun trainingSessionDecodedPayloadParserProjectsSamplesAndAdvancedHeartRateFieldsFromProtobufBytes() {
+        val samplesPayload = protobufBytes {
+            packedVarintField(2, listOf(120, 125, 130))
+        }
+        val advancedPayload = protobufBytes {
+            messageField(1) {
+                varintField(1, 1)
+                packedVarintField(5, listOf(zigZag32(131), zigZag32(132), zigZag32(133)))
+            }
+            messageField(1) {
+                varintField(1, 3)
+                packedVarintField(5, listOf(zigZag32(222)))
+            }
+        }
+
+        val samples = PolarTrainingSessionModels.parseDecodedPayloadResponse("SAMPLES.BPB", samplesPayload)
+        val advanced = PolarTrainingSessionModels.parseDecodedPayloadResponse("SAMPLES2.GZB", advancedPayload)
+
+        assertEquals(listOf(120, 125, 130), samples.payload.heartRateSamples)
+        assertEquals(
+            listOf(
+                PolarTrainingIntervalledSampleList("HEART_RATE", listOf(131, 132, 133)),
+                PolarTrainingIntervalledSampleList("ALTITUDE", listOf(222))
+            ),
+            advanced.payload.intervalledSampleLists
+        )
+        assertEquals(false, samples.malformed)
+        assertEquals(false, advanced.malformed)
+    }
+
+    @Test
+    fun trainingSessionDecodedPayloadParserProjectsExerciseSummaryAndRouteFieldsFromProtobufBytes() {
+        val exerciseSummaryPayload = protobufBytes {
+            messageField(1) {
+                messageField(2) {
+                    varintField(1, 12)
+                }
+            }
+            messageField(3) {
+                varintField(1, 5)
+            }
+            fixed32Field(18, 10000.0f.toBits())
+        }
+        val routePayload = protobufBytes {
+            fixed64Field(2, 10.0.toBits())
+            fixed64Field(3, 20.0.toBits())
+            packedVarintField(5, listOf(6))
+        }
+        val routeAdvancedPayload = protobufBytes {
+            messageField(1) {
+                varintField(1, 0)
+                messageField(2) {
+                    fixed64Field(1, 10.0.toBits())
+                    fixed64Field(2, 20.0.toBits())
+                }
+            }
+            packedVarintField(2, listOf(3))
+            packedVarint64Field(3, listOf(zigZag64(100)))
+            packedVarint64Field(4, listOf(zigZag64(200)))
+        }
+
+        val exerciseSummary = PolarTrainingSessionModels.parseDecodedPayloadResponse("BASE.BPB", exerciseSummaryPayload)
+        val route = PolarTrainingSessionModels.parseDecodedPayloadResponse("ROUTE.BPB", routePayload)
+        val routeAdvanced = PolarTrainingSessionModels.parseDecodedPayloadResponse("ROUTE2.BPB", routeAdvancedPayload)
+
+        assertEquals(12, exerciseSummary.payload.startHour)
+        assertEquals(5, exerciseSummary.payload.sport)
+        assertEquals(10000, exerciseSummary.payload.walkingDistanceMeters)
+        assertEquals(listOf(10.0), route.payload.latitude)
+        assertEquals(listOf(20.0), route.payload.longitude)
+        assertEquals(listOf(6), route.payload.satelliteAmount)
+        assertEquals(listOf(0), routeAdvanced.payload.syncPointIndex)
+        assertEquals(listOf(10.0), routeAdvanced.payload.syncPointLatitude)
+        assertEquals(listOf(20.0), routeAdvanced.payload.syncPointLongitude)
+        assertEquals(listOf(100L), routeAdvanced.payload.latitudeDeltas)
+        assertEquals(listOf(200L), routeAdvanced.payload.longitudeDeltas)
+        assertEquals(listOf(3), routeAdvanced.payload.satelliteAmount)
+        assertEquals(false, exerciseSummary.malformed)
+        assertEquals(false, route.malformed)
+        assertEquals(false, routeAdvanced.malformed)
+    }
+
+
+    @Test
+    fun trainingSessionDecodedPayloadParserMarksMalformedProtobufWithoutThrowing() {
+        val malformed = byteArrayOf(((4 shl 3) or 2).toByte(), 5, 'P'.code.toByte())
+
+        val response = PolarTrainingSessionModels.parseDecodedPayloadResponse("TSESS.BPB", malformed)
+
+        assertEquals("trainingSessionSummary", response.kind)
+        assertEquals(true, response.malformed)
+        assertEquals(3, response.byteSize)
     }
 
     @Test
@@ -175,75 +382,53 @@ class TrainingSessionCommonPolicyTest {
         assertEquals(true, platforms.booleanValue("common"))
     }
 
-    private fun payloadFetchOrder(reference: String): List<String> {
-        return listOf(reference.stringValue("path")) + reference.objectArray("exercises").flatMap { exercise ->
-            val basePath = exercise.stringValue("androidPath").substringBeforeLast("/")
-            exercise.stringArrayValue("exerciseDataTypes").map { dataType -> "$basePath/${dataType.deviceFileName()}" }
-        }
-    }
-
-    private fun assemblePayloadReadResult(reference: String, responses: String, fetchOrder: List<String>): TrainingPayloadResult {
-        val exercises = reference.objectArray("exercises").associate { exercise ->
-            exercise.intValue("index") to MutableExercisePayload(index = exercise.intValue("index"))
-        }.toMutableMap()
-        val result = TrainingPayloadResult(exercises = exercises.values.toList())
-        fetchOrder.forEach { path ->
-            val response = responses.objectValue(path)
-            val fileName = response.stringValue("fileName")
-            result.totalBytes += response.intValue("byteSize")
-            result.completedBytes += response.intValue("byteSize")
-            result.currentFileName = fileName
-            val exerciseIndex = path.exerciseIndexOrNull()
-            if (response.optionalBooleanValue("malformed") == true) {
-                exerciseIndex?.let { index -> exercises.getValue(index).malformedFilesIgnored += fileName }
-                return@forEach
-            }
-            val payload = response.objectValue("payload")
-            when (response.stringValue("kind")) {
-                "trainingSessionSummary" -> {
-                    result.modelName = payload.stringValue("modelName")
-                    result.durationSeconds = payload.intValue("durationSeconds")
-                    result.distanceMeters = payload.intValue("distanceMeters")
-                    result.calories = payload.intValue("calories")
-                }
-                "exerciseSummary" -> exerciseIndex?.let { index -> exercises.getValue(index).exerciseSummaryPresent = true }
-                "route", "routeGzip" -> exerciseIndex?.let { index -> exercises.getValue(index).routePresent = true }
-                "routeAdvanced", "routeAdvancedGzip" -> exerciseIndex?.let { index -> exercises.getValue(index).routeAdvancedPresent = true }
-                "samples", "samplesGzip" -> exerciseIndex?.let { index -> exercises.getValue(index).samplesHeartRate = payload.intArrayValue("heartRateSamples") }
-                "samplesAdvancedGzip" -> exerciseIndex?.let { index ->
-                    val sampleLists = payload.objectArray("intervalledSampleLists")
-                    exercises.getValue(index).samplesAdvancedHeartRate = sampleLists
-                        .filter { sampleList -> sampleList.stringValue("sampleType") == "HEART_RATE" }
-                        .flatMap { sampleList -> sampleList.intArrayValue("heartRateSamples") }
-                    exercises.getValue(index).unknownAdvancedSampleListsIgnored += sampleLists.count { sampleList -> sampleList.stringValue("sampleType") != "HEART_RATE" }
-                }
-            }
-        }
-        result.progressPercent = if (result.totalBytes == 0) 0 else result.completedBytes * 100 / result.totalBytes
-        return result
-    }
-
-    private fun String.exerciseIndexOrNull(): Int? {
-        val match = Regex("/(\\d{2})/[^/]+$").find(this) ?: return null
-        return match.groupValues[1].toInt()
-    }
-
-    private fun String.deviceFileName(): String {
-        return when (this) {
-            "EXERCISE_SUMMARY" -> "BASE.BPB"
-            "ROUTE" -> "ROUTE.BPB"
-            "ROUTE_GZIP" -> "ROUTE.GZB"
-            "ROUTE_ADVANCED_FORMAT" -> "ROUTE2.BPB"
-            "ROUTE_ADVANCED_FORMAT_GZIP" -> "ROUTE2.GZB"
-            "SAMPLES" -> "SAMPLES.BPB"
-            "SAMPLES_GZIP" -> "SAMPLES.GZB"
-            "SAMPLES_ADVANCED_FORMAT_GZIP" -> "SAMPLES2.GZB"
-            else -> error("Unknown training exercise data type $this")
-        }
-    }
-
     private fun exerciseDataTypeOrNull(name: String): String? {
         return PolarTrainingSessionModels.exerciseDataTypeOrNull(name)
+    }
+
+    private fun payloadReference(reference: String): PolarTrainingSessionReference {
+        return PolarTrainingSessionReference(
+            dateTime = "${reference.stringValue("date")}T00:00:00",
+            date = reference.stringValue("date"),
+            path = reference.stringValue("path"),
+            trainingDataTypes = reference.stringArrayValue("trainingDataTypes"),
+            exercises = reference.objectArray("exercises").map { exercise ->
+                PolarTrainingExerciseReference(
+                    index = exercise.intValue("index"),
+                    androidPath = exercise.stringValue("androidPath"),
+                    iosPath = exercise.stringValue("iosPath"),
+                    exerciseDataTypes = exercise.stringArrayValue("exerciseDataTypes"),
+                    fileSizes = exercise.objectValue("fileSizes").intObject().mapValues { entry -> entry.value.toLong() }
+                )
+            },
+            fileSize = reference.intValue("fileSize").toLong()
+        )
+    }
+
+    private fun payloadResponses(responses: String): Map<String, PolarTrainingPayloadResponse> {
+        return responses.objectMap().mapValues { entry ->
+            val response = entry.value
+            val payload = response.optionalObjectValue("payload")
+            PolarTrainingPayloadResponse(
+                kind = response.stringValue("kind"),
+                fileName = response.stringValue("fileName"),
+                byteSize = response.intValue("byteSize"),
+                malformed = response.optionalBooleanValue("malformed") == true,
+                payload = PolarTrainingPayloadFields(
+                    modelName = payload?.optionalStringValue("modelName"),
+                    durationSeconds = payload?.optionalIntValue("durationSeconds"),
+                    distanceMeters = payload?.optionalIntValue("distanceMeters"),
+                    calories = payload?.optionalIntValue("calories"),
+                    heartRateSamples = payload?.optionalSignedIntArrayValue("heartRateSamples").orEmpty(),
+                    intervalledSampleLists = payload?.optionalObjectArrayValue("intervalledSampleLists").orEmpty().map { sampleList ->
+                        PolarTrainingIntervalledSampleList(
+                            sampleType = sampleList.stringValue("sampleType"),
+                            heartRateSamples = sampleList.optionalSignedIntArrayValue("heartRateSamples").orEmpty()
+                        )
+                    }
+                )
+            )
+        }
     }
 
     private fun directoryEntries(directories: String, path: String): List<DirectoryEntry> {
@@ -299,40 +484,182 @@ class TrainingSessionCommonPolicyTest {
         return if (content.isEmpty()) emptyList() else content.split(',').map { item -> item.trim().toInt() }
     }
 
+    private fun String.optionalIntValue(field: String): Int? {
+        return Regex("\"$field\"\\s*:\\s*(-?\\d+)").find(this)?.groupValues?.get(1)?.toInt()
+    }
+
+    private fun String.intObject(): Map<String, Int> {
+        val content = trim().removeSurrounding("{", "}")
+        if (content.trim().isEmpty()) return emptyMap()
+        return Regex("\"([^\"]+)\"\\s*:\\s*(-?\\d+)").findAll(content).associate { match ->
+            match.groupValues[1] to match.groupValues[2].toInt()
+        }
+    }
+
+    private fun String.objectMap(): Map<String, String> {
+        val entries = linkedMapOf<String, String>()
+        var index = 0
+        while (index < length) {
+            val keyStart = indexOf('"', index)
+            if (keyStart < 0) return entries
+            val keyToken = readJsonStringToken(keyStart)
+            var colonIndex = keyToken.nextIndex
+            while (colonIndex < length && this[colonIndex].isWhitespace()) colonIndex += 1
+            if (colonIndex >= length || this[colonIndex] != ':') {
+                index = keyToken.nextIndex
+                continue
+            }
+            var valueStart = colonIndex + 1
+            while (valueStart < length && this[valueStart].isWhitespace()) valueStart += 1
+            if (valueStart < length && this[valueStart] == '{') {
+                val valueEnd = balancedEnd(valueStart, '{', '}')
+                entries[keyToken.value] = substring(valueStart, valueEnd + 1)
+                index = valueEnd + 1
+            } else {
+                index = valueStart + 1
+            }
+        }
+        return entries
+    }
+
+    private fun String.optionalObjectArrayValue(field: String): List<String>? {
+        val fieldIndex = indexOf("\"$field\"")
+        if (fieldIndex < 0) return null
+        val colonIndex = indexOf(':', fieldIndex)
+        if (colonIndex < 0) return null
+        var arrayStart = colonIndex + 1
+        while (arrayStart < length && this[arrayStart].isWhitespace()) arrayStart += 1
+        if (arrayStart >= length || this[arrayStart] != '[') return null
+        val arrayEnd = balancedEnd(arrayStart, '[', ']')
+        val content = substring(arrayStart + 1, arrayEnd)
+        val objects = mutableListOf<String>()
+        var index = 0
+        while (index < content.length) {
+            val objectStart = content.indexOf('{', index)
+            if (objectStart < 0) return objects
+            val objectEnd = content.balancedEnd(objectStart, '{', '}')
+            objects += content.substring(objectStart, objectEnd + 1)
+            index = objectEnd + 1
+        }
+        return objects
+    }
+
+    private fun String.readJsonStringToken(start: Int): JsonStringToken {
+        require(this[start] == '"') { "Expected JSON string at $start" }
+        val value = StringBuilder()
+        var index = start + 1
+        var escaped = false
+        while (index < length) {
+            val char = this[index]
+            if (escaped) {
+                value.append(char)
+                escaped = false
+            } else if (char == '\\') {
+                escaped = true
+            } else if (char == '"') {
+                return JsonStringToken(value.toString(), index + 1)
+            } else {
+                value.append(char)
+            }
+            index += 1
+        }
+        error("Unterminated JSON string at $start")
+    }
+
     private data class DirectoryEntry(
         val name: String,
         val size: Int
     )
 
-    private data class TrainingPayloadResult(
-        var totalBytes: Int = 0,
-        var completedBytes: Int = 0,
-        var progressPercent: Int = 0,
-        var currentFileName: String = "",
-        var modelName: String = "",
-        var durationSeconds: Int = 0,
-        var distanceMeters: Int = 0,
-        var calories: Int = 0,
-        val exercises: List<MutableExercisePayload>
-    )
-
-    private data class MutableExercisePayload(
-        val index: Int,
-        var exerciseSummaryPresent: Boolean = false,
-        var routePresent: Boolean = false,
-        var routeAdvancedPresent: Boolean = false,
-        var samplesHeartRate: List<Int> = emptyList(),
-        var samplesAdvancedHeartRate: List<Int> = emptyList(),
-        var unknownAdvancedSampleListsIgnored: Int = 0,
-        var malformedFilesIgnored: List<String> = emptyList()
+    private data class JsonStringToken(
+        val value: String,
+        val nextIndex: Int
     )
 
     private data class ParserCase(
         val id: String,
+        val fileName: String,
         val parser: String,
         val encoding: String,
+        val publicModelSlot: String,
         val fields: List<String>
     )
+
+    private class ProtobufBuilder {
+        private val bytes = mutableListOf<Byte>()
+
+        fun varintField(fieldNumber: Int, value: Int) {
+            writeVarint(((fieldNumber shl 3) or 0).toLong())
+            writeVarint(value.toLong())
+        }
+
+        fun stringField(fieldNumber: Int, value: String) {
+            lengthDelimitedField(fieldNumber, value.encodeToByteArray().toList())
+        }
+
+        fun messageField(fieldNumber: Int, block: ProtobufBuilder.() -> Unit) {
+            lengthDelimitedField(fieldNumber, ProtobufBuilder().apply(block).build().toList())
+        }
+
+        fun packedVarintField(fieldNumber: Int, values: List<Int>) {
+            val packed = ProtobufBuilder().apply { values.forEach { writeVarint(it.toLong()) } }.build().toList()
+            lengthDelimitedField(fieldNumber, packed)
+        }
+
+        fun packedVarint64Field(fieldNumber: Int, values: List<Long>) {
+            val packed = ProtobufBuilder().apply { values.forEach { writeVarint(it) } }.build().toList()
+            lengthDelimitedField(fieldNumber, packed)
+        }
+
+        fun fixed32Field(fieldNumber: Int, value: Int) {
+            writeVarint(((fieldNumber shl 3) or 5).toLong())
+            bytes += (value and 0xff).toByte()
+            bytes += ((value ushr 8) and 0xff).toByte()
+            bytes += ((value ushr 16) and 0xff).toByte()
+            bytes += ((value ushr 24) and 0xff).toByte()
+        }
+
+        fun fixed64Field(fieldNumber: Int, value: Long) {
+            writeVarint(((fieldNumber shl 3) or 1).toLong())
+            for (index in 0 until 8) {
+                bytes += ((value ushr (8 * index)) and 0xff).toByte()
+            }
+        }
+
+        fun build(): ByteArray {
+            return bytes.toByteArray()
+        }
+
+        private fun lengthDelimitedField(fieldNumber: Int, value: List<Byte>) {
+            writeVarint(((fieldNumber shl 3) or 2).toLong())
+            writeVarint(value.size.toLong())
+            bytes += value
+        }
+
+        private fun writeVarint(value: Long) {
+            var current = value
+            while (true) {
+                if ((current and 0x7f.inv().toLong()) == 0L) {
+                    bytes += current.toByte()
+                    return
+                }
+                bytes += (((current and 0x7f) or 0x80).toByte())
+                current = current ushr 7
+            }
+        }
+    }
+
+    private fun protobufBytes(block: ProtobufBuilder.() -> Unit): ByteArray {
+        return ProtobufBuilder().apply(block).build()
+    }
+
+    private fun zigZag32(value: Int): Int {
+        return (value shl 1) xor (value shr 31)
+    }
+
+    private fun zigZag64(value: Long): Long {
+        return (value shl 1) xor (value shr 63)
+    }
 
     private companion object {
         const val ROOT_PATH = "/U/0/"
@@ -370,11 +697,16 @@ class TrainingSessionCommonPolicyTest {
             "unknown-advanced-sample-list-ignoring",
             "known-sample-preservation",
             "payload-parser-family-ownership",
-            "byte-level-parser-dependency-gate",
+            "selected-protobuf-field-parser-ownership",
+            "shared-gzip-payload-codec",
+            "public-model-read-plan",
+            "generated-public-protobuf-construction-boundary",
             "platform-training-session-vector-reference-gate",
+            "public-model-slot-planning",
+            "public-generated-model-reconstruction-boundary",
             "compile-verification-gate"
         )
         const val TRAINING_SESSION_MISSING_EXERCISE_FILE_COMMON_DECISION = "Android currently returns a partial exercise when an exercise data file request fails; iOS currently propagates the request failure. Choose an explicit shared policy before moving training-session read orchestration to KMP."
-        const val TRAINING_SESSION_READINESS_COMMON_DECISION = "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, byte-level parser dependency gates, and compile verification remain explicit before production discovery/read orchestration moves."
+        const val TRAINING_SESSION_READINESS_COMMON_DECISION = "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared selected protobuf field parsing, shared public-model read planning, shared public-model slot planning, generated public protobuf construction boundaries, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves."
     }
 }

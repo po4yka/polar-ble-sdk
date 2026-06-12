@@ -36,20 +36,18 @@
   },
   "consumerTests": {
     "android": [
-      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest",
-      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest"
     ],
     "ios": [
       "BlePsFtpClientTest"
     ],
     "commonPrototype": [
-      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
       "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
     ]
   },
   "execution": {
-    "android": "planned-fake-clock-or-injectable-timeout-required",
-    "ios": "planned-fake-clock-or-injectable-timeout-required",
+    "android": "injectable-timeout-unit-test",
+    "ios": "injectable-timeout-xctest",
     "common": "shared-common-test"
   },
   "platformExpectations": {

@@ -1,7 +1,11 @@
 // Copyright © 2026 Polar. All rights reserved.
 
 import XCTest
+import Foundation
 @testable import PolarBleSdk
+
+private let AVAILABLE_DATA_TYPES_READINESS_COMMON_DECISION = "Available-data-types migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS data utility tests continue to pin offline and online PMD-to-public mapping, HR-service availability projection, iOS location/pressure filters, Android full public surface, public-to-PMD measurement lookup, unknown public type boundaries, PMD feature-read boundaries, HR-service discovery boundaries, public error mapping boundaries, platform vector references, and compile verification before broader availability facade behavior moves."
+private let AVAILABLE_DATA_TYPES_READINESS_FAMILIES = ["offline-pmd-to-public-mapping", "online-pmd-to-public-mapping", "hr-service-availability-projection", "ios-location-pressure-filter-boundary", "android-full-surface-boundary", "public-to-pmd-measurement-lookup", "unknown-public-type-null-boundary", "pmd-feature-read-platform-boundary", "hr-service-discovery-platform-boundary", "public-error-mapping-boundary", "platform-available-data-type-vector-reference-gate", "compile-verification-gate"]
 
 final class PolarDataUtilsTest: XCTestCase {
 
@@ -47,6 +51,12 @@ final class PolarDataUtilsTest: XCTestCase {
         XCTAssertEqual(.pressure, PolarDataUtils.mapToPmdClientMeasurementType(from: .pressure))
     }
 
+    func testMapToPmdClientMeasurementType_usesSharedPlannerNames() {
+        XCTAssertEqual("MAG", PolarPmdMeasurementRuntimePlanner.pmdMeasurementTypeName(forPublicDataTypeName: "MAGNETOMETER"))
+        XCTAssertEqual("OFFLINE_HR", PolarPmdMeasurementRuntimePlanner.pmdMeasurementTypeName(forPublicDataTypeName: "HR"))
+        XCTAssertEqual("SKIN_TEMP", PolarPmdMeasurementRuntimePlanner.pmdMeasurementTypeName(forPublicDataTypeName: "SKIN_TEMPERATURE"))
+    }
+
     // MARK: - mapToPolarFeature – all supported types
 
     func testMapToPolarFeature_ecg() throws {
@@ -89,9 +99,34 @@ final class PolarDataUtilsTest: XCTestCase {
         XCTAssertEqual(.skinTemperature, try PolarDataUtils.mapToPolarFeature(from: .skinTemperature))
     }
 
+    func testMapToPolarFeatureUsesSharedPmdMeasurementNamesWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("ECG", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.ecg.rawValue)))
+        XCTAssertEqual("ACC", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.acc.rawValue)))
+        XCTAssertEqual("MAG", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.mgn.rawValue)))
+        XCTAssertEqual("OFFLINE_HR", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.offline_hr.rawValue)))
+        #endif
+        XCTAssertEqual(.ecg, try PolarDataUtils.mapToPolarFeature(from: .ecg))
+        XCTAssertEqual(.acc, try PolarDataUtils.mapToPolarFeature(from: .acc))
+        XCTAssertEqual(.magnetometer, try PolarDataUtils.mapToPolarFeature(from: .mgn))
+        XCTAssertEqual(.hr, try PolarDataUtils.mapToPolarFeature(from: .offline_hr))
+    }
+
+    func testPmdControlPointResponseUsesSharedBackedMaskedMeasurementType() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("ACC", PmdControlPointRuntimePlanner.measurementTypeName(id: 0xC2))
+        #endif
+        let response = PmdControlPointResponse(Data([PmdControlPointResponse.CONTROL_POINT_RESPONSE_CODE, 0x01, 0xC2, UInt8(PmdResponseCode.success.rawValue), 0x00]))
+        XCTAssertEqual(.acc, response.type)
+        XCTAssertEqual(.success, response.errorCode)
+    }
+
     // MARK: - mapToPolarFeature – unsupported types throw
 
     func testMapToPolarFeature_sdkMode_throws() {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("SDK_MODE", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.sdkMode.rawValue)))
+        #endif
         XCTAssertThrowsError(try PolarDataUtils.mapToPolarFeature(from: .sdkMode)) { error in
             guard case PolarErrors.polarBleSdkInternalException = error else {
                 return XCTFail("Expected polarBleSdkInternalException, got \(error)")
@@ -100,6 +135,9 @@ final class PolarDataUtilsTest: XCTestCase {
     }
 
     func testMapToPolarFeature_location_throws() {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("LOCATION", PolarPmdMeasurementRuntimePlanner.measurementTypeName(id: Int(PmdMeasurementType.location.rawValue)))
+        #endif
         XCTAssertThrowsError(try PolarDataUtils.mapToPolarFeature(from: .location)) { error in
             guard case PolarErrors.polarBleSdkInternalException = error else {
                 return XCTFail("Expected polarBleSdkInternalException, got \(error)")
@@ -119,6 +157,102 @@ final class PolarDataUtilsTest: XCTestCase {
             let back = try PolarDataUtils.mapToPolarFeature(from: pmd)
             XCTAssertEqual(original, back, "Round-trip failed for \(original)")
         }
+    }
+
+    func testAvailableDataTypes_useSharedPlannerWithIosPublicSurfaceFilters() throws {
+        let pmdTypes: Set<PmdMeasurementType> = [.ecg, .acc, .ppg, .ppi, .gyro, .mgn, .pressure, .temperature, .skinTemperature, .offline_hr]
+
+        XCTAssertEqual(
+            PolarPmdMeasurementRuntimePlanner.availableOfflineRecordingDataTypes(from: pmdTypes),
+            [.ecg, .acc, .ppg, .ppi, .gyro, .magnetometer, .temperature, .skinTemperature, .hr]
+        )
+        XCTAssertEqual(
+            PolarPmdMeasurementRuntimePlanner.availableOnlineStreamDataTypes(from: pmdTypes, hasHrService: true),
+            [.hr, .ecg, .acc, .ppg, .ppi, .gyro, .magnetometer, .pressure, .temperature, .skinTemperature]
+        )
+        XCTAssertFalse(PolarPmdMeasurementRuntimePlanner.availableOnlineStreamDataTypes(from: pmdTypes, hasHrService: false).contains(.hr))
+        XCTAssertEqual(PolarPmdMeasurementRuntimePlanner.availableHrServiceDataTypes(hasHrService: true), [.hr])
+        XCTAssertEqual(PolarPmdMeasurementRuntimePlanner.availableHrServiceDataTypes(hasHrService: false), [])
+    }
+
+    func testAvailableDataTypesReadinessManifestIsPinnedBeforeAvailabilityMigration() throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/available-data-types/available-data-types-readiness.json")
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any])
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any])
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+        let prototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any])
+
+        XCTAssertEqual(manifest["id"] as? String, "available-data-types-readiness")
+        XCTAssertEqual(input["kind"] as? String, "availableDataTypesReadiness")
+        XCTAssertEqual(requiredFamilies, AVAILABLE_DATA_TYPES_READINESS_FAMILIES)
+        XCTAssertEqual(expected["migrationReadiness"] as? String, "coveredByPreMigrationCharacterization")
+        XCTAssertEqual(coveredFamilies, AVAILABLE_DATA_TYPES_READINESS_FAMILIES)
+        XCTAssertEqual(expected["commonDecision"] as? String, AVAILABLE_DATA_TYPES_READINESS_COMMON_DECISION)
+        XCTAssertEqual(prototype["status"] as? String, "executable shared commonTest available-data-types planning guard")
+        XCTAssertEqual(prototype["reason"] as? String, "Declared because this vector is consumed by shared commonTest and platform adapter tests before available-data-types runtime delegation moves further into shared KMP.")
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.impl.utils.PolarRuntimePlannerAdapterTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarDataUtilsTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.AvailableDataTypesCommonPolicyTest"])
+    }
+
+    func testFeatureAvailabilityPreconditions_useSharedPlannerForServiceAndCapabilityGuards() throws {
+        XCTAssertTrue(
+            PolarFeatureAvailabilityRuntimePlanner.preconditionsMet(
+                featureName: "feature_polar_firmware_update",
+                discoveredServiceNames: ["PSFTP"],
+                capabilityNames: ["FIRMWARE_UPDATE"]
+            )
+        )
+        XCTAssertFalse(
+            PolarFeatureAvailabilityRuntimePlanner.preconditionsMet(
+                featureName: "feature_polar_firmware_update",
+                discoveredServiceNames: ["PSFTP"],
+                capabilityNames: []
+            )
+        )
+        XCTAssertFalse(
+            PolarFeatureAvailabilityRuntimePlanner.preconditionsMet(
+                featureName: "feature_polar_led_animation",
+                discoveredServiceNames: ["PMD"],
+                capabilityNames: []
+            )
+        )
+        XCTAssertTrue(
+            PolarFeatureAvailabilityRuntimePlanner.preconditionsMet(
+                featureName: "feature_polar_watch_faces_configuration",
+                discoveredServiceNames: ["PSFTP"],
+                capabilityNames: ["NOT_SENSOR"]
+            )
+        )
+    }
+
+    func testFeatureAvailabilityReadinessVector_usesSharedIosRuntimePlanner() throws {
+        let vector = try GoldenVectorTestData.loadObject("sdk/feature-availability/feature-availability-readiness.json")
+        let input = try XCTUnwrap(vector["input"] as? [String: Any])
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
+        let cases = try XCTUnwrap(input["cases"] as? [[String: Any]])
+
+        XCTAssertEqual("feature-availability-readiness", vector["id"] as? String)
+        XCTAssertEqual("featureAvailabilityReadiness", input["kind"] as? String)
+        XCTAssertEqual(featureAvailabilityCaseIds, cases.compactMap { $0["id"] as? String })
+        for currentCase in cases {
+            let caseId = try XCTUnwrap(currentCase["id"] as? String)
+            XCTAssertEqual(
+                try XCTUnwrap(currentCase["expectedAvailable"] as? Bool),
+                PolarFeatureAvailabilityRuntimePlanner.preconditionsMet(
+                    featureName: try XCTUnwrap(currentCase["featureName"] as? String),
+                    discoveredServiceNames: Set(try XCTUnwrap(currentCase["discoveredServices"] as? [String])),
+                    capabilityNames: Set(try XCTUnwrap(currentCase["capabilities"] as? [String]))
+                ),
+                caseId
+            )
+        }
+        XCTAssertEqual(featureAvailabilityBehaviorFamilies, input["requiredBehaviorFamilies"] as? [String])
+        XCTAssertEqual(featureAvailabilityBehaviorFamilies, expected["coveredBehaviorFamilies"] as? [String])
+        XCTAssertEqual(featureAvailabilityCommonDecision, expected["commonDecision"] as? String)
     }
 
     // MARK: - mapToPmdSecret
@@ -141,6 +275,28 @@ final class PolarDataUtilsTest: XCTestCase {
         let pmdSecret = try PolarDataUtils.mapToPmdSecret(from: polarSecret)
 
         XCTAssertEqual(key, pmdSecret.key)
+    }
+
+    func testPmdSecretSerializationAndStrategyLookupUseSharedPolicyWhenLinked() throws {
+        let aesKey = Data((0..<16).map { UInt8($0) })
+        let xorKey = Data([0x0F])
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("AES128", PmdSecretRuntimePlanner.strategyName(strategyByte: 2))
+        XCTAssertEqual("060102" + aesKey.map { String(format: "%02x", $0) }.joined(), PmdSecretRuntimePlanner.settingsHex(strategy: "AES128", keyHex: aesKey.map { String(format: "%02x", $0) }.joined()))
+        XCTAssertEqual("0601010f", PmdSecretRuntimePlanner.settingsHex(strategy: "XOR", keyHex: "0f"))
+        #endif
+        XCTAssertEqual(.aes128, try PmdSecret.SecurityStrategy.fromByte(strategyByte: 2))
+        XCTAssertEqual(Data([0x06, 0x01, 0x02]) + aesKey, try PmdSecret(strategy: .aes128, key: aesKey).serializeToPmdSettings())
+        XCTAssertEqual(Data([0x06, 0x01, 0x01, 0x0F]), try PmdSecret(strategy: .xor, key: xorKey).serializeToPmdSettings())
+    }
+
+    func testPmdSecretNoneAndXorDecryptUseSharedPolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("010203", PmdSecretRuntimePlanner.decryptHex(strategy: "NONE", keyHex: "", cipherHex: "010203"))
+        XCTAssertEqual("f0ff", PmdSecretRuntimePlanner.decryptHex(strategy: "XOR", keyHex: "0f", cipherHex: "fff0"))
+        #endif
+        XCTAssertEqual(Data([0x01, 0x02, 0x03]), try PmdSecret(strategy: .none, key: Data()).decryptArray(cipherArray: Data([0x01, 0x02, 0x03])))
+        XCTAssertEqual(Data([0xF0, 0xFF]), try PmdSecret(strategy: .xor, key: Data([0x0F])).decryptArray(cipherArray: Data([0xFF, 0xF0])))
     }
 
     // MARK: - mapToPmdOfflineTriggerMode (via mapToPmdOfflineTrigger)
@@ -399,7 +555,7 @@ final class PolarDataUtilsTest: XCTestCase {
             "enabled-feature-projection",
             "excluded-feature-projection",
             "platform-packet-split",
-            "facade-error-mapping-deferred",
+            "facade-error-mapping-pinned",
             "compile-verification-gate"
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
@@ -646,6 +802,25 @@ final class PolarDataUtilsTest: XCTestCase {
         "get-trigger-success",
         "get-trigger-transport-error"
     ]
+
+    private let featureAvailabilityCaseIds = [
+        "firmware-update-requires-psftp-and-firmware-capability",
+        "firmware-update-missing-firmware-capability-is-unavailable",
+        "led-animation-requires-pmd-and-psftp-services",
+        "watch-face-configuration-requires-psftp-and-not-sensor-capability",
+        "offline-exercise-v2-uses-h10-filesystem-capability-without-service-gate",
+        "unknown-feature-has-no-shared-preconditions"
+    ]
+
+    private let featureAvailabilityBehaviorFamilies = [
+        "service-and-capability-gates",
+        "feature-name-normalization",
+        "h10-filesystem-capability-only-gate",
+        "unknown-feature-pass-through",
+        "platform-client-readiness-boundary"
+    ]
+
+    private let featureAvailabilityCommonDecision = "SDK feature availability migration owns only deterministic service and capability preconditions in shared KMP; GATT client lookup, clientReady waits, PMD feature reads, notification readiness, service discovery, BLE transport execution, and public callback/error behavior remain platform-owned."
 }
 
 private extension Dictionary where Key == String, Value == Any {

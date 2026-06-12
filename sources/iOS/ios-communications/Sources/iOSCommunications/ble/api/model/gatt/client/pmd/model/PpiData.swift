@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class PpiData {
     
@@ -34,6 +37,11 @@ public class PpiData {
     }
     
     private static func dataFromRawType0(frame: PmdDataFrame) throws -> PpiData {
+        #if canImport(PolarBleSdkShared)
+        if let sharedData = sharedRawType0Data(frame: frame) {
+            return sharedData
+        }
+        #endif
         let data = PpiData(samples: stride(from: 0, to: frame.dataContent.count, by: PPI_SAMPLE_CHUNK)
             .map { (start) -> Data in
                 return frame.dataContent.subdata(in: start..<start.advanced(by: PPI_SAMPLE_CHUNK))
@@ -67,5 +75,63 @@ public class PpiData {
         }
 
         return data
+    }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedRawType0Data(frame: PmdDataFrame) -> PpiData? {
+        guard !frame.isCompressedFrame,
+              frame.frameType == .type_0,
+              frame.previousTimeStamp <= UInt64(Int64.max),
+              frame.sampleRate <= UInt(Int32.max) else {
+            return nil
+        }
+        guard let sharedRows = PpiDataRuntimePlanner.rawType0Samples(
+            dataFrameHex: sharedDataFrameHex(frame: frame),
+            previousTimeStamp: Int64(frame.previousTimeStamp),
+            factor: frame.factor,
+            sampleRate: Int32(frame.sampleRate)
+        ), !sharedRows.isEmpty else {
+            return nil
+        }
+        let rowValues = sharedRows.split(separator: "|")
+        let samples = rowValues.compactMap { row -> PpiSample? in
+            let fields = row.split(separator: ",")
+            guard fields.count == 7,
+                  let timeStamp = UInt64(fields[0]),
+                  let hr = Int(fields[1]),
+                  let ppInMs = UInt16(fields[2]),
+                  let ppErrorEstimate = UInt16(fields[3]),
+                  let blockerBit = Int(fields[4]),
+                  let skinContactStatus = Int(fields[5]),
+                  let skinContactSupported = Int(fields[6]) else {
+                return nil
+            }
+            return PpiSample(timeStamp: timeStamp, hr: hr, ppInMs: ppInMs, ppErrorEstimate: ppErrorEstimate, blockerBit: blockerBit, skinContactStatus: skinContactStatus, skinContactSupported: skinContactSupported)
+        }
+        guard samples.count == rowValues.count else {
+            return nil
+        }
+        return PpiData(samples: samples)
+    }
+
+    private static func sharedDataFrameHex(frame: PmdDataFrame) -> String {
+        var data = Data([frame.measurementType.rawValue])
+        var littleEndianTimestamp = frame.timeStamp.littleEndian
+        withUnsafeBytes(of: &littleEndianTimestamp) { data.append(contentsOf: $0) }
+        let frameTypeByte = frame.frameType.rawValue | (frame.isCompressedFrame ? 0x80 : 0)
+        data.append(frameTypeByte)
+        data.append(frame.dataContent)
+        return data.map { String(format: "%02x", $0) }.joined()
+    }
+    #endif
+}
+
+enum PpiDataRuntimePlanner {
+    static func rawType0Samples(dataFrameHex: String, previousTimeStamp: Int64, factor: Float, sampleRate: Int32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppiRawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: previousTimeStamp, factor: factor, sampleRate: sampleRate)
+        #else
+        return nil
+        #endif
     }
 }

@@ -34,20 +34,18 @@
   },
   "consumerTests": {
     "android": [
-      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest",
-      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest"
+      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest"
     ],
     "ios": [
       "BlePsFtpClientTest"
     ],
     "commonPrototype": [
-      "com.polar.androidcommunications.api.ble.model.gatt.client.psftp.PsFtpCommonFakeRuntimeTest",
       "com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"
     ]
   },
   "platformExpectations": {
     "commonDecision": {
-    "progressPolicy": "android-currently-emits-negative-header-overhead-progress-before-payload-count-while-ios-emits-initial-zero-header-progress-and-final-payload-count"
+      "progressPolicy": "android-currently-emits-negative-header-overhead-progress-before-payload-count-while-ios-emits-initial-zero-header-progress-and-final-payload-count"
     }
   },
   "platforms": {

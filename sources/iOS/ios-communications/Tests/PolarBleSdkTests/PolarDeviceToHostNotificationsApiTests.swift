@@ -6,6 +6,7 @@ import XCTest
 
 private enum D2HNotificationTestError: Error {
     case lateFailure
+    case serviceMissing
 }
 
 private let D2H_STREAM_RUNTIME_POLICY_SCENARIO_IDS = [
@@ -32,6 +33,49 @@ class PolarDeviceToHostNotificationsApiTests: XCTestCase {
         mockClient = nil
         mockSession = nil
         api = nil
+    }
+
+    func testD2HNotificationMappingUsesSharedPlannerWhenLinked() async throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("STOP_GPS_MEASUREMENT", PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Protocol_PbPFtpDevToHostNotification.stopGpsMeasurement.rawValue))
+        #endif
+        mockClient.receiveNotificationCalls.append(contentsOf: [
+            (Protocol_PbPFtpDevToHostNotification.stopGpsMeasurement.rawValue, [Data()], false)
+        ])
+
+        let result = try await collectStream(api.observeDeviceToHostNotifications(identifier: deviceId)).first
+
+        XCTAssertEqual(result?.notificationType, .stopGpsMeasurement)
+        XCTAssertEqual(result?.parameters, Data())
+    }
+
+    func testD2HRuntimePlannerMapsNotificationPlanWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        var syncRequiredNotificationParameter = Protocol_PbPFtpSyncRequiredParams()
+        var syncTrigger = Protocol_PbPFtpSyncTrigger()
+        syncTrigger.source = .timed
+        syncRequiredNotificationParameter.syncTriggers = [syncTrigger]
+        let parametersHex = try syncRequiredNotificationParameter.serializedData().map { String(format: "%02x", $0) }.joined()
+        let plan = PolarD2hRuntimePlanner.notificationPlan(notificationId: Protocol_PbPFtpDevToHostNotification.syncRequired.rawValue, parametersHex: parametersHex)
+        XCTAssertEqual("SYNC_REQUIRED", plan?.notificationType)
+        XCTAssertEqual("PbPFtpSyncRequiredParams", plan?.parsedProtoName)
+        XCTAssertEqual("STOP_GPS_MEASUREMENT", PolarD2hRuntimePlanner.notificationTypeName(notificationId: Protocol_PbPFtpDevToHostNotification.stopGpsMeasurement.rawValue))
+        XCTAssertNil(PolarD2hRuntimePlanner.notificationPlan(notificationId: 999, parametersHex: ""))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func testD2HNotificationRawValueMappingUsesSharedPlannerWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("STOP_GPS_MEASUREMENT", PolarD2hRuntimePlanner.notificationTypeName(notificationId: Protocol_PbPFtpDevToHostNotification.stopGpsMeasurement.rawValue))
+        #endif
+        XCTAssertEqual(.filesystemModified, PolarDeviceToHostNotification(rawValue: 0))
+        XCTAssertEqual(.syncRequired, PolarDeviceToHostNotification(rawValue: Protocol_PbPFtpDevToHostNotification.syncRequired.rawValue))
+        XCTAssertEqual(.stopGpsMeasurement, PolarDeviceToHostNotification(rawValue: Protocol_PbPFtpDevToHostNotification.stopGpsMeasurement.rawValue))
+        XCTAssertEqual(.exerciseStatus, PolarDeviceToHostNotification(rawValue: 19))
+        XCTAssertNil(PolarDeviceToHostNotification(rawValue: 6))
+        XCTAssertNil(PolarDeviceToHostNotification(rawValue: 999))
     }
     
     func testReceivesSyncRequiredNotification() async throws {
@@ -65,6 +109,22 @@ class PolarDeviceToHostNotificationsApiTests: XCTestCase {
         
         XCTAssertEqual(results[1].notificationType, PolarDeviceToHostNotification.keepBackgroundAlive)
         XCTAssertEqual(results[1].parameters.count, 0)
+    }
+
+    func testD2HParameterParserUsesSharedProtoNameWhenLinked() throws {
+        var syncRequiredNotificationParameter = Protocol_PbPFtpSyncRequiredParams()
+        var syncTrigger = Protocol_PbPFtpSyncTrigger()
+        syncTrigger.source = .timed
+        syncRequiredNotificationParameter.syncTriggers = [syncTrigger]
+        let serializedData = try syncRequiredNotificationParameter.serializedData()
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("PbPFtpSyncRequiredParams", PolarRuntimePlanner.d2hParsedProtoName(notificationType: "SYNC_REQUIRED", parametersHex: serializedData.map { String(format: "%02x", $0) }.joined()))
+        #endif
+
+        let parsed = BlePsFtpClient.parseD2HNotificationParameters(.stopGpsMeasurement, data: serializedData, sharedParsedProtoName: "PbPFtpSyncRequiredParams")
+
+        let parsedParams = try XCTUnwrap(parsed as? Protocol_PbPFtpSyncRequiredParams)
+        XCTAssertEqual(parsedParams, syncRequiredNotificationParameter)
     }
     
     func testReceivesFilesystemModifiedNotification() async throws {
@@ -322,6 +382,23 @@ class PolarDeviceToHostNotificationsApiTests: XCTestCase {
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results[0].notificationType, .stopGpsMeasurement)
         XCTAssertEqual(results[0].parameters.count, 0)
+    }
+
+    func testFailedD2HSubscribePropagatesErrorWithoutEmittedValues() async throws {
+        try assertD2HStreamRuntimePolicyVectorContains("failed-subscribe-does-not-register-observer")
+        mockClient.receiveNotificationError = D2HNotificationTestError.serviceMissing
+
+        var results: [PolarD2HNotificationData] = []
+        do {
+            for try await value in api.observeDeviceToHostNotifications(identifier: deviceId) {
+                results.append(value)
+            }
+            XCTFail("Expected failed D2H subscription")
+        } catch D2HNotificationTestError.serviceMissing {
+            XCTAssertTrue(results.isEmpty, "Failed D2H subscribe must not emit stale values")
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
     }
 
     func testD2HNotificationGoldenVectorsMatchIOSBehavior() async throws {

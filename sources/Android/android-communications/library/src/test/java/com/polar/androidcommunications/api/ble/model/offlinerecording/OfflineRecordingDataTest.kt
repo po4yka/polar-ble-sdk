@@ -119,7 +119,7 @@ internal class OfflineRecordingDataTest {
 
         // Assert
         assertTrue(offlinePpgData.data is PpgData)
-        val sample0 = (offlinePpgData.data as PpgData).ppgSamples as MutableList<PpgData.PpgDataFrameType0>
+        val sample0 = (offlinePpgData.data as PpgData).ppgSamples.filterIsInstance<PpgData.PpgDataFrameType0>()
 
         assertEquals(PpgOfflineMockData.sample0Channel0, sample0[0].ppgDataSamples[0])
         assertEquals(PpgOfflineMockData.sample0Channel1, sample0[0].ppgDataSamples[1])

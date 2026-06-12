@@ -2,8 +2,10 @@ package com.polar.sharedtest
 
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
+import com.polar.shared.sdk.PolarUserDeviceSettingsModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class UserDeviceSettingsRuntimePolicyCommonTest {
     @Test
@@ -57,6 +59,49 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
 
         assertEquals(listOf("write:/U/0/S/UDEVSET.BPB", "field:protobufPayload=platform-built"), outcome.commands)
         assertEquals("success", outcome.terminal)
+        assertEquals("/U/0/S/UDEVSET.BPB", PolarRuntimeOrchestration.userDeviceSettingsPath("POLAR_FILE_SYSTEM_V2"))
+        assertEquals("/UDEVSET.BPB", PolarRuntimeOrchestration.userDeviceSettingsPath("H10_FILE_SYSTEM"))
+        assertEquals("/U/0/S/UDEVSET.BPB", PolarRuntimeOrchestration.userDeviceSettingsPath("UNKNOWN_FILE_SYSTEM", unknownSettingsPath = "/U/0/S/UDEVSET.BPB"))
+        assertEquals("/UDEVSET.BPB", PolarRuntimeOrchestration.userDeviceSettingsPath("unknownFileSystem", unknownSettingsPath = "/UDEVSET.BPB"))
+        assertEquals(null, PolarRuntimeOrchestration.userDeviceSettingsPath("UNKNOWN_FILE_SYSTEM", unknownSettingsPath = null))
+    }
+
+    @Test
+    fun userDeviceSettingsPayloadFieldPlanningMatchesFacadePolicyTokens() {
+        assertEquals(listOf("protobufPayload=platform-built"), PolarUserDeviceSettingsModels.protobufPayloadFields())
+        assertEquals(listOf("telemetryEnabled=true"), PolarUserDeviceSettingsModels.telemetryPayloadFields(true))
+        assertEquals(listOf("deviceLocation=WRIST_RIGHT"), PolarUserDeviceSettingsModels.deviceLocationPayloadFields(3))
+        assertEquals(listOf("usbConnectionMode=ON"), PolarUserDeviceSettingsModels.usbConnectionModePayloadFields(true))
+        assertEquals(
+            listOf("automaticTrainingDetectionMode=ON", "automaticTrainingDetectionSensitivity=77", "minimumTrainingDurationSeconds=300"),
+            PolarUserDeviceSettingsModels.automaticTrainingDetectionPayloadFields(true, 77, 300)
+        )
+        assertEquals(listOf("automaticOhrMeasurement=ALWAYS_ON"), PolarUserDeviceSettingsModels.automaticOhrPayloadFields(true))
+        assertEquals(listOf("daylightSaving.nextDaylightSavingTime=present", "daylightSaving.offset=nonzero"), PolarUserDeviceSettingsModels.daylightSavingPayloadFields())
+    }
+
+    @Test
+    fun userDeviceSettingsRuntimeVectorRunsThroughCommonFakeTransportFacadeShape() {
+        val vector = loadGoldenVectorText("sdk/user-device-settings-runtime/settings-runtime-policy.json")
+        val input = vector.objectValue("input")
+        val expectedCases = vector.objectValue("expected").objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
+
+        input.objectArray("operations").forEach { operationJson ->
+            val operation = PolarUserDeviceSettingsOperation(
+                id = operationJson.stringValue("id"),
+                kind = operationJson.stringValue("kind"),
+                path = operationJson.stringValue("path"),
+                payloadFields = operationJson.optionalStringArrayValue("payloadFields") ?: emptyList()
+            )
+            val planned = PolarRuntimeOrchestration.planUserDeviceSettings(operation)
+            val expected = expectedCases.getValue(operation.id)
+            val transport = ScriptedCommonFakeTransport(outcomesForTerminal(expected.stringValue("terminal"), planned.commands))
+            val terminal = executePlannedSettingsOperation(planned.commands, operation.payloadFields, transport)
+
+            assertEquals(expected.stringArrayValue("commands"), planned.commands, operation.id)
+            assertEquals(expected.stringValue("terminal"), terminal, operation.id)
+            assertEquals(expectedTransportCommands(expected.stringArrayValue("commands"), operation.payloadFields), transport.commands, operation.id)
+        }
     }
 
     @Test
@@ -93,16 +138,22 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
     private val requiredUserDeviceSettingsRuntimeOperationIds = listOf(
         "get-user-device-settings",
         "get-user-device-settings-read-failure",
+        "set-user-device-settings",
+        "set-user-device-settings-write-failure",
         "set-telemetry-enabled",
         "set-telemetry-read-failure",
         "set-telemetry-write-failure",
         "set-user-device-location",
+        "set-user-device-location-read-failure",
         "set-user-device-location-write-failure",
         "set-usb-connection-mode",
+        "set-usb-connection-mode-read-failure",
         "set-usb-connection-mode-write-failure",
         "set-automatic-training-detection",
+        "set-automatic-training-detection-read-failure",
         "set-automatic-training-detection-write-failure",
         "set-automatic-ohr-measurement",
+        "set-automatic-ohr-measurement-read-failure",
         "set-automatic-ohr-measurement-write-failure",
         "set-daylight-saving-time"
     )
@@ -111,15 +162,22 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         "settings-path-gate",
         "settings-read-success",
         "settings-read-failure-no-write",
+        "whole-settings-direct-write",
+        "whole-settings-write-failure-after-payload",
         "telemetry-read-then-write",
+        "telemetry-read-failure-no-write",
         "telemetry-write-failure-after-payload",
         "device-location-read-then-write",
+        "device-location-read-failure-no-write",
         "device-location-write-failure-after-payload",
         "usb-connection-mode-read-then-write",
+        "usb-connection-mode-read-failure-no-write",
         "usb-connection-mode-write-failure-after-payload",
         "automatic-training-detection-read-then-write",
+        "automatic-training-detection-read-failure-no-write",
         "automatic-training-detection-write-failure-after-payload",
         "automatic-ohr-measurement-read-then-write",
+        "automatic-ohr-measurement-read-failure-no-write",
         "automatic-ohr-measurement-write-failure-after-payload",
         "daylight-saving-payload-shape",
         "protobuf-field-preservation-gate",
@@ -128,23 +186,88 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         "compile-verification-gate"
     )
 
-    private val userDeviceSettingsRuntimeReadinessCommonDecision = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, read-failure no-write and write-failure-after-payload behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+    private val userDeviceSettingsRuntimeReadinessCommonDecision = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
 
-    private val userDeviceSettingsRuntimePolicyCommonDecision = "Promote user-device-settings runtime only after read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+    private val userDeviceSettingsRuntimePolicyCommonDecision = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
 
     private val readFailureNoWriteBehavior = "read-failure no-write behavior"
+
+    private fun outcomesForTerminal(terminal: String, commands: List<String> = listOf("read:", "write:")): List<CommonFakeTransportOutcome> {
+        return when (terminal) {
+            "success" -> commands.mapNotNull { command ->
+                when {
+                    command.startsWith("read:") -> CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01))
+                    command.startsWith("write:") -> CommonFakeTransportOutcome.Complete
+                    else -> null
+                }
+            }
+            "transport-error" -> listOf(CommonFakeTransportOutcome.TransportError("settings-read-failed"))
+            "transport-error-after-payload" -> listOf(
+                if (commands.any { it.startsWith("read:") }) CommonFakeTransportOutcome.Bytes(byteArrayOf(0x01)) else null,
+                CommonFakeTransportOutcome.TransportError("settings-write-failed")
+            ).filterNotNull()
+            else -> error("Unsupported settings runtime terminal $terminal")
+        }
+    }
+
+    private fun executePlannedSettingsOperation(
+        commands: List<String>,
+        payloadFields: List<String>,
+        transport: ScriptedCommonFakeTransport
+    ): String {
+        var terminal = "success"
+        commands.forEach { command ->
+            when {
+                command.startsWith("read:") -> {
+                    val outcome = transport.read(command.removePrefix("read:"))
+                    if (outcome is CommonFakeTransportOutcome.TransportError) {
+                        terminal = "transport-error"
+                        return terminal
+                    }
+                    assertIs<CommonFakeTransportOutcome.Bytes>(outcome, command)
+                }
+                command.startsWith("write:") -> {
+                    val outcome = transport.write(command.removePrefix("write:"), payloadFields.joinToString(separator = "|").encodeToByteArray())
+                    if (outcome is CommonFakeTransportOutcome.TransportError) {
+                        terminal = "transport-error-after-payload"
+                        return terminal
+                    }
+                    assertIs<CommonFakeTransportOutcome.Complete>(outcome, command)
+                }
+            }
+        }
+        return terminal
+    }
+
+    private fun expectedTransportCommands(commands: List<String>, payloadFields: List<String>): List<CommonFakeTransportCommand> {
+        val payloadHex = payloadFields.joinToString(separator = "|").encodeToByteArray().toHexString()
+        return commands.mapNotNull { command ->
+            when {
+                command.startsWith("read:") -> CommonFakeTransportCommand(CommonFakeTransportOperation.READ, command.removePrefix("read:"))
+                command.startsWith("write:") -> CommonFakeTransportCommand(CommonFakeTransportOperation.WRITE, command.removePrefix("write:"), payloadHex)
+                else -> null
+            }
+        }
+    }
 
     private fun assertUserDeviceSettingsPolicyFields(operationsById: Map<String, String>) {
         assertEquals("read", operationsById.getValue("get-user-device-settings").stringValue("kind"))
         assertEquals("readFailure", operationsById.getValue("get-user-device-settings-read-failure").stringValue("kind"))
+        assertEquals(listOf("protobufPayload=platform-built"), operationsById.getValue("set-user-device-settings").stringArrayValue("payloadFields"))
+        assertEquals("writeFailure", operationsById.getValue("set-user-device-settings-write-failure").stringValue("kind"))
+        assertEquals(listOf("protobufPayload=platform-built"), operationsById.getValue("set-user-device-settings-write-failure").stringArrayValue("payloadFields"))
         assertEquals(listOf("telemetryEnabled=true", "preserve:deviceLocation=WRIST_LEFT"), operationsById.getValue("set-telemetry-enabled").stringArrayValue("payloadFields"))
         assertEquals("readFailure", operationsById.getValue("set-telemetry-read-failure").stringValue("kind"))
         assertEquals(listOf("telemetryEnabled=true"), operationsById.getValue("set-telemetry-write-failure").stringArrayValue("payloadFields"))
         assertEquals(listOf("deviceLocation=WRIST_RIGHT", "preserve:telemetryEnabled=true"), operationsById.getValue("set-user-device-location").stringArrayValue("payloadFields"))
+        assertEquals("readFailure", operationsById.getValue("set-user-device-location-read-failure").stringValue("kind"))
         assertEquals(listOf("deviceLocation=WRIST_LEFT", "preserve:telemetryEnabled=true"), operationsById.getValue("set-user-device-location-write-failure").stringArrayValue("payloadFields"))
         assertEquals(listOf("usbConnectionMode=ON", "preserve:deviceLocation=WRIST_LEFT", "preserve:telemetryEnabled=true"), operationsById.getValue("set-usb-connection-mode").stringArrayValue("payloadFields"))
+        assertEquals("readFailure", operationsById.getValue("set-usb-connection-mode-read-failure").stringValue("kind"))
         assertEquals(listOf("automaticTrainingDetectionMode=ON", "automaticTrainingDetectionSensitivity=77", "minimumTrainingDurationSeconds=300", "preserve:telemetryEnabled=true"), operationsById.getValue("set-automatic-training-detection").stringArrayValue("payloadFields"))
+        assertEquals("readFailure", operationsById.getValue("set-automatic-training-detection-read-failure").stringValue("kind"))
         assertEquals(listOf("automaticOhrMeasurement=ALWAYS_ON", "preserve:automaticTrainingDetectionSettings"), operationsById.getValue("set-automatic-ohr-measurement").stringArrayValue("payloadFields"))
+        assertEquals("readFailure", operationsById.getValue("set-automatic-ohr-measurement-read-failure").stringValue("kind"))
         assertEquals(listOf("daylightSaving.nextDaylightSavingTime=present", "daylightSaving.offset=nonzero"), operationsById.getValue("set-daylight-saving-time").stringArrayValue("payloadFields"))
     }
 
@@ -153,6 +276,14 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("get-user-device-settings-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
         assertEquals("transport-error", expectedCasesById.getValue("set-telemetry-read-failure").stringValue("terminal"), readFailureNoWriteBehavior)
         assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("set-telemetry-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
+        assertEquals("transport-error", expectedCasesById.getValue("set-user-device-location-read-failure").stringValue("terminal"), readFailureNoWriteBehavior)
+        assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("set-user-device-location-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
+        assertEquals("transport-error", expectedCasesById.getValue("set-usb-connection-mode-read-failure").stringValue("terminal"), readFailureNoWriteBehavior)
+        assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("set-usb-connection-mode-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
+        assertEquals("transport-error", expectedCasesById.getValue("set-automatic-training-detection-read-failure").stringValue("terminal"), readFailureNoWriteBehavior)
+        assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("set-automatic-training-detection-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
+        assertEquals("transport-error", expectedCasesById.getValue("set-automatic-ohr-measurement-read-failure").stringValue("terminal"), readFailureNoWriteBehavior)
+        assertEquals(listOf("read:/U/0/S/UDEVSET.BPB"), expectedCasesById.getValue("set-automatic-ohr-measurement-read-failure").stringArrayValue("commands"), readFailureNoWriteBehavior)
     }
 
 }

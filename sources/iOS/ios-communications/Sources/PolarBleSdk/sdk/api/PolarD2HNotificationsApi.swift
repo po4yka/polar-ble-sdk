@@ -66,6 +66,11 @@ public enum PolarDeviceToHostNotification: Int {
   }
 
   public init?(rawValue: Int) {
+    if let sharedName = PolarD2hRuntimePlanner.notificationTypeName(notificationId: rawValue) {
+      guard let notification = PolarDeviceToHostNotification(sharedName: sharedName) else { return nil }
+      self = notification
+      return
+    }
     switch rawValue {
     case 0: self = .filesystemModified
     case 1: self = .internalTestEvent
@@ -111,6 +116,31 @@ public enum PolarDeviceToHostNotification: Int {
     case .mediaControlEnabled: return 17
     case .restApiEvent: return 18
     case .exerciseStatus: return 19
+    }
+  }
+
+  private init?(sharedName: String) {
+    switch sharedName {
+    case "FILESYSTEM_MODIFIED": self = .filesystemModified
+    case "INTERNAL_TEST_EVENT": self = .internalTestEvent
+    case "IDLING": self = .idling
+    case "BATTERY_STATUS": self = .batteryStatus
+    case "INACTIVITY_ALERT": self = .inactivityAlert
+    case "TRAINING_SESSION_STATUS": self = .trainingSessionStatus
+    case "SYNC_REQUIRED": self = .syncRequired
+    case "AUTOSYNC_STATUS": self = .autosyncStatus
+    case "PNS_DH_NOTIFICATION_RESPONSE": self = .pnsDhNotificationResponse
+    case "PNS_SETTINGS": self = .pnsSettings
+    case "START_GPS_MEASUREMENT": self = .startGpsMeasurement
+    case "STOP_GPS_MEASUREMENT": self = .stopGpsMeasurement
+    case "KEEP_BACKGROUND_ALIVE": self = .keepBackgroundAlive
+    case "POLAR_SHELL_DH_DATA": self = .polarShellDhData
+    case "MEDIA_CONTROL_REQUEST_DH": self = .mediaControlRequestDh
+    case "MEDIA_CONTROL_COMMAND_DH": self = .mediaControlCommandDh
+    case "MEDIA_CONTROL_ENABLED": self = .mediaControlEnabled
+    case "REST_API_EVENT": self = .restApiEvent
+    case "EXERCISE_STATUS": self = .exerciseStatus
+    default: return nil
     }
   }
 }

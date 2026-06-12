@@ -1,11 +1,13 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
+
 enum class PmdRecordingType(val numVal: UByte) {
     ONLINE(0u),
     OFFLINE(1u);
 
     fun asBitField(): UByte {
-        return (this.numVal.toUInt() shl 7).toUByte()
+        return PolarRuntimePlannerAdapter.pmdRecordingTypeBitField(name).toUByte()
     }
 
     companion object {

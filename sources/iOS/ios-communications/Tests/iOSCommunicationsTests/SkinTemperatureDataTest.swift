@@ -1,6 +1,9 @@
 ///  Copyright © 2023 Polar. All rights reserved.
 
 import XCTest
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 @testable import iOSCommunications
 
 final class SkinTemperatureDataTest: XCTestCase {
@@ -55,6 +58,37 @@ final class SkinTemperatureDataTest: XCTestCase {
         XCTAssertEqual(27.54, temperatureData.samples[0].skinTemperature)
         XCTAssertEqual(27.54, temperatureData.samples[1].skinTemperature)
         XCTAssertEqual(27.54, temperatureData.samples[2].skinTemperature)
+    }
+
+    func testSkinTemperatureRawType0ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "0740ae21ae31b2ee0a00f628c041"
+        let sharedRows = try XCTUnwrap(SkinTemperatureDataRuntimePlanner.rawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 787762910281000000, factor: 1.0, sampleRate: 4))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 787762910281000000 },
+            { _ in 1.0 },
+            { _ in 4 })
+        let skinTemperatureData = try SkinTemperatureData.parseDataFromDataFrame(frame: dataFrame)
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt64, Float) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt64(fields[0])),
+                try XCTUnwrap(Float(fields[1]))
+            )
+        }
+
+        XCTAssertEqual(sharedSamples.count, skinTemperatureData.samples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            XCTAssertEqual(sharedSample.0, skinTemperatureData.samples[index].timeStamp)
+            XCTAssertEqual(sharedSample.1, skinTemperatureData.samples[index].skinTemperature, accuracy: 0.00001)
+            XCTAssertFalse(skinTemperatureData.samples[index].isTimestampEstimated)
+        }
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testSkinTemperatureGoldenVectorsMatchIOSCommunicationsBehavior() throws {

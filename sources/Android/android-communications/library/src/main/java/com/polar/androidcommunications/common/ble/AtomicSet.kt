@@ -1,8 +1,10 @@
 package com.polar.androidcommunications.common.ble
 
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
+
 class AtomicSet<Any : kotlin.Any> {
 
-    private val items: MutableList<Any> = mutableListOf()
+    private val items: PolarRuntimePlannerAdapter.PlannedAtomicSet<Any> = PolarRuntimePlannerAdapter.PlannedAtomicSet()
 
     fun interface CompareFunction<Any> {
         fun compare(`object`: Any): Boolean
@@ -15,45 +17,32 @@ class AtomicSet<Any : kotlin.Any> {
 
     @Synchronized
     fun add(`object`: Any?): Boolean {
-        if (`object` != null && !items.contains(`object`)) {
-            items.add(`object`)
-            return true
-        }
-        return false
+        return items.add(`object`)
     }
 
     @Synchronized
     fun <T: Any> remove(`object`: T?) {
-        if (`object` != null) {
-            items.remove(`object`)
-        }
+        items.remove(`object`)
     }
 
     @Synchronized
     fun <T: Any> accessAll(`object`: (kotlin.Any) -> Unit) {
-        for (i in items.size - 1 downTo 0) {
-            `object`(items[i])
-        }
+        items.accessAll { item -> `object`(item) }
     }
 
     @Synchronized
     fun fetch(compareFunction: CompareFunction<Any?>): Any? {
-        for (i in items.size - 1 downTo 0) {
-            if (compareFunction.compare(items[i])) {
-                return items[i]
-            }
-        }
-        return null
+        return items.fetch { item -> compareFunction.compare(item) }
     }
 
     @Synchronized
     fun objects(): Set<Any> {
-        return HashSet(items)
+        return HashSet(items.objects())
     }
 
     @Synchronized
     fun size(): Int {
-        return items.size
+        return items.size()
     }
 
     @Synchronized

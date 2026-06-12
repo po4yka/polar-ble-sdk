@@ -1,5 +1,7 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarSleepModels
+import com.polar.shared.sdk.PolarSleepWakeStateName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -43,6 +45,10 @@ class SleepNightlyRechargeCommonPolicyTest {
                     assertEquals(input.objectValue("sleepResultDate").dateString(), common.stringValue("sleepResultDate"), caseId)
                     assertEquals(0, common.intValue("sleepWakePhaseCount"), "$caseId wake phases")
                     assertEquals(0, common.intValue("sleepCycleCount"), "$caseId cycles")
+                    assertEquals(false, PolarSleepModels.shouldIncludeOriginalSleepRange(false), "$caseId original range absent")
+                    assertEquals(false, PolarSleepModels.shouldIncludeSleepSkinTemperatureResult(false), "$caseId skin temperature absent")
+                    assertEquals(true, PolarSleepModels.shouldIncludeOriginalSleepRange(true), "$caseId original range present")
+                    assertEquals(true, PolarSleepModels.shouldIncludeSleepSkinTemperatureResult(true), "$caseId skin temperature present")
                     assertEquals(SLEEP_PARTIAL_NIGHT_COMMON_DECISION, commonDecision, caseId)
                 }
                 "sleep-offset-platform-policy" -> {
@@ -72,6 +78,23 @@ class SleepNightlyRechargeCommonPolicyTest {
                 else -> error("Unhandled sleep vector $caseId")
             }
         }
+    }
+
+    @Test
+    fun sleepOffsetProjectionUsesSharedStartAndEndFields() {
+        val vector = loadGoldenVectorText("sdk/sleep/sleep-offset-platform-policy.json")
+        val input = vector.objectValue("input")
+        val expected = vector.objectValue("expected").objectValue("android")
+
+        assertEquals(expected.intValue("sleepStartOffsetSeconds"), PolarSleepModels.sleepStartOffsetSeconds(input.intValue("sleepStartOffsetSeconds")))
+        assertEquals(expected.intValue("sleepEndOffsetSeconds"), PolarSleepModels.sleepEndOffsetSeconds(input.intValue("sleepEndOffsetSeconds")))
+    }
+
+    @Test
+    fun sleepFilePathPlanningUsesSharedDayPathPolicy() {
+        assertEquals("/U/0/20260102/SLEEP/SLEEPRES.BPB", PolarSleepModels.sleepAnalysisPath("20260102"))
+        assertEquals("/U/0/20260102/NSTRES" + "U" + "L/NSTRCONT.BPB", PolarSleepModels.sleepSkinTemperaturePath("20260102"))
+        assertEquals("/U/0/20260102/NR/NR.BPB", PolarSleepModels.nightlyRechargePath("20260102"))
     }
 
     @Test
@@ -164,14 +187,15 @@ class SleepNightlyRechargeCommonPolicyTest {
     }
 
     private fun String.sleepStageName(): String {
-        return when (this) {
-            "PB_UNKNOWN" -> "UNKNOWN"
-            "PB_WAKE" -> "WAKE"
-            "PB_REM" -> "REM"
-            "PB_NONREM12" -> "NONREM12"
-            "PB_NONREM3" -> "NONREM3"
+        val value = when (this) {
+            "PB_UNKNOWN" -> 0
+            "PB_WAKE" -> -2
+            "PB_REM" -> -3
+            "PB_NONREM12" -> -5
+            "PB_NONREM3" -> -6
             else -> error("Unexpected sleep stage $this")
         }
+        return PolarSleepWakeStateName.fromValue(value)?.name ?: error("Unexpected sleep stage value $value")
     }
 
     private fun String.defaultNightlyValue(): String {
@@ -297,8 +321,8 @@ class SleepNightlyRechargeCommonPolicyTest {
             "platform-sleep-nightly-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val SLEEP_PARTIAL_NIGHT_COMMON_DECISION = "Shared sleep mapping should preserve empty repeated fields as empty lists, absent optional scalar defaults as explicit zero only when that is the existing public contract, and should choose one cross-platform policy for absent recording device, battery flag, and original sleep range before migration."
-        const val SLEEP_OFFSET_PLATFORM_COMMON_DECISION = "Map sleepEndOffsetSeconds from the protobuf sleepEndOffsetSeconds field and treat the current iOS start-offset copy as a legacy bug to fix during shared-model migration."
+        const val SLEEP_PARTIAL_NIGHT_COMMON_DECISION = "Shared sleep mapping preserves empty repeated fields as empty lists, absent optional scalar defaults as explicit zero only when that is the existing public contract, and maps absent original sleep range plus absent sleep skin-temperature date to absent public submodels in shared-backed production code."
+        const val SLEEP_OFFSET_PLATFORM_COMMON_DECISION = "Map sleepEndOffsetSeconds from the protobuf sleepEndOffsetSeconds field; linked iOS production code uses the shared KMP policy while non-shared SwiftPM/watchOS fallback preserves the legacy start-offset copy."
         const val SLEEP_NIGHTLY_READINESS_COMMON_DECISION = "Sleep and nightly recharge model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified."
     }
 }

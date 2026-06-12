@@ -1,7 +1,9 @@
 package com.polar.sharedtest
 
 import com.polar.shared.sdk.PolarSdkModelMappers
+import com.polar.shared.sdk.PolarSkinTemperatureMeasurementType
 import com.polar.shared.sdk.PolarSkinTemperatureSampleModel
+import com.polar.shared.sdk.PolarSkinTemperatureSensorLocation
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,6 +11,24 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SkinTemperatureDomainCommonPolicyTest {
+    @Test
+    fun skinTemperatureDomainEnumLookupsPreserveKnownValuesAndUnknownNullPolicy() {
+        assertEquals(PolarSkinTemperatureMeasurementType.TM_SKIN_TEMPERATURE, PolarSkinTemperatureMeasurementType.fromValue(1))
+        assertEquals(PolarSkinTemperatureMeasurementType.TM_CORE_TEMPERATURE, PolarSkinTemperatureMeasurementType.fromValue(2))
+        assertNull(PolarSkinTemperatureMeasurementType.fromValue(0))
+        assertNull(PolarSkinTemperatureMeasurementType.fromValue(99))
+
+        assertEquals(PolarSkinTemperatureSensorLocation.SL_DISTAL, PolarSkinTemperatureSensorLocation.fromValue(1))
+        assertEquals(PolarSkinTemperatureSensorLocation.SL_PROXIMAL, PolarSkinTemperatureSensorLocation.fromValue(2))
+        assertNull(PolarSkinTemperatureSensorLocation.fromValue(0))
+        assertNull(PolarSkinTemperatureSensorLocation.fromValue(99))
+    }
+
+    @Test
+    fun skinTemperatureFilePathPlanningUsesSharedDayPathPolicy() {
+        assertEquals("/U/0/20260102/SKINTEMP/TEMPCONT.BPB", PolarSdkModelMappers.skinTemperaturePath("20260102"))
+    }
+
     @Test
     fun skinTemperatureDomainGoldenVectorsDefineExecutableCommonSourceDeviceAndUnknownEnumPolicy() {
         SKIN_TEMPERATURE_DOMAIN_VECTORS.forEach { relativePath ->
@@ -40,11 +60,11 @@ class SkinTemperatureDomainCommonPolicyTest {
                     assertTrue(model.samples.isEmpty(), "$caseId preserve empty samples")
                 }
                 commonDecision.optionalStringValue("unknownEnumPolicy")?.let { policy ->
-                    assertEquals("choose-null-or-explicit-unknown-before-shared-model-migration", policy, caseId)
-                    assertNull(model.measurementType, "$caseId unresolved unknown measurement policy")
-                    assertNull(model.sensorLocation, "$caseId unresolved unknown sensor-location policy")
-                    assertEquals("SL_UNKNOWN", platformExpectations.objectValue("ios").stringValue("sensorLocation"), "$caseId iOS unknown enum characterization")
-                    assertEquals("TM_UNKNOWN", platformExpectations.objectValue("ios").stringValue("measurementType"), "$caseId iOS unknown enum characterization")
+                    assertEquals("map-unrecognized-measurement-and-sensor-location-to-null-in-shared-models", policy, caseId)
+                    assertNull(model.measurementType, "$caseId shared unknown measurement policy")
+                    assertNull(model.sensorLocation, "$caseId shared unknown sensor-location policy")
+                    assertNull(platformExpectations.objectValue("ios").optionalStringValue("sensorLocation"), "$caseId linked iOS shared unknown sensor-location policy")
+                    assertNull(platformExpectations.objectValue("ios").optionalStringValue("measurementType"), "$caseId linked iOS shared unknown measurement policy")
                 }
             }
         }

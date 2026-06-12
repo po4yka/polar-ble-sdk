@@ -1,6 +1,9 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 private let ARABICA_USER_ROOT_FOLDER = "/U/0/"
 private let ACTIVITY_DIRECTORY = "ACT/"
@@ -15,11 +18,37 @@ private let dateFormat: DateFormatter = {
 private let TAG = "PolarActivityUtils"
 
 internal class PolarActivityUtils {
+    static func activityDirectoryReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return activityReadOperation(id: "activity-read-directory", path: activityDirectoryPath(day: dateFormat.string(from: date)))
+    }
+
+    static func activitySampleFileReadOperation(path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return activityReadOperation(id: "activity-read-sample-file", path: path)
+    }
+
+    static func dailySummaryReadOperation(date: Date) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        return activityReadOperation(id: "daily-summary-read", path: dailySummaryPath(day: dateFormat.string(from: date)))
+    }
+
+    private static func activityDirectoryPath(day: String) -> String {
+        return PolarActivityRuntimePlanner.activityDirectoryPath(day: day) ?? "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(ACTIVITY_DIRECTORY)"
+    }
+
+    private static func dailySummaryPath(day: String) -> String {
+        return PolarActivityRuntimePlanner.dailySummaryPath(day: day) ?? "\(ARABICA_USER_ROOT_FOLDER)\(day)/\(DAILY_SUMMARY_DIRECTORY)\(DAILY_SUMMARY_PROTO)"
+    }
+
+    private static func activityReadOperation(id: String, path: String) -> (command: Protocol_PbPFtpOperation.Command, path: String) {
+        if let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: id, command: "GET", path: path) {
+            return plannedOperation
+        }
+        return (.get, path)
+    }
 
     /// Read step count for given date.
     static func readStepsFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> Int {
         BleLogger.trace(TAG, "readStepsFromDayDirectory: \(date)")
-        let activityFileDir = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(ACTIVITY_DIRECTORY)"
+        let activityFileDir = activityDirectoryReadOperation(date: date).path
         let filePaths: [String]
         do {
             filePaths = try await listFiles(client: client, folderPath: activityFileDir) { entry in
@@ -32,9 +61,9 @@ internal class PolarActivityUtils {
         guard !filePaths.isEmpty else { return 0 }
         var stepCount: UInt32 = 0
         for path in filePaths {
-            let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = path }
+            let plannedOperation = activitySampleFileReadOperation(path: path)
             do {
-                let response = try await client.request(try operation.serializedBytes())
+                let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
                 let proto = try Data_PbActivitySamples(serializedBytes: Data(response))
                 stepCount += proto.stepsSamples.reduce(0, +)
             } catch {
@@ -48,10 +77,10 @@ internal class PolarActivityUtils {
     /// Read distance in meters for given date.
     static func readDistanceFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> Float {
         BleLogger.trace(TAG, "readDistanceFromDayDirectory: \(date)")
-        let dailySummaryFilePath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(DAILY_SUMMARY_DIRECTORY)\(DAILY_SUMMARY_PROTO)"
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = dailySummaryFilePath }
+        let plannedOperation = dailySummaryReadOperation(date: date)
+        let dailySummaryFilePath = plannedOperation.path
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbDailySummary(serializedBytes: Data(response))
             return Float(proto.activityDistance)
         } catch {
@@ -63,10 +92,10 @@ internal class PolarActivityUtils {
     /// Read active time for given date.
     static func readActiveTimeFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> PolarActiveTimeData {
         BleLogger.trace(TAG, "readActiveTimeFromDayDirectory: \(date)")
-        let dailySummaryFilePath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(DAILY_SUMMARY_DIRECTORY)\(DAILY_SUMMARY_PROTO)"
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = dailySummaryFilePath }
+        let plannedOperation = dailySummaryReadOperation(date: date)
+        let dailySummaryFilePath = plannedOperation.path
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbDailySummary(serializedBytes: Data(response))
             return PolarActiveTimeData(
                 date: date,
@@ -88,10 +117,10 @@ internal class PolarActivityUtils {
     /// Read calories for given date.
     static func readCaloriesFromDayDirectory(client: BlePsFtpClient, date: Date, caloriesType: CaloriesType) async throws -> Int {
         BleLogger.trace(TAG, "readCaloriesFromDayDirectory: \(date), type: \(caloriesType)")
-        let dailySummaryFilePath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(DAILY_SUMMARY_DIRECTORY)\(DAILY_SUMMARY_PROTO)"
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = dailySummaryFilePath }
+        let plannedOperation = dailySummaryReadOperation(date: date)
+        let dailySummaryFilePath = plannedOperation.path
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbDailySummary(serializedBytes: Data(response))
             switch caloriesType {
             case .activity: return Int(proto.activityCalories)
@@ -107,7 +136,7 @@ internal class PolarActivityUtils {
     /// Read and return activity samples data for a given date.
     static func readActivitySamplesDataFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> PolarActivityDayData {
         BleLogger.trace(TAG, "readActivitySamplesDataFromDayDirectory: \(date)")
-        let activityFileDir = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(ACTIVITY_DIRECTORY)"
+        let activityFileDir = activityDirectoryReadOperation(date: date).path
         let filePaths: [String]
         do {
             filePaths = try await listFiles(client: client, folderPath: activityFileDir) { entry in
@@ -126,8 +155,8 @@ internal class PolarActivityUtils {
         }
         var polarActivityDataList: [PolarActivityData] = []
         for path in filePaths {
-            let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = path }
-            let response = try await client.request(try operation.serializedBytes())
+            let plannedOperation = activitySampleFileReadOperation(path: path)
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbActivitySamples(serializedBytes: Data(response))
             let activitySamplesData = PolarActivityData.PolarActivitySamples(
                 startTime: try PolarTimeUtils.pbLocalDateTimeToDate(pbLocalDateTime: proto.startTime),
@@ -147,10 +176,9 @@ internal class PolarActivityUtils {
     /// Read daily summary data for given date. Returns nil if not found (error 103).
     static func readDailySummaryDataFromDayDirectory(client: BlePsFtpClient, date: Date) async throws -> PolarDailySummary? {
         BleLogger.trace(TAG, "readDailySummaryDataFromDayDirectory: \(date)")
-        let dailySummaryFilePath = "\(ARABICA_USER_ROOT_FOLDER)\(dateFormat.string(from: date))/\(DAILY_SUMMARY_DIRECTORY)\(DAILY_SUMMARY_PROTO)"
-        let operation = Protocol_PbPFtpOperation.with { $0.command = .get; $0.path = dailySummaryFilePath }
+        let plannedOperation = dailySummaryReadOperation(date: date)
         do {
-            let response = try await client.request(try operation.serializedBytes())
+            let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedOperation))
             let proto = try Data_PbDailySummary(serializedBytes: Data(response))
             return try PolarDailySummary.fromProto(proto: proto)
         } catch {
@@ -170,9 +198,7 @@ internal class PolarActivityUtils {
         folderPath: String = "/",
         condition: @escaping (_ p: String) -> Bool
     ) async throws -> [String] {
-        var path = folderPath
-        if path.first != "/" { path.insert("/", at: path.startIndex) }
-        if path.last  != "/" { path.insert("/", at: path.endIndex) }
+        let path = PolarRuntimePlanner.normalizeFileListFolderPath(folderPath)
         let entries = try await fetchRecursive(path, client: client, condition: condition)
         return entries.map { $0.name }
     }
@@ -182,15 +208,13 @@ internal class PolarActivityUtils {
         client: BlePsFtpClient,
         condition: @escaping (_ p: String) -> Bool
     ) async throws -> [(name: String, size: UInt64)] {
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = path
-        let request = try operation.serializedData()
+        let plannedOperation = activityReadOperation(id: "activity-read-recursive-directory", path: path)
+        let request = try PolarRuntimePlanner.fileOperationBytes(plannedOperation)
         let data = try await client.request(request)
         let dir = try Protocol_PbPFtpDirectory(serializedBytes: data as Data)
         var results: [(name: String, size: UInt64)] = []
         for entry in dir.entries where condition(entry.name) {
-            let fullPath = path + entry.name
+            let fullPath = plannedOperation.path + entry.name
             if fullPath.hasSuffix("/") {
                 let children = try await fetchRecursive(fullPath, client: client, condition: condition)
                 results.append(contentsOf: children)
@@ -199,5 +223,111 @@ internal class PolarActivityUtils {
             }
         }
         return results
+    }
+}
+
+enum PolarActivityRuntimePlanner {
+    static func activityDirectoryPath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.activityDirectoryPath(day: day)
+        #else
+        return nil
+        #endif
+    }
+
+    static func dailySummaryPath(day: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.dailySummaryPath(day: day)
+        #else
+        return nil
+        #endif
+    }
+
+    static func automaticSamplesDirectoryPath() -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.automaticSamplesDirectoryPath()
+        #else
+        return nil
+        #endif
+    }
+
+    static func automaticSamplesFilePath(fileName: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.automaticSamplesFilePath(fileName: fileName)
+        #else
+        return nil
+        #endif
+    }
+
+    static func automaticHrTriggerName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.automaticHrTriggerName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func activityClassName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.activityClassName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func dailyBalanceFeedbackName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.dailyBalanceFeedbackName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func trainingReadinessName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.trainingReadinessName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func ppiSampleTriggerName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppiSampleTriggerName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func ppiSkinContactName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppiSkinContactName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func ppiMovementName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppiMovementName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func ppiIntervalStatusName(value: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppiIntervalStatusName(value: Int32(value))
+        #else
+        return nil
+        #endif
+    }
+
+    static func ppiStatusNames(statusByte: UInt32) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.ppiStatusNames(statusByte: Int32(statusByte))
+        #else
+        return nil
+        #endif
     }
 }

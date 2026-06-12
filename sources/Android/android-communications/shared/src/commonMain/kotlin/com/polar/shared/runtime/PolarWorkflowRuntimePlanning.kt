@@ -1,5 +1,7 @@
 package com.polar.shared.runtime
 
+import com.polar.shared.sdk.PolarFirmwareUpdateModels
+
 data class PolarStoredDataCleanupDateFolder(
     val path: String,
     val beforeCutoff: Boolean,
@@ -33,6 +35,7 @@ data class PolarWorkflowPlan(
     val downloadAttempted: Boolean = false,
     val zipExtractionAttempted: Boolean = false,
     val cleanupCallbackCount: Int = 0,
+    val retryDelaysMillis: List<Long> = emptyList(),
     val enabledFeatures: List<String> = emptyList(),
     val excludedFeatures: List<String> = emptyList()
 )
@@ -72,6 +75,17 @@ data class PolarBackupFile(
     val dataHex: String
 )
 
+data class PolarBackupFilePath(
+    val directory: String,
+    val fileName: String
+)
+
+data class PolarBackupTraversalPlan(
+    val path: String,
+    val wildcardRootPath: String? = null,
+    val wildcardSubFolder: String? = null
+)
+
 data class PolarBackupRestoreFile(
     val directory: String,
     val fileName: String,
@@ -104,8 +118,6 @@ class PolarPsFtpTransportWriteFailure(message: String) : IllegalStateException(m
 class PolarPsFtpWriteAckTimeout(val point: String) : IllegalStateException("PSFTP write acknowledgement timeout at $point")
 
 object PolarWorkflowRuntimePlanning {
-    private const val SYSTEM_UPDATE_FILE = "SYSUPDAT.IMG"
-
     fun planStoredDataCleanup(scenario: PolarStoredDataCleanupScenario): PolarWorkflowPlan {
         return when (scenario.kind) {
             "filterDirectoryEntries" -> PolarWorkflowPlan(commands = cleanupFilterDirectoryEntries(scenario))
@@ -115,6 +127,51 @@ object PolarWorkflowRuntimePlanning {
             "listFailure" -> PolarWorkflowPlan(commands = listOf("GET:${requireNotNull(scenario.rootPath)}"), terminal = "platform-split")
             else -> error("Unsupported cleanup scenario ${scenario.kind}")
         }
+    }
+
+    fun storedDataEntryMatchesFilter(entry: String, includePrefixes: List<String> = emptyList(), includeSuffixes: List<String> = emptyList()): Boolean {
+        return (includePrefixes.isEmpty() || includePrefixes.any { prefix -> entry.startsWith(prefix) }) &&
+            (includeSuffixes.isEmpty() || includeSuffixes.any { suffix -> entry.endsWith(suffix) })
+    }
+
+    fun storedDataCleanupDirectoryEntryMatches(dataType: String, entry: String, cutoffFolder: String? = null): Boolean {
+        val isDateFolder = entry.matches(Regex("^(\\d{8})(/)"))
+        return when (dataType) {
+            "AUTOS" -> isDateFolder || entry.contains(".BPB")
+            "SDLOGS" -> isDateFolder || entry == "$dataType/" || storedDataEntryMatchesFilter(entry, includeSuffixes = listOf(".SLG", ".TXT"))
+            "UNDEFINED" -> false
+            else -> {
+                val matchesDataEntry = isDateFolder || (cutoffFolder != null && entry == "$cutoffFolder/") || entry == "$dataType/" || entry.contains(".BPB")
+                matchesDataEntry && !entry.contains("USERID.BPB") && !entry.contains("HIST")
+            }
+        }
+    }
+
+    fun shouldPruneStoredDataEmptyParents(dataType: String): Boolean {
+        return dataType !in setOf("AUTOS", "SDLOGS", "UNDEFINED")
+    }
+
+    fun storedDataCleanupRootPath(dataType: String, defaultRoot: String = "/U/0"): String {
+        return when (dataType) {
+            "AUTOS" -> "/U/0/AUTOS"
+            "SDLOGS" -> "/SDLOGS"
+            else -> defaultRoot
+        }
+    }
+
+    fun storedDataDateIsOnOrBefore(day: String, cutoffDate: String): Boolean {
+        return day <= cutoffDate
+    }
+
+    fun storedDataEmptyParentDirectories(filePath: String, rootPath: String = "/U/0", trailingSlash: Boolean = false): List<String> {
+        val normalizedRoot = rootPath.trimEnd('/')
+        val directories = mutableListOf<String>()
+        var currentDir = filePath.substringBeforeLast("/", missingDelimiterValue = "")
+        while (currentDir.isNotEmpty() && currentDir.trimEnd('/') != normalizedRoot) {
+            directories += if (trailingSlash) currentDir.withTrailingSlash() else currentDir.trimEnd('/')
+            currentDir = currentDir.trimEnd('/').substringBeforeLast("/", missingDelimiterValue = "")
+        }
+        return directories
     }
 
     fun planOfflineTriggerRuntime(
@@ -137,24 +194,102 @@ object PolarWorkflowRuntimePlanning {
             "check-update-not-available",
             "check-update-available" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses)
             "download-failure" -> PolarWorkflowPlan(statuses = listOf("fetchingFwUpdatePackage", requireNotNull(scenario.expectedTerminalStatus)), downloadAttempted = true)
-            "retryable-server-failure" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses, terminalError = scenario.expectedTerminalError, downloadAttempted = scenario.downloadAttempted)
+            "retryable-server-failure" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses, terminalError = scenario.expectedTerminalError, downloadAttempted = scenario.downloadAttempted, retryDelaysMillis = firmwareRetryDelaysMillis(maxRetries = 2))
+            "client-request-failure" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses, terminalError = scenario.expectedTerminalError, downloadAttempted = scenario.downloadAttempted)
             "empty-or-invalid-zip" -> PolarWorkflowPlan(statuses = listOf("fetchingFwUpdatePackage", requireNotNull(scenario.expectedTerminalStatus)), downloadAttempted = true, zipExtractionAttempted = true)
             "cancel-after-package-fetch-cleans-up-before-ble-write" -> PolarWorkflowPlan(statuses = scenario.expectedStatuses, writes = scenario.expectedWrites, terminalError = scenario.expectedTerminalError, downloadAttempted = true, zipExtractionAttempted = true, cleanupCallbackCount = scenario.expectedCleanupCallbackCount)
             "write-package-success-with-system-update-last" -> PolarWorkflowPlan(statuses = scenario.expectedStatusOrder, writes = orderFirmwareFiles(scenario.firmwareFiles).map { "/$it" })
             "system-update-reboot-response-is-success" -> PolarWorkflowPlan(statuses = listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "finalizingFwUpdate", requireNotNull(scenario.expectedTerminalStatus)), writes = orderFirmwareFiles(scenario.firmwareFiles).map { "/$it" })
+            "non-system-reboot-response-is-terminal-failure" -> PolarWorkflowPlan(statuses = listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "fwUpdateFailed"), writes = orderFirmwareFiles(scenario.firmwareFiles).map { "/$it" }, terminalError = "propagate-error")
             "battery-too-low-response-is-terminal-failure" -> PolarWorkflowPlan(statuses = listOf("preparingDeviceForFwUpdate", "fetchingFwUpdatePackage", "writingFwUpdatePackage", "fwUpdateFailed"), writes = orderFirmwareFiles(scenario.firmwareFiles).map { "/$it" }, terminalError = "battery-too-low")
             else -> error("Unsupported firmware workflow scenario ${scenario.id}")
         }
     }
 
     fun orderFirmwareFiles(fileNames: List<String>): List<String> {
-        return fileNames.sortedWith { first, second ->
-            when {
-                first == SYSTEM_UPDATE_FILE && second != SYSTEM_UPDATE_FILE -> 1
-                second == SYSTEM_UPDATE_FILE && first != SYSTEM_UPDATE_FILE -> -1
-                else -> first.compareTo(second)
+        return PolarFirmwareUpdateModels.orderFirmwareFiles(fileNames)
+    }
+
+    fun firmwareRetryDelaysMillis(maxRetries: Int): List<Long> {
+        require(maxRetries >= 0) { "Retry count cannot be negative" }
+        return listOf(1000L, 2000L).take(maxRetries)
+    }
+
+    fun firmwareAvailabilityFailureIsRetryable(details: String): Boolean {
+        val lowercasedDetails = details.lowercase()
+        val responseCode = Regex("""response code:\s*(\d{3})""")
+            .find(lowercasedDetails)
+            ?.groupValues
+            ?.get(1)
+            ?.toIntOrNull()
+        return lowercasedDetails.contains("server") ||
+            (responseCode != null && responseCode in 500..599) ||
+            Regex("""(^|[^0-9])50[0-9]([^0-9]|$)""").containsMatchIn(lowercasedDetails)
+    }
+
+    fun firmwareUpdateIsAvailable(currentVersion: String, availableVersion: String, fileUrl: String): Boolean {
+        return fileUrl.isNotBlank() && PolarFirmwareUpdateModels.isAvailableFirmwareVersionHigher(currentVersion, availableVersion)
+    }
+
+    fun ledConfigPayloadBytes(sdkModeLedEnabled: Boolean, ppiModeLedEnabled: Boolean): List<Int> {
+        return listOf(
+            if (sdkModeLedEnabled) 1 else 0,
+            if (ppiModeLedEnabled) 1 else 0
+        )
+    }
+
+    fun firmwarePackageEntryIsPayload(fileName: String): Boolean {
+        return fileName != "readme.txt"
+    }
+
+    fun firmwarePayloadFileNames(fileNames: List<String>): List<String> {
+        return orderFirmwareFiles(fileNames.filter(::firmwarePackageEntryIsPayload))
+    }
+
+    fun firmwareFileTriggersRebootWait(fileName: String): Boolean {
+        return fileName.contains("SYSUPDAT.IMG")
+    }
+
+    fun firmwareWriteTerminal(errorCode: Int, fileName: String): String {
+        return when {
+            errorCode == 1 && firmwareFileTriggersRebootWait(fileName) -> "success-rebooting"
+            errorCode == 209 -> "battery-too-low"
+            else -> "propagate-error"
+        }
+    }
+
+    fun firmwareFinalizationSteps(hasH10FileSystem: Boolean, isDeviceSensor: Boolean): List<String> {
+        return buildList {
+            add("wait-for-device-update")
+            if (!hasH10FileSystem) add("restore-backup")
+            add("set-device-time")
+            if (isDeviceSensor) {
+                add("stop-sync")
+            } else {
+                add("restart-device")
+                add("wait-for-restart-reconnect")
             }
         }
+    }
+
+    fun firmwareWriteProgressPercent(bytesWritten: Int, payloadSize: Int): Int {
+        return if (payloadSize <= 0) 0 else bytesWritten * 100 / payloadSize
+    }
+
+    fun shouldEmitFirmwareWriteProgress(
+        lastBytesWritten: Int,
+        bytesWritten: Int,
+        payloadSize: Int,
+        minPercentageIncrement: Int,
+        timeSinceLastEmitMs: Long? = null,
+        maxEmitIntervalMs: Long = 5_000L
+    ): Boolean {
+        val delta = bytesWritten - lastBytesWritten
+        val deltaPercentage = firmwareWriteProgressPercent(delta, payloadSize)
+        return lastBytesWritten == 0 ||
+            bytesWritten >= payloadSize ||
+            deltaPercentage >= minPercentageIncrement ||
+            (timeSinceLastEmitMs != null && timeSinceLastEmitMs >= maxEmitIntervalMs)
     }
 
     fun expandBackupEntries(backupText: String, availablePaths: List<String>): List<String> {
@@ -167,6 +302,14 @@ object PolarWorkflowRuntimePlanning {
         }
     }
 
+    fun parseBackupTextForAndroid(backupText: String): List<String> {
+        return backupText.lineSequence().toMutableSet().toList()
+    }
+
+    fun parseBackupTextForIos(backupText: String): List<String> {
+        return backupText.split("\n").dropLast(1).map { line -> line.trim() }
+    }
+
     fun defaultBackupPaths(): List<String> = listOf(
         "/U/0/S/PHYSDATA.BPB",
         "/U/0/S/UDEVSET.BPB",
@@ -174,8 +317,41 @@ object PolarWorkflowRuntimePlanning {
         "/U/0/USERID.BPB"
     )
 
+    fun backupRootPaths(entries: List<String>, defaultPaths: List<String> = defaultBackupPaths()): List<String> {
+        val paths = entries.filter { entry -> entry.isNotEmpty() }.toMutableList()
+        defaultPaths.forEach { defaultPath ->
+            if (paths.none { path -> path.replace("/U/*/", "/U/0/") == defaultPath }) {
+                paths += defaultPath
+            }
+        }
+        return paths
+    }
+
+    fun backupTraversalRootPath(path: String): String {
+        return path.replace("/U/*/", "/U/0/")
+    }
+
+    fun backupTraversalPlan(path: String): PolarBackupTraversalPlan {
+        val normalizedPath = backupTraversalRootPath(path)
+        if (!normalizedPath.contains("*")) {
+            return PolarBackupTraversalPlan(path = normalizedPath)
+        }
+        return PolarBackupTraversalPlan(
+            path = normalizedPath,
+            wildcardRootPath = normalizedPath.substringBefore("*"),
+            wildcardSubFolder = normalizedPath.substringAfter("*").removePrefix("/").split("/").firstOrNull()
+        )
+    }
+
     fun readBackupFiles(paths: List<String>, filesByPath: Map<String, String>): List<PolarBackupFile> {
         return paths.map { path -> PolarBackupFile(path, filesByPath.getValue(path)) }
+    }
+
+    fun backupFilePath(path: String): PolarBackupFilePath {
+        return PolarBackupFilePath(
+            directory = path.substringBeforeLast('/', missingDelimiterValue = "") + "/",
+            fileName = path.substringAfterLast('/')
+        )
     }
 
     fun planBackupRestore(restoreFiles: List<PolarBackupRestoreFile>): PolarWorkflowPlan {
@@ -212,6 +388,12 @@ object PolarWorkflowRuntimePlanning {
         }
     }
 
+    fun encodeRfc76FrameChunk(chunk: ByteArray, hasMore: Boolean, next: Int, sequenceNumber: Int): ByteArray {
+        val status = if (hasMore) RFC76_STATUS_MORE else RFC76_STATUS_LAST
+        val header = ((sequenceNumber and 0x0f) shl 4) or ((status and 0x03) shl 1) or (next and 0x01)
+        return byteArrayOf(header.toByte()) + chunk
+    }
+
     fun splitRfc76Frames(payload: ByteArray, mtu: Int): List<ByteArray> {
         require(mtu > 1) { "MTU must leave room for an RFC76 header byte" }
         val payloadSize = mtu - 1
@@ -223,13 +405,18 @@ object PolarWorkflowRuntimePlanning {
             val chunk = payload.copyOfRange(offset, end)
             val hasMore = end < payload.size
             val next = if (sequenceNumber == 0) 0 else 1
-            val status = if (hasMore) RFC76_STATUS_MORE else RFC76_STATUS_LAST
-            val header = (sequenceNumber shl 4) or (status shl 1) or next
-            frames += byteArrayOf(header.toByte()) + chunk
+            frames += encodeRfc76FrameChunk(chunk, hasMore, next, sequenceNumber)
             offset = end
             sequenceNumber = (sequenceNumber + 1) and 0x0f
         } while (offset < payload.size || frames.isEmpty())
         return frames
+    }
+
+    fun splitRfc76RequestWriteFrames(header: ByteArray, data: ByteArray, mtu: Int): List<ByteArray> {
+        return splitRfc76Frames(
+            encodeCompleteMessageStream(type = "request", header = header, idValue = 0, data = data),
+            mtu
+        )
     }
 
     fun reassembleRequestResponse(responseFrames: List<ByteArray>): ByteArray {
@@ -285,11 +472,38 @@ object PolarWorkflowRuntimePlanning {
         return PolarWorkflowPlan(commands = listOf("write:${payload.size}"), terminal = "success")
     }
 
+    fun psFtpWriteAckTerminal(payloadSize: Int, writeAck: String = "success"): String {
+        return planPsFtpWrite(ByteArray(maxOf(payloadSize, 1)) { 0 }, writeAck = writeAck).terminal
+    }
+
     fun planPsFtpWriteProgress(payloadSize: Int, platform: String): List<Int> {
         return when (platform) {
             "android" -> listOf(-14, payloadSize)
             "ios" -> listOf(0, payloadSize - 1, payloadSize)
             else -> error("Unsupported PSFTP progress platform $platform")
+        }
+    }
+
+    fun shouldEmitPsFtpWriteProgress(
+        bytesWritten: Long,
+        payloadSize: Int,
+        platform: String,
+        timeSinceLastEmitMs: Long,
+        throttleMs: Long = 5_000L
+    ): Boolean {
+        return planPsFtpWriteProgress(payloadSize, platform).contains(bytesWritten.toInt()) || timeSinceLastEmitMs >= throttleMs
+    }
+
+    fun psFtpWriteTimeoutSeconds(
+        filePath: String,
+        defaultTimeoutSeconds: Int = 90,
+        extendedTimeoutSeconds: Int = 900,
+        extendedPathPrefixes: List<String> = listOf("/SYNCPART.TGZ")
+    ): Int {
+        return if (extendedPathPrefixes.any { prefix -> filePath.startsWith(prefix) }) {
+            extendedTimeoutSeconds
+        } else {
+            defaultTimeoutSeconds
         }
     }
 
@@ -305,10 +519,7 @@ object PolarWorkflowRuntimePlanning {
         val root = requireNotNull(scenario.rootPath)
         val commands = mutableListOf("GET:$root")
         scenario.entries
-            .filter { entry ->
-                (scenario.includePrefixes.isEmpty() || scenario.includePrefixes.any { prefix -> entry.startsWith(prefix) }) &&
-                    (scenario.includeSuffixes.isEmpty() || scenario.includeSuffixes.any { suffix -> entry.endsWith(suffix) })
-            }
+            .filter { entry -> storedDataEntryMatchesFilter(entry, scenario.includePrefixes, scenario.includeSuffixes) }
             .mapTo(commands) { entry -> "REMOVE:${root.withTrailingSlash()}$entry" }
         return commands
     }
@@ -340,7 +551,7 @@ object PolarWorkflowRuntimePlanning {
             val parent = sample.path.substringBeforeLast('/') + "/"
             commands += "GET:$parent"
             commands += "GET:${sample.path}"
-            if (sample.embeddedDay < cutoff) {
+            if (storedDataDateIsOnOrBefore(sample.embeddedDay, cutoff)) {
                 commands += "REMOVE:${sample.path}"
             }
         }

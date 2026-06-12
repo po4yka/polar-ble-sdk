@@ -1,5 +1,9 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarUserDeviceSettingsModels
+import com.polar.shared.sdk.PolarUserDeviceSettingsFields
+import com.polar.shared.sdk.PolarSerializedUserDeviceSettingsFields
+import com.polar.shared.sdk.PolarUserDeviceSettingsTimestamp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -55,11 +59,43 @@ class UserDeviceSettingsCommonPolicyTest {
         assertEquals(listOf("com.polar.sharedtest.UserDeviceSettingsCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
-    private fun parseSettings(proto: String): UserDeviceSettings {
-        return UserDeviceSettings(
+    @Test
+    fun userDeviceSettingsCommonProtoCodecPreservesMappedFieldPresence() {
+        val timestamp = PolarUserDeviceSettingsTimestamp(
+            year = 2026,
+            month = 5,
+            day = 28,
+            hour = 12,
+            minute = 0,
+            seconds = 0,
+            millis = 0,
+            trusted = true
+        )
+        val fullModel = PolarUserDeviceSettingsFields(
+            deviceLocation = 2,
+            usbConnectionMode = true,
+            automaticTrainingDetectionMode = true,
+            automaticTrainingDetectionSensitivity = 75,
+            minimumTrainingDurationSeconds = 300,
+            telemetryEnabled = true,
+            autosFilesEnabled = true
+        )
+        val fullBytes = PolarUserDeviceSettingsModels.buildProtoBytes(fullModel, timestamp)
+        assertEquals(fullModel, PolarUserDeviceSettingsModels.parseProtoBytes(fullBytes))
+
+        val minimalModel = PolarUserDeviceSettingsFields(deviceLocation = 5)
+        val minimalBytes = PolarUserDeviceSettingsModels.buildProtoBytes(minimalModel, timestamp)
+        assertEquals(minimalModel, PolarUserDeviceSettingsModels.parseProtoBytes(minimalBytes))
+
+        val noTelemetryBytes = PolarUserDeviceSettingsModels.buildProtoBytes(fullModel, timestamp, includeTelemetry = false)
+        assertEquals(fullModel.copy(telemetryEnabled = null), PolarUserDeviceSettingsModels.parseProtoBytes(noTelemetryBytes))
+    }
+
+    private fun parseSettings(proto: String): PolarUserDeviceSettingsFields {
+        return PolarUserDeviceSettingsModels.parsePresencePreservingFields(
             deviceLocation = proto.optionalIntValue("deviceLocation"),
-            usbConnectionMode = proto.optionalOnOffBoolean("usbConnectionMode"),
-            automaticTrainingDetectionMode = proto.optionalOnOffBoolean("automaticTrainingDetectionMode"),
+            usbConnectionMode = proto.optionalStringValue("usbConnectionMode"),
+            automaticTrainingDetectionMode = proto.optionalStringValue("automaticTrainingDetectionMode"),
             automaticTrainingDetectionSensitivity = proto.optionalIntValue("automaticTrainingDetectionSensitivity"),
             minimumTrainingDurationSeconds = proto.optionalIntValue("minimumTrainingDurationSeconds"),
             telemetryEnabled = proto.optionalBooleanValue("telemetryEnabled"),
@@ -67,8 +103,8 @@ class UserDeviceSettingsCommonPolicyTest {
         )
     }
 
-    private fun parseModel(model: String): UserDeviceSettings {
-        return UserDeviceSettings(
+    private fun parseModel(model: String): PolarUserDeviceSettingsFields {
+        return PolarUserDeviceSettingsFields(
             deviceLocation = model.optionalIntValue("deviceLocation"),
             usbConnectionMode = model.optionalBooleanValue("usbConnectionMode"),
             automaticTrainingDetectionMode = model.optionalBooleanValue("automaticTrainingDetectionMode"),
@@ -79,23 +115,15 @@ class UserDeviceSettingsCommonPolicyTest {
         )
     }
 
-    private fun serializeSettings(model: UserDeviceSettings): SerializedSettings {
-        return SerializedSettings(
-            deviceLocation = model.deviceLocation,
-            hasLastModified = true,
-            lastModifiedTrusted = true,
-            usbConnectionMode = model.usbConnectionMode?.toOnOff(),
-            automaticTrainingDetectionMode = model.automaticTrainingDetectionMode?.toOnOff(),
-            automaticTrainingDetectionSensitivity = model.automaticTrainingDetectionSensitivity,
-            minimumTrainingDurationSeconds = model.minimumTrainingDurationSeconds,
-            hasTelemetryEnabled = model.telemetryEnabled != null,
-            telemetryEnabled = model.telemetryEnabled,
-            autosFilesEnabled = model.autosFilesEnabled
-        )
+    private fun serializeSettings(model: PolarUserDeviceSettingsFields): PolarSerializedUserDeviceSettingsFields {
+        return PolarUserDeviceSettingsModels.serializePresencePreservingFields(model)
     }
 
-    private fun assertModel(expected: String, actual: UserDeviceSettings, caseId: String) {
+    private fun assertModel(expected: String, actual: PolarUserDeviceSettingsFields, caseId: String) {
         assertEquals(expected.optionalIntValue("deviceLocation"), actual.deviceLocation, "$caseId deviceLocation")
+        expected.optionalIntValue("deviceLocation")?.let { deviceLocation ->
+            assertEquals(deviceLocation, PolarUserDeviceSettingsModels.deviceLocationName(deviceLocation)?.let(PolarUserDeviceSettingsModels::deviceLocationValue), "$caseId shared deviceLocation")
+        }
         assertEquals(expected.optionalBooleanOrNull("usbConnectionMode"), actual.usbConnectionMode, "$caseId usbConnectionMode")
         assertEquals(expected.optionalBooleanOrNull("automaticTrainingDetectionMode"), actual.automaticTrainingDetectionMode, "$caseId automaticTrainingDetectionMode")
         assertEquals(expected.optionalIntOrNull("automaticTrainingDetectionSensitivity"), actual.automaticTrainingDetectionSensitivity, "$caseId sensitivity")
@@ -104,21 +132,45 @@ class UserDeviceSettingsCommonPolicyTest {
         assertEquals(expected.optionalBooleanOrNull("autosFilesEnabled"), actual.autosFilesEnabled, "$caseId autos")
     }
 
-    private fun assertProto(expected: String, actual: SerializedSettings, caseId: String) {
+    private fun assertProto(expected: String, actual: PolarSerializedUserDeviceSettingsFields, caseId: String) {
         assertEquals(expected.optionalIntValue("deviceLocation"), actual.deviceLocation, "$caseId deviceLocation")
         assertEquals(expected.booleanValue("hasLastModified"), actual.hasLastModified, "$caseId hasLastModified")
         assertEquals(expected.booleanValue("lastModifiedTrusted"), actual.lastModifiedTrusted, "$caseId trusted")
-        expected.optionalStringValue("usbConnectionMode")?.let { assertEquals(it, actual.usbConnectionMode, "$caseId usb") }
-        expected.optionalStringValue("automaticTrainingDetectionMode")?.let { assertEquals(it, actual.automaticTrainingDetectionMode, "$caseId autos mode") }
+        expected.optionalStringValue("usbConnectionMode")?.let {
+            assertEquals(it, actual.usbConnectionMode, "$caseId usb")
+            assertEquals(it, PolarUserDeviceSettingsModels.usbConnectionModeName(it.userDeviceSettingsUsbValue()), "$caseId shared usb")
+            assertEquals(it.userDeviceSettingsUsbValue(), PolarUserDeviceSettingsModels.usbConnectionModeValue(it), "$caseId shared usb reverse")
+        }
+        expected.optionalStringValue("automaticTrainingDetectionMode")?.let {
+            assertEquals(it, actual.automaticTrainingDetectionMode, "$caseId autos mode")
+            assertEquals(it, PolarUserDeviceSettingsModels.automaticTrainingDetectionModeName(it.userDeviceSettingsAutomaticTrainingDetectionValue()), "$caseId shared autos mode")
+            assertEquals(it.userDeviceSettingsAutomaticTrainingDetectionValue(), PolarUserDeviceSettingsModels.automaticTrainingDetectionModeValue(it), "$caseId shared autos reverse")
+        }
         expected.optionalIntValue("automaticTrainingDetectionSensitivity")?.let { assertEquals(it, actual.automaticTrainingDetectionSensitivity, "$caseId sensitivity") }
         expected.optionalIntValue("minimumTrainingDurationSeconds")?.let { assertEquals(it, actual.minimumTrainingDurationSeconds, "$caseId duration") }
         assertEquals(expected.optionalBooleanValue("hasTelemetryEnabled") ?: false, actual.hasTelemetryEnabled, "$caseId hasTelemetry")
         expected.optionalBooleanValue("telemetryEnabled")?.let { assertEquals(it, actual.telemetryEnabled, "$caseId telemetry") }
         expected.optionalBooleanValue("autosFilesEnabled")?.let { assertEquals(it, actual.autosFilesEnabled, "$caseId autos") }
+        actual.autosFilesEnabled?.let { enabled ->
+            val sharedState = PolarUserDeviceSettingsModels.automaticMeasurementStateName(enabled)
+            assertEquals(enabled, PolarUserDeviceSettingsModels.automaticMeasurementStateEnabled(sharedState), "$caseId shared automatic measurement")
+        }
     }
 
-    private fun Boolean.toOnOff(): String {
-        return if (this) "ON" else "OFF"
+    private fun String.userDeviceSettingsUsbValue(): Int {
+        return when (this) {
+            "OFF" -> 1
+            "ON" -> 2
+            else -> error("Unexpected USB mode $this")
+        }
+    }
+
+    private fun String.userDeviceSettingsAutomaticTrainingDetectionValue(): Int {
+        return when (this) {
+            "OFF" -> 0
+            "ON" -> 1
+            else -> error("Unexpected automatic training detection mode $this")
+        }
     }
 
     private fun String.optionalObjectValue(field: String): String? {
@@ -158,16 +210,6 @@ class UserDeviceSettingsCommonPolicyTest {
         return Regex("\"([^\"]+)\"").findAll(values).map { match -> match.groupValues[1] }.toList()
     }
 
-    private fun String.optionalOnOffBoolean(field: String): Boolean? {
-        return optionalStringValue(field)?.let { value ->
-            when (value) {
-                "ON" -> true
-                "OFF" -> false
-                else -> error("Unexpected ON/OFF value $value")
-            }
-        }
-    }
-
     private fun String.hasNull(field: String): Boolean {
         return Regex("\"$field\"\\s*:\\s*null").containsMatchIn(this)
     }
@@ -199,29 +241,6 @@ class UserDeviceSettingsCommonPolicyTest {
         error("Unbalanced $open$close block")
     }
 
-    private data class UserDeviceSettings(
-        val deviceLocation: Int?,
-        val usbConnectionMode: Boolean?,
-        val automaticTrainingDetectionMode: Boolean?,
-        val automaticTrainingDetectionSensitivity: Int?,
-        val minimumTrainingDurationSeconds: Int?,
-        val telemetryEnabled: Boolean?,
-        val autosFilesEnabled: Boolean?
-    )
-
-    private data class SerializedSettings(
-        val deviceLocation: Int?,
-        val hasLastModified: Boolean,
-        val lastModifiedTrusted: Boolean,
-        val usbConnectionMode: String?,
-        val automaticTrainingDetectionMode: String?,
-        val automaticTrainingDetectionSensitivity: Int?,
-        val minimumTrainingDurationSeconds: Int?,
-        val hasTelemetryEnabled: Boolean,
-        val telemetryEnabled: Boolean?,
-        val autosFilesEnabled: Boolean?
-    )
-
     private companion object {
         val REQUIRED_USER_DEVICE_SETTINGS_MODEL_FAMILIES = listOf(
             "protobuf-presence-preservation",
@@ -230,6 +249,7 @@ class UserDeviceSettingsCommonPolicyTest {
             "encoder-owned-trusted-last-modified",
             "explicit-telemetry-write-policy",
             "platform-default-divergence",
+            "mapped-protobuf-byte-codec",
             "platform-user-device-settings-vector-references",
             "compile-verification-gate"
         )

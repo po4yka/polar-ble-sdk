@@ -2,7 +2,7 @@
   "id": "pressure-compressed-type0-android-factor-half",
   "area": "sensor-parser",
   "case": "pressure_compressed_type0_android_factor_applied_to_reference_sample",
-  "source": "Android PressureDataTest; iOS compressed pressure parser currently indexes outside the one-channel sample",
+  "source": "Android PressureDataTest and shared KMP parser; linked iOS consumes the shared compressed pressure parser",
   "input": {
     "dataFrameHex": "0b660000000000000080ae277b44",
     "previousTimeStamp": 100,
@@ -10,7 +10,6 @@
     "sampleRate": 0
   },
   "expected": {
-    "migrationOwnership": "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code.",
     "measurementType": "PRESSURE",
     "frameType": 0,
     "compressed": true,
@@ -24,10 +23,10 @@
   },
   "platforms": {
     "android": true,
-    "ios": false,
-    "common": false
+    "ios": true,
+    "common": true
   },
-  "notes": "Android decodes compressed pressure type-0 as an IEEE-754 reference sample and applies frame.factor. iOS is excluded until the compressed pressure parser's one-channel indexing behavior is intentionally fixed or retained for KMP.",
+  "notes": "Shared KMP decodes compressed pressure type-0 as an IEEE-754 reference sample and applies frame.factor; Android production and linked iOS production consume this shared parser while unlinked SwiftPM/watchOS keeps the legacy Swift fallback.",
   "consumerTests": {
     "android": [
       "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PressureDataTest",

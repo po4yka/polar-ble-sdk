@@ -1,6 +1,10 @@
 
 import Foundation
 
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
+
 // ps-ftp errors
 public enum BlePsFtpException: Error {
     ///  Undefined error, after a single undefined error might still be recoverable to next operation
@@ -124,6 +128,12 @@ public class BlePsFtpUtility {
         _ header: Data?,
         type: MessageType ,
         id: Int) ->  InputStream  {
+        #if canImport(PolarBleSdkShared)
+        if type != .request || header != nil,
+           let sharedData = SharedPsFtpByteCodec.completeMessageStream(type: type, header: header, id: id) {
+            return InputStream(data: sharedData)
+        }
+        #endif
         switch type {
         case .request:
             guard let header = header else {
@@ -170,27 +180,16 @@ public class BlePsFtpUtility {
     ///   - sequenceNumber: RFC76 ring counter
     /// - Returns: air packet
     public static func buildRfc76MessageFrame(_ data: InputStream, next: Int, mtuSize: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> Data {
-        var packet = Data()
-        //
+        let packet: Data
         if data.hasBytesAvailable {
-            //
             var frameData = [UInt8](repeating: 0, count: mtuSize)
             let bytesRead = frameData.withUnsafeMutableBufferPointer{ (ptr: inout  UnsafeMutableBufferPointer<UInt8>) -> Int in
                 return data.read(ptr.baseAddress!+1, maxLength: mtuSize-1)
             }
-            if data.hasBytesAvailable && bytesRead == (mtuSize-1) {
-                // more
-                frameData[0] = 0x06 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            }else{
-                // last
-                frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            }
-            packet = Data(bytes: &frameData, count: bytesRead + 1)
+            let hasMore = data.hasBytesAvailable && bytesRead == (mtuSize-1)
+            packet = makeRfc76Frame(chunk: Data(frameData[1..<(bytesRead + 1)]), hasMore: hasMore, next: next, sequenceNumber: sequenceNumber)
         } else {
-            // 0 payload
-            var frameData = [UInt8](repeating: 0, count: 1)
-            frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            packet = Data(bytes: &frameData, count: 1)
+            packet = makeRfc76Frame(chunk: Data(), hasMore: false, next: next, sequenceNumber: sequenceNumber)
         }
         sequenceNumber.increment()
         return packet
@@ -207,16 +206,15 @@ public class BlePsFtpUtility {
     /// - Returns: air packet
     public static func buildRfc76MessageFrame(_ header: InputStream, data: InputStream?, next: Int, mtuSize: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> Data {
         // sorry as swift(stupids) does not support bit fields, needed have this verbose style
-        var packet = Data()
+        let packet: Data
         if header.hasBytesAvailable {
-            //
             var frameData = [UInt8](repeating: 0, count: mtuSize)
             var bytesRead = frameData.withUnsafeMutableBufferPointer{ (ptr: inout  UnsafeMutableBufferPointer<UInt8>) -> Int in
                 return header.read(ptr.baseAddress!+1, maxLength: mtuSize-1)
             }
+            var hasMore = false
             if header.hasBytesAvailable {
-                // more header payload
-                frameData[0] = 0x06 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
+                hasMore = true
             }else{
                 // last header payload
                 if data != nil && data!.hasBytesAvailable {
@@ -227,38 +225,60 @@ public class BlePsFtpUtility {
                         }
                     }
                     if data!.hasBytesAvailable && bytesRead == (mtuSize-1) {
-                        // more data payload
-                        frameData[0] = 0x06 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-                    } else {
-                        frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
+                        hasMore = true
                     }
-                } else {
-                    frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
                 }
             }
-            packet = Data.init(bytes: &frameData, count: bytesRead + 1)
+            packet = makeRfc76Frame(chunk: Data(frameData[1..<(bytesRead + 1)]), hasMore: hasMore, next: next, sequenceNumber: sequenceNumber)
         } else if data != nil && data!.hasBytesAvailable {
             var frameData = [UInt8](repeating: 0, count: mtuSize)
             let bytesRead = frameData.withUnsafeMutableBufferPointer{ (ptr: inout  UnsafeMutableBufferPointer<UInt8>) -> Int in
                 return data!.read(ptr.baseAddress!+1, maxLength: mtuSize-1)
             }
             // note added failsafe check for bytes actually read
-            if data!.hasBytesAvailable && bytesRead == (mtuSize-1) {
-                // more data payload
-                frameData[0] = 0x06 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            }else{
-                // last data payload
-                frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            }
-            packet = Data(bytes: &frameData, count: bytesRead + 1)
+            let hasMore = data!.hasBytesAvailable && bytesRead == (mtuSize-1)
+            packet = makeRfc76Frame(chunk: Data(frameData[1..<(bytesRead + 1)]), hasMore: hasMore, next: next, sequenceNumber: sequenceNumber)
         } else {
-            // 0 payload
-            var frameData = [UInt8](repeating: 0, count: 1)
-            frameData[0] = 0x02 | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
-            packet = Data(bytes: &frameData, count: 1)
+            packet = makeRfc76Frame(chunk: Data(), hasMore: false, next: next, sequenceNumber: sequenceNumber)
         }
         sequenceNumber.increment()
         return packet
+    }
+
+    public static func buildRfc76MessageFrameAll(_ header: InputStream, data: InputStream?, mtuSize: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> [Data] {
+        #if canImport(PolarBleSdkShared)
+        if sequenceNumber.getSeq() == 0,
+           let sharedFrames = SharedPsFtpByteCodec.splitRfc76RequestWriteFrames(header, data: data, mtuSize: mtuSize) {
+            for _ in sharedFrames {
+                sequenceNumber.increment()
+            }
+            return sharedFrames
+        }
+        #endif
+        var next = 0
+        var frames = [Data]()
+        var more = true
+        repeat {
+            let packet = buildRfc76MessageFrame(header, data: data, next: next, mtuSize: mtuSize, sequenceNumber: sequenceNumber)
+            more = (packet[0] & 0x06) == 0x06
+            frames.append(packet)
+            next = 1
+        } while more
+        return frames
+    }
+
+    private static func makeRfc76Frame(chunk: Data, hasMore: Bool, next: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> Data {
+        #if canImport(PolarBleSdkShared)
+        if let sharedFrame = SharedPsFtpByteCodec.encodeRfc76FrameChunk(chunk: chunk, hasMore: hasMore, next: next, sequenceNumber: sequenceNumber.getSeq()) {
+            return sharedFrame
+        }
+        #endif
+        var frameData = [UInt8](repeating: 0, count: chunk.count + 1)
+        frameData[0] = (hasMore ? 0x06 : 0x02) | UInt8(next) | UInt8(sequenceNumber.getSeq() << 4)
+        if !chunk.isEmpty {
+            frameData.replaceSubrange(1..<frameData.count, with: chunk)
+        }
+        return Data(frameData)
     }
     
     /// Generate list of air packets from data stream
@@ -269,6 +289,15 @@ public class BlePsFtpUtility {
     ///   - sequenceNumber: RFC76 ring counter
     /// - Returns: list of air packets
     public static func buildRfc76MessageFrameAll(_ data: InputStream, mtuSize: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> [Data] {
+        #if canImport(PolarBleSdkShared)
+        if sequenceNumber.getSeq() == 0,
+           let sharedFrames = SharedPsFtpByteCodec.splitRfc76Frames(data, mtuSize: mtuSize) {
+            for _ in sharedFrames {
+                sequenceNumber.increment()
+            }
+            return sharedFrames
+        }
+        #endif
         var next: Int=0
         var requs = [Data]()
         var more = true
@@ -301,6 +330,17 @@ public class BlePsFtpUtility {
         if (packet.isEmpty) {
             throw BlePsFtpUtility.RFC76FrameProcessError.frameIsEmpty
         }
+
+        #if canImport(PolarBleSdkShared)
+        if let sharedFrame = SharedPsFtpByteCodec.decodedRfc76Frame(packet) {
+            header.next = sharedFrame.next
+            header.status = sharedFrame.status
+            header.sequenceNumber = sharedFrame.sequenceNumber
+            header.error = sharedFrame.error
+            header.payload = sharedFrame.payload
+            return
+        }
+        #endif
         
         let ptr = (packet as NSData).bytes.bindMemory(to: UInt8.self, capacity: packet.count)
         header.next = (Int)(ptr[0] & 0x01)
@@ -322,6 +362,148 @@ public class BlePsFtpUtility {
             }
         }
     }
+
+    static func writeTimeoutSeconds(filePath: String, defaultTimeoutSeconds: Int, extendedTimeoutSeconds: Int) -> Int {
+        #if canImport(PolarBleSdkShared)
+        return SharedPsFtpByteCodec.writeTimeoutSeconds(filePath: filePath, defaultTimeoutSeconds: defaultTimeoutSeconds, extendedTimeoutSeconds: extendedTimeoutSeconds)
+        #else
+        return filePath.hasPrefix("/SYNCPART.TGZ") ? extendedTimeoutSeconds : defaultTimeoutSeconds
+        #endif
+    }
+
+    static func writeAckTerminal(payloadSize: Int, writeAck: String = "success") -> String {
+        #if canImport(PolarBleSdkShared)
+        return SharedPsFtpByteCodec.writeAckTerminal(payloadSize: payloadSize, writeAck: writeAck)
+        #else
+        return writeAck == "success" ? "success" : writeAck
+        #endif
+    }
 }
 
 public extension BlePsFtpException { var localizedDescription: String { return "The operation couldn't be completed. (PolarBleSdk.BleGattException.\(self)" } }
+
+#if canImport(PolarBleSdkShared)
+private extension BlePsFtpUtility.MessageType {
+    var sharedName: String {
+        switch self {
+        case .request:
+            return "request"
+        case .query:
+            return "query"
+        case .notification:
+            return "notification"
+        }
+    }
+}
+
+private struct SharedRfc76Frame {
+    let next: Int
+    let status: Int
+    let sequenceNumber: Int
+    let error: Int?
+    let payload: Data
+}
+
+enum SharedPsFtpByteCodec {
+    fileprivate static func completeMessageStream(type: BlePsFtpUtility.MessageType, header: Data?, id: Int) -> Data? {
+        return Data(hexBytes: PolarIosSharedBridge.shared.psFtpCompleteMessageStreamHex(type: type.sharedName, headerHex: (header ?? Data()).hexString, dataHex: "", idValue: Int32(id)))
+    }
+
+    fileprivate static func decodedRfc76Frame(_ packet: Data) -> SharedRfc76Frame? {
+        let fields = PolarIosSharedBridge.shared.psFtpDecodedRfc76Frame(frameHex: packet.hexString).split(separator: ",", omittingEmptySubsequences: false)
+        guard fields.count == 5,
+              let next = Int(fields[0]),
+              let status = Int(fields[1]),
+              let sequenceNumber = Int(fields[2]),
+              let payload = Data(hexBytes: String(fields[4])) else {
+            return nil
+        }
+        return SharedRfc76Frame(
+            next: next,
+            status: status,
+            sequenceNumber: sequenceNumber,
+            error: fields[3].isEmpty ? nil : Int(fields[3]),
+            payload: payload
+        )
+    }
+
+    fileprivate static func encodeRfc76FrameChunk(chunk: Data, hasMore: Bool, next: Int, sequenceNumber: Int) -> Data? {
+        return Data(hexBytes: PolarIosSharedBridge.shared.psFtpEncodeRfc76FrameChunkHex(chunkHex: chunk.hexString, hasMore: hasMore, next: Int32(next), sequenceNumber: Int32(sequenceNumber)))
+    }
+
+    fileprivate static func splitRfc76Frames(_ stream: InputStream, mtuSize: Int) -> [Data]? {
+        let payload = Data(readingRemaining: stream)
+        let frameHexValues = PolarIosSharedBridge.shared.psFtpSplitRfc76FramesHex(payloadHex: payload.hexString, mtu: Int32(mtuSize)).split(separator: "|", omittingEmptySubsequences: false)
+        let frames = frameHexValues.compactMap { Data(hexBytes: String($0)) }
+        return frames.count == frameHexValues.count ? frames : nil
+    }
+
+    fileprivate static func splitRfc76RequestWriteFrames(_ header: InputStream, data: InputStream?, mtuSize: Int) -> [Data]? {
+        let headerData = Data(readingRemaining: header)
+        let dataBytes = data.map { Data(readingRemaining: $0) } ?? Data()
+        let frameHexValues = PolarIosSharedBridge.shared.psFtpSplitRfc76RequestWriteFramesHex(headerHex: headerData.hexString, dataHex: dataBytes.hexString, mtu: Int32(mtuSize)).split(separator: "|", omittingEmptySubsequences: false)
+        let frames = frameHexValues.compactMap { Data(hexBytes: String($0)) }
+        return frames.count == frameHexValues.count ? frames : nil
+    }
+
+    static func reassembledNotifications(_ packets: [(status: Int, frame: Data)]) -> [(id: Int32, parameters: Data)]? {
+        let encodedPackets = packets.map { "\($0.status):\($0.frame.hexString)" }.joined(separator: "|")
+        let encodedNotifications = PolarIosSharedBridge.shared.psFtpReassembledNotifications(packets: encodedPackets)
+        if encodedNotifications.isEmpty {
+            return []
+        }
+        let notifications = encodedNotifications.split(separator: "|", omittingEmptySubsequences: false).compactMap { value -> (id: Int32, parameters: Data)? in
+            let parts = value.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+            guard parts.count == 2,
+                  let id = Int32(parts[0]),
+                  let parameters = Data(hexBytes: String(parts[1])) else {
+                return nil
+            }
+            return (id: id, parameters: parameters)
+        }
+        return notifications.count == encodedNotifications.split(separator: "|", omittingEmptySubsequences: false).count ? notifications : nil
+    }
+
+    static func writeTimeoutSeconds(filePath: String, defaultTimeoutSeconds: Int, extendedTimeoutSeconds: Int) -> Int {
+        return Int(PolarIosSharedBridge.shared.psFtpWriteTimeoutSeconds(filePath: filePath, defaultTimeoutSeconds: Int32(defaultTimeoutSeconds), extendedTimeoutSeconds: Int32(extendedTimeoutSeconds)))
+    }
+
+    static func writeAckTerminal(payloadSize: Int, writeAck: String) -> String {
+        return PolarIosSharedBridge.shared.planRuntimePsFtpWriteAck(payloadSize: Int32(payloadSize), writeAck: writeAck)
+    }
+}
+
+private extension Data {
+    var hexString: String {
+        map { String(format: "%02x", $0) }.joined()
+    }
+
+    init?(hexBytes: String) {
+        guard hexBytes.count % 2 == 0 else { return nil }
+        var bytes = [UInt8]()
+        var index = hexBytes.startIndex
+        while index < hexBytes.endIndex {
+            let nextIndex = hexBytes.index(index, offsetBy: 2)
+            guard let byte = UInt8(hexBytes[index..<nextIndex], radix: 16) else {
+                return nil
+            }
+            bytes.append(byte)
+            index = nextIndex
+        }
+        self = Data(bytes)
+    }
+}
+
+private extension Data {
+    init(readingRemaining stream: InputStream) {
+        var output = Data()
+        var buffer = [UInt8](repeating: 0, count: 512)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            if count <= 0 { break }
+            output.append(buffer, count: count)
+        }
+        self = output
+    }
+}
+#endif

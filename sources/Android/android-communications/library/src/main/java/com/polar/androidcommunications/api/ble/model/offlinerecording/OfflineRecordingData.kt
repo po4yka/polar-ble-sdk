@@ -18,14 +18,14 @@ internal class OfflineRecordingData<out T>(
     val data: T
 ) {
 
-    data class OfflineRecordingHeader internal constructor(
+    data class OfflineRecordingHeader(
         val magic: UInt,
         val version: UInt,
         val free: UInt,
         val eswHash: UInt,
     )
 
-    data class OfflineRecordingMetaData internal constructor(
+    data class OfflineRecordingMetaData(
         val offlineRecordingHeader: OfflineRecordingHeader,
         val startTime: LocalDateTime,
         val recordingSettings: PmdSetting?,

@@ -10,6 +10,7 @@ import com.polar.sdk.api.model.activity.PPiSampleStatus
 import com.polar.sdk.api.model.activity.PPiSampleTriggerType
 import com.polar.sdk.api.model.activity.SkinContact
 import com.polar.sdk.impl.utils.PolarAutomaticSamplesUtils
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import fi.polar.remote.representation.protobuf.AutomaticSamples.PbAutomaticHeartRateSamples
 import fi.polar.remote.representation.protobuf.AutomaticSamples.PbAutomaticSampleSessions
 import fi.polar.remote.representation.protobuf.AutomaticSamples.PbMeasTriggerType
@@ -25,6 +26,7 @@ import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Test
+import protocol.PftpRequest
 import protocol.PftpResponse.PbPFtpDirectory
 import protocol.PftpResponse.PbPFtpEntry
 import java.io.ByteArrayOutputStream
@@ -36,6 +38,20 @@ import java.time.LocalTime
 class PolarAutomaticSamplesUtilsTest {
 
     private val mockClient = mockk<BlePsFtpClient>()
+
+    @Test
+    fun `automatic sample read headers use shared file facade planning`() {
+        Assert.assertEquals("/U/0/AUTOS/", PolarRuntimePlannerAdapter.automaticSamplesDirectoryPath())
+        Assert.assertEquals("/U/0/AUTOS/AUTOS001.BPB", PolarRuntimePlannerAdapter.automaticSamplesFilePath("AUTOS001.BPB"))
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/AUTOS/",
+            PolarAutomaticSamplesUtils.automaticSamplesDirectoryReadOperation()
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/AUTOS/AUTOS001.BPB",
+            PolarAutomaticSamplesUtils.automaticSamplesFileReadOperation("AUTOS001.BPB")
+        )
+    }
 
     @Test
     fun `read247HrSamples() should correctly filter samples by date and parse all trigger types`() = runTest {
@@ -252,6 +268,18 @@ class PolarAutomaticSamplesUtilsTest {
     }
 
     @Test
+    fun `ppi sample status mapping ignores high bits through shared KMP policy`() {
+        Assert.assertEquals(
+            PPiSampleStatus(
+                skinContact = SkinContact.SKIN_CONTACT_DETECTED,
+                movement = Movement.MOVING_DETECTED,
+                intervalStatus = IntervalStatus.INTERVAL_DENOTES_OFFLINE_PERIOD
+            ),
+            PPiSampleStatus.from(0xFF)
+        )
+    }
+
+    @Test
     fun `read247ppiSamples() should filter out dates outside of range`() = runTest {
         // Arrange
         val fromDate = LocalDate.of(2024, 11, 10)
@@ -428,13 +456,16 @@ class PolarAutomaticSamplesUtilsTest {
             "daily-summary-request-path",
             "daily-summary-scalar-projection",
             "daily-summary-duration-projection",
+            "unsupported-field-deferral",
+            "public-model-shape-gate",
+            "facade-request-error-boundary",
             "platform-activity-vector-reference-gate",
             "compile-verification-gate"
         )
         Assert.assertEquals(expectedFamilies, requiredFamilies)
         Assert.assertEquals(expectedFamilies, coveredFamilies)
         Assert.assertEquals(
-            "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, and compile verification remain explicit before production model mapping moves.",
+            "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves.",
             expected.get("commonDecision").asString
         )
         Assert.assertEquals(

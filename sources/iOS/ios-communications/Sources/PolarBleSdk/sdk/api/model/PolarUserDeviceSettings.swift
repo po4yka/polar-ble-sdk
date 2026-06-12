@@ -3,6 +3,9 @@
 //
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class PolarUserDeviceSettings {
 
@@ -28,6 +31,12 @@ public class PolarUserDeviceSettings {
         case BIKE_MOUNT
 
         public func toInt() -> Int {
+            #if canImport(PolarBleSdkShared)
+            if let sharedValue = PolarUserDeviceSettingsRuntimePlanner.deviceLocationValue(name: rawValue) {
+                return Int(truncating: sharedValue)
+            }
+            #endif
+
             let allValues: NSArray = DeviceLocation.allCases as NSArray
             let result: Int = allValues.index(of: self)
             return result
@@ -39,6 +48,13 @@ public class PolarUserDeviceSettings {
         case OFF
 
         func toProto() -> Data_PbUsbConnectionSettings.PbUsbConnectionMode {
+            #if canImport(PolarBleSdkShared)
+            if let sharedValue = PolarUserDeviceSettingsRuntimePlanner.usbConnectionModeValue(name: rawValue),
+               let proto = Data_PbUsbConnectionSettings.PbUsbConnectionMode(rawValue: Int(truncating: sharedValue)) {
+                return proto
+            }
+            #endif
+
             switch self {
             case .ON:
                 return Data_PbUsbConnectionSettings.PbUsbConnectionMode.on
@@ -48,6 +64,12 @@ public class PolarUserDeviceSettings {
         }
 
         static func fromProto(proto: Data_PbUsbConnectionSettings.PbUsbConnectionMode) -> UsbConnectionMode? {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarUserDeviceSettingsRuntimePlanner.usbConnectionModeName(value: proto.rawValue) {
+                return UsbConnectionMode(rawValue: sharedName)
+            }
+            #endif
+
             switch proto {
             case Data_PbUsbConnectionSettings.PbUsbConnectionMode.on:
                 return .ON
@@ -64,6 +86,13 @@ public class PolarUserDeviceSettings {
         case OFF
 
         func toProto() -> Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState {
+            #if canImport(PolarBleSdkShared)
+            if let sharedValue = PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionModeValue(name: rawValue),
+               let proto = Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState(rawValue: Int(truncating: sharedValue)) {
+                return proto
+            }
+            #endif
+
             switch self {
             case .ON:
                 return Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.on
@@ -73,6 +102,13 @@ public class PolarUserDeviceSettings {
         }
 
         static func fromProto(proto: Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState) -> AutomaticTrainingDetectionMode {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarUserDeviceSettingsRuntimePlanner.automaticTrainingDetectionModeName(value: proto.rawValue),
+               let sharedMode = AutomaticTrainingDetectionMode(rawValue: sharedName) {
+                return sharedMode
+            }
+            #endif
+
             switch proto {
             case Data_PbAutomaticTrainingDetectionSettings.PbAutomaticTrainingDetectionState.on:
                 return .ON
@@ -111,6 +147,27 @@ public class PolarUserDeviceSettings {
     }
 
     static func toProto(userDeviceSettings: PolarUserDeviceSettings) -> Data_PbUserDeviceSettings {
+        var sharedFields: [String: String] = [
+            "deviceLocation": String(userDeviceSettings.deviceLocation.toInt()),
+            "automaticTrainingDetectionSensitivity": String(userDeviceSettings.automaticTrainingDetectionSensitivity ?? 50),
+            "minimumTrainingDurationSeconds": String(userDeviceSettings.minimumTrainingDurationSeconds ?? 600)
+        ]
+        if let usbConnectionMode = userDeviceSettings.usbConnectionMode {
+            sharedFields["usbConnectionMode"] = String(usbConnectionMode == .ON)
+        }
+        if let telemetryEnabled = userDeviceSettings.telemetryEnabled {
+            sharedFields["telemetryEnabled"] = String(telemetryEnabled)
+        }
+        if let automaticTrainingDetectionMode = userDeviceSettings.automaticTrainingDetectionMode {
+            sharedFields["automaticTrainingDetectionMode"] = String(automaticTrainingDetectionMode == .ON)
+        }
+        if let autosFilesEnabled = userDeviceSettings.autosFilesEnabled {
+            sharedFields["autosFilesEnabled"] = String(autosFilesEnabled)
+        }
+        if let sharedData = PolarUserDeviceSettingsRuntimePlanner.buildProtoData(fields: sharedFields, date: Date()),
+           let sharedProto = try? Data_PbUserDeviceSettings(serializedBytes: sharedData) {
+            return sharedProto
+        }
 
         var proto = Data_PbUserDeviceSettings()
         var generalSettings = Data_PbUserDeviceGeneralSettings()
@@ -133,6 +190,7 @@ public class PolarUserDeviceSettings {
         if let automaticTrainingDetectionMode = userDeviceSettings.automaticTrainingDetectionMode {
             var automaticTrainingDetectionSettings = Data_PbAutomaticTrainingDetectionSettings()
             automaticTrainingDetectionSettings.state = automaticTrainingDetectionMode.toProto()
+            proto.automaticMeasurementSettings.automaticTrainingDetectionSettings = automaticTrainingDetectionSettings
         }
         
         proto.automaticMeasurementSettings.automaticTrainingDetectionSettings.sensitivity = userDeviceSettings.automaticTrainingDetectionSensitivity ?? 50
@@ -140,16 +198,66 @@ public class PolarUserDeviceSettings {
         
         if let autosFilesEnabled = userDeviceSettings.autosFilesEnabled {
             var ohr = Data_PbAutomaticMeasurementSettings()
-            ohr.state = autosFilesEnabled ? .alwaysOn : .off
+            ohr.state = automaticMeasurementState(enabled: autosFilesEnabled)
             proto.automaticMeasurementSettings.automaticOhrMeasurement = ohr
         }
 
         return proto
     }
 
+    static func automaticMeasurementState(enabled: Bool) -> Data_PbAutomaticMeasurementSettings.PbAutomaticMeasurementState {
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarUserDeviceSettingsRuntimePlanner.automaticMeasurementStateName(enabled: enabled) {
+            switch sharedName {
+            case "ALWAYS_ON": return .alwaysOn
+            case "OFF": return .off
+            default: break
+            }
+        }
+        #endif
+        return enabled ? .alwaysOn : .off
+    }
+
     static func fromProto(pbUserDeviceSettings: Data_PbUserDeviceSettings) -> PolarUserDeviceSettingsResult {
         var result = PolarUserDeviceSettingsResult()
+        if let data = try? pbUserDeviceSettings.serializedData(),
+           let sharedFields = PolarUserDeviceSettingsRuntimePlanner.parseProtoFields(data: data) {
+            if let deviceLocation = sharedFields["deviceLocation"].flatMap(Int.init),
+               let sharedName = PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: deviceLocation),
+               let sharedLocation = PolarUserDeviceSettings.DeviceLocation(rawValue: sharedName) {
+                result.deviceLocation = sharedLocation
+            }
+            if let usbConnectionMode = sharedFields["usbConnectionMode"] {
+                result.usbConnectionMode = boolField(usbConnectionMode).map { $0 ? .ON : .OFF }
+            }
+            if let automaticTrainingDetectionMode = sharedFields["automaticTrainingDetectionMode"] {
+                result.automaticTrainingDetectionMode = boolField(automaticTrainingDetectionMode).map { $0 ? .ON : .OFF }
+            }
+            if let sensitivity = sharedFields["automaticTrainingDetectionSensitivity"].flatMap(UInt32.init) {
+                result.automaticTrainingDetectionSensitivity = sensitivity
+            }
+            if let minimumDuration = sharedFields["minimumTrainingDurationSeconds"].flatMap(UInt32.init) {
+                result.minimumTrainingDurationSeconds = minimumDuration
+            }
+            if let telemetryEnabled = sharedFields["telemetryEnabled"].flatMap(Bool.init) {
+                result.telemetryEnabled = telemetryEnabled
+            }
+            if let autosFilesEnabled = sharedFields["autosFilesEnabled"].flatMap(Bool.init) {
+                result.autosFilesEnabled = autosFilesEnabled
+            }
+            return result
+        }
+
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: pbUserDeviceSettings.generalSettings.deviceLocation.rawValue),
+           let sharedLocation = PolarUserDeviceSettings.DeviceLocation(rawValue: sharedName) {
+            result.deviceLocation = sharedLocation
+        } else {
+            result.deviceLocation = PolarUserDeviceSettings.DeviceLocation.allCases[pbUserDeviceSettings.generalSettings.deviceLocation.rawValue]
+        }
+        #else
         result.deviceLocation = PolarUserDeviceSettings.DeviceLocation.allCases[pbUserDeviceSettings.generalSettings.deviceLocation.rawValue]
+        #endif
         
         if pbUserDeviceSettings.hasUsbConnectionSettings {
             result.usbConnectionMode = UsbConnectionMode.fromProto(proto: pbUserDeviceSettings.usbConnectionSettings.mode)
@@ -180,10 +288,24 @@ public class PolarUserDeviceSettings {
     }
     
     public static func getStringValue(deviceLocationIndex: Int) -> String {
+        #if canImport(PolarBleSdkShared)
+        if let sharedName = PolarUserDeviceSettingsRuntimePlanner.deviceLocationName(value: deviceLocationIndex) {
+            return sharedName
+        }
+        #endif
+
         return String(describing: DeviceLocation.allCases[deviceLocationIndex])
     }
     
     public static func getDeviceLocation(deviceLocation: String) -> DeviceLocation {
+        #if canImport(PolarBleSdkShared)
+        if let sharedValue = PolarUserDeviceSettingsRuntimePlanner.deviceLocationValue(name: deviceLocation) {
+            let sharedIndex = Int(truncating: sharedValue)
+            if DeviceLocation.allCases.indices.contains(sharedIndex) {
+                return DeviceLocation.allCases[sharedIndex]
+            }
+        }
+        #endif
         
         for devicelocation in DeviceLocation.allCases {
             if (devicelocation.rawValue == deviceLocation) {
@@ -201,6 +323,14 @@ public class PolarUserDeviceSettings {
             items.append(PolarUserDeviceSettings.getStringValue(deviceLocationIndex: item.toInt()))
         }
         return items
+    }
+}
+
+private func boolField(_ value: String) -> Bool? {
+    switch value {
+    case "true": return true
+    case "false": return false
+    default: return nil
     }
 }
 

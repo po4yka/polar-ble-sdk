@@ -23,14 +23,14 @@ extension PolarBleApiImpl: PolarSleepApi {
 
     func stopSleepRecording(identifier: String) async throws {
         do {
-            _ = try await self.fileUtils.getFile(identifier: identifier, filePath: "/REST/SLEEP.API")
+            _ = try await self.fileUtils.getFile(identifier: identifier, filePath: PolarRuntimePlanner.sleepRestApiPath())
         } catch {
             if case let BlePsFtpException.responseError(code) = error {
                 if code == 103 { throw SleepApiFailure.sleepApiNotSupported }
             }
             throw error
         }
-        try await putNotification(identifier: identifier, notification: "{}", path: "/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording")
+        try await putNotification(identifier: identifier, notification: "{}", path: PolarRuntimePlanner.stopSleepRecordingPath())
     }
 
     internal struct SleepRecordingState: Decodable {
@@ -58,7 +58,7 @@ extension PolarBleApiImpl: PolarSleepApi {
             Task {
                 do {
                     do {
-                        _ = try await self.fileUtils.getFile(identifier: identifier, filePath: "/REST/SLEEP.API")
+                        _ = try await self.fileUtils.getFile(identifier: identifier, filePath: PolarRuntimePlanner.sleepRestApiPath())
                     } catch {
                         if case let BlePsFtpException.responseError(code) = error, code == 103 {
                             continuation.finish(throwing: SleepApiFailure.sleepApiNotSupported)
@@ -67,7 +67,7 @@ extension PolarBleApiImpl: PolarSleepApi {
                         throw error
                     }
                     try await putNotification(identifier: identifier, notification: "{}",
-                                              path: "/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]")
+                                              path: PolarRuntimePlanner.sleepRecordingStateSubscribePath())
                     for try await items in self.receiveRestApiEvents(identifier: identifier) as AsyncThrowingStream<[SleepRecordingStateWrapper], Error> {
                         let bools = items.map { $0.sleepRecordingState.isEnabled }
                         continuation.yield(bools)
@@ -88,18 +88,7 @@ extension PolarBleApiImpl: PolarSleepApi {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
-        var datesList = [Date]()
-        let calendar = Calendar.current
-        var currentDate = fromDate
-        if fromDate == toDate {
-            datesList.append(fromDate)
-        } else {
-            while currentDate <= toDate {
-                datesList.append(currentDate)
-                guard let next = calendar.date(byAdding: .day, value: 1, to: currentDate) else { break }
-                currentDate = next
-            }
-        }
+        let datesList = PolarTimeUtils.basicDateRange(fromDate: fromDate, toDate: toDate)
         var sleepDataList: [PolarSleepData.PolarSleepAnalysisResult] = []
         for date in datesList {
             let result = try await PolarSleepUtils.readSleepFromDayDirectory(client: client, date: date)

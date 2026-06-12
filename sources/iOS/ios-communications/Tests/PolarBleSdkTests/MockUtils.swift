@@ -259,6 +259,7 @@ class MockSearchBleDeviceSession: BleDeviceSession {
 
 class MockSearchBleApiImpl {
     let searchSubject = PassthroughSubject<BleDeviceSession, Error>()
+    var searchCancellationCount = 0
 
     // Accept a MockBleDeviceSession to match the call-site signature in tests.
     init(mockDeviceSession: MockBleDeviceSession) {}
@@ -285,6 +286,7 @@ class MockSearchBleApiImpl {
                         connectable: value.advertisementContent.isConnectable,
                         hasSAGRFCFileSystem: hasSAGRFCFileSystem)
             }
+            .handleEvents(receiveCancel: { [weak self] in self?.searchCancellationCount += 1 })
             .eraseToAnyPublisher()
     }
 }
@@ -349,6 +351,7 @@ class MockHrBroadcastBleApiImpl {
     }
 
     private let channel = SessionChannel()
+    var streamCancellationCount = 0
 
     init(mockDeviceSession: MockBleDeviceSession) {}
 
@@ -367,7 +370,7 @@ class MockHrBroadcastBleApiImpl {
 
     func startListenForPolarHrBroadcasts(_ identifiers: Set<String>?) -> AsyncThrowingStream<PolarHrBroadcastData, Error> {
         AsyncThrowingStream { continuation in
-            Task { [channel] in
+            let task = Task { [channel] in
                 do {
                     while let session = try await channel.next() {
                         let hasSAGRFCFileSystem = BlePolarDeviceCapabilitiesUtility.fileSystemType(
@@ -389,6 +392,11 @@ class MockHrBroadcastBleApiImpl {
                 } catch {
                     continuation.finish(throwing: error)
                 }
+            }
+            continuation.onTermination = { [weak self, channel] _ in
+                self?.streamCancellationCount += 1
+                task.cancel()
+                Task { await channel.finish() }
             }
         }
     }
@@ -581,6 +589,7 @@ public class MockBlePsFtpClient: BlePsFtpClient, @unchecked Sendable {
 
     public var queryCalls: [(id: Int, parameters: NSData?)] = []
     public var queryReturnValues: [Result<Data, Error>] = []
+    public var queryReturnValueClosure: ((Int, NSData?) async throws -> Data)?
     public var queryReturnValue: Result<Data, Error>?
 
     public var writeCalls: [(header: NSData, data: InputStream)] = []
@@ -588,6 +597,7 @@ public class MockBlePsFtpClient: BlePsFtpClient, @unchecked Sendable {
     public var writeReturnValue: AsyncThrowingStream<UInt, Error>?
 
     public var sendNotificationCalls: [(notification: Int, parameters: NSData?)] = []
+    public var sendNotificationClosure: ((Int, NSData?) async throws -> Void)?
     public var sendNotificationError: Error?
 
     public var receiveNotificationCalls: [(notification: Int, parameters: [Data], compressed: Bool)] = []
@@ -621,6 +631,9 @@ public class MockBlePsFtpClient: BlePsFtpClient, @unchecked Sendable {
 
     override public func query(_ id: Int, parameters: NSData?) async throws -> NSData {
         queryCalls.append((id: id, parameters: parameters))
+        if let closure = queryReturnValueClosure {
+            return NSData(data: try await closure(id, parameters))
+        }
         if !queryReturnValues.isEmpty {
             let result = queryReturnValues.removeFirst()
             switch result {
@@ -642,6 +655,10 @@ public class MockBlePsFtpClient: BlePsFtpClient, @unchecked Sendable {
 
     public override func sendNotification(_ id: Int, parameters: NSData?) async throws {
         sendNotificationCalls.append((id, parameters))
+        if let closure = sendNotificationClosure {
+            try await closure(id, parameters)
+            return
+        }
         if let error = sendNotificationError { throw error }
     }
 

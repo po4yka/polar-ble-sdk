@@ -4,6 +4,7 @@ import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class CommandRuntimePolicyCommonTest {
     @Test
@@ -83,6 +84,103 @@ class CommandRuntimePolicyCommonTest {
         assertEquals(true, platforms.booleanValue("common"))
     }
 
+    @Test
+    fun resetNotificationFieldProjectionMatchesSharedCommandFlags() {
+        val factoryResetFields = PolarRuntimeOrchestration.resetNotificationFields(
+            PolarFacadeCommandOperation(
+                id = "factory-reset",
+                kind = "resetNotification",
+                query = null,
+                parameters = emptyList(),
+                notifications = emptyList(),
+                sleep = false,
+                factoryDefaults = true,
+                otaFirmwareUpdate = false
+            )
+        )
+        val warehouseSleepFields = PolarRuntimeOrchestration.resetNotificationFields(
+            PolarFacadeCommandOperation(
+                id = "warehouse-sleep",
+                kind = "resetNotification",
+                query = null,
+                parameters = emptyList(),
+                notifications = emptyList(),
+                sleep = true,
+                factoryDefaults = true,
+                otaFirmwareUpdate = false
+            )
+        )
+
+        assertEquals(false, factoryResetFields.sleep)
+        assertEquals(true, factoryResetFields.factoryDefaults)
+        assertEquals(false, factoryResetFields.otaFirmwareUpdate)
+        assertEquals(true, warehouseSleepFields.sleep)
+        assertEquals(true, warehouseSleepFields.factoryDefaults)
+        assertEquals(false, warehouseSleepFields.otaFirmwareUpdate)
+    }
+
+    @Test
+    fun h10AndSyncStopFieldProjectionMatchesSharedCommandParameters() {
+        val h10Fields = PolarRuntimeOrchestration.h10StartRecordingFields(
+            PolarFacadeCommandOperation(
+                id = "h10-start-recording",
+                kind = "query",
+                query = "REQUEST_START_RECORDING",
+                parameters = listOf("sampleDataIdentifier=myExercise", "sampleType=SAMPLE_TYPE_HEART_RATE", "recordingIntervalSeconds=1"),
+                notifications = emptyList(),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
+            )
+        )
+        val syncStopFields = PolarRuntimeOrchestration.syncStopNotificationFields(
+            PolarFacadeCommandOperation(
+                id = "sync-stop-success",
+                kind = "syncStop",
+                query = null,
+                parameters = emptyList(),
+                notifications = listOf("STOP_SYNC:completed=true", "TERMINATE_SESSION"),
+                sleep = null,
+                factoryDefaults = null,
+                otaFirmwareUpdate = null
+            )
+        )
+
+        assertEquals("myExercise", h10Fields.sampleDataIdentifier)
+        assertEquals("SAMPLE_TYPE_HEART_RATE", h10Fields.sampleType)
+        assertEquals(1, h10Fields.recordingIntervalSeconds)
+        assertEquals(true, syncStopFields.completed)
+    }
+
+    @Test
+    fun resetSyncH10CommandVectorRunsThroughCommonFakeTransportFacadeShape() {
+        val vector = loadGoldenVectorText("sdk/command-runtime/reset-sync-h10-command-policy.json")
+        val input = vector.objectValue("input")
+        val expectedCases = vector.objectValue("expected").objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
+
+        input.objectArray("operations").forEach { operationJson ->
+            val operation = PolarFacadeCommandOperation(
+                id = operationJson.stringValue("id"),
+                kind = operationJson.stringValue("kind"),
+                query = operationJson.optionalStringValue("query"),
+                parameters = operationJson.optionalStringArrayValue("parameters") ?: emptyList(),
+                notifications = operationJson.optionalStringArrayValue("notifications") ?: emptyList(),
+                sleep = operationJson.optionalBooleanValue("sleep"),
+                factoryDefaults = operationJson.optionalBooleanValue("factoryDefaults"),
+                otaFirmwareUpdate = operationJson.optionalBooleanValue("otaFirmwareUpdate")
+            )
+            val planned = PolarRuntimeOrchestration.planCommand(operation)
+            val expected = expectedCases.getValue(operation.id)
+            val transportCommands = commandTransportCommands(expected.stringArrayValue("commands"))
+            val transport = ScriptedCommonFakeTransport(outcomesForCommandTransport(transportCommands, expected.stringValue("terminal")))
+            val terminal = executePlannedCommand(transportCommands, expected.stringValue("terminal"), transport)
+
+            assertEquals(expected.stringArrayValue("commands"), planned.commands, operation.id)
+            assertEquals(expected.stringValue("terminal"), terminal, operation.id)
+            assertEquals(transportCommands, transport.commands, operation.id)
+        }
+    }
+
     private val requiredCommandRuntimeOperationIds = listOf(
         "h10-start-recording",
         "h10-start-recording-query-failure",
@@ -90,6 +188,14 @@ class CommandRuntimePolicyCommonTest {
         "h10-stop-recording-query-failure",
         "h10-recording-status",
         "h10-recording-status-query-failure",
+        "live-exercise-start",
+        "live-exercise-pause",
+        "live-exercise-resume",
+        "live-exercise-stop",
+        "live-exercise-status",
+        "offline-exercise-v2-start",
+        "offline-exercise-v2-stop",
+        "offline-exercise-v2-status",
         "factory-reset",
         "factory-reset-notification-failure",
         "factory-reset-preserve-pairing",
@@ -113,6 +219,14 @@ class CommandRuntimePolicyCommonTest {
         "h10-recording-stop-query-failure",
         "h10-recording-status-query",
         "h10-recording-status-query-failure",
+        "live-exercise-start-query",
+        "live-exercise-pause-query",
+        "live-exercise-resume-query",
+        "live-exercise-stop-query",
+        "live-exercise-status-query",
+        "offline-exercise-v2-start-query",
+        "offline-exercise-v2-stop-query",
+        "offline-exercise-v2-status-query",
         "factory-reset-flags",
         "factory-reset-notification-failure",
         "preserve-pairing-reset-flags",
@@ -137,9 +251,74 @@ class CommandRuntimePolicyCommonTest {
     private val COMMAND_POLICY_IOS_SYNC_START_QUERY_FAILURE = "propagates the query error and sends no notifications"
     private val COMMAND_POLICY_IOS_SYNC_STOP_NOTIFICATION_FAILURE = "propagates the notification error after STOP_SYNC is attempted"
     private val COMMAND_POLICY_PLATFORM_SPLIT_DECISION = "Keep sync failure policy platform-specific until the public API migration has an approved compatibility decision."
-    private val COMMAND_POLICY_COMMON_DECISION = "Promote reset/H10 command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
+    private val COMMAND_POLICY_COMMON_DECISION = "Promote reset/H10/exercise command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
 
-    private val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+    private val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+
+    private fun outcomesForCommandTransport(commands: List<CommonFakeTransportCommand>, terminal: String): List<CommonFakeTransportOutcome> {
+        if (terminal == "transport-error" || terminal == "platform-split") {
+            return if (commands.size == 1) {
+                listOf(CommonFakeTransportOutcome.TransportError("command-failed"))
+            } else {
+                commands.dropLast(1).map { CommonFakeTransportOutcome.Complete } + CommonFakeTransportOutcome.TransportError("command-failed")
+            }
+        }
+        return commands.map { CommonFakeTransportOutcome.Complete }
+    }
+
+    private fun executePlannedCommand(
+        commands: List<CommonFakeTransportCommand>,
+        expectedTerminal: String,
+        transport: ScriptedCommonFakeTransport
+    ): String {
+        commands.forEach { command ->
+            val payload = command.payloadHex?.let(::hexToBytes) ?: byteArrayOf()
+            val outcome = transport.write(command.target, payload)
+            if (outcome is CommonFakeTransportOutcome.TransportError) {
+                return expectedTerminal
+            }
+            assertIs<CommonFakeTransportOutcome.Complete>(outcome, command.target)
+        }
+        return expectedTerminal
+    }
+
+    private fun commandTransportCommands(commands: List<String>): List<CommonFakeTransportCommand> {
+        val transportCommands = mutableListOf<CommonFakeTransportCommand>()
+        var index = 0
+        while (index < commands.size) {
+            val command = commands[index]
+            when {
+                command.startsWith("query:") -> {
+                    val payloadFields = mutableListOf<String>()
+                    index += 1
+                    while (index < commands.size && (commands[index].startsWith("parameter:") || commands[index] == "parameters:none")) {
+                        payloadFields += commands[index]
+                        index += 1
+                    }
+                    transportCommands += CommonFakeTransportCommand(
+                        operation = CommonFakeTransportOperation.WRITE,
+                        target = command,
+                        payloadHex = payloadFields.joinToString(separator = "|").encodeToByteArray().toHexString()
+                    )
+                }
+                command.startsWith("notification:") -> {
+                    val payloadFields = mutableListOf<String>()
+                    index += 1
+                    while (index < commands.size && commands[index].startsWith("flag:")) {
+                        payloadFields += commands[index]
+                        index += 1
+                    }
+                    transportCommands += CommonFakeTransportCommand(
+                        operation = CommonFakeTransportOperation.WRITE,
+                        target = command,
+                        payloadHex = payloadFields.joinToString(separator = "|").encodeToByteArray().toHexString()
+                    )
+                }
+                else -> index += 1
+            }
+        }
+        return transportCommands
+    }
 
     private fun assertCommandRuntimePolicyFields(operationsById: Map<String, String>) {
         assertEquals("REQUEST_START_RECORDING", operationsById.getValue("h10-start-recording").stringValue("query"))
@@ -155,5 +334,17 @@ class CommandRuntimePolicyCommonTest {
         assertEquals("queryFailure", operationsById.getValue("h10-recording-status-query-failure").stringValue("kind"))
         assertEquals("REQUEST_RECORDING_STATUS", operationsById.getValue("h10-recording-status-query-failure").stringValue("query"))
         assertEquals("recording-status-query-failed", operationsById.getValue("h10-recording-status-query-failure").stringValue("error"))
+        assertEquals("START_EXERCISE", operationsById.getValue("live-exercise-start").stringValue("query"))
+        assertEquals(listOf("sportProfileId=1"), operationsById.getValue("live-exercise-start").stringArrayValue("parameters"))
+        assertEquals("PAUSE_EXERCISE", operationsById.getValue("live-exercise-pause").stringValue("query"))
+        assertEquals("RESUME_EXERCISE", operationsById.getValue("live-exercise-resume").stringValue("query"))
+        assertEquals("STOP_EXERCISE", operationsById.getValue("live-exercise-stop").stringValue("query"))
+        assertEquals(listOf("save=true"), operationsById.getValue("live-exercise-stop").stringArrayValue("parameters"))
+        assertEquals("GET_EXERCISE_STATUS", operationsById.getValue("live-exercise-status").stringValue("query"))
+        assertEquals("START_DM_EXERCISE", operationsById.getValue("offline-exercise-v2-start").stringValue("query"))
+        assertEquals(listOf("sportProfileId=1"), operationsById.getValue("offline-exercise-v2-start").stringArrayValue("parameters"))
+        assertEquals("STOP_EXERCISE", operationsById.getValue("offline-exercise-v2-stop").stringValue("query"))
+        assertEquals(listOf("save=true"), operationsById.getValue("offline-exercise-v2-stop").stringArrayValue("parameters"))
+        assertEquals("GET_EXERCISE_STATUS", operationsById.getValue("offline-exercise-v2-status").stringValue("query"))
     }
 }

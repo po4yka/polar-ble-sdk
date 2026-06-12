@@ -71,6 +71,20 @@ class BleAdvertisementContentTest: XCTestCase {
         XCTAssertNotNil(bleAdvertisementContent.polarHrAdvertisementData)
         XCTAssertTrue(bleAdvertisementContent.polarHrAdvertisementData.isPresent)
     }
+
+    func testManufacturerHrPayloadExtractionUsesProductionPlannerPolicy() throws {
+        let gpbAndHrManufacturerData = Data([0x6b, 0x00,
+                                             0x72, 0x08, 0x97, 0xc9, 0xc3, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                             0x7a, 0x01, 0x03, 0x33, 0x00, 0x00])
+        let malformedGpbMissingLength = Data([0x6b, 0x00, 0x40])
+
+        bleAdvertisementContent.processAdvertisementData(0, advertisementData: [CBAdvertisementDataManufacturerDataKey : gpbAndHrManufacturerData])
+        XCTAssertTrue(bleAdvertisementContent.polarHrAdvertisementData.isPresent)
+
+        bleAdvertisementContent = BleAdvertisementContent()
+        bleAdvertisementContent.processAdvertisementData(0, advertisementData: [CBAdvertisementDataManufacturerDataKey : malformedGpbMissingLength])
+        XCTAssertFalse(bleAdvertisementContent.polarHrAdvertisementData.isPresent)
+    }
     
     func testParseHrFromManufacturerDataSAGRFC31format() throws {
         // Arrange
@@ -360,6 +374,10 @@ class BleAdvertisementContentTest: XCTestCase {
 }
 
 private extension Data {
+    var hexString: String {
+        return map { String(format: "%02x", $0) }.joined()
+    }
+
     init(hexString: String) throws {
         guard hexString.count.isMultiple(of: 2) else {
             throw NSError(domain: "BleAdvertisementContentTest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Hex string must have an even length"])

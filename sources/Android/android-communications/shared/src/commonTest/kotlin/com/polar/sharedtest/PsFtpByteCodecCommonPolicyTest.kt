@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -81,6 +82,34 @@ class PsFtpByteCodecCommonPolicyTest {
     }
 
     @Test
+    fun psFtpRfc76FrameChunkEncoderDefinesSharedProductionHeaderPolicy() {
+        assertEquals("060a0b0c", PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(hexToBytes("0a0b0c"), hasMore = true, next = 0, sequenceNumber = 0).toHex())
+        assertEquals("97010203", PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(hexToBytes("010203"), hasMore = true, next = 1, sequenceNumber = 9).toHex())
+        assertEquals("c3", PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(ByteArray(0), hasMore = false, next = 1, sequenceNumber = 12).toHex())
+        assertEquals("03", PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(ByteArray(0), hasMore = false, next = 1, sequenceNumber = 16).toHex())
+    }
+
+    @Test
+    fun psFtpRequestWriteFrameSplittingCombinesHeaderAndFilePayloadInSharedProductionPolicy() {
+        val frames = PolarWorkflowRuntimePlanning.splitRfc76RequestWriteFrames(
+            header = hexToBytes("010203"),
+            data = hexToBytes("aabbccdd"),
+            mtu = 4
+        )
+
+        assertEquals(listOf("06030001", "170203aa", "23bbccdd"), frames.map { frame -> frame.toHex() })
+    }
+
+    @Test
+    fun psFtpWriteTimeoutPolicySelectsSharedExtendedPathPrefix() {
+        assertEquals(900, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/SYNCPART.TGZ"))
+        assertEquals(900, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/SYNCPART.TGZ/part0"))
+        assertEquals(90, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/U/0/S/UDEVSET.BPB"))
+        assertEquals(30, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/SYNCPART.TGZ", defaultTimeoutSeconds = 30, extendedTimeoutSeconds = 120, extendedPathPrefixes = listOf("/FW/")))
+        assertEquals(120, PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds("/FW/PACKAGE.BIN", defaultTimeoutSeconds = 30, extendedTimeoutSeconds = 120, extendedPathPrefixes = listOf("/FW/")))
+    }
+
+    @Test
     fun psFtpByteCodecReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/psftp-message-stream/byte-codec-readiness.json")
         val input = manifest.objectValue("input")
@@ -124,6 +153,7 @@ class PsFtpByteCodecCommonPolicyTest {
         "rfc60-query-stream-encoding",
         "rfc60-notification-stream-encoding",
         "android-request-file-data-append-policy",
+        "ios-request-write-frame-splitting",
         "rfc76-mtu-frame-splitting",
         "rfc76-sequence-wrap",
         "platform-codec-vector-reference-gate",
@@ -131,57 +161,23 @@ class PsFtpByteCodecCommonPolicyTest {
     )
 
     private fun decodeRfc76Frame(frame: ByteArray): DecodedRfc76Frame {
-        val header = frame.first().toInt() and 0xFF
-        val status = (header shr 1) and 0x03
-        val payload = frame.drop(1).toByteArray()
-        val androidErrorCode = if (status == RFC76_STATUS_ERROR_OR_RESPONSE && payload.size >= 2) {
-            payload[0].toInt() and 0xFF
-        } else {
-            null
-        }
-        val iosErrorCode = if (status == RFC76_STATUS_ERROR_OR_RESPONSE && payload.size >= 2) {
-            (payload[0].toInt() and 0xFF) or ((payload[1].toInt() and 0xFF) shl 8)
-        } else {
-            null
-        }
-
+        val frame = PolarWorkflowRuntimePlanning.decodeRfc76Frame(frame)
         return DecodedRfc76Frame(
-            next = header and 0x01,
-            status = status,
-            sequenceNumber = (header shr 4) and 0x0F,
-            payload = if (status == RFC76_STATUS_ERROR_OR_RESPONSE) null else payload,
-            androidErrorCode = androidErrorCode,
-            iosErrorCode = iosErrorCode
+            next = frame.next,
+            status = frame.status,
+            sequenceNumber = frame.sequenceNumber,
+            payload = frame.payload,
+            androidErrorCode = frame.androidErrorCode,
+            iosErrorCode = frame.iosErrorCode
         )
     }
 
     private fun encodeCompleteMessageStream(type: String, header: ByteArray, idValue: Int, data: ByteArray): ByteArray {
-        return when (type) {
-            "request" -> byteArrayOf((header.size and 0xFF).toByte(), ((header.size shr 8) and 0xFF).toByte()) + header + data
-            "query" -> byteArrayOf((idValue and 0xFF).toByte(), (((idValue shr 8) and 0x7F) or 0x80).toByte()) + header
-            "notification" -> byteArrayOf((idValue and 0xFF).toByte()) + header
-            else -> error("Unsupported PSFTP complete message stream type $type")
-        }
+        return PolarWorkflowRuntimePlanning.encodeCompleteMessageStream(type, header, idValue, data)
     }
 
     private fun splitRfc76Frames(payload: ByteArray, mtu: Int): List<ByteArray> {
-        require(mtu > 1) { "MTU must leave room for an RFC76 header byte" }
-        val payloadSize = mtu - 1
-        val frames = mutableListOf<ByteArray>()
-        var offset = 0
-        var sequenceNumber = 0
-        do {
-            val end = minOf(offset + payloadSize, payload.size)
-            val chunk = payload.copyOfRange(offset, end)
-            val hasMore = end < payload.size
-            val next = if (sequenceNumber == 0) 0 else 1
-            val status = if (hasMore) RFC76_STATUS_MORE else RFC76_STATUS_LAST
-            val header = (sequenceNumber shl 4) or (status shl 1) or next
-            frames += byteArrayOf(header.toByte()) + chunk
-            offset = end
-            sequenceNumber = (sequenceNumber + 1) and 0x0F
-        } while (offset < payload.size || frames.isEmpty())
-        return frames
+        return PolarWorkflowRuntimePlanning.splitRfc76Frames(payload, mtu)
     }
 
     private data class DecodedRfc76Frame(
@@ -278,9 +274,6 @@ class PsFtpByteCodecCommonPolicyTest {
             "complete_message_streams",
             "rfc76_frame_splitting"
         )
-        const val RFC76_STATUS_ERROR_OR_RESPONSE = 0
-        const val RFC76_STATUS_MORE = 3
-        const val RFC76_STATUS_LAST = 1
-        const val PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
+        const val PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
     }
 }

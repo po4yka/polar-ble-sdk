@@ -1,0 +1,87 @@
+{
+  "id": "feature-availability-readiness",
+  "area": "sdk.feature-availability",
+  "case": "feature_availability_readiness",
+  "source": "SDK feature availability KMP migration readiness planning with Android, iOS, and shared precondition characterization",
+  "description": "Pins deterministic SDK feature service and capability preconditions while platform adapters keep service discovery, GATT client readiness, PMD feature reads, notifications, BLE transport, and public callbacks.",
+  "input": {
+    "kind": "featureAvailabilityReadiness",
+    "cases": [
+      {
+        "id": "firmware-update-requires-psftp-and-firmware-capability",
+        "featureName": "feature_polar_firmware_update",
+        "discoveredServices": ["PSFTP"],
+        "capabilities": ["FIRMWARE_UPDATE"],
+        "expectedAvailable": true
+      },
+      {
+        "id": "firmware-update-missing-firmware-capability-is-unavailable",
+        "featureName": "FEATURE_POLAR_FIRMWARE_UPDATE",
+        "discoveredServices": ["PSFTP"],
+        "capabilities": [],
+        "expectedAvailable": false
+      },
+      {
+        "id": "led-animation-requires-pmd-and-psftp-services",
+        "featureName": "FEATURE_POLAR_LED_ANIMATION",
+        "discoveredServices": ["PMD"],
+        "capabilities": [],
+        "expectedAvailable": false
+      },
+      {
+        "id": "watch-face-configuration-requires-psftp-and-not-sensor-capability",
+        "featureName": "feature_polar_watch_faces_configuration",
+        "discoveredServices": ["PSFTP"],
+        "capabilities": ["NOT_SENSOR"],
+        "expectedAvailable": true
+      },
+      {
+        "id": "offline-exercise-v2-uses-h10-filesystem-capability-without-service-gate",
+        "featureName": "FEATURE_POLAR_OFFLINE_EXERCISE_V2",
+        "discoveredServices": [],
+        "capabilities": ["H10_FILE_SYSTEM"],
+        "expectedAvailable": true
+      },
+      {
+        "id": "unknown-feature-has-no-shared-preconditions",
+        "featureName": "FEATURE_UNKNOWN_VENDOR_EXTENSION",
+        "discoveredServices": [],
+        "capabilities": [],
+        "expectedAvailable": true
+      }
+    ],
+    "requiredBehaviorFamilies": [
+      "service-and-capability-gates",
+      "feature-name-normalization",
+      "h10-filesystem-capability-only-gate",
+      "unknown-feature-pass-through",
+      "platform-client-readiness-boundary"
+    ]
+  },
+  "expected": {
+    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "coveredBehaviorFamilies": [
+      "service-and-capability-gates",
+      "feature-name-normalization",
+      "h10-filesystem-capability-only-gate",
+      "unknown-feature-pass-through",
+      "platform-client-readiness-boundary"
+    ],
+    "commonDecision": "SDK feature availability migration owns only deterministic service and capability preconditions in shared KMP; GATT client lookup, clientReady waits, PMD feature reads, notification readiness, service discovery, BLE transport execution, and public callback/error behavior remain platform-owned.",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest feature-availability planning guard",
+      "reason": "Declared because this vector is consumed by shared commonTest and platform adapter tests before feature availability runtime delegation moves further into shared KMP."
+    }
+  },
+  "consumerTests": {
+    "android": ["com.polar.sdk.impl.utils.PolarRuntimePlannerAdapterTest"],
+    "ios": ["PolarDataUtilsTest"],
+    "commonPrototype": ["com.polar.sharedtest.FeatureAvailabilityCommonPolicyTest"]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This readiness manifest is a migration gate for pure service/capability preconditions only. Android and iOS must continue to own platform service discovery names, GATT client lookup, clientReady waits, PMD feature reads, notification readiness, BLE transport execution, public callbacks, and public error mapping unless a later slice extracts a pure state machine with facade compatibility tests."
+}

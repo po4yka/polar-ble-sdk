@@ -22,7 +22,14 @@ class PolarExerciseSession {
              * Resolve [SportProfile] from integer id.
              * Falls back to [UNKNOWN] if no match is found.
              */
-            fun fromId(id: Int): SportProfile = values().find { it.id == id } ?: UNKNOWN
+            fun fromId(id: Int): SportProfile {
+                return when (PolarSdkModelAdapter.exerciseSportProfileName(id)) {
+                    "RUNNING" -> RUNNING
+                    "CYCLING" -> CYCLING
+                    "OTHER_OUTDOOR" -> OTHER_OUTDOOR
+                    else -> UNKNOWN
+                }
+            }
         }
     }
 

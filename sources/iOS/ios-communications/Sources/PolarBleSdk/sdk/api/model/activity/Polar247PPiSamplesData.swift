@@ -1,6 +1,9 @@
 //  Copyright © 2025 Polar. All rights reserved.
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 /// Polar Peak-to-peak interval data
 /// - Parameters:
@@ -31,6 +34,12 @@ public struct Polar247PPiSamplesData: Codable {
         case TRIGGER_TYPE_MANUAL = "TRIGGER_TYPE_MANUAL"
 
         static func getByValue(value: Data_PbPpIntervalAutoSamples.PbPpIntervalRecordingTriggerType) -> PPiSampleTriggerType {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarActivityRuntimePlanner.ppiSampleTriggerName(value: Int(value.rawValue)),
+               let sharedTrigger = PPiSampleTriggerType(sharedName: sharedName) {
+                return sharedTrigger
+            }
+            #endif
 
             switch value {
             case .ppiTriggerTypeUndefined: return .TRIGGER_TYPE_UNDEFINED
@@ -45,6 +54,12 @@ public struct Polar247PPiSamplesData: Codable {
         case SKIN_CONTACT_DETECTED = "SKIN_CONTACT_DETECTED"
 
         static func getByValue(value: Int) -> SkinContact? {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarActivityRuntimePlanner.ppiSkinContactName(value: value),
+               let sharedValue = SkinContact(rawValue: sharedName) {
+                return sharedValue
+            }
+            #endif
 
             switch value {
             case 0: return .NO_SKIN_CONTACT
@@ -60,6 +75,12 @@ public struct Polar247PPiSamplesData: Codable {
         case MOVING_DETECTED = "MOVING_DETECTED"
 
         static func getByValue(value: Int) -> Movement? {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarActivityRuntimePlanner.ppiMovementName(value: value),
+               let sharedValue = Movement(rawValue: sharedName) {
+                return sharedValue
+            }
+            #endif
 
             switch value {
             case 0: return .NO_MOVING_DETECTED
@@ -75,6 +96,12 @@ public struct Polar247PPiSamplesData: Codable {
         case INTERVAL_DENOTES_OFFLINE_PERIOD = "INTERVAL_DENOTES_OFFLINE_PERIOD"
         
         static func getByValue(value: Int) -> IntervalStatus? {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarActivityRuntimePlanner.ppiIntervalStatusName(value: value),
+               let sharedValue = IntervalStatus(rawValue: sharedName) {
+                return sharedValue
+            }
+            #endif
 
             switch value {
             case 0: return .INTERVAL_IS_ONLINE
@@ -91,6 +118,12 @@ public struct Polar247PPiSamplesData: Codable {
         public var intervalStatus: IntervalStatus
 
         static func fromStatusByte(byte: UInt32) -> PPiSampleStatus {
+            #if canImport(PolarBleSdkShared)
+            if let sharedNames = PolarActivityRuntimePlanner.ppiStatusNames(statusByte: byte),
+               let sharedStatus = PPiSampleStatus(sharedNames: sharedNames) {
+                return sharedStatus
+            }
+            #endif
             // 32-bit representation of the incoming byte as String
             let binary = String.binaryRepresentation(of: byte)
             return PPiSampleStatus(
@@ -135,6 +168,32 @@ public struct Polar247PPiSamplesData: Codable {
         )
     }
 }
+
+#if canImport(PolarBleSdkShared)
+private extension Polar247PPiSamplesData.PPiSampleTriggerType {
+    init?(sharedName: String) {
+        switch sharedName {
+        case "TRIGGER_TYPE_UNDEFINED": self = .TRIGGER_TYPE_UNDEFINED
+        case "TRIGGER_TYPE_AUTOMATIC": self = .TRIGGER_TYPE_AUTOMATIC
+        case "TRIGGER_TYPE_MANUAL": self = .TRIGGER_TYPE_MANUAL
+        default: return nil
+        }
+    }
+}
+
+private extension Polar247PPiSamplesData.PPiSampleStatus {
+    init?(sharedNames: String) {
+        let names = sharedNames.split(separator: ",").map(String.init)
+        guard names.count == 3,
+              let skinContact = Polar247PPiSamplesData.SkinContact(rawValue: names[0]),
+              let movement = Polar247PPiSamplesData.Movement(rawValue: names[1]),
+              let intervalStatus = Polar247PPiSamplesData.IntervalStatus(rawValue: names[2]) else {
+            return nil
+        }
+        self.init(skinContact: skinContact, movement: movement, intervalStatus: intervalStatus)
+    }
+}
+#endif
 
 extension String {
 

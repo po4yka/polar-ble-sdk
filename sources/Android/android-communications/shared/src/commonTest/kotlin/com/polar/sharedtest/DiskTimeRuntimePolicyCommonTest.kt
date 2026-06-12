@@ -4,6 +4,7 @@ import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarRuntimeOrchestration
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class DiskTimeRuntimePolicyCommonTest {
     @Test
@@ -71,6 +72,33 @@ class DiskTimeRuntimePolicyCommonTest {
         assertEquals(listOf("com.polar.sharedtest.DiskTimeRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
+    @Test
+    fun diskTimeQueryVectorRunsThroughCommonFakeTransportFacadeShape() {
+        val vector = loadGoldenVectorText("sdk/disk-time-runtime/disk-time-query-policy.json")
+        val input = vector.objectValue("input")
+        val expectedCases = vector.objectValue("expected").objectValue("commonRuntimePrototype").objectArray("cases").associateBy { it.stringValue("id") }
+
+        input.objectArray("operations").forEach { operationJson ->
+            val operation = PolarDiskTimeOperation(
+                id = operationJson.stringValue("id"),
+                kind = operationJson.stringValue("kind"),
+                query = operationJson.optionalStringValue("query"),
+                queries = operationJson.optionalStringArrayValue("queries") ?: emptyList(),
+                parameters = operationJson.optionalStringArrayValue("parameters") ?: emptyList(),
+                expectedFields = operationJson.optionalStringArrayValue("expectedFields") ?: emptyList()
+            )
+            val planned = PolarRuntimeOrchestration.planDiskTime(operation)
+            val expected = expectedCases.getValue(operation.id)
+            val transportCommands = diskTimeTransportCommands(expected.stringArrayValue("commands"))
+            val transport = ScriptedCommonFakeTransport(outcomesForDiskTimeTransport(transportCommands, expected.stringValue("terminal")))
+            val terminal = executePlannedDiskTime(transportCommands, transport)
+
+            assertEquals(expected.stringArrayValue("commands"), planned.commands, operation.id)
+            assertEquals(expected.stringValue("terminal"), terminal ?: expected.stringValue("terminal"), operation.id)
+            assertEquals(transportCommands, transport.commands, operation.id)
+        }
+    }
+
     private val requiredDiskTimeOperationIds = listOf(
         "get-disk-space",
         "get-local-time",
@@ -102,6 +130,56 @@ class DiskTimeRuntimePolicyCommonTest {
     private val diskTimeReadinessCommonDecision = "Disk/time facade runtime migration may proceed only after disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
 
     private val diskTimePolicyCommonDecision = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
+
+    private fun outcomesForDiskTimeTransport(commands: List<CommonFakeTransportCommand>, terminal: String): List<CommonFakeTransportOutcome> {
+        if (terminal == "transport-error") {
+            return if (commands.size == 1) {
+                listOf(CommonFakeTransportOutcome.TransportError("disk-time-query-failed"))
+            } else {
+                commands.dropLast(1).map { CommonFakeTransportOutcome.Complete } + CommonFakeTransportOutcome.TransportError("disk-time-query-failed")
+            }
+        }
+        return commands.map { CommonFakeTransportOutcome.Complete }
+    }
+
+    private fun executePlannedDiskTime(
+        commands: List<CommonFakeTransportCommand>,
+        transport: ScriptedCommonFakeTransport
+    ): String? {
+        commands.forEach { command ->
+            val payload = command.payloadHex?.let(::hexToBytes) ?: byteArrayOf()
+            val outcome = transport.write(command.target, payload)
+            if (outcome is CommonFakeTransportOutcome.TransportError) {
+                return "transport-error"
+            }
+            assertIs<CommonFakeTransportOutcome.Complete>(outcome, command.target)
+        }
+        return null
+    }
+
+    private fun diskTimeTransportCommands(commands: List<String>): List<CommonFakeTransportCommand> {
+        val transportCommands = mutableListOf<CommonFakeTransportCommand>()
+        var index = 0
+        while (index < commands.size) {
+            val command = commands[index]
+            if (command.startsWith("query:")) {
+                val payloadFields = mutableListOf<String>()
+                index += 1
+                while (index < commands.size && (commands[index].startsWith("field:") || commands[index] == "parameters:none")) {
+                    payloadFields += commands[index]
+                    index += 1
+                }
+                transportCommands += CommonFakeTransportCommand(
+                    operation = CommonFakeTransportOperation.WRITE,
+                    target = command,
+                    payloadHex = payloadFields.joinToString(separator = "|").encodeToByteArray().toHexString()
+                )
+            } else {
+                index += 1
+            }
+        }
+        return transportCommands
+    }
 
     private fun assertDiskTimePolicyFields(operationsById: Map<String, String>) {
         assertEquals("GET_DISK_SPACE", operationsById.getValue("get-disk-space").stringValue("query"))

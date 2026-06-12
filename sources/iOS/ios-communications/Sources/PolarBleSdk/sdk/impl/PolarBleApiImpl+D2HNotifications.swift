@@ -11,17 +11,26 @@ extension PolarBleApiImpl: PolarDeviceToHostNotificationsApi {
                         return
                     }
                     for try await notification in client.waitNotification() {
-                        guard PolarRuntimePlanner.d2hNotificationTypeName(notificationId: Int(notification.id)) != nil else {
-                            BleLogger.trace("Unknown notification type: \(notification.id)")
-                            continue
-                        }
-                        guard let mappedNotification = PolarDeviceToHostNotification(rawValue: Int(notification.id)) else {
-                            continuation.finish(throwing: PolarErrors.invalidArgument(description: "Shared D2H notification id \(notification.id) is not represented by the iOS public enum"))
-                            return
-                        }
+                        let mappedNotification: PolarDeviceToHostNotification
                         let parameters = Data(notification.parameters)
-                        _ = PolarRuntimePlanner.d2hParsedProtoName(notificationType: String(describing: mappedNotification), parametersHex: parameters.map { String(format: "%02x", $0) }.joined())
-                        let parsedParameters = BlePsFtpClient.parseD2HNotificationParameters(mappedNotification, data: parameters)
+                        let parametersHex = parameters.map { String(format: "%02x", $0) }.joined()
+                        let sharedParsedProtoName: String?
+                        if let sharedPlan = PolarRuntimePlanner.d2hNotificationPlan(notificationId: Int(notification.id), parametersHex: parametersHex) {
+                            guard let sharedMappedNotification = PolarDeviceToHostNotification(sharedNotificationType: sharedPlan.notificationType) else {
+                                continuation.finish(throwing: PolarErrors.invalidArgument(description: "Shared D2H notification type \(sharedPlan.notificationType) is not represented by the iOS public enum"))
+                                return
+                            }
+                            mappedNotification = sharedMappedNotification
+                            sharedParsedProtoName = sharedPlan.parsedProtoName
+                        } else {
+                            guard let rawMappedNotification = PolarDeviceToHostNotification(rawValue: Int(notification.id)) else {
+                                BleLogger.trace("Unknown notification type: \(notification.id)")
+                                continue
+                            }
+                            mappedNotification = rawMappedNotification
+                            sharedParsedProtoName = PolarRuntimePlanner.d2hParsedProtoName(notificationType: rawMappedNotification.sharedNotificationType, parametersHex: parametersHex)
+                        }
+                        let parsedParameters = BlePsFtpClient.parseD2HNotificationParameters(mappedNotification, data: parameters, sharedParsedProtoName: sharedParsedProtoName)
                         let data = PolarD2HNotificationData(
                             notificationType: mappedNotification,
                             parameters: parameters,
@@ -43,10 +52,64 @@ extension PolarBleApiImpl: PolarDeviceToHostNotificationsApi {
     }
 }
 
+private extension PolarDeviceToHostNotification {
+    init?(sharedNotificationType: String) {
+        switch sharedNotificationType {
+        case "FILESYSTEM_MODIFIED": self = .filesystemModified
+        case "INTERNAL_TEST_EVENT": self = .internalTestEvent
+        case "IDLING": self = .idling
+        case "BATTERY_STATUS": self = .batteryStatus
+        case "INACTIVITY_ALERT": self = .inactivityAlert
+        case "TRAINING_SESSION_STATUS": self = .trainingSessionStatus
+        case "SYNC_REQUIRED": self = .syncRequired
+        case "AUTOSYNC_STATUS": self = .autosyncStatus
+        case "PNS_DH_NOTIFICATION_RESPONSE": self = .pnsDhNotificationResponse
+        case "PNS_SETTINGS": self = .pnsSettings
+        case "START_GPS_MEASUREMENT": self = .startGpsMeasurement
+        case "STOP_GPS_MEASUREMENT": self = .stopGpsMeasurement
+        case "KEEP_BACKGROUND_ALIVE": self = .keepBackgroundAlive
+        case "POLAR_SHELL_DH_DATA": self = .polarShellDhData
+        case "MEDIA_CONTROL_REQUEST_DH": self = .mediaControlRequestDh
+        case "MEDIA_CONTROL_COMMAND_DH": self = .mediaControlCommandDh
+        case "MEDIA_CONTROL_ENABLED": self = .mediaControlEnabled
+        case "REST_API_EVENT": self = .restApiEvent
+        case "EXERCISE_STATUS": self = .exerciseStatus
+        default: return nil
+        }
+    }
+
+    var sharedNotificationType: String {
+        switch self {
+        case .filesystemModified: return "FILESYSTEM_MODIFIED"
+        case .internalTestEvent: return "INTERNAL_TEST_EVENT"
+        case .idling: return "IDLING"
+        case .batteryStatus: return "BATTERY_STATUS"
+        case .inactivityAlert: return "INACTIVITY_ALERT"
+        case .trainingSessionStatus: return "TRAINING_SESSION_STATUS"
+        case .syncRequired: return "SYNC_REQUIRED"
+        case .autosyncStatus: return "AUTOSYNC_STATUS"
+        case .pnsDhNotificationResponse: return "PNS_DH_NOTIFICATION_RESPONSE"
+        case .pnsSettings: return "PNS_SETTINGS"
+        case .startGpsMeasurement: return "START_GPS_MEASUREMENT"
+        case .stopGpsMeasurement: return "STOP_GPS_MEASUREMENT"
+        case .keepBackgroundAlive: return "KEEP_BACKGROUND_ALIVE"
+        case .polarShellDhData: return "POLAR_SHELL_DH_DATA"
+        case .mediaControlRequestDh: return "MEDIA_CONTROL_REQUEST_DH"
+        case .mediaControlCommandDh: return "MEDIA_CONTROL_COMMAND_DH"
+        case .mediaControlEnabled: return "MEDIA_CONTROL_ENABLED"
+        case .restApiEvent: return "REST_API_EVENT"
+        case .exerciseStatus: return "EXERCISE_STATUS"
+        }
+    }
+}
+
 extension BlePsFtpClient {
-    static func parseD2HNotificationParameters(_ notification: PolarDeviceToHostNotification, data: Data) -> Any? {
+    static func parseD2HNotificationParameters(_ notification: PolarDeviceToHostNotification, data: Data, sharedParsedProtoName: String? = nil) -> Any? {
         if data.isEmpty { return nil }
         do {
+            if let sharedParsedProtoName {
+                return try parseD2HNotificationParameters(sharedParsedProtoName: sharedParsedProtoName, data: data)
+            }
             switch notification {
             case .syncRequired:       return try Protocol_PbPFtpSyncRequiredParams(serializedBytes: data, extensions: nil)
             case .filesystemModified: return try Protocol_PbPFtpFilesystemModifiedParams(serializedBytes: data, extensions: nil)
@@ -68,6 +131,28 @@ extension BlePsFtpClient {
             }
         } catch {
             BleLogger.error("Failed to parse D2H notification parameters for \(notification): \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    private static func parseD2HNotificationParameters(sharedParsedProtoName: String, data: Data) throws -> Any? {
+        switch sharedParsedProtoName {
+        case "PbPFtpSyncRequiredParams": return try Protocol_PbPFtpSyncRequiredParams(serializedBytes: data, extensions: nil)
+        case "PbPFtpFilesystemModifiedParams": return try Protocol_PbPFtpFilesystemModifiedParams(serializedBytes: data, extensions: nil)
+        case "PbPFtpInactivityAlert": return try Protocol_PbPFtpInactivityAlert(serializedBytes: data, extensions: nil)
+        case "PbPFtpTrainingSessionStatus": return try Protocol_PbPFtpTrainingSessionStatus(serializedBytes: data, extensions: nil)
+        case "PbPFtpAutoSyncStatusParams": return try Protocol_PbPFtpAutoSyncStatusParams(serializedBytes: data, extensions: nil)
+        case "PbPftpPnsDHNotificationResponse": return try Protocol_PbPftpPnsDHNotificationResponse(serializedBytes: data, extensions: nil)
+        case "PbPftpPnsState": return try Protocol_PbPftpPnsState(serializedBytes: data, extensions: nil)
+        case "PbPftpStartGPSMeasurement": return try Protocol_PbPftpStartGPSMeasurement(serializedBytes: data, extensions: nil)
+        case "PbPFtpPolarShellMessageParams": return try Protocol_PbPFtpPolarShellMessageParams(serializedBytes: data, extensions: nil)
+        case "PbPftpDHMediaControlRequest": return try Protocol_PbPftpDHMediaControlRequest(serializedBytes: data, extensions: nil)
+        case "PbPftpDHMediaControlCommand": return try Protocol_PbPftpDHMediaControlCommand(serializedBytes: data, extensions: nil)
+        case "PbPftpDHMediaControlEnabled": return try Protocol_PbPftpDHMediaControlEnabled(serializedBytes: data, extensions: nil)
+        case "PbPftpDHRestApiEvent": return try Protocol_PbPftpDHRestApiEvent(serializedBytes: data, extensions: nil)
+        case "PbPftpDHExerciseStatus": return try Protocol_PbPftpDHExerciseStatus(serializedBytes: data, extensions: nil)
+        default:
+            BleLogger.trace("No shared D2H parameter parser implemented for: \(sharedParsedProtoName)")
             return nil
         }
     }

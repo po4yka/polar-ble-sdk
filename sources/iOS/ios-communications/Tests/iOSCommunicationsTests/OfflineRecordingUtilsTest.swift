@@ -1,5 +1,8 @@
 import XCTest
 @testable import iOSCommunications
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 final class OfflineRecordingUtilsTest: XCTestCase {
     
@@ -44,6 +47,18 @@ final class OfflineRecordingUtilsTest: XCTestCase {
       OfflineRecordingUtils.mapOfflineRecordingFileNameToMeasurementType(fileName: "INVALID.REC"),
             "Invalid file name"
         )
+    }
+
+    func testOfflineRecordingFilenameMappingUsesSharedPlannerWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("ACC", OfflineRecordingRuntimePlanner.measurementTypeName(fileName: "ACC0.REC"))
+        XCTAssertEqual("SKIN_TEMP", OfflineRecordingRuntimePlanner.measurementTypeName(fileName: "SKINTEMP.REC"))
+        XCTAssertNil(OfflineRecordingRuntimePlanner.measurementTypeName(fileName: "INVALID.REC"))
+        XCTAssertEqual(.acc, try OfflineRecordingUtils.mapOfflineRecordingFileNameToMeasurementType(fileName: "ACC0.REC"))
+        XCTAssertEqual(.skinTemperature, try OfflineRecordingUtils.mapOfflineRecordingFileNameToMeasurementType(fileName: "SKINTEMP.REC"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testOfflineRecordingFilenameMappingGoldenVectorsMatchIOSBehavior() throws {
@@ -100,7 +115,7 @@ final class OfflineRecordingUtilsTest: XCTestCase {
         switch name {
         case "acc": return .acc
         case "gyro": return .gyro
-        case "mgn": return .mgn
+        case "mgn", "magnetometer": return .mgn
         case "ppg": return .ppg
         case "ppi": return .ppi
         case "offline_hr": return .offline_hr

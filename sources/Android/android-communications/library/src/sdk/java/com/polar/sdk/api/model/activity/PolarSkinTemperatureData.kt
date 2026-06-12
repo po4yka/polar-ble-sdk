@@ -1,9 +1,5 @@
 package com.polar.sdk.api.model
 
-import com.polar.shared.sdk.PolarSdkModelMappers
-import com.polar.shared.sdk.PolarSkinTemperatureMeasurementType
-import com.polar.shared.sdk.PolarSkinTemperatureSampleModel
-import com.polar.shared.sdk.PolarSkinTemperatureSensorLocation
 import com.polar.services.datamodels.protobuf.TemperatureMeasurement.TemperatureMeasurementSample
 import java.time.LocalDate
 
@@ -20,7 +16,7 @@ enum class SkinTemperatureMeasurementType(val value: Int) {
 
     companion object {
         infix fun from(value: Int): SkinTemperatureMeasurementType? =
-            SkinTemperatureMeasurementType.values().firstOrNull { it.value == value }
+            PolarSdkModelAdapter.skinTemperatureMeasurementTypeName(value)?.toAndroidMeasurementType()
     }
 }
 
@@ -35,7 +31,7 @@ enum class SkinTemperatureSensorLocation(val value: Int) {
 
     companion object {
         infix fun from(value: Int): SkinTemperatureSensorLocation? =
-            SkinTemperatureSensorLocation.values().firstOrNull { it.value == value }
+            PolarSdkModelAdapter.skinTemperatureSensorLocationName(value)?.toAndroidSensorLocation()
     }
 }
 
@@ -53,12 +49,18 @@ data class PolarSkinTemperatureDataSample(
 
 fun fromPbTemperatureMeasurementSamples(pbTemperatureMeasurementData: List<TemperatureMeasurementSample>):
         List<PolarSkinTemperatureDataSample> {
-    return pbTemperatureMeasurementData.map { sample ->
-        PolarSkinTemperatureSampleModel(
+    return pbTemperatureMeasurementData.toPlannedSkinTemperatureSamples()
+        .let(PolarSdkModelAdapter::skinTemperatureSamples)
+        .toAndroidSkinTemperatureSamples()
+}
+
+private fun List<TemperatureMeasurementSample>.toPlannedSkinTemperatureSamples(): List<PolarSdkModelAdapter.PlannedSkinTemperatureSample> {
+    return map { sample ->
+        PolarSdkModelAdapter.PlannedSkinTemperatureSample(
             recordingTimeDeltaMs = sample.recordingTimeDeltaMilliseconds,
             temperature = sample.temperatureCelsius
         )
-    }.toAndroidSkinTemperatureSamples()
+    }
 }
 
 internal fun sharedSkinTemperatureResult(
@@ -67,16 +69,11 @@ internal fun sharedSkinTemperatureResult(
     sensorLocation: Int,
     samples: List<TemperatureMeasurementSample>
 ): PolarSkinTemperatureResult {
-    val shared = PolarSdkModelMappers.skinTemperature(
+    val shared = PolarSdkModelAdapter.skinTemperature(
         sourceDeviceId = sourceDeviceId,
         measurementType = measurementType,
         sensorLocation = sensorLocation,
-        samples = samples.map { sample ->
-            PolarSkinTemperatureSampleModel(
-                recordingTimeDeltaMs = sample.recordingTimeDeltaMilliseconds,
-                temperature = sample.temperatureCelsius
-            )
-        }
+        samples = samples.toPlannedSkinTemperatureSamples()
     )
     return PolarSkinTemperatureResult(
         deviceId = shared.sourceDeviceId,
@@ -86,7 +83,7 @@ internal fun sharedSkinTemperatureResult(
     )
 }
 
-private fun List<PolarSkinTemperatureSampleModel>.toAndroidSkinTemperatureSamples(): List<PolarSkinTemperatureDataSample> {
+private fun List<PolarSdkModelAdapter.PlannedSkinTemperatureSample>.toAndroidSkinTemperatureSamples(): List<PolarSkinTemperatureDataSample> {
     return map { sample ->
         PolarSkinTemperatureDataSample(
             recordingTimeDeltaMs = sample.recordingTimeDeltaMs,
@@ -95,16 +92,18 @@ private fun List<PolarSkinTemperatureSampleModel>.toAndroidSkinTemperatureSample
     }
 }
 
-private fun PolarSkinTemperatureMeasurementType.toAndroidMeasurementType(): SkinTemperatureMeasurementType {
+private fun String.toAndroidMeasurementType(): SkinTemperatureMeasurementType {
     return when (this) {
-        PolarSkinTemperatureMeasurementType.TM_SKIN_TEMPERATURE -> SkinTemperatureMeasurementType.TM_SKIN_TEMPERATURE
-        PolarSkinTemperatureMeasurementType.TM_CORE_TEMPERATURE -> SkinTemperatureMeasurementType.TM_CORE_TEMPERATURE
+        "TM_SKIN_TEMPERATURE" -> SkinTemperatureMeasurementType.TM_SKIN_TEMPERATURE
+        "TM_CORE_TEMPERATURE" -> SkinTemperatureMeasurementType.TM_CORE_TEMPERATURE
+        else -> error("Unknown skin temperature measurement type $this")
     }
 }
 
-private fun PolarSkinTemperatureSensorLocation.toAndroidSensorLocation(): SkinTemperatureSensorLocation {
+private fun String.toAndroidSensorLocation(): SkinTemperatureSensorLocation {
     return when (this) {
-        PolarSkinTemperatureSensorLocation.SL_DISTAL -> SkinTemperatureSensorLocation.SL_DISTAL
-        PolarSkinTemperatureSensorLocation.SL_PROXIMAL -> SkinTemperatureSensorLocation.SL_PROXIMAL
+        "SL_DISTAL" -> SkinTemperatureSensorLocation.SL_DISTAL
+        "SL_PROXIMAL" -> SkinTemperatureSensorLocation.SL_PROXIMAL
+        else -> error("Unknown skin temperature sensor location $this")
     }
 }

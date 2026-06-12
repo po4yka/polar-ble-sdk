@@ -93,6 +93,19 @@ internal class BlePmdClientTest {
     }
 
     @Test
+    fun pmdMeasurementTypeLookupDelegatesKnownIdsToSharedModelAndPreservesUnknownFallback() {
+        assertEquals(PmdMeasurementType.ECG, PmdMeasurementType.fromId(0))
+        assertEquals(PmdMeasurementType.ACC, PmdMeasurementType.fromId(0xC2.toByte()))
+        assertEquals(PmdMeasurementType.GYRO, PmdMeasurementType.fromId(5))
+        assertEquals(PmdMeasurementType.MAGNETOMETER, PmdMeasurementType.fromId(6))
+        assertEquals(PmdMeasurementType.SKIN_TEMP, PmdMeasurementType.fromId(7))
+        assertEquals(PmdMeasurementType.OFFLINE_RECORDING, PmdMeasurementType.fromId(13))
+        assertEquals(PmdMeasurementType.OFFLINE_HR, PmdMeasurementType.fromId(14))
+        assertEquals(PmdMeasurementType.UNKNOWN_TYPE, PmdMeasurementType.fromId(4))
+        assertEquals(PmdMeasurementType.UNKNOWN_TYPE, PmdMeasurementType.fromId(0xFF.toByte()))
+    }
+
+    @Test
     fun `process not supported frame type`() {
         // Arrange
         // HEX: 01 01 00 00 00 00 00 00 70 FF
@@ -1292,6 +1305,12 @@ internal class BlePmdClientTest {
         //   packet[1] = firstByte = OFFLINE.asBitField() OR ACC.numVal = 0x80 OR 0x02 = 0x82
         val expectedFirstByte = (PmdRecordingType.OFFLINE.asBitField() or PmdMeasurementType.ACC.numVal).toByte()
         assertEquals("Second byte should encode OFFLINE recording type + ACC measurement", expectedFirstByte, capturedPacket.captured[1])
+    }
+
+    @Test
+    fun `pmd recording type bitfields delegate to shared KMP policy`() {
+        assertEquals(0x00.toUByte(), PmdRecordingType.ONLINE.asBitField())
+        assertEquals(0x80.toUByte(), PmdRecordingType.OFFLINE.asBitField())
     }
 
     @Test

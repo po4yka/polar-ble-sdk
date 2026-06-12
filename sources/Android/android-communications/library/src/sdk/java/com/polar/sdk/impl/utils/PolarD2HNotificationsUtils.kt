@@ -4,7 +4,6 @@ package com.polar.sdk.impl.utils
 import com.google.protobuf.InvalidProtocolBufferException
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
-import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import com.polar.sdk.api.PolarD2HNotificationData
 import com.polar.sdk.api.PolarDeviceToHostNotification
 import kotlinx.coroutines.flow.Flow
@@ -24,14 +23,14 @@ private const val TAG = "PolarD2HNotificationsUtils"
 fun BlePsFtpClient.observeDeviceToHostNotifications(identifier: String): Flow<PolarD2HNotificationData> {
     return waitForNotification()
         .transform { notification ->
-            val sharedNotificationType = PolarD2hRuntimePlanning.notificationTypeOrNull(notification.id)
-            if (sharedNotificationType == null) {
+            val parameters = notification.byteArrayOutputStream.toByteArray()
+            val emissionPlan = PolarRuntimePlannerAdapter.d2hNotificationPlan(notification.id, parameters.toHexString())
+            if (emissionPlan == null) {
                 BleLogger.w(TAG, "Unknown notification type: ${notification.id}")
             } else {
                 val notificationType = PolarDeviceToHostNotification.fromValue(notification.id)
-                    ?: error("Shared D2H notification type $sharedNotificationType is not represented by the Android public enum")
-                val parameters = notification.byteArrayOutputStream.toByteArray()
-                val parsedParameters = parseD2HNotificationParameters(notificationType, parameters)
+                    ?: error("Shared D2H notification type ${emissionPlan.notificationType} is not represented by the Android public enum")
+                val parsedParameters = parseD2HNotificationParameters(notificationType, parameters, emissionPlan.parsedProtoName)
                 emit(PolarD2HNotificationData(notificationType, parameters, parsedParameters))
             }
         }
@@ -53,57 +52,57 @@ fun BlePsFtpClient.observeDeviceToHostNotifications(identifier: String): Flow<Po
  */
 private fun parseD2HNotificationParameters(
     notificationType: PolarDeviceToHostNotification,
-    data: ByteArray
+    data: ByteArray,
+    sharedParsedProtoName: String? = PolarRuntimePlannerAdapter.d2hParsedProtoName(notificationType.name, data.toHexString())
 ): Any? {
     if (data.isEmpty()) {
         return null
     }
 
     return try {
-        when (notificationType) {
-            PolarDeviceToHostNotification.SYNC_REQUIRED -> {
+        when (sharedParsedProtoName) {
+            "PbPFtpSyncRequiredParams" -> {
                 PbPFtpSyncRequiredParams.parseFrom(data)
             }
-            PolarDeviceToHostNotification.FILESYSTEM_MODIFIED -> {
+            "PbPFtpFilesystemModifiedParams" -> {
                 PbPFtpFilesystemModifiedParams.parseFrom(data)
             }
-            PolarDeviceToHostNotification.INACTIVITY_ALERT -> {
+            "PbPFtpInactivityAlert" -> {
                 PbPFtpInactivityAlert.parseFrom(data)
             }
-            PolarDeviceToHostNotification.TRAINING_SESSION_STATUS -> {
+            "PbPFtpTrainingSessionStatus" -> {
                 PbPFtpTrainingSessionStatus.parseFrom(data)
             }
-            PolarDeviceToHostNotification.AUTOSYNC_STATUS -> {
+            "PbPFtpAutoSyncStatusParams" -> {
                 PbPFtpAutoSyncStatusParams.parseFrom(data)
             }
-            PolarDeviceToHostNotification.PNS_DH_NOTIFICATION_RESPONSE -> {
+            "PbPftpPnsDHNotificationResponse" -> {
                 PbPftpPnsDHNotificationResponse.parseFrom(data)
             }
-            PolarDeviceToHostNotification.PNS_SETTINGS -> {
+            "PbPftpPnsState" -> {
                 PbPftpPnsState.parseFrom(data)
             }
-            PolarDeviceToHostNotification.START_GPS_MEASUREMENT -> {
+            "PbPftpStartGPSMeasurement" -> {
                 PbPftpStartGPSMeasurement.parseFrom(data)
             }
-            PolarDeviceToHostNotification.POLAR_SHELL_DH_DATA -> {
+            "PbPFtpPolarShellMessageParams" -> {
                 PbPFtpPolarShellMessageParams.parseFrom(data)
             }
-            PolarDeviceToHostNotification.MEDIA_CONTROL_REQUEST_DH -> {
+            "PbPftpDHMediaControlRequest" -> {
                 PbPftpDHMediaControlRequest.parseFrom(data)
             }
-            PolarDeviceToHostNotification.MEDIA_CONTROL_COMMAND_DH -> {
+            "PbPftpDHMediaControlCommand" -> {
                 PbPftpDHMediaControlCommand.parseFrom(data)
             }
-            PolarDeviceToHostNotification.MEDIA_CONTROL_ENABLED -> {
+            "PbPftpDHMediaControlEnabled" -> {
                 PbPftpDHMediaControlEnabled.parseFrom(data)
             }
-            PolarDeviceToHostNotification.REST_API_EVENT -> {
+            "PbPftpDHRestApiEvent" -> {
                 PbPftpDHRestApiEvent.parseFrom(data)
             }
-            PolarDeviceToHostNotification.EXERCISE_STATUS -> {
+            "PbPftpDHExerciseStatus" -> {
                 PbPftpDHExerciseStatus.parseFrom(data)
             }
-            // Notifications without parameters or not yet implemented
             else -> {
                 BleLogger.d(TAG, "No parameter parsing implemented for: $notificationType")
                 null
@@ -113,4 +112,8 @@ private fun parseD2HNotificationParameters(
         BleLogger.e(TAG, "Failed to parse parameters for $notificationType: ${e.message}")
         null
     }
+}
+
+private fun ByteArray.toHexString(): String {
+    return joinToString(separator = "") { "%02x".format(it.toInt() and 0xff) }
 }

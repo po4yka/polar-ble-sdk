@@ -15,7 +15,7 @@
       "write-file-payload-capture-before-stream-error",
       "delete-file-response-error-status-message",
       "command-path-capture-for-every-operation",
-      "facade-error-mapping-deferred",
+      "facade-error-mapping-pinned",
       "platform-runtime-vector-reference-gate",
       "compile-verification-gate"
     ]
@@ -29,11 +29,11 @@
       "write-file-payload-capture-before-stream-error",
       "delete-file-response-error-status-message",
       "command-path-capture-for-every-operation",
-      "facade-error-mapping-deferred",
+      "facade-error-mapping-pinned",
       "platform-runtime-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping, and the shared tests are compile-verified.",
+    "commonDecision": "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
       "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
@@ -55,5 +55,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for file runtime error behavior-family completeness only; public Android and iOS facade error shapes must remain adapter-owned or be standardized intentionally before production file utility orchestration moves to shared KMP."
+  "notes": "This readiness manifest is a migration gate for file runtime error behavior-family completeness only; public Android and iOS facade error shapes are pinned through file-facade-runtime-policy.json and must remain adapter-owned or be standardized intentionally before production file utility orchestration moves to shared KMP."
 }

@@ -17,7 +17,7 @@ public struct AutomaticSamples: Codable {
         do {
             date = proto.hasDay ? try PolarTimeUtils.pbDateToUTCDate(pbDate: proto.day) : nil
             return AutomaticSamples(day: date)
-        } catch let err {
+        } catch {
             return AutomaticSamples(day: nil)
         }
     }

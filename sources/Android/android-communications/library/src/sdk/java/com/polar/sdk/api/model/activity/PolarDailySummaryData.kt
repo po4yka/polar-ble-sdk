@@ -1,5 +1,6 @@
 package com.polar.sdk.api.model.activity
 
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 import com.polar.sdk.impl.utils.PolarTimeUtils
 import fi.polar.remote.representation.protobuf.DailySummary.PbDailySummary
 import fi.polar.remote.representation.protobuf.Types.PbDuration
@@ -60,8 +61,11 @@ enum class PolarDailyBalanceFeedBack(val numVal: Int) {
     YOU_SEEM_TO_BE_STRAINED(10);
 
     companion object {
-        infix fun from(value: Int): PolarDailyBalanceFeedBack? =
-            PolarDailyBalanceFeedBack.values().firstOrNull { it.numVal == value }
+        infix fun from(value: Int): PolarDailyBalanceFeedBack? {
+            return PolarSdkModelAdapter.dailyBalanceFeedbackName(value)?.let { sharedName ->
+                entries.firstOrNull { feedback -> feedback.name == sharedName }
+            }
+        }
     }
 }
 
@@ -82,8 +86,11 @@ enum class PolarReadinessForSpeedAndStrengthTraining(val numVal: Int) {
     NOT_RECOVERED_AND_INJURY_AND_ILLNESS_RISK_CAUSED_BY_CARDIO_TRAINING(12);
 
     companion object {
-        infix fun from(value: Int): PolarReadinessForSpeedAndStrengthTraining? =
-            PolarReadinessForSpeedAndStrengthTraining.values().firstOrNull { it.numVal == value }
+        infix fun from(value: Int): PolarReadinessForSpeedAndStrengthTraining? {
+            return PolarSdkModelAdapter.trainingReadinessName(value)?.let { sharedName ->
+                entries.firstOrNull { readiness -> readiness.name == sharedName }
+            }
+        }
     }
 }
 

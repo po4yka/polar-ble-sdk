@@ -2,6 +2,9 @@
 
 import XCTest
 @testable import iOSCommunications
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 final class PmdSettingTest: XCTestCase {
     func testPmdSettingsWithRange() {
@@ -128,6 +131,9 @@ final class PmdSettingTest: XCTestCase {
         XCTAssertTrue(setting.settings[PmdSetting.PmdSettingType.rangeMilliUnit]!.contains(0xffffffff))
         XCTAssertTrue(setting.settings[PmdSetting.PmdSettingType.rangeMilliUnit]!.contains(0xff))
         XCTAssertTrue(setting.settings[PmdSetting.PmdSettingType.resolution]!.contains(0x0E))
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(PmdSettingRuntimePlanner.parsedSettingsCsv(settingsHex: "0302ffffffffff00000001010e00"), "3=4294967295,255;1=14")
+        #endif
         
         let serialized = setting.serialize()
         XCTAssertEqual(serialized.count, 10)

@@ -2,6 +2,7 @@
 
 import XCTest
 @testable import PolarBleSdk
+import Zip
 
 class PolarFirmwareUpdateUtilsTest: XCTestCase {
 
@@ -12,6 +13,7 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        PolarFirmwareUpdateUtils.packageExtractor = ZipFirmwarePackageExtractor()
         mockClient = nil
     }
 
@@ -42,6 +44,10 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(firmwareInfo?.deviceModelName, expectedModelName)
         XCTAssertEqual(firmwareInfo?.deviceHardwareCode, expectedHardwareCode)
         XCTAssertEqual(mockClient.requestCalls.count, 1)
+        let requestOperation = try Protocol_PbPFtpOperation(serializedBytes: mockClient.requestCalls[0])
+        XCTAssertEqual(.get, requestOperation.command)
+        XCTAssertEqual(PolarRuntimePlanner.firmwareDeviceInfoPath(), PolarFirmwareUpdateUtils.DEVICE_FIRMWARE_INFO_PATH)
+        XCTAssertEqual(PolarFirmwareUpdateUtils.DEVICE_FIRMWARE_INFO_PATH, requestOperation.path)
     }
     
     func testIsAvailableFirmwareVersionHigher_shouldReturnTrue_whenCurrentVersionIsSmallerThanAvailableVersion() {
@@ -136,6 +142,35 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
            XCTAssertEqual(files[2], f3, "Files should maintain initial order if already sorted")
        }
 
+    func testFirmwareUtilityUsesSharedPlannerWhenLinked() async throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual("1.2.0", PolarRuntimePlanner.firmwareDeviceVersion(major: 1, minor: 2, patch: 0))
+        XCTAssertTrue(PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: "1.0.0", availableVersion: "1.0.1"))
+        XCTAssertFalse(PolarRuntimePlanner.isFirmwareVersionHigher(currentVersion: "2.0.0", availableVersion: "1.0.0"))
+        XCTAssertEqual(0, PolarRuntimePlanner.firmwareFilePriority("BTUPDAT.BIN"))
+        XCTAssertEqual(1, PolarRuntimePlanner.firmwareFilePriority("SYSUPDAT.IMG"))
+
+        let expectedDeviceId = "123456"
+        let proto = Data_PbDeviceInfo.with {
+            $0.deviceVersion = .with {
+                $0.major = 1
+                $0.minor = 2
+                $0.patch = 0
+            }
+            $0.modelName = "Model"
+            $0.hardwareCode = "00.112233"
+        }
+        mockClient.requestReturnValue = .success(try proto.serializedData())
+
+        let firmwareInfo = await PolarFirmwareUpdateUtils.readDeviceFirmwareInfo(client: mockClient, deviceId: expectedDeviceId)
+
+        XCTAssertEqual(firmwareInfo?.deviceFwVersion, "1.2.0")
+        XCTAssertTrue(PolarFirmwareUpdateUtils.isAvailableFirmwareVersionHigher(currentVersion: "1.0.0", availableVersion: "1.0.1"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
     func testFirmwareDeviceInfoGoldenVectorsMapProtoToModel() async throws {
         for vector in try loadFirmwareUpdateGoldenVectors().filter({ inputKind($0) == "deviceInfo" }) {
             let id = try XCTUnwrap(vector["id"] as? String)
@@ -191,6 +226,351 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         }
     }
 
+    func testFirmwareRuntimePlannerOrderingUsesSharedPolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(
+            ["TCHUPDAT.BIN", "APPUPDAT.BIN", "BTUPDAT.BIN", "SYSUPDAT.IMG"],
+            PolarRuntimePlanner.orderFirmwareFiles(["TCHUPDAT.BIN", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN"])
+        )
+        XCTAssertEqual(
+            ["APPUPDAT.BIN", "BTUPDAT.BIN", "README.TXT", "SYSUPDAT.IMG"],
+            PolarRuntimePlanner.firmwarePayloadFileNames(["readme.txt", "SYSUPDAT.IMG", "APPUPDAT.BIN", "BTUPDAT.BIN", "README.TXT"])
+        )
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func testFirmwarePackageEntryFilterUsesSharedPolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertFalse(PolarRuntimePlanner.firmwarePackageEntryIsPayload("readme.txt"))
+        XCTAssertFalse(PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload("readme.txt"))
+        XCTAssertTrue(PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload("README.TXT"))
+        XCTAssertTrue(PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload("BTUPDAT.BIN"))
+        XCTAssertTrue(PolarFirmwareUpdateUtils.firmwarePackageEntryIsPayload("SYSUPDAT.IMG"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func testUnzipFirmwarePackageSkipsSharedNonPayloadEntries() throws {
+        let sourceDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let zipURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("zip")
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: sourceDirectory)
+            try? FileManager.default.removeItem(at: zipURL)
+        }
+        try Data("skip".utf8).write(to: sourceDirectory.appendingPathComponent("readme.txt"))
+        try Data([0x01]).write(to: sourceDirectory.appendingPathComponent("BTUPDAT.BIN"))
+        try Data([0x02]).write(to: sourceDirectory.appendingPathComponent("SYSUPDAT.IMG"))
+        try Zip.zipFiles(paths: [
+            sourceDirectory.appendingPathComponent("readme.txt"),
+            sourceDirectory.appendingPathComponent("BTUPDAT.BIN"),
+            sourceDirectory.appendingPathComponent("SYSUPDAT.IMG")
+        ], zipFilePath: zipURL, password: nil, progress: nil)
+        let unzipped = try XCTUnwrap(PolarFirmwareUpdateUtils.unzipFirmwarePackage(zippedData: try Data(contentsOf: zipURL)))
+        XCTAssertNil(unzipped["readme.txt"])
+        XCTAssertEqual(Data([0x01]), unzipped["BTUPDAT.BIN"])
+        XCTAssertEqual(Data([0x02]), unzipped["SYSUPDAT.IMG"])
+        XCTAssertEqual(PolarRuntimePlanner.firmwarePayloadFileNames(Array(unzipped.keys)).sorted(), Array(unzipped.keys).sorted())
+    }
+
+    func testUnzipFirmwarePackageUsesInjectedExtractor() throws {
+        let extractor = CapturingFirmwarePackageExtractor(result: ["BTUPDAT.BIN": Data([0x0B])])
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+
+        let unzipped = try XCTUnwrap(PolarFirmwareUpdateUtils.unzipFirmwarePackage(zippedData: Data([0x01, 0x02])))
+
+        XCTAssertEqual([Data([0x01, 0x02])], extractor.zippedPayloads)
+        XCTAssertEqual(Data([0x0B]), unzipped["BTUPDAT.BIN"])
+    }
+
+    func testFirmwareRebootWaitFilterUsesSharedPolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertTrue(PolarRuntimePlanner.firmwareFileTriggersRebootWait("/SYSUPDAT.IMG"))
+        XCTAssertTrue(PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait("/SYSUPDAT.IMG"))
+        XCTAssertFalse(PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait("BTUPDAT.BIN"))
+        XCTAssertFalse(PolarFirmwareUpdateUtils.firmwareFileTriggersRebootWait("sysupdat.img"))
+        XCTAssertEqual("success-rebooting", PolarRuntimePlanner.firmwareWriteTerminal(errorCode: 1, fileName: "/SYSUPDAT.IMG"))
+        XCTAssertEqual("propagate-error", PolarRuntimePlanner.firmwareWriteTerminal(errorCode: 1, fileName: "BTUPDAT.BIN"))
+        XCTAssertEqual("battery-too-low", PolarRuntimePlanner.firmwareWriteTerminal(errorCode: 209, fileName: "/SYSUPDAT.IMG"))
+        XCTAssertEqual("propagate-error", PolarRuntimePlanner.firmwareWriteTerminal(errorCode: 103, fileName: "/SYSUPDAT.IMG"))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func testFirmwareWriteFailureMapsSharedTerminalToIosPublicError() throws {
+        let fallbackError = PolarErrors.fileError(description: "mapped")
+        let mapper: (Error) -> Error = { _ in fallbackError }
+
+        let batteryError = PolarFirmwareUpdateUtils.firmwareWriteFailure(
+            error: NSError(domain: "pftp", code: Protocol_PbPFtpError.batteryTooLow.rawValue),
+            fileName: "/SYSUPDAT.IMG",
+            mapBatteryTooLow: { PolarErrors.deviceError(description: "Battery too low to perform firmware update") },
+            mapError: mapper
+        )
+        guard let batteryPolarError = batteryError as? PolarErrors else {
+            return XCTFail("Expected battery-too-low to map to deviceError")
+        }
+        switch batteryPolarError {
+        case .deviceError(let description):
+            XCTAssertEqual("Battery too low to perform firmware update", description)
+        default:
+            XCTFail("Expected battery-too-low to map to deviceError")
+        }
+
+        let rebootError = PolarFirmwareUpdateUtils.firmwareWriteFailure(
+            error: NSError(domain: "pftp", code: Protocol_PbPFtpError.rebooting.rawValue),
+            fileName: "/SYSUPDAT.IMG",
+            mapBatteryTooLow: { PolarErrors.deviceError(description: "Battery too low to perform firmware update") },
+            mapError: mapper
+        )
+        XCTAssertNil(rebootError)
+
+        let nonSystemRebootError = PolarFirmwareUpdateUtils.firmwareWriteFailure(
+            error: NSError(domain: "pftp", code: Protocol_PbPFtpError.rebooting.rawValue),
+            fileName: "BTUPDAT.BIN",
+            mapBatteryTooLow: { PolarErrors.deviceError(description: "Battery too low to perform firmware update") },
+            mapError: mapper
+        )
+        guard let nonSystemPolarError = nonSystemRebootError as? PolarErrors else {
+            return XCTFail("Expected non-system reboot to use platform error mapper")
+        }
+        switch nonSystemPolarError {
+        case .fileError(let description):
+            XCTAssertEqual("mapped", description)
+        default:
+            XCTFail("Expected non-system reboot to use platform error mapper")
+        }
+
+        let transportError = PolarFirmwareUpdateUtils.firmwareWriteFailure(
+            error: NSError(domain: "transport", code: -999),
+            fileName: "/SYSUPDAT.IMG",
+            mapBatteryTooLow: { PolarErrors.deviceError(description: "Battery too low to perform firmware update") },
+            mapError: mapper
+        )
+        guard let transportPolarError = transportError as? PolarErrors else {
+            return XCTFail("Expected non-PFTP error to use platform error mapper")
+        }
+        switch transportPolarError {
+        case .fileError(let description):
+            XCTAssertEqual("mapped", description)
+        default:
+            XCTFail("Expected non-PFTP error to use platform error mapper")
+        }
+    }
+
+    func testFirmwareWriteProgressPolicyUsesSharedZeroSafeThresholdsWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        XCTAssertEqual(0, PolarRuntimePlanner.firmwareWriteProgressPercent(bytesWritten: 0, payloadSize: 0))
+        XCTAssertEqual(0, PolarRuntimePlanner.firmwareWriteProgressPercent(bytesWritten: 12, payloadSize: 0))
+        XCTAssertEqual(50, PolarRuntimePlanner.firmwareWriteProgressPercent(bytesWritten: 2, payloadSize: 4))
+        XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 0, bytesWritten: 0, payloadSize: 0, minPercentageIncrement: 25))
+        XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 4, payloadSize: 4, minPercentageIncrement: 75))
+        XCTAssertFalse(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 3, payloadSize: 100, minPercentageIncrement: 25))
+        XCTAssertFalse(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 3, payloadSize: 100, minPercentageIncrement: 25, timeSinceLastEmitMs: 4_999))
+        XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 3, payloadSize: 100, minPercentageIncrement: 25, timeSinceLastEmitMs: 5_000))
+        XCTAssertTrue(PolarRuntimePlanner.shouldEmitFirmwareWriteProgress(lastBytesWritten: 2, bytesWritten: 52, payloadSize: 100, minPercentageIncrement: 25))
+        XCTAssertEqual(["/BTUPDAT.BIN", "/SYSUPDAT.IMG"], PolarRuntimePlanner.firmwareWritePaths(["SYSUPDAT.IMG", "BTUPDAT.BIN"]))
+        XCTAssertEqual([1000, 2000], PolarRuntimePlanner.firmwareRetryDelaysMillis(maxRetries: 2))
+        XCTAssertEqual([1000], PolarRuntimePlanner.firmwareRetryDelaysMillis(maxRetries: 1))
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
+    }
+
+    func testFirmwareUpdateApiUsesInjectedTransportForCheckRequest() throws {
+        let transport = CapturingFirmwareUpdateTransport()
+        let responseData = try JSONSerialization.data(withJSONObject: [
+            "version": "9.9.9",
+            "fileUrl": "https://example.invalid/fw.zip"
+        ])
+        transport.nextResponse = (
+            data: responseData,
+            response: HTTPURLResponse(url: URL(string: "https://firmware-management.polar.com/api/v1/firmware-update/check")!, statusCode: 200, httpVersion: nil, headerFields: nil),
+            error: nil
+        )
+        let api = FirmwareUpdateApi(transport: transport)
+        let finished = expectation(description: "check firmware update")
+        var result: Result<FirmwareUpdateResponse, Error>?
+
+        api.checkFirmwareUpdate(
+            firmwareUpdateRequest: FirmwareUpdateRequest(clientId: "sdk", uuid: "device", firmwareVersion: "1.0.0", hardwareCode: "hw")
+        ) {
+            result = $0
+            finished.fulfill()
+        }
+
+        wait(for: [finished], timeout: 1)
+        let request = try XCTUnwrap(transport.requests.first)
+        XCTAssertEqual(request.url?.absoluteString, "https://firmware-management.polar.com/api/v1/firmware-update/check")
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+        let body = try XCTUnwrap(request.httpBody)
+        let bodyJson = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: String])
+        XCTAssertEqual(bodyJson["clientId"], "sdk")
+        XCTAssertEqual(bodyJson["uuid"], "device")
+        XCTAssertEqual(bodyJson["firmwareVersion"], "1.0.0")
+        XCTAssertEqual(bodyJson["hardwareCode"], "hw")
+        guard case .success(let response) = try XCTUnwrap(result) else {
+            return XCTFail("Expected firmware update success")
+        }
+        XCTAssertEqual(response.version, "9.9.9")
+        XCTAssertEqual(response.fileUrl, "https://example.invalid/fw.zip")
+        XCTAssertEqual(response.statusCode, 200)
+    }
+
+    func testFirmwareUpdateApiCompletesClientErrorCheckRequest() throws {
+        let transport = CapturingFirmwareUpdateTransport()
+        transport.nextResponse = (
+            data: Data("{}".utf8),
+            response: HTTPURLResponse(url: URL(string: "https://firmware-management.polar.com/api/v1/firmware-update/check")!, statusCode: 404, httpVersion: nil, headerFields: nil),
+            error: nil
+        )
+        let api = FirmwareUpdateApi(transport: transport)
+        let finished = expectation(description: "check firmware update client error")
+        var result: Result<FirmwareUpdateResponse, Error>?
+
+        api.checkFirmwareUpdate(
+            firmwareUpdateRequest: FirmwareUpdateRequest(clientId: "sdk", uuid: "device", firmwareVersion: "1.0.0", hardwareCode: "hw")
+        ) {
+            result = $0
+            finished.fulfill()
+        }
+
+        wait(for: [finished], timeout: 1)
+        guard case .failure(let error) = try XCTUnwrap(result) else {
+            return XCTFail("Expected firmware update client error")
+        }
+        guard case FirmwareUpdateApi.Failure.requestFailed = error else {
+            return XCTFail("Expected requestFailed error, got \(error)")
+        }
+    }
+
+    func testFirmwareUpdateApiUsesInjectedTransportForPackageDownloadFailure() async throws {
+        let transport = CapturingFirmwareUpdateTransport()
+        let expectedError = NSError(domain: "firmware-test", code: 7)
+        transport.nextResponse = (data: nil, response: nil, error: expectedError)
+        let api = FirmwareUpdateApi(transport: transport)
+
+        do {
+            _ = try await api.getFirmwareUpdatePackage(url: "https://example.invalid/fw.zip")
+            XCTFail("Expected package download failure")
+        } catch {
+            XCTAssertEqual((error as NSError).domain, expectedError.domain)
+            XCTAssertEqual((error as NSError).code, expectedError.code)
+        }
+
+        XCTAssertEqual(transport.requests.first?.url?.absoluteString, "https://example.invalid/fw.zip")
+    }
+
+    func testGetFirmwareUpdatePackageUsesInjectedFacadeFirmwareService() async throws {
+        let api = PolarBleApiImpl(DispatchQueue(label: "PolarFirmwareUpdateUtilsTest.firmware-service"), features: [.feature_polar_firmware_update])
+        let service = CapturingFirmwareUpdateService()
+        service.packageResult = .success(Data([0x0A, 0x0B]))
+        let extractor = CapturingFirmwarePackageExtractor(result: ["BTUPDAT.BIN": Data([0x01])])
+        api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+        PolarFirmwareUpdateUtils.packageExtractor = extractor
+
+        let firmwareFiles = try await api.getFirmwareUpdatePackageAsync(firmwareUrl: "https://example.invalid/fw.zip")
+
+        XCTAssertEqual(service.packageUrls, ["https://example.invalid/fw.zip"])
+        XCTAssertEqual(extractor.zippedPayloads, [Data([0x0A, 0x0B])])
+        XCTAssertEqual(firmwareFiles.count, 1)
+        XCTAssertEqual(firmwareFiles.first?.0, "BTUPDAT.BIN")
+        XCTAssertEqual(firmwareFiles.first?.1, Data([0x01]))
+    }
+
+    func testGetFirmwareUpdatePackagePropagatesInjectedFacadeFirmwareServiceError() async throws {
+        let api = PolarBleApiImpl(DispatchQueue(label: "PolarFirmwareUpdateUtilsTest.firmware-service-error"), features: [.feature_polar_firmware_update])
+        let service = CapturingFirmwareUpdateService()
+        let expectedError = NSError(domain: "firmware-service", code: 503)
+        service.packageResult = .failure(expectedError)
+        api.firmwareUpdateApiFactory = { () -> PolarBleSdk.FirmwareUpdateServicing in service }
+
+        do {
+            _ = try await api.getFirmwareUpdatePackageAsync(firmwareUrl: "https://example.invalid/fw.zip")
+            XCTFail("Expected package helper to propagate the firmware service error")
+        } catch {
+            XCTAssertEqual((error as NSError).domain, expectedError.domain)
+            XCTAssertEqual((error as NSError).code, expectedError.code)
+        }
+
+        XCTAssertEqual(service.packageUrls, ["https://example.invalid/fw.zip"])
+    }
+
+    func testWriteFirmwareFilesUsesInjectedBleWriterAndSharedProgressPolicy() async throws {
+        let api = PolarBleApiImpl(DispatchQueue(label: "PolarFirmwareUpdateUtilsTest.firmware-writer"), features: [.feature_polar_firmware_update])
+        let baseDate = Date(timeIntervalSince1970: 0)
+        var dateOffsets: [TimeInterval] = [0, 0, 0, 0, 0, 0]
+        var writeRequests: [(identifier: String, path: String, data: Data)] = []
+        api.firmwareProgressDateProvider = {
+            return baseDate.addingTimeInterval(dateOffsets.isEmpty ? 0 : dateOffsets.removeFirst())
+        }
+        api.firmwareFileWriteStreamFactory = { identifier, path, data in
+            writeRequests.append((identifier: identifier, path: path, data: data))
+            return AsyncThrowingStream { continuation in
+                continuation.yield(0)
+                continuation.yield(UInt(data.count))
+                continuation.finish()
+            }
+        }
+
+        let statuses = try await collectFirmwareStatuses(
+            api.writeFirmwareFilesToDeviceAsync(
+                "device-id",
+                firmwareFiles: [
+                    ("BTUPDAT.BIN", Data([0x01, 0x02, 0x03, 0x04])),
+                    ("SYSUPDAT.IMG", Data([0x05, 0x06]))
+                ],
+                minPercentageIncrement: 25
+            )
+        )
+
+        XCTAssertEqual(writeRequests.map { $0.identifier }, ["device-id", "device-id"])
+        XCTAssertEqual(writeRequests.map { $0.path }, ["/BTUPDAT.BIN", "/SYSUPDAT.IMG"])
+        XCTAssertEqual(writeRequests.map { $0.data }, [Data([0x01, 0x02, 0x03, 0x04]), Data([0x05, 0x06])])
+        XCTAssertEqual(firmwareWritingDetails(statuses), [
+            "Writing firmware update file BTUPDAT.BIN, (0%) bytes written: 0/4",
+            "Writing firmware update file BTUPDAT.BIN, (100%) bytes written: 4/4",
+            "Writing firmware update file SYSUPDAT.IMG, (0%) bytes written: 0/2",
+            "Writing firmware update file SYSUPDAT.IMG, (100%) bytes written: 2/2"
+        ])
+    }
+
+    func testWriteFirmwareFilesCancelsInjectedBleWriterWhenConsumerTerminates() async throws {
+        let api = PolarBleApiImpl(DispatchQueue(label: "PolarFirmwareUpdateUtilsTest.firmware-cancel"), features: [.feature_polar_firmware_update])
+        let writerStarted = expectation(description: "writer started")
+        let writerCancelled = expectation(description: "writer cancelled")
+        api.firmwareProgressDateProvider = { Date(timeIntervalSince1970: 0) }
+        api.firmwareFileWriteStreamFactory = { _, _, _ in
+            return AsyncThrowingStream { continuation in
+                writerStarted.fulfill()
+                continuation.onTermination = { @Sendable _ in
+                    writerCancelled.fulfill()
+                }
+                continuation.yield(0)
+            }
+        }
+        let stream = api.writeFirmwareFilesToDeviceAsync(
+            "device-id",
+            firmwareFiles: [("BTUPDAT.BIN", Data([0x01, 0x02]))],
+            minPercentageIncrement: 25
+        )
+        let reader = Task {
+            var iterator = stream.makeAsyncIterator()
+            _ = try await iterator.next()
+            _ = try await iterator.next()
+        }
+
+        await fulfillment(of: [writerStarted], timeout: 1)
+        reader.cancel()
+        await fulfillment(of: [writerCancelled], timeout: 1)
+    }
+
     func testFirmwareGoldenVectorsFollowNeutralKmpShape() throws {
         for vector in try loadFirmwareUpdateGoldenVectors() {
             let id = try XCTUnwrap(vector["id"] as? String)
@@ -226,14 +606,18 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(FIRMWARE_WORKFLOW_SCENARIOS, scenarioIds, "workflow-runtime-policy")
         XCTAssertEqual(expected["policy"] as? String, "firmware-update-workflow-runtime-matrix", "workflow-runtime-policy")
         XCTAssertEqual(expected["migrationRequirement"] as? String, FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT, "workflow-runtime-policy")
-        XCTAssertEqual(commonPrototype["status"] as? String, "executable shared commonTest plus Android-hosted prototype", "workflow-runtime-policy")
+        XCTAssertEqual(commonPrototype["status"] as? String, "executable shared commonTest", "workflow-runtime-policy")
         XCTAssertEqual(FIRMWARE_WORKFLOW_SCENARIOS, commonPrototypeCaseIds, "workflow-runtime-policy")
         XCTAssertEqual(execution["common"] as? String, "shared-common-test", "workflow-runtime-policy")
+        XCTAssertEqual(execution["android"] as? String, "partial-production-shared-policy-consumption", "workflow-runtime-policy")
+        XCTAssertEqual(execution["ios"] as? String, "partial-production-shared-policy-consumption", "workflow-runtime-policy")
+        XCTAssertEqual(platformExpectations["android"] as? String, FIRMWARE_WORKFLOW_ANDROID_PRODUCTION_EVIDENCE, "workflow-runtime-policy")
+        XCTAssertEqual(platformExpectations["ios"] as? String, FIRMWARE_WORKFLOW_IOS_PRODUCTION_EVIDENCE, "workflow-runtime-policy")
         XCTAssertEqual(commonDecision["workflowPolicy"] as? String, FIRMWARE_WORKFLOW_COMMON_DECISION, "workflow-runtime-policy")
         XCTAssertNotNil(vector["execution"], "workflow-runtime-policy")
-        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "workflow-runtime-policy"), ["com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest", "com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "workflow-runtime-policy"), ["com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "workflow-runtime-policy"), ["PolarFirmwareUpdateUtilsTest"])
-        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "workflow-runtime-policy"), ["com.polar.sdk.api.model.utils.FirmwareUpdateCommonFakeWorkflowTest", "com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "workflow-runtime-policy"), ["com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"])
     }
 
     func testWorkflowRuntimeReadinessManifestIsPinnedBeforeWorkflowMigration() throws {
@@ -305,6 +689,23 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
     private func int32(_ object: [String: Any], _ key: String, id: String) throws -> Int32 {
         return try XCTUnwrap(object[key] as? NSNumber, "\(id) \(key)").int32Value
     }
+
+    private func collectFirmwareStatuses(_ stream: AsyncThrowingStream<FirmwareUpdateStatus, Error>) async throws -> [FirmwareUpdateStatus] {
+        var statuses: [FirmwareUpdateStatus] = []
+        for try await status in stream {
+            statuses.append(status)
+        }
+        return statuses
+    }
+
+    private func firmwareWritingDetails(_ statuses: [FirmwareUpdateStatus]) -> [String] {
+        return statuses.compactMap { status in
+            if case .writingFwUpdatePackage(let details) = status {
+                return details
+            }
+            return nil
+        }
+    }
 }
 
 private let FIRMWARE_UTILITY_READINESS_POLICY_VECTOR_PATHS = [
@@ -347,15 +748,77 @@ private let FIRMWARE_WORKFLOW_SCENARIOS = [
     "check-update-available",
     "download-failure",
     "retryable-server-failure",
+    "client-request-failure",
     "empty-or-invalid-zip",
     "cancel-after-package-fetch-cleans-up-before-ble-write",
     "write-package-success-with-system-update-last",
     "system-update-reboot-response-is-success",
+    "non-system-reboot-response-is-terminal-failure",
     "battery-too-low-response-is-terminal-failure"
 ]
 
 private let FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT = "Before moving firmware update orchestration into common KMP code, implement injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors."
 
-private let FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, reboot success, and terminal device errors into typed common workflow states before KMP migration"
+private let FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, finalization step planning, reboot success, non-system reboot failure, and terminal device errors into typed common workflow states before KMP migration"
 
-private let FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, progress, retryable fake-network server failure classification, terminal device errors, and cancellation cleanup before BLE writes are pinned, retry scheduling has explicit platform facade coverage, public facade error mapping is pinned, and the shared tests are compile-verified."
+private let FIRMWARE_WORKFLOW_ANDROID_PRODUCTION_EVIDENCE = "BDBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, finalization step planning, reboot response success, non-system reboot failure, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned."
+
+private let FIRMWARE_WORKFLOW_IOS_PRODUCTION_EVIDENCE = "PolarBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, finalization step planning, reboot response success, non-system reboot failure, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned."
+
+private let FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/finalization-step/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, cancellation cleanup before BLE writes, and shared-planned retry delay execution are pinned, public facade error mapping is pinned, and the shared tests are compile-verified."
+
+private final class CapturingFirmwareUpdateTransport: FirmwareUpdateNetworkTransport {
+    var requests: [URLRequest] = []
+    var nextResponse: (data: Data?, response: URLResponse?, error: Error?) = (nil, nil, nil)
+
+    func firmwareDataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> FirmwareUpdateDataTask {
+        requests.append(request)
+        return CapturingFirmwareUpdateDataTask {
+            completionHandler(self.nextResponse.data, self.nextResponse.response, self.nextResponse.error)
+        }
+    }
+}
+
+private final class CapturingFirmwareUpdateDataTask: FirmwareUpdateDataTask {
+    private let onResume: () -> Void
+
+    init(onResume: @escaping () -> Void) {
+        self.onResume = onResume
+    }
+
+    func resume() {
+        onResume()
+    }
+}
+
+private final class CapturingFirmwarePackageExtractor: FirmwarePackageExtracting {
+    private let result: [String: Data]?
+    private(set) var zippedPayloads: [Data] = []
+
+    init(result: [String: Data]?) {
+        self.result = result
+    }
+
+    func unzipFirmwarePackage(zippedData: Data) -> [String: Data]? {
+        zippedPayloads.append(zippedData)
+        return result
+    }
+}
+
+private final class CapturingFirmwareUpdateService: PolarBleSdk.FirmwareUpdateServicing {
+    var packageResult: Result<Data?, Error> = .success(nil)
+    private(set) var packageUrls: [String] = []
+
+    func checkFirmwareUpdate(firmwareUpdateRequest: PolarBleSdk.FirmwareUpdateRequest, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        completion(.success(PolarBleSdk.FirmwareUpdateResponse(version: nil, fileUrl: nil)))
+    }
+
+    func checkFirmwareUpdateFromFirmwareUrl(_ url: URL, completion: @escaping (Result<PolarBleSdk.FirmwareUpdateResponse, Error>) -> Void) {
+        completion(.success(PolarBleSdk.FirmwareUpdateResponse(version: url.lastPathComponent, fileUrl: url.absoluteString)))
+    }
+
+    func getFirmwareUpdatePackage(url: String) async throws -> Data? {
+        packageUrls.append(url)
+        return try packageResult.get()
+    }
+}

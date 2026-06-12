@@ -12,6 +12,7 @@ import com.polar.sdk.api.model.activity.PolarDailyBalanceFeedBack
 import com.polar.sdk.api.model.activity.PolarReadinessForSpeedAndStrengthTraining
 import com.polar.sdk.impl.utils.CaloriesType
 import com.polar.sdk.impl.utils.PolarActivityUtils
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import fi.polar.remote.representation.protobuf.ActivitySamples.PbActivityInfo
 import fi.polar.remote.representation.protobuf.ActivitySamples.PbActivitySamples
 import fi.polar.remote.representation.protobuf.DailySummary
@@ -46,6 +47,26 @@ import java.time.format.DateTimeFormatter
 class PolarActivityUtilsTest {
 
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+
+    @Test
+    fun `activity read headers use shared file facade planning`() {
+        val date = LocalDate.of(2026, 1, 2)
+
+        Assert.assertEquals("/U/0/20260102/ACT/", PolarRuntimePlannerAdapter.activityDirectoryPath("20260102"))
+        Assert.assertEquals("/U/0/20260102/DSUM/DSUM.BPB", PolarRuntimePlannerAdapter.dailySummaryPath("20260102"))
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/ACT/",
+            PolarActivityUtils.activityDirectoryReadOperation(date)
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/ACT/ASAMPL0.BPB",
+            PolarActivityUtils.activitySampleFileReadOperation("/U/0/20260102/ACT/ASAMPL0.BPB")
+        )
+        Assert.assertEquals(
+            PftpRequest.PbPFtpOperation.Command.GET to "/U/0/20260102/DSUM/DSUM.BPB",
+            PolarActivityUtils.dailySummaryReadOperation(date)
+        )
+    }
 
     @Test
     fun `readStepsFromDayDirectory() should return sum of step samples`() = runTest {
@@ -874,13 +895,16 @@ class PolarActivityUtilsTest {
             "daily-summary-request-path",
             "daily-summary-scalar-projection",
             "daily-summary-duration-projection",
+            "unsupported-field-deferral",
+            "public-model-shape-gate",
+            "facade-request-error-boundary",
             "platform-activity-vector-reference-gate",
             "compile-verification-gate"
         )
         Assert.assertEquals(expectedFamilies, requiredFamilies)
         Assert.assertEquals(expectedFamilies, coveredFamilies)
         Assert.assertEquals(
-            "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, and compile verification remain explicit before production model mapping moves.",
+            "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves.",
             expected.get("commonDecision").asString
         )
         Assert.assertEquals(

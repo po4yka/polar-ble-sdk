@@ -1,5 +1,6 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.psftp
 
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import org.apache.commons.io.IOUtils
 import protocol.PftpError.PbPFtpError
 import java.io.ByteArrayInputStream
@@ -43,48 +44,17 @@ object BlePsFtpUtils {
         type: MessageType,
         id: Int
     ): ByteArrayInputStream {
-        val outputStream = ByteArrayOutputStream()
-        // for request and query add RFC60 header
-        when (type) {
-            MessageType.REQUEST -> {
-                val headerSize = header?.available()
-                val request = ByteArray(2)
-                // RFC60
-                if (headerSize != null) {
-                    request[1] = ((headerSize and 0x7F00) shr 8).toByte()
-                }
-                if (headerSize != null) {
-                    request[0] = (headerSize and 0x00FF).toByte()
-                }
-                outputStream.write(request, 0, 2)
-                IOUtils.copy(header, outputStream)
-                if (data != null) {
-                    IOUtils.copy(data, outputStream)
-                }
-            }
+        val sharedHeader = header?.let { IOUtils.toByteArray(it) } ?: ByteArray(0)
+        val sharedData = data?.let { IOUtils.toByteArray(it) } ?: ByteArray(0)
+        return ByteArrayInputStream(
+            SharedPsFtpByteCodec.encodeCompleteMessageStream(
+                type = type,
+                header = sharedHeader,
+                idValue = id,
+                data = sharedData
+            )
+        )
 
-            MessageType.QUERY -> {
-                val request = ByteArray(2)
-                // RFC60
-                request[1] = (((id and 0x7F00) shr 8) or 0x80).toByte()
-                request[0] = (id and 0x00FF).toByte()
-                outputStream.write(request, 0, 2)
-                if (header != null) {
-                    IOUtils.copy(header, outputStream)
-                }
-            }
-
-            MessageType.NOTIFICATION -> {
-                val request = ByteArray(1)
-                request[0] = id.toByte()
-                outputStream.write(request, 0, 1)
-                if (header != null) {
-                    IOUtils.copy(header, outputStream)
-                }
-            }
-        }
-
-        return ByteArrayInputStream(outputStream.toByteArray())
     }
 
     /**
@@ -102,22 +72,32 @@ object BlePsFtpUtils {
         mtuSize: Int,
         sequenceNumber: Rfc76SequenceNumber
     ): ByteArray {
-        val offset = RFC76_HEADER_SIZE
-        val packet: ByteArray
-        if (data.available() > (mtuSize - RFC76_HEADER_SIZE)) {
-            packet = ByteArray(mtuSize)
-            packet[0] =
-                ((packet[0].toInt() or next or 0x06).toLong() or (sequenceNumber.seq shl 4)).toByte() // 0x06 == MORE
-            data.read(packet, offset, mtuSize - offset)
+        val payloadSize = mtuSize - RFC76_HEADER_SIZE
+        val packet: ByteArray = if (data.available() > payloadSize) {
+            val chunk = ByteArray(payloadSize)
+            data.read(chunk, 0, chunk.size)
+            SharedPsFtpByteCodec.encodeRfc76FrameChunk(
+                chunk = chunk,
+                hasMore = true,
+                next = next,
+                sequenceNumber = sequenceNumber.seq.toInt()
+            )
         } else if (data.available() > 0) {
-            packet = ByteArray(data.available() + RFC76_HEADER_SIZE)
-            packet[0] =
-                ((packet[0].toInt() or next or 0x02).toLong() or (sequenceNumber.seq shl 4)).toByte() // 0x02 == LAST
-            data.read(packet, offset, data.available())
+            val chunk = ByteArray(data.available())
+            data.read(chunk, 0, chunk.size)
+            SharedPsFtpByteCodec.encodeRfc76FrameChunk(
+                chunk = chunk,
+                hasMore = false,
+                next = next,
+                sequenceNumber = sequenceNumber.seq.toInt()
+            )
         } else {
-            packet = ByteArray(RFC76_HEADER_SIZE)
-            packet[0] =
-                ((packet[0].toInt() or next or 0x02).toLong() or (sequenceNumber.seq shl 4)).toByte()
+            SharedPsFtpByteCodec.encodeRfc76FrameChunk(
+                chunk = ByteArray(0),
+                hasMore = false,
+                next = next,
+                sequenceNumber = sequenceNumber.seq.toInt()
+            )
         }
         sequenceNumber.increment()
         return packet
@@ -136,6 +116,13 @@ object BlePsFtpUtils {
         mtuSize: Int,
         sequenceNumber: Rfc76SequenceNumber
     ): MutableList<ByteArray> {
+        if (sequenceNumber.seq == 0L) {
+            val packets = SharedPsFtpByteCodec.splitRfc76Frames(IOUtils.toByteArray(data), mtuSize).toMutableList()
+            repeat(packets.size) {
+                sequenceNumber.increment()
+            }
+            return packets
+        }
         val packets: MutableList<ByteArray> = ArrayList()
         var next = 0
         do {
@@ -164,21 +151,14 @@ object BlePsFtpUtils {
      * @param packet air packet
      */
     fun processRfc76MessageFrameHeader(header: PftpRfc76ResponseHeader, packet: ByteArray) {
-        header.next = packet[0].toInt() and 0x01
-        header.status = (packet[0].toInt() shr 1) and 0x03
-        header.sequenceNumber = ((packet[0].toInt() shr 4) and 0x0F).toLong()
-        if (header.status == 0) {
-            header.error =
-                ((packet[RFC76_HEADER_SIZE].toInt() and 0xFF) or ((packet[RFC76_HEADER_SIZE + 1].toInt() shl 8) and 0xFF)) and 0x0000FFFF
+        val decoded = SharedPsFtpByteCodec.decodeRfc76Frame(packet)
+        header.next = decoded.next
+        header.status = decoded.status
+        header.sequenceNumber = decoded.sequenceNumber.toLong()
+        if (decoded.status == RFC76_STATUS_ERROR_OR_RESPONSE) {
+            header.error = decoded.androidErrorCode ?: 0
         } else {
-            header.payload = ByteArray(packet.size - RFC76_HEADER_SIZE)
-            System.arraycopy(
-                packet,
-                RFC76_HEADER_SIZE,
-                header.payload,
-                0,
-                packet.size - RFC76_HEADER_SIZE
-            )
+            header.payload = decoded.payload
         }
     }
 
@@ -256,5 +236,32 @@ object BlePsFtpUtils {
         REQUEST,
         QUERY,
         NOTIFICATION
+    }
+}
+
+private object SharedPsFtpByteCodec {
+    fun encodeCompleteMessageStream(type: BlePsFtpUtils.MessageType, header: ByteArray, idValue: Int, data: ByteArray): ByteArray {
+        return PolarRuntimePlannerAdapter.psFtpEncodeCompleteMessageStream(
+            type = when (type) {
+                BlePsFtpUtils.MessageType.REQUEST -> "request"
+                BlePsFtpUtils.MessageType.QUERY -> "query"
+                BlePsFtpUtils.MessageType.NOTIFICATION -> "notification"
+            },
+            header = header,
+            idValue = idValue,
+            data = data
+        )
+    }
+
+    fun splitRfc76Frames(payload: ByteArray, mtuSize: Int): List<ByteArray> {
+        return PolarRuntimePlannerAdapter.psFtpSplitRfc76Frames(payload, mtuSize)
+    }
+
+    fun encodeRfc76FrameChunk(chunk: ByteArray, hasMore: Boolean, next: Int, sequenceNumber: Int): ByteArray {
+        return PolarRuntimePlannerAdapter.psFtpEncodeRfc76FrameChunk(chunk, hasMore, next, sequenceNumber)
+    }
+
+    fun decodeRfc76Frame(packet: ByteArray): PolarRuntimePlannerAdapter.PlannedPsFtpFrame {
+        return PolarRuntimePlannerAdapter.psFtpDecodeRfc76Frame(packet)
     }
 }

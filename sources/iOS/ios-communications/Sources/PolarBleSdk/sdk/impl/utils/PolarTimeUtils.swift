@@ -82,11 +82,7 @@ internal class PolarTimeUtils {
     }
     
     static func nanosToMillis(nanoseconds: Int) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.nanosToMillis(nanoseconds: Int32(nanoseconds)))
-        #else
-        return Int(round(Double(nanoseconds) / Double(nanoToMillisMultiplier)))
-        #endif
+        return PolarTimeRuntimePlanner.nanosToMillis(nanoseconds: nanoseconds) ?? Int(round(Double(nanoseconds) / Double(nanoToMillisMultiplier)))
     }
     
     static func pbLocalDateTimeToDate(pbLocalDateTime: PbLocalDateTime?) throws -> Date {
@@ -297,43 +293,67 @@ internal class PolarTimeUtils {
     }
 
     static func pbDurationToMillis(pbDuration: PbDuration) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.durationToMillis(hours: Int32(pbDuration.hours), minutes: Int32(pbDuration.minutes), seconds: Int32(pbDuration.seconds), millis: Int32(pbDuration.millis)))
-        #else
-        return hoursToMillis(hours: Int(pbDuration.hours)) + minutesToMillis(minutes: Int(pbDuration.minutes)) + secondsToMillis(seconds: Int(pbDuration.seconds)) + Int(pbDuration.millis)
-        #endif
+        return PolarTimeRuntimePlanner.durationToMillis(hours: Int(pbDuration.hours), minutes: Int(pbDuration.minutes), seconds: Int(pbDuration.seconds), millis: Int(pbDuration.millis)) ?? hoursToMillis(hours: Int(pbDuration.hours)) + minutesToMillis(minutes: Int(pbDuration.minutes)) + secondsToMillis(seconds: Int(pbDuration.seconds)) + Int(pbDuration.millis)
     }
 
     static func pbTimeToTimeString(_ pbTime: PbTime) -> String {
-        #if canImport(PolarBleSdkShared)
-        return PolarIosSharedBridge.shared.timeString(hour: Int32(pbTime.hour), minute: Int32(pbTime.minute), second: Int32(pbTime.seconds), millis: Int32(pbTime.millis))
-        #else
-        return String(format: "%02d:%02d:%02d.%02d", pbTime.hour, pbTime.minute, pbTime.seconds, pbTime.millis)
-        #endif
+        return PolarTimeRuntimePlanner.timeString(hour: Int(pbTime.hour), minute: Int(pbTime.minute), second: Int(pbTime.seconds), millis: Int(pbTime.millis)) ?? String(format: "%02d:%02d:%02d.%02d", pbTime.hour, pbTime.minute, pbTime.seconds, pbTime.millis)
+    }
+
+    static func basicDateRange(fromDate: Date, toDate: Date) -> [Date] {
+        guard fromDate <= toDate else { return [] }
+        let calendar = Calendar.current
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyyMMdd"
+        let start = formatter.string(from: fromDate)
+        let end = formatter.string(from: toDate)
+        if let sharedDays = basicDateRangeStrings(startInclusive: start, endInclusive: end) {
+            let timeComponents = calendar.dateComponents([.hour, .minute, .second, .nanosecond], from: fromDate)
+            return sharedDays.compactMap { day in
+                guard let baseDate = formatter.date(from: day) else { return nil }
+                var components = calendar.dateComponents([.year, .month, .day], from: baseDate)
+                components.hour = timeComponents.hour
+                components.minute = timeComponents.minute
+                components.second = timeComponents.second
+                components.nanosecond = timeComponents.nanosecond
+                return calendar.date(from: components)
+            }.filter { $0 <= toDate }
+        }
+        var datesList = [Date]()
+        var currentDate = fromDate
+        while currentDate <= toDate {
+            datesList.append(currentDate)
+            guard let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate) else { break }
+            currentDate = nextDate
+        }
+        return datesList
+    }
+
+    static func basicDateRangeStrings(fromDate: Date, toDate: Date) -> [String] {
+        guard fromDate <= toDate else { return [] }
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar.current
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyyMMdd"
+        return basicDateRangeStrings(startInclusive: formatter.string(from: fromDate), endInclusive: formatter.string(from: toDate)) ?? basicDateRange(fromDate: fromDate, toDate: toDate).map { formatter.string(from: $0) }
+    }
+
+    private static func basicDateRangeStrings(startInclusive: String, endInclusive: String) -> [String]? {
+        return PolarTimeRuntimePlanner.basicDateRange(startInclusive: startInclusive, endInclusive: endInclusive)
     }
 
     private static func millisToNanos(milliseconds: Int) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.millisToNanos(milliseconds: Int32(milliseconds)))
-        #else
-        return milliseconds * nanoToMillisMultiplier
-        #endif
+        return PolarTimeRuntimePlanner.millisToNanos(milliseconds: milliseconds) ?? milliseconds * nanoToMillisMultiplier
     }
 
     private static func secondsToMinutes(seconds: Int) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.secondsToMinutes(seconds: Int32(seconds)))
-        #else
-        return Int(round(Double(seconds) / Double(secondsToMinutesMultiplier)))
-        #endif
+        return PolarTimeRuntimePlanner.secondsToMinutes(seconds: seconds) ?? Int(round(Double(seconds) / Double(secondsToMinutesMultiplier)))
     }
 
     private static func minutesToSeconds(minutes: Int) -> Int {
-        #if canImport(PolarBleSdkShared)
-        return Int(PolarIosSharedBridge.shared.minutesToSeconds(minutes: Int32(minutes)))
-        #else
-        return minutes * secondsToMinutesMultiplier
-        #endif
+        return PolarTimeRuntimePlanner.minutesToSeconds(minutes: minutes) ?? minutes * secondsToMinutesMultiplier
     }
 
     private static func hoursToMillis(hours: Int) -> Int {
@@ -387,5 +407,64 @@ internal class PolarTimeUtils {
         } else {
             return nil
         }
+    }
+}
+
+enum PolarTimeRuntimePlanner {
+    static func nanosToMillis(nanoseconds: Int) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.nanosToMillis(nanoseconds: Int32(nanoseconds)))
+        #else
+        return nil
+        #endif
+    }
+
+    static func durationToMillis(hours: Int, minutes: Int, seconds: Int, millis: Int) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.durationToMillis(hours: Int32(hours), minutes: Int32(minutes), seconds: Int32(seconds), millis: Int32(millis)))
+        #else
+        return nil
+        #endif
+    }
+
+    static func timeString(hour: Int, minute: Int, second: Int, millis: Int) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.timeString(hour: Int32(hour), minute: Int32(minute), second: Int32(second), millis: Int32(millis))
+        #else
+        return nil
+        #endif
+    }
+
+    static func millisToNanos(milliseconds: Int) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.millisToNanos(milliseconds: Int32(milliseconds)))
+        #else
+        return nil
+        #endif
+    }
+
+    static func secondsToMinutes(seconds: Int) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.secondsToMinutes(seconds: Int32(seconds)))
+        #else
+        return nil
+        #endif
+    }
+
+    static func minutesToSeconds(minutes: Int) -> Int? {
+        #if canImport(PolarBleSdkShared)
+        return Int(PolarIosSharedBridge.shared.minutesToSeconds(minutes: Int32(minutes)))
+        #else
+        return nil
+        #endif
+    }
+
+    static func basicDateRange(startInclusive: String, endInclusive: String) -> [String]? {
+        #if canImport(PolarBleSdkShared)
+        let csv = PolarIosSharedBridge.shared.basicDateRangeCsv(startInclusive: startInclusive, endInclusive: endInclusive)
+        return csv.isEmpty ? [] : csv.split(separator: ",").map(String.init)
+        #else
+        return nil
+        #endif
     }
 }

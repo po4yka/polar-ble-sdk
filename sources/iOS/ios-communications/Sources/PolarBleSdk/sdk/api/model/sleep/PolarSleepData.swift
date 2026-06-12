@@ -3,6 +3,9 @@
 //
 
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class PolarSleepData {
 
@@ -14,6 +17,12 @@ public class PolarSleepData {
         case NONREM3 = "NONREM3"
 
         static func getByValue(value: Int) -> SleepWakeState {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarSleepRuntimePlanner.sleepWakeStateName(value: value),
+               let sharedState = SleepWakeState(sharedName: sharedName) {
+                return sharedState
+            }
+            #endif
 
             switch value {
             case 0: return .UNKNOWN
@@ -35,11 +44,27 @@ public class PolarSleepData {
         case SLEPT_WELL = 4
 
         static func getByValue(value: Int) -> SleepRating {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarSleepRuntimePlanner.sleepRatingName(value: value),
+               let sharedRating = SleepRating(sharedName: sharedName) {
+                return sharedRating
+            }
+            #endif
             guard let status = SleepRating(rawValue: value) else {
                 BleLogger.error("Invalid SleepRating value: \(value)")
                 return SLEPT_UNDEFINED
             }
             return status
+        }
+
+        static func optionalFromProtoValue(value: Int) -> SleepRating? {
+            #if canImport(PolarBleSdkShared)
+            if let sharedName = PolarSleepRuntimePlanner.sleepRatingName(value: value),
+               let sharedRating = SleepRating(sharedName: sharedName) {
+                return sharedRating
+            }
+            #endif
+            return SleepRating(rawValue: value)
         }
     }
 
@@ -143,3 +168,32 @@ public class PolarSleepData {
         return snoozeTimes
     }
 }
+
+#if canImport(PolarBleSdkShared)
+private extension PolarSleepData.SleepWakeState {
+    init?(sharedName: String) {
+        switch sharedName {
+        case "UNKNOWN": self = .UNKNOWN
+        case "WAKE": self = .WAKE
+        case "REM": self = .REM
+        case "NONREM12": self = .NONREM12
+        case "NONREM3": self = .NONREM3
+        default: return nil
+        }
+    }
+}
+
+private extension PolarSleepData.SleepRating {
+    init?(sharedName: String) {
+        switch sharedName {
+        case "SLEPT_UNDEFINED": self = .SLEPT_UNDEFINED
+        case "SLEPT_POORLY": self = .SLEPT_POORLY
+        case "SLEPT_SOMEWHAT_POORLY": self = .SLEPT_SOMEWHAT_POORLY
+        case "SLEPT_NEITHER_POORLY_NOR_WELL": self = .SLEPT_NEITHER_POORLY_NOR_WELL
+        case "SLEPT_SOMEWHAT_WELL": self = .SLEPT_SOMEWHAT_WELL
+        case "SLEPT_WELL": self = .SLEPT_WELL
+        default: return nil
+        }
+    }
+}
+#endif

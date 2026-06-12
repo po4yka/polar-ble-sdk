@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.sdk.PolarRestServiceModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -25,6 +26,7 @@ class RestEventCompressionPolicyCommonTest {
         assertEquals(false, compressed.booleanValue("uncompressed"), "compressed-batch")
         assertEquals("gzip", compressed.objectValue("compression").stringValue("android"), "compressed-batch Android codec")
         assertEquals("deflate", compressed.objectValue("compression").stringValue("ios"), "compressed-batch iOS codec")
+        assertEquals(compressed.stringArrayValue("payloads"), decodeRestEventPayloads(compressed), "compressed-batch shared JVM codec")
         val malformed = cases.getValue("malformed-compressed-payload")
         assertEquals("throws-ioexception", malformed.objectValue("expected").stringValue("android"), "malformed Android policy")
         assertEquals("emits-original-payload", malformed.objectValue("expected").stringValue("ios"), "malformed iOS policy")
@@ -59,6 +61,14 @@ class RestEventCompressionPolicyCommonTest {
         assertEquals(listOf("com.polar.sharedtest.RestEventCompressionPolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
     }
 
+    @Test
+    fun restEventCompressionCompressedBatchUsesPolarRestEventCompressionCodec() {
+        val vector = loadGoldenVectorText("sdk/rest-service/rest-event-compression-platform-policy.json")
+        val compressed = vector.objectValue("input").objectArray("cases").first { testCase -> testCase.stringValue("id") == "compressed-batch" }
+
+        assertEquals(compressed.stringArrayValue("payloads"), decodeRestEventPayloads(compressed))
+    }
+
     private val requiredRestEventCompressionCaseIds = listOf(
         "uncompressed-batch",
         "empty-uncompressed-batch",
@@ -74,7 +84,7 @@ class RestEventCompressionPolicyCommonTest {
         "ios-deflate-codec-reference-gate",
         "malformed-compressed-payload-platform-split",
         "notification-payload-order-gate",
-        "normalize-or-preserve-codec-decision-gate",
+        "shared-platform-actual-codec-gate",
         "platform-event-vector-reference-gate",
         "compile-verification-gate"
     )
@@ -83,15 +93,21 @@ class RestEventCompressionPolicyCommonTest {
 
     private val restEventCompressionMalformedIosPolicy = "logs inflate failure and emits the original payload bytes"
 
-    private val restEventCompressionCommonCodecDecision = "Android currently uses GZIPInputStream while iOS uses zlib deflate/inflate helpers for REST event payloads; normalize or explicitly preserve this platform split before moving REST event decoding to shared KMP code."
+    private val restEventCompressionCommonCodecDecision = "Shared KMP owns REST event compression dispatch while platform actuals deliberately preserve Android GZIPInputStream-compatible gzip decoding and iOS zlib inflate behavior."
 
-    private val restEventCompressionReadinessDecision = "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior is deliberately normalized or deliberately preserved, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
+    private val restEventCompressionReadinessDecision = "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior are preserved through shared KMP platform actual codecs, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
 
     private fun decodeRestEventPayloads(testCase: String): List<String> {
         return if (testCase.booleanValue("uncompressed")) {
-            testCase.stringArrayValue("payloads")
+            PolarRestServiceModels.restEventPayloads(
+                uncompressed = true,
+                payloads = testCase.stringArrayValue("payloads").map { payload -> payload.encodeToByteArray() }
+            ).map { payload -> payload.decodeToString() }
         } else {
-            error("Shared REST event compression codec is intentionally not selected before KMP migration")
+            PolarRestServiceModels.restEventPayloads(
+                uncompressed = false,
+                payloads = testCase.objectValue("compressedPayloadsHex").stringArrayValue("android").map(::hexToBytes)
+            ).map { payload -> payload.decodeToString() }
         }
     }
 

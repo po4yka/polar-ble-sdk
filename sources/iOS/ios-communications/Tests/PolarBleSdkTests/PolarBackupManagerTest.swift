@@ -47,6 +47,7 @@ class PolarBackupManagerTest: XCTestCase {
 
         mockClient.requestReturnValueClosure = { requestData in
             let request = try Protocol_PbPFtpOperation(serializedBytes: requestData, partial: false)
+            XCTAssertEqual(request.command, .get)
             if request.path.contains("/SYS/BACKUP.TXT") {
                 return mockBackupFileContent.data(using: .utf8)!
             } else if request.path.contains("/SYS/BT/") {
@@ -95,6 +96,7 @@ class PolarBackupManagerTest: XCTestCase {
 
         mockClient.requestReturnValueClosure = { requestData in
             let request = try Protocol_PbPFtpOperation(serializedBytes: requestData)
+            XCTAssertEqual(request.command, .get)
             if let entries = directories[request.path] {
                 return try self.directoryData(from: entries)
             }
@@ -184,6 +186,51 @@ class PolarBackupManagerTest: XCTestCase {
             XCTAssertEqual(operation.path, try XCTUnwrap(expectedWrite["path"] as? String))
             XCTAssertEqual(try data(from: mockClient.writeCalls[index].data).hexString, try XCTUnwrap(expectedWrite["dataHex"] as? String))
         }
+    }
+
+    func testBackupRootPathPlanningUsesSharedDefaultsAndUserWildcardDeduplication() throws {
+        XCTAssertEqual(
+            ["/SYS/BT/", "/U/*/USERID.BPB", "/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB"],
+            PolarFirmwareBackupRuntimePlanner.backupRootPaths(["/SYS/BT/", "/U/*/USERID.BPB"])
+        )
+        XCTAssertEqual(
+            PolarFirmwareBackupRuntimePlanner.defaultBackupPaths(),
+            PolarFirmwareBackupRuntimePlanner.backupRootPaths([])
+        )
+        let wildcardPlan = PolarFirmwareBackupRuntimePlanner.backupTraversalPlan("/SYS/*/BT/BTDEV.BPB")
+        XCTAssertEqual("/SYS/*/BT/BTDEV.BPB", wildcardPlan.path)
+        XCTAssertEqual("/SYS/", wildcardPlan.wildcardRootPath)
+        XCTAssertEqual("BT", wildcardPlan.wildcardSubFolder)
+    }
+
+    func testBackupTextParsingUsesSharedIosCompatibilityPolicyWhenLinked() throws {
+        XCTAssertEqual(
+            ["/SYS/BT/", "/TRIMMED/PATH.BPB", "/SYS/BT/"],
+            PolarFirmwareBackupRuntimePlanner.parseBackupTextForIos("/SYS/BT/\n /TRIMMED/PATH.BPB \n/SYS/BT/\n/FINAL/NO_NEWLINE.BPB")
+        )
+        XCTAssertEqual([], PolarFirmwareBackupRuntimePlanner.parseBackupTextForIos(""))
+    }
+
+    func testBackupFilePathPlanningUsesSharedPathSplit() throws {
+        let filePath = PolarFirmwareBackupRuntimePlanner.backupFilePath("/SYS/BT/BTDEV.BPB")
+
+        XCTAssertEqual("/SYS/BT/", filePath.directory)
+        XCTAssertEqual("BTDEV.BPB", filePath.fileName)
+    }
+
+    func testBackupRestoreWritesUseSharedBatchPlanningWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let writes = PolarFirmwareBackupRuntimePlanner.backupRestoreWrites([
+            (directory: "/U/0/S/", fileName: "UDEVSET.BPB", payloadHex: "0102"),
+            (directory: "/SYS/BT/", fileName: "BTDEV.BPB", payloadHex: "0304")
+        ])
+
+        XCTAssertEqual([.put, .put], writes.map { $0.command })
+        XCTAssertEqual(["/U/0/S/UDEVSET.BPB", "/SYS/BT/BTDEV.BPB"], writes.map { $0.path })
+        XCTAssertEqual(["0102", "0304"], writes.map { $0.payloadHex })
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testBackupGoldenVectorsFollowNeutralKmpShape() throws {

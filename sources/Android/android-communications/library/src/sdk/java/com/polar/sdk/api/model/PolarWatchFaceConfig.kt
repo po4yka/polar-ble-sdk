@@ -29,11 +29,14 @@ enum class PolarWatchFaceComplication(val complicationId: String) {
     WEATHER("weather-complication"),
     WEEKLY_SUMMARY("weeklysummary-complication");
 
-    val id: Int get() = complicationId.hashCode()
+    val id: Int get() = PolarSdkModelAdapter.watchFaceComplicationId(complicationId)
 
     companion object {
-        fun fromId(id: Int): PolarWatchFaceComplication? =
-            entries.firstOrNull { it.id == id }
+        fun fromId(id: Int): PolarWatchFaceComplication? {
+            return PolarSdkModelAdapter.watchFaceComplicationName(id)?.let { sharedName ->
+                entries.firstOrNull { complication -> complication.name == sharedName }
+            }
+        }
     }
 }
 

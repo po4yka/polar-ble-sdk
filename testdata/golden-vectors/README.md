@@ -14,6 +14,7 @@ testdata/golden-vectors/protocol/type-utils/
 testdata/golden-vectors/sdk/activity-samples/
 testdata/golden-vectors/sdk/atomic-set/
 testdata/golden-vectors/sdk/automatic-samples/
+testdata/golden-vectors/sdk/available-data-types/
 testdata/golden-vectors/sdk/backup-utils/
 testdata/golden-vectors/sdk/command-runtime/
 testdata/golden-vectors/sdk/d2h-notifications/
@@ -21,8 +22,11 @@ testdata/golden-vectors/sdk/daily-summary/
 testdata/golden-vectors/sdk/device-capabilities/
 testdata/golden-vectors/sdk/disk-space/
 testdata/golden-vectors/sdk/disk-time-runtime/
+testdata/golden-vectors/sdk/exercise-session/
 testdata/golden-vectors/sdk/fake-transport/
+testdata/golden-vectors/sdk/feature-availability/
 testdata/golden-vectors/sdk/file-utils/
+testdata/golden-vectors/sdk/first-time-use/
 testdata/golden-vectors/sdk/firmware-update/
 testdata/golden-vectors/sdk/kvtx/
 testdata/golden-vectors/sdk/nightly-recharge/
@@ -32,6 +36,7 @@ testdata/golden-vectors/sdk/psftp-notifications/
 testdata/golden-vectors/sdk/psftp-response/
 testdata/golden-vectors/sdk/psftp-rfc76/
 testdata/golden-vectors/sdk/rest-service/
+testdata/golden-vectors/sdk/sd-log/
 testdata/golden-vectors/sdk/skin-temperature/
 testdata/golden-vectors/sdk/sleep/
 testdata/golden-vectors/sdk/spo2-test/

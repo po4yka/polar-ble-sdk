@@ -1,6 +1,9 @@
 //  Copyright © 2022 Polar. All rights reserved.
 
 import XCTest
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 @testable import iOSCommunications
 
 final class PpiDataTest: XCTestCase {
@@ -76,6 +79,46 @@ final class PpiDataTest: XCTestCase {
         XCTAssertEqual(UInt64(UInt64(2e12)), ppiData.samples[1].timeStamp)
         
         XCTAssertEqual(2, ppiData.samples.count)
+    }
+
+    func testPpiRawType0ParserUsesSharedKmpWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let dataFrameHex = "0100204aa9d1010000008080808080ff000100010000"
+        let sharedRows = try XCTUnwrap(PpiDataRuntimePlanner.rawType0Samples(dataFrameHex: dataFrameHex, previousTimeStamp: 100, factor: 1.0, sampleRate: 0))
+        XCTAssertFalse(sharedRows.isEmpty)
+
+        let dataFrame = try PmdDataFrame(
+            data: Data(hexString: dataFrameHex),
+            { _, _ in 100 },
+            { _ in 1.0 },
+            { _ in 0 })
+        let ppiData = try PpiData.parseDataFromDataFrame(frame: dataFrame)
+        let sharedSamples = try sharedRows.split(separator: "|").map { row -> (UInt64, Int, UInt16, UInt16, Int, Int, Int) in
+            let fields = row.split(separator: ",")
+            return (
+                try XCTUnwrap(UInt64(fields[0])),
+                try XCTUnwrap(Int(fields[1])),
+                try XCTUnwrap(UInt16(fields[2])),
+                try XCTUnwrap(UInt16(fields[3])),
+                try XCTUnwrap(Int(fields[4])),
+                try XCTUnwrap(Int(fields[5])),
+                try XCTUnwrap(Int(fields[6]))
+            )
+        }
+
+        XCTAssertEqual(sharedSamples.count, ppiData.samples.count)
+        for (index, sharedSample) in sharedSamples.enumerated() {
+            XCTAssertEqual(sharedSample.0, ppiData.samples[index].timeStamp)
+            XCTAssertEqual(sharedSample.1, ppiData.samples[index].hr)
+            XCTAssertEqual(sharedSample.2, ppiData.samples[index].ppInMs)
+            XCTAssertEqual(sharedSample.3, ppiData.samples[index].ppErrorEstimate)
+            XCTAssertEqual(sharedSample.4, ppiData.samples[index].blockerBit)
+            XCTAssertEqual(sharedSample.5, ppiData.samples[index].skinContactStatus)
+            XCTAssertEqual(sharedSample.6, ppiData.samples[index].skinContactSupported)
+        }
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked in this build")
+        #endif
     }
 
     func testPpiGoldenVectorsMatchIOSCommunicationsBehavior() throws {

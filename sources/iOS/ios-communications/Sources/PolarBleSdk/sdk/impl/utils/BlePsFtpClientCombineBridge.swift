@@ -45,7 +45,9 @@ extension BlePsFtpClient {
     // MARK: - clientReady / waitPsFtpReady
 
     func clientReadyPublisher(_ checkConnection: Bool) -> AnyPublisher<Never, Error> {
-        asyncVoidPublisher { try await self.clientReady(checkConnection) }
+        asyncVoidPublisher {
+            _ = self.clientReady(checkConnection)
+        }
     }
 
     func waitPsFtpReadyPublisher(_ checkConnection: Bool) -> AnyPublisher<Never, Error> {

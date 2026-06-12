@@ -378,6 +378,36 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
+    fun `SDK feature availability readiness remains vector pinned and platform bounded`() {
+        val root = findRepositoryRoot()
+        val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
+        val fakeTransportPlan = root.resolve("documentation/KmpFakeTransportTestPlan.md").readText()
+        val backlog = root.resolve("documentation/KmpFullCoverageTddBacklog.md").readText()
+        val remainingWork = root.resolve("documentation/KmpPreMigrationRemainingWork.md").readText()
+        val vector = root.resolve("testdata/golden-vectors/sdk/feature-availability/feature-availability-readiness.json").readText()
+        val sharedTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/FeatureAvailabilityCommonPolicyTest.kt").readText()
+        val androidTest = root.resolve("sources/Android/android-communications/library/src/test/java/com/polar/sdk/impl/utils/PolarRuntimePlannerAdapterTest.kt").readText()
+        val iosTest = root.resolve("sources/iOS/ios-communications/Tests/PolarBleSdkTests/PolarDataUtilsTest.swift").readText()
+        val docs = "$inventory\n$fakeTransportPlan\n$backlog\n$remainingWork"
+        val violations = mutableListOf<String>()
+
+        FEATURE_AVAILABILITY_VECTOR_REQUIRED_TERMS
+            .filterNot { term -> vector.contains(term) }
+            .mapTo(violations) { term -> "feature-availability-readiness.json missing $term" }
+        FEATURE_AVAILABILITY_DOC_REQUIRED_TERMS
+            .filterNot { term -> docs.contains(term) }
+            .mapTo(violations) { term -> "migration docs missing $term" }
+        FEATURE_AVAILABILITY_TEST_REQUIRED_TERMS
+            .filterNot { term -> sharedTest.contains(term) && androidTest.contains(term) && iosTest.contains(term) }
+            .mapTo(violations) { term -> "shared/Android/iOS tests must all assert $term" }
+
+        assertTrue(
+            "SDK feature availability migration must stay vector-pinned while client readiness and transport behavior remain platform-owned: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
     fun `KMP coverage inventory keeps full coverage exit criteria explicit`() {
         val inventory = findRepositoryRoot().resolve("documentation/KmpCoverageInventory.md").readText()
         val exitCriteriaSection = inventory.substringAfter("## Full-Coverage Exit Criteria Before Migration", missingDelimiterValue = "")
@@ -399,6 +429,20 @@ class GoldenVectorMigrationPolicyTest {
         assertTrue(
             "KmpFullCoverageTddBacklog.md must keep platform host and GATT boundaries explicit until a pure codec or deterministic state-machine contract exists: $missingTerms",
             missingTerms.isEmpty()
+        )
+    }
+
+    @Test
+    fun `KMP backlog describes current migration state without stale remaining gap language`() {
+        val backlog = findRepositoryRoot().resolve("documentation/KmpFullCoverageTddBacklog.md").readText()
+        val missingTerms = CURRENT_SHARED_POLICY_STATE_REQUIRED_TERMS
+            .filterNot { term -> backlog.contains(term) }
+        val staleTerms = STALE_SHARED_POLICY_BACKLOG_TERMS
+            .filter { term -> backlog.contains(term) }
+
+        assertTrue(
+            "KmpFullCoverageTddBacklog.md must describe implemented-or-deferred shared policy state without stale remaining-gap language: missing=$missingTerms stale=$staleTerms",
+            missingTerms.isEmpty() && staleTerms.isEmpty()
         )
     }
 
@@ -837,6 +881,12 @@ class GoldenVectorMigrationPolicyTest {
         if (!inventory.contains("GnssLocationOwnershipCommonPolicyTest.kt")) {
             violations += "KmpCoverageInventory.md must mention GnssLocationOwnershipCommonPolicyTest.kt in the GNSS/location parser row"
         }
+        if (!inventory.contains("No direct iOS parser surface; `gnss-location-readiness.json` intentionally has no iOS consumer")) {
+            violations += "KmpCoverageInventory.md must record GNSS iOS as an intentional no-parser-surface boundary, not a generic missing test"
+        }
+        if (inventory.contains("Missing direct Swift parser implementation/test")) {
+            violations += "KmpCoverageInventory.md must not describe GNSS iOS parser ownership as a generic missing Swift test"
+        }
         if (!readme.contains("GnssLocationOwnershipCommonPolicyTest")) {
             violations += "protocol/sensors/README.md must mention executable shared GNSS ownership policy coverage"
         }
@@ -1212,6 +1262,122 @@ class GoldenVectorMigrationPolicyTest {
 
         assertTrue(
             "User-device-settings migration vectors must have executable shared common policy coverage before settings model code moves to KMP: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
+    fun `first time use migration vectors have executable shared common policy coverage`() {
+        val root = findRepositoryRoot()
+        val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/FirstTimeUseModelsCommonPolicyTest.kt")
+        val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
+        val readme = root.resolve("testdata/golden-vectors/sdk/first-time-use/README.md").readText()
+        val violations = mutableListOf<String>()
+
+        if (!commonTest.isFile) {
+            violations += commonTest.relativeTo(root).path
+        } else {
+            val commonTestText = commonTest.readText()
+            FIRST_TIME_USE_COMMON_POLICY_REQUIRED_TERMS
+                .filterNot { term -> commonTestText.contains(term) }
+                .mapTo(violations) { term -> "${commonTest.relativeTo(root).path}: missing first-time-use common policy term $term" }
+        }
+        if (!inventory.contains("FirstTimeUseModelsCommonPolicyTest.kt") || !inventory.contains("first-time-use-readiness.json")) {
+            violations += "KmpCoverageInventory.md must mention FirstTimeUseModelsCommonPolicyTest.kt and first-time-use-readiness.json in the first-time-use row"
+        }
+        if (!readme.contains("FirstTimeUseModelsCommonPolicyTest")) {
+            violations += "sdk/first-time-use/README.md must mention executable shared first-time-use policy coverage"
+        }
+
+        assertTrue(
+            "First-time-use migration vectors must have executable shared common policy coverage before FTU model or facade execution moves to KMP: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
+    fun `sd log migration vectors have executable shared common policy coverage`() {
+        val root = findRepositoryRoot()
+        val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/SdLogModelsCommonPolicyTest.kt")
+        val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
+        val readme = root.resolve("testdata/golden-vectors/sdk/sd-log/README.md").readText()
+        val violations = mutableListOf<String>()
+
+        if (!commonTest.isFile) {
+            violations += commonTest.relativeTo(root).path
+        } else {
+            val commonTestText = commonTest.readText()
+            SD_LOG_COMMON_POLICY_REQUIRED_TERMS
+                .filterNot { term -> commonTestText.contains(term) }
+                .mapTo(violations) { term -> "${commonTest.relativeTo(root).path}: missing sd-log common policy term $term" }
+        }
+        if (!inventory.contains("SdLogModelsCommonPolicyTest.kt") || !inventory.contains("sd-log-readiness.json")) {
+            violations += "KmpCoverageInventory.md must mention SdLogModelsCommonPolicyTest.kt and sd-log-readiness.json in the SD-log row"
+        }
+        if (!readme.contains("SdLogModelsCommonPolicyTest.kt")) {
+            violations += "sdk/sd-log/README.md must mention executable shared SD-log policy coverage"
+        }
+
+        assertTrue(
+            "SD-log migration vectors must have executable shared common policy coverage before SD-log model or facade execution moves to KMP: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
+    fun `exercise session migration vectors have executable shared common policy coverage`() {
+        val root = findRepositoryRoot()
+        val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/ExerciseSessionModelsCommonPolicyTest.kt")
+        val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
+        val readme = root.resolve("testdata/golden-vectors/sdk/exercise-session/README.md").readText()
+        val violations = mutableListOf<String>()
+
+        if (!commonTest.isFile) {
+            violations += commonTest.relativeTo(root).path
+        } else {
+            val commonTestText = commonTest.readText()
+            EXERCISE_SESSION_COMMON_POLICY_REQUIRED_TERMS
+                .filterNot { term -> commonTestText.contains(term) }
+                .mapTo(violations) { term -> "${commonTest.relativeTo(root).path}: missing exercise-session common policy term $term" }
+        }
+        if (!inventory.contains("ExerciseSessionModelsCommonPolicyTest.kt") || !inventory.contains("exercise-session-readiness.json")) {
+            violations += "KmpCoverageInventory.md must mention ExerciseSessionModelsCommonPolicyTest.kt and exercise-session-readiness.json in the exercise-session row"
+        }
+        if (!readme.contains("ExerciseSessionModelsCommonPolicyTest.kt")) {
+            violations += "sdk/exercise-session/README.md must mention executable shared exercise-session policy coverage"
+        }
+
+        assertTrue(
+            "Exercise-session migration vectors must have executable shared common policy coverage before exercise model or facade execution moves to KMP: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
+    fun `available data types migration vectors have executable shared common policy coverage`() {
+        val root = findRepositoryRoot()
+        val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/AvailableDataTypesCommonPolicyTest.kt")
+        val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
+        val readme = root.resolve("testdata/golden-vectors/sdk/available-data-types/README.md").readText()
+        val violations = mutableListOf<String>()
+
+        if (!commonTest.isFile) {
+            violations += commonTest.relativeTo(root).path
+        } else {
+            val commonTestText = commonTest.readText()
+            AVAILABLE_DATA_TYPES_COMMON_POLICY_REQUIRED_TERMS
+                .filterNot { term -> commonTestText.contains(term) }
+                .mapTo(violations) { term -> "${commonTest.relativeTo(root).path}: missing available-data-types common policy term $term" }
+        }
+        if (!inventory.contains("AvailableDataTypesCommonPolicyTest.kt") || !inventory.contains("available-data-types-readiness.json")) {
+            violations += "KmpCoverageInventory.md must mention AvailableDataTypesCommonPolicyTest.kt and available-data-types-readiness.json in the available data types notes"
+        }
+        if (!readme.contains("AvailableDataTypesCommonPolicyTest.kt")) {
+            violations += "sdk/available-data-types/README.md must mention executable shared available-data-types policy coverage"
+        }
+
+        assertTrue(
+            "Available-data-types migration vectors must have executable shared common policy coverage before availability facade behavior moves to KMP: $violations",
             violations.isEmpty()
         )
     }
@@ -1926,7 +2092,7 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
-    fun `firmware workflow facade ledger stays gated on injectable dependencies and facade compatibility`() {
+    fun `firmware workflow facade ledger stays pinned on injectable dependencies and facade compatibility`() {
         val root = findRepositoryRoot()
         val plan = root.resolve("documentation/KmpFakeTransportTestPlan.md").readText()
         val ledgerRow = plan.sectionBetween("## Public Facade Operation Coverage Ledger", "## Pre-Migration Gates")
@@ -1940,13 +2106,13 @@ class GoldenVectorMigrationPolicyTest {
             FIRMWARE_FACADE_GATE_REQUIRED_TERMS
                 .filterNot { term -> rowText.contains(term) }
                 .mapTo(violations) { term -> "Firmware update workflow ledger row missing $term" }
-            if (!ledgerRow[PUBLIC_FACADE_LEDGER_STATUS_COLUMN].contains("facade gate open")) {
-                violations += "Firmware update workflow must stay facade-gated until production injectable dependencies and facade compatibility tests exist"
+            if (!ledgerRow[PUBLIC_FACADE_LEDGER_STATUS_COLUMN].contains("facade compatibility pinned")) {
+                violations += "Firmware update workflow must stay pinned once production injectable dependencies and facade compatibility tests exist"
             }
         }
 
         assertTrue(
-            "Firmware workflow public facade delegation must remain explicitly blocked by concrete dependency and facade-test gates: $violations",
+            "Firmware workflow public facade delegation must remain explicitly pinned by concrete dependency and facade-test evidence: $violations",
             violations.isEmpty()
         )
     }
@@ -2056,6 +2222,41 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
+    fun `Android PMD model parsers stay behind runtime adapter boundary`() {
+        val root = findRepositoryRoot()
+        val modelDirectory = root.resolve("sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/gatt/client/pmd/model")
+        val retiredFrameAdapter = modelDirectory.resolve("PolarSharedPmdFrameAdapter.kt")
+        val directSharedImports = modelDirectory
+            .walkTopDown()
+            .filter { file -> file.isFile && file.extension == "kt" }
+            .flatMap { file ->
+                file.readLines().mapIndexedNotNull { index, line ->
+                    if (line.startsWith("import com.polar.shared")) {
+                        "${file.relativeTo(root).path}:${index + 1}:$line"
+                    } else {
+                        null
+                    }
+                }
+            }
+            .toList()
+        val runtimeAdapter = root.resolve("sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/impl/utils/PolarRuntimePlannerAdapter.kt").readText()
+        val missingAdapterMethods = PMD_SENSOR_RUNTIME_ADAPTER_METHODS.filterNot { method -> runtimeAdapter.contains("fun $method(") }
+
+        assertTrue(
+            "Android PMD model production files must not import shared parser DTOs directly; use PolarRuntimePlannerAdapter DTO bridges instead: $directSharedImports",
+            directSharedImports.isEmpty()
+        )
+        assertTrue(
+            "PolarSharedPmdFrameAdapter.kt must stay retired; parser bridge ownership belongs in PolarRuntimePlannerAdapter",
+            !retiredFrameAdapter.exists()
+        )
+        assertTrue(
+            "PolarRuntimePlannerAdapter must keep parser bridge methods for every migrated PMD sensor family: $missingAdapterMethods",
+            missingAdapterMethods.isEmpty()
+        )
+    }
+
+    @Test
     fun `byte level common dependency deferrals stay explicit until production common codecs exist`() {
         val root = findRepositoryRoot()
         val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle").readText()
@@ -2065,6 +2266,7 @@ class GoldenVectorMigrationPolicyTest {
         val trainingSessionPayloadRead = root.resolve("testdata/golden-vectors/sdk/training-session/payload-read-policy.json").readText()
         val trainingSessionPayloadParser = root.resolve("testdata/golden-vectors/sdk/training-session/payload-parser-policy.json").readText()
         val trainingSessionReadiness = root.resolve("testdata/golden-vectors/sdk/training-session/training-session-readiness.json").readText()
+        val userDeviceSettingsReadiness = root.resolve("testdata/golden-vectors/sdk/user-device-settings/settings-model-readiness.json").readText()
         val pmdSecretReadiness = root.resolve("testdata/golden-vectors/protocol/pmd/secret-readiness.json").readText()
         val restCompressionReadiness = root.resolve("testdata/golden-vectors/sdk/rest-service/rest-event-compression-readiness.json").readText()
         val watchFaceReadiness = root.resolve("testdata/golden-vectors/sdk/watch-face/watch-face-readiness.json").readText()
@@ -2081,6 +2283,7 @@ class GoldenVectorMigrationPolicyTest {
                 "payload-read-policy.json" -> trainingSessionPayloadRead
                 "payload-parser-policy.json" -> trainingSessionPayloadParser
                 "training-session-readiness.json" -> trainingSessionReadiness
+                "settings-model-readiness.json" -> userDeviceSettingsReadiness
                 "secret-readiness.json" -> pmdSecretReadiness
                 "rest-event-compression-readiness.json" -> restCompressionReadiness
                 "watch-face-readiness.json" -> watchFaceReadiness
@@ -2093,6 +2296,46 @@ class GoldenVectorMigrationPolicyTest {
 
         assertTrue(
             "Byte-level protobuf/gzip/crypto/codec migration must remain explicitly deferred until production common dependencies and byte-identical ownership are added: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
+    fun `training session generated public protobuf reconstruction stays out of shared common production`() {
+        val root = findRepositoryRoot()
+        val sharedMain = root.resolve("sources/Android/android-communications/shared/src/commonMain/kotlin")
+        val generatedTrainingProtoTerms = listOf(
+            "fi.polar.remote.representation.protobuf.TrainingSession",
+            "fi.polar.remote.representation.protobuf.Training.",
+            "fi.polar.remote.representation.protobuf.ExerciseRouteSamples",
+            "fi.polar.remote.representation.protobuf.ExerciseRouteSamples2",
+            "fi.polar.remote.representation.protobuf.ExerciseSamples",
+            "fi.polar.remote.representation.protobuf.ExerciseSamples2",
+            "TrainingSession.PbTrainingSession",
+            "Training.PbExerciseBase",
+            "ExerciseRouteSamples.PbExerciseRouteSamples",
+            "ExerciseRouteSamples2.PbExerciseRouteSamples2",
+            "ExerciseSamples.PbExerciseSamples",
+            "ExerciseSamples2.PbExerciseSamples2",
+            "Data_PbTrainingSession",
+            "Data_PbExerciseBase",
+            "Data_PbExerciseRouteSamples",
+            "Data_PbExerciseRouteSamples2",
+            "Data_PbExerciseSamples",
+            "Data_PbExerciseSamples2"
+        )
+        val violations = sharedMain.walkTopDown()
+            .filter { file -> file.isFile && file.extension == "kt" }
+            .flatMap { file ->
+                val text = file.readText()
+                generatedTrainingProtoTerms
+                    .filter { term -> text.contains(term) }
+                    .map { term -> "${file.relativeTo(root).path} references generated training protobuf public model term $term" }
+            }
+            .toList()
+
+        assertTrue(
+            "Shared common training-session code may parse selected protobuf fields, but generated public protobuf object reconstruction must stay platform-owned until the DTO/reconstruction strategy is explicit: $violations",
             violations.isEmpty()
         )
     }
@@ -2807,14 +3050,30 @@ class GoldenVectorMigrationPolicyTest {
         val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DeviceIdCommonPolicyTest.kt")
         val androidDeviceIdUtility = root.resolve("sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/polar/BlePolarDeviceIdUtility.kt")
         val androidDeviceUuid = root.resolve("sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarDeviceUuid.kt")
+        val androidSdkModelAdapter = root.resolve("sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/api/model/PolarSdkModelAdapter.kt")
+        val androidDeviceUuidSharedRoute = androidDeviceUuid.isFile &&
+            (
+                androidDeviceUuid.readText().contains("PolarDeviceId.uuidFromDeviceId") ||
+                    (
+                        androidDeviceUuid.readText().contains("PolarSdkModelAdapter.uuidFromDeviceId") &&
+                            androidSdkModelAdapter.isFile &&
+                            androidSdkModelAdapter.readText().contains("PolarDeviceId.uuidFromDeviceId")
+                    )
+            )
         return commonMain.isFile &&
             commonMain.readText().contains("object PolarDeviceId") &&
             commonTest.isFile &&
             commonTest.readText().contains("PolarDeviceId.uuidFromDeviceId") &&
             androidDeviceIdUtility.isFile &&
-            androidDeviceIdUtility.readText().contains("PolarDeviceId.assembleFull") &&
-            androidDeviceUuid.isFile &&
-            androidDeviceUuid.readText().contains("PolarDeviceId.uuidFromDeviceId")
+            (
+                androidDeviceIdUtility.readText().contains("PolarDeviceId.assembleFull") ||
+                    (
+                        androidDeviceIdUtility.readText().contains("PolarSdkModelAdapter.assembleFullDeviceId") &&
+                            androidSdkModelAdapter.isFile &&
+                            androidSdkModelAdapter.readText().contains("PolarDeviceId.assembleFull")
+                    )
+            ) &&
+            androidDeviceUuidSharedRoute
     }
 
     private fun iosSharedConsumptionMigrated(root: File): Boolean {
@@ -2973,6 +3232,19 @@ class GoldenVectorMigrationPolicyTest {
             "still need dedicated fake-transport vectors",
             "future fake-transport vectors"
         )
+        val PMD_SENSOR_RUNTIME_ADAPTER_METHODS = listOf(
+            "pmdAccSamples",
+            "pmdEcgSamples",
+            "pmdGnssLocationSamples",
+            "pmdGyrSamples",
+            "pmdMagSamples",
+            "pmdOfflineHrSamples",
+            "pmdPpgSamples",
+            "pmdPpiSamples",
+            "pmdPressureSamples",
+            "pmdSkinTemperatureSamples",
+            "pmdTemperatureSamples"
+        )
         val KMP_COVERAGE_DOCS = listOf(
             "documentation/KmpCoverageInventory.md",
             "documentation/KmpFakeTransportTestPlan.md",
@@ -3106,6 +3378,7 @@ class GoldenVectorMigrationPolicyTest {
             "security-strategy-byte-mapping",
             "unknown-security-strategy-rejection",
             "aes-fixture-pinning",
+            "shared-common-aes-production-decryption",
             "compile-verification-gate",
             "invalidSecurityKey",
             "unknownSecurityStrategy",
@@ -3248,12 +3521,12 @@ class GoldenVectorMigrationPolicyTest {
             "skinContactSupported"
         )
         val PRESSURE_TEMPERATURE_COMMON_POLICY_REQUIRED_TERMS = listOf(
-            "pressureAndTemperatureGoldenVectorsDefineExecutableCommonRawType0Policy",
-            "pressureAndTemperatureCompressedVectorsPinPlatformParityDeferralBeforeCommonParserMigration",
+            "pressureAndTemperatureGoldenVectorsDefineExecutableCommonScalarPolicy",
+            "pressureAndTemperatureCompressedVectorsUseProductionSharedType0Parser",
             "pressureTemperatureReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "protocol/sensors/pressure-temperature-readiness.json",
             "pressure-temperature-readiness",
-            "COMPRESSED_PLATFORM_PARITY_VECTORS",
+            "COMPRESSED_COMMON_VECTORS",
             "protocol/sensors/pressure-compressed-type0-android-factor-half.json",
             "protocol/sensors/pressure-raw-type0-single-sample.json",
             "protocol/sensors/pressure-raw-type0-truncated-sample-android-error.json",
@@ -3262,33 +3535,34 @@ class GoldenVectorMigrationPolicyTest {
             "protocol/sensors/temperature-compressed-type0-flat-deltas-android-two-samples.json",
             "pressure-raw-type0-ieee754-parsing",
             "temperature-raw-type0-ieee754-parsing",
-            "compressed-pressure-one-channel-indexing-deferral",
-            "compressed-temperature-sample-count-deferral",
+            "compressed-pressure-shared-type0-parser",
+            "compressed-temperature-shared-type0-parser",
             "compile-verification-gate",
             "compressedScalarDecisionNote",
-            "readFloatLe",
+            "PolarSensorDataParser.parsePressure",
+            "PolarSensorDataParser.parseTemperature",
             "unsupportedFrame",
             "malformedFrame",
             "PROTOCOL_ONLY_MIGRATION_OWNERSHIP"
         )
         val GNSS_LOCATION_OWNERSHIP_COMMON_POLICY_REQUIRED_TERMS = listOf(
-            "gnssLocationGoldenVectorsPinAndroidOwnedParserPolicyBeforeCommonMigration",
-            "gnssLocationReadinessManifestNamesEveryPreMigrationOwnershipFamily",
-            "GNSS_LOCATION_ANDROID_OWNED_VECTORS",
+            "gnssLocationGoldenVectorsPinSharedParserPolicyWithAndroidProductionDelegation",
+            "gnssLocationReadinessManifestNamesEverySharedParserDelegationFamily",
+            "GNSS_LOCATION_SHARED_PARSER_VECTORS",
             "protocol/sensors/gnss-location-readiness.json",
             "gnss-location-readiness",
-            "androidOwnedPreMigrationCharacterization",
+            "sharedParserAndroidProductionDelegation",
             "protocol/sensors/gnss-location-raw-type0-coordinate.json",
             "protocol/sensors/gnss-location-raw-type1-satellite-dilution.json",
             "protocol/sensors/gnss-location-raw-type2-satellite-summary.json",
             "protocol/sensors/gnss-location-raw-type3-nmea.json",
-            "android-owned-raw-type0-coordinate",
-            "android-owned-raw-type1-satellite-dilution",
-            "android-owned-raw-type2-satellite-summary",
-            "android-owned-raw-type3-nmea",
+            "shared-parser-raw-type0-coordinate",
+            "shared-parser-raw-type1-satellite-dilution",
+            "shared-parser-raw-type2-satellite-summary",
+            "shared-parser-raw-type3-nmea",
+            "android-production-delegation",
             "non-ios-parser-ownership",
-            "non-common-parser-ownership",
-            "future-shared-parser-parity-gate",
+            "shared-parser-parity-gate",
             "compile-verification-gate",
             "coordinate",
             "satelliteDilution",
@@ -3297,7 +3571,9 @@ class GoldenVectorMigrationPolicyTest {
             "consumerTests.hasStringArray(\"ios\")",
             "platforms.booleanValue(\"ios\")",
             "platforms.booleanValue(\"common\")",
-            "PROTOCOL_ONLY_MIGRATION_OWNERSHIP"
+            "No direct iOS parser surface",
+            "intentionally has no iOS consumer",
+            "SHARED_GNSS_LOCATION_MIGRATION_OWNERSHIP"
         )
         val OFFLINE_HR_COMMON_POLICY_REQUIRED_TERMS = listOf(
             "offlineHrGoldenVectorsDefineExecutableCommonRawAndUnsupportedFramePolicy",
@@ -3343,6 +3619,8 @@ class GoldenVectorMigrationPolicyTest {
             "trainingSessionMissingExerciseFileGoldenVectorDefinesExecutableCommonPlatformPolicy",
             "trainingSessionPayloadReadGoldenVectorDefinesExecutableCommonProgressMalformedAndUnknownSamplePolicy",
             "trainingSessionPayloadParserGoldenVectorDefinesExecutableCommonParserOwnershipPolicy",
+            "PolarTrainingPayloadParserCase",
+            "PolarTrainingSessionModels.payloadParserCase",
             "trainingSessionReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/training-session/training-session-readiness.json",
             "training-session-readiness",
@@ -3353,8 +3631,12 @@ class GoldenVectorMigrationPolicyTest {
             "reference-directory-traversal",
             "payload-fetch-order",
             "malformed-component-isolation",
-            "byte-level-parser-dependency-gate",
+            "selected-protobuf-field-parser-ownership",
+            "shared-gzip-payload-codec",
+            "generated-public-protobuf-construction-boundary",
             "platform-training-session-vector-reference-gate",
+            "public-model-slot-planning",
+            "public-generated-model-reconstruction-boundary",
             "compile-verification-gate",
             "ignore-files-that-do-not-map-to-public-training-or-exercise-data-types",
             "android-currently-stores-first-file-path-while-ios-stores-exercise-directory-path",
@@ -3362,9 +3644,9 @@ class GoldenVectorMigrationPolicyTest {
             "omit-only-the-malformed-component-and-continue-reading-remaining-files",
             "ignore-unknown-advanced-sample-lists-and-preserve-known-samples",
             "compute-progress-from-reference-file-sizes-and-last-completed-file",
-            "trainingSessionByteLevelPayloadParserMigrationRequiresExplicitCommonProtoAndGzipDependencies",
-            "add-common-protobuf-and-gzip-parser-dependencies-before-byte-level-payload-migration",
-            "deferred-until-common-protobuf-and-gzip-parser-exist",
+            "trainingSessionSelectedPayloadParserOwnershipKeepsGeneratedModelBoundaryExplicit",
+            "selected-common-protobuf-field-parser-active-before-generated-model-reconstruction",
+            "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred",
             "samples-advanced-gzip-protobuf",
             "PbExerciseSamples2",
             "gzip-protobuf",
@@ -3403,7 +3685,7 @@ class GoldenVectorMigrationPolicyTest {
             "unknown-sensor-location-boundary",
             "compile-verification-gate",
             "include-nullable-source-device-id-in-shared-model-or-adapt-it-at-platform-facade",
-            "choose-null-or-explicit-unknown-before-shared-model-migration",
+            "map-unrecognized-measurement-and-sensor-location-to-null-in-shared-models",
             "preserve-empty-list"
         )
         val DISK_SPACE_COMMON_POLICY_REQUIRED_TERMS = listOf(
@@ -3443,6 +3725,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val WATCH_FACE_COMMON_POLICY_REQUIRED_TERMS = listOf(
             "watchFaceGoldenVectorsDefineExecutableCommonFieldComplicationAndMalformedPolicy",
+            "watchFaceFlatBufferParsingExecutesInSharedCommonCode",
             "watchFaceReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/watch-face/watch-face-readiness.json",
             "watch-face-readiness",
@@ -3454,9 +3737,12 @@ class GoldenVectorMigrationPolicyTest {
             "complication-id-order-preservation",
             "unknown-complication-raw-id-preservation",
             "kvtx-wrapper-metadata",
+            "flatbuffer-byte-input-parser",
+            "flatbuffer-byte-output-shared-code",
             "compile-verification-gate",
             "preserve-raw-id-in-config-fields-and-return-null-for-enum-lookup",
-            "MINIMUM_FLATBUFFER_HEADER_SIZE",
+            "PolarWatchFaceConfigFlatBuffer.parse",
+            "PolarWatchFaceConfigFlatBuffer.build",
             "complicationNameOrNull"
         )
         val KVTX_COMMON_POLICY_REQUIRED_TERMS = listOf(
@@ -3534,6 +3820,9 @@ class GoldenVectorMigrationPolicyTest {
             "automatic-hr-trigger-mapping",
             "automatic-ppi-delta-decompression",
             "daily-summary-scalar-projection",
+            "unsupported-field-deferral",
+            "public-model-shape-gate",
+            "facade-request-error-boundary",
             "platform-activity-vector-reference-gate",
             "compile-verification-gate",
             "choose one shared malformed activity sample policy",
@@ -3562,6 +3851,10 @@ class GoldenVectorMigrationPolicyTest {
         )
         val USER_DEVICE_SETTINGS_COMMON_POLICY_REQUIRED_TERMS = listOf(
             "userDeviceSettingsGoldenVectorsDefineExecutableCommonPresenceAndWritePolicy",
+            "PolarUserDeviceSettingsFields",
+            "PolarSerializedUserDeviceSettingsFields",
+            "PolarUserDeviceSettingsModels.parsePresencePreservingFields",
+            "PolarUserDeviceSettingsModels.serializePresencePreservingFields",
             "userDeviceSettingsModelReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/user-device-settings/settings-model-readiness.json",
             "user-device-settings-model-readiness",
@@ -3576,11 +3869,92 @@ class GoldenVectorMigrationPolicyTest {
             "encoder-owned-trusted-last-modified",
             "explicit-telemetry-write-policy",
             "platform-default-divergence",
+            "mapped-protobuf-byte-codec",
             "platform-user-device-settings-vector-references",
             "compile-verification-gate",
             "preserve-protobuf-presence",
             "write-explicit-telemetry",
-            "lastModifiedTrusted"
+            "lastModifiedTrusted",
+            "parseProtoBytes",
+            "buildProtoBytes"
+        )
+        val SD_LOG_COMMON_POLICY_REQUIRED_TERMS = listOf(
+            "sdLogEnumMappingsPreservePublicNumericValues",
+            "sdLogReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+            "sdk/sd-log/sd-log-readiness.json",
+            "sd-log-readiness",
+            "sdLogReadiness",
+            "log-trigger-enum-projection",
+            "magnetometer-frequency-enum-projection",
+            "unknown-enum-null-boundary",
+            "sd-log-config-read-write-paths",
+            "write-progress-policy-gate",
+            "session-notification-platform-boundary",
+            "protobuf-construction-platform-boundary",
+            "optional-field-presence-boundary",
+            "public-error-mapping-boundary",
+            "platform-sd-log-vector-reference-gate",
+            "compile-verification-gate",
+            "SD-log migration may proceed only after this readiness manifest is executable from shared commonTest"
+        )
+        val EXERCISE_SESSION_COMMON_POLICY_REQUIRED_TERMS = listOf(
+            "exerciseSportProfileMappingPreservesPublicIdsAndUnknownFallback",
+            "exerciseSessionReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+            "sdk/exercise-session/exercise-session-readiness.json",
+            "exercise-session-readiness",
+            "exerciseSessionReadiness",
+            "sport-profile-id-mapping",
+            "unknown-sport-profile-fallback",
+            "offline-exercise-start-command-planning",
+            "offline-exercise-stop-command-planning",
+            "offline-exercise-status-command-planning",
+            "offline-exercise-file-read-remove-paths",
+            "offline-exercise-device-info-path",
+            "protobuf-construction-platform-boundary",
+            "status-result-platform-boundary",
+            "public-error-mapping-boundary",
+            "platform-exercise-session-vector-reference-gate",
+            "compile-verification-gate",
+            "Exercise-session migration may proceed only after this readiness manifest is executable from shared commonTest"
+        )
+        val AVAILABLE_DATA_TYPES_COMMON_POLICY_REQUIRED_TERMS = listOf(
+            "availableDataTypesReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+            "sdk/available-data-types/available-data-types-readiness.json",
+            "available-data-types-readiness",
+            "availableDataTypesReadiness",
+            "offline-pmd-to-public-mapping",
+            "online-pmd-to-public-mapping",
+            "hr-service-availability-projection",
+            "ios-location-pressure-filter-boundary",
+            "android-full-surface-boundary",
+            "public-to-pmd-measurement-lookup",
+            "unknown-public-type-null-boundary",
+            "pmd-feature-read-platform-boundary",
+            "hr-service-discovery-platform-boundary",
+            "public-error-mapping-boundary",
+            "platform-available-data-type-vector-reference-gate",
+            "compile-verification-gate",
+            "Available-data-types migration may proceed only after this readiness manifest is executable from shared commonTest"
+        )
+        val FIRST_TIME_USE_COMMON_POLICY_REQUIRED_TERMS = listOf(
+            "firstTimeUseEnumMappingsPreservePublicPhysicalConfigValues",
+            "firstTimeUseReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+            "sdk/first-time-use/first-time-use-readiness.json",
+            "first-time-use-readiness",
+            "firstTimeUseReadiness",
+            "gender-enum-projection",
+            "training-background-enum-projection",
+            "typical-day-enum-projection",
+            "unknown-enum-null-boundary",
+            "physical-config-read-write-paths",
+            "user-id-read-write-paths",
+            "write-progress-policy-gate",
+            "sync-sequencing-platform-boundary",
+            "protobuf-construction-platform-boundary",
+            "public-error-mapping-boundary",
+            "platform-first-time-use-vector-reference-gate",
+            "compile-verification-gate",
+            "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest"
         )
         val SHARED_CONSUMPTION_REQUIRED_TERMS = listOf(
             "implementation project(':shared')",
@@ -3600,6 +3974,32 @@ class GoldenVectorMigrationPolicyTest {
             "GATT clients" to listOf("Partial", "platform-owned", "Keep transport clients platform-specific"),
             "Android Bluedroid host behavior" to listOf("Platform-specific", "Do not migrate to common code"),
             "iOS CoreBluetooth host behavior" to listOf("Platform-specific", "Do not migrate to common code")
+        )
+        val FEATURE_AVAILABILITY_VECTOR_REQUIRED_TERMS = listOf(
+            "feature_availability_readiness",
+            "service-and-capability-gates",
+            "feature-name-normalization",
+            "h10-filesystem-capability-only-gate",
+            "unknown-feature-pass-through",
+            "platform-client-readiness-boundary",
+            "commonRuntimePrototype"
+        )
+        val FEATURE_AVAILABILITY_DOC_REQUIRED_TERMS = listOf(
+            "feature-availability-readiness.json",
+            "FeatureAvailabilityCommonPolicyTest.kt",
+            "PolarRuntimePlannerAdapterTest.kt",
+            "PolarDataUtilsTest.swift",
+            "GATT client lookup",
+            "`clientReady` waits",
+            "PMD feature reads",
+            "public callback/error behavior"
+        )
+        val FEATURE_AVAILABILITY_TEST_REQUIRED_TERMS = listOf(
+            "firmware-update-requires-psftp-and-firmware-capability",
+            "offline-exercise-v2-uses-h10-filesystem-capability-without-service-gate",
+            "unknown-feature-has-no-shared-preconditions",
+            "platform-client-readiness-boundary",
+            "SDK feature availability migration owns only deterministic service and capability preconditions"
         )
         val FULL_COVERAGE_EXIT_CRITERIA_TERMS = listOf(
             "Every row marked `Partial` has either new tests, documented platform-specific ownership, or a migration deferral note.",
@@ -3629,6 +4029,18 @@ class GoldenVectorMigrationPolicyTest {
         val PLATFORM_OWNED_BACKLOG_REQUIRED_TERMS = listOf(
             "Platform-owned gaps: Android Bluedroid host behavior, iOS CoreBluetooth host behavior, GATT client host interactions, and platform identifier routing should stay platform-specific unless a future slice defines a pure codec or deterministic state machine contract.",
             "BLE device lifecycle and GATT clients: keep platform-owned unless a slice extracts a pure codec or deterministic state machine with common fake-transport tests."
+        )
+        val CURRENT_SHARED_POLICY_STATE_REQUIRED_TERMS = listOf(
+            "## Current Shared-Policy State",
+            "runtime-pinned Android/iOS facade compatibility evidence in `KmpFakeTransportTestPlan.md`",
+            "New runtime/facade work should add operation-specific Android facade tests, iOS facade tests, and shared fake-transport tests only when a later production delegation slice introduces a new operation family",
+            "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
+            "BLE/session/GATT host behavior stays platform-owned unless a later slice defines a pure codec or deterministic state-machine contract"
+        )
+        val STALE_SHARED_POLICY_BACKLOG_TERMS = listOf(
+            "## Remaining Shared-Policy Gaps",
+            "production shared delegation still needs remaining facade compatibility tests",
+            "Runtime/facade gaps:"
         )
         val PODSPEC_SOURCE_FILES = Regex("s\\.source_files\\s*=\\s*'([^']+)'")
         val PODSPEC_RESOURCES = Regex("s\\.resources\\s*=\\s*\\[(.*)]")
@@ -3827,22 +4239,32 @@ class GoldenVectorMigrationPolicyTest {
             "Offline trigger runtime"
         )
         val FIRMWARE_FACADE_GATE_REQUIRED_TERMS = listOf(
-            "facade gate open",
+            "facade compatibility pinned",
             "PolarFirmwareUpdateUtilsTest.kt",
-            "FirmwareUpdateCommonFakeWorkflowTest.kt",
             "PolarFirmwareUpdateUtilsTest.swift",
+            "FirmwareUpdateApi(transport:)",
+            "firmwareUpdateApiFactory",
+            "PolarFirmwareUpdateUtils.packageExtractor",
+            "firmwareFileWriteStreamFactory",
+            "shared finalization step planning",
             "workflow-runtime-policy.json",
             "FirmwareWorkflowRuntimePolicyCommonTest.kt",
             "injectable production dependencies",
             "facade progress",
             "cleanup",
             "cancellation",
+            "multi-BLE host-state restoration",
+            "automatic reconnection restoration",
+            "final set-time failure mapping",
+            "final restart failure mapping",
+            "final stop-sync platform split",
             "retry scheduling",
-            "error-mapping tests before delegation"
+            "public error translation adapter-owned"
         )
-        val FACADE_GATE_OPEN_REQUIRED_TERMS = mapOf(
+        val FACADE_GATE_OPEN_REQUIRED_TERMS = mapOf<String, List<String>>()
+        val RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = mapOf(
             "User device settings writes and reads" to listOf(
-                "facade gate open",
+                "facade read/write error mapping pinned",
                 "BDBleApiImplTest.kt",
                 "PolarUserDeviceSettingsTest.kt",
                 "UserDeviceSettingsCommonPolicyTest.kt",
@@ -3850,42 +4272,56 @@ class GoldenVectorMigrationPolicyTest {
                 "PolarUserDeviceSettingsUtilsTest.swift",
                 "settings-runtime-policy.json",
                 "UserDeviceSettingsRuntimePolicyCommonTest.kt",
-                "protobuf serialization",
-                "platform defaults",
-                "daylight-saving time source",
-                "public error mapping before delegation"
+                "read-failure no-write",
+                "write-failure-after-payload",
+                "daylight-saving payload shape",
+                "facade-error mapping gate",
+                "protobuf parser/builder ownership",
+                "public error translation adapter-owned"
             ),
             "Stored data cleanup and deletion workflows" to listOf(
-                "facade gate open",
+                "facade list-failure/path split pinned",
                 "BDBleApiImplTest.kt",
                 "PolarBleApiImplTests.swift",
                 "cleanup-workflow-policy.json",
                 "StoredDataCleanupRuntimePolicyCommonTest.kt",
-                "facade compatibility tests",
-                "cleanup error/path splits before delegation"
+                "SDLOGS list-failure swallowing",
+                "SDLOGS list-failure propagation",
+                "empty-parent pruning",
+                "facade-error mapping gate",
+                "directory listing",
+                "automatic-sample protobuf date reads",
+                "public error translation adapter-owned"
             ),
             "Reset sync notification and H10 recording commands" to listOf(
-                "facade gate open",
+                "facade sync-failure split pinned",
                 "BDBleApiImplTest.kt",
                 "PolarBleApiImplTests.swift",
                 "reset-sync-h10-command-policy.json",
                 "CommandRuntimePolicyCommonTest.kt",
-                "platform facade success/error compatibility tests",
-                "sync failure splits before delegation"
+                "H10 recording start/stop/status query payloads and query failures",
+                "Android sync-start/sync-stop failure compatibility",
+                "iOS sync-start/sync-stop failure propagation",
+                "facade-error mapping gate",
+                "protobuf builders",
+                "BLE transport calls",
+                "sync failure split translation",
+                "public error mapping adapter-owned"
             ),
-            "Firmware update workflow" to FIRMWARE_FACADE_GATE_REQUIRED_TERMS
-        )
-        val RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = mapOf(
             "REST service discovery and description" to listOf(
-                "facade response-error pinned",
+                "facade response-error and sleep action paths pinned",
                 "BDBleApiImplTest.kt",
                 "PolarBleApiImplTests.swift",
                 "rest-facade-runtime-policy.json",
                 "rest-request-transport-policy.json",
+                "rest-service-mapping-readiness.json",
                 "RestFacadeRuntimePolicyCommonTest.kt",
+                "RestServiceMappingCommonPolicyTest.kt",
                 "RestRequestTransportPolicyCommonTest.kt",
                 "response-error platform mapping",
-                "empty-success policy",
+                "empty-success policy pinned through shared transport planning plus platform parse/decode compatibility",
+                "shared sleep REST action-path planning",
+                "sleep REST action-path vector references",
                 "facade-level public error compatibility assertions",
                 "additional delegated REST operations before shared REST runtime delegation"
             ),
@@ -3923,7 +4359,8 @@ class GoldenVectorMigrationPolicyTest {
                 "OfflineTriggerRuntimePolicyCommonTest.kt",
                 "response-queue cleanup split explicit",
                 "cancellation coverage only if production shared delegation introduces cancellable tasks, observers, or streams"
-            )
+            ),
+            "Firmware update workflow" to FIRMWARE_FACADE_GATE_REQUIRED_TERMS
         )
         val PSFTP_TIMEOUT_LEDGER_REQUIRED_TERMS = mapOf(
             "Timeout without notification" to listOf(
@@ -3980,37 +4417,51 @@ class GoldenVectorMigrationPolicyTest {
             "gzip",
             "zlib",
             "compression",
+            "gson",
+            "moshi",
             "okio",
             "kotlinx-io"
         )
         val BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = mapOf(
             "KmpFullCoverageTddBacklog.md" to listOf(
-                "add real common protobuf/gzip production dependencies",
-                "full AES implementation ownership still must be chosen",
-                "add byte-level shared codec vectors before moving gzip/deflate behavior into common code",
-                "byte-identical output",
+                "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
+                "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
+                "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
+                "shared-common-aes-production-decryption",
+                "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
+                "training-session gzip payload decompression now uses shared KMP platform actuals",
+                "Watch-face FlatBuffer byte input parsing and output construction now live in shared production code",
                 "KVTX"
             ),
             "KmpCoverageInventory.md" to listOf(
-                "Keep generic iOS `Data.deflated`/`Data.inflated` platform-specific unless a future shared REST codec deliberately standardizes gzip/zlib behavior for KMP common code.",
+                "REST event compressed payload decoding now uses shared KMP platform actual codecs while generic iOS `Data.deflated`/`Data.inflated` remains platform-specific.",
+                "linked iOS `PolarRestServiceProjectionPlanner` now consume shared REST JSON parsing",
+                "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
                 "Keep iOS nil-on-truncation compatibility adapter-owned if required while common parsing uses typed malformed-script errors.",
                 "semantic and codec-ownership/readiness policy executable"
             ),
             "KmpPreMigrationRemainingWork.md" to listOf(
-                "Add real common protobuf/gzip/crypto/codec dependencies",
-                "training-session payload parsing",
-                "PMD AES secret handling",
-                "compression helpers",
-                "shared FlatBuffer/KVTX byte-identical output decision"
+                "Generated public protobuf object reconstruction remains platform-owned",
+                "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
+                "training-session payloads",
+                "Training-session gzip payload decoding now uses shared KMP platform actuals",
+                "PMD AES ECB/no-padding decryption now lives in shared common production code",
+                "watch-face FlatBuffer input/output construction lives in shared common production code",
+                "training-session deferral artifacts"
             ),
             "payload-read-policy.json" to listOf(
                 "byteLevelParserGate",
-                "add-common-protobuf-and-gzip-parser-dependencies-before-byte-level-payload-migration",
-                "deferred-until-common-protobuf-and-gzip-parser-exist"
+                "selected-common-protobuf-field-parser-active-before-generated-model-reconstruction",
+                "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred",
+                "readPlan",
+                "publicModelReadPlanPolicy",
+                "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects"
             ),
             "payload-parser-policy.json" to listOf(
-                "Before moving byte-level training payload parsing to common code, add production common protobuf and gzip dependencies",
-                "without claiming common byte decoding is implemented",
+                "Selected training payload protobuf field parsing now executes in shared KMP",
+                "generated public protobuf object construction remains platform-owned",
+                "shared selected-field parser policy",
+                "publicModelSlot",
                 "training-session-summary-protobuf",
                 "exercise-summary-protobuf",
                 "route-protobuf",
@@ -4023,20 +4474,32 @@ class GoldenVectorMigrationPolicyTest {
                 "gzip-protobuf"
             ),
             "training-session-readiness.json" to listOf(
-                "byte-level-parser-dependency-gate",
-                "real byte-level protobuf/gzip decoding remains deferred until common production parser dependencies exist and are compile-verified"
+                "selected-protobuf-field-parser-ownership",
+                "shared-gzip-payload-codec",
+                "public-model-read-plan",
+                "generated-public-protobuf-construction-boundary",
+                "public-model-slot-planning",
+                "public-generated-model-reconstruction-boundary",
+                "shared selected protobuf field parsing",
+                "shared public-model read planning",
+                "generated public protobuf construction boundaries",
+                "generated public protobuf model reconstruction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered"
             ),
             "secret-readiness.json" to listOf(
                 "AES block-alignment gating",
-                "production common AES provider selection remains an explicit implementation gate rather than a test-only shortcut"
+                "shared-common-aes-production-decryption",
+                "shared production code owns NONE/XOR decryption and shared common AES ECB/no-padding decryption"
             ),
             "rest-event-compression-readiness.json" to listOf(
                 "android-gzip-codec-reference-gate",
                 "ios-deflate-codec-reference-gate",
-                "normalize-or-preserve-codec-decision-gate"
+                "shared-platform-actual-codec-gate"
             ),
             "watch-face-readiness.json" to listOf(
-                "byte-identical FlatBuffer output remains platform-specific unless production shared FlatBuffer builders are deliberately introduced and compile-verified"
+                "flatbuffer-byte-input-parser",
+                "flatbuffer-byte-output-shared-code",
+                "shared FlatBuffer byte input parsing",
+                "shared FlatBuffer byte output construction"
             )
         )
         val FAKE_TRANSPORT_TEST_REQUIRED_TERMS = listOf(
@@ -4101,13 +4564,13 @@ class GoldenVectorMigrationPolicyTest {
             "\"0a0b\""
         )
         val FAKE_TRANSPORT_COMMON_REST_RUNTIME_TEST_REQUIRED_TERMS = listOf(
-            "restRequestTransportPolicyVectorRunsThroughCommonFakeTransport",
+            "restRequestTransportPolicyVectorRunsThroughProductionCommonPlanner",
             "restRequestTransportReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "rest-request-transport-policy",
             "sdk/rest-service/rest-request-transport-policy.json",
             "sdk/rest-service/rest-request-transport-readiness.json",
             "rest-request-transport-readiness",
-            "ScriptedCommonFakeTransport",
+            "PolarRuntimeOrchestration.planRestRequestTransport",
             "service-list-request-error-payload",
             "service-description-request-error-payload",
             "service-list-empty-transport-response",
@@ -4116,12 +4579,13 @@ class GoldenVectorMigrationPolicyTest {
             "empty-successful-response-policy-gate",
             "response-error-payload-status",
             "response-error-payload-message",
-            "facade-error-mapping-deferred",
+            "facade-error-mapping-pinned",
             "compile-verification-gate",
-            "toPftpCommand"
+            "PolarRestRequestTransportOperation"
         )
         val FAKE_TRANSPORT_COMMON_REST_FACADE_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "restFacadeRuntimePolicyVectorDefinesExecutableCommonRequestPlanning",
+            "restFacadeRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
             "restFacadeRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/rest-service/rest-facade-runtime-policy.json",
             "sdk/rest-service/rest-facade-runtime-readiness.json",
@@ -4163,6 +4627,8 @@ class GoldenVectorMigrationPolicyTest {
             "malformed-json",
             "json-parse-failure",
             "json-decoder-failure",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "rest-request-transport-policy.json",
             "service-list-request-path",
             "service-description-action-field-mapping",
@@ -4186,6 +4652,10 @@ class GoldenVectorMigrationPolicyTest {
             "restServiceListGoldenVectorsDefineExecutableCommonMappingPolicy",
             "restServiceDescriptionGoldenVectorsDefineExecutableCommonMappingPolicy",
             "restServiceListWrongTypeGoldenVectorPinsPlatformSplitBeforeCommonDecoderMigration",
+            "PolarRestServiceList",
+            "PolarRestServiceDescription",
+            "PolarRestServiceModels.serviceList",
+            "PolarRestServiceModels.serviceDescription",
             "restServiceMappingReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/rest-service/rest-service-mapping-readiness.json",
             "rest-service-mapping-readiness",
@@ -4220,24 +4690,25 @@ class GoldenVectorMigrationPolicyTest {
             "android-gzip-codec-reference-gate",
             "ios-deflate-codec-reference-gate",
             "malformed-compressed-payload-platform-split",
-            "normalize-or-preserve-codec-decision-gate",
+            "shared-platform-actual-codec-gate",
             "compile-verification-gate",
+            "PolarRestEventCompressionCodec",
             "GZIPInputStream",
-            "normalize or explicitly preserve this platform split"
+            "shared KMP platform actual codecs"
         )
         val FAKE_TRANSPORT_COMMON_FILE_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "fileListingGoldenVectorsDefineExecutableCommonTraversalPolicy",
             "sdk/file-utils/list-files-shallow-all.json",
             "sdk/file-utils/list-files-recursive-filtered.json",
             "entry-name-contains-dot",
-            "fileReadWriteDeleteGoldenVectorRunsThroughCommonFakeTransport",
+            "fileReadWriteDeleteGoldenVectorRunsThroughProductionFileFacadePlanner",
             "sdk/file-utils/file-read-write-delete-operations.json",
-            "fileRuntimeErrorPolicyVectorRunsThroughCommonFakeTransport",
+            "fileRuntimeErrorPolicyVectorRunsThroughProductionCommonPlanner",
             "fileRuntimeErrorReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/file-utils/runtime-error-policy.json",
             "sdk/file-utils/runtime-error-readiness.json",
             "runtime-error-readiness",
-            "ScriptedCommonFakeTransport",
+            "PolarRuntimeOrchestration.planFileFacade",
             "directory-list-response-error-103",
             "directory-list-malformed-payload",
             "read-file-transport-error",
@@ -4250,13 +4721,16 @@ class GoldenVectorMigrationPolicyTest {
             "directory-missing-status-103",
             "directory-malformed-payload-parse-failure",
             "write-file-payload-capture-before-stream-error",
-            "facade-error-mapping-deferred",
+            "facade-error-mapping-pinned",
             "compile-verification-gate",
-            "toPftpCommand"
+            "PolarRuntimeOrchestration.planFileRuntimeError"
         )
         val FAKE_TRANSPORT_COMMON_FILE_FACADE_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "fileFacadeRuntimePolicyVectorDefinesExecutableCommonCommandPlanning",
+            "fileFacadeRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
             "fileFacadeRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+            "ledConfigPayloadPlanningPreservesSdkAndPpiByteOrder",
+            "ledConfigPayloadBytes",
             "sdk/file-utils/file-facade-runtime-policy.json",
             "sdk/file-utils/file-facade-runtime-readiness.json",
             "file-facade-runtime-policy",
@@ -4292,6 +4766,8 @@ class GoldenVectorMigrationPolicyTest {
             "pftp-response-error-code",
             "device-error-wrapper",
             "write-stream-error-after-payload",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "file-read-write-delete-operations.json",
             "runtime-error-policy.json",
             "list-files-shallow-all.json",
@@ -4315,6 +4791,14 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_BACKUP_UTILITY_TEST_REQUIRED_TERMS = listOf(
             "backupExpansionAndRestoreWritesGoldenVectorDefinesExecutableCommonPolicy",
+            "backupWorkflowRunsThroughCommonFakeTraversalAndRestoreHarness",
+            "CommonBackupFakeRuntime",
+            "backupTraversalRootPath",
+            "backupTraversalPlan",
+            "directoryEntries",
+            "readCommands",
+            "restorePayloads",
+            "GET:/SYS/BACKUP.TXT",
             "restoreFailureGoldenVectorPinsPlatformSplitBeforeCommonWorkflowMigration",
             "backupWorkflowReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/backup-utils/backup-expansion-and-restore-writes.json",
@@ -4329,14 +4813,15 @@ class GoldenVectorMigrationPolicyTest {
             "restore-failure-aggregation-decision-gate",
             "compile-verification-gate",
             "choose whether restore failure aggregation belongs in shared code",
-            "ScriptedCommonFakeTransport"
+            "PolarWorkflowRuntimePlanning.planBackupRestore"
         )
         val FAKE_TRANSPORT_COMMON_OFFLINE_TRIGGER_RUNTIME_TEST_REQUIRED_TERMS = listOf(
-            "offlineTriggerRuntimePolicyVectorRunsThroughCommonFakeTransport",
+            "offlineTriggerRuntimePolicyVectorRunsThroughProductionCommonPlanner",
+            "offlineTriggerRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
             "offlineTriggerRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/offline-recording/trigger-runtime-policy.json",
             "sdk/offline-recording/trigger-runtime-readiness.json",
-            "ScriptedCommonFakeTransport",
+            "PolarWorkflowRuntimePlanning.planOfflineTriggerRuntime",
             "set-trigger-success-with-secret",
             "set-trigger-mode-error",
             "set-trigger-status-read-error",
@@ -4347,11 +4832,14 @@ class GoldenVectorMigrationPolicyTest {
             "setSetting",
             "control-point-error",
             "transport-error",
+            "Cancellation remains a production-delegation gate because current offline-trigger operations are synchronous control-point commands without stream observers or cancellable fake-runtime tasks.",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "enabledFeatures",
             "typed-set-mode",
             "settings-write",
             "optional-secret-attachment",
-            "facade-error-mapping-deferred",
+            "facade-error-mapping-pinned",
             "compile-verified",
             "explicit length byte"
         )
@@ -4381,11 +4869,18 @@ class GoldenVectorMigrationPolicyTest {
             "SYSUPDAT.IMG"
         )
         val FAKE_TRANSPORT_COMMON_FIRMWARE_WORKFLOW_TEST_REQUIRED_TERMS = listOf(
-            "firmwareWorkflowRuntimePolicyVectorRunsThroughCommonFakeWorkflow",
+            "firmwareWorkflowRuntimePolicyVectorRunsThroughProductionCommonPlanner",
+            "firmwareWorkflowRuntimeVectorRunsThroughCommonFakeDependencies",
             "firmwareWorkflowRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+            "firmwarePackagePayloadSelectionKeepsAndroidReadmeSkipPolicyInSharedPlanning",
+            "firmwareRebootWaitSelectionUsesSharedSystemUpdateFilePolicy",
+            "firmwareAvailabilityFailureRetryClassificationUsesSharedPolicy",
+            "firmwareUpdateAvailabilityRequiresHigherVersionAndPackageUrl",
             "sdk/firmware-update/workflow-runtime-policy.json",
             "sdk/firmware-update/workflow-runtime-readiness.json",
-            "ScriptedCommonFakeTransport",
+            "PolarWorkflowRuntimePlanning.planFirmwareWorkflow",
+            "firmwareAvailabilityFailureIsRetryable",
+            "firmwareUpdateIsAvailable",
             "check-update-not-available",
             "check-update-available",
             "download-failure",
@@ -4395,11 +4890,27 @@ class GoldenVectorMigrationPolicyTest {
             "retryable-server-failure",
             "write-package-success-with-system-update-last",
             "system-update-reboot-response-is-success",
+            "non-system-reboot-response-is-terminal-failure",
+            "propagate-error",
             "SYSUPDAT.IMG",
             "rebooting",
             "battery-too-low-response-is-terminal-failure",
             "battery-too-low",
             "retryable server failure",
+            "CommonFirmwareFakeNetwork",
+            "CommonFirmwareFakePackageDownloader",
+            "CommonFirmwareFakeZipStore",
+            "CommonFirmwareFakeBleWriter",
+            "CommonFakeRetryScheduler",
+            "firmwarePayloadsByPath",
+            "firmwareArtifacts",
+            "firmwarePackageEntryIsPayload",
+            "firmwareFileTriggersRebootWait",
+            "bleWritePayloads",
+            "payloadsByPath",
+            "bleWriteProgressEvents",
+            "progressEvents",
+            "payloadHex.length / 2",
             "fake-network-availability",
             "fake-filesystem-zip-extraction",
             "ble-write-progress",
@@ -4429,10 +4940,19 @@ class GoldenVectorMigrationPolicyTest {
             "initial-silence",
             "wait-notification-has-no-built-in-initial-silence-timeout",
             "commonFakeNotificationRuntimeConsumerTimeoutCleansObserverWithVirtualClock",
-            "FakeNotificationTimeoutRuntime",
+            "PolarWorkflowRuntimePlanning.planConsumerTimeoutObserverCleanup",
             "consumerTimeout",
             "activeObserverCount",
             "cleanupCallbackCount",
+            "commonFakePsFtpHarnessPinsInitialSilenceTimeoutCleanupWithoutLeakedOperation",
+            "CommonFakePsFtpRuntimeHarness",
+            "descriptorEnabled",
+            "independentD2hChannelPackets",
+            "independentMtuChannelWrites",
+            "pendingOperationCount",
+            "operationScopeCleanupEvents",
+            "scanner-pause",
+            "scanner-resume",
             "commonFakeNotificationRuntimePinsRfc76ErrorAndTransportStatusPlatformSplit",
             "sdk/psftp-notifications/notification-error-policy.json",
             "rfc76-error-first-frame",
@@ -4441,12 +4961,15 @@ class GoldenVectorMigrationPolicyTest {
             "Nonzero transport status is a current platform split",
             "sdk/psftp-notifications/notification-continuation-timeout-policy.json",
             "missing-last-frame-after-more",
+            "commonFakePsFtpHarnessPinsContinuationTimeoutCleanupWithoutLeakedOperation",
             "commonFakeWriteRuntimePinsPlatformProgressSplitBeforeSharedPolicyChoice",
             "sdk/psftp-response/write-success-progress.json",
             "android-currently-emits-negative-header-overhead-progress-before-payload-count-while-ios-emits-initial-zero-header-progress-and-final-payload-count",
             "sdk/psftp-response/write-interruption-error-policy.json",
             "sdk/psftp-response/write-transport-failure-policy.json",
             "sdk/psftp-response/write-ack-timeout-policy.json",
+            "commonFakePsFtpHarnessPinsWriteAckTimeoutCleanupWithoutLeakedOperation",
+            "writeAckCount",
             "psFtpRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/psftp-response/psftp-runtime-readiness.json",
             "psftp-runtime-readiness",
@@ -4581,6 +5104,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_COMMAND_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "resetSyncH10CommandPolicyVectorDefinesExecutableCommonCommandPlanning",
+            "resetSyncH10CommandVectorRunsThroughCommonFakeTransportFacadeShape",
             "resetSyncH10CommandReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/command-runtime/reset-sync-h10-command-policy.json",
             "sdk/command-runtime/reset-sync-h10-command-readiness.json",
@@ -4599,6 +5123,20 @@ class GoldenVectorMigrationPolicyTest {
             "h10-recording-status-query-failure",
             "REQUEST_RECORDING_STATUS",
             "recording-status-query-failed",
+            "live-exercise-start",
+            "START_EXERCISE",
+            "live-exercise-pause",
+            "PAUSE_EXERCISE",
+            "live-exercise-resume",
+            "RESUME_EXERCISE",
+            "live-exercise-stop",
+            "STOP_EXERCISE",
+            "live-exercise-status",
+            "GET_EXERCISE_STATUS",
+            "offline-exercise-v2-start",
+            "START_DM_EXERCISE",
+            "offline-exercise-v2-stop",
+            "offline-exercise-v2-status",
             "queryFailure",
             "transport-error",
             "factory-reset-notification-failure",
@@ -4614,6 +5152,8 @@ class GoldenVectorMigrationPolicyTest {
             "sync-stop-success",
             "sync-stop-notification-failure",
             "platform-split",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "syncStartQueryFailure",
             "syncStopNotificationFailure",
             "h10-recording-start-query",
@@ -4622,6 +5162,14 @@ class GoldenVectorMigrationPolicyTest {
             "h10-recording-stop-query-failure",
             "h10-recording-status-query",
             "h10-recording-status-query-failure",
+            "live-exercise-start-query",
+            "live-exercise-pause-query",
+            "live-exercise-resume-query",
+            "live-exercise-stop-query",
+            "live-exercise-status-query",
+            "offline-exercise-v2-start-query",
+            "offline-exercise-v2-stop-query",
+            "offline-exercise-v2-status-query",
             "factory-reset-flags",
             "preserve-pairing-reset-flags",
             "preserve-pairing-reset-notification-failure",
@@ -4637,6 +5185,13 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_STORED_DATA_CLEANUP_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "cleanupWorkflowPolicyVectorDefinesExecutableCommonTraversalAndPlatformSplits",
+            "cleanupWorkflowVectorRunsThroughCommonFakeTransportFacadeShape",
+            "cleanupWorkflowVectorRunsThroughCommonFakeTraversalRuntime",
+            "CommonStoredDataCleanupFakeTraversalRuntime",
+            "CleanupExecution",
+            "readCommands",
+            "removeCommands",
+            "REMOVE_EMPTY_DIRECTORY:/U/0/20260530/ACT",
             "cleanupWorkflowReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/stored-data-cleanup/cleanup-workflow-policy.json",
             "sdk/stored-data-cleanup/cleanup-workflow-readiness.json",
@@ -4653,6 +5208,8 @@ class GoldenVectorMigrationPolicyTest {
             "AUTOS001.BPB",
             "platform-path-split",
             "platform-split",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "sdlogsListFailure",
             "activityEmptyParentRemovePath",
             "telemetry-trc-filter",
@@ -4660,10 +5217,12 @@ class GoldenVectorMigrationPolicyTest {
             "empty-parent-path-platform-split",
             "facade-error-mapping-gate",
             "compile-verified",
-            "FakeStoredDataCleanupRuntime"
+            "storedDataDateIsOnOrBefore",
+            "PolarWorkflowRuntimePlanning.planStoredDataCleanup"
         )
         val FAKE_TRANSPORT_COMMON_DISK_TIME_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "diskTimeQueryPolicyVectorDefinesExecutableCommonQueryPlanning",
+            "diskTimeQueryVectorRunsThroughCommonFakeTransportFacadeShape",
             "diskTimeQueryReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/disk-time-runtime/disk-time-query-policy.json",
             "sdk/disk-time-runtime/disk-time-query-readiness.json",
@@ -4684,6 +5243,8 @@ class GoldenVectorMigrationPolicyTest {
             "get-local-time-with-zone-failure",
             "get-disk-space-failure",
             "transport-error",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "disk-space-query",
             "local-time-query",
             "local-time-with-zone-query",
@@ -4698,6 +5259,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TERMS = listOf(
             "userDeviceSettingsRuntimePolicyVectorDefinesExecutableCommonReadWritePlanning",
+            "userDeviceSettingsRuntimeVectorRunsThroughCommonFakeTransportFacadeShape",
             "userDeviceSettingsRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily",
             "sdk/user-device-settings-runtime/settings-runtime-policy.json",
             "sdk/user-device-settings-runtime/settings-runtime-readiness.json",
@@ -4706,18 +5268,25 @@ class GoldenVectorMigrationPolicyTest {
             "/U/0/S/UDEVSET.BPB",
             "get-user-device-settings",
             "get-user-device-settings-read-failure",
+            "set-user-device-settings",
+            "set-user-device-settings-write-failure",
             "set-telemetry-enabled",
             "set-telemetry-read-failure",
             "set-telemetry-write-failure",
             "set-user-device-location",
+            "set-user-device-location-read-failure",
             "set-user-device-location-write-failure",
             "set-usb-connection-mode",
+            "set-usb-connection-mode-read-failure",
             "set-usb-connection-mode-write-failure",
             "set-automatic-training-detection",
+            "set-automatic-training-detection-read-failure",
             "set-automatic-training-detection-write-failure",
             "set-automatic-ohr-measurement",
+            "set-automatic-ohr-measurement-read-failure",
             "set-automatic-ohr-measurement-write-failure",
             "set-daylight-saving-time",
+            "protobufPayload=platform-built",
             "telemetryEnabled=true",
             "deviceLocation=WRIST_RIGHT",
             "usbConnectionMode=ON",
@@ -4727,8 +5296,17 @@ class GoldenVectorMigrationPolicyTest {
             "automaticOhrMeasurement=ALWAYS_ON",
             "daylightSaving.nextDaylightSavingTime=present",
             "transport-error-after-payload",
+            "ScriptedCommonFakeTransport",
+            "CommonFakeTransportCommand",
             "read-failure no-write behavior",
             "settings-read-failure-no-write",
+            "telemetry-read-failure-no-write",
+            "device-location-read-failure-no-write",
+            "usb-connection-mode-read-failure-no-write",
+            "automatic-training-detection-read-failure-no-write",
+            "automatic-ohr-measurement-read-failure-no-write",
+            "whole-settings-direct-write",
+            "whole-settings-write-failure-after-payload",
             "telemetry-write-failure-after-payload",
             "usb-connection-mode-write-failure-after-payload",
             "automatic-training-detection-read-then-write",

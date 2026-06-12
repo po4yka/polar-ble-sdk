@@ -28,8 +28,10 @@ import PolarBleSdkShared
 final class BlePolarDeviceIdUtilityTest: XCTestCase {
     func testProductionDeviceIdUtilityCanUseSharedKmpBridgeWhenLinked() throws {
         #if canImport(PolarBleSdkShared)
-        XCTAssertEqual("1234567C", PolarIosSharedBridge.shared.assembleFullDeviceId(deviceId: "1234567"))
-        XCTAssertTrue(PolarIosSharedBridge.shared.isValidDeviceId(deviceId: "1234567C"))
+        XCTAssertEqual("1234567C", PolarDeviceIdRuntimePlanner.assembleFullDeviceId(0x1234567, width: 7))
+        XCTAssertTrue(try XCTUnwrap(PolarDeviceIdRuntimePlanner.isValidDeviceId("1234567C")))
+        XCTAssertEqual("1234567C", BlePolarDeviceIdUtility.assemblyFullPolarDeviceId(0x1234567, width: 7))
+        XCTAssertTrue(BlePolarDeviceIdUtility.isValidDeviceId("1234567C"))
         #else
         throw XCTSkip("PolarBleSdkShared is not linked in this build")
         #endif

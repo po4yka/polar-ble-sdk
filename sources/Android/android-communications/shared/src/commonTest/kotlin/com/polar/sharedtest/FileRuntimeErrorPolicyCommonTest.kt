@@ -1,5 +1,6 @@
 package com.polar.sharedtest
 
+import com.polar.shared.runtime.PolarFileFacadeOperation
 import com.polar.shared.runtime.PolarFileRuntimeErrorOperation
 import com.polar.shared.runtime.PolarFileRuntimeErrorPlan
 import com.polar.shared.runtime.PolarRuntimeOrchestration
@@ -27,43 +28,37 @@ class FileRuntimeErrorPolicyCommonTest {
     }
 
     @Test
-    fun fileReadWriteDeleteGoldenVectorRunsThroughCommonFakeTransport() {
+    fun fileReadWriteDeleteGoldenVectorRunsThroughProductionFileFacadePlanner() {
         val vector = loadGoldenVectorText("sdk/file-utils/file-read-write-delete-operations.json")
         val operations = vector.objectValue("input").objectArray("operations")
         val expectedOperations = vector.objectValue("expected").objectArray("operations")
-        val outcomes = operations.map { operation ->
-            when (operation.stringValue("action")) {
-                "read" -> CommonFakeTransportOutcome.Bytes(hexToBytes(operation.stringValue("responseHex")))
-                "write" -> CommonFakeTransportOutcome.Complete
-                "delete" -> CommonFakeTransportOutcome.Bytes(hexToBytes(operation.stringValue("responseHex")))
-                else -> error("Unsupported file operation ${operation.stringValue("action")}")
-            }
-        }
-        val transport = ScriptedCommonFakeTransport(outcomes)
 
         operations.forEachIndexed { index, operation ->
             val expected = expectedOperations[index]
-            val outcome = when (operation.stringValue("action")) {
-                "read" -> transport.read(operation.stringValue("path"))
-                "write" -> transport.write(operation.stringValue("path"), hexToBytes(operation.stringValue("payloadHex")))
-                "delete" -> transport.remove(operation.stringValue("path"))
-                else -> error("Unsupported file operation ${operation.stringValue("action")}")
-            }
-            val command = transport.commands.last()
+            val outcome = PolarRuntimeOrchestration.planFileFacade(
+                PolarFileFacadeOperation(
+                    id = operation.stringValue("action"),
+                    command = expected.stringValue("command"),
+                    path = operation.stringValue("path"),
+                    payloadHex = operation.optionalStringValue("payloadHex"),
+                    responseHex = operation.optionalStringValue("responseHex"),
+                    progress = emptyList(),
+                    transportMode = null
+                )
+            )
 
-            assertEquals(expected.stringValue("command"), command.operation.toPftpCommand(), operation.stringValue("action"))
-            assertEquals(expected.stringValue("path"), command.target, operation.stringValue("action"))
+            assertEquals("${expected.stringValue("command")}:${expected.stringValue("path")}", outcome.commands.first(), operation.stringValue("action"))
             expected.optionalStringValue("writtenHex")?.let { expectedPayload ->
-                assertEquals(expectedPayload, command.payloadHex, operation.stringValue("action"))
+                assertEquals("payload:$expectedPayload", outcome.commands.last(), operation.stringValue("action"))
             }
             expected.optionalStringValue("resultHex")?.let { expectedPayload ->
-                assertEquals(expectedPayload, (outcome as CommonFakeTransportOutcome.Bytes).value.toHex(), operation.stringValue("action"))
+                assertEquals(expectedPayload, outcome.resultHex, operation.stringValue("action"))
             }
         }
     }
 
     @Test
-    fun fileRuntimeErrorPolicyVectorRunsThroughCommonFakeTransport() {
+    fun fileRuntimeErrorPolicyVectorRunsThroughProductionCommonPlanner() {
         val vector = loadGoldenVectorText("sdk/file-utils/runtime-error-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -88,14 +83,14 @@ class FileRuntimeErrorPolicyCommonTest {
         assertEquals("fileRuntimeErrorPolicy", input.stringValue("kind"))
         assertEquals(requiredFileRuntimeErrorCaseIds, cases.map { it.id })
         assertEquals(fileRuntimeErrorMigrationRequirement, expected.stringValue("migrationRequirement"))
-        assertEquals("executable shared commonTest plus Android-hosted prototype", expectedPrototype.stringValue("status"))
+        assertEquals("executable shared commonTest", expectedPrototype.stringValue("status"))
         assertEquals(requiredFileRuntimeErrorCaseIds, expectedCases.keys.toList())
         assertEquals(fileRuntimeErrorCommonDecision, expected.stringValue("commonDecision"))
         assertEquals("shared-common-test", vector.objectValue("execution").stringValue("status"))
         assertEquals("executable shared commonTest covers file command capture and typed runtime errors before facade mapping moves", vector.objectValue("platformExpectations").stringValue("common"))
-        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFileUtilsTest", "com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest"), consumerTests.stringArrayValue("android"))
+        assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFileUtilsTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarFileUtilsTest"), consumerTests.stringArrayValue("ios"))
-        assertEquals(listOf("com.polar.sdk.api.model.utils.RestAndFileCommonFakeRuntimeTest", "com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
+        assertEquals(listOf("com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
 
         cases.forEach { testCase ->
             val outcome = PolarRuntimeOrchestration.planFileRuntimeError(testCase)
@@ -149,9 +144,9 @@ class FileRuntimeErrorPolicyCommonTest {
         assertEquals(fileRuntimeErrorCommonDecision, expected.stringValue("commonDecision"))
         assertEquals("shared-common-test", policy.objectValue("execution").stringValue("status"))
         assertEquals("executable shared commonTest covers file command capture and typed runtime errors before facade mapping moves", policy.objectValue("platformExpectations").stringValue("common"))
-        assertEquals("planned facade-level fake-transport characterization for public error mapping", policy.objectValue("platformExpectations").stringValue("android"))
-        assertEquals("planned facade-level fake-transport characterization for public error mapping", policy.objectValue("platformExpectations").stringValue("ios"))
-        assertEquals("This vector complements executable file read/write/delete and directory-listing vectors with shared commonTest runtime checks. Public Android and iOS facade error mapping remains a migration gate before production file orchestration delegates to shared code.", policy.stringValue("notes"))
+        assertEquals("BDBleApiImplTest and file-facade-runtime-policy.json pin Android public low-level file response-error object/name mapping, empty-read success, write-stream failure, and delete request failure behavior", policy.objectValue("platformExpectations").stringValue("android"))
+        assertEquals("PolarBleApiImplTests and file-facade-runtime-policy.json pin iOS public low-level file response-error code mapping, empty-read success, write-stream failure, and delete request failure behavior", policy.objectValue("platformExpectations").stringValue("ios"))
+        assertEquals("This vector complements executable file read/write/delete and directory-listing vectors with shared commonTest runtime checks plus Android and iOS public low-level file facade compatibility through file-facade-runtime-policy.json; directory traversal and additional file workflows still need their own facade compatibility before production file orchestration delegates to shared code.", policy.stringValue("notes"))
         assertFileRuntimeErrorCase(cases.getValue("directory-list-response-error-103"), expectedCases.getValue("directory-list-response-error-103"), "listFiles", "/U/0/", "pftpResponseError", 103, "No such file or directory", null, "GET", "directory-missing")
         assertFileRuntimeErrorCase(cases.getValue("directory-list-malformed-payload"), expectedCases.getValue("directory-list-malformed-payload"), "listFiles", "/U/0/", "success", null, null, "ffff", "GET", "directory-parse-failure")
         assertFileRuntimeErrorCase(cases.getValue("read-file-transport-error"), expectedCases.getValue("read-file-transport-error"), "readFile", "/U/0/S/PHYSDATA.BPB", "transportError", null, "deviceNotConnected", null, "GET", "transport-error")
@@ -197,7 +192,7 @@ class FileRuntimeErrorPolicyCommonTest {
         "write-file-payload-capture-before-stream-error",
         "delete-file-response-error-status-message",
         "command-path-capture-for-every-operation",
-        "facade-error-mapping-deferred",
+        "facade-error-mapping-pinned",
         "platform-runtime-vector-reference-gate",
         "compile-verification-gate"
     )
@@ -206,24 +201,13 @@ class FileRuntimeErrorPolicyCommonTest {
 
     private val fileRuntimeErrorCommonDecision = "Preserve documented platform-specific policies only where required for public compatibility; otherwise normalize shared runtime errors to typed request, parse, response, and write-stream failures."
 
-    private val fileRuntimeErrorReadinessCommonDecision = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping, and the shared tests are compile-verified."
+    private val fileRuntimeErrorReadinessCommonDecision = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified."
 
     private fun assertOutcome(caseId: String, expected: String, outcome: PolarFileRuntimeErrorPlan) {
         assertEquals(expected.stringValue("outcome"), outcome.outcome, caseId)
         outcome.status?.let { status -> assertEquals(expected.intValue("status"), status, caseId) }
         outcome.message?.let { message -> assertEquals(expected.stringValue("message"), message, caseId) }
         outcome.error?.let { error -> assertEquals(expected.stringValue("error"), error, caseId) }
-    }
-
-    private fun CommonFakeTransportOperation.toPftpCommand(): String {
-        return when (this) {
-            CommonFakeTransportOperation.READ -> "GET"
-            CommonFakeTransportOperation.WRITE -> "PUT"
-            CommonFakeTransportOperation.REMOVE -> "REMOVE"
-            CommonFakeTransportOperation.SUBSCRIBE -> "SUBSCRIBE"
-            CommonFakeTransportOperation.UNSUBSCRIBE -> "UNSUBSCRIBE"
-            CommonFakeTransportOperation.RECONNECT -> "RECONNECT"
-        }
     }
 
     private class FakeFileUtility(
@@ -307,23 +291,6 @@ class FileRuntimeErrorPolicyCommonTest {
             }
         }
         error("Unbalanced $open$close block")
-    }
-
-    private fun ByteArray.toHex(): String {
-        return joinToString(separator = "") { byte ->
-            val value = byte.toInt() and 0xFF
-            val high = value / 16
-            val low = value % 16
-            "${high.toHexDigit()}${low.toHexDigit()}"
-        }
-    }
-
-    private fun Int.toHexDigit(): Char {
-        return if (this < 10) {
-            '0' + this
-        } else {
-            'a' + (this - 10)
-        }
     }
 
     private data class FileEntry(

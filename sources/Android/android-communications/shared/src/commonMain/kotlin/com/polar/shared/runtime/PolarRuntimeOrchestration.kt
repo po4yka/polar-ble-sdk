@@ -38,6 +38,15 @@ data class PolarRestFacadeOperation(
     val expectedPlatformTerminal: String?
 )
 
+data class PolarRestRequestTransportOperation(
+    val id: String,
+    val path: String,
+    val transportMode: String,
+    val status: Int?,
+    val message: String?,
+    val payloadHex: String?
+)
+
 data class PolarFileFacadeOperation(
     val id: String,
     val command: String,
@@ -77,7 +86,42 @@ data class PolarUserDeviceSettingsOperation(
     val payloadFields: List<String>
 )
 
+data class PolarResetNotificationFields(
+    val sleep: Boolean,
+    val factoryDefaults: Boolean,
+    val otaFirmwareUpdate: Boolean
+)
+
+data class PolarH10StartRecordingFields(
+    val sampleDataIdentifier: String,
+    val sampleType: String,
+    val recordingIntervalSeconds: Int
+)
+
+data class PolarSyncStopNotificationFields(
+    val completed: Boolean
+)
+
 object PolarRuntimeOrchestration {
+    fun userDeviceSettingsPath(
+        fileSystemType: String,
+        deviceSettingsPath: String = "/U/0/S/UDEVSET.BPB",
+        sensorSettingsPath: String = "/UDEVSET.BPB",
+        unknownSettingsPath: String? = deviceSettingsPath
+    ): String? {
+        return when (fileSystemType) {
+            "POLAR_FILE_SYSTEM_V2", "polarFileSystemV2" -> deviceSettingsPath
+            "H10_FILE_SYSTEM", "h10FileSystem" -> sensorSettingsPath
+            else -> unknownSettingsPath
+        }
+    }
+
+    fun normalizeFileListFolderPath(folderPath: String): String {
+        val nonEmpty = folderPath.ifEmpty { "/" }
+        val withLeadingSlash = if (nonEmpty.first() == '/') nonEmpty else "/$nonEmpty"
+        return if (withLeadingSlash.last() == '/') withLeadingSlash else "$withLeadingSlash/"
+    }
+
     fun planCommand(operation: PolarFacadeCommandOperation): PolarRuntimePlan {
         return when (operation.kind) {
             "query" -> PolarRuntimePlan(operation.queryCommands(), "success")
@@ -90,6 +134,34 @@ object PolarRuntimeOrchestration {
             "syncStopFailure" -> PolarRuntimePlan(operation.syncStopCommands(), "platform-split")
             else -> error("Unsupported public facade command operation ${operation.kind}")
         }
+    }
+
+    fun resetNotificationFields(operation: PolarFacadeCommandOperation): PolarResetNotificationFields {
+        require(operation.kind == "resetNotification" || operation.kind == "resetNotificationFailure")
+        val commands = operation.resetCommands()
+        return PolarResetNotificationFields(
+            sleep = commands.flagValue("sleep"),
+            factoryDefaults = commands.flagValue("factoryDefaults"),
+            otaFirmwareUpdate = commands.flagValue("otaFirmwareUpdate")
+        )
+    }
+
+    fun h10StartRecordingFields(operation: PolarFacadeCommandOperation): PolarH10StartRecordingFields {
+        require(operation.query == "REQUEST_START_RECORDING")
+        val commands = operation.queryCommands()
+        return PolarH10StartRecordingFields(
+            sampleDataIdentifier = commands.parameterValue("sampleDataIdentifier"),
+            sampleType = commands.parameterValue("sampleType"),
+            recordingIntervalSeconds = commands.parameterValue("recordingIntervalSeconds").toInt()
+        )
+    }
+
+    fun syncStopNotificationFields(operation: PolarFacadeCommandOperation): PolarSyncStopNotificationFields {
+        require(operation.kind == "syncStop" || operation.kind == "syncStopFailure")
+        val stopSyncCommand = operation.syncStopCommands().first { command -> command.startsWith("notification:STOP_SYNC") }
+        return PolarSyncStopNotificationFields(
+            completed = stopSyncCommand.substringAfter("completed=").toBooleanStrict()
+        )
     }
 
     fun planDiskTime(operation: PolarDiskTimeOperation): PolarRuntimePlan {
@@ -129,6 +201,21 @@ object PolarRuntimeOrchestration {
             else -> error("Unsupported REST facade transport mode ${operation.transportMode}")
         }
         return PolarRuntimePlan(commands, terminal)
+    }
+
+    fun planRestRequestTransport(operation: PolarRestRequestTransportOperation): PolarRuntimePlan {
+        val commands = mutableListOf("GET:${operation.path}")
+        return when (operation.transportMode) {
+            "pftpResponseError" -> {
+                commands += "response-error:${requireNotNull(operation.status)}:${requireNotNull(operation.message)}"
+                PolarRuntimePlan(commands, "response-error")
+            }
+            "success" -> {
+                require(operation.payloadHex == "") { "REST request transport policy only covers empty successful responses in this slice" }
+                PolarRuntimePlan(commands, "requires-empty-response-policy", resultHex = "")
+            }
+            else -> error("Unsupported REST request transport mode ${operation.transportMode}")
+        }
     }
 
     fun planFileFacade(operation: PolarFileFacadeOperation): PolarRuntimePlan {
@@ -178,6 +265,7 @@ object PolarRuntimeOrchestration {
             "read" -> PolarRuntimePlan(operation.userDeviceSettingsReadCommands(), "success")
             "readFailure" -> PolarRuntimePlan(operation.userDeviceSettingsReadCommands(), "transport-error")
             "write" -> PolarRuntimePlan(operation.userDeviceSettingsWriteCommands(), "success")
+            "writeFailure" -> PolarRuntimePlan(operation.userDeviceSettingsWriteCommands(), "transport-error-after-payload")
             "readThenWrite" -> PolarRuntimePlan(operation.userDeviceSettingsReadWriteCommands(), "success")
             "readThenWriteFailure" -> PolarRuntimePlan(operation.userDeviceSettingsReadWriteCommands(), "transport-error-after-payload")
             else -> error("Unsupported user-device-settings operation ${operation.kind}")
@@ -201,6 +289,17 @@ object PolarRuntimeOrchestration {
             "flag:factoryDefaults=${requireNotNull(factoryDefaults)}",
             "flag:otaFirmwareUpdate=${requireNotNull(otaFirmwareUpdate)}"
         )
+    }
+
+    private fun List<String>.flagValue(name: String): Boolean {
+        return first { command -> command.startsWith("flag:$name=") }
+            .substringAfter("=")
+            .toBooleanStrict()
+    }
+
+    private fun List<String>.parameterValue(name: String): String {
+        return first { command -> command.startsWith("parameter:$name=") }
+            .substringAfter("=")
     }
 
     private fun PolarFacadeCommandOperation.syncStartCommands(): List<String> {

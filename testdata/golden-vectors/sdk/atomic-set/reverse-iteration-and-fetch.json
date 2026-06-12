@@ -23,7 +23,7 @@
     ]
   },
   "expected": {
-    "migrationOwnership": "Android-only helper characterization. Do not promote AtomicSet itself to common KMP unless a shared concurrency collection is intentionally designed and consumes these semantics as a compatibility fixture.",
+    "migrationOwnership": "Shared PolarAtomicSet owns collection-like set semantics as a compatibility fixture; Android AtomicSet remains the synchronized platform wrapper and BLE/GATT observer primitive.",
     "size": 3,
     "accessAllOrder": ["item3", "item2", "item1"],
     "fetchPrefix": "item",
@@ -36,12 +36,15 @@
   "consumerTests": {
     "android": [
       "com.polar.androidcommunications.common.ble.AtomicSetTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AtomicSetCommonPolicyTest"
     ]
   },
   "platforms": {
     "android": true,
     "ios": false,
-    "common": false
+    "common": true
   },
-  "notes": "Android AtomicSet iterates and fetches from newest to oldest."
+  "notes": "Shared PolarAtomicSet and Android AtomicSet iterate and fetch from newest to oldest; Android owns synchronization and platform observer usage."
 }
