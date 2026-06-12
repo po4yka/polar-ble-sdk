@@ -420,6 +420,34 @@ object PolarIosSharedBridge {
         }.getOrDefault(true)
     }
 
+    fun trainingSessionPayloadReadResult(referenceText: String, responsesText: String, fetchOrderText: String): String {
+        val reference = trainingSessionReference(referenceText) ?: return ""
+        val responses = responsesText.lines()
+            .filter { line -> line.isNotEmpty() }
+            .mapNotNull { line ->
+                val fields = line.split('|')
+                if (fields.size != 3) return@mapNotNull null
+                val payload = runCatching {
+                    PolarTrainingSessionModels.parseDecodedPayloadResponse(fields[1], fields[2].hexToBytes())
+                }.getOrNull() ?: return@mapNotNull null
+                fields[0] to payload
+            }.toMap()
+        val fetchOrder = fetchOrderText.lines().filter { line -> line.isNotEmpty() }.ifEmpty { PolarTrainingSessionModels.payloadFetchOrder(reference) }
+        return runCatching {
+            val result = PolarTrainingSessionModels.assemblePayloadReadResult(reference, responses, fetchOrder)
+            listOf(
+                result.totalBytes.toString(),
+                result.completedBytes.toString(),
+                result.progressPercent.toString(),
+                result.currentFileName,
+                result.modelName,
+                result.durationSeconds.toString(),
+                result.distanceMeters.toString(),
+                result.calories.toString()
+            ).joinToString("|")
+        }.getOrDefault("")
+    }
+
     fun trainingSessionDeleteParentPath(referencePath: String): String {
         return PolarTrainingSessionModels.deleteParentPath(referencePath)
     }
@@ -2273,6 +2301,34 @@ object PolarIosSharedBridge {
         return PolarOfflineTriggerDesiredFeature(
             type = parts[0],
             hasSelectedSettings = parts.getOrNull(1) != "no-settings"
+        )
+    }
+
+    private fun trainingSessionReference(referenceText: String): PolarTrainingSessionReference? {
+        val lines = referenceText.lines().filter { line -> line.isNotEmpty() }
+        val referenceFields = lines.firstOrNull()?.split('|') ?: return null
+        if (referenceFields.size < 5 || referenceFields[0] != "R") return null
+        val exercises = lines.drop(1).mapNotNull { line ->
+            val fields = line.split('|')
+            if (fields.size < 6 || fields[0] != "E") {
+                null
+            } else {
+                PolarTrainingExerciseReference(
+                    index = fields[1].toIntOrNull() ?: return@mapNotNull null,
+                    androidPath = fields[2],
+                    iosPath = fields[3],
+                    exerciseDataTypes = fields[4].semicolonList(),
+                    fileSizes = fields[5].semicolonKeyLongMap()
+                )
+            }
+        }
+        return PolarTrainingSessionReference(
+            dateTime = referenceFields[1],
+            date = referenceFields[1].substringBefore('T', missingDelimiterValue = referenceFields[1]),
+            path = referenceFields[2],
+            trainingDataTypes = referenceFields[3].semicolonList(),
+            exercises = exercises,
+            fileSize = referenceFields[4].toLongOrNull() ?: 0L
         )
     }
 

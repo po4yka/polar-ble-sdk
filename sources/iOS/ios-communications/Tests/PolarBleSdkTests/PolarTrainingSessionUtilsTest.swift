@@ -383,6 +383,26 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         XCTAssertTrue(PolarRuntimePlanner.trainingSessionPayloadMalformed(fileName: "TSESS.BPB", payload: truncatedSummaryName))
     }
 
+    func testTrainingSessionPayloadReadResultUsesSharedBridgeWhenLinked() throws {
+        let referenceText = [
+            "R|2026-01-02T12:34:56|/U/0/20260102/E/123456/TSESS.BPB|TRAINING_SESSION_SUMMARY|12",
+            "E|0|/U/0/20260102/E/123456/00/BASE.BPB|/U/0/20260102/E/123456/00|SAMPLES|SAMPLES.BPB:2"
+        ].joined(separator: "\n")
+        let result = PolarRuntimePlanner.trainingSessionPayloadReadResult(
+            referenceText: referenceText,
+            responses: [
+                (path: "/U/0/20260102/E/123456/TSESS.BPB", fileName: "TSESS.BPB", payload: Data([0x22, 0x01, 0x50])),
+                (path: "/U/0/20260102/E/123456/00/SAMPLES.BPB", fileName: "SAMPLES.BPB", payload: Data([0x10, 0x78]))
+            ],
+            fetchOrder: [
+                "/U/0/20260102/E/123456/TSESS.BPB",
+                "/U/0/20260102/E/123456/00/SAMPLES.BPB"
+            ]
+        )
+
+        XCTAssertTrue(result.hasPrefix("5|5|100|SAMPLES.BPB|P|0|0|0"), result)
+    }
+
     func testTrainingSessionReadinessManifestIsPinnedBeforeMigration() throws {
         let readiness = try loadTrainingSessionReadinessManifest()
         let input = try XCTUnwrap(readiness["input"] as? [String: Any])
