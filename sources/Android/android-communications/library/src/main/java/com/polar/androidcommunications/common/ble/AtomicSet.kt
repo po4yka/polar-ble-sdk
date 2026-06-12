@@ -1,10 +1,10 @@
 package com.polar.androidcommunications.common.ble
 
-import com.polar.shared.ble.PolarAtomicSet
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 class AtomicSet<Any : kotlin.Any> {
 
-    private val items: PolarAtomicSet<Any> = PolarAtomicSet()
+    private val items: PolarRuntimePlannerAdapter.PlannedAtomicSet<Any> = PolarRuntimePlannerAdapter.PlannedAtomicSet()
 
     fun interface CompareFunction<Any> {
         fun compare(`object`: Any): Boolean

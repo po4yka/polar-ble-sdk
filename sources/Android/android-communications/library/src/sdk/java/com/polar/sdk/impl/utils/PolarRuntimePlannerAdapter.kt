@@ -3,6 +3,7 @@ package com.polar.sdk.impl.utils
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType
 import com.polar.shared.ble.PolarAdvertisementModels
+import com.polar.shared.ble.PolarAtomicSet
 import com.polar.shared.ble.PolarTypeUtils
 import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
@@ -329,6 +330,41 @@ internal object PolarRuntimePlannerAdapter {
         val unknownAdvancedSampleListsIgnored: Int,
         val malformedFilesIgnored: List<String>
     )
+    class PlannedAtomicSet<T : Any> {
+        private val items: PolarAtomicSet<T> = PolarAtomicSet()
+
+        fun clear() {
+            items.clear()
+        }
+
+        fun add(item: T?): Boolean {
+            return items.add(item)
+        }
+
+        fun remove(item: T?) {
+            items.remove(item)
+        }
+
+        fun accessAll(visitor: (T) -> Unit) {
+            items.accessAll(visitor)
+        }
+
+        fun fetch(predicate: (T) -> Boolean): T? {
+            return items.fetch(predicate)
+        }
+
+        fun objects(): Set<T> {
+            return items.objects()
+        }
+
+        fun size(): Int {
+            return items.size()
+        }
+
+        fun contains(item: T): Boolean {
+            return items.contains(item)
+        }
+    }
 
     fun availableOfflineRecordingDataTypes(features: Set<PmdMeasurementType>): Set<PolarDeviceDataType> {
         return PolarSdkModelMappers.availableOfflineRecordingDataTypeNames(features.sharedMeasurementTypeNames())

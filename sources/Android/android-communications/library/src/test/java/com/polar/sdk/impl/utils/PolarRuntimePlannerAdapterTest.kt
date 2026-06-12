@@ -155,6 +155,28 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `atomic set delegate routes through Android runtime adapter`() {
+        val set = PolarRuntimePlannerAdapter.PlannedAtomicSet<String>()
+        val visited = mutableListOf<String>()
+
+        Assert.assertTrue(set.add("first"))
+        Assert.assertTrue(set.add("second"))
+        Assert.assertFalse(set.add("first"))
+        Assert.assertFalse(set.add(null))
+        set.accessAll { visited += it }
+
+        Assert.assertEquals(listOf("second", "first"), visited)
+        Assert.assertEquals("second", set.fetch { it.startsWith("s") })
+        Assert.assertEquals(setOf("first", "second"), set.objects())
+        Assert.assertEquals(2, set.size())
+        Assert.assertTrue(set.contains("first"))
+        set.remove("first")
+        Assert.assertFalse(set.contains("first"))
+        set.clear()
+        Assert.assertEquals(0, set.size())
+    }
+
+    @Test
     fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
         val vector = loadFeatureAvailabilityReadinessVector()
         val input = vector.getAsJsonObject("input")
