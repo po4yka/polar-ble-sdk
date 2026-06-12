@@ -890,7 +890,13 @@ class PolarRuntimePlannerAdapterTest {
 
     @Test
     fun `shared PSFTP write ack terminal preserves Android success policy`() {
+        Assert.assertTrue(PolarRuntimePlannerAdapter.shouldEmitPsFtpWriteProgress(bytesWritten = -14, payloadSize = 100, platform = "android", elapsedSinceLastEmitMillis = 0))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.shouldEmitPsFtpWriteProgress(bytesWritten = 1, payloadSize = 100, platform = "android", elapsedSinceLastEmitMillis = 0))
+        Assert.assertFalse(PolarRuntimePlannerAdapter.shouldEmitPsFtpWriteProgress(bytesWritten = 50, payloadSize = 100, platform = "android", elapsedSinceLastEmitMillis = 4999))
+        Assert.assertTrue(PolarRuntimePlannerAdapter.shouldEmitPsFtpWriteProgress(bytesWritten = 50, payloadSize = 100, platform = "android", elapsedSinceLastEmitMillis = 5000))
         Assert.assertEquals("success", PolarRuntimePlannerAdapter.planPsFtpWriteAck(payloadSize = 2))
+        Assert.assertEquals(10, PolarRuntimePlannerAdapter.psFtpWriteTimeoutSeconds("/U/0/ANY.BPB", defaultTimeoutSeconds = 10, extendedTimeoutSeconds = 30))
+        Assert.assertEquals(30, PolarRuntimePlannerAdapter.psFtpWriteTimeoutSeconds("/SYNCPART.TGZ", defaultTimeoutSeconds = 10, extendedTimeoutSeconds = 30))
         PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(payloadSize = 2)
         Assert.assertThrows(IllegalStateException::class.java) {
             PolarRuntimePlannerAdapter.ensurePsFtpWriteRuntimePlan(payloadSize = 2, writeAck = "never")

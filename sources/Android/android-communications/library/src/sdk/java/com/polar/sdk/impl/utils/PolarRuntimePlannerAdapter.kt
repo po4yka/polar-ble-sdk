@@ -1640,8 +1640,16 @@ internal object PolarRuntimePlannerAdapter {
         return PolarWorkflowRuntimePlanning.planPsFtpWriteProgress(payloadSize, platform)
     }
 
+    fun shouldEmitPsFtpWriteProgress(bytesWritten: Long, payloadSize: Int, platform: String, elapsedSinceLastEmitMillis: Long): Boolean {
+        return PolarWorkflowRuntimePlanning.shouldEmitPsFtpWriteProgress(bytesWritten, payloadSize, platform, elapsedSinceLastEmitMillis)
+    }
+
     fun planPsFtpWriteAck(payloadSize: Int, writeAck: String = "success"): String {
         return PolarWorkflowRuntimePlanning.psFtpWriteAckTerminal(payloadSize, writeAck)
+    }
+
+    fun psFtpWriteTimeoutSeconds(filePath: String, defaultTimeoutSeconds: Int, extendedTimeoutSeconds: Int): Int {
+        return PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds(filePath, defaultTimeoutSeconds, extendedTimeoutSeconds)
     }
 
     fun ensurePsFtpWriteRuntimePlan(payloadSize: Int, platform: String = "android", writeAck: String = "success") {

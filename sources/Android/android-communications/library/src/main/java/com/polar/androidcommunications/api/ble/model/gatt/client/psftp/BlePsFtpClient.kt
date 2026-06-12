@@ -16,7 +16,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpU
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils.PftpRfc76ResponseHeader
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils.Rfc76SequenceNumber
 import com.polar.androidcommunications.api.ble.model.proto.CommunicationsPftpRequest
-import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -385,7 +385,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                             val bytesWritten = totalPayload - totalStream.available() - headerSize - 2
                             val now = System.currentTimeMillis()
                             val timeSinceLastEmit = if (lastEmitTime == 0L) 0L else now - lastEmitTime
-                            if (PolarWorkflowRuntimePlanning.shouldEmitPsFtpWriteProgress(bytesWritten, payloadSize, "android", timeSinceLastEmit)) {
+                            if (PolarRuntimePlannerAdapter.shouldEmitPsFtpWriteProgress(bytesWritten, payloadSize, "android", timeSinceLastEmit)) {
                                 lastEmitTime = now
                                 trySend(bytesWritten)
                             }
@@ -405,7 +405,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                         return@synchronized
                     }
                     // channel completes naturally on scope exit
-                    PolarWorkflowRuntimePlanning.psFtpWriteAckTerminal(payloadSize)
+                    PolarRuntimePlannerAdapter.planPsFtpWriteAck(payloadSize)
                 } else {
                     throw BleCharacteristicNotificationNotEnabled("PS-FTP MTU not enabled")
                 }
@@ -418,7 +418,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
 
     @VisibleForTesting
     internal fun getWriteTimeoutForFilePath(filePath: String): Long {
-        return PolarWorkflowRuntimePlanning.psFtpWriteTimeoutSeconds(
+        return PolarRuntimePlannerAdapter.psFtpWriteTimeoutSeconds(
             filePath = filePath,
             defaultTimeoutSeconds = protocolTimeoutSeconds.toInt(),
             extendedTimeoutSeconds = protocolTimeoutExtendedSeconds.toInt()
