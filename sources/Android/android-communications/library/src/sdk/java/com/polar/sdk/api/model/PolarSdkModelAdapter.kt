@@ -117,6 +117,14 @@ internal object PolarSdkModelAdapter {
         return PolarDeviceId.uuidFromDeviceId(deviceId)
     }
 
+    fun isValidDeviceId(deviceId: String): Boolean {
+        return PolarDeviceId.isValid(deviceId)
+    }
+
+    fun assembleFullDeviceId(deviceId: String): String {
+        return PolarDeviceId.assembleFull(deviceId)
+    }
+
     fun advertisementDeviceModelNameFromLocalName(localName: String, prefix: String): String {
         return PolarAdvertisementModels.deviceModelNameFromLocalName(localName, prefix)
     }

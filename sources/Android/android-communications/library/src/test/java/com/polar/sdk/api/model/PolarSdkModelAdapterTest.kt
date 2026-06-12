@@ -20,6 +20,11 @@ class PolarSdkModelAdapterTest {
 
     @Test
     fun `device uuid construction routes through sdk model adapter`() {
+        val assembled = PolarSdkModelAdapter.assembleFullDeviceId("123456")
+
+        assertEquals("1234561A", assembled)
+        assertEquals(true, PolarSdkModelAdapter.isValidDeviceId(assembled))
+        assertEquals(false, PolarSdkModelAdapter.isValidDeviceId("12345610"))
         assertEquals("0e030000-0084-0000-0000-000089643A20", PolarSdkModelAdapter.uuidFromDeviceId("89643A20"))
     }
 

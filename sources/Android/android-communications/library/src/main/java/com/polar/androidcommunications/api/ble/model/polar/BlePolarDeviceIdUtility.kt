@@ -1,6 +1,6 @@
 package com.polar.androidcommunications.api.ble.model.polar
 
-import com.polar.shared.device.PolarDeviceId
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 
 class BlePolarDeviceIdUtility private constructor() {
     init {
@@ -10,11 +10,11 @@ class BlePolarDeviceIdUtility private constructor() {
     companion object {
         fun isValidDeviceId(deviceId: String?): Boolean {
             if (deviceId == null) return false
-            return PolarDeviceId.isValid(deviceId)
+            return PolarSdkModelAdapter.isValidDeviceId(deviceId)
         }
 
         fun assemblyFullPolarDeviceId(deviceId: String): String {
-            return PolarDeviceId.assembleFull(deviceId)
+            return PolarSdkModelAdapter.assembleFullDeviceId(deviceId)
         }
     }
 }

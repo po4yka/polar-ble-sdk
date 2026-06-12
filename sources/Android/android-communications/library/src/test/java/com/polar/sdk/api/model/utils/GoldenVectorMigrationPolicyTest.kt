@@ -2976,7 +2976,14 @@ class GoldenVectorMigrationPolicyTest {
             commonTest.isFile &&
             commonTest.readText().contains("PolarDeviceId.uuidFromDeviceId") &&
             androidDeviceIdUtility.isFile &&
-            androidDeviceIdUtility.readText().contains("PolarDeviceId.assembleFull") &&
+            (
+                androidDeviceIdUtility.readText().contains("PolarDeviceId.assembleFull") ||
+                    (
+                        androidDeviceIdUtility.readText().contains("PolarSdkModelAdapter.assembleFullDeviceId") &&
+                            androidSdkModelAdapter.isFile &&
+                            androidSdkModelAdapter.readText().contains("PolarDeviceId.assembleFull")
+                    )
+            ) &&
             androidDeviceUuidSharedRoute
     }
 

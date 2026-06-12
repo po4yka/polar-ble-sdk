@@ -2594,7 +2594,14 @@ device_id_slice_migrated = File.file?(device_id_common_main) &&
                            File.file?(device_id_common_test) &&
                            File.read(device_id_common_test).include?("PolarDeviceId.uuidFromDeviceId") &&
                            File.file?(android_device_id_utility) &&
-                           File.read(android_device_id_utility).include?("PolarDeviceId.assembleFull") &&
+                           (
+                             File.read(android_device_id_utility).include?("PolarDeviceId.assembleFull") ||
+                             (
+                               File.read(android_device_id_utility).include?("PolarSdkModelAdapter.assembleFullDeviceId") &&
+                               File.file?(android_sdk_model_adapter) &&
+                               File.read(android_sdk_model_adapter).include?("PolarDeviceId.assembleFull")
+                             )
+                           ) &&
                            android_device_uuid_shared_route
 ios_shared_consumption_migrated = File.file?(ios_shared_bridge) &&
                                   File.read(ios_shared_bridge).include?("object PolarIosSharedBridge") &&
