@@ -248,6 +248,20 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `type conversion helpers route through Android runtime adapter`() {
+        Assert.assertEquals(255.toUByte(), PolarRuntimePlannerAdapter.convertArrayToUnsignedByte(byteArrayOf(0xFF.toByte())))
+        Assert.assertEquals(0x78563412u, PolarRuntimePlannerAdapter.convertArrayToUnsignedInt(byteArrayOf(0x12, 0x34, 0x56, 0x78)))
+        Assert.assertEquals(0x5634u, PolarRuntimePlannerAdapter.convertArrayToUnsignedInt(byteArrayOf(0x12, 0x34, 0x56, 0x78), offset = 1, length = 2))
+        Assert.assertEquals(0x807060504030201uL, PolarRuntimePlannerAdapter.convertArrayToUnsignedLong(byteArrayOf(0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08)))
+        Assert.assertEquals(0x060504uL, PolarRuntimePlannerAdapter.convertArrayToUnsignedLong(byteArrayOf(0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08), offset = 3, length = 3))
+        Assert.assertEquals(-128, PolarRuntimePlannerAdapter.convertArrayToSignedInt(byteArrayOf(0x80.toByte())))
+        Assert.assertEquals(-32768, PolarRuntimePlannerAdapter.convertArrayToSignedInt(byteArrayOf(0x00, 0x80.toByte())))
+        Assert.assertEquals(-1, PolarRuntimePlannerAdapter.convertArrayToSignedInt(byteArrayOf(0x00, 0x00, 0x00, 0x80.toByte())))
+        Assert.assertEquals(127, PolarRuntimePlannerAdapter.convertArrayToSignedInt(byteArrayOf(0x01, 0x7F, 0x00), offset = 1, length = 1))
+        Assert.assertEquals(255, PolarRuntimePlannerAdapter.convertUnsignedByteToInt(0xFF.toByte()))
+    }
+
+    @Test
     fun `shared command query plans select Android protobuf query ids`() {
         val cases = listOf(
             "h10-start-recording" to ("REQUEST_START_RECORDING" to PftpRequest.PbPFtpQuery.REQUEST_START_RECORDING_VALUE),

@@ -3,6 +3,7 @@ package com.polar.sdk.impl.utils
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType
 import com.polar.shared.ble.PolarAdvertisementModels
+import com.polar.shared.ble.PolarTypeUtils
 import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
@@ -387,6 +388,43 @@ internal object PolarRuntimePlannerAdapter {
 
     fun pmdSecretStrategyNameFromByte(strategyByte: Int): String? {
         return PolarPmdSecret.strategyNameFromByte(strategyByte)
+    }
+
+    fun convertArrayToUnsignedByte(data: ByteArray): UByte {
+        return PolarTypeUtils.requireUnsignedByte(data).toUByte()
+    }
+
+    fun convertArrayToUnsignedInt(data: ByteArray, offset: Int, length: Int): UInt {
+        return PolarTypeUtils.convertArrayToUnsignedInt(data, offset, length).requireValue().toUInt()
+    }
+
+    fun convertArrayToUnsignedInt(data: ByteArray): UInt {
+        return PolarTypeUtils.requireUnsignedInt(data).toUInt()
+    }
+
+    fun convertArrayToUnsignedLong(data: ByteArray, offset: Int, length: Int): ULong {
+        return PolarTypeUtils.convertArrayToUnsignedLong(data, offset, length).requireValue().toULong()
+    }
+
+    fun convertArrayToUnsignedLong(data: ByteArray): ULong {
+        return PolarTypeUtils.requireUnsignedLong(data).toULong()
+    }
+
+    fun convertArrayToSignedInt(data: ByteArray, offset: Int, length: Int): Int {
+        return convertArrayToSignedInt(data.copyOfRange(offset, offset + length))
+    }
+
+    fun convertArrayToSignedInt(data: ByteArray): Int {
+        var result = PolarTypeUtils.requireUnsignedInt(data).toUInt()
+        if (data.last() < 0) {
+            val mask: UInt = 0xFFFFFFFFu shl data.size * 8
+            result = result or mask
+        }
+        return result.toInt()
+    }
+
+    fun convertUnsignedByteToInt(byte: Byte): Int {
+        return PolarTypeUtils.convertUnsignedByteToInt(byte)
     }
 
     fun locationDataProjection(samples: List<PlannedGnssLocationSample>): List<PlannedLocationDataProjectionSample> {
