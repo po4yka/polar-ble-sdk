@@ -9,9 +9,13 @@ import kotlin.test.assertEquals
 class RestServiceMappingCommonPolicyTest {
     @Test
     fun sleepRestFacadePathsUseSharedPolicy() {
+        val manifest = loadGoldenVectorText("sdk/rest-service/rest-service-mapping-readiness.json")
+
         assertEquals("/REST/SLEEP.API", PolarRestServiceModels.sleepApiPath())
         assertEquals("/REST/SLEEP.API?cmd=subscribe&event=sleep_recording_state&details=[enabled]", PolarRestServiceModels.sleepRecordingStateSubscribePath())
         assertEquals("/REST/SLEEP.API?cmd=post&endpoint=stop_sleep_recording", PolarRestServiceModels.stopSleepRecordingPath())
+        assertEquals(true, manifest.stringArrayContains("requiredBehaviorFamilies", "sleep-rest-action-path-planning"))
+        assertEquals(true, manifest.stringArrayContains("coveredBehaviorFamilies", "sleep-rest-action-path-planning"))
     }
 
     @Test
@@ -219,6 +223,7 @@ class RestServiceMappingCommonPolicyTest {
             "service-list-name-path-mapping",
             "service-list-empty-defaults",
             "service-description-action-event-mapping",
+            "sleep-rest-action-path-planning",
             "service-description-empty-defaults",
             "wrong-type-services-platform-split",
             "unknown-field-ignore-policy",

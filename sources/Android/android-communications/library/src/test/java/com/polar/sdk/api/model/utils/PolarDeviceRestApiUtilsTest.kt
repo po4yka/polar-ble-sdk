@@ -389,6 +389,7 @@ class PolarDeviceRestApiUtilsTest {
             "service-list-name-path-mapping",
             "service-list-empty-defaults",
             "service-description-action-event-mapping",
+            "sleep-rest-action-path-planning",
             "service-description-empty-defaults",
             "wrong-type-services-platform-split",
             "unknown-field-ignore-policy",
