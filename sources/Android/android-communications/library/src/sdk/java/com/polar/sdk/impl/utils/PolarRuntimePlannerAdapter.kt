@@ -132,6 +132,15 @@ internal object PolarRuntimePlannerAdapter {
         val ppgQuality: Int,
         val correctedHr: Int
     )
+    data class PlannedPpiSample(
+        val hr: Int,
+        val ppInMs: Int,
+        val ppErrorEstimate: Int,
+        val blockerBit: Int,
+        val skinContactStatus: Int,
+        val skinContactSupported: Int,
+        val timeStamp: ULong
+    )
     data class BackupTraversalPlan(
         val path: String,
         val wildcardRootPath: String?,
@@ -557,6 +566,38 @@ internal object PolarRuntimePlannerAdapter {
                 hr = sample.hr,
                 ppgQuality = sample.ppgQuality,
                 correctedHr = sample.correctedHr
+            )
+        }
+    }
+
+    fun pmdPpiSamples(
+        frameType: Int,
+        compressed: Boolean,
+        timeStamp: ULong,
+        previousTimeStamp: ULong,
+        factor: Float,
+        sampleRate: Int,
+        dataContent: ByteArray
+    ): List<PlannedPpiSample> {
+        return PolarSensorDataParser.parsePpi(
+            PolarPmdDataFrame(
+                frameType = frameType,
+                compressed = compressed,
+                timeStamp = timeStamp,
+                previousTimeStamp = previousTimeStamp,
+                factor = factor,
+                sampleRate = sampleRate,
+                dataContent = dataContent
+            )
+        ).map { sample ->
+            PlannedPpiSample(
+                hr = sample.hr,
+                ppInMs = sample.ppInMs,
+                ppErrorEstimate = sample.ppErrorEstimate,
+                blockerBit = sample.blockerBit,
+                skinContactStatus = sample.skinContactStatus,
+                skinContactSupported = sample.skinContactSupported,
+                timeStamp = sample.timeStamp
             )
         }
     }

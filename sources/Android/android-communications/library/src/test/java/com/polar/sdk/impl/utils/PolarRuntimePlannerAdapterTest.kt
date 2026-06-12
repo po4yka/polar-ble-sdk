@@ -246,6 +246,30 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `PMD PPI parser routes through Android runtime adapter`() {
+        val samples = PolarRuntimePlannerAdapter.pmdPpiSamples(
+            frameType = 0,
+            compressed = false,
+            timeStamp = 200_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(
+                60, 100, 0, 10, 0, 7,
+                61, 200.toByte(), 0, 11, 0, 0
+            )
+        )
+
+        Assert.assertEquals(listOf(60, 61), samples.map { it.hr })
+        Assert.assertEquals(listOf(100, 200), samples.map { it.ppInMs })
+        Assert.assertEquals(listOf(10, 11), samples.map { it.ppErrorEstimate })
+        Assert.assertEquals(listOf(1, 0), samples.map { it.blockerBit })
+        Assert.assertEquals(listOf(1, 0), samples.map { it.skinContactStatus })
+        Assert.assertEquals(listOf(1, 0), samples.map { it.skinContactSupported })
+        Assert.assertEquals(listOf(0uL, 200_000_000uL), samples.map { it.timeStamp })
+    }
+
+    @Test
     fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
         val vector = loadFeatureAvailabilityReadinessVector()
         val input = vector.getAsJsonObject("input")
