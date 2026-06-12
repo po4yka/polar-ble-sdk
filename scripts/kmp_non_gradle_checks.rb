@@ -1387,6 +1387,18 @@ PLATFORM_OWNED_BACKLOG_REQUIRED_TERMS = [
   "Platform-owned gaps: Android Bluedroid host behavior, iOS CoreBluetooth host behavior, GATT client host interactions, and platform identifier routing should stay platform-specific unless a future slice defines a pure codec or deterministic state machine contract.",
   "BLE device lifecycle and GATT clients: keep platform-owned unless a slice extracts a pure codec or deterministic state machine with common fake-transport tests."
 ].freeze
+CURRENT_SHARED_POLICY_STATE_REQUIRED_TERMS = [
+  "## Current Shared-Policy State",
+  "runtime-pinned Android/iOS facade compatibility evidence in `KmpFakeTransportTestPlan.md`",
+  "New runtime/facade work should add operation-specific Android facade tests, iOS facade tests, and shared fake-transport tests only when a later production delegation slice introduces a new operation family",
+  "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
+  "BLE/session/GATT host behavior stays platform-owned unless a later slice defines a pure codec or deterministic state-machine contract"
+].freeze
+STALE_SHARED_POLICY_BACKLOG_TERMS = [
+  "## Remaining Shared-Policy Gaps",
+  "production shared delegation still needs remaining facade compatibility tests",
+  "Runtime/facade gaps:"
+].freeze
 STALE_SHARED_RUNTIME_VECTOR_NOTES = ["still need dedicated fake-transport vectors", "future fake-transport vectors"].freeze
 PMD_SENSOR_RUNTIME_ADAPTER_METHODS = %w[
   pmdAccSamples
@@ -2122,6 +2134,12 @@ end
 backlog = File.read(File.join(ROOT, "documentation/KmpFullCoverageTddBacklog.md"))
 PLATFORM_OWNED_BACKLOG_REQUIRED_TERMS.each do |term|
   errors << "documentation/KmpFullCoverageTddBacklog.md: missing platform-owned boundary term #{term}" unless backlog.include?(term)
+end
+CURRENT_SHARED_POLICY_STATE_REQUIRED_TERMS.each do |term|
+  errors << "documentation/KmpFullCoverageTddBacklog.md: missing current shared-policy state term #{term}" unless backlog.include?(term)
+end
+STALE_SHARED_POLICY_BACKLOG_TERMS.each do |term|
+  errors << "documentation/KmpFullCoverageTddBacklog.md: stale remaining shared-policy gap term still present #{term}" if backlog.include?(term)
 end
 
 existing_kotlin_tests = Dir[File.join(ROOT, "sources/Android/android-communications/**/*.kt")].select { |path| File.file?(path) && File.basename(path).end_with?("Test.kt") }.map { |path| File.basename(path) }.to_set

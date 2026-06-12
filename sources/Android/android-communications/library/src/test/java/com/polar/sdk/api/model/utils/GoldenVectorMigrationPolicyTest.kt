@@ -433,6 +433,20 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
+    fun `KMP backlog describes current migration state without stale remaining gap language`() {
+        val backlog = findRepositoryRoot().resolve("documentation/KmpFullCoverageTddBacklog.md").readText()
+        val missingTerms = CURRENT_SHARED_POLICY_STATE_REQUIRED_TERMS
+            .filterNot { term -> backlog.contains(term) }
+        val staleTerms = STALE_SHARED_POLICY_BACKLOG_TERMS
+            .filter { term -> backlog.contains(term) }
+
+        assertTrue(
+            "KmpFullCoverageTddBacklog.md must describe implemented-or-deferred shared policy state without stale remaining-gap language: missing=$missingTerms stale=$staleTerms",
+            missingTerms.isEmpty() && staleTerms.isEmpty()
+        )
+    }
+
+    @Test
     fun `type utility migration vectors have executable shared common policy coverage`() {
         val root = findRepositoryRoot()
         val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/TypeUtilsCommonPolicyTest.kt")
@@ -4015,6 +4029,18 @@ class GoldenVectorMigrationPolicyTest {
         val PLATFORM_OWNED_BACKLOG_REQUIRED_TERMS = listOf(
             "Platform-owned gaps: Android Bluedroid host behavior, iOS CoreBluetooth host behavior, GATT client host interactions, and platform identifier routing should stay platform-specific unless a future slice defines a pure codec or deterministic state machine contract.",
             "BLE device lifecycle and GATT clients: keep platform-owned unless a slice extracts a pure codec or deterministic state machine with common fake-transport tests."
+        )
+        val CURRENT_SHARED_POLICY_STATE_REQUIRED_TERMS = listOf(
+            "## Current Shared-Policy State",
+            "runtime-pinned Android/iOS facade compatibility evidence in `KmpFakeTransportTestPlan.md`",
+            "New runtime/facade work should add operation-specific Android facade tests, iOS facade tests, and shared fake-transport tests only when a later production delegation slice introduces a new operation family",
+            "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
+            "BLE/session/GATT host behavior stays platform-owned unless a later slice defines a pure codec or deterministic state-machine contract"
+        )
+        val STALE_SHARED_POLICY_BACKLOG_TERMS = listOf(
+            "## Remaining Shared-Policy Gaps",
+            "production shared delegation still needs remaining facade compatibility tests",
+            "Runtime/facade gaps:"
         )
         val PODSPEC_SOURCE_FILES = Regex("s\\.source_files\\s*=\\s*'([^']+)'")
         val PODSPEC_RESOURCES = Regex("s\\.resources\\s*=\\s*\\[(.*)]")
