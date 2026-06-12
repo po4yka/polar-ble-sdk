@@ -350,6 +350,36 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `PMD ECG parser routes through Android runtime adapter`() {
+        val type0 = PolarRuntimePlannerAdapter.pmdEcgSamples(
+            frameType = 0,
+            compressed = false,
+            timeStamp = 1_000_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(0x02, 0x80.toByte(), 0xFF.toByte())
+        ).single() as PolarRuntimePlannerAdapter.PlannedEcgType0Sample
+        val type3 = PolarRuntimePlannerAdapter.pmdEcgSamples(
+            frameType = 3,
+            compressed = false,
+            timeStamp = 1_000_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(0x00, 0x12, 0x03, 0x11, 0x10, 0x04, 0xFF.toByte())
+        ).single() as PolarRuntimePlannerAdapter.PlannedEcgType3Sample
+
+        Assert.assertEquals(1_000_000_000uL, type0.timeStamp)
+        Assert.assertEquals(-32766, type0.microVolts)
+        Assert.assertFalse(type0.overSampling)
+        Assert.assertEquals(1_000_000_000uL, type3.timeStamp)
+        Assert.assertEquals(201216, type3.data0)
+        Assert.assertEquals(266257, type3.data1)
+        Assert.assertEquals(0xFF.toUByte(), type3.status)
+    }
+
+    @Test
     fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
         val vector = loadFeatureAvailabilityReadinessVector()
         val input = vector.getAsJsonObject("input")

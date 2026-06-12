@@ -36,6 +36,8 @@ import com.polar.shared.pmd.PolarPmdSettings
 import com.polar.shared.pmd.PolarPmdSecret
 import com.polar.shared.pmd.sensors.PolarPmdDataFrame
 import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.shared.pmd.sensors.PolarEcgType0Sample
+import com.polar.shared.pmd.sensors.PolarEcgType3Sample
 import com.polar.shared.pmd.sensors.PolarGnssCoordinateSample
 import com.polar.shared.pmd.sensors.PolarGnssLocationSample
 import com.polar.shared.pmd.sensors.PolarGnssNmeaSample
@@ -159,6 +161,24 @@ internal object PolarRuntimePlannerAdapter {
         val z: Float,
         val calibrationStatusName: String? = null
     )
+    sealed class PlannedEcgSample {
+        abstract val timeStamp: ULong
+    }
+    data class PlannedEcgType0Sample(
+        override val timeStamp: ULong,
+        val microVolts: Int,
+        val overSampling: Boolean = false,
+        val skinContactBit: Byte = 0,
+        val contactImpedance: Byte = 0,
+        val ecgDataTag: Byte = 0,
+        val paceDataTag: Byte = 0
+    ) : PlannedEcgSample()
+    data class PlannedEcgType3Sample(
+        override val timeStamp: ULong,
+        val data0: Int,
+        val data1: Int,
+        val status: UByte
+    ) : PlannedEcgSample()
     data class BackupTraversalPlan(
         val path: String,
         val wildcardRootPath: String?,
@@ -652,6 +672,29 @@ internal object PolarRuntimePlannerAdapter {
 
     fun pmdMagCalibrationStatusNameFromId(id: Int): String {
         return PolarMagCalibrationStatus.fromId(id).name
+    }
+
+    fun pmdEcgSamples(frameType: Int, compressed: Boolean, timeStamp: ULong, previousTimeStamp: ULong, factor: Float, sampleRate: Int, dataContent: ByteArray): List<PlannedEcgSample> {
+        return PolarSensorDataParser.parseEcg(pmdDataFrame(frameType, compressed, timeStamp, previousTimeStamp, factor, sampleRate, dataContent))
+            .map { sample ->
+                when (sample) {
+                    is PolarEcgType0Sample -> PlannedEcgType0Sample(
+                        timeStamp = sample.timeStamp,
+                        microVolts = sample.microVolts,
+                        overSampling = sample.overSampling,
+                        skinContactBit = sample.skinContactBit,
+                        contactImpedance = sample.contactImpedance,
+                        ecgDataTag = sample.ecgDataTag,
+                        paceDataTag = sample.paceDataTag
+                    )
+                    is PolarEcgType3Sample -> PlannedEcgType3Sample(
+                        timeStamp = sample.timeStamp,
+                        data0 = sample.data0,
+                        data1 = sample.data1,
+                        status = sample.status
+                    )
+                }
+            }
     }
 
     fun locationDataProjection(samples: List<PlannedGnssLocationSample>): List<PlannedLocationDataProjectionSample> {
