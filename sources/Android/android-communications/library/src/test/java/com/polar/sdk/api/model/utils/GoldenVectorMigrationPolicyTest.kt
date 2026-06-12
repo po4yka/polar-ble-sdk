@@ -2208,6 +2208,41 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
+    fun `Android PMD model parsers stay behind runtime adapter boundary`() {
+        val root = findRepositoryRoot()
+        val modelDirectory = root.resolve("sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/gatt/client/pmd/model")
+        val retiredFrameAdapter = modelDirectory.resolve("PolarSharedPmdFrameAdapter.kt")
+        val directSharedImports = modelDirectory
+            .walkTopDown()
+            .filter { file -> file.isFile && file.extension == "kt" }
+            .flatMap { file ->
+                file.readLines().mapIndexedNotNull { index, line ->
+                    if (line.startsWith("import com.polar.shared")) {
+                        "${file.relativeTo(root).path}:${index + 1}:$line"
+                    } else {
+                        null
+                    }
+                }
+            }
+            .toList()
+        val runtimeAdapter = root.resolve("sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/impl/utils/PolarRuntimePlannerAdapter.kt").readText()
+        val missingAdapterMethods = PMD_SENSOR_RUNTIME_ADAPTER_METHODS.filterNot { method -> runtimeAdapter.contains("fun $method(") }
+
+        assertTrue(
+            "Android PMD model production files must not import shared parser DTOs directly; use PolarRuntimePlannerAdapter DTO bridges instead: $directSharedImports",
+            directSharedImports.isEmpty()
+        )
+        assertTrue(
+            "PolarSharedPmdFrameAdapter.kt must stay retired; parser bridge ownership belongs in PolarRuntimePlannerAdapter",
+            !retiredFrameAdapter.exists()
+        )
+        assertTrue(
+            "PolarRuntimePlannerAdapter must keep parser bridge methods for every migrated PMD sensor family: $missingAdapterMethods",
+            missingAdapterMethods.isEmpty()
+        )
+    }
+
+    @Test
     fun `byte level common dependency deferrals stay explicit until production common codecs exist`() {
         val root = findRepositoryRoot()
         val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle").readText()
@@ -3142,6 +3177,19 @@ class GoldenVectorMigrationPolicyTest {
         val STALE_SHARED_RUNTIME_VECTOR_NOTES = listOf(
             "still need dedicated fake-transport vectors",
             "future fake-transport vectors"
+        )
+        val PMD_SENSOR_RUNTIME_ADAPTER_METHODS = listOf(
+            "pmdAccSamples",
+            "pmdEcgSamples",
+            "pmdGnssLocationSamples",
+            "pmdGyrSamples",
+            "pmdMagSamples",
+            "pmdOfflineHrSamples",
+            "pmdPpgSamples",
+            "pmdPpiSamples",
+            "pmdPressureSamples",
+            "pmdSkinTemperatureSamples",
+            "pmdTemperatureSamples"
         )
         val KMP_COVERAGE_DOCS = listOf(
             "documentation/KmpCoverageInventory.md",

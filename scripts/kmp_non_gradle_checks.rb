@@ -1368,6 +1368,19 @@ PLATFORM_OWNED_BACKLOG_REQUIRED_TERMS = [
   "BLE device lifecycle and GATT clients: keep platform-owned unless a slice extracts a pure codec or deterministic state machine with common fake-transport tests."
 ].freeze
 STALE_SHARED_RUNTIME_VECTOR_NOTES = ["still need dedicated fake-transport vectors", "future fake-transport vectors"].freeze
+PMD_SENSOR_RUNTIME_ADAPTER_METHODS = %w[
+  pmdAccSamples
+  pmdEcgSamples
+  pmdGnssLocationSamples
+  pmdGyrSamples
+  pmdMagSamples
+  pmdOfflineHrSamples
+  pmdPpgSamples
+  pmdPpiSamples
+  pmdPressureSamples
+  pmdSkinTemperatureSamples
+  pmdTemperatureSamples
+].freeze
 COVERED_SENSOR_READINESS_MANIFESTS = {
   "protocol/sensors/acc-readiness.json" => "coveredByPreMigrationCharacterization",
   "protocol/sensors/ecg-readiness.json" => "coveredByPreMigrationCharacterization",
@@ -2817,6 +2830,22 @@ Dir[File.join(common_main_root, "**/*.kt")].sort.each do |path|
 end
 COMMON_MAIN_PORTABILITY_PLAN_TERMS.each do |term|
   errors << "documentation/KmpMigrationPlan.md: missing commonMain portability term #{term}" unless migration_plan.include?(term)
+end
+
+pmd_model_root = File.join(ROOT, "sources/Android/android-communications/library/src/main/java/com/polar/androidcommunications/api/ble/model/gatt/client/pmd/model")
+Dir[File.join(pmd_model_root, "**/*.kt")].sort.each do |path|
+  relative_path = relative(path)
+  File.readlines(path).each_with_index do |line, index|
+    next unless line.start_with?("import com.polar.shared")
+
+    errors << "#{relative_path}:#{index + 1}: Android PMD model production parser must use PolarRuntimePlannerAdapter instead of direct shared import: #{line.strip}"
+  end
+end
+retired_pmd_frame_adapter = File.join(pmd_model_root, "PolarSharedPmdFrameAdapter.kt")
+errors << "#{relative(retired_pmd_frame_adapter)}: retired Android PMD shared frame adapter must not be reintroduced" if File.exist?(retired_pmd_frame_adapter)
+runtime_planner_adapter = File.read(File.join(ROOT, "sources/Android/android-communications/library/src/sdk/java/com/polar/sdk/impl/utils/PolarRuntimePlannerAdapter.kt"))
+PMD_SENSOR_RUNTIME_ADAPTER_METHODS.each do |method|
+  errors << "PolarRuntimePlannerAdapter.kt: missing PMD sensor parser bridge method #{method}" unless runtime_planner_adapter.include?("fun #{method}(")
 end
 
 fail_with(errors)
