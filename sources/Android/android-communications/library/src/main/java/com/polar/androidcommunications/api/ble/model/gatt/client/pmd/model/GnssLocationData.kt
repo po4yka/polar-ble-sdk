@@ -1,12 +1,7 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
-import com.polar.shared.pmd.sensors.PolarGnssCoordinateSample
-import com.polar.shared.pmd.sensors.PolarGnssNmeaSample
-import com.polar.shared.pmd.sensors.PolarGnssSatelliteDilutionSample
-import com.polar.shared.pmd.sensors.PolarGnssSatelliteSummary
-import com.polar.shared.pmd.sensors.PolarGnssSatelliteSummarySample
-import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 /**
  * Sealed class to represent Location data sample
@@ -94,10 +89,18 @@ internal class GnssLocationData {
     companion object {
         fun parseDataFromDataFrame(frame: PmdDataFrame): GnssLocationData {
             val locationData = GnssLocationData()
-            PolarSensorDataParser.parseGnssLocation(frame.toPolarSharedFrame()).forEach { sample ->
+            PolarRuntimePlannerAdapter.pmdGnssLocationSamples(
+                frameType = frame.frameType.id.toInt(),
+                compressed = frame.isCompressedFrame,
+                timeStamp = frame.timeStamp,
+                previousTimeStamp = frame.previousTimeStamp,
+                factor = frame.factor,
+                sampleRate = frame.sampleRate,
+                dataContent = frame.dataContent
+            ).forEach { sample ->
                 locationData.gnssLocationDataSamples.add(
                     when (sample) {
-                        is PolarGnssCoordinateSample -> GnssCoordinateSample(
+                        is PolarRuntimePlannerAdapter.PlannedGnssCoordinateSample -> GnssCoordinateSample(
                             timeStamp = sample.timeStamp,
                             latitude = sample.latitude,
                             longitude = sample.longitude,
@@ -113,14 +116,14 @@ internal class GnssLocationData {
                             speedFlag = sample.speedFlag,
                             fusionState = sample.fusionState
                         )
-                        is PolarGnssSatelliteDilutionSample -> GnssSatelliteDilutionSample(
+                        is PolarRuntimePlannerAdapter.PlannedGnssSatelliteDilutionSample -> GnssSatelliteDilutionSample(
                             timeStamp = sample.timeStamp,
                             dilution = sample.dilution,
                             altitude = sample.altitude,
                             numberOfSatellites = sample.numberOfSatellites,
                             fix = sample.fix
                         )
-                        is PolarGnssSatelliteSummarySample -> GnssSatelliteSummarySample(
+                        is PolarRuntimePlannerAdapter.PlannedGnssSatelliteSummarySample -> GnssSatelliteSummarySample(
                             timeStamp = sample.timeStamp,
                             seenGnssSatelliteSummaryBand1 = sample.seenGnssSatelliteSummaryBand1.toAndroidSummary(),
                             usedGnssSatelliteSummaryBand1 = sample.usedGnssSatelliteSummaryBand1.toAndroidSummary(),
@@ -128,7 +131,7 @@ internal class GnssLocationData {
                             usedGnssSatelliteSummaryBand2 = sample.usedGnssSatelliteSummaryBand2.toAndroidSummary(),
                             maxSnr = sample.maxSnr
                         )
-                        is PolarGnssNmeaSample -> GnssGpsNMEASample(
+                        is PolarRuntimePlannerAdapter.PlannedGnssNmeaSample -> GnssGpsNMEASample(
                             timeStamp = sample.timeStamp,
                             measurementPeriod = sample.measurementPeriod,
                             messageLength = sample.messageLength,
@@ -141,7 +144,7 @@ internal class GnssLocationData {
             return locationData
         }
 
-        private fun PolarGnssSatelliteSummary.toAndroidSummary(): GnssSatelliteSummary {
+        private fun PolarRuntimePlannerAdapter.PlannedGnssSatelliteSummary.toAndroidSummary(): GnssSatelliteSummary {
             return GnssSatelliteSummary(
                 gpsNbrOfSat = gpsNbrOfSat,
                 gpsMaxSnr = gpsMaxSnr,

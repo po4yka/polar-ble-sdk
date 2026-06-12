@@ -408,6 +408,25 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `PMD GNSS parser routes through Android runtime adapter`() {
+        val dilution = PolarRuntimePlannerAdapter.pmdGnssLocationSamples(
+            frameType = 1,
+            compressed = false,
+            timeStamp = 1_000_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(0xD2.toByte(), 0x04, 0xEC.toByte(), 0xFF.toByte(), 0x07, 0x01)
+        ).single() as PolarRuntimePlannerAdapter.PlannedGnssSatelliteDilutionSample
+
+        Assert.assertEquals(1_000_000_000uL, dilution.timeStamp)
+        Assert.assertEquals(12.34f, dilution.dilution, 0.0001f)
+        Assert.assertEquals(-20, dilution.altitude)
+        Assert.assertEquals(7u, dilution.numberOfSatellites)
+        Assert.assertTrue(dilution.fix)
+    }
+
+    @Test
     fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
         val vector = loadFeatureAvailabilityReadinessVector()
         val input = vector.getAsJsonObject("input")
