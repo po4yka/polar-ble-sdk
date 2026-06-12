@@ -6,7 +6,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.BleHrClient.Com
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpUtils.PFTP_SERVICE_16BIT_UUID
 import com.polar.androidcommunications.common.ble.BleUtils
 import com.polar.androidcommunications.testrules.BleLoggerTestRule
-import com.polar.shared.ble.PolarAdvertisementModels
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
@@ -139,8 +139,8 @@ internal class BleAdvertisementContentTest {
         )
         val malformedGpbMissingLength = byteArrayOf(0x6b.toByte(), 0x00.toByte(), 0x40.toByte())
 
-        Assert.assertArrayEquals(byteArrayOf(0x33.toByte(), 0x00.toByte(), 0x00.toByte()), PolarAdvertisementModels.polarManufacturerHrPayloads(gpbAndHrManufacturerData).single())
-        Assert.assertTrue(PolarAdvertisementModels.polarManufacturerHrPayloads(malformedGpbMissingLength).isEmpty())
+        Assert.assertArrayEquals(byteArrayOf(0x33.toByte(), 0x00.toByte(), 0x00.toByte()), PolarSdkModelAdapter.polarManufacturerHrPayloads(gpbAndHrManufacturerData).single())
+        Assert.assertTrue(PolarSdkModelAdapter.polarManufacturerHrPayloads(malformedGpbMissingLength).isEmpty())
     }
 
     @Test

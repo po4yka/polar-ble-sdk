@@ -1,5 +1,6 @@
 package com.polar.sdk.api.model
 
+import com.polar.shared.ble.PolarAdvertisementModels
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import com.polar.shared.sdk.PolarActivityClassName
@@ -95,6 +96,10 @@ internal object PolarSdkModelAdapter {
         val sensorLocation: String?,
         val samples: List<PlannedSkinTemperatureSample>
     )
+    data class PlannedAdvertisementLocalName(
+        val deviceType: String,
+        val deviceId: String
+    )
 
     fun diskSpace(fragmentSize: Long, totalFragments: Long, freeFragments: Long): PlannedDiskSpace {
         val shared = PolarSdkModelMappers.diskSpace(
@@ -110,6 +115,26 @@ internal object PolarSdkModelAdapter {
 
     fun uuidFromDeviceId(deviceId: String): String {
         return PolarDeviceId.uuidFromDeviceId(deviceId)
+    }
+
+    fun advertisementDeviceModelNameFromLocalName(localName: String, prefix: String): String {
+        return PolarAdvertisementModels.deviceModelNameFromLocalName(localName, prefix)
+    }
+
+    fun isValidAdvertisementLocalName(localName: String, prefix: String): Boolean {
+        return PolarAdvertisementModels.isValidDeviceLocalName(localName, prefix)
+    }
+
+    fun parseAdvertisementLocalName(localName: String, prefix: String): PlannedAdvertisementLocalName {
+        val shared = PolarAdvertisementModels.parseLocalName(localName, prefix)
+        return PlannedAdvertisementLocalName(
+            deviceType = shared.deviceType,
+            deviceId = shared.deviceId
+        )
+    }
+
+    fun polarManufacturerHrPayloads(content: ByteArray): List<ByteArray> {
+        return PolarAdvertisementModels.polarManufacturerHrPayloads(content)
     }
 
     fun d2hNotificationTypeName(value: Int): String? {

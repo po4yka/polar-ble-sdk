@@ -24,6 +24,25 @@ class PolarSdkModelAdapterTest {
     }
 
     @Test
+    fun `advertisement local name and manufacturer payload parsing route through sdk model adapter`() {
+        val localName = PolarSdkModelAdapter.parseAdvertisementLocalName("Polar GritX Pro aa123459", "Polar")
+        val manufacturerData = byteArrayOf(
+            0x6b.toByte(), 0x00.toByte(),
+            0x72.toByte(), 0x08.toByte(), 0x97.toByte(), 0xc9.toByte(), 0xc3.toByte(), 0x00.toByte(), 0x00.toByte(),
+            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x7a.toByte(), 0x01.toByte(), 0x03.toByte(), 0x33.toByte(),
+            0x00.toByte(), 0x00.toByte()
+        )
+
+        assertEquals("GritX Pro", localName.deviceType)
+        assertEquals("aa123459", localName.deviceId)
+        assertEquals("GritX Pro", PolarSdkModelAdapter.advertisementDeviceModelNameFromLocalName("Polar GritX Pro aa123459", "Polar"))
+        assertEquals(true, PolarSdkModelAdapter.isValidAdvertisementLocalName("Polar GritX Pro aa123459", "Polar"))
+        assertEquals(false, PolarSdkModelAdapter.isValidAdvertisementLocalName("Custom GritX Pro aa123459", "Polar"))
+        assertEquals(listOf(byteArrayOf(0x33.toByte(), 0x00.toByte(), 0x00.toByte()).toList()), PolarSdkModelAdapter.polarManufacturerHrPayloads(manufacturerData).map { it.toList() })
+        assertEquals(emptyList<List<Byte>>(), PolarSdkModelAdapter.polarManufacturerHrPayloads(byteArrayOf(0x6b.toByte(), 0x00.toByte(), 0x40.toByte())).map { it.toList() })
+    }
+
+    @Test
     fun `d2h notification type lookup routes through sdk model adapter`() {
         assertEquals("EXERCISE_STATUS", PolarSdkModelAdapter.d2hNotificationTypeName(19))
         assertNull(PolarSdkModelAdapter.d2hNotificationTypeName(99))

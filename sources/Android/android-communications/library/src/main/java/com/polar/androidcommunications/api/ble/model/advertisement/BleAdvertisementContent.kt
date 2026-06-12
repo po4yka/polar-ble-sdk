@@ -4,7 +4,7 @@ import androidx.annotation.VisibleForTesting
 import com.polar.androidcommunications.api.ble.model.polar.PolarAdvDataUtility.isValidDevice
 import com.polar.androidcommunications.common.ble.BleUtils.AD_TYPE
 import com.polar.androidcommunications.common.ble.BleUtils.EVENT_TYPE
-import com.polar.shared.ble.PolarAdvertisementModels
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 import java.util.ArrayList
 import java.util.HashMap
 
@@ -129,7 +129,7 @@ class BleAdvertisementContent {
         if (advertisementData.containsKey(AD_TYPE.GAP_ADTYPE_MANUFACTURER_SPECIFIC)) {
             val content = advertisementData[AD_TYPE.GAP_ADTYPE_MANUFACTURER_SPECIFIC]
             if (content != null) {
-                PolarAdvertisementModels.polarManufacturerHrPayloads(content).forEach { payload ->
+                PolarSdkModelAdapter.polarManufacturerHrPayloads(content).forEach { payload ->
                     polarHrAdvertisement.processPolarManufacturerData(payload)
                     didContainHrData = true
                 }
@@ -160,7 +160,7 @@ class BleAdvertisementContent {
             this.name = name
             if (isValidDevice(name, advertisementDeviceNamePrefix)) {
                 val nameSplit = name.split(" ").toTypedArray()
-                val parsed = PolarAdvertisementModels.parseLocalName(name, advertisementDeviceNamePrefix)
+                val parsed = PolarSdkModelAdapter.parseAdvertisementLocalName(name, advertisementDeviceNamePrefix)
                 polarDeviceType = parsed.deviceType
                 polarDeviceId = parsed.deviceId
                 if (nameSplit[nameSplit.size - 1].length == 7) {
