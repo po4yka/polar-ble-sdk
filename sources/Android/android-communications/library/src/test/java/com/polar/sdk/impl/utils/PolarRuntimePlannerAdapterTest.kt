@@ -380,6 +380,34 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `PMD PPG parser routes through Android runtime adapter`() {
+        val type0 = PolarRuntimePlannerAdapter.pmdPpgSamples(
+            frameType = 0,
+            compressed = false,
+            timeStamp = 1_000_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0xFF.toByte(), 0xFF.toByte(), 0x7F, 0x00, 0x00, 0x00)
+        ).single() as PolarRuntimePlannerAdapter.PlannedPpgType0Sample
+        val sportId = PolarRuntimePlannerAdapter.pmdPpgSamples(
+            frameType = 6,
+            compressed = false,
+            timeStamp = 1_000_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01)
+        ).single() as PolarRuntimePlannerAdapter.PlannedPpgSportIdSample
+
+        Assert.assertEquals(1_000_000_000uL, type0.timeStamp)
+        Assert.assertEquals(listOf(197121, 394500, 8388607), type0.ppgDataSamples)
+        Assert.assertEquals(0, type0.ambientSample)
+        Assert.assertEquals(1_000_000_000uL, sportId.timeStamp)
+        Assert.assertEquals(0x0102030405060708uL, sportId.sportId)
+    }
+
+    @Test
     fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
         val vector = loadFeatureAvailabilityReadinessVector()
         val input = vector.getAsJsonObject("input")

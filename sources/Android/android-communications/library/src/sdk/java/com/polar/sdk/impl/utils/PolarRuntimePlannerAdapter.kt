@@ -52,6 +52,16 @@ import com.polar.shared.pmd.sensors.PolarLocationSatelliteDilutionProjectionSamp
 import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjection
 import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjectionSample
 import com.polar.shared.pmd.sensors.PolarMagCalibrationStatus
+import com.polar.shared.pmd.sensors.PolarPpgSportIdSample
+import com.polar.shared.pmd.sensors.PolarPpgType0Sample
+import com.polar.shared.pmd.sensors.PolarPpgType10Sample
+import com.polar.shared.pmd.sensors.PolarPpgType13Sample
+import com.polar.shared.pmd.sensors.PolarPpgType14Sample
+import com.polar.shared.pmd.sensors.PolarPpgType4Sample
+import com.polar.shared.pmd.sensors.PolarPpgType5Sample
+import com.polar.shared.pmd.sensors.PolarPpgType7Sample
+import com.polar.shared.pmd.sensors.PolarPpgType8Sample
+import com.polar.shared.pmd.sensors.PolarPpgType9Sample
 import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import com.polar.shared.sdk.PolarKvtxScriptCodec
@@ -179,6 +189,63 @@ internal object PolarRuntimePlannerAdapter {
         val data1: Int,
         val status: UByte
     ) : PlannedEcgSample()
+    sealed class PlannedPpgSample {
+        abstract val timeStamp: ULong
+    }
+    data class PlannedPpgType0Sample(
+        override val timeStamp: ULong,
+        val ppgDataSamples: List<Int>,
+        val ambientSample: Int
+    ) : PlannedPpgSample()
+    data class PlannedPpgType4Sample(
+        override val timeStamp: ULong,
+        val numIntTs: List<UInt>,
+        val channel1GainTs: List<UInt>,
+        val channel2GainTs: List<UInt>
+    ) : PlannedPpgSample()
+    data class PlannedPpgType5Sample(
+        override val timeStamp: ULong,
+        val operationMode: UInt
+    ) : PlannedPpgSample()
+    data class PlannedPpgType7Sample(
+        override val timeStamp: ULong,
+        val ppgDataSamples: List<Int>,
+        val statusBits: List<Int>
+    ) : PlannedPpgSample()
+    data class PlannedPpgType8Sample(
+        override val timeStamp: ULong,
+        val ppgDataSamples: List<Int>,
+        val statusBits: List<Int>
+    ) : PlannedPpgSample()
+    data class PlannedPpgType9Sample(
+        override val timeStamp: ULong,
+        val numIntTs: List<UInt>,
+        val channel1GainTs: List<UInt>,
+        val channel2GainTs: List<UInt>
+    ) : PlannedPpgSample()
+    data class PlannedPpgType10Sample(
+        override val timeStamp: ULong,
+        val greenSamples: List<Int>,
+        val redSamples: List<Int>,
+        val irSamples: List<Int>,
+        val statusBits: List<Int>
+    ) : PlannedPpgSample()
+    data class PlannedPpgType13Sample(
+        override val timeStamp: ULong,
+        val ppgChannel0: List<Int>,
+        val ppgChannel1: List<Int>,
+        val statusBits: List<Int>
+    ) : PlannedPpgSample()
+    data class PlannedPpgType14Sample(
+        override val timeStamp: ULong,
+        val numIntTs1: List<UInt>,
+        val channel1GainTs1: List<UInt>,
+        val channel2GainTs1: List<UInt>
+    ) : PlannedPpgSample()
+    data class PlannedPpgSportIdSample(
+        override val timeStamp: ULong,
+        val sportId: ULong
+    ) : PlannedPpgSample()
     data class BackupTraversalPlan(
         val path: String,
         val wildcardRootPath: String?,
@@ -693,6 +760,24 @@ internal object PolarRuntimePlannerAdapter {
                         data1 = sample.data1,
                         status = sample.status
                     )
+                }
+            }
+    }
+
+    fun pmdPpgSamples(frameType: Int, compressed: Boolean, timeStamp: ULong, previousTimeStamp: ULong, factor: Float, sampleRate: Int, dataContent: ByteArray): List<PlannedPpgSample> {
+        return PolarSensorDataParser.parsePpg(pmdDataFrame(frameType, compressed, timeStamp, previousTimeStamp, factor, sampleRate, dataContent))
+            .map { sample ->
+                when (sample) {
+                    is PolarPpgType0Sample -> PlannedPpgType0Sample(sample.timeStamp, sample.ppgDataSamples, sample.ambientSample)
+                    is PolarPpgType4Sample -> PlannedPpgType4Sample(sample.timeStamp, sample.numIntTs, sample.channel1GainTs, sample.channel2GainTs)
+                    is PolarPpgType5Sample -> PlannedPpgType5Sample(sample.timeStamp, sample.operationMode)
+                    is PolarPpgType7Sample -> PlannedPpgType7Sample(sample.timeStamp, sample.ppgDataSamples, sample.statusBits)
+                    is PolarPpgType8Sample -> PlannedPpgType8Sample(sample.timeStamp, sample.ppgDataSamples, sample.statusBits)
+                    is PolarPpgType9Sample -> PlannedPpgType9Sample(sample.timeStamp, sample.numIntTs, sample.channel1GainTs, sample.channel2GainTs)
+                    is PolarPpgType10Sample -> PlannedPpgType10Sample(sample.timeStamp, sample.greenSamples, sample.redSamples, sample.irSamples, sample.statusBits)
+                    is PolarPpgType13Sample -> PlannedPpgType13Sample(sample.timeStamp, sample.ppgChannel0, sample.ppgChannel1, sample.statusBits)
+                    is PolarPpgType14Sample -> PlannedPpgType14Sample(sample.timeStamp, sample.numIntTs1, sample.channel1GainTs1, sample.channel2GainTs1)
+                    is PolarPpgSportIdSample -> PlannedPpgSportIdSample(sample.timeStamp, sample.sportId)
                 }
             }
     }
