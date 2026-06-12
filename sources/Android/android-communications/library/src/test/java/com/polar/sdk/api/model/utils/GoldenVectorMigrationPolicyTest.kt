@@ -1282,6 +1282,35 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
+    fun `sd log migration vectors have executable shared common policy coverage`() {
+        val root = findRepositoryRoot()
+        val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/SdLogModelsCommonPolicyTest.kt")
+        val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
+        val readme = root.resolve("testdata/golden-vectors/sdk/sd-log/README.md").readText()
+        val violations = mutableListOf<String>()
+
+        if (!commonTest.isFile) {
+            violations += commonTest.relativeTo(root).path
+        } else {
+            val commonTestText = commonTest.readText()
+            SD_LOG_COMMON_POLICY_REQUIRED_TERMS
+                .filterNot { term -> commonTestText.contains(term) }
+                .mapTo(violations) { term -> "${commonTest.relativeTo(root).path}: missing sd-log common policy term $term" }
+        }
+        if (!inventory.contains("SdLogModelsCommonPolicyTest.kt") || !inventory.contains("sd-log-readiness.json")) {
+            violations += "KmpCoverageInventory.md must mention SdLogModelsCommonPolicyTest.kt and sd-log-readiness.json in the SD-log row"
+        }
+        if (!readme.contains("SdLogModelsCommonPolicyTest.kt")) {
+            violations += "sdk/sd-log/README.md must mention executable shared SD-log policy coverage"
+        }
+
+        assertTrue(
+            "SD-log migration vectors must have executable shared common policy coverage before SD-log model or facade execution moves to KMP: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
     fun `KMP documentation keeps validation commands discoverable`() {
         val root = findRepositoryRoot()
         val missingLinks = KMP_DOCS_THAT_MUST_LINK_VALIDATION
@@ -3680,6 +3709,25 @@ class GoldenVectorMigrationPolicyTest {
             "lastModifiedTrusted",
             "parseProtoBytes",
             "buildProtoBytes"
+        )
+        val SD_LOG_COMMON_POLICY_REQUIRED_TERMS = listOf(
+            "sdLogEnumMappingsPreservePublicNumericValues",
+            "sdLogReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+            "sdk/sd-log/sd-log-readiness.json",
+            "sd-log-readiness",
+            "sdLogReadiness",
+            "log-trigger-enum-projection",
+            "magnetometer-frequency-enum-projection",
+            "unknown-enum-null-boundary",
+            "sd-log-config-read-write-paths",
+            "write-progress-policy-gate",
+            "session-notification-platform-boundary",
+            "protobuf-construction-platform-boundary",
+            "optional-field-presence-boundary",
+            "public-error-mapping-boundary",
+            "platform-sd-log-vector-reference-gate",
+            "compile-verification-gate",
+            "SD-log migration may proceed only after this readiness manifest is executable from shared commonTest"
         )
         val FIRST_TIME_USE_COMMON_POLICY_REQUIRED_TERMS = listOf(
             "firstTimeUseEnumMappingsPreservePublicPhysicalConfigValues",

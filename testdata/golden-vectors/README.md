@@ -34,6 +34,7 @@ testdata/golden-vectors/sdk/psftp-notifications/
 testdata/golden-vectors/sdk/psftp-response/
 testdata/golden-vectors/sdk/psftp-rfc76/
 testdata/golden-vectors/sdk/rest-service/
+testdata/golden-vectors/sdk/sd-log/
 testdata/golden-vectors/sdk/skin-temperature/
 testdata/golden-vectors/sdk/sleep/
 testdata/golden-vectors/sdk/spo2-test/
