@@ -207,15 +207,15 @@ internal object PolarTrainingSessionUtils {
                     BleLogger.e(TAG, "  Failed to parse $type: shared protobuf preflight marked payload malformed")
                     continue
                 }
-                when (PolarRuntimePlannerAdapter.trainingSessionPayloadParser(type.deviceFileName)) {
-                    "PbExerciseBase" -> summary = Training.PbExerciseBase.parseFrom(data)
-                    "PbExerciseRouteSamples" ->
+                when (PolarRuntimePlannerAdapter.trainingSessionPublicModelSlot(type.deviceFileName)) {
+                    "exerciseSummary" -> summary = Training.PbExerciseBase.parseFrom(data)
+                    "route" ->
                         route = ExerciseRouteSamples.PbExerciseRouteSamples.parseFrom(data)
-                    "PbExerciseRouteSamples2" ->
+                    "routeAdvanced" ->
                         routeAdv = ExerciseRouteSamples2.PbExerciseRouteSamples2.parseFrom(data)
-                    "PbExerciseSamples" ->
+                    "samples" ->
                         samples = ExerciseSamples.PbExerciseSamples.parseFrom(data)
-                    "PbExerciseSamples2" ->
+                    "samplesAdvanced" ->
                         samplesAdv = ExerciseSamples2.PbExerciseSamples2.parseFrom(data)
                     else -> Unit
                 }

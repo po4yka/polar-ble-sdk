@@ -123,6 +123,21 @@ object PolarTrainingSessionModels {
         }
     }
 
+    fun publicModelSlot(fileName: String): String? {
+        return when (fileName) {
+            "TSESS.BPB" -> "sessionSummary"
+            "BASE.BPB" -> "exerciseSummary"
+            "ROUTE.BPB",
+            "ROUTE.GZB" -> "route"
+            "ROUTE2.BPB",
+            "ROUTE2.GZB" -> "routeAdvanced"
+            "SAMPLES.BPB",
+            "SAMPLES.GZB" -> "samples"
+            "SAMPLES2.GZB" -> "samplesAdvanced"
+            else -> null
+        }
+    }
+
     fun decodePayloadBytes(fileName: String, payload: ByteArray): ByteArray {
         return if (payloadParserCase(fileName)?.encoding == "gzip-protobuf") {
             PolarTrainingSessionPayloadCodec.decodeGzipPayload(payload)

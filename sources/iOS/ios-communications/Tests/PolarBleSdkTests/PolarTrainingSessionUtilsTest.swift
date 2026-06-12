@@ -338,12 +338,15 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             let planned = try XCTUnwrap(PolarTrainingSessionUtils.trainingSessionPayloadParserCase(fileName: fileName), id)
             XCTAssertEqual(inputCase["parser"] as? String, prototypeCase["parser"] as? String, id)
             XCTAssertEqual(inputCase["encoding"] as? String, prototypeCase["encoding"] as? String, id)
+            XCTAssertEqual(inputCase["publicModelSlot"] as? String, prototypeCase["publicModelSlot"] as? String, id)
             XCTAssertEqual(inputCase["expectedFields"] as? [String], prototypeCase["fields"] as? [String], id)
             XCTAssertEqual(planned.parser, inputCase["parser"] as? String, id)
             XCTAssertEqual(planned.encoding, inputCase["encoding"] as? String, id)
             XCTAssertEqual(PolarTrainingSessionUtils.trainingSessionPayloadEncoding(fileName: fileName), inputCase["encoding"] as? String, id)
+            XCTAssertEqual(PolarTrainingSessionUtils.trainingSessionPublicModelSlot(fileName: fileName), inputCase["publicModelSlot"] as? String, id)
         }
         XCTAssertEqual(cases.filter { ($0["encoding"] as? String) == "gzip-protobuf" }.count, 4, "payload-parser-policy")
+        XCTAssertEqual(cases.compactMap { $0["publicModelSlot"] as? String }, ["sessionSummary", "exerciseSummary", "route", "route", "routeAdvanced", "routeAdvanced", "samples", "samples", "samplesAdvanced"], "payload-parser-policy")
         XCTAssertEqual(commonParserPrototype["status"] as? String, "executable shared parser-policy coverage; gzip decoding is shared and protobuf parsing remains gated on common protobuf dependencies", "payload-parser-policy")
         XCTAssertEqual(expected["commonDecision"] as? String, TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION, "payload-parser-policy")
         XCTAssertEqual(consumerTests["android"] as? [String], ["com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"], "payload-parser-policy")
@@ -402,12 +405,13 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             "shared-gzip-payload-codec",
             "protobuf-byte-parsing-deferral",
             "platform-training-session-vector-reference-gate",
-            "public-model-reconstruction-gate",
+            "public-model-slot-planning",
+            "public-generated-model-reconstruction-boundary",
             "compile-verification-gate"
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction gates, and compile verification remain explicit before production discovery/read orchestration moves.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared public-model slot planning, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.")
     }
 
     func test_readTrainingSession_shouldReturnTrainingSessionDataWithExercises() async throws {
@@ -843,4 +847,4 @@ private let TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS = [
     "samples-advanced-gzip-protobuf"
 ]
 
-private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies that can execute these parser cases against real bytes; gzip decompression is now shared KMP production code, and until protobuf parsing moves this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies that can execute these parser cases against real bytes; gzip decompression and public-model slot planning are now shared KMP production code, and until protobuf parsing moves this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."

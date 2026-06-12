@@ -377,10 +377,13 @@ class PolarTrainingSessionUtilsTest {
             val id = inputCase.get("id").asString
             assertEquals(id, inputCase.get("parser").asString, prototypeCase.get("parser").asString)
             assertEquals(id, inputCase.get("encoding").asString, prototypeCase.get("encoding").asString)
+            assertEquals(id, inputCase.get("publicModelSlot").asString, prototypeCase.get("publicModelSlot").asString)
             assertEquals(id, inputCase.get("encoding").asString, PolarTrainingSessionUtils.trainingSessionPayloadEncoding(inputCase.get("fileName").asString))
+            assertEquals(id, inputCase.get("publicModelSlot").asString, PolarRuntimePlannerAdapter.trainingSessionPublicModelSlot(inputCase.get("fileName").asString))
             assertEquals(id, inputCase.getAsJsonArray("expectedFields").map { it.asString }, prototypeCase.getAsJsonArray("fields").map { it.asString })
         }
         assertEquals(4, cases.count { it.get("encoding").asString == "gzip-protobuf" })
+        assertEquals(listOf("sessionSummary", "exerciseSummary", "route", "route", "routeAdvanced", "routeAdvanced", "samples", "samples", "samplesAdvanced"), cases.map { it.get("publicModelSlot").asString })
         assertEquals("executable shared parser-policy coverage; gzip decoding is shared and protobuf parsing remains gated on common protobuf dependencies", expected.getAsJsonObject("commonParserPrototype").get("status").asString)
         assertEquals(TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION, expected.get("commonDecision").asString)
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
@@ -446,13 +449,14 @@ class PolarTrainingSessionUtilsTest {
             "shared-gzip-payload-codec",
             "protobuf-byte-parsing-deferral",
             "platform-training-session-vector-reference-gate",
-            "public-model-reconstruction-gate",
+            "public-model-slot-planning",
+            "public-generated-model-reconstruction-boundary",
             "compile-verification-gate"
         )
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction gates, and compile verification remain explicit before production discovery/read orchestration moves.",
+            "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared public-model slot planning, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.",
             expected.get("commonDecision").asString
         )
     }
@@ -780,6 +784,6 @@ class PolarTrainingSessionUtilsTest {
             "samples-advanced-gzip-protobuf"
         )
 
-        const val TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies that can execute these parser cases against real bytes; gzip decompression is now shared KMP production code, and until protobuf parsing moves this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+        const val TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies that can execute these parser cases against real bytes; gzip decompression and public-model slot planning are now shared KMP production code, and until protobuf parsing moves this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
     }
 }

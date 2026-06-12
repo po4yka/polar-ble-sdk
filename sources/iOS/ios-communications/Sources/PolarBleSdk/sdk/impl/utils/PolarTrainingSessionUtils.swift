@@ -59,6 +59,15 @@ internal class PolarTrainingSessionUtils {
         return trainingSessionPayloadParserCase(fileName: fileName)?.encoding
     }
 
+    static func trainingSessionPublicModelSlot(fileName: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        if let sharedSlot = PolarRuntimePlanner.trainingSessionPublicModelSlot(fileName: fileName) {
+            return sharedSlot
+        }
+        #endif
+        return fallbackTrainingSessionPublicModelSlot(fileName: fileName)
+    }
+
     static func trainingSessionExerciseDataTypeFileName(dataType: PolarExerciseDataTypes) -> String {
         return dataType.deviceFileName
     }
@@ -279,12 +288,12 @@ internal class PolarTrainingSessionUtils {
             if PolarRuntimePlanner.trainingSessionPayloadMalformed(fileName: type.deviceFileName, payload: data) {
                 continue
             }
-            switch trainingSessionPayloadParserCase(fileName: type.deviceFileName)?.parser {
-            case "PbExerciseBase": summary = try? Data_PbExerciseBase(serializedBytes: data)
-            case "PbExerciseRouteSamples": route = try? Data_PbExerciseRouteSamples(serializedBytes: data)
-            case "PbExerciseRouteSamples2": route2 = try? Data_PbExerciseRouteSamples2(serializedBytes: data)
-            case "PbExerciseSamples": samples = try? Data_PbExerciseSamples(serializedBytes: data)
-            case "PbExerciseSamples2": samples2 = try? Data_PbExerciseSamples2(serializedBytes: data)
+            switch trainingSessionPublicModelSlot(fileName: type.deviceFileName) {
+            case "exerciseSummary": summary = try? Data_PbExerciseBase(serializedBytes: data)
+            case "route": route = try? Data_PbExerciseRouteSamples(serializedBytes: data)
+            case "routeAdvanced": route2 = try? Data_PbExerciseRouteSamples2(serializedBytes: data)
+            case "samples": samples = try? Data_PbExerciseSamples(serializedBytes: data)
+            case "samplesAdvanced": samples2 = try? Data_PbExerciseSamples2(serializedBytes: data)
             default: continue
             }
         }
@@ -479,6 +488,18 @@ internal class PolarTrainingSessionUtils {
         case "SAMPLES.BPB": return (parser: "PbExerciseSamples", encoding: "protobuf")
         case "SAMPLES.GZB": return (parser: "PbExerciseSamples", encoding: "gzip-protobuf")
         case "SAMPLES2.GZB": return (parser: "PbExerciseSamples2", encoding: "gzip-protobuf")
+        default: return nil
+        }
+    }
+
+    private static func fallbackTrainingSessionPublicModelSlot(fileName: String) -> String? {
+        switch fileName {
+        case "TSESS.BPB": return "sessionSummary"
+        case "BASE.BPB": return "exerciseSummary"
+        case "ROUTE.BPB", "ROUTE.GZB": return "route"
+        case "ROUTE2.BPB", "ROUTE2.GZB": return "routeAdvanced"
+        case "SAMPLES.BPB", "SAMPLES.GZB": return "samples"
+        case "SAMPLES2.GZB": return "samplesAdvanced"
         default: return nil
         }
     }

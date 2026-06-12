@@ -3526,7 +3526,8 @@ class GoldenVectorMigrationPolicyTest {
             "shared-gzip-payload-codec",
             "protobuf-byte-parsing-deferral",
             "platform-training-session-vector-reference-gate",
-            "public-model-reconstruction-gate",
+            "public-model-slot-planning",
+            "public-generated-model-reconstruction-boundary",
             "compile-verification-gate",
             "ignore-files-that-do-not-map-to-public-training-or-exercise-data-types",
             "android-currently-stores-first-file-path-while-ios-stores-exercise-directory-path",
@@ -4334,8 +4335,9 @@ class GoldenVectorMigrationPolicyTest {
             ),
             "payload-parser-policy.json" to listOf(
                 "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies",
-                "gzip decompression is now shared KMP production code",
-                "while gzip payload decoding is already shared production code",
+                "gzip decompression and public-model slot planning are now shared KMP production code",
+                "while gzip payload decoding and public-model slot planning are already shared production code",
+                "publicModelSlot",
                 "training-session-summary-protobuf",
                 "exercise-summary-protobuf",
                 "route-protobuf",
@@ -4351,10 +4353,11 @@ class GoldenVectorMigrationPolicyTest {
                 "byte-level-parser-dependency-gate",
                 "shared-gzip-payload-codec",
                 "protobuf-byte-parsing-deferral",
-                "public-model-reconstruction-gate",
-                "gzip payload decoding now uses shared KMP platform actuals",
+                "public-model-slot-planning",
+                "public-generated-model-reconstruction-boundary",
+                "gzip payload decoding and deterministic public-model slot planning now use shared KMP production code",
                 "real byte-level protobuf parsing remains deferred until common production parser dependencies exist and are compile-verified",
-                "public generated protobuf model reconstruction remains platform-owned until a shared DTO/reconstruction strategy is added and covered"
+                "public generated protobuf model reconstruction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered"
             ),
             "secret-readiness.json" to listOf(
                 "AES block-alignment gating",

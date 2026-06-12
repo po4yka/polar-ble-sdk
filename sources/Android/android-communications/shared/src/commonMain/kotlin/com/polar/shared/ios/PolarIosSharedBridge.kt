@@ -368,6 +368,10 @@ object PolarIosSharedBridge {
         return "${parserCase.parser}|${parserCase.encoding}"
     }
 
+    fun trainingSessionPublicModelSlot(fileName: String): String? {
+        return PolarTrainingSessionModels.publicModelSlot(fileName)
+    }
+
     fun trainingSessionDecodePayloadHex(fileName: String, payloadHex: String): String? {
         return runCatching {
             PolarTrainingSessionModels.decodePayloadBytes(fileName, payloadHex.hexToBytes()).toHex()

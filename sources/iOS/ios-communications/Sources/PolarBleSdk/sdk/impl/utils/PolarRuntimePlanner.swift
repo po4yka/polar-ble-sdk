@@ -477,6 +477,14 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func trainingSessionPublicModelSlot(fileName: String) -> String? {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.trainingSessionPublicModelSlot(fileName: fileName)
+        #else
+        return nil
+        #endif
+    }
+
     static func decodeTrainingSessionPayload(fileName: String, payload: Data) -> Data? {
         #if canImport(PolarBleSdkShared)
         guard let decodedHex = PolarIosSharedBridge.shared.trainingSessionDecodePayloadHex(fileName: fileName, payloadHex: payload.hexString()) else {

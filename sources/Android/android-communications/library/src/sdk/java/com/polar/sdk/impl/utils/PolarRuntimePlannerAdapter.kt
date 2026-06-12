@@ -1080,6 +1080,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarTrainingSessionModels.payloadParserCase(fileName)?.parser
     }
 
+    fun trainingSessionPublicModelSlot(fileName: String): String? {
+        return PolarTrainingSessionModels.publicModelSlot(fileName)
+    }
+
     fun trainingSessionExerciseDataTypeFileName(typeName: String): String? {
         return PolarTrainingSessionModels.exerciseDataTypeFileName(typeName)
     }
