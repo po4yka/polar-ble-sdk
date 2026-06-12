@@ -1,7 +1,7 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model
 
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
-import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 /**
  * Offline hr data
@@ -31,7 +31,15 @@ internal class OfflineHrData {
 
         private fun dataFromSharedParser(frame: PmdDataFrame): OfflineHrData {
             val offlineHrData = OfflineHrData()
-            PolarSensorDataParser.parseOfflineHr(frame.toPolarSharedFrame()).forEach { sample ->
+            PolarRuntimePlannerAdapter.pmdOfflineHrSamples(
+                frameType = frame.frameType.id.toInt(),
+                compressed = frame.isCompressedFrame,
+                timeStamp = frame.timeStamp,
+                previousTimeStamp = frame.previousTimeStamp,
+                factor = frame.factor,
+                sampleRate = frame.sampleRate,
+                dataContent = frame.dataContent
+            ).forEach { sample ->
                 offlineHrData.hrSamples.add(
                     OfflineHrSample(
                         hr = sample.hr,

@@ -34,6 +34,8 @@ import com.polar.shared.pmd.PolarPmdRecordingType
 import com.polar.shared.pmd.PolarPmdSettingType
 import com.polar.shared.pmd.PolarPmdSettings
 import com.polar.shared.pmd.PolarPmdSecret
+import com.polar.shared.pmd.sensors.PolarPmdDataFrame
+import com.polar.shared.pmd.sensors.PolarSensorDataParser
 import com.polar.shared.pmd.sensors.PolarGnssCoordinateSample
 import com.polar.shared.pmd.sensors.PolarGnssLocationSample
 import com.polar.shared.pmd.sensors.PolarGnssNmeaSample
@@ -124,6 +126,11 @@ internal object PolarRuntimePlannerAdapter {
         val sequenceNumber: Int,
         val payload: ByteArray?,
         val androidErrorCode: Int?
+    )
+    data class PlannedOfflineHrSample(
+        val hr: Int,
+        val ppgQuality: Int,
+        val correctedHr: Int
     )
     data class BackupTraversalPlan(
         val path: String,
@@ -524,6 +531,34 @@ internal object PolarRuntimePlannerAdapter {
 
     fun psFtpDecodeRfc76Frame(packet: ByteArray): PlannedPsFtpFrame {
         return PolarWorkflowRuntimePlanning.decodeRfc76Frame(packet).toPlanned()
+    }
+
+    fun pmdOfflineHrSamples(
+        frameType: Int,
+        compressed: Boolean,
+        timeStamp: ULong,
+        previousTimeStamp: ULong,
+        factor: Float,
+        sampleRate: Int,
+        dataContent: ByteArray
+    ): List<PlannedOfflineHrSample> {
+        return PolarSensorDataParser.parseOfflineHr(
+            PolarPmdDataFrame(
+                frameType = frameType,
+                compressed = compressed,
+                timeStamp = timeStamp,
+                previousTimeStamp = previousTimeStamp,
+                factor = factor,
+                sampleRate = sampleRate,
+                dataContent = dataContent
+            )
+        ).map { sample ->
+            PlannedOfflineHrSample(
+                hr = sample.hr,
+                ppgQuality = sample.ppgQuality,
+                correctedHr = sample.correctedHr
+            )
+        }
     }
 
     fun locationDataProjection(samples: List<PlannedGnssLocationSample>): List<PlannedLocationDataProjectionSample> {

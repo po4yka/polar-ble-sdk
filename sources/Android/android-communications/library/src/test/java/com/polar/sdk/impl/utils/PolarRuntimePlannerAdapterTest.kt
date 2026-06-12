@@ -217,6 +217,35 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `PMD offline HR parser routes through Android runtime adapter`() {
+        val type0Samples = PolarRuntimePlannerAdapter.pmdOfflineHrSamples(
+            frameType = 0,
+            compressed = false,
+            timeStamp = 1uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(60, 61)
+        )
+        val type1Samples = PolarRuntimePlannerAdapter.pmdOfflineHrSamples(
+            frameType = 1,
+            compressed = false,
+            timeStamp = 1uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(62, 99, 64, 63, 88, 65)
+        )
+
+        Assert.assertEquals(listOf(60, 61), type0Samples.map { it.hr })
+        Assert.assertEquals(listOf(0, 0), type0Samples.map { it.ppgQuality })
+        Assert.assertEquals(listOf(0, 0), type0Samples.map { it.correctedHr })
+        Assert.assertEquals(listOf(62, 63), type1Samples.map { it.hr })
+        Assert.assertEquals(listOf(99, 88), type1Samples.map { it.ppgQuality })
+        Assert.assertEquals(listOf(64, 65), type1Samples.map { it.correctedHr })
+    }
+
+    @Test
     fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
         val vector = loadFeatureAvailabilityReadinessVector()
         val input = vector.getAsJsonObject("input")
