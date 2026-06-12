@@ -1,8 +1,7 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
 import com.polar.androidcommunications.common.ble.TypeUtils
-import com.polar.shared.pmd.PolarPmdSettingType
-import com.polar.shared.pmd.PolarPmdSettings
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import java.util.AbstractMap
 import java.util.Collections
 import java.util.EnumMap
@@ -38,13 +37,13 @@ class PmdSetting {
     }
 
     private fun parsePmdSettingsData(data: ByteArray): EnumMap<PmdSettingType, Set<Int>> {
-        val parsed = PolarPmdSettings.parseSettings(data)
-        if (parsed.error != null) {
+        val parsed = PolarRuntimePlannerAdapter.pmdSettings(data)
+        if (parsed.invalid) {
             throwAndroidCompatibleParseError(data)
         }
         val parsedSettings = EnumMap<PmdSettingType, Set<Int>>(PmdSettingType::class.java)
         parsed.settings.forEach { (type, values) ->
-            parsedSettings[type.toAndroidType()] = values.toSet()
+            parsedSettings[PmdSettingType.valueOf(type)] = values
         }
         return parsedSettings
     }
@@ -63,7 +62,7 @@ class PmdSetting {
     }
 
     fun serializeSelected(): ByteArray {
-        return PolarPmdSettings.serializeSelectedSettings(selected.mapKeys { it.key.toSharedType() })
+        return PolarRuntimePlannerAdapter.pmdSerializeSelectedSettings(selected.mapKeys { it.key.name })
     }
 
     fun maxSettings(): PmdSetting {
@@ -143,28 +142,5 @@ class PmdSetting {
             throw RuntimeException("invalidPMDData")
         }
 
-        private fun PmdSettingType.toSharedType(): PolarPmdSettingType {
-            return when (this) {
-                PmdSettingType.SAMPLE_RATE -> PolarPmdSettingType.SAMPLE_RATE
-                PmdSettingType.RESOLUTION -> PolarPmdSettingType.RESOLUTION
-                PmdSettingType.RANGE -> PolarPmdSettingType.RANGE
-                PmdSettingType.RANGE_MILLIUNIT -> PolarPmdSettingType.RANGE_MILLIUNIT
-                PmdSettingType.CHANNELS -> PolarPmdSettingType.CHANNELS
-                PmdSettingType.FACTOR -> PolarPmdSettingType.FACTOR
-                PmdSettingType.SECURITY -> PolarPmdSettingType.SECURITY
-            }
-        }
-
-        private fun PolarPmdSettingType.toAndroidType(): PmdSettingType {
-            return when (this) {
-                PolarPmdSettingType.SAMPLE_RATE -> PmdSettingType.SAMPLE_RATE
-                PolarPmdSettingType.RESOLUTION -> PmdSettingType.RESOLUTION
-                PolarPmdSettingType.RANGE -> PmdSettingType.RANGE
-                PolarPmdSettingType.RANGE_MILLIUNIT -> PmdSettingType.RANGE_MILLIUNIT
-                PolarPmdSettingType.CHANNELS -> PmdSettingType.CHANNELS
-                PolarPmdSettingType.FACTOR -> PmdSettingType.FACTOR
-                PolarPmdSettingType.SECURITY -> PmdSettingType.SECURITY
-            }
-        }
     }
 }

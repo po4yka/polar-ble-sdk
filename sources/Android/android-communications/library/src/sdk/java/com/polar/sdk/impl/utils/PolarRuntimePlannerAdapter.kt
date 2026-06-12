@@ -30,6 +30,8 @@ import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.pmd.PolarPmdControlPoint
 import com.polar.shared.pmd.PolarPmdMeasurementTypeName
 import com.polar.shared.pmd.PolarPmdRecordingType
+import com.polar.shared.pmd.PolarPmdSettingType
+import com.polar.shared.pmd.PolarPmdSettings
 import com.polar.shared.pmd.PolarPmdSecret
 import com.polar.shared.pmd.sensors.PolarGnssCoordinateSample
 import com.polar.shared.pmd.sensors.PolarGnssLocationSample
@@ -110,6 +112,10 @@ internal object PolarRuntimePlannerAdapter {
         val statusValue: Int,
         val more: Boolean,
         val parameters: ByteArray
+    )
+    data class PlannedPmdSettings(
+        val settings: Map<String, Set<Int>>,
+        val invalid: Boolean
     )
     data class BackupTraversalPlan(
         val path: String,
@@ -413,6 +419,18 @@ internal object PolarRuntimePlannerAdapter {
             more = parsed.more,
             parameters = parsed.parameters
         )
+    }
+
+    fun pmdSettings(data: ByteArray): PlannedPmdSettings {
+        val parsed = PolarPmdSettings.parseSettings(data)
+        return PlannedPmdSettings(
+            settings = parsed.settings.mapKeys { it.key.name }.mapValues { it.value.toSet() },
+            invalid = parsed.error != null
+        )
+    }
+
+    fun pmdSerializeSelectedSettings(selected: Map<String, Int>): ByteArray {
+        return PolarPmdSettings.serializeSelectedSettings(selected.mapKeys { PolarPmdSettingType.valueOf(it.key) })
     }
 
     fun pmdSecretSerializeBytes(strategyName: String, key: ByteArray): ByteArray {

@@ -28,7 +28,7 @@ object TypeUtils {
     }
 
     fun convertArrayToSignedInt(data: ByteArray, offset: Int, length: Int): Int {
-        return PolarRuntimePlannerAdapter.convertArrayToSignedInt(data, offset, length)
+        return convertArrayToSignedInt(data.copyOfRange(offset, offset + length))
     }
 
     fun convertArrayToSignedInt(data: ByteArray): Int {

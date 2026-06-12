@@ -261,6 +261,35 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `PMD settings helpers route through Android runtime adapter`() {
+        val settings = PolarRuntimePlannerAdapter.pmdSettings(
+            byteArrayOf(
+                0x00, 0x01, 0x82.toByte(), 0x00,
+                0x03, 0x02, 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0x00, 0x00, 0x00,
+                0x04, 0x01, 0x03
+            )
+        )
+        val serialized = PolarRuntimePlannerAdapter.pmdSerializeSelectedSettings(
+            mapOf(
+                "SAMPLE_RATE" to 130,
+                "RESOLUTION" to 14,
+                "RANGE" to 16,
+                "RANGE_MILLIUNIT" to 255,
+                "CHANNELS" to 3,
+                "FACTOR" to 1234
+            )
+        )
+        val invalid = PolarRuntimePlannerAdapter.pmdSettings(byteArrayOf(0x06, 0x01, 0x00))
+
+        Assert.assertFalse(settings.invalid)
+        Assert.assertEquals(setOf(130), settings.settings["SAMPLE_RATE"])
+        Assert.assertEquals(setOf(-1, 255), settings.settings["RANGE_MILLIUNIT"])
+        Assert.assertEquals(setOf(3), settings.settings["CHANNELS"])
+        Assert.assertEquals("0001820001010e00020110000301ff000000040103", serialized.toHexString())
+        Assert.assertTrue(invalid.invalid)
+    }
+
+    @Test
     fun `PMD secret helpers route through Android runtime adapter`() {
         val aesKey = byteArrayOf(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0xFF.toByte())
         val aesCipher = byteArrayOf(
@@ -978,6 +1007,8 @@ class PolarRuntimePlannerAdapterTest {
             directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
         }
     }
+
+    private fun ByteArray.toHexString(): String = joinToString(separator = "") { "%02x".format(it.toInt() and 0xFF) }
 
     private companion object {
         val FEATURE_AVAILABILITY_CASE_IDS = listOf(
