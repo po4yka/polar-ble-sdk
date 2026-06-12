@@ -141,6 +141,10 @@ internal object PolarRuntimePlannerAdapter {
         val skinContactSupported: Int,
         val timeStamp: ULong
     )
+    data class PlannedPmdScalarSample(
+        val timeStamp: ULong,
+        val value: Float
+    )
     data class BackupTraversalPlan(
         val path: String,
         val wildcardRootPath: String?,
@@ -600,6 +604,21 @@ internal object PolarRuntimePlannerAdapter {
                 timeStamp = sample.timeStamp
             )
         }
+    }
+
+    fun pmdPressureSamples(frameType: Int, compressed: Boolean, timeStamp: ULong, previousTimeStamp: ULong, factor: Float, sampleRate: Int, dataContent: ByteArray): List<PlannedPmdScalarSample> {
+        return PolarSensorDataParser.parsePressure(pmdDataFrame(frameType, compressed, timeStamp, previousTimeStamp, factor, sampleRate, dataContent))
+            .map { sample -> PlannedPmdScalarSample(sample.timeStamp, sample.pressure) }
+    }
+
+    fun pmdTemperatureSamples(frameType: Int, compressed: Boolean, timeStamp: ULong, previousTimeStamp: ULong, factor: Float, sampleRate: Int, dataContent: ByteArray): List<PlannedPmdScalarSample> {
+        return PolarSensorDataParser.parseTemperature(pmdDataFrame(frameType, compressed, timeStamp, previousTimeStamp, factor, sampleRate, dataContent))
+            .map { sample -> PlannedPmdScalarSample(sample.timeStamp, sample.temperature) }
+    }
+
+    fun pmdSkinTemperatureSamples(frameType: Int, compressed: Boolean, timeStamp: ULong, previousTimeStamp: ULong, factor: Float, sampleRate: Int, dataContent: ByteArray): List<PlannedPmdScalarSample> {
+        return PolarSensorDataParser.parseSkinTemperature(pmdDataFrame(frameType, compressed, timeStamp, previousTimeStamp, factor, sampleRate, dataContent))
+            .map { sample -> PlannedPmdScalarSample(sample.timeStamp, sample.skinTemperature) }
     }
 
     fun locationDataProjection(samples: List<PlannedGnssLocationSample>): List<PlannedLocationDataProjectionSample> {
@@ -2051,6 +2070,26 @@ internal object PolarRuntimePlannerAdapter {
             sequenceNumber = sequenceNumber,
             payload = payload,
             androidErrorCode = androidErrorCode
+        )
+    }
+
+    private fun pmdDataFrame(
+        frameType: Int,
+        compressed: Boolean,
+        timeStamp: ULong,
+        previousTimeStamp: ULong,
+        factor: Float,
+        sampleRate: Int,
+        dataContent: ByteArray
+    ): PolarPmdDataFrame {
+        return PolarPmdDataFrame(
+            frameType = frameType,
+            compressed = compressed,
+            timeStamp = timeStamp,
+            previousTimeStamp = previousTimeStamp,
+            factor = factor,
+            sampleRate = sampleRate,
+            dataContent = dataContent
         )
     }
 

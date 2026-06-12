@@ -4,7 +4,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClien
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient.PmdDataFieldEncoding
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrameUtils
-import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import java.lang.Float.intBitsToFloat
 
 internal class SkinTemperatureData {
@@ -25,8 +25,16 @@ internal class SkinTemperatureData {
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): SkinTemperatureData {
             val skinTemperatureData = SkinTemperatureData()
-            PolarSensorDataParser.parseSkinTemperature(frame.toPolarSharedFrame()).forEach { sample ->
-                skinTemperatureData.skinTemperatureSamples.add(SkinTemperatureSample(timeStamp = sample.timeStamp, skinTemperature = sample.skinTemperature))
+            PolarRuntimePlannerAdapter.pmdSkinTemperatureSamples(
+                frameType = frame.frameType.id.toInt(),
+                compressed = frame.isCompressedFrame,
+                timeStamp = frame.timeStamp,
+                previousTimeStamp = frame.previousTimeStamp,
+                factor = frame.factor,
+                sampleRate = frame.sampleRate,
+                dataContent = frame.dataContent
+            ).forEach { sample ->
+                skinTemperatureData.skinTemperatureSamples.add(SkinTemperatureSample(timeStamp = sample.timeStamp, skinTemperature = sample.value))
             }
             return skinTemperatureData
         }

@@ -270,6 +270,44 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `PMD scalar parsers route through Android runtime adapter`() {
+        val pressure = PolarRuntimePlannerAdapter.pmdPressureSamples(
+            frameType = 0,
+            compressed = false,
+            timeStamp = 1_000_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(0x00, 0x00, 0x80.toByte(), 0x3F)
+        )
+        val temperature = PolarRuntimePlannerAdapter.pmdTemperatureSamples(
+            frameType = 0,
+            compressed = false,
+            timeStamp = 2_000_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(0x00, 0x00, 0x20, 0x41)
+        )
+        val skinTemperature = PolarRuntimePlannerAdapter.pmdSkinTemperatureSamples(
+            frameType = 0,
+            compressed = false,
+            timeStamp = 3_000_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(0x00, 0x00, 0xC8.toByte(), 0x41.toByte())
+        )
+
+        Assert.assertEquals(1_000_000_000uL, pressure.single().timeStamp)
+        Assert.assertEquals(1.0f, pressure.single().value, 0.0001f)
+        Assert.assertEquals(2_000_000_000uL, temperature.single().timeStamp)
+        Assert.assertEquals(10.0f, temperature.single().value, 0.0001f)
+        Assert.assertEquals(3_000_000_000uL, skinTemperature.single().timeStamp)
+        Assert.assertEquals(25.0f, skinTemperature.single().value, 0.0001f)
+    }
+
+    @Test
     fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
         val vector = loadFeatureAvailabilityReadinessVector()
         val input = vector.getAsJsonObject("input")
