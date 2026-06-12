@@ -1,11 +1,15 @@
 package com.polar.sdk.impl.utils
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType
 import org.junit.Assert
 import org.junit.Test
 import protocol.PftpNotification
 import protocol.PftpRequest
+import java.io.File
+import java.io.FileReader
 
 class PolarRuntimePlannerAdapterTest {
     @Test
@@ -59,6 +63,32 @@ class PolarRuntimePlannerAdapterTest {
         Assert.assertFalse(PolarRuntimePlannerAdapter.availableOnlineStreamDataTypes(features, hasHrService = false).contains(PolarDeviceDataType.HR))
         Assert.assertEquals(setOf(PolarDeviceDataType.HR), PolarRuntimePlannerAdapter.availableHrServiceDataTypes(hasHrService = true))
         Assert.assertEquals(emptySet<PolarDeviceDataType>(), PolarRuntimePlannerAdapter.availableHrServiceDataTypes(hasHrService = false))
+    }
+
+    @Test
+    fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
+        val vector = loadFeatureAvailabilityReadinessVector()
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val cases = input.getAsJsonArray("cases").map { it.asJsonObject }
+
+        Assert.assertEquals("feature-availability-readiness", vector.get("id").asString)
+        Assert.assertEquals("featureAvailabilityReadiness", input.get("kind").asString)
+        Assert.assertEquals(FEATURE_AVAILABILITY_CASE_IDS, cases.map { it.get("id").asString })
+        cases.forEach { case ->
+            Assert.assertEquals(
+                case.get("id").asString,
+                case.get("expectedAvailable").asBoolean,
+                PolarRuntimePlannerAdapter.featureAvailabilityPreconditionsMet(
+                    featureName = case.get("featureName").asString,
+                    discoveredServices = case.getAsJsonArray("discoveredServices").map { it.asString }.toSet(),
+                    capabilities = case.getAsJsonArray("capabilities").map { it.asString }.toSet()
+                )
+            )
+        }
+        Assert.assertEquals(FEATURE_AVAILABILITY_BEHAVIOR_FAMILIES, input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString })
+        Assert.assertEquals(FEATURE_AVAILABILITY_BEHAVIOR_FAMILIES, expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString })
+        Assert.assertEquals(FEATURE_AVAILABILITY_COMMON_DECISION, expected.get("commonDecision").asString)
     }
 
     @Test
@@ -646,5 +676,41 @@ class PolarRuntimePlannerAdapterTest {
         )
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/20260530/ACT/ACTIVITY.BPB", activityRemoveOperation)
         Assert.assertEquals(PftpRequest.PbPFtpOperation.Command.REMOVE to "/U/0/AUTOS/20260530/AUTOS001.BPB", automaticSampleRemoveOperation)
+    }
+
+    private fun loadFeatureAvailabilityReadinessVector(): JsonObject {
+        FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/feature-availability/feature-availability-readiness.json")).use { reader ->
+            return JsonParser().parse(reader).asJsonObject
+        }
+    }
+
+    private fun findRepositoryRoot(): File {
+        val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
+        var directory = File(userDirectory).absoluteFile
+        while (true) {
+            if (directory.resolve("testdata/golden-vectors").isDirectory) {
+                return directory
+            }
+            directory = directory.parentFile ?: error("Could not find repository root from $userDirectory")
+        }
+    }
+
+    private companion object {
+        val FEATURE_AVAILABILITY_CASE_IDS = listOf(
+            "firmware-update-requires-psftp-and-firmware-capability",
+            "firmware-update-missing-firmware-capability-is-unavailable",
+            "led-animation-requires-pmd-and-psftp-services",
+            "watch-face-configuration-requires-psftp-and-not-sensor-capability",
+            "offline-exercise-v2-uses-h10-filesystem-capability-without-service-gate",
+            "unknown-feature-has-no-shared-preconditions"
+        )
+        val FEATURE_AVAILABILITY_BEHAVIOR_FAMILIES = listOf(
+            "service-and-capability-gates",
+            "feature-name-normalization",
+            "h10-filesystem-capability-only-gate",
+            "unknown-feature-pass-through",
+            "platform-client-readiness-boundary"
+        )
+        const val FEATURE_AVAILABILITY_COMMON_DECISION = "SDK feature availability migration owns only deterministic service and capability preconditions in shared KMP; GATT client lookup, clientReady waits, PMD feature reads, notification readiness, service discovery, BLE transport execution, and public callback/error behavior remain platform-owned."
     }
 }

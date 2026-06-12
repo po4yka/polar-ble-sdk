@@ -202,6 +202,32 @@ final class PolarDataUtilsTest: XCTestCase {
         )
     }
 
+    func testFeatureAvailabilityReadinessVector_usesSharedIosRuntimePlanner() throws {
+        let vector = try GoldenVectorTestData.loadObject("sdk/feature-availability/feature-availability-readiness.json")
+        let input = try XCTUnwrap(vector["input"] as? [String: Any])
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
+        let cases = try XCTUnwrap(input["cases"] as? [[String: Any]])
+
+        XCTAssertEqual("feature-availability-readiness", vector["id"] as? String)
+        XCTAssertEqual("featureAvailabilityReadiness", input["kind"] as? String)
+        XCTAssertEqual(featureAvailabilityCaseIds, cases.compactMap { $0["id"] as? String })
+        for currentCase in cases {
+            let caseId = try XCTUnwrap(currentCase["id"] as? String)
+            XCTAssertEqual(
+                try XCTUnwrap(currentCase["expectedAvailable"] as? Bool),
+                PolarFeatureAvailabilityRuntimePlanner.preconditionsMet(
+                    featureName: try XCTUnwrap(currentCase["featureName"] as? String),
+                    discoveredServiceNames: Set(try XCTUnwrap(currentCase["discoveredServices"] as? [String])),
+                    capabilityNames: Set(try XCTUnwrap(currentCase["capabilities"] as? [String]))
+                ),
+                caseId
+            )
+        }
+        XCTAssertEqual(featureAvailabilityBehaviorFamilies, input["requiredBehaviorFamilies"] as? [String])
+        XCTAssertEqual(featureAvailabilityBehaviorFamilies, expected["coveredBehaviorFamilies"] as? [String])
+        XCTAssertEqual(featureAvailabilityCommonDecision, expected["commonDecision"] as? String)
+    }
+
     // MARK: - mapToPmdSecret
 
     func testMapToPmdSecret_validKey_returnsAes128Secret() throws {
@@ -749,6 +775,25 @@ final class PolarDataUtilsTest: XCTestCase {
         "get-trigger-success",
         "get-trigger-transport-error"
     ]
+
+    private let featureAvailabilityCaseIds = [
+        "firmware-update-requires-psftp-and-firmware-capability",
+        "firmware-update-missing-firmware-capability-is-unavailable",
+        "led-animation-requires-pmd-and-psftp-services",
+        "watch-face-configuration-requires-psftp-and-not-sensor-capability",
+        "offline-exercise-v2-uses-h10-filesystem-capability-without-service-gate",
+        "unknown-feature-has-no-shared-preconditions"
+    ]
+
+    private let featureAvailabilityBehaviorFamilies = [
+        "service-and-capability-gates",
+        "feature-name-normalization",
+        "h10-filesystem-capability-only-gate",
+        "unknown-feature-pass-through",
+        "platform-client-readiness-boundary"
+    ]
+
+    private let featureAvailabilityCommonDecision = "SDK feature availability migration owns only deterministic service and capability preconditions in shared KMP; GATT client lookup, clientReady waits, PMD feature reads, notification readiness, service discovery, BLE transport execution, and public callback/error behavior remain platform-owned."
 }
 
 private extension Dictionary where Key == String, Value == Any {
