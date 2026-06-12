@@ -286,6 +286,7 @@ class PolarRuntimePlannerAdapterTest {
 
     @Test
     fun `shared training session payload read result routes through Android runtime adapter DTOs`() {
+        val parsedSamples = PolarRuntimePlannerAdapter.parseTrainingSessionPayloadResponse("SAMPLES.BPB", byteArrayOf(0x10, 0x78))
         val reference = PolarRuntimePlannerAdapter.PlannedTrainingSessionReference(
             dateTime = "2026-01-02T12:34:56",
             date = "2026-01-02",
@@ -337,6 +338,10 @@ class PolarRuntimePlannerAdapterTest {
         val result = PolarRuntimePlannerAdapter.trainingSessionPayloadReadResult(reference, responses)
         val exercise = result.exercises.single()
 
+        Assert.assertEquals("samples", parsedSamples.kind)
+        Assert.assertEquals("SAMPLES.BPB", parsedSamples.fileName)
+        Assert.assertEquals(2, parsedSamples.byteSize)
+        Assert.assertEquals(listOf(120), parsedSamples.heartRateSamples)
         Assert.assertEquals(25, result.totalBytes)
         Assert.assertEquals(25, result.completedBytes)
         Assert.assertEquals(100, result.progressPercent)

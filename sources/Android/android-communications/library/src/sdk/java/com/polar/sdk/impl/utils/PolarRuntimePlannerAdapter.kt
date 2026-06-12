@@ -1324,6 +1324,10 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun parseTrainingSessionPayloadResponse(fileName: String, payload: ByteArray): PlannedTrainingPayloadResponse {
+        return PolarTrainingSessionModels.parseDecodedPayloadResponse(fileName, payload).toPlanned()
+    }
+
     fun trainingSessionPayloadEncoding(fileName: String): String? {
         return PolarTrainingSessionModels.payloadParserCase(fileName)?.encoding
     }
@@ -1528,6 +1532,26 @@ internal object PolarRuntimePlannerAdapter {
                     )
                 }
             )
+        )
+    }
+
+    private fun PolarTrainingPayloadResponse.toPlanned(): PlannedTrainingPayloadResponse {
+        return PlannedTrainingPayloadResponse(
+            kind = kind,
+            fileName = fileName,
+            byteSize = byteSize,
+            malformed = malformed,
+            modelName = payload.modelName,
+            durationSeconds = payload.durationSeconds,
+            distanceMeters = payload.distanceMeters,
+            calories = payload.calories,
+            heartRateSamples = payload.heartRateSamples,
+            intervalledSampleLists = payload.intervalledSampleLists.map { sampleList ->
+                PlannedTrainingIntervalledSampleList(
+                    sampleType = sampleList.sampleType,
+                    heartRateSamples = sampleList.heartRateSamples
+                )
+            }
         )
     }
 

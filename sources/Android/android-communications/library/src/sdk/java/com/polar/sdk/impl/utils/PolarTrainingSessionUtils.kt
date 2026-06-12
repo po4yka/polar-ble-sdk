@@ -142,11 +142,15 @@ internal object PolarTrainingSessionUtils {
         val summaryOperation = trainingSessionSummaryReadOperation(reference.path)
 
         val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(summaryOperation))
-        val sessionSummary = TrainingSession.PbTrainingSession.parseFrom(response.toByteArray())
+        val summaryBytes = response.toByteArray()
+        val sessionSummary = TrainingSession.PbTrainingSession.parseFrom(summaryBytes)
         BleLogger.d(TAG, "Session summary received, processing ${reference.exercises.size} exercises")
 
         val payloadReadPlan = trainingSessionPayloadReadPlan(reference)
-        val exercises = reference.exercises.map { fetchExerciseData(client, it, payloadReadPlan) }
+        val exerciseReads = reference.exercises.map { fetchExerciseData(client, it, payloadReadPlan) }
+        val readResult = trainingSessionPayloadReadResult(reference, summaryBytes, exerciseReads.flatMap { read -> read.payloadResults })
+        BleLogger.d(TAG, "Training session payload read result: completed=${readResult.completedBytes}/${readResult.totalBytes} bytes (${readResult.progressPercent}%), current=${readResult.currentFileName}")
+        val exercises = exerciseReads.map { read -> read.exercise }
         BleLogger.d(TAG, "All exercises combined: ${exercises.size}")
         return PolarTrainingSession(reference, sessionSummary, exercises)
     }
@@ -155,7 +159,7 @@ internal object PolarTrainingSessionUtils {
         client: BlePsFtpClient,
         exercise: PolarExercise,
         payloadReadPlan: List<PolarRuntimePlannerAdapter.PlannedTrainingPayloadReadPlanEntry>
-    ): PolarExercise {
+    ): TrainingExerciseReadResult {
         BleLogger.d(TAG, "Fetching exercise ${exercise.index} data, path: ${exercise.path}")
         val basePath = exercise.path.substringBeforeLast("/")
         val dataTypesByFileName = exercise.exerciseDataTypes.associateBy { dataType -> dataType.deviceFileName }
@@ -179,10 +183,10 @@ internal object PolarTrainingSessionUtils {
                 ByteArray(0)
             }
             BleLogger.d(TAG, "${dataType.deviceFileName} received: ${data.size} bytes")
-            TrainingExercisePayloadResult(dataType, entry.publicModelSlot, data)
+            TrainingExercisePayloadResult(entry.path, dataType, entry.publicModelSlot, data)
         }
 
-        return parseExerciseData(exercise, results)
+        return TrainingExerciseReadResult(parseExerciseData(exercise, results), results)
     }
 
     internal fun decodePayloadBytes(fileName: String, data: ByteArray): ByteArray {
@@ -204,27 +208,27 @@ internal object PolarTrainingSessionUtils {
         var samples: ExerciseSamples.PbExerciseSamples? = null
         var samplesAdv: ExerciseSamples2.PbExerciseSamples2? = null
 
-        for ((type, publicModelSlot, data) in results) {
-            if (data.isEmpty()) continue
+        for (result in results) {
+            if (result.data.isEmpty()) continue
             try {
-                if (PolarRuntimePlannerAdapter.trainingSessionPayloadMalformed(type.deviceFileName, data)) {
-                    BleLogger.e(TAG, "  Failed to parse $type: shared protobuf preflight marked payload malformed")
+                if (PolarRuntimePlannerAdapter.trainingSessionPayloadMalformed(result.type.deviceFileName, result.data)) {
+                    BleLogger.e(TAG, "  Failed to parse ${result.type}: shared protobuf preflight marked payload malformed")
                     continue
                 }
-                when (publicModelSlot) {
-                    "exerciseSummary" -> summary = Training.PbExerciseBase.parseFrom(data)
+                when (result.publicModelSlot) {
+                    "exerciseSummary" -> summary = Training.PbExerciseBase.parseFrom(result.data)
                     "route" ->
-                        route = ExerciseRouteSamples.PbExerciseRouteSamples.parseFrom(data)
+                        route = ExerciseRouteSamples.PbExerciseRouteSamples.parseFrom(result.data)
                     "routeAdvanced" ->
-                        routeAdv = ExerciseRouteSamples2.PbExerciseRouteSamples2.parseFrom(data)
+                        routeAdv = ExerciseRouteSamples2.PbExerciseRouteSamples2.parseFrom(result.data)
                     "samples" ->
-                        samples = ExerciseSamples.PbExerciseSamples.parseFrom(data)
+                        samples = ExerciseSamples.PbExerciseSamples.parseFrom(result.data)
                     "samplesAdvanced" ->
-                        samplesAdv = ExerciseSamples2.PbExerciseSamples2.parseFrom(data)
+                        samplesAdv = ExerciseSamples2.PbExerciseSamples2.parseFrom(result.data)
                     else -> Unit
                 }
             } catch (e: Exception) {
-                BleLogger.e(TAG, "  Failed to parse $type: ${e.message}")
+                BleLogger.e(TAG, "  Failed to parse ${result.type}: ${e.message}")
             }
         }
 
@@ -237,7 +241,33 @@ internal object PolarTrainingSessionUtils {
         )
     }
 
+    private fun trainingSessionPayloadReadResult(
+        reference: PolarTrainingSessionReference,
+        summaryPayload: ByteArray,
+        exerciseResults: List<TrainingExercisePayloadResult>
+    ): PolarRuntimePlannerAdapter.PlannedTrainingPayloadReadResult {
+        val responsesByPath = linkedMapOf(
+            reference.path to PolarRuntimePlannerAdapter.parseTrainingSessionPayloadResponse("TSESS.BPB", summaryPayload)
+        )
+        exerciseResults
+            .filter { result -> result.data.isNotEmpty() }
+            .forEach { result ->
+                responsesByPath[result.path] = PolarRuntimePlannerAdapter.parseTrainingSessionPayloadResponse(result.type.deviceFileName, result.data)
+            }
+        return PolarRuntimePlannerAdapter.trainingSessionPayloadReadResult(
+            reference = reference.toPlannedReference(),
+            responsesByPath = responsesByPath,
+            fetchOrder = responsesByPath.keys.toList()
+        )
+    }
+
+    private data class TrainingExerciseReadResult(
+        val exercise: PolarExercise,
+        val payloadResults: List<TrainingExercisePayloadResult>
+    )
+
     private data class TrainingExercisePayloadResult(
+        val path: String,
         val type: PolarExerciseDataTypes,
         val publicModelSlot: String,
         val data: ByteArray
