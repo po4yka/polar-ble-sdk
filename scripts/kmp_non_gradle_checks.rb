@@ -340,8 +340,10 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "byte-level-parser-dependency-gate",
     "shared-gzip-payload-codec",
     "protobuf-byte-parsing-deferral",
+    "public-model-reconstruction-gate",
     "gzip payload decoding now uses shared KMP platform actuals",
-    "real byte-level protobuf parsing remains deferred until common production parser dependencies exist and are compile-verified"
+    "real byte-level protobuf parsing remains deferred until common production parser dependencies exist and are compile-verified",
+    "public generated protobuf model reconstruction remains platform-owned until a shared DTO/reconstruction strategy is added and covered"
   ],
   "secret-readiness.json" => [
     "AES block-alignment gating",

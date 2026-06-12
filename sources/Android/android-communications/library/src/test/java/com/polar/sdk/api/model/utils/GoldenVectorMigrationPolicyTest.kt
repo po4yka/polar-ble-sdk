@@ -3410,6 +3410,7 @@ class GoldenVectorMigrationPolicyTest {
             "shared-gzip-payload-codec",
             "protobuf-byte-parsing-deferral",
             "platform-training-session-vector-reference-gate",
+            "public-model-reconstruction-gate",
             "compile-verification-gate",
             "ignore-files-that-do-not-map-to-public-training-or-exercise-data-types",
             "android-currently-stores-first-file-path-while-ios-stores-exercise-directory-path",
@@ -4153,8 +4154,10 @@ class GoldenVectorMigrationPolicyTest {
                 "byte-level-parser-dependency-gate",
                 "shared-gzip-payload-codec",
                 "protobuf-byte-parsing-deferral",
+                "public-model-reconstruction-gate",
                 "gzip payload decoding now uses shared KMP platform actuals",
-                "real byte-level protobuf parsing remains deferred until common production parser dependencies exist and are compile-verified"
+                "real byte-level protobuf parsing remains deferred until common production parser dependencies exist and are compile-verified",
+                "public generated protobuf model reconstruction remains platform-owned until a shared DTO/reconstruction strategy is added and covered"
             ),
             "secret-readiness.json" to listOf(
                 "AES block-alignment gating",

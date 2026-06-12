@@ -402,11 +402,12 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             "shared-gzip-payload-codec",
             "protobuf-byte-parsing-deferral",
             "platform-training-session-vector-reference-gate",
+            "public-model-reconstruction-gate",
             "compile-verification-gate"
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, and compile verification remain explicit before production discovery/read orchestration moves.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction gates, and compile verification remain explicit before production discovery/read orchestration moves.")
     }
 
     func test_readTrainingSession_shouldReturnTrainingSessionDataWithExercises() async throws {

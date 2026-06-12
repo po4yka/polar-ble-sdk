@@ -580,9 +580,10 @@ class TrainingSessionCommonPolicyTest {
             "shared-gzip-payload-codec",
             "protobuf-byte-parsing-deferral",
             "platform-training-session-vector-reference-gate",
+            "public-model-reconstruction-gate",
             "compile-verification-gate"
         )
         const val TRAINING_SESSION_MISSING_EXERCISE_FILE_COMMON_DECISION = "Android currently returns a partial exercise when an exercise data file request fails; iOS currently propagates the request failure. Choose an explicit shared policy before moving training-session read orchestration to KMP."
-        const val TRAINING_SESSION_READINESS_COMMON_DECISION = "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, and compile verification remain explicit before production discovery/read orchestration moves."
+        const val TRAINING_SESSION_READINESS_COMMON_DECISION = "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction gates, and compile verification remain explicit before production discovery/read orchestration moves."
     }
 }
