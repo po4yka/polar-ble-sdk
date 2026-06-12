@@ -66,6 +66,27 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `available data types readiness manifest is pinned before availability migration`() {
+        val vector = loadAvailableDataTypesReadinessVector()
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val consumerTests = vector.getAsJsonObject("consumerTests")
+
+        Assert.assertEquals("available-data-types-readiness", vector.get("id").asString)
+        Assert.assertEquals("availableDataTypesReadiness", input.get("kind").asString)
+        Assert.assertEquals(AVAILABLE_DATA_TYPES_BEHAVIOR_FAMILIES, input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString })
+        Assert.assertEquals("coveredByPreMigrationCharacterization", expected.get("migrationReadiness").asString)
+        Assert.assertEquals(AVAILABLE_DATA_TYPES_BEHAVIOR_FAMILIES, expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString })
+        Assert.assertEquals(AVAILABLE_DATA_TYPES_COMMON_DECISION, expected.get("commonDecision").asString)
+        val prototype = expected.getAsJsonObject("commonRuntimePrototype")
+        Assert.assertEquals("executable shared commonTest available-data-types planning guard", prototype.get("status").asString)
+        Assert.assertEquals("Declared because this vector is consumed by shared commonTest and platform adapter tests before available-data-types runtime delegation moves further into shared KMP.", prototype.get("reason").asString)
+        Assert.assertEquals(listOf("com.polar.sdk.impl.utils.PolarRuntimePlannerAdapterTest"), consumerTests.getAsJsonArray("android").map { it.asString })
+        Assert.assertEquals(listOf("PolarDataUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        Assert.assertEquals(listOf("com.polar.sharedtest.AvailableDataTypesCommonPolicyTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
+    }
+
+    @Test
     fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
         val vector = loadFeatureAvailabilityReadinessVector()
         val input = vector.getAsJsonObject("input")
@@ -684,6 +705,12 @@ class PolarRuntimePlannerAdapterTest {
         }
     }
 
+    private fun loadAvailableDataTypesReadinessVector(): JsonObject {
+        FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/available-data-types/available-data-types-readiness.json")).use { reader ->
+            return JsonParser().parse(reader).asJsonObject
+        }
+    }
+
     private fun findRepositoryRoot(): File {
         val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
         var directory = File(userDirectory).absoluteFile
@@ -712,5 +739,20 @@ class PolarRuntimePlannerAdapterTest {
             "platform-client-readiness-boundary"
         )
         const val FEATURE_AVAILABILITY_COMMON_DECISION = "SDK feature availability migration owns only deterministic service and capability preconditions in shared KMP; GATT client lookup, clientReady waits, PMD feature reads, notification readiness, service discovery, BLE transport execution, and public callback/error behavior remain platform-owned."
+        val AVAILABLE_DATA_TYPES_BEHAVIOR_FAMILIES = listOf(
+            "offline-pmd-to-public-mapping",
+            "online-pmd-to-public-mapping",
+            "hr-service-availability-projection",
+            "ios-location-pressure-filter-boundary",
+            "android-full-surface-boundary",
+            "public-to-pmd-measurement-lookup",
+            "unknown-public-type-null-boundary",
+            "pmd-feature-read-platform-boundary",
+            "hr-service-discovery-platform-boundary",
+            "public-error-mapping-boundary",
+            "platform-available-data-type-vector-reference-gate",
+            "compile-verification-gate"
+        )
+        const val AVAILABLE_DATA_TYPES_COMMON_DECISION = "Available-data-types migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS data utility tests continue to pin offline and online PMD-to-public mapping, HR-service availability projection, iOS location/pressure filters, Android full public surface, public-to-PMD measurement lookup, unknown public type boundaries, PMD feature-read boundaries, HR-service discovery boundaries, public error mapping boundaries, platform vector references, and compile verification before broader availability facade behavior moves."
     }
 }

@@ -1340,6 +1340,35 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
+    fun `available data types migration vectors have executable shared common policy coverage`() {
+        val root = findRepositoryRoot()
+        val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/AvailableDataTypesCommonPolicyTest.kt")
+        val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
+        val readme = root.resolve("testdata/golden-vectors/sdk/available-data-types/README.md").readText()
+        val violations = mutableListOf<String>()
+
+        if (!commonTest.isFile) {
+            violations += commonTest.relativeTo(root).path
+        } else {
+            val commonTestText = commonTest.readText()
+            AVAILABLE_DATA_TYPES_COMMON_POLICY_REQUIRED_TERMS
+                .filterNot { term -> commonTestText.contains(term) }
+                .mapTo(violations) { term -> "${commonTest.relativeTo(root).path}: missing available-data-types common policy term $term" }
+        }
+        if (!inventory.contains("AvailableDataTypesCommonPolicyTest.kt") || !inventory.contains("available-data-types-readiness.json")) {
+            violations += "KmpCoverageInventory.md must mention AvailableDataTypesCommonPolicyTest.kt and available-data-types-readiness.json in the available data types notes"
+        }
+        if (!readme.contains("AvailableDataTypesCommonPolicyTest.kt")) {
+            violations += "sdk/available-data-types/README.md must mention executable shared available-data-types policy coverage"
+        }
+
+        assertTrue(
+            "Available-data-types migration vectors must have executable shared common policy coverage before availability facade behavior moves to KMP: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
     fun `KMP documentation keeps validation commands discoverable`() {
         val root = findRepositoryRoot()
         val missingLinks = KMP_DOCS_THAT_MUST_LINK_VALIDATION
@@ -3777,6 +3806,25 @@ class GoldenVectorMigrationPolicyTest {
             "platform-exercise-session-vector-reference-gate",
             "compile-verification-gate",
             "Exercise-session migration may proceed only after this readiness manifest is executable from shared commonTest"
+        )
+        val AVAILABLE_DATA_TYPES_COMMON_POLICY_REQUIRED_TERMS = listOf(
+            "availableDataTypesReadinessManifestNamesEveryPreMigrationBehaviorFamily",
+            "sdk/available-data-types/available-data-types-readiness.json",
+            "available-data-types-readiness",
+            "availableDataTypesReadiness",
+            "offline-pmd-to-public-mapping",
+            "online-pmd-to-public-mapping",
+            "hr-service-availability-projection",
+            "ios-location-pressure-filter-boundary",
+            "android-full-surface-boundary",
+            "public-to-pmd-measurement-lookup",
+            "unknown-public-type-null-boundary",
+            "pmd-feature-read-platform-boundary",
+            "hr-service-discovery-platform-boundary",
+            "public-error-mapping-boundary",
+            "platform-available-data-type-vector-reference-gate",
+            "compile-verification-gate",
+            "Available-data-types migration may proceed only after this readiness manifest is executable from shared commonTest"
         )
         val FIRST_TIME_USE_COMMON_POLICY_REQUIRED_TERMS = listOf(
             "firstTimeUseEnumMappingsPreservePublicPhysicalConfigValues",

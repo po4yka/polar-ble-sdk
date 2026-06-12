@@ -60,4 +60,47 @@ class AvailableDataTypesCommonPolicyTest {
         }
         assertEquals(null, PolarSdkModelMappers.pmdMeasurementTypeNameForPublicDataTypeName("UNKNOWN"))
     }
+
+    @Test
+    fun availableDataTypesReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+        val manifest = loadGoldenVectorText("sdk/available-data-types/available-data-types-readiness.json")
+        val input = manifest.objectValue("input")
+        val expected = manifest.objectValue("expected")
+        val consumerTests = manifest.objectValue("consumerTests")
+        val platforms = manifest.objectValue("platforms")
+
+        assertEquals("available-data-types-readiness", manifest.stringValue("id"))
+        assertEquals("availableDataTypesReadiness", input.stringValue("kind"))
+        assertEquals(AVAILABLE_DATA_TYPES_READINESS_FAMILIES, input.stringArrayValue("requiredBehaviorFamilies"))
+        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals(AVAILABLE_DATA_TYPES_READINESS_FAMILIES, expected.stringArrayValue("coveredBehaviorFamilies"))
+        assertEquals(AVAILABLE_DATA_TYPES_READINESS_COMMON_DECISION, expected.stringValue("commonDecision"))
+        val prototype = expected.objectValue("commonRuntimePrototype")
+        assertEquals("executable shared commonTest available-data-types planning guard", prototype.stringValue("status"))
+        assertEquals("Declared because this vector is consumed by shared commonTest and platform adapter tests before available-data-types runtime delegation moves further into shared KMP.", prototype.stringValue("reason"))
+        assertEquals(listOf("com.polar.sdk.impl.utils.PolarRuntimePlannerAdapterTest"), consumerTests.stringArrayValue("android"))
+        assertEquals(listOf("PolarDataUtilsTest"), consumerTests.stringArrayValue("ios"))
+        assertEquals(listOf("com.polar.sharedtest.AvailableDataTypesCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
+        assertEquals(true, platforms.booleanValue("android"))
+        assertEquals(true, platforms.booleanValue("ios"))
+        assertEquals(true, platforms.booleanValue("common"))
+    }
+
+    private companion object {
+        val AVAILABLE_DATA_TYPES_READINESS_FAMILIES = listOf(
+            "offline-pmd-to-public-mapping",
+            "online-pmd-to-public-mapping",
+            "hr-service-availability-projection",
+            "ios-location-pressure-filter-boundary",
+            "android-full-surface-boundary",
+            "public-to-pmd-measurement-lookup",
+            "unknown-public-type-null-boundary",
+            "pmd-feature-read-platform-boundary",
+            "hr-service-discovery-platform-boundary",
+            "public-error-mapping-boundary",
+            "platform-available-data-type-vector-reference-gate",
+            "compile-verification-gate"
+        )
+        const val AVAILABLE_DATA_TYPES_READINESS_COMMON_DECISION = "Available-data-types migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS data utility tests continue to pin offline and online PMD-to-public mapping, HR-service availability projection, iOS location/pressure filters, Android full public surface, public-to-PMD measurement lookup, unknown public type boundaries, PMD feature-read boundaries, HR-service discovery boundaries, public error mapping boundaries, platform vector references, and compile verification before broader availability facade behavior moves."
+    }
 }

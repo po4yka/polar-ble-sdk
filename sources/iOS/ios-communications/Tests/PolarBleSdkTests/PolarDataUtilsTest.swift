@@ -1,7 +1,11 @@
 // Copyright © 2026 Polar. All rights reserved.
 
 import XCTest
+import Foundation
 @testable import PolarBleSdk
+
+private let AVAILABLE_DATA_TYPES_READINESS_COMMON_DECISION = "Available-data-types migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS data utility tests continue to pin offline and online PMD-to-public mapping, HR-service availability projection, iOS location/pressure filters, Android full public surface, public-to-PMD measurement lookup, unknown public type boundaries, PMD feature-read boundaries, HR-service discovery boundaries, public error mapping boundaries, platform vector references, and compile verification before broader availability facade behavior moves."
+private let AVAILABLE_DATA_TYPES_READINESS_FAMILIES = ["offline-pmd-to-public-mapping", "online-pmd-to-public-mapping", "hr-service-availability-projection", "ios-location-pressure-filter-boundary", "android-full-surface-boundary", "public-to-pmd-measurement-lookup", "unknown-public-type-null-boundary", "pmd-feature-read-platform-boundary", "hr-service-discovery-platform-boundary", "public-error-mapping-boundary", "platform-available-data-type-vector-reference-gate", "compile-verification-gate"]
 
 final class PolarDataUtilsTest: XCTestCase {
 
@@ -169,6 +173,29 @@ final class PolarDataUtilsTest: XCTestCase {
         XCTAssertFalse(PolarPmdMeasurementRuntimePlanner.availableOnlineStreamDataTypes(from: pmdTypes, hasHrService: false).contains(.hr))
         XCTAssertEqual(PolarPmdMeasurementRuntimePlanner.availableHrServiceDataTypes(hasHrService: true), [.hr])
         XCTAssertEqual(PolarPmdMeasurementRuntimePlanner.availableHrServiceDataTypes(hasHrService: false), [])
+    }
+
+    func testAvailableDataTypesReadinessManifestIsPinnedBeforeAvailabilityMigration() throws {
+        let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/available-data-types/available-data-types-readiness.json")
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any])
+        let input = try XCTUnwrap(manifest["input"] as? [String: Any])
+        let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(manifest["consumerTests"] as? [String: Any])
+        let requiredFamilies = try XCTUnwrap(input["requiredBehaviorFamilies"] as? [String])
+        let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
+        let prototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any])
+
+        XCTAssertEqual(manifest["id"] as? String, "available-data-types-readiness")
+        XCTAssertEqual(input["kind"] as? String, "availableDataTypesReadiness")
+        XCTAssertEqual(requiredFamilies, AVAILABLE_DATA_TYPES_READINESS_FAMILIES)
+        XCTAssertEqual(expected["migrationReadiness"] as? String, "coveredByPreMigrationCharacterization")
+        XCTAssertEqual(coveredFamilies, AVAILABLE_DATA_TYPES_READINESS_FAMILIES)
+        XCTAssertEqual(expected["commonDecision"] as? String, AVAILABLE_DATA_TYPES_READINESS_COMMON_DECISION)
+        XCTAssertEqual(prototype["status"] as? String, "executable shared commonTest available-data-types planning guard")
+        XCTAssertEqual(prototype["reason"] as? String, "Declared because this vector is consumed by shared commonTest and platform adapter tests before available-data-types runtime delegation moves further into shared KMP.")
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.impl.utils.PolarRuntimePlannerAdapterTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarDataUtilsTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.AvailableDataTypesCommonPolicyTest"])
     }
 
     func testFeatureAvailabilityPreconditions_useSharedPlannerForServiceAndCapabilityGuards() throws {
