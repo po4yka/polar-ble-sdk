@@ -531,6 +531,21 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func trainingSessionPayloadReconstructionPlan(referenceText: String, responses: [(path: String, fileName: String, payload: Data)], fetchOrder: [String]) -> String {
+        #if canImport(PolarBleSdkShared)
+        let responsesText = responses
+            .map { response in "\(response.path)|\(response.fileName)|\(response.payload.hexString())" }
+            .joined(separator: "\n")
+        return PolarIosSharedBridge.shared.trainingSessionPayloadReconstructionPlan(
+            referenceText: referenceText,
+            responsesText: responsesText,
+            fetchOrderText: fetchOrder.joined(separator: "\n")
+        )
+        #else
+        return ""
+        #endif
+    }
+
     static func trainingSessionDeleteParentPath(referencePath: String) -> String {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.trainingSessionDeleteParentPath(referencePath: referencePath)

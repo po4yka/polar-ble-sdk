@@ -78,5 +78,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest gates training-session discovery/read orchestration behavior-family completeness only; gzip payload decoding, selected protobuf field parsing, and deterministic public-model slot planning now use shared KMP production code, while generated public protobuf model reconstruction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered."
+  "notes": "This readiness manifest gates training-session discovery/read orchestration behavior-family completeness only; gzip payload decoding, selected protobuf field parsing, deterministic public-model slot planning, and neutral reconstruction-slot planning now use shared KMP production code, while generated public protobuf model construction remains platform-owned in Android and iOS adapters."
 }

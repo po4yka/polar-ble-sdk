@@ -4034,7 +4034,7 @@ class GoldenVectorMigrationPolicyTest {
             "## Current Shared-Policy State",
             "runtime-pinned Android/iOS facade compatibility evidence in `KmpFakeTransportTestPlan.md`",
             "New runtime/facade work should add operation-specific Android facade tests, iOS facade tests, and shared fake-transport tests only when a later production delegation slice introduces a new operation family",
-            "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
+            "training-session neutral reconstruction planning now exists while generated public protobuf object construction remains platform-owned",
             "BLE/session/GATT host behavior stays platform-owned unless a later slice defines a pure codec or deterministic state-machine contract"
         )
         val STALE_SHARED_POLICY_BACKLOG_TERMS = listOf(
@@ -4424,7 +4424,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = mapOf(
             "KmpFullCoverageTddBacklog.md" to listOf(
-                "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
+                "training-session neutral reconstruction planning now exists while generated public protobuf object construction remains platform-owned",
                 "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
                 "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
                 "shared-common-aes-production-decryption",
@@ -4455,7 +4455,9 @@ class GoldenVectorMigrationPolicyTest {
                 "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred",
                 "readPlan",
                 "publicModelReadPlanPolicy",
-                "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects"
+                "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects",
+                "publicModelReconstructionPlanPolicy",
+                "shared-neutral-reconstruction-plan-selects-decoded-payload-bytes-for-platform-generated-model-adapters"
             ),
             "payload-parser-policy.json" to listOf(
                 "Selected training payload protobuf field parsing now executes in shared KMP",
@@ -4483,7 +4485,7 @@ class GoldenVectorMigrationPolicyTest {
                 "shared selected protobuf field parsing",
                 "shared public-model read planning",
                 "generated public protobuf construction boundaries",
-                "generated public protobuf model reconstruction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered"
+                "generated public protobuf model construction remains platform-owned"
             ),
             "secret-readiness.json" to listOf(
                 "AES block-alignment gating",

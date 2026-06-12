@@ -4,6 +4,9 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType
+import fi.polar.remote.representation.protobuf.ExerciseSamples
+import fi.polar.remote.representation.protobuf.TrainingSession
+import fi.polar.remote.representation.protobuf.Types
 import org.junit.Assert
 import org.junit.Test
 import protocol.PftpNotification
@@ -718,6 +721,60 @@ class PolarRuntimePlannerAdapterTest {
         Assert.assertEquals(listOf(120, 121), exercise.samplesHeartRate)
         Assert.assertEquals(listOf(130, 131), exercise.samplesAdvancedHeartRate)
         Assert.assertEquals(1, exercise.unknownAdvancedSampleListsIgnored)
+    }
+
+    @Test
+    fun `shared training session reconstruction plan preserves Android generated public model fields through adapter`() {
+        val reference = PolarRuntimePlannerAdapter.PlannedTrainingSessionReference(
+            dateTime = "2026-01-02T12:34:56",
+            date = "2026-01-02",
+            path = "/U/0/20260102/E/123456/TSESS.BPB",
+            trainingDataTypes = listOf("TRAINING_SESSION_SUMMARY"),
+            exercises = listOf(
+                PolarRuntimePlannerAdapter.PlannedTrainingExerciseReference(
+                    index = 0,
+                    androidPath = "/U/0/20260102/E/123456/00/BASE.BPB",
+                    iosPath = "/U/0/20260102/E/123456/00",
+                    exerciseDataTypes = listOf("SAMPLES"),
+                    fileSizes = mapOf("SAMPLES.BPB" to 4L)
+                )
+            ),
+            fileSize = 7L
+        )
+        val summaryPayload = TrainingSession.PbTrainingSession.newBuilder()
+            .setStart(
+                Types.PbLocalDateTime.newBuilder()
+                    .setDate(Types.PbDate.newBuilder().setYear(2026).setMonth(1).setDay(2))
+                    .setTime(Types.PbTime.newBuilder().setHour(12).setMinute(34).setSeconds(56))
+                    .setOBSOLETETrusted(true)
+            )
+            .setExerciseCount(1)
+            .setDeviceId("android-public-device")
+            .setCalories(88)
+            .build()
+            .toByteArray()
+        val samplesPayload = ExerciseSamples.PbExerciseSamples.newBuilder()
+            .setRecordingInterval(Types.PbDuration.newBuilder().setSeconds(1))
+            .addAllHeartRateSamples(listOf(120, 121))
+            .build()
+            .toByteArray()
+
+        val plan = PolarRuntimePlannerAdapter.trainingSessionPayloadReconstructionPlan(
+            reference = reference,
+            decodedPayloadsByPath = mapOf(
+                "/U/0/20260102/E/123456/TSESS.BPB" to summaryPayload,
+                "/U/0/20260102/E/123456/00/SAMPLES.BPB" to samplesPayload
+            )
+        )
+        val sessionSummaryEntry = requireNotNull(plan.sessionSummary)
+        val sessionSummary = TrainingSession.PbTrainingSession.parseFrom(sessionSummaryEntry.decodedPayload)
+        val samples = ExerciseSamples.PbExerciseSamples.parseFrom(plan.exercises.single().entries.single().decodedPayload)
+
+        Assert.assertEquals("sessionSummary", sessionSummaryEntry.publicModelSlot)
+        Assert.assertEquals("android-public-device", sessionSummary.deviceId)
+        Assert.assertEquals(88, sessionSummary.calories)
+        Assert.assertEquals("samples", plan.exercises.single().entries.single().publicModelSlot)
+        Assert.assertEquals(listOf(120, 121), samples.heartRateSamplesList)
     }
 
     @Test

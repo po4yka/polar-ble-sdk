@@ -74,6 +74,7 @@ import com.polar.shared.sdk.PolarSleepModels
 import com.polar.shared.sdk.PolarSpo2Models
 import com.polar.shared.sdk.PolarTrainingPayloadFields
 import com.polar.shared.sdk.PolarTrainingPayloadResponse
+import com.polar.shared.sdk.PolarTrainingPayloadReconstructionEntry
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarTrainingSessionReference
@@ -476,6 +477,22 @@ internal object PolarRuntimePlannerAdapter {
         val samplesAdvancedHeartRate: List<Int>,
         val unknownAdvancedSampleListsIgnored: Int,
         val malformedFilesIgnored: List<String>
+    )
+    data class PlannedTrainingPayloadReconstructionPlan(
+        val sessionSummary: PlannedTrainingPayloadReconstructionEntry?,
+        val exercises: List<PlannedTrainingPayloadReconstructionExercise>
+    )
+    data class PlannedTrainingPayloadReconstructionExercise(
+        val index: Int,
+        val entries: List<PlannedTrainingPayloadReconstructionEntry>,
+        val malformedFilesIgnored: List<String>
+    )
+    data class PlannedTrainingPayloadReconstructionEntry(
+        val path: String,
+        val fileName: String,
+        val publicModelSlot: String,
+        val exerciseIndex: Int?,
+        val decodedPayload: ByteArray
     )
     class PlannedAtomicSet<T : Any> {
         private val items: PolarAtomicSet<T> = PolarAtomicSet()
@@ -1780,6 +1797,28 @@ internal object PolarRuntimePlannerAdapter {
         )
     }
 
+    fun trainingSessionPayloadReconstructionPlan(
+        reference: PlannedTrainingSessionReference,
+        decodedPayloadsByPath: Map<String, ByteArray>,
+        fetchOrder: List<String> = trainingSessionPayloadFetchOrder(reference)
+    ): PlannedTrainingPayloadReconstructionPlan {
+        val plan = PolarTrainingSessionModels.assemblePayloadReconstructionPlan(
+            reference = reference.toShared(),
+            decodedPayloadsByPath = decodedPayloadsByPath,
+            fetchOrder = fetchOrder
+        )
+        return PlannedTrainingPayloadReconstructionPlan(
+            sessionSummary = plan.sessionSummary?.toPlanned(),
+            exercises = plan.exercises.map { exercise ->
+                PlannedTrainingPayloadReconstructionExercise(
+                    index = exercise.index,
+                    entries = exercise.entries.map { entry -> entry.toPlanned() },
+                    malformedFilesIgnored = exercise.malformedFilesIgnored
+                )
+            }
+        )
+    }
+
     fun parseTrainingSessionPayloadResponse(fileName: String, payload: ByteArray): PlannedTrainingPayloadResponse {
         return PolarTrainingSessionModels.parseDecodedPayloadResponse(fileName, payload).toPlanned()
     }
@@ -2038,6 +2077,16 @@ internal object PolarRuntimePlannerAdapter {
                     heartRateSamples = sampleList.heartRateSamples
                 )
             }
+        )
+    }
+
+    private fun PolarTrainingPayloadReconstructionEntry.toPlanned(): PlannedTrainingPayloadReconstructionEntry {
+        return PlannedTrainingPayloadReconstructionEntry(
+            path = path,
+            fileName = fileName,
+            publicModelSlot = publicModelSlot,
+            exerciseIndex = exerciseIndex,
+            decodedPayload = decodedPayload
         )
     }
 

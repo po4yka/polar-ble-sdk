@@ -273,6 +273,50 @@
           "SAMPLES.GZB"
         ]
       }
+    ],
+    "reconstructionPlan": [
+      {
+        "publicModelSlot": "sessionSummary",
+        "exerciseIndex": null,
+        "fileName": "TSESS.BPB",
+        "payloadOwnership": "decoded-payload-bytes-for-platform-generated-model-adapter"
+      },
+      {
+        "publicModelSlot": "exerciseSummary",
+        "exerciseIndex": 0,
+        "fileName": "BASE.BPB",
+        "payloadOwnership": "decoded-payload-bytes-for-platform-generated-model-adapter"
+      },
+      {
+        "publicModelSlot": "route",
+        "exerciseIndex": 0,
+        "fileName": "ROUTE.BPB",
+        "payloadOwnership": "decoded-payload-bytes-for-platform-generated-model-adapter"
+      },
+      {
+        "publicModelSlot": "route",
+        "exerciseIndex": 0,
+        "fileName": "ROUTE.GZB",
+        "payloadOwnership": "decoded-payload-bytes-for-platform-generated-model-adapter"
+      },
+      {
+        "publicModelSlot": "routeAdvanced",
+        "exerciseIndex": 0,
+        "fileName": "ROUTE2.BPB",
+        "payloadOwnership": "decoded-payload-bytes-for-platform-generated-model-adapter"
+      },
+      {
+        "publicModelSlot": "samples",
+        "exerciseIndex": 0,
+        "fileName": "SAMPLES.BPB",
+        "payloadOwnership": "decoded-payload-bytes-for-platform-generated-model-adapter"
+      },
+      {
+        "publicModelSlot": "samplesAdvanced",
+        "exerciseIndex": 0,
+        "fileName": "SAMPLES2.GZB",
+        "payloadOwnership": "decoded-payload-bytes-for-platform-generated-model-adapter"
+      }
     ]
   },
   "consumerTests": {
@@ -297,9 +341,10 @@
       "malformedPayloadPolicy": "omit-only-the-malformed-component-and-continue-reading-remaining-files",
       "unknownSampleListPolicy": "ignore-unknown-advanced-sample-lists-and-preserve-known-samples",
       "publicModelReadPlanPolicy": "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects",
+      "publicModelReconstructionPlanPolicy": "shared-neutral-reconstruction-plan-selects-decoded-payload-bytes-for-platform-generated-model-adapters",
       "byteLevelParserGate": "selected-common-protobuf-field-parser-active-before-generated-model-reconstruction",
       "byteLevelPayloadStatus": "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred"
     }
   },
-  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, and unknown advanced sample-list handling. payload-parser-policy.json now pins parser-family ownership; gzip payload decompression, selected protobuf field parsing, malformed payload isolation, and deterministic public-model read planning are owned by shared KMP, while generated public protobuf object reconstruction remains platform-owned until a broader shared DTO strategy is added."
+  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, unknown advanced sample-list handling, and decoded-payload reconstruction-slot planning. payload-parser-policy.json now pins parser-family ownership; gzip payload decompression, selected protobuf field parsing, malformed payload isolation, deterministic public-model read planning, and neutral reconstruction planning are owned by shared KMP, while generated public protobuf object reconstruction remains platform-owned in Android and iOS adapters."
 }
