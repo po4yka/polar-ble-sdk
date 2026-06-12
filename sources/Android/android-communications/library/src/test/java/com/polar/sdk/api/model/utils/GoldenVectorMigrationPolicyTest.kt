@@ -2578,6 +2578,17 @@ class GoldenVectorMigrationPolicyTest {
         if (packageSwift.contains("PolarBleSdkShared") && (!packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework"))) {
             violations += "Package.swift must use an explicit PolarBleSdkShared.xcframework binaryTarget for SwiftPM shared consumption"
         }
+        if (!packageSwift.contains("hasPolarBleSdkSharedXCFramework") || !packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework")) {
+            violations += "Package.swift must keep SwiftPM/watchOS shared consumption conditional on an explicit PolarBleSdkShared.xcframework binaryTarget"
+        }
+        val podspec = root.resolve("PolarBleSdk.podspec").readText()
+        if (!podspec.contains("'OTHER_SWIFT_FLAGS' => '$(inherited) -D POLAR_KMP_SHARED_REQUIRED'")) {
+            violations += "PolarBleSdk.podspec must require linked PolarBleSdkShared for the CocoaPods iOS surface"
+        }
+        val xcodeProject = root.resolve("sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj").readText()
+        if (Regex("POLAR_KMP_SHARED_REQUIRED").findAll(xcodeProject).count() != 2) {
+            violations += "iOS Xcode project must define POLAR_KMP_SHARED_REQUIRED only for PolarBleSdk Debug/Release"
+        }
         if (!packageScript.isFile || !packageScript.canExecute()) {
             violations += "package_kmp_xcframework.sh must exist and be executable"
         }
@@ -2603,6 +2614,19 @@ class GoldenVectorMigrationPolicyTest {
         assertTrue(
             "Shared artifact consumption must be documented before production modules are wired: $violations",
             violations.isEmpty()
+        )
+    }
+
+    @Test
+    fun `modern KMP stack audit keeps final ownership boundaries explicit`() {
+        val root = findRepositoryRoot()
+        val audit = root.resolve("documentation/KmpModernStackAudit.md").readText()
+        val missingTerms = KMP_MODERN_STACK_AUDIT_REQUIRED_TERMS
+            .filterNot { term -> audit.contains(term) }
+
+        assertTrue(
+            "KmpModernStackAudit.md must keep migrated, platform-owned, packaging-owned, and current validation boundaries explicit: $missingTerms",
+            missingTerms.isEmpty()
         )
     }
 
@@ -3997,6 +4021,21 @@ class GoldenVectorMigrationPolicyTest {
             "Do not claim SwiftPM/watchOS shared consumption",
             "rollback path for every shared-module adoption step"
         )
+        val KMP_MODERN_STACK_AUDIT_REQUIRED_TERMS = listOf(
+            "## Fully Migrated Shared KMP Ownership",
+            "Golden-vector governance is active",
+            "Android production consumes shared KMP through `implementation project(':shared')`",
+            "two-AAR compatibility model",
+            "iOS CocoaPods and Xcode workspace production surfaces consume `PolarBleSdkShared.framework`",
+            "POLAR_KMP_SHARED_REQUIRED",
+            "Swift Package Manager and watchOS are fallback-only on a clean checkout",
+            "PolarBleSdkShared.xcframework",
+            "Generated public protobuf reconstruction remains platform-owned",
+            "BLE/session/GATT host behavior remains platform-owned",
+            "CI and release policy remain artifact-only",
+            "The latest broad `xcodebuild test",
+            "must be resolved before claiming a green broad iOS gate"
+        )
         val PLATFORM_OWNED_COVERAGE_ROWS = mapOf(
             "BLE device session lifecycle" to listOf("Partial", "platform-owned", "Keep platform-specific"),
             "GATT clients" to listOf("Partial", "platform-owned", "Keep transport clients platform-specific"),
@@ -4104,7 +4143,8 @@ class GoldenVectorMigrationPolicyTest {
             "Use XCTest failures from that command as migration evidence"
         )
         val IOS_XCTEST_REMAINING_WORK_REQUIRED_TERMS = listOf(
-            "The iOS XCTest gate is unblocked and passes with `xcodebuild test -quiet -workspace sources/iOS/ios-communications/iOSCommunications.xcworkspace -scheme iOSCommunications -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5'",
+            "Historical iOS XCTest closeout evidence exists for earlier slices, but the latest broad audit run is no longer treated as green in this document",
+            "see `KmpModernStackAudit.md` for the current full-suite blocker list",
             "Keep full iOS XCTest in the required validation set for future slices",
             "`swiftc -parse` is only a syntax gate and must not replace the passing simulator XCTest command"
         )
