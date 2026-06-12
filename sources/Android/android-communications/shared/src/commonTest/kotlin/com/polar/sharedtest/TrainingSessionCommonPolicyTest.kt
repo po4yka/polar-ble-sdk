@@ -114,6 +114,46 @@ class TrainingSessionCommonPolicyTest {
     }
 
     @Test
+    fun trainingSessionPayloadReadResultUsesSharedReadPlanExerciseIndexForUnpaddedAndroidPaths() {
+        val reference = PolarTrainingSessionReference(
+            dateTime = "2025-01-01T10:12:00",
+            date = "2025-01-01",
+            path = "/U/0/20250101/E/101200/TSESS.BPB",
+            trainingDataTypes = listOf("TRAINING_SESSION_SUMMARY"),
+            exercises = listOf(
+                PolarTrainingExerciseReference(
+                    index = 1,
+                    androidPath = "/U/0/20250101/E/101200/1/BASE.BPB",
+                    iosPath = "/U/0/20250101/E/101200/01",
+                    exerciseDataTypes = listOf("SAMPLES"),
+                    fileSizes = mapOf("SAMPLES.BPB" to 3L)
+                )
+            ),
+            fileSize = 6L
+        )
+        val responses = mapOf(
+            "/U/0/20250101/E/101200/TSESS.BPB" to PolarTrainingPayloadResponse(
+                kind = "trainingSessionSummary",
+                fileName = "TSESS.BPB",
+                byteSize = 3,
+                payload = PolarTrainingPayloadFields(modelName = "Polar 360")
+            ),
+            "/U/0/20250101/E/101200/1/SAMPLES.BPB" to PolarTrainingPayloadResponse(
+                kind = "samples",
+                fileName = "SAMPLES.BPB",
+                byteSize = 3,
+                payload = PolarTrainingPayloadFields(heartRateSamples = listOf(120, 121))
+            )
+        )
+
+        val result = PolarTrainingSessionModels.assemblePayloadReadResult(reference, responses)
+
+        assertEquals(1, result.exercises.single().index)
+        assertEquals(listOf(120, 121), result.exercises.single().samplesHeartRate)
+        assertEquals(100, result.progressPercent)
+    }
+
+    @Test
     fun trainingSessionProgressPercentUsesSharedClampPolicy() {
         assertEquals(0, PolarTrainingSessionModels.progressPercent(0, 0))
         assertEquals(25, PolarTrainingSessionModels.progressPercent(25, 100))

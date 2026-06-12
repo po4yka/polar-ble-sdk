@@ -224,6 +224,7 @@ object PolarTrainingSessionModels {
     }
 
     fun assemblePayloadReadResult(reference: PolarTrainingSessionReference, responsesByPath: Map<String, PolarTrainingPayloadResponse>, fetchOrder: List<String> = payloadFetchOrder(reference)): PolarTrainingPayloadReadResult {
+        val readPlanByPath = payloadReadPlan(reference).associateBy { entry -> entry.path }
         val exercises = reference.exercises.associate { exercise ->
             exercise.index to MutableTrainingPayloadExercise(index = exercise.index)
         }.toMutableMap()
@@ -233,7 +234,7 @@ object PolarTrainingSessionModels {
             result.totalBytes += response.byteSize
             result.completedBytes += response.byteSize
             result.currentFileName = response.fileName
-            val exerciseIndex = path.exerciseIndexOrNull()
+            val exerciseIndex = readPlanByPath[path]?.exerciseIndex ?: path.exerciseIndexOrNull()
             if (response.malformed) {
                 exerciseIndex?.let { index -> exercises.getValue(index).malformedFilesIgnored += response.fileName }
                 return@forEach
