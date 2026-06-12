@@ -278,6 +278,10 @@ object PolarIosSharedBridge {
         return PolarFirmwareUpdateModels.deviceInfoPath()
     }
 
+    fun firmwareSystemUpdateFilePath(): String {
+        return PolarFirmwareUpdateModels.systemUpdateFilePath()
+    }
+
     fun diskSpaceTotalSpace(fragmentSize: Long, totalFragments: Long, freeFragments: Long): Long {
         return PolarSdkModelMappers.diskSpace(
             fragmentSize = fragmentSize,

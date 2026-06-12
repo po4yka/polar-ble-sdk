@@ -509,6 +509,7 @@ class PolarRuntimePlannerAdapterTest {
         )
         Assert.assertTrue(PolarRuntimePlannerAdapter.firmwareFilePriority("BTUPDAT.BIN") < PolarRuntimePlannerAdapter.firmwareFilePriority("SYSUPDAT.IMG"))
         Assert.assertEquals("1.2.0", PolarRuntimePlannerAdapter.firmwareDeviceVersion(major = 1, minor = 2, patch = 0))
+        Assert.assertEquals("/SYSUPDAT.IMG", PolarRuntimePlannerAdapter.firmwareSystemUpdateFilePath())
         Assert.assertTrue(PolarRuntimePlannerAdapter.isAvailableFirmwareVersionHigher(currentVersion = "1.0.0", availableVersion = "1.0.1"))
         Assert.assertFalse(PolarRuntimePlannerAdapter.isAvailableFirmwareVersionHigher(currentVersion = "2.0.0", availableVersion = "1.0.0"))
         Assert.assertEquals(

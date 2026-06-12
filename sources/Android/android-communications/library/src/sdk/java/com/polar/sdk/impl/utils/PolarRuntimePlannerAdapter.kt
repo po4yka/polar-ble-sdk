@@ -1184,6 +1184,10 @@ internal object PolarRuntimePlannerAdapter {
         return PolarFirmwareUpdateModels.deviceInfoPath()
     }
 
+    fun firmwareSystemUpdateFilePath(): String {
+        return PolarFirmwareUpdateModels.systemUpdateFilePath()
+    }
+
     fun planBackupRestoreOperation(path: String, payloadHex: String, writeResult: String = "success"): Pair<PftpRequest.PbPFtpOperation.Command, String>? {
         val command = PolarWorkflowRuntimePlanning.planBackupRestore(
             listOf(

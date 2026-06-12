@@ -227,6 +227,14 @@ enum PolarFirmwareBackupRuntimePlanner {
         #endif
     }
 
+    static func firmwareSystemUpdateFilePath() -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.firmwareSystemUpdateFilePath()
+        #else
+        return "/SYSUPDAT.IMG"
+        #endif
+    }
+
     static func firmwareFilePriority(_ fileName: String) -> Int {
         #if canImport(PolarBleSdkShared)
         return Int(PolarIosSharedBridge.shared.firmwareFilePriority(fileName: fileName))

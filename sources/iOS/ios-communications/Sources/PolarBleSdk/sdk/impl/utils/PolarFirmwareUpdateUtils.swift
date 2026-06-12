@@ -48,7 +48,7 @@ final class ZipFirmwarePackageExtractor: FirmwarePackageExtracting {
 }
 
 class PolarFirmwareUpdateUtils {
-    static let FIRMWARE_UPDATE_FILE_PATH = "/SYSUPDAT.IMG"
+    static let FIRMWARE_UPDATE_FILE_PATH = PolarRuntimePlanner.firmwareSystemUpdateFilePath()
     static let DEVICE_FIRMWARE_INFO_PATH = PolarRuntimePlanner.firmwareDeviceInfoPath()
     static var packageExtractor: FirmwarePackageExtracting = ZipFirmwarePackageExtractor()
 

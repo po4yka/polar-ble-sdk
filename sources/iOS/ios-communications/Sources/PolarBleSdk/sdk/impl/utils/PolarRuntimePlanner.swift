@@ -379,6 +379,10 @@ enum PolarRuntimePlanner {
         return PolarFirmwareBackupRuntimePlanner.firmwareDeviceInfoPath()
     }
 
+    static func firmwareSystemUpdateFilePath() -> String {
+        return PolarFirmwareBackupRuntimePlanner.firmwareSystemUpdateFilePath()
+    }
+
     static func firmwareFilePriority(_ fileName: String) -> Int {
         return PolarFirmwareBackupRuntimePlanner.firmwareFilePriority(fileName)
     }

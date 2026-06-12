@@ -10,6 +10,7 @@ class FirmwareUpdateUtilityCommonPolicyTest {
     @Test
     fun firmwareDeviceInfoGoldenVectorsDefineExecutableCommonMappingPolicy() {
         assertEquals("/DEVICE.BPB", PolarFirmwareUpdateModels.deviceInfoPath())
+        assertEquals("/SYSUPDAT.IMG", PolarFirmwareUpdateModels.systemUpdateFilePath())
         listOf(
             "sdk/firmware-update/device-info-basic.json",
             "sdk/firmware-update/device-info-zero-version.json"

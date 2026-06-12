@@ -2506,6 +2506,7 @@ final class PolarBleApiImplTests: XCTestCase {
         let operation = PolarFirmwareBackupRuntimePlanner.backupRestoreOperation(path: "/U/0/BACKUP.TXT", payloadHex: "0102")
         XCTAssertEqual(.put, operation?.command)
         XCTAssertEqual("/U/0/BACKUP.TXT", operation?.path)
+        XCTAssertEqual("/SYSUPDAT.IMG", PolarFirmwareBackupRuntimePlanner.firmwareSystemUpdateFilePath())
         XCTAssertEqual(["/U/0/S/PHYSDATA.BPB", "/U/0/S/UDEVSET.BPB", "/U/0/S/PREFS.BPB", "/U/0/USERID.BPB"], PolarFirmwareBackupRuntimePlanner.defaultBackupPaths())
         XCTAssertEqual("/U/0/S/UDEVSET.BPB", PolarFirmwareBackupRuntimePlanner.backupTraversalRootPath("/U/*/S/UDEVSET.BPB"))
         XCTAssertEqual("cancelled", PolarFirmwareBackupRuntimePlanner.firmwarePackageFetchCancellationTerminalError())

@@ -7,6 +7,10 @@ object PolarFirmwareUpdateModels {
         return "/DEVICE.BPB"
     }
 
+    fun systemUpdateFilePath(): String {
+        return "/$SYSTEM_UPDATE_FILE"
+    }
+
     fun deviceVersionToString(major: Int, minor: Int, patch: Int): String {
         return "$major.$minor.$patch"
     }
