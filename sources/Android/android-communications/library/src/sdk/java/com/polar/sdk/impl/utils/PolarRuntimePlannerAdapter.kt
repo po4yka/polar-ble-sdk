@@ -48,6 +48,8 @@ import com.polar.shared.sdk.PolarSdkFeatureAvailability
 import com.polar.shared.sdk.PolarSdkModelMappers
 import com.polar.shared.sdk.PolarSleepModels
 import com.polar.shared.sdk.PolarSpo2Models
+import com.polar.shared.sdk.PolarTrainingPayloadFields
+import com.polar.shared.sdk.PolarTrainingPayloadResponse
 import com.polar.shared.sdk.PolarTrainingSessionFileEntry
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import com.polar.shared.sdk.PolarTrainingSessionReference
@@ -277,6 +279,43 @@ internal object PolarRuntimePlannerAdapter {
         val fileName: String,
         val publicModelSlot: String,
         val exerciseIndex: Int?
+    )
+    data class PlannedTrainingPayloadResponse(
+        val kind: String,
+        val fileName: String,
+        val byteSize: Int,
+        val malformed: Boolean = false,
+        val modelName: String? = null,
+        val durationSeconds: Int? = null,
+        val distanceMeters: Int? = null,
+        val calories: Int? = null,
+        val heartRateSamples: List<Int> = emptyList(),
+        val intervalledSampleLists: List<PlannedTrainingIntervalledSampleList> = emptyList()
+    )
+    data class PlannedTrainingIntervalledSampleList(
+        val sampleType: String,
+        val heartRateSamples: List<Int> = emptyList()
+    )
+    data class PlannedTrainingPayloadReadResult(
+        val totalBytes: Int,
+        val completedBytes: Int,
+        val progressPercent: Int,
+        val currentFileName: String,
+        val modelName: String,
+        val durationSeconds: Int,
+        val distanceMeters: Int,
+        val calories: Int,
+        val exercises: List<PlannedTrainingPayloadExercise>
+    )
+    data class PlannedTrainingPayloadExercise(
+        val index: Int,
+        val exerciseSummaryPresent: Boolean,
+        val routePresent: Boolean,
+        val routeAdvancedPresent: Boolean,
+        val samplesHeartRate: List<Int>,
+        val samplesAdvancedHeartRate: List<Int>,
+        val unknownAdvancedSampleListsIgnored: Int,
+        val malformedFilesIgnored: List<String>
     )
 
     fun availableOfflineRecordingDataTypes(features: Set<PmdMeasurementType>): Set<PolarDeviceDataType> {
@@ -1251,6 +1290,40 @@ internal object PolarRuntimePlannerAdapter {
         }
     }
 
+    fun trainingSessionPayloadReadResult(
+        reference: PlannedTrainingSessionReference,
+        responsesByPath: Map<String, PlannedTrainingPayloadResponse>,
+        fetchOrder: List<String> = trainingSessionPayloadFetchOrder(reference)
+    ): PlannedTrainingPayloadReadResult {
+        val result = PolarTrainingSessionModels.assemblePayloadReadResult(
+            reference = reference.toShared(),
+            responsesByPath = responsesByPath.mapValues { entry -> entry.value.toShared() },
+            fetchOrder = fetchOrder
+        )
+        return PlannedTrainingPayloadReadResult(
+            totalBytes = result.totalBytes,
+            completedBytes = result.completedBytes,
+            progressPercent = result.progressPercent,
+            currentFileName = result.currentFileName,
+            modelName = result.modelName,
+            durationSeconds = result.durationSeconds,
+            distanceMeters = result.distanceMeters,
+            calories = result.calories,
+            exercises = result.exercises.map { exercise ->
+                PlannedTrainingPayloadExercise(
+                    index = exercise.index,
+                    exerciseSummaryPresent = exercise.exerciseSummaryPresent,
+                    routePresent = exercise.routePresent,
+                    routeAdvancedPresent = exercise.routeAdvancedPresent,
+                    samplesHeartRate = exercise.samplesHeartRate,
+                    samplesAdvancedHeartRate = exercise.samplesAdvancedHeartRate,
+                    unknownAdvancedSampleListsIgnored = exercise.unknownAdvancedSampleListsIgnored,
+                    malformedFilesIgnored = exercise.malformedFilesIgnored
+                )
+            }
+        )
+    }
+
     fun trainingSessionPayloadEncoding(fileName: String): String? {
         return PolarTrainingSessionModels.payloadParserCase(fileName)?.encoding
     }
@@ -1433,6 +1506,28 @@ internal object PolarRuntimePlannerAdapter {
                 )
             },
             fileSize = fileSize
+        )
+    }
+
+    private fun PlannedTrainingPayloadResponse.toShared(): PolarTrainingPayloadResponse {
+        return PolarTrainingPayloadResponse(
+            kind = kind,
+            fileName = fileName,
+            byteSize = byteSize,
+            malformed = malformed,
+            payload = PolarTrainingPayloadFields(
+                modelName = modelName,
+                durationSeconds = durationSeconds,
+                distanceMeters = distanceMeters,
+                calories = calories,
+                heartRateSamples = heartRateSamples,
+                intervalledSampleLists = intervalledSampleLists.map { sampleList ->
+                    com.polar.shared.sdk.PolarTrainingIntervalledSampleList(
+                        sampleType = sampleList.sampleType,
+                        heartRateSamples = sampleList.heartRateSamples
+                    )
+                }
+            )
         )
     }
 

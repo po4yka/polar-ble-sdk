@@ -285,6 +285,74 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared training session payload read result routes through Android runtime adapter DTOs`() {
+        val reference = PolarRuntimePlannerAdapter.PlannedTrainingSessionReference(
+            dateTime = "2026-01-02T12:34:56",
+            date = "2026-01-02",
+            path = "/U/0/20260102/E/123456/TSESS.BPB",
+            trainingDataTypes = listOf("TRAINING_SESSION_SUMMARY"),
+            exercises = listOf(
+                PolarRuntimePlannerAdapter.PlannedTrainingExerciseReference(
+                    index = 0,
+                    androidPath = "/U/0/20260102/E/123456/00/BASE.BPB",
+                    iosPath = "/U/0/20260102/E/123456/00",
+                    exerciseDataTypes = listOf("EXERCISE_SUMMARY", "SAMPLES", "SAMPLES_ADVANCED_FORMAT_GZIP"),
+                    fileSizes = mapOf("BASE.BPB" to 5L, "SAMPLES.BPB" to 4L, "SAMPLES2.GZB" to 6L)
+                )
+            ),
+            fileSize = 25L
+        )
+        val responses = mapOf(
+            "/U/0/20260102/E/123456/TSESS.BPB" to PolarRuntimePlannerAdapter.PlannedTrainingPayloadResponse(
+                kind = "trainingSessionSummary",
+                fileName = "TSESS.BPB",
+                byteSize = 10,
+                modelName = "Polar 360",
+                durationSeconds = 123,
+                distanceMeters = 456,
+                calories = 78
+            ),
+            "/U/0/20260102/E/123456/00/BASE.BPB" to PolarRuntimePlannerAdapter.PlannedTrainingPayloadResponse(
+                kind = "exerciseSummary",
+                fileName = "BASE.BPB",
+                byteSize = 5
+            ),
+            "/U/0/20260102/E/123456/00/SAMPLES.BPB" to PolarRuntimePlannerAdapter.PlannedTrainingPayloadResponse(
+                kind = "samples",
+                fileName = "SAMPLES.BPB",
+                byteSize = 4,
+                heartRateSamples = listOf(120, 121)
+            ),
+            "/U/0/20260102/E/123456/00/SAMPLES2.GZB" to PolarRuntimePlannerAdapter.PlannedTrainingPayloadResponse(
+                kind = "samplesAdvancedGzip",
+                fileName = "SAMPLES2.GZB",
+                byteSize = 6,
+                intervalledSampleLists = listOf(
+                    PolarRuntimePlannerAdapter.PlannedTrainingIntervalledSampleList("HEART_RATE", listOf(130, 131)),
+                    PolarRuntimePlannerAdapter.PlannedTrainingIntervalledSampleList("CADENCE", listOf(90))
+                )
+            )
+        )
+
+        val result = PolarRuntimePlannerAdapter.trainingSessionPayloadReadResult(reference, responses)
+        val exercise = result.exercises.single()
+
+        Assert.assertEquals(25, result.totalBytes)
+        Assert.assertEquals(25, result.completedBytes)
+        Assert.assertEquals(100, result.progressPercent)
+        Assert.assertEquals("SAMPLES2.GZB", result.currentFileName)
+        Assert.assertEquals("Polar 360", result.modelName)
+        Assert.assertEquals(123, result.durationSeconds)
+        Assert.assertEquals(456, result.distanceMeters)
+        Assert.assertEquals(78, result.calories)
+        Assert.assertEquals(0, exercise.index)
+        Assert.assertTrue(exercise.exerciseSummaryPresent)
+        Assert.assertEquals(listOf(120, 121), exercise.samplesHeartRate)
+        Assert.assertEquals(listOf(130, 131), exercise.samplesAdvancedHeartRate)
+        Assert.assertEquals(1, exercise.unknownAdvancedSampleListsIgnored)
+    }
+
+    @Test
     fun `shared time field policy routes through Android runtime adapter`() {
         val fields = PolarRuntimePlannerAdapter.dateTimeFields(
             year = 2026,
