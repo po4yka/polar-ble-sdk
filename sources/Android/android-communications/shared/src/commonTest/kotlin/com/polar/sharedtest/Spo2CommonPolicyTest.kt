@@ -72,6 +72,46 @@ class Spo2CommonPolicyTest {
     }
 
     @Test
+    fun spo2PlatformProjectionEntryPointsPreservePublicShapeSplit() {
+        val androidProjection = PolarSpo2Models.projectAndroidTestData(
+            date = "2026-04-14",
+            timeDirName = "063751",
+            recordingDevice = "0004BF3D",
+            timeZoneOffsetMinutes = 180,
+            testStatus = 0,
+            bloodOxygenPercent = 96,
+            spo2Class = 3,
+            spo2ValueDeviationFromBaseline = 2,
+            spo2QualityAveragePercent = 99.0f,
+            averageHeartRateBpm = 66,
+            heartRateVariabilityMs = 79.97114f,
+            spo2HrvDeviationFromBaseline = 3,
+            altitudeMeters = 18.13582f
+        )
+        val iosProjection = PolarSpo2Models.projectIosTestData(
+            date = "2026-04-14",
+            timeDirName = "063751",
+            recordingDevice = "0004BF3D",
+            timeZoneOffsetMinutes = 180,
+            testStatus = 0,
+            bloodOxygenPercent = 96,
+            spo2Class = 3,
+            spo2ValueDeviationFromBaseline = 2,
+            spo2QualityAveragePercent = 99.0f,
+            averageHeartRateBpm = 66,
+            heartRateVariabilityMs = 79.97114f,
+            spo2HrvDeviationFromBaseline = 3,
+            altitudeMeters = 18.13582f,
+            triggerType = 1
+        )
+
+        assertEquals(null, androidProjection.triggerType)
+        assertEquals("automatic", iosProjection.triggerType)
+        assertEquals("map-spo2-proto-fields-to-public-model", androidProjection.policy)
+        assertEquals("map-spo2-trigger-type-when-platform-exposes-it", iosProjection.policy)
+    }
+
+    @Test
     fun spo2ReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
         val vector = loadGoldenVectorText("sdk/spo2-test/spo2-readiness.json")
         val input = vector.objectValue("input")

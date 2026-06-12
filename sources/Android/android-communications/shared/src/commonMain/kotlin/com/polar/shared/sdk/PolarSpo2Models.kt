@@ -84,6 +84,73 @@ object PolarSpo2Models {
         )
     }
 
+    fun projectAndroidTestData(
+        date: String,
+        timeDirName: String,
+        recordingDevice: String?,
+        timeZoneOffsetMinutes: Int,
+        testStatus: Int,
+        bloodOxygenPercent: Int?,
+        spo2Class: Int?,
+        spo2ValueDeviationFromBaseline: Int?,
+        spo2QualityAveragePercent: Float?,
+        averageHeartRateBpm: Int?,
+        heartRateVariabilityMs: Float?,
+        spo2HrvDeviationFromBaseline: Int?,
+        altitudeMeters: Float?
+    ): PolarSpo2TestProjection {
+        return projectTestData(
+            date = date,
+            timeDirName = timeDirName,
+            recordingDevice = recordingDevice,
+            timeZoneOffsetMinutes = timeZoneOffsetMinutes,
+            testStatus = testStatus,
+            bloodOxygenPercent = bloodOxygenPercent,
+            spo2Class = spo2Class,
+            spo2ValueDeviationFromBaseline = spo2ValueDeviationFromBaseline,
+            spo2QualityAveragePercent = spo2QualityAveragePercent,
+            averageHeartRateBpm = averageHeartRateBpm,
+            heartRateVariabilityMs = heartRateVariabilityMs,
+            spo2HrvDeviationFromBaseline = spo2HrvDeviationFromBaseline,
+            altitudeMeters = altitudeMeters,
+            triggerType = null
+        )
+    }
+
+    fun projectIosTestData(
+        date: String,
+        timeDirName: String,
+        recordingDevice: String?,
+        timeZoneOffsetMinutes: Int,
+        testStatus: Int,
+        bloodOxygenPercent: Int?,
+        spo2Class: Int?,
+        spo2ValueDeviationFromBaseline: Int?,
+        spo2QualityAveragePercent: Float?,
+        averageHeartRateBpm: Int?,
+        heartRateVariabilityMs: Float?,
+        spo2HrvDeviationFromBaseline: Int?,
+        altitudeMeters: Float?,
+        triggerType: Int?
+    ): PolarSpo2TestProjection {
+        return projectTestData(
+            date = date,
+            timeDirName = timeDirName,
+            recordingDevice = recordingDevice,
+            timeZoneOffsetMinutes = timeZoneOffsetMinutes,
+            testStatus = testStatus,
+            bloodOxygenPercent = bloodOxygenPercent,
+            spo2Class = spo2Class,
+            spo2ValueDeviationFromBaseline = spo2ValueDeviationFromBaseline,
+            spo2QualityAveragePercent = spo2QualityAveragePercent,
+            averageHeartRateBpm = averageHeartRateBpm,
+            heartRateVariabilityMs = heartRateVariabilityMs,
+            spo2HrvDeviationFromBaseline = spo2HrvDeviationFromBaseline,
+            altitudeMeters = altitudeMeters,
+            triggerType = triggerType
+        )
+    }
+
     fun testStatusName(value: Int): String? {
         return when (value) {
             0 -> "passed"

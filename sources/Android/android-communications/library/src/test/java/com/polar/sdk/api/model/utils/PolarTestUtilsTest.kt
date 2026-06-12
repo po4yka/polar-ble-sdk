@@ -55,6 +55,31 @@ class PolarTestUtilsTest {
     }
 
     @Test
+    fun `spo2 projection uses shared Android public shape policy`() {
+        val projection = PolarRuntimePlannerAdapter.spo2TestDataProjection(
+            date = "2026-04-14",
+            timeDirName = "063751",
+            recordingDevice = "0004BF3D",
+            timeZoneOffsetMinutes = 180,
+            testStatus = 0,
+            bloodOxygenPercent = 96,
+            spo2Class = 3,
+            spo2ValueDeviationFromBaseline = 2,
+            spo2QualityAveragePercent = 99.0f,
+            averageHeartRateBpm = 66,
+            heartRateVariabilityMs = 79.97114f,
+            spo2HrvDeviationFromBaseline = 3,
+            altitudeMeters = 18.13582f
+        )
+
+        assertEquals("0004BF3D", projection.recordingDevice)
+        assertEquals("passed", projection.testStatus)
+        assertEquals("normal", projection.spo2Class)
+        assertEquals("usual", projection.spo2ValueDeviationFromBaseline)
+        assertEquals("aboveUsual", projection.spo2HrvDeviationFromBaseline)
+    }
+
+    @Test
     fun `readSpo2TestProtoFromDayDirectory() returns one entry per time subdirectory`() = runTest {
         val client = mockk<BlePsFtpClient>()
         val date = LocalDate.of(2026, 4, 8)

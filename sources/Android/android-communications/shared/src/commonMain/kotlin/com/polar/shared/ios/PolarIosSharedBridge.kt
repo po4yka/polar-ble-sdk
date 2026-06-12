@@ -887,7 +887,7 @@ object PolarIosSharedBridge {
         altitudeMeters: String,
         triggerType: String
     ): String {
-        val projection = PolarSpo2Models.projectTestData(
+        val projection = PolarSpo2Models.projectIosTestData(
             date = date,
             timeDirName = timeDirName,
             recordingDevice = recordingDevice,

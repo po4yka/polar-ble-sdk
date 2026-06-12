@@ -1025,7 +1025,7 @@ internal object PolarRuntimePlannerAdapter {
         spo2HrvDeviationFromBaseline: Int?,
         altitudeMeters: Float?
     ): PlannedSpo2TestProjection {
-        val projection = PolarSpo2Models.projectTestData(
+        val projection = PolarSpo2Models.projectAndroidTestData(
             date = date,
             timeDirName = timeDirName,
             recordingDevice = recordingDevice,
@@ -1038,8 +1038,7 @@ internal object PolarRuntimePlannerAdapter {
             averageHeartRateBpm = averageHeartRateBpm,
             heartRateVariabilityMs = heartRateVariabilityMs,
             spo2HrvDeviationFromBaseline = spo2HrvDeviationFromBaseline,
-            altitudeMeters = altitudeMeters,
-            triggerType = null
+            altitudeMeters = altitudeMeters
         )
         return PlannedSpo2TestProjection(
             recordingDevice = projection.recordingDevice,

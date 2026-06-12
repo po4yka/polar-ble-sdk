@@ -318,6 +318,37 @@ class PolarTestUtilsTests: XCTestCase {
         #endif
     }
 
+    func testSpo2ProjectionUsesSharedIosPublicShapePolicyWhenLinked() throws {
+        #if canImport(PolarBleSdkShared)
+        let fields = PolarIosSharedBridge.shared.spo2ProjectionFields(
+            date: "2026-04-14",
+            timeDirName: "063751",
+            recordingDevice: "0004BF3D",
+            timeZoneOffsetMinutes: 180,
+            testStatus: 0,
+            bloodOxygenPercent: "96",
+            spo2Class: "3",
+            spo2ValueDeviationFromBaseline: "2",
+            spo2QualityAveragePercent: "99.0",
+            averageHeartRateBpm: "66",
+            heartRateVariabilityMs: "79.97114",
+            spo2HrvDeviationFromBaseline: "3",
+            altitudeMeters: "18.13582",
+            triggerType: "1"
+        ).split(separator: "\u{1F}", omittingEmptySubsequences: false).map(String.init)
+
+        XCTAssertEqual(fields.count, 11)
+        XCTAssertEqual(fields[0], "0004BF3D")
+        XCTAssertEqual(fields[1], "passed")
+        XCTAssertEqual(fields[3], "normal")
+        XCTAssertEqual(fields[4], "usual")
+        XCTAssertEqual(fields[8], "aboveUsual")
+        XCTAssertEqual(fields[10], "automatic")
+        #else
+        throw XCTSkip("PolarBleSdkShared is not linked for this target")
+        #endif
+    }
+
     // MARK: - Round-trip: each Spo2TestStatus from proto
 
     func testAllSpo2TestStatuses_RoundTripFromProto() async throws {
