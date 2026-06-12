@@ -27,6 +27,7 @@ import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.pmd.PolarPmdControlPoint
 import com.polar.shared.pmd.PolarPmdMeasurementTypeName
 import com.polar.shared.pmd.PolarPmdRecordingType
+import com.polar.shared.pmd.PolarPmdSecret
 import com.polar.shared.pmd.sensors.PolarGnssCoordinateSample
 import com.polar.shared.pmd.sensors.PolarGnssLocationSample
 import com.polar.shared.pmd.sensors.PolarGnssNmeaSample
@@ -374,6 +375,18 @@ internal object PolarRuntimePlannerAdapter {
             more = parsed.more,
             parameters = parsed.parameters
         )
+    }
+
+    fun pmdSecretSerializeBytes(strategyName: String, key: ByteArray): ByteArray {
+        return PolarPmdSecret.from(strategyName, key).serializeBytes()
+    }
+
+    fun pmdSecretDecryptBytes(strategyName: String, key: ByteArray, cipherBytes: ByteArray): ByteArray? {
+        return PolarPmdSecret.from(strategyName, key).decryptBytes(cipherBytes)
+    }
+
+    fun pmdSecretStrategyNameFromByte(strategyByte: Int): String? {
+        return PolarPmdSecret.strategyNameFromByte(strategyByte)
     }
 
     fun locationDataProjection(samples: List<PlannedGnssLocationSample>): List<PlannedLocationDataProjectionSample> {

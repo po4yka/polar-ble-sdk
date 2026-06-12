@@ -1,7 +1,7 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.pmd
 
 import com.polar.androidcommunications.api.ble.exceptions.SecurityError
-import com.polar.shared.pmd.PolarPmdSecret
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
@@ -18,11 +18,11 @@ class PmdSecret(val strategy: SecurityStrategy, val key: ByteArray) {
     }
 
     fun serializeToPmdSettings(): ByteArray {
-        return PolarPmdSecret.from(strategy.name, key).serializeBytes()
+        return PolarRuntimePlannerAdapter.pmdSecretSerializeBytes(strategy.name, key)
     }
 
     fun decryptArray(cipherArray: ByteArray): ByteArray {
-        PolarPmdSecret.from(strategy.name, key).decryptBytes(cipherArray)?.let { return it }
+        PolarRuntimePlannerAdapter.pmdSecretDecryptBytes(strategy.name, key, cipherArray)?.let { return it }
         when (this.strategy) {
             SecurityStrategy.AES128 -> {
                 val key = SecretKeySpec(this.key, "AES")
@@ -37,10 +37,10 @@ class PmdSecret(val strategy: SecurityStrategy, val key: ByteArray) {
                 return cipher.doFinal(cipherArray)
             }
             SecurityStrategy.XOR -> {
-                return PolarPmdSecret.from(strategy.name, key).decryptBytes(cipherArray) ?: error("Shared XOR decrypt returned null")
+                return PolarRuntimePlannerAdapter.pmdSecretDecryptBytes(strategy.name, key, cipherArray) ?: error("Shared XOR decrypt returned null")
             }
             SecurityStrategy.NONE -> {
-                return PolarPmdSecret.from(strategy.name, key).decryptBytes(cipherArray) ?: error("Shared NONE decrypt returned null")
+                return PolarRuntimePlannerAdapter.pmdSecretDecryptBytes(strategy.name, key, cipherArray) ?: error("Shared NONE decrypt returned null")
             }
         }
     }
@@ -53,7 +53,7 @@ class PmdSecret(val strategy: SecurityStrategy, val key: ByteArray) {
 
         companion object {
             fun fromByte(strategyByte: UByte): SecurityStrategy {
-                return PolarPmdSecret.strategyNameFromByte(strategyByte.toInt())?.let { strategyName ->
+                return PolarRuntimePlannerAdapter.pmdSecretStrategyNameFromByte(strategyByte.toInt())?.let { strategyName ->
                     SecurityStrategy.valueOf(strategyName)
                 } ?: throw SecurityError.SecurityStrategyUnknown("Cannot decide security strategy from byte  ${"0x%x".format(strategyByte.toInt())}")
             }

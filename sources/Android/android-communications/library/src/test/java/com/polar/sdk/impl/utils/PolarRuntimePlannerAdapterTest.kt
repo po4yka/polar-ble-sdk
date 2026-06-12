@@ -227,6 +227,27 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `PMD secret helpers route through Android runtime adapter`() {
+        val aesKey = byteArrayOf(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0xFF.toByte())
+        val aesCipher = byteArrayOf(
+            0x00.toByte(), 0x01.toByte(), 0x02.toByte(), 0x03.toByte(), 0x04.toByte(), 0x05.toByte(), 0x06.toByte(), 0x07.toByte(), 0x08.toByte(), 0x09.toByte(), 0x0A.toByte(), 0x0B.toByte(), 0x0C.toByte(), 0x0D.toByte(), 0x0E.toByte(), 0xFF.toByte()
+        )
+
+        Assert.assertArrayEquals(byteArrayOf(0x06, 0x01, 0x00), PolarRuntimePlannerAdapter.pmdSecretSerializeBytes("NONE", byteArrayOf()))
+        Assert.assertArrayEquals(byteArrayOf(0x06, 0x01, 0x01, 0x55), PolarRuntimePlannerAdapter.pmdSecretSerializeBytes("XOR", byteArrayOf(0x55)))
+        Assert.assertArrayEquals(byteArrayOf(0x55, 0x54, 0x57, 0x56), PolarRuntimePlannerAdapter.pmdSecretDecryptBytes("XOR", byteArrayOf(0x55), byteArrayOf(0x00, 0x01, 0x02, 0x03)))
+        Assert.assertArrayEquals(aesCipher, PolarRuntimePlannerAdapter.pmdSecretDecryptBytes("NONE", byteArrayOf(), aesCipher))
+        Assert.assertArrayEquals(
+            byteArrayOf(0x60.toByte(), 0x08.toByte(), 0x6b.toByte(), 0xda.toByte(), 0x00.toByte(), 0xdb.toByte(), 0x42.toByte(), 0x62.toByte(), 0x34.toByte(), 0x60.toByte(), 0x27.toByte(), 0x43.toByte(), 0x71.toByte(), 0xa7.toByte(), 0x53.toByte(), 0x68.toByte()),
+            PolarRuntimePlannerAdapter.pmdSecretDecryptBytes("AES128", aesKey, aesCipher)
+        )
+        Assert.assertNull(PolarRuntimePlannerAdapter.pmdSecretDecryptBytes("AES128", aesKey, byteArrayOf(0x01)))
+        Assert.assertEquals("NONE", PolarRuntimePlannerAdapter.pmdSecretStrategyNameFromByte(0))
+        Assert.assertEquals("AES256", PolarRuntimePlannerAdapter.pmdSecretStrategyNameFromByte(3))
+        Assert.assertNull(PolarRuntimePlannerAdapter.pmdSecretStrategyNameFromByte(0xFF))
+    }
+
+    @Test
     fun `shared command query plans select Android protobuf query ids`() {
         val cases = listOf(
             "h10-start-recording" to ("REQUEST_START_RECORDING" to PftpRequest.PbPFtpQuery.REQUEST_START_RECORDING_VALUE),
