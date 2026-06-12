@@ -308,6 +308,48 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `PMD vector parsers route through Android runtime adapter`() {
+        val acc = PolarRuntimePlannerAdapter.pmdAccSamples(
+            frameType = 0,
+            compressed = false,
+            timeStamp = 1_000_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(1, 2, 3)
+        ).single()
+        val gyr = PolarRuntimePlannerAdapter.pmdGyrSamples(
+            frameType = 0,
+            compressed = true,
+            timeStamp = 1_000_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 0.5f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(1, 0, 2, 0, 3, 0)
+        ).single()
+        val mag = PolarRuntimePlannerAdapter.pmdMagSamples(
+            frameType = 1,
+            compressed = true,
+            timeStamp = 1_000_000_000uL,
+            previousTimeStamp = 0uL,
+            factor = 1.0f,
+            sampleRate = 1,
+            dataContent = byteArrayOf(0xE8.toByte(), 0x03, 0xD0.toByte(), 0x07, 0xB8.toByte(), 0x0B, 0x02, 0x00)
+        ).single()
+
+        Assert.assertEquals(1_000_000_000uL, acc.timeStamp)
+        Assert.assertEquals(listOf(1, 2, 3), listOf(acc.x, acc.y, acc.z))
+        Assert.assertEquals(0.5f, gyr.x, 0.0001f)
+        Assert.assertEquals(1.0f, gyr.y, 0.0001f)
+        Assert.assertEquals(1.5f, gyr.z, 0.0001f)
+        Assert.assertEquals(1.0f, mag.x, 0.0001f)
+        Assert.assertEquals(2.0f, mag.y, 0.0001f)
+        Assert.assertEquals(3.0f, mag.z, 0.0001f)
+        Assert.assertEquals("OK", mag.calibrationStatusName)
+        Assert.assertEquals("GOOD", PolarRuntimePlannerAdapter.pmdMagCalibrationStatusNameFromId(3))
+    }
+
+    @Test
     fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
         val vector = loadFeatureAvailabilityReadinessVector()
         val input = vector.getAsJsonObject("input")

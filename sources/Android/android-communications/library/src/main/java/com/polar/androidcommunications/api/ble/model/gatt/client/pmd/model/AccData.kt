@@ -4,7 +4,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClien
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePMDClient.Companion.parseDeltaFramesAll
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdDataFrame
 import com.polar.androidcommunications.common.ble.TypeUtils
-import com.polar.shared.pmd.sensors.PolarSensorDataParser
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 
 internal class AccData {
     data class AccSample(
@@ -32,7 +32,15 @@ internal class AccData {
 
         fun parseDataFromDataFrame(frame: PmdDataFrame): AccData {
             val accData = AccData()
-            PolarSensorDataParser.parseAcc(frame.toPolarSharedFrame()).forEach { sample ->
+            PolarRuntimePlannerAdapter.pmdAccSamples(
+                frameType = frame.frameType.id.toInt(),
+                compressed = frame.isCompressedFrame,
+                timeStamp = frame.timeStamp,
+                previousTimeStamp = frame.previousTimeStamp,
+                factor = frame.factor,
+                sampleRate = frame.sampleRate,
+                dataContent = frame.dataContent
+            ).forEach { sample ->
                 accData.accSamples.add(AccSample(timeStamp = sample.timeStamp, x = sample.x, y = sample.y, z = sample.z))
             }
             return accData

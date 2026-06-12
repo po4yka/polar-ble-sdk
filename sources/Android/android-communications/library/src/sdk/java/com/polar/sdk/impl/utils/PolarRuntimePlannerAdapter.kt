@@ -49,6 +49,7 @@ import com.polar.shared.pmd.sensors.PolarLocationNmeaProjectionSample
 import com.polar.shared.pmd.sensors.PolarLocationSatelliteDilutionProjectionSample
 import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjection
 import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjectionSample
+import com.polar.shared.pmd.sensors.PolarMagCalibrationStatus
 import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import com.polar.shared.sdk.PolarKvtxScriptCodec
@@ -144,6 +145,19 @@ internal object PolarRuntimePlannerAdapter {
     data class PlannedPmdScalarSample(
         val timeStamp: ULong,
         val value: Float
+    )
+    data class PlannedPmdIntVectorSample(
+        val timeStamp: ULong,
+        val x: Int,
+        val y: Int,
+        val z: Int
+    )
+    data class PlannedPmdFloatVectorSample(
+        val timeStamp: ULong,
+        val x: Float,
+        val y: Float,
+        val z: Float,
+        val calibrationStatusName: String? = null
     )
     data class BackupTraversalPlan(
         val path: String,
@@ -619,6 +633,25 @@ internal object PolarRuntimePlannerAdapter {
     fun pmdSkinTemperatureSamples(frameType: Int, compressed: Boolean, timeStamp: ULong, previousTimeStamp: ULong, factor: Float, sampleRate: Int, dataContent: ByteArray): List<PlannedPmdScalarSample> {
         return PolarSensorDataParser.parseSkinTemperature(pmdDataFrame(frameType, compressed, timeStamp, previousTimeStamp, factor, sampleRate, dataContent))
             .map { sample -> PlannedPmdScalarSample(sample.timeStamp, sample.skinTemperature) }
+    }
+
+    fun pmdAccSamples(frameType: Int, compressed: Boolean, timeStamp: ULong, previousTimeStamp: ULong, factor: Float, sampleRate: Int, dataContent: ByteArray): List<PlannedPmdIntVectorSample> {
+        return PolarSensorDataParser.parseAcc(pmdDataFrame(frameType, compressed, timeStamp, previousTimeStamp, factor, sampleRate, dataContent))
+            .map { sample -> PlannedPmdIntVectorSample(sample.timeStamp, sample.x, sample.y, sample.z) }
+    }
+
+    fun pmdGyrSamples(frameType: Int, compressed: Boolean, timeStamp: ULong, previousTimeStamp: ULong, factor: Float, sampleRate: Int, dataContent: ByteArray): List<PlannedPmdFloatVectorSample> {
+        return PolarSensorDataParser.parseGyr(pmdDataFrame(frameType, compressed, timeStamp, previousTimeStamp, factor, sampleRate, dataContent))
+            .map { sample -> PlannedPmdFloatVectorSample(sample.timeStamp, sample.x, sample.y, sample.z) }
+    }
+
+    fun pmdMagSamples(frameType: Int, compressed: Boolean, timeStamp: ULong, previousTimeStamp: ULong, factor: Float, sampleRate: Int, dataContent: ByteArray): List<PlannedPmdFloatVectorSample> {
+        return PolarSensorDataParser.parseMag(pmdDataFrame(frameType, compressed, timeStamp, previousTimeStamp, factor, sampleRate, dataContent))
+            .map { sample -> PlannedPmdFloatVectorSample(sample.timeStamp, sample.x, sample.y, sample.z, sample.calibrationStatus.name) }
+    }
+
+    fun pmdMagCalibrationStatusNameFromId(id: Int): String {
+        return PolarMagCalibrationStatus.fromId(id).name
     }
 
     fun locationDataProjection(samples: List<PlannedGnssLocationSample>): List<PlannedLocationDataProjectionSample> {
