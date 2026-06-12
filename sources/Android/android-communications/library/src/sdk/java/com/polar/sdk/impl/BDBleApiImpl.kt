@@ -76,8 +76,6 @@ import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdClientSkinTemperatureDataTo
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdClientTemperatureDataToPolarTemperature
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdSettingsToPolarSettings
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPmdTriggerToPolarTrigger
-import com.polar.shared.ble.PolarAdvertisementModels
-import com.polar.shared.sdk.PolarSdkFeatureAvailability
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarFeatureToPmdClientMeasurementType
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarOfflineTriggerToPmdOfflineTrigger
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarSecretToPmdSecret
@@ -3592,25 +3590,25 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     private fun List<UUID>.sharedServiceNames(): Set<String> {
-        val names = mutableSetOf<String>()
-        if (contains(HR_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_HR
-        if (contains(BleDisClient.DIS_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_DEVICE_INFO
-        if (contains(BleBattClient.BATTERY_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_BATTERY
-        if (contains(BlePMDClient.PMD_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_PMD
-        if (contains(BlePsFtpUtils.RFC77_PFTP_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_PSFTP
-        if (contains(HealthThermometer.HTS_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_HTS
-        if (contains(PFC_SERVICE)) names += PolarSdkFeatureAvailability.SERVICE_PFC
-        return names
+        return PolarRuntimePlannerAdapter.featureAvailabilityServiceNames(
+            hasHr = contains(HR_SERVICE),
+            hasDeviceInfo = contains(BleDisClient.DIS_SERVICE),
+            hasBattery = contains(BleBattClient.BATTERY_SERVICE),
+            hasPmd = contains(BlePMDClient.PMD_SERVICE),
+            hasPsftp = contains(BlePsFtpUtils.RFC77_PFTP_SERVICE),
+            hasHts = contains(HealthThermometer.HTS_SERVICE),
+            hasPfc = contains(PFC_SERVICE)
+        )
     }
 
     private fun BleDeviceSession.sharedFeatureCapabilityNames(): Set<String> {
-        val names = mutableSetOf<String>()
-        if (isRecordingSupported(polarDeviceType)) names += PolarSdkFeatureAvailability.CAPABILITY_RECORDING
-        if (BlePolarDeviceCapabilitiesUtility.isActivityDataSupported(polarDeviceType)) names += PolarSdkFeatureAvailability.CAPABILITY_ACTIVITY_DATA
-        if (BlePolarDeviceCapabilitiesUtility.isFirmwareUpdateSupported(polarDeviceType)) names += PolarSdkFeatureAvailability.CAPABILITY_FIRMWARE_UPDATE
-        if (getFileSystemType(polarDeviceType) == FileSystemType.H10_FILE_SYSTEM) names += PolarSdkFeatureAvailability.CAPABILITY_H10_FILE_SYSTEM
-        if (!BlePolarDeviceCapabilitiesUtility.isDeviceSensor(polarDeviceType)) names += PolarSdkFeatureAvailability.CAPABILITY_NOT_SENSOR
-        return names
+        return PolarRuntimePlannerAdapter.featureAvailabilityCapabilityNames(
+            recordingSupported = isRecordingSupported(polarDeviceType),
+            activityDataSupported = BlePolarDeviceCapabilitiesUtility.isActivityDataSupported(polarDeviceType),
+            firmwareUpdateSupported = BlePolarDeviceCapabilitiesUtility.isFirmwareUpdateSupported(polarDeviceType),
+            h10FileSystem = getFileSystemType(polarDeviceType) == FileSystemType.H10_FILE_SYSTEM,
+            notSensor = !BlePolarDeviceCapabilitiesUtility.isDeviceSensor(polarDeviceType)
+        )
     }
 
     private suspend fun isHealthThermometerFeatureAvailable(discoveredServices: List<UUID>, session: BleDeviceSession): Boolean {
@@ -3843,7 +3841,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         }
 
         internal fun activityCapabilityDeviceType(deviceName: String): String {
-            val sharedDeviceType = PolarAdvertisementModels.deviceModelNameFromLocalName(deviceName)
+            val sharedDeviceType = PolarRuntimePlannerAdapter.deviceModelNameFromLocalName(deviceName)
             if (sharedDeviceType.isNotEmpty()) return sharedDeviceType
             return deviceName.let {
                 if (it.startsWith("Polar ")) it.removePrefix("Polar ")

@@ -2,6 +2,7 @@ package com.polar.sdk.impl.utils
 
 import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdMeasurementType
 import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType
+import com.polar.shared.ble.PolarAdvertisementModels
 import com.polar.shared.runtime.PolarDiskTimeOperation
 import com.polar.shared.runtime.PolarFacadeCommandOperation
 import com.polar.shared.runtime.PolarFileFacadeOperation
@@ -186,6 +187,46 @@ internal object PolarRuntimePlannerAdapter {
             discoveredServices = discoveredServices,
             capabilities = capabilities
         )
+    }
+
+    fun featureAvailabilityServiceNames(
+        hasHr: Boolean = false,
+        hasDeviceInfo: Boolean = false,
+        hasBattery: Boolean = false,
+        hasPmd: Boolean = false,
+        hasPsftp: Boolean = false,
+        hasHts: Boolean = false,
+        hasPfc: Boolean = false
+    ): Set<String> {
+        val names = mutableSetOf<String>()
+        if (hasHr) names += PolarSdkFeatureAvailability.SERVICE_HR
+        if (hasDeviceInfo) names += PolarSdkFeatureAvailability.SERVICE_DEVICE_INFO
+        if (hasBattery) names += PolarSdkFeatureAvailability.SERVICE_BATTERY
+        if (hasPmd) names += PolarSdkFeatureAvailability.SERVICE_PMD
+        if (hasPsftp) names += PolarSdkFeatureAvailability.SERVICE_PSFTP
+        if (hasHts) names += PolarSdkFeatureAvailability.SERVICE_HTS
+        if (hasPfc) names += PolarSdkFeatureAvailability.SERVICE_PFC
+        return names
+    }
+
+    fun featureAvailabilityCapabilityNames(
+        recordingSupported: Boolean = false,
+        activityDataSupported: Boolean = false,
+        firmwareUpdateSupported: Boolean = false,
+        h10FileSystem: Boolean = false,
+        notSensor: Boolean = false
+    ): Set<String> {
+        val names = mutableSetOf<String>()
+        if (recordingSupported) names += PolarSdkFeatureAvailability.CAPABILITY_RECORDING
+        if (activityDataSupported) names += PolarSdkFeatureAvailability.CAPABILITY_ACTIVITY_DATA
+        if (firmwareUpdateSupported) names += PolarSdkFeatureAvailability.CAPABILITY_FIRMWARE_UPDATE
+        if (h10FileSystem) names += PolarSdkFeatureAvailability.CAPABILITY_H10_FILE_SYSTEM
+        if (notSensor) names += PolarSdkFeatureAvailability.CAPABILITY_NOT_SENSOR
+        return names
+    }
+
+    fun deviceModelNameFromLocalName(localName: String): String {
+        return PolarAdvertisementModels.deviceModelNameFromLocalName(localName)
     }
 
     fun planCommandQuery(id: String, query: String, parameters: List<String> = emptyList()): PolarRuntimePlan {

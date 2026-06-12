@@ -92,9 +92,28 @@ class PolarRuntimePlannerAdapterTest {
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
         val cases = input.getAsJsonArray("cases").map { it.asJsonObject }
+        val discoveredServices = PolarRuntimePlannerAdapter.featureAvailabilityServiceNames(
+            hasHr = true,
+            hasDeviceInfo = true,
+            hasBattery = true,
+            hasPmd = true,
+            hasPsftp = true,
+            hasHts = true,
+            hasPfc = true
+        )
+        val capabilities = PolarRuntimePlannerAdapter.featureAvailabilityCapabilityNames(
+            recordingSupported = true,
+            activityDataSupported = true,
+            firmwareUpdateSupported = true,
+            h10FileSystem = true,
+            notSensor = true
+        )
 
         Assert.assertEquals("feature-availability-readiness", vector.get("id").asString)
         Assert.assertEquals("featureAvailabilityReadiness", input.get("kind").asString)
+        Assert.assertEquals(listOf("ACTIVITY_DATA", "FIRMWARE_UPDATE", "H10_FILE_SYSTEM", "NOT_SENSOR", "RECORDING").sorted(), capabilities.sorted())
+        Assert.assertEquals(listOf("BATTERY", "DEVICE_INFO", "HR", "HTS", "PFC", "PMD", "PSFTP").sorted(), discoveredServices.sorted())
+        Assert.assertEquals("H10", PolarRuntimePlannerAdapter.deviceModelNameFromLocalName("Polar H10 12345678"))
         Assert.assertEquals(FEATURE_AVAILABILITY_CASE_IDS, cases.map { it.get("id").asString })
         cases.forEach { case ->
             Assert.assertEquals(
