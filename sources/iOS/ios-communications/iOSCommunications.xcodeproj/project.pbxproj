@@ -2799,7 +2799,7 @@
 					"-framework",
 					PolarBleSdkShared,
 				);
-				OTHER_SWIFT_FLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited) -D POLAR_KMP_SHARED_REQUIRED";
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.PolarBleSdk;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -2866,7 +2866,7 @@
 					"-framework",
 					PolarBleSdkShared,
 				);
-				OTHER_SWIFT_FLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited) -D POLAR_KMP_SHARED_REQUIRED";
 				PRODUCT_BUNDLE_IDENTIFIER = com.polar.PolarBleSdk;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;

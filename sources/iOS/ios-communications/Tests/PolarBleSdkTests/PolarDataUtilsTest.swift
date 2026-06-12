@@ -9,6 +9,11 @@ private let AVAILABLE_DATA_TYPES_READINESS_FAMILIES = ["offline-pmd-to-public-ma
 
 final class PolarDataUtilsTest: XCTestCase {
 
+    func testPolarBleSdkIosTargetRequiresLinkedSharedFramework() {
+        XCTAssertTrue(PolarSharedFrameworkLinkGuard.isSharedFrameworkRequired)
+        XCTAssertTrue(PolarSharedFrameworkLinkGuard.isSharedFrameworkLinked)
+    }
+
     // MARK: - mapToPmdClientMeasurementType
 
     func testMapToPmdClientMeasurementType_ecg() {

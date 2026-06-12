@@ -21,7 +21,8 @@ Pod::Spec.new do |s|
     s.pod_target_xcconfig = {
         'ENABLE_USER_SCRIPT_SANDBOXING' => 'NO',
         'FRAMEWORK_SEARCH_PATHS' => '$(inherited) $(PODS_TARGET_SRCROOT)/sources/iOS/ios-communications/Generated/PolarBleSdkShared/$(PLATFORM_NAME) $(PODS_CONFIGURATION_BUILD_DIR)/PolarBleSdkShared',
-        'OTHER_LDFLAGS' => '$(inherited) -framework PolarBleSdkShared'
+        'OTHER_LDFLAGS' => '$(inherited) -framework PolarBleSdkShared',
+        'OTHER_SWIFT_FLAGS' => '$(inherited) -D POLAR_KMP_SHARED_REQUIRED'
     }
     s.user_target_xcconfig = {
         'FRAMEWORK_SEARCH_PATHS' => '$(inherited) $(PODS_CONFIGURATION_BUILD_DIR)/PolarBleSdkShared',

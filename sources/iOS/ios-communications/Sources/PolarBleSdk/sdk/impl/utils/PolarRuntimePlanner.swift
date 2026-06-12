@@ -6,6 +6,30 @@ import Foundation
 import PolarBleSdkShared
 #endif
 
+#if POLAR_KMP_SHARED_REQUIRED
+#if !canImport(PolarBleSdkShared)
+#error("POLAR_KMP_SHARED_REQUIRED builds must link PolarBleSdkShared; SwiftPM/watchOS fallback builds must not define this condition.")
+#endif
+#endif
+
+enum PolarSharedFrameworkLinkGuard {
+    static var isSharedFrameworkRequired: Bool {
+        #if POLAR_KMP_SHARED_REQUIRED
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    static var isSharedFrameworkLinked: Bool {
+        #if canImport(PolarBleSdkShared)
+        return true
+        #else
+        return false
+        #endif
+    }
+}
+
 enum PolarRuntimePlanner {
     @discardableResult
     static func commandQuery(id: String, query: String, parameters: [String] = []) -> String {
