@@ -313,10 +313,13 @@ class ActivitySummaryCommonPolicyTest {
             "daily-summary-request-path",
             "daily-summary-scalar-projection",
             "daily-summary-duration-projection",
+            "unsupported-field-deferral",
+            "public-model-shape-gate",
+            "facade-request-error-boundary",
             "platform-activity-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val ACTIVITY_SUMMARY_READINESS_COMMON_DECISION = "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, and compile verification remain explicit before production model mapping moves."
+        const val ACTIVITY_SUMMARY_READINESS_COMMON_DECISION = "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves."
         val PPI_STATUS_POLICY_TERMS = listOf("SKIN_CONTACT_DETECTED", "NO_SKIN_CONTACT", "MOVING_DETECTED", "NO_MOVING_DETECTED", "INTERVAL_DENOTES_OFFLINE_PERIOD", "INTERVAL_IS_ONLINE")
     }
 }
