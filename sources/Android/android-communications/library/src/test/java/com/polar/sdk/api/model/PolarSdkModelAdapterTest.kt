@@ -48,6 +48,54 @@ class PolarSdkModelAdapterTest {
     }
 
     @Test
+    fun `device capability lookup and merge route through sdk model adapter`() {
+        val bundled = PolarSdkModelAdapter.PlannedDeviceCapabilitiesConfig(
+            version = "2.0",
+            devices = mapOf(
+                "h10" to PolarSdkModelAdapter.PlannedDeviceCapabilities(
+                    fileSystemType = "H10_FILE_SYSTEM",
+                    recordingSupported = true,
+                    firmwareUpdateSupported = false,
+                    isDeviceSensor = true,
+                    activityDataSupported = false
+                )
+            ),
+            defaults = PolarSdkModelAdapter.PlannedDeviceCapabilityDefaults(
+                fileSystemType = "POLAR_FILE_SYSTEM_V2",
+                recordingSupported = false,
+                firmwareUpdateSupported = true,
+                isDeviceSensor = false,
+                activityDataSupported = false
+            )
+        )
+        val user = bundled.copy(
+            version = "1.0",
+            devices = mapOf(
+                "h10" to PolarSdkModelAdapter.PlannedDeviceCapabilities(
+                    fileSystemType = null,
+                    recordingSupported = false,
+                    firmwareUpdateSupported = null,
+                    isDeviceSensor = null,
+                    activityDataSupported = true
+                )
+            )
+        )
+
+        val merged = PolarSdkModelAdapter.mergeDeviceCapabilityConfigs(user, bundled)
+        val h10 = PolarSdkModelAdapter.resolveDeviceCapabilities(merged, "H10")
+        val missing = PolarSdkModelAdapter.resolveDeviceCapabilities(merged, "missing")
+
+        assertEquals("2.0", merged.version)
+        assertEquals("H10_FILE_SYSTEM", h10.fileSystemType)
+        assertEquals(false, h10.recordingSupported)
+        assertEquals(false, h10.firmwareUpdateSupported)
+        assertEquals(true, h10.isDeviceSensor)
+        assertEquals(true, h10.activityDataSupported)
+        assertEquals("POLAR_FILE_SYSTEM_V2", missing.fileSystemType)
+        assertEquals(true, missing.firmwareUpdateSupported)
+    }
+
+    @Test
     fun `d2h notification type lookup routes through sdk model adapter`() {
         assertEquals("EXERCISE_STATUS", PolarSdkModelAdapter.d2hNotificationTypeName(19))
         assertNull(PolarSdkModelAdapter.d2hNotificationTypeName(99))

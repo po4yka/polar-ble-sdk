@@ -1,6 +1,10 @@
 package com.polar.sdk.api.model
 
 import com.polar.shared.ble.PolarAdvertisementModels
+import com.polar.shared.device.PolarDeviceCapabilities
+import com.polar.shared.device.PolarDeviceCapabilitiesConfig
+import com.polar.shared.device.PolarDeviceCapabilitiesLookup
+import com.polar.shared.device.PolarDeviceCapabilityDefaults
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.runtime.PolarD2hRuntimePlanning
 import com.polar.shared.sdk.PolarActivityClassName
@@ -100,6 +104,32 @@ internal object PolarSdkModelAdapter {
         val deviceType: String,
         val deviceId: String
     )
+    data class PlannedDeviceCapabilitiesConfig(
+        val version: String,
+        val devices: Map<String, PlannedDeviceCapabilities>,
+        val defaults: PlannedDeviceCapabilityDefaults
+    )
+    data class PlannedDeviceCapabilities(
+        val fileSystemType: String?,
+        val recordingSupported: Boolean?,
+        val firmwareUpdateSupported: Boolean?,
+        val isDeviceSensor: Boolean?,
+        val activityDataSupported: Boolean?
+    )
+    data class PlannedDeviceCapabilityDefaults(
+        val fileSystemType: String,
+        val recordingSupported: Boolean,
+        val firmwareUpdateSupported: Boolean,
+        val isDeviceSensor: Boolean,
+        val activityDataSupported: Boolean
+    )
+    data class PlannedResolvedDeviceCapabilities(
+        val fileSystemType: String,
+        val recordingSupported: Boolean,
+        val firmwareUpdateSupported: Boolean,
+        val isDeviceSensor: Boolean,
+        val activityDataSupported: Boolean
+    )
 
     fun diskSpace(fragmentSize: Long, totalFragments: Long, freeFragments: Long): PlannedDiskSpace {
         val shared = PolarSdkModelMappers.diskSpace(
@@ -143,6 +173,24 @@ internal object PolarSdkModelAdapter {
 
     fun polarManufacturerHrPayloads(content: ByteArray): List<ByteArray> {
         return PolarAdvertisementModels.polarManufacturerHrPayloads(content)
+    }
+
+    fun resolveDeviceCapabilities(config: PlannedDeviceCapabilitiesConfig, deviceType: String): PlannedResolvedDeviceCapabilities {
+        val shared = config.toShared().capability(deviceType)
+        return PlannedResolvedDeviceCapabilities(
+            fileSystemType = shared.fileSystemType.name,
+            recordingSupported = shared.recordingSupported,
+            firmwareUpdateSupported = shared.firmwareUpdateSupported,
+            isDeviceSensor = shared.isDeviceSensor,
+            activityDataSupported = shared.activityDataSupported
+        )
+    }
+
+    fun mergeDeviceCapabilityConfigs(user: PlannedDeviceCapabilitiesConfig, bundled: PlannedDeviceCapabilitiesConfig): PlannedDeviceCapabilitiesConfig {
+        return PolarDeviceCapabilitiesLookup.mergeUserConfig(
+            user = user.toShared(),
+            bundled = bundled.toShared()
+        ).toPlanned()
     }
 
     fun d2hNotificationTypeName(value: Int): String? {
@@ -477,6 +525,62 @@ internal object PolarSdkModelAdapter {
             minimumTrainingDurationSeconds = minimumTrainingDurationSeconds,
             telemetryEnabled = telemetryEnabled,
             autosFilesEnabled = autosFilesEnabled
+        )
+    }
+
+    private fun PlannedDeviceCapabilitiesConfig.toShared(): PolarDeviceCapabilitiesConfig {
+        return PolarDeviceCapabilitiesConfig(
+            version = version,
+            devices = devices.mapValues { (_, capabilities) -> capabilities.toShared() },
+            defaults = defaults.toShared()
+        )
+    }
+
+    private fun PlannedDeviceCapabilities.toShared(): PolarDeviceCapabilities {
+        return PolarDeviceCapabilities(
+            fileSystemType = fileSystemType,
+            recordingSupported = recordingSupported,
+            firmwareUpdateSupported = firmwareUpdateSupported,
+            isDeviceSensor = isDeviceSensor,
+            activityDataSupported = activityDataSupported
+        )
+    }
+
+    private fun PlannedDeviceCapabilityDefaults.toShared(): PolarDeviceCapabilityDefaults {
+        return PolarDeviceCapabilityDefaults(
+            fileSystemType = fileSystemType,
+            recordingSupported = recordingSupported,
+            firmwareUpdateSupported = firmwareUpdateSupported,
+            isDeviceSensor = isDeviceSensor,
+            activityDataSupported = activityDataSupported
+        )
+    }
+
+    private fun PolarDeviceCapabilitiesConfig.toPlanned(): PlannedDeviceCapabilitiesConfig {
+        return PlannedDeviceCapabilitiesConfig(
+            version = version,
+            devices = devices.mapValues { (_, capabilities) -> capabilities.toPlanned() },
+            defaults = defaults.toPlanned()
+        )
+    }
+
+    private fun PolarDeviceCapabilities.toPlanned(): PlannedDeviceCapabilities {
+        return PlannedDeviceCapabilities(
+            fileSystemType = fileSystemType,
+            recordingSupported = recordingSupported,
+            firmwareUpdateSupported = firmwareUpdateSupported,
+            isDeviceSensor = isDeviceSensor,
+            activityDataSupported = activityDataSupported
+        )
+    }
+
+    private fun PolarDeviceCapabilityDefaults.toPlanned(): PlannedDeviceCapabilityDefaults {
+        return PlannedDeviceCapabilityDefaults(
+            fileSystemType = fileSystemType,
+            recordingSupported = recordingSupported,
+            firmwareUpdateSupported = firmwareUpdateSupported,
+            isDeviceSensor = isDeviceSensor,
+            activityDataSupported = activityDataSupported
         )
     }
 }

@@ -6,11 +6,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.polar.androidcommunications.api.ble.BleLogger
-import com.polar.shared.device.PolarDeviceCapabilities
-import com.polar.shared.device.PolarDeviceCapabilitiesConfig
-import com.polar.shared.device.PolarDeviceCapabilitiesLookup
-import com.polar.shared.device.PolarDeviceCapabilityDefaults
-import com.polar.shared.device.PolarFileSystemType
+import com.polar.sdk.api.model.PolarSdkModelAdapter
 import java.io.File
 
 class BlePolarDeviceCapabilitiesUtility {
@@ -136,9 +132,9 @@ class BlePolarDeviceCapabilitiesUtility {
             user: DeviceCapabilitiesConfig,
             asset: DeviceCapabilitiesConfig
         ): DeviceCapabilitiesConfig {
-            return PolarDeviceCapabilitiesLookup.mergeUserConfig(
-                user = user.toShared(),
-                bundled = asset.toShared()
+            return PolarSdkModelAdapter.mergeDeviceCapabilityConfigs(
+                user = user.toPlanned(),
+                bundled = asset.toPlanned()
             ).toAndroid()
         }
 
@@ -163,7 +159,7 @@ class BlePolarDeviceCapabilitiesUtility {
         fun getFileSystemType(deviceType: String): FileSystemType {
             if (!ensureInitialized()) return FileSystemType.UNKNOWN_FILE_SYSTEM
 
-            val result = config.toShared().capability(deviceType).fileSystemType.toAndroid()
+            val result = PolarSdkModelAdapter.resolveDeviceCapabilities(config.toPlanned(), deviceType).fileSystemType.toAndroidFileSystemType()
 
             BleLogger.d(TAG, "getFileSystemType($deviceType) -> $result")
             return result
@@ -179,7 +175,7 @@ class BlePolarDeviceCapabilitiesUtility {
         fun isRecordingSupported(deviceType: String): Boolean {
             if (!ensureInitialized()) return false
 
-            val result = config.toShared().capability(deviceType).recordingSupported
+            val result = PolarSdkModelAdapter.resolveDeviceCapabilities(config.toPlanned(), deviceType).recordingSupported
             BleLogger.d(TAG, "isRecordingSupported($deviceType) -> $result")
             return result
         }
@@ -194,7 +190,7 @@ class BlePolarDeviceCapabilitiesUtility {
         fun isFirmwareUpdateSupported(deviceType: String): Boolean {
             if (!ensureInitialized()) return false
 
-            val result = config.toShared().capability(deviceType).firmwareUpdateSupported
+            val result = PolarSdkModelAdapter.resolveDeviceCapabilities(config.toPlanned(), deviceType).firmwareUpdateSupported
 
             BleLogger.d(TAG, "isFirmwareUpdateSupported($deviceType) -> $result")
             return result
@@ -210,7 +206,7 @@ class BlePolarDeviceCapabilitiesUtility {
         fun isDeviceSensor(deviceType: String): Boolean {
             if (!ensureInitialized()) return false
 
-            val result = config.toShared().capability(deviceType).isDeviceSensor
+            val result = PolarSdkModelAdapter.resolveDeviceCapabilities(config.toPlanned(), deviceType).isDeviceSensor
 
             BleLogger.d(TAG, "isDeviceSensor($deviceType) -> $result")
             return result
@@ -226,22 +222,22 @@ class BlePolarDeviceCapabilitiesUtility {
         fun isActivityDataSupported(deviceType: String): Boolean {
             if (!ensureInitialized()) return false
 
-            val result = config.toShared().capability(deviceType).activityDataSupported
+            val result = PolarSdkModelAdapter.resolveDeviceCapabilities(config.toPlanned(), deviceType).activityDataSupported
 
             BleLogger.d(TAG, "isActivityDataSupported($deviceType) -> $result")
             return result
         }
 
-        private fun DeviceCapabilitiesConfig.toShared(): PolarDeviceCapabilitiesConfig {
-            return PolarDeviceCapabilitiesConfig(
+        private fun DeviceCapabilitiesConfig.toPlanned(): PolarSdkModelAdapter.PlannedDeviceCapabilitiesConfig {
+            return PolarSdkModelAdapter.PlannedDeviceCapabilitiesConfig(
                 version = version,
-                devices = devices.mapValues { (_, capabilities) -> capabilities.toShared() },
-                defaults = defaults.toShared()
+                devices = devices.mapValues { (_, capabilities) -> capabilities.toPlanned() },
+                defaults = defaults.toPlanned()
             )
         }
 
-        private fun DeviceCapabilities.toShared(): PolarDeviceCapabilities {
-            return PolarDeviceCapabilities(
+        private fun DeviceCapabilities.toPlanned(): PolarSdkModelAdapter.PlannedDeviceCapabilities {
+            return PolarSdkModelAdapter.PlannedDeviceCapabilities(
                 fileSystemType = fileSystemType,
                 recordingSupported = recordingSupported,
                 firmwareUpdateSupported = firmwareUpdateSupported,
@@ -250,8 +246,8 @@ class BlePolarDeviceCapabilitiesUtility {
             )
         }
 
-        private fun DefaultsSection.toShared(): PolarDeviceCapabilityDefaults {
-            return PolarDeviceCapabilityDefaults(
+        private fun DefaultsSection.toPlanned(): PolarSdkModelAdapter.PlannedDeviceCapabilityDefaults {
+            return PolarSdkModelAdapter.PlannedDeviceCapabilityDefaults(
                 fileSystemType = fileSystemType,
                 recordingSupported = recordingSupported,
                 firmwareUpdateSupported = firmwareUpdateSupported,
@@ -260,7 +256,7 @@ class BlePolarDeviceCapabilitiesUtility {
             )
         }
 
-        private fun PolarDeviceCapabilitiesConfig.toAndroid(): DeviceCapabilitiesConfig {
+        private fun PolarSdkModelAdapter.PlannedDeviceCapabilitiesConfig.toAndroid(): DeviceCapabilitiesConfig {
             return DeviceCapabilitiesConfig(
                 version = version,
                 devices = devices.mapValues { (_, capabilities) -> capabilities.toAndroid() },
@@ -268,7 +264,7 @@ class BlePolarDeviceCapabilitiesUtility {
             )
         }
 
-        private fun PolarDeviceCapabilities.toAndroid(): DeviceCapabilities {
+        private fun PolarSdkModelAdapter.PlannedDeviceCapabilities.toAndroid(): DeviceCapabilities {
             return DeviceCapabilities(
                 fileSystemType = fileSystemType,
                 recordingSupported = recordingSupported,
@@ -278,7 +274,7 @@ class BlePolarDeviceCapabilitiesUtility {
             )
         }
 
-        private fun PolarDeviceCapabilityDefaults.toAndroid(): DefaultsSection {
+        private fun PolarSdkModelAdapter.PlannedDeviceCapabilityDefaults.toAndroid(): DefaultsSection {
             return DefaultsSection(
                 fileSystemType = fileSystemType,
                 recordingSupported = recordingSupported,
@@ -288,11 +284,11 @@ class BlePolarDeviceCapabilitiesUtility {
             )
         }
 
-        private fun PolarFileSystemType.toAndroid(): FileSystemType {
+        private fun String.toAndroidFileSystemType(): FileSystemType {
             return when (this) {
-                PolarFileSystemType.H10_FILE_SYSTEM -> FileSystemType.H10_FILE_SYSTEM
-                PolarFileSystemType.POLAR_FILE_SYSTEM_V2 -> FileSystemType.POLAR_FILE_SYSTEM_V2
-                PolarFileSystemType.UNKNOWN_FILE_SYSTEM -> FileSystemType.UNKNOWN_FILE_SYSTEM
+                "H10_FILE_SYSTEM" -> FileSystemType.H10_FILE_SYSTEM
+                "POLAR_FILE_SYSTEM_V2" -> FileSystemType.POLAR_FILE_SYSTEM_V2
+                else -> FileSystemType.UNKNOWN_FILE_SYSTEM
             }
         }
     }
