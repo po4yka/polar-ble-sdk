@@ -3577,9 +3577,9 @@ class GoldenVectorMigrationPolicyTest {
             "reference-directory-traversal",
             "payload-fetch-order",
             "malformed-component-isolation",
-            "byte-level-parser-dependency-gate",
+            "selected-protobuf-field-parser-ownership",
             "shared-gzip-payload-codec",
-            "protobuf-byte-parsing-deferral",
+            "generated-public-protobuf-construction-boundary",
             "platform-training-session-vector-reference-gate",
             "public-model-slot-planning",
             "public-generated-model-reconstruction-boundary",
@@ -3590,9 +3590,9 @@ class GoldenVectorMigrationPolicyTest {
             "omit-only-the-malformed-component-and-continue-reading-remaining-files",
             "ignore-unknown-advanced-sample-lists-and-preserve-known-samples",
             "compute-progress-from-reference-file-sizes-and-last-completed-file",
-            "trainingSessionByteLevelPayloadParserMigrationRequiresExplicitCommonProtoDependencies",
-            "add-common-protobuf-parser-dependency-before-byte-level-payload-migration",
-            "protobuf-parsing-deferred-until-common-protobuf-parser-exists",
+            "trainingSessionSelectedPayloadParserOwnershipKeepsGeneratedModelBoundaryExplicit",
+            "selected-common-protobuf-field-parser-active-before-generated-model-reconstruction",
+            "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred",
             "samples-advanced-gzip-protobuf",
             "PbExerciseSamples2",
             "gzip-protobuf",
@@ -4358,7 +4358,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = mapOf(
             "KmpFullCoverageTddBacklog.md" to listOf(
-                "add real common protobuf production parser dependencies",
+                "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
                 "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
                 "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
                 "shared-common-aes-production-decryption",
@@ -4375,9 +4375,9 @@ class GoldenVectorMigrationPolicyTest {
                 "semantic and codec-ownership/readiness policy executable"
             ),
             "KmpPreMigrationRemainingWork.md" to listOf(
-                "Add real common protobuf parser dependencies",
+                "Generated public protobuf object reconstruction remains platform-owned",
                 "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
-                "training-session payload parsing",
+                "training-session payloads",
                 "Training-session gzip payload decoding now uses shared KMP platform actuals",
                 "PMD AES ECB/no-padding decryption now lives in shared common production code",
                 "watch-face FlatBuffer input/output construction lives in shared common production code",
@@ -4385,16 +4385,16 @@ class GoldenVectorMigrationPolicyTest {
             ),
             "payload-read-policy.json" to listOf(
                 "byteLevelParserGate",
-                "add-common-protobuf-parser-dependency-before-byte-level-payload-migration",
-                "protobuf-parsing-deferred-until-common-protobuf-parser-exists",
+                "selected-common-protobuf-field-parser-active-before-generated-model-reconstruction",
+                "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred",
                 "readPlan",
                 "publicModelReadPlanPolicy",
                 "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects"
             ),
             "payload-parser-policy.json" to listOf(
-                "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies",
-                "gzip decompression and public-model slot planning are now shared KMP production code",
-                "while gzip payload decoding and public-model slot planning are already shared production code",
+                "Selected training payload protobuf field parsing now executes in shared KMP",
+                "generated public protobuf object construction remains platform-owned",
+                "shared selected-field parser policy",
                 "publicModelSlot",
                 "training-session-summary-protobuf",
                 "exercise-summary-protobuf",
@@ -4408,16 +4408,16 @@ class GoldenVectorMigrationPolicyTest {
                 "gzip-protobuf"
             ),
             "training-session-readiness.json" to listOf(
-                "byte-level-parser-dependency-gate",
+                "selected-protobuf-field-parser-ownership",
                 "shared-gzip-payload-codec",
                 "public-model-read-plan",
-                "protobuf-byte-parsing-deferral",
+                "generated-public-protobuf-construction-boundary",
                 "public-model-slot-planning",
                 "public-generated-model-reconstruction-boundary",
-                "gzip payload decoding and deterministic public-model slot planning now use shared KMP production code",
+                "shared selected protobuf field parsing",
                 "shared public-model read planning",
-                "real byte-level protobuf parsing remains deferred until common production parser dependencies exist and are compile-verified",
-                "public generated protobuf model reconstruction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered"
+                "generated public protobuf construction boundaries",
+                "generated public protobuf model reconstruction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered"
             ),
             "secret-readiness.json" to listOf(
                 "AES block-alignment gating",

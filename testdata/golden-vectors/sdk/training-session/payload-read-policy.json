@@ -297,9 +297,9 @@
       "malformedPayloadPolicy": "omit-only-the-malformed-component-and-continue-reading-remaining-files",
       "unknownSampleListPolicy": "ignore-unknown-advanced-sample-lists-and-preserve-known-samples",
       "publicModelReadPlanPolicy": "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects",
-      "byteLevelParserGate": "add-common-protobuf-parser-dependency-before-byte-level-payload-migration",
-      "byteLevelPayloadStatus": "protobuf-parsing-deferred-until-common-protobuf-parser-exists"
+      "byteLevelParserGate": "selected-common-protobuf-field-parser-active-before-generated-model-reconstruction",
+      "byteLevelPayloadStatus": "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred"
     }
   },
-  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, and unknown advanced sample-list handling. payload-parser-policy.json now pins the parser-family ownership cases; gzip payload decompression is owned by shared platform actuals, while real protobuf byte parsing remains an explicit production gate because the current shared module has no common protobuf parser dependency."
+  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, and unknown advanced sample-list handling. payload-parser-policy.json now pins parser-family ownership; gzip payload decompression, selected protobuf field parsing, malformed payload isolation, and deterministic public-model read planning are owned by shared KMP, while generated public protobuf object reconstruction remains platform-owned until a broader shared DTO strategy is added."
 }

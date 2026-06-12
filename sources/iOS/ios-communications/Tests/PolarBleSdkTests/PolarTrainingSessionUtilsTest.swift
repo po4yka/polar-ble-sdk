@@ -432,10 +432,10 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             "unknown-advanced-sample-list-ignoring",
             "known-sample-preservation",
             "payload-parser-family-ownership",
-            "byte-level-parser-dependency-gate",
+            "selected-protobuf-field-parser-ownership",
             "shared-gzip-payload-codec",
             "public-model-read-plan",
-            "protobuf-byte-parsing-deferral",
+            "generated-public-protobuf-construction-boundary",
             "platform-training-session-vector-reference-gate",
             "public-model-slot-planning",
             "public-generated-model-reconstruction-boundary",
@@ -443,7 +443,7 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared public-model read planning, shared public-model slot planning, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared selected protobuf field parsing, shared public-model read planning, shared public-model slot planning, generated public protobuf construction boundaries, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.")
     }
 
     func test_readTrainingSession_shouldReturnTrainingSessionDataWithExercises() async throws {

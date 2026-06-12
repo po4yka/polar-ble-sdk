@@ -2,8 +2,8 @@
   "id": "payload-parser-policy",
   "area": "sdk.training-session",
   "case": "payload_parser_policy",
-  "source": "Android and iOS PolarTrainingSessionUtils byte-level protobuf characterization distilled into shared parser migration policy after gzip payload decompression moved to shared KMP",
-  "description": "Pins the training-session protobuf and gzip-protobuf payload families whose protobuf parsing must become executable in common code before byte-level training payload parsers fully move to KMP.",
+  "source": "Android and iOS PolarTrainingSessionUtils byte-level protobuf characterization distilled into shared parser migration policy after gzip payload decompression and selected field parsing moved to shared KMP",
+  "description": "Pins the training-session protobuf and gzip-protobuf payload families whose selected field parsing is executable in common code while generated public protobuf model reconstruction remains platform-owned.",
   "input": {
     "kind": "payloadParserPolicy",
     "cases": [
@@ -119,7 +119,7 @@
   },
   "expected": {
     "commonParserPrototype": {
-      "status": "executable shared parser-policy coverage; gzip decoding is shared and protobuf parsing remains gated on common protobuf dependencies",
+      "status": "executable shared parser-policy coverage; gzip decoding and selected protobuf field parsing are shared while generated public model reconstruction remains platform-owned",
       "cases": [
         {
           "id": "training-session-summary-protobuf",
@@ -222,7 +222,7 @@
         }
       ]
     },
-    "commonDecision": "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies that can execute these parser cases against real bytes; gzip decompression and public-model slot planning are now shared KMP production code, and until protobuf parsing moves this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+    "commonDecision": "Selected training payload protobuf field parsing now executes in shared KMP for these parser cases; generated public protobuf object construction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered. Gzip decompression and public-model slot planning are shared KMP production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
   },
   "consumerTests": {
     "android": [
@@ -240,6 +240,6 @@
     "ios": true,
     "common": true
   },
-  "commonDecision": "This vector converts the existing platform byte-level protobuf coverage into an executable shared parser-policy gate, while gzip payload decoding and public-model slot planning are already shared production code.",
-  "notes": "The Android and iOS tests currently construct real protobuf payloads for these parser families. Shared KMP production parser migration still requires real common protobuf decoding and compile verification, while deterministic public-model slot selection is shared and platform adapters still build the generated public models."
+  "commonDecision": "This vector converts the existing platform byte-level protobuf coverage into an executable shared selected-field parser policy, while gzip payload decoding and public-model slot planning are already shared production code.",
+  "notes": "The Android and iOS tests construct real protobuf payloads for these parser families. Shared KMP production now parses selected summary and sample fields with the portable training protobuf reader, while platform adapters still build the generated public protobuf models until a broader shared DTO/reconstruction strategy is added."
 }

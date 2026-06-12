@@ -291,7 +291,7 @@ SHARED_COMMON_PRODUCTION_CODEC_DEPENDENCY_TERMS = [
 ].freeze
 BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   "KmpFullCoverageTddBacklog.md" => [
-    "add real common protobuf production parser dependencies",
+    "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
     "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
     "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
     "shared-common-aes-production-decryption",
@@ -308,9 +308,9 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "semantic and codec-ownership/readiness policy executable"
   ],
   "KmpPreMigrationRemainingWork.md" => [
-    "Add real common protobuf parser dependencies",
+    "Generated public protobuf object reconstruction remains platform-owned",
     "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
-    "training-session payload parsing",
+    "training-session payloads",
     "Training-session gzip payload decoding now uses shared KMP platform actuals",
     "PMD AES ECB/no-padding decryption now lives in shared common production code",
     "watch-face FlatBuffer input/output construction lives in shared common production code",
@@ -318,16 +318,16 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   ],
   "payload-read-policy.json" => [
     "byteLevelParserGate",
-    "add-common-protobuf-parser-dependency-before-byte-level-payload-migration",
-    "protobuf-parsing-deferred-until-common-protobuf-parser-exists",
+    "selected-common-protobuf-field-parser-active-before-generated-model-reconstruction",
+    "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred",
     "readPlan",
     "publicModelReadPlanPolicy",
     "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects"
   ],
   "payload-parser-policy.json" => [
-    "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies",
-    "gzip decompression and public-model slot planning are now shared KMP production code",
-    "while gzip payload decoding and public-model slot planning are already shared production code",
+    "Selected training payload protobuf field parsing now executes in shared KMP",
+    "generated public protobuf object construction remains platform-owned",
+    "shared selected-field parser policy",
     "publicModelSlot",
     "training-session-summary-protobuf",
     "exercise-summary-protobuf",
@@ -341,16 +341,16 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "gzip-protobuf"
   ],
   "training-session-readiness.json" => [
-    "byte-level-parser-dependency-gate",
+    "selected-protobuf-field-parser-ownership",
     "shared-gzip-payload-codec",
     "public-model-read-plan",
-    "protobuf-byte-parsing-deferral",
+    "generated-public-protobuf-construction-boundary",
     "public-model-slot-planning",
     "public-generated-model-reconstruction-boundary",
-    "gzip payload decoding and deterministic public-model slot planning now use shared KMP production code",
+    "shared selected protobuf field parsing",
     "shared public-model read planning",
-    "real byte-level protobuf parsing remains deferred until common production parser dependencies exist and are compile-verified",
-    "public generated protobuf model reconstruction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered"
+    "generated public protobuf construction boundaries",
+    "generated public protobuf model reconstruction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered"
   ],
   "secret-readiness.json" => [
     "AES block-alignment gating",
