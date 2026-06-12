@@ -1,6 +1,6 @@
-# KMP Pre-Migration Coverage Inventory
+# KMP Coverage Inventory
 
-This inventory turns the KMP migration goal into concrete coverage obligations. Each row names the current Android and iOS test evidence that should be preserved or extended before the corresponding behavior is moved into shared KMP code.
+This inventory turns the KMP migration goal into concrete coverage obligations. Each row names the current Android, iOS, and shared test evidence that should be preserved when a behavior is delegated to shared KMP code or intentionally retained as platform-owned.
 
 ## Coverage Status Legend
 

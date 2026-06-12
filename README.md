@@ -412,9 +412,9 @@ class MyController: UIViewController,
 - [Polar BLE SDK 5.0.0 Migration Guide](./documentation/MigrationGuide5.0.0.md) – Breaking changes from 4.x to 5.x
 - [Android SDK 7.0.0 Migration Guide](./documentation/MigrationGuide7.0.0-Android.md) – RxJava to Kotlin Coroutines
 - [iOS SDK 8.0.0 Migration Guide](./documentation/MigrationGuide8.0.0-iOS.md) – RxSwift to Swift Concurrency
-- [Kotlin Multiplatform Migration Plan](./documentation/KmpMigrationPlan.md) – Proposed shared-core architecture and phased migration path
+- [Kotlin Multiplatform Migration Plan](./documentation/KmpMigrationPlan.md) – Shared-core architecture, migration boundaries, and phased rollout path
 - [KMP Migration TDD Strategy](./documentation/KmpTddStrategy.md) – Characterization and golden-vector testing strategy before migration
-- [KMP Pre-Migration Coverage Inventory](./documentation/KmpCoverageInventory.md) – Current Android/iOS coverage map and pre-migration coverage obligations
+- [KMP Coverage Inventory](./documentation/KmpCoverageInventory.md) – Current Android/iOS/shared coverage map and guarded platform-owned boundaries
 - [KMP Migration Checklist](./documentation/KmpMigrationChecklist.md) – Per-slice gates for test-first migration work
 - [KMP Shared Artifact Consumption](./documentation/KmpSharedArtifactConsumption.md) – Android AAR, CocoaPods, SwiftPM/watchOS, and rollback packaging contract
 - [CI/CD](./documentation/CiCd.md) – GitHub Actions validation, artifact-only release builds, and failure triage

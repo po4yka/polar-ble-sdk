@@ -11,7 +11,7 @@ Batch several file, test, vector, and documentation edits before invoking Gradle
 Run Android commands from `sources/Android/android-communications`.
 
 ```bash
-ANDROID_HOME=/Users/po4yka/Library/Android/sdk ./gradlew :library:testSdkDebugUnitTest --tests 'com.polar.sdk.api.model.utils.GoldenVectorMigrationPolicyTest' --no-daemon
+./gradlew :library:testSdkDebugUnitTest --tests 'com.polar.sdk.api.model.utils.GoldenVectorMigrationPolicyTest' --no-daemon
 ```
 
 Use the same task with additional `--tests` filters for touched Android characterization tests. For parser or model slices, include the direct vector consumer test and `GoldenVectorMigrationPolicyTest`. For runtime/facade slices, include the fake-transport or facade test named in the vector `consumerTests`.
@@ -19,7 +19,7 @@ Use the same task with additional `--tests` filters for touched Android characte
 Before treating a broad Android coverage-preparation batch as merge-ready, run the full SDK debug unit-test gate:
 
 ```bash
-ANDROID_HOME=/Users/po4yka/Library/Android/sdk ./gradlew :library:testSdkDebugUnitTest --no-daemon
+./gradlew :library:testSdkDebugUnitTest --no-daemon
 ```
 
 ## iOS
@@ -44,7 +44,7 @@ When iOS production code consumes shared KMP, the Xcode and CocoaPods paths buil
 
 ```bash
 cd sources/Android/android-communications
-ANDROID_HOME=/Users/po4yka/Library/Android/sdk ./gradlew :shared:linkDebugFrameworkIosX64 :shared:compileKotlinIosX64 --no-daemon
+./gradlew :shared:linkDebugFrameworkIosX64 :shared:compileKotlinIosX64 --no-daemon
 ```
 
 After the probe passes, run the current simulator XCTest gate:
@@ -62,7 +62,7 @@ Use XCTest failures from that command as migration evidence: repository-root loo
 A minimal shared KMP module exists at `sources/Android/android-communications/shared`. It has JVM, Android, and Apple targets, while `commonTest` execution currently runs through the JVM target. Run the common golden-vector helper smoke test from `sources/Android/android-communications`:
 
 ```bash
-ANDROID_HOME=/Users/po4yka/Library/Android/sdk ./gradlew :shared:jvmTest --no-daemon
+./gradlew :shared:jvmTest --no-daemon
 ```
 
 The first deferred Gradle batch after a broad non-Gradle coverage sweep should include `:shared:jvmTest` because it executes `GoldenVectorTestDataCommonTest.kt`, `TimeDateCommonPolicyTest.kt`, the common parser/model policies, PSFTP byte-codec policy, fake-transport contract policy, REST/file/backup/offline-trigger/firmware/PSFTP runtime policies, D2H stream policy, generic stream duplicate-completion policy, `RemainingRuntimeWorkflowPlanningCommonTest.kt`, and codec-ownership policies in one shared gate. Common-style runtime prototypes that still live under the Android library test source set remain Android-hosted until the shared module owns the corresponding runtime abstractions and fake transports.
@@ -70,19 +70,19 @@ The first deferred Gradle batch after a broad non-Gradle coverage sweep should i
 When shared target wiring changes, also run the narrow target compile gate:
 
 ```bash
-ANDROID_HOME=/Users/po4yka/Library/Android/sdk ./gradlew :shared:compileAndroidMain :shared:compileAndroidHostTest :shared:compileKotlinIosX64 :shared:compileKotlinMetadata :shared:jvmTest --no-daemon
+./gradlew :shared:compileAndroidMain :shared:compileAndroidHostTest :shared:compileKotlinIosX64 :shared:compileKotlinMetadata :shared:jvmTest --no-daemon
 ```
 
 When shared artifact consumption documentation or artifact shape changes, run the artifact smoke gate:
 
 ```bash
-ANDROID_HOME=/Users/po4yka/Library/Android/sdk ./gradlew :shared:bundleAndroidMainAar :shared:linkDebugFrameworkIosX64 --no-daemon
+./gradlew :shared:bundleAndroidMainAar :shared:linkDebugFrameworkIosX64 --no-daemon
 ```
 
 When Android release packaging or example local-AAR consumption changes, run the example AAR gate from the repository root:
 
 ```bash
-ANDROID_HOME=/Users/po4yka/Library/Android/sdk ANDROID_SDK_ROOT=/Users/po4yka/Library/Android/sdk scripts/verify_android_example_aar_consumption.sh
+scripts/verify_android_example_aar_consumption.sh
 ```
 
 When iOS release packaging changes, validate the SwiftPM manifest surface and the CocoaPods shared-framework path from the repository root:
