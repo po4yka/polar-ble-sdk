@@ -4,7 +4,7 @@ This plan defines the fake-transport coverage required before moving connection-
 
 ## Scope Boundary
 
-Android Bluedroid and iOS CoreBluetooth scanning, bonding, permission, adapter, background, and OS callback behavior remain platform-specific. KMP common code may own only deterministic orchestration that can be expressed through a fake transport: command sequencing, read/write request routing, notification filtering, stream lifetime, cancellation, timeout, retry policy, and disconnect propagation.
+Android Bluedroid and iOS CoreBluetooth scanning, bonding, permission, adapter, background, and OS callback behavior remain platform-specific. `session-state-machine-ownership.json` plus `BleSessionPlatformOwnershipCommonPolicyTest.kt` explicitly keep current BLE/session state machines platform-owned because audited transitions depend on Android BluetoothGatt, Bluedroid callbacks, operation queues, advertisement timestamps, iOS CoreBluetooth manager state, scanner queues, observer lifetime, permissions, lifecycle, and public error mapping. KMP common code may own only deterministic orchestration that can be expressed through a fake transport: command sequencing, read/write request routing, notification filtering, stream lifetime, cancellation, timeout, retry policy, and disconnect propagation.
 
 ## Fake Transport Contract
 

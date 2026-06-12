@@ -11,6 +11,7 @@ import android.os.Looper
 import com.polar.androidcommunications.api.ble.model.BleDeviceSession.DeviceSessionState
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattBase
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattFactory
+import com.polar.testutils.GoldenVectorTestData
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -531,5 +532,40 @@ class BDDeviceSessionImplTest {
 
         // Act & Assert
         assertFalse(sut.isAuthenticationNeeded)
+    }
+
+    @Test
+    fun sessionStateMachineOwnershipVectorKeepsAndroidBluetoothGattHostOwned() {
+        val vector = GoldenVectorTestData.loadObject("sdk/ble-session/session-state-machine-ownership.json")
+        val expected = vector.getAsJsonObject("expected")
+        val consumerTests = vector.getAsJsonObject("consumerTests")
+
+        assertEquals("session-state-machine-ownership", vector.get("id").asString)
+        assertEquals("no_shared_session_state_machine", expected.get("migrationDecision").asString)
+        assertEquals(
+            listOf("com.polar.androidcommunications.enpoints.ble.bluedroid.host.BDDeviceSessionImplTest"),
+            consumerTests.getAsJsonArray("android").map { it.asString }
+        )
+
+        val sut = createSut()
+        val gatt = mockk<BluetoothGatt>(relaxed = true)
+        sut.gatt = gatt
+        sut.resetGatt()
+        verify(exactly = 1) { gatt.close() }
+        assertEquals(null, sut.gatt)
+
+        val serviceUuid = UUID.randomUUID()
+        val client = mockk<BleGattBase>(relaxed = true)
+        every { client.serviceBelongsToClient(serviceUuid) } returns true
+        every { client.isEncryptionRequired } returns true
+        every { factory.getRemoteServices(any()) } returns setOf(client)
+        val authSut = createSut()
+        val authGatt = mockk<BluetoothGatt>(relaxed = true)
+        val service = mockk<BluetoothGattService>()
+        every { service.uuid } returns serviceUuid
+        every { authGatt.services } returns listOf(service)
+        authSut.gatt = authGatt
+
+        assertTrue(authSut.isAuthenticationNeeded)
     }
 }

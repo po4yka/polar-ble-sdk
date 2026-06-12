@@ -16,6 +16,7 @@ testdata/golden-vectors/sdk/activity-samples/
 testdata/golden-vectors/sdk/atomic-set/
 testdata/golden-vectors/sdk/automatic-samples/
 testdata/golden-vectors/sdk/available-data-types/
+testdata/golden-vectors/sdk/ble-session/
 testdata/golden-vectors/sdk/backup-utils/
 testdata/golden-vectors/sdk/command-runtime/
 testdata/golden-vectors/sdk/d2h-notifications/
