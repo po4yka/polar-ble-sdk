@@ -24,6 +24,7 @@ import com.polar.shared.runtime.PolarFirmwareWorkflowScenario
 import com.polar.shared.runtime.PolarOfflineTriggerDesiredFeature
 import com.polar.shared.runtime.PolarOfflineTriggerDeviceTrigger
 import com.polar.shared.runtime.PolarOfflineTriggerTransport
+import com.polar.shared.runtime.PolarPsFtpFrame
 import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.device.PolarDeviceId
@@ -116,6 +117,13 @@ internal object PolarRuntimePlannerAdapter {
     data class PlannedPmdSettings(
         val settings: Map<String, Set<Int>>,
         val invalid: Boolean
+    )
+    data class PlannedPsFtpFrame(
+        val next: Int,
+        val status: Int,
+        val sequenceNumber: Int,
+        val payload: ByteArray?,
+        val androidErrorCode: Int?
     )
     data class BackupTraversalPlan(
         val path: String,
@@ -500,6 +508,22 @@ internal object PolarRuntimePlannerAdapter {
 
     fun streamConsumerCancellation(target: String) {
         PolarStreamRuntimePlanning.planConsumerCancellation(target)
+    }
+
+    fun psFtpEncodeCompleteMessageStream(type: String, header: ByteArray, idValue: Int, data: ByteArray): ByteArray {
+        return PolarWorkflowRuntimePlanning.encodeCompleteMessageStream(type, header, idValue, data)
+    }
+
+    fun psFtpSplitRfc76Frames(payload: ByteArray, mtuSize: Int): List<ByteArray> {
+        return PolarWorkflowRuntimePlanning.splitRfc76Frames(payload, mtuSize)
+    }
+
+    fun psFtpEncodeRfc76FrameChunk(chunk: ByteArray, hasMore: Boolean, next: Int, sequenceNumber: Int): ByteArray {
+        return PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(chunk, hasMore, next, sequenceNumber)
+    }
+
+    fun psFtpDecodeRfc76Frame(packet: ByteArray): PlannedPsFtpFrame {
+        return PolarWorkflowRuntimePlanning.decodeRfc76Frame(packet).toPlanned()
     }
 
     fun locationDataProjection(samples: List<PlannedGnssLocationSample>): List<PlannedLocationDataProjectionSample> {
@@ -1933,6 +1957,16 @@ internal object PolarRuntimePlannerAdapter {
             beidouMaxSnr = beidouMaxSnr,
             nbrOfSat = nbrOfSat,
             snrTop5Avg = snrTop5Avg
+        )
+    }
+
+    private fun PolarPsFtpFrame.toPlanned(): PlannedPsFtpFrame {
+        return PlannedPsFtpFrame(
+            next = next,
+            status = status,
+            sequenceNumber = sequenceNumber,
+            payload = payload,
+            androidErrorCode = androidErrorCode
         )
     }
 

@@ -189,6 +189,34 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `PSFTP byte codec helpers route through Android runtime adapter`() {
+        val completeRequest = PolarRuntimePlannerAdapter.psFtpEncodeCompleteMessageStream(
+            type = "request",
+            header = byteArrayOf(0x0A, 0x01, 0x02),
+            idValue = 0,
+            data = byteArrayOf(0x7F)
+        )
+        val completeQuery = PolarRuntimePlannerAdapter.psFtpEncodeCompleteMessageStream(
+            type = "query",
+            header = byteArrayOf(0x0B),
+            idValue = 0x1234,
+            data = ByteArray(0)
+        )
+        val frames = PolarRuntimePlannerAdapter.psFtpSplitRfc76Frames(byteArrayOf(0x10, 0x11, 0x12), mtuSize = 3)
+        val errorFrame = PolarRuntimePlannerAdapter.psFtpDecodeRfc76Frame(byteArrayOf(0x00, 0x05, 0x01))
+
+        Assert.assertEquals("03000a01027f", completeRequest.toHexString())
+        Assert.assertEquals("34 92 0b".replace(" ", ""), completeQuery.toHexString())
+        Assert.assertEquals(listOf("061011", "1312"), frames.map { it.toHexString() })
+        Assert.assertEquals("070102", PolarRuntimePlannerAdapter.psFtpEncodeRfc76FrameChunk(byteArrayOf(0x01, 0x02), hasMore = true, next = 1, sequenceNumber = 0).toHexString())
+        Assert.assertEquals(0, errorFrame.next)
+        Assert.assertEquals(0, errorFrame.status)
+        Assert.assertEquals(0, errorFrame.sequenceNumber)
+        Assert.assertEquals(5, errorFrame.androidErrorCode)
+        Assert.assertNull(errorFrame.payload)
+    }
+
+    @Test
     fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
         val vector = loadFeatureAvailabilityReadinessVector()
         val input = vector.getAsJsonObject("input")

@@ -1,7 +1,6 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client.psftp
 
-import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
-import com.polar.shared.runtime.PolarPsFtpFrame
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import org.apache.commons.io.IOUtils
 import protocol.PftpError.PbPFtpError
 import java.io.ByteArrayInputStream
@@ -242,7 +241,7 @@ object BlePsFtpUtils {
 
 private object SharedPsFtpByteCodec {
     fun encodeCompleteMessageStream(type: BlePsFtpUtils.MessageType, header: ByteArray, idValue: Int, data: ByteArray): ByteArray {
-        return PolarWorkflowRuntimePlanning.encodeCompleteMessageStream(
+        return PolarRuntimePlannerAdapter.psFtpEncodeCompleteMessageStream(
             type = when (type) {
                 BlePsFtpUtils.MessageType.REQUEST -> "request"
                 BlePsFtpUtils.MessageType.QUERY -> "query"
@@ -255,14 +254,14 @@ private object SharedPsFtpByteCodec {
     }
 
     fun splitRfc76Frames(payload: ByteArray, mtuSize: Int): List<ByteArray> {
-        return PolarWorkflowRuntimePlanning.splitRfc76Frames(payload, mtuSize)
+        return PolarRuntimePlannerAdapter.psFtpSplitRfc76Frames(payload, mtuSize)
     }
 
     fun encodeRfc76FrameChunk(chunk: ByteArray, hasMore: Boolean, next: Int, sequenceNumber: Int): ByteArray {
-        return PolarWorkflowRuntimePlanning.encodeRfc76FrameChunk(chunk, hasMore, next, sequenceNumber)
+        return PolarRuntimePlannerAdapter.psFtpEncodeRfc76FrameChunk(chunk, hasMore, next, sequenceNumber)
     }
 
-    fun decodeRfc76Frame(packet: ByteArray): PolarPsFtpFrame {
-        return PolarWorkflowRuntimePlanning.decodeRfc76Frame(packet)
+    fun decodeRfc76Frame(packet: ByteArray): PolarRuntimePlannerAdapter.PlannedPsFtpFrame {
+        return PolarRuntimePlannerAdapter.psFtpDecodeRfc76Frame(packet)
     }
 }
