@@ -319,7 +319,10 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   "payload-read-policy.json" => [
     "byteLevelParserGate",
     "add-common-protobuf-parser-dependency-before-byte-level-payload-migration",
-    "protobuf-parsing-deferred-until-common-protobuf-parser-exists"
+    "protobuf-parsing-deferred-until-common-protobuf-parser-exists",
+    "readPlan",
+    "publicModelReadPlanPolicy",
+    "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects"
   ],
   "payload-parser-policy.json" => [
     "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies",
@@ -340,10 +343,12 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   "training-session-readiness.json" => [
     "byte-level-parser-dependency-gate",
     "shared-gzip-payload-codec",
+    "public-model-read-plan",
     "protobuf-byte-parsing-deferral",
     "public-model-slot-planning",
     "public-generated-model-reconstruction-boundary",
     "gzip payload decoding and deterministic public-model slot planning now use shared KMP production code",
+    "shared public-model read planning",
     "real byte-level protobuf parsing remains deferred until common production parser dependencies exist and are compile-verified",
     "public generated protobuf model reconstruction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered"
   ],

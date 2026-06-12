@@ -469,6 +469,14 @@ enum PolarRuntimePlanner {
         #endif
     }
 
+    static func trainingSessionPayloadReadPlan(referenceText: String) -> String {
+        #if canImport(PolarBleSdkShared)
+        return PolarIosSharedBridge.shared.trainingSessionPayloadReadPlan(referenceText: referenceText)
+        #else
+        return ""
+        #endif
+    }
+
     static func trainingSessionPayloadParserCase(fileName: String) -> String? {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.trainingSessionPayloadParserCase(fileName: fileName)

@@ -167,9 +167,28 @@ object PolarTrainingSessionModels {
     }
 
     fun payloadFetchOrder(reference: PolarTrainingSessionReference): List<String> {
-        return listOf(reference.path) + reference.exercises.flatMap { exercise ->
+        return payloadReadPlan(reference).map { it.path }
+    }
+
+    fun payloadReadPlan(reference: PolarTrainingSessionReference): List<PolarTrainingPayloadReadPlanEntry> {
+        return listOf(
+            PolarTrainingPayloadReadPlanEntry(
+                path = reference.path,
+                fileName = reference.path.substringAfterLast("/"),
+                publicModelSlot = "sessionSummary",
+                exerciseIndex = null
+            )
+        ) + reference.exercises.flatMap { exercise ->
             val basePath = exercise.androidPath.substringBeforeLast("/")
-            exercise.exerciseDataTypes.mapNotNull { dataType -> exerciseDataTypeFileName(dataType)?.let { fileName -> "$basePath/$fileName" } }
+            exercise.exerciseDataTypes.mapNotNull { dataType ->
+                val fileName = exerciseDataTypeFileName(dataType) ?: return@mapNotNull null
+                PolarTrainingPayloadReadPlanEntry(
+                    path = "$basePath/$fileName",
+                    fileName = fileName,
+                    publicModelSlot = publicModelSlot(fileName) ?: return@mapNotNull null,
+                    exerciseIndex = exercise.index
+                )
+            }
         }
     }
 
@@ -465,6 +484,13 @@ data class PolarTrainingPayloadParserCase(
     val fileName: String,
     val parser: String,
     val encoding: String
+)
+
+data class PolarTrainingPayloadReadPlanEntry(
+    val path: String,
+    val fileName: String,
+    val publicModelSlot: String,
+    val exerciseIndex: Int?
 )
 
 data class PolarTrainingIntervalledSampleList(

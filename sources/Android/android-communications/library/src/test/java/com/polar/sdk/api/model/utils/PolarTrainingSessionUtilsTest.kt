@@ -127,6 +127,20 @@ class PolarTrainingSessionUtilsTest {
             ),
             PolarTrainingSessionUtils.trainingSessionPayloadFetchOrder(reference)
         )
+        val readPlan = PolarTrainingSessionUtils.trainingSessionPayloadReadPlan(reference)
+        assertEquals(
+            listOf(
+                "/U/0/20260102/E/123456/TSESS.BPB",
+                "/U/0/20260102/E/123456/00/BASE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.BPB",
+                "/U/0/20260102/E/123456/00/ROUTE.GZB",
+                "/U/0/20260102/E/123456/00/SAMPLES2.GZB"
+            ),
+            readPlan.map { it.path }
+        )
+        assertEquals(listOf("TSESS.BPB", "BASE.BPB", "ROUTE.BPB", "ROUTE.GZB", "SAMPLES2.GZB"), readPlan.map { it.fileName })
+        assertEquals(listOf("sessionSummary", "exerciseSummary", "route", "route", "samplesAdvanced"), readPlan.map { it.publicModelSlot })
+        assertEquals(listOf(null, 0, 0, 0, 0), readPlan.map { it.exerciseIndex })
     }
 
     @Test
@@ -447,6 +461,7 @@ class PolarTrainingSessionUtilsTest {
             "payload-parser-family-ownership",
             "byte-level-parser-dependency-gate",
             "shared-gzip-payload-codec",
+            "public-model-read-plan",
             "protobuf-byte-parsing-deferral",
             "platform-training-session-vector-reference-gate",
             "public-model-slot-planning",
@@ -456,7 +471,7 @@ class PolarTrainingSessionUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared public-model slot planning, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.",
+            "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared public-model read planning, shared public-model slot planning, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.",
             expected.get("commonDecision").asString
         )
     }

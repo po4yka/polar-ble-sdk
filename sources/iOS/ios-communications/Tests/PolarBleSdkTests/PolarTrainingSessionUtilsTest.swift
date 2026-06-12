@@ -117,6 +117,17 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             ],
             PolarTrainingSessionUtils.trainingSessionPayloadFetchOrder(reference: reference)
         )
+        let readPlan = PolarTrainingSessionUtils.trainingSessionPayloadReadPlan(reference: reference)
+        XCTAssertEqual(readPlan.map(\.path), [
+            "/U/0/20260102/E/123456/TSESS.BPB",
+            "/U/0/20260102/E/123456/00/BASE.BPB",
+            "/U/0/20260102/E/123456/00/ROUTE.BPB",
+            "/U/0/20260102/E/123456/00/ROUTE.GZB",
+            "/U/0/20260102/E/123456/00/SAMPLES2.GZB"
+        ])
+        XCTAssertEqual(readPlan.map(\.fileName), ["TSESS.BPB", "BASE.BPB", "ROUTE.BPB", "ROUTE.GZB", "SAMPLES2.GZB"])
+        XCTAssertEqual(readPlan.map(\.publicModelSlot), ["sessionSummary", "exerciseSummary", "route", "route", "samplesAdvanced"])
+        XCTAssertEqual(readPlan.map(\.exerciseIndex), [nil, 0, 0, 0, 0])
     }
 
     func testTrainingSessionProgressPercentUsesSharedClampPolicy() throws {
@@ -403,6 +414,7 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             "payload-parser-family-ownership",
             "byte-level-parser-dependency-gate",
             "shared-gzip-payload-codec",
+            "public-model-read-plan",
             "protobuf-byte-parsing-deferral",
             "platform-training-session-vector-reference-gate",
             "public-model-slot-planning",
@@ -411,7 +423,7 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared public-model slot planning, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared public-model read planning, shared public-model slot planning, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.")
     }
 
     func test_readTrainingSession_shouldReturnTrainingSessionDataWithExercises() async throws {

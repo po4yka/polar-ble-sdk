@@ -73,9 +73,15 @@ class TrainingSessionCommonPolicyTest {
         val sharedReference = payloadReference(reference)
         val sharedResponses = payloadResponses(responses)
         val fetchOrder = PolarTrainingSessionModels.payloadFetchOrder(sharedReference)
+        val readPlan = PolarTrainingSessionModels.payloadReadPlan(sharedReference)
         val result = PolarTrainingSessionModels.assemblePayloadReadResult(sharedReference, sharedResponses, fetchOrder)
 
         assertEquals(expected.stringArrayValue("fetchOrder"), fetchOrder, vector.stringValue("id"))
+        val expectedReadPlan = expected.objectArray("readPlan")
+        assertEquals(expectedReadPlan.map { it.stringValue("path") }, readPlan.map { it.path }, vector.stringValue("id"))
+        assertEquals(expectedReadPlan.map { it.stringValue("fileName") }, readPlan.map { it.fileName }, vector.stringValue("id"))
+        assertEquals(expectedReadPlan.map { it.stringValue("publicModelSlot") }, readPlan.map { it.publicModelSlot }, vector.stringValue("id"))
+        assertEquals(expectedReadPlan.map { it.optionalIntValue("exerciseIndex") }, readPlan.map { it.exerciseIndex }, vector.stringValue("id"))
         assertEquals("/U/0/20250101/E/", PolarTrainingSessionModels.deleteParentPath(sharedReference.path), vector.stringValue("id"))
         assertEquals("/U/0/20250101/E/", PolarTrainingSessionModels.deleteRemovePath(sharedReference.path, parentEntryCount = 1), vector.stringValue("id"))
         assertEquals("/U/0/20250101/E/101200/", PolarTrainingSessionModels.deleteRemovePath(sharedReference.path, parentEntryCount = 2), vector.stringValue("id"))
@@ -104,6 +110,7 @@ class TrainingSessionCommonPolicyTest {
         assertEquals("compute-progress-from-reference-file-sizes-and-last-completed-file", commonDecision.stringValue("progressPolicy"), vector.stringValue("id"))
         assertEquals("omit-only-the-malformed-component-and-continue-reading-remaining-files", commonDecision.stringValue("malformedPayloadPolicy"), vector.stringValue("id"))
         assertEquals("ignore-unknown-advanced-sample-lists-and-preserve-known-samples", commonDecision.stringValue("unknownSampleListPolicy"), vector.stringValue("id"))
+        assertEquals("shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects", commonDecision.stringValue("publicModelReadPlanPolicy"), vector.stringValue("id"))
     }
 
     @Test
@@ -583,6 +590,7 @@ class TrainingSessionCommonPolicyTest {
             "payload-parser-family-ownership",
             "byte-level-parser-dependency-gate",
             "shared-gzip-payload-codec",
+            "public-model-read-plan",
             "protobuf-byte-parsing-deferral",
             "platform-training-session-vector-reference-gate",
             "public-model-slot-planning",
@@ -590,6 +598,6 @@ class TrainingSessionCommonPolicyTest {
             "compile-verification-gate"
         )
         const val TRAINING_SESSION_MISSING_EXERCISE_FILE_COMMON_DECISION = "Android currently returns a partial exercise when an exercise data file request fails; iOS currently propagates the request failure. Choose an explicit shared policy before moving training-session read orchestration to KMP."
-        const val TRAINING_SESSION_READINESS_COMMON_DECISION = "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared public-model slot planning, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves."
+        const val TRAINING_SESSION_READINESS_COMMON_DECISION = "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared public-model read planning, shared public-model slot planning, byte-level protobuf parser dependency gates, protobuf byte parsing deferral, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves."
     }
 }

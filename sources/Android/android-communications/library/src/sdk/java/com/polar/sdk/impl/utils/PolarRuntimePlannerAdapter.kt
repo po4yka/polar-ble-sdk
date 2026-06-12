@@ -153,6 +153,12 @@ internal object PolarRuntimePlannerAdapter {
         val exercises: List<PlannedTrainingExerciseReference>,
         val fileSize: Long
     )
+    data class PlannedTrainingPayloadReadPlanEntry(
+        val path: String,
+        val fileName: String,
+        val publicModelSlot: String,
+        val exerciseIndex: Int?
+    )
 
     fun availableOfflineRecordingDataTypes(features: Set<PmdMeasurementType>): Set<PolarDeviceDataType> {
         return PolarSdkModelMappers.availableOfflineRecordingDataTypeNames(features.sharedMeasurementTypeNames())
@@ -1062,6 +1068,17 @@ internal object PolarRuntimePlannerAdapter {
 
     fun trainingSessionPayloadFetchOrder(reference: PlannedTrainingSessionReference): List<String> {
         return PolarTrainingSessionModels.payloadFetchOrder(reference.toShared())
+    }
+
+    fun trainingSessionPayloadReadPlan(reference: PlannedTrainingSessionReference): List<PlannedTrainingPayloadReadPlanEntry> {
+        return PolarTrainingSessionModels.payloadReadPlan(reference.toShared()).map { entry ->
+            PlannedTrainingPayloadReadPlanEntry(
+                path = entry.path,
+                fileName = entry.fileName,
+                publicModelSlot = entry.publicModelSlot,
+                exerciseIndex = entry.exerciseIndex
+            )
+        }
     }
 
     fun trainingSessionPayloadEncoding(fileName: String): String? {

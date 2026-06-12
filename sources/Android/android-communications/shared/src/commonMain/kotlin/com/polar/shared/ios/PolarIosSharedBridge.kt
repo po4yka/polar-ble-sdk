@@ -363,6 +363,38 @@ object PolarIosSharedBridge {
         return PolarTrainingSessionModels.payloadFetchOrder(reference).joinToString("\n")
     }
 
+    fun trainingSessionPayloadReadPlan(referenceText: String): String {
+        val lines = referenceText.lines().filter { line -> line.isNotEmpty() }
+        val referenceFields = lines.firstOrNull()?.split('|') ?: return ""
+        if (referenceFields.size < 5 || referenceFields[0] != "R") return ""
+        val exercises = lines.drop(1).mapNotNull { line ->
+            val fields = line.split('|')
+            if (fields.size < 6 || fields[0] != "E") {
+                null
+            } else {
+                PolarTrainingExerciseReference(
+                    index = fields[1].toIntOrNull() ?: return@mapNotNull null,
+                    androidPath = fields[2],
+                    iosPath = fields[3],
+                    exerciseDataTypes = fields[4].semicolonList(),
+                    fileSizes = fields[5].semicolonKeyLongMap()
+                )
+            }
+        }
+        val reference = PolarTrainingSessionReference(
+            dateTime = referenceFields[1],
+            date = referenceFields[1].substringBefore('T', missingDelimiterValue = referenceFields[1]),
+            path = referenceFields[2],
+            trainingDataTypes = referenceFields[3].semicolonList(),
+            exercises = exercises,
+            fileSize = referenceFields[4].toLongOrNull() ?: 0L
+        )
+        return PolarTrainingSessionModels.payloadReadPlan(reference)
+            .joinToString("\n") { entry ->
+                listOf(entry.path, entry.fileName, entry.publicModelSlot, entry.exerciseIndex?.toString().orEmpty()).joinToString("|")
+            }
+    }
+
     fun trainingSessionPayloadParserCase(fileName: String): String? {
         val parserCase = PolarTrainingSessionModels.payloadParserCase(fileName) ?: return null
         return "${parserCase.parser}|${parserCase.encoding}"

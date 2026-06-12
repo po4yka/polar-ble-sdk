@@ -183,6 +183,62 @@
       "/U/0/20250101/E/101200/00/SAMPLES.GZB",
       "/U/0/20250101/E/101200/00/SAMPLES2.GZB"
     ],
+    "readPlan": [
+      {
+        "path": "/U/0/20250101/E/101200/TSESS.BPB",
+        "fileName": "TSESS.BPB",
+        "publicModelSlot": "sessionSummary",
+        "exerciseIndex": null
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/BASE.BPB",
+        "fileName": "BASE.BPB",
+        "publicModelSlot": "exerciseSummary",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/ROUTE.BPB",
+        "fileName": "ROUTE.BPB",
+        "publicModelSlot": "route",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/ROUTE.GZB",
+        "fileName": "ROUTE.GZB",
+        "publicModelSlot": "route",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/ROUTE2.BPB",
+        "fileName": "ROUTE2.BPB",
+        "publicModelSlot": "routeAdvanced",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/ROUTE2.GZB",
+        "fileName": "ROUTE2.GZB",
+        "publicModelSlot": "routeAdvanced",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/SAMPLES.BPB",
+        "fileName": "SAMPLES.BPB",
+        "publicModelSlot": "samples",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/SAMPLES.GZB",
+        "fileName": "SAMPLES.GZB",
+        "publicModelSlot": "samples",
+        "exerciseIndex": 0
+      },
+      {
+        "path": "/U/0/20250101/E/101200/00/SAMPLES2.GZB",
+        "fileName": "SAMPLES2.GZB",
+        "publicModelSlot": "samplesAdvanced",
+        "exerciseIndex": 0
+      }
+    ],
     "progress": {
       "totalBytes": 759,
       "completedBytes": 759,
@@ -240,6 +296,7 @@
       "progressPolicy": "compute-progress-from-reference-file-sizes-and-last-completed-file",
       "malformedPayloadPolicy": "omit-only-the-malformed-component-and-continue-reading-remaining-files",
       "unknownSampleListPolicy": "ignore-unknown-advanced-sample-lists-and-preserve-known-samples",
+      "publicModelReadPlanPolicy": "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects",
       "byteLevelParserGate": "add-common-protobuf-parser-dependency-before-byte-level-payload-migration",
       "byteLevelPayloadStatus": "protobuf-parsing-deferred-until-common-protobuf-parser-exists"
     }
