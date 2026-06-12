@@ -15,6 +15,7 @@ import com.polar.shared.runtime.PolarRestRequestTransportOperation
 import com.polar.shared.runtime.PolarResetNotificationFields
 import com.polar.shared.runtime.PolarRuntimePlan
 import com.polar.shared.runtime.PolarRuntimeOrchestration
+import com.polar.shared.runtime.PolarStreamRuntimePlanning
 import com.polar.shared.runtime.PolarSyncStopNotificationFields
 import com.polar.shared.runtime.PolarUserDeviceSettingsOperation
 import com.polar.shared.runtime.PolarBackupRestoreFile
@@ -461,6 +462,26 @@ internal object PolarRuntimePlannerAdapter {
 
     fun convertUnsignedByteToInt(byte: Byte): Int {
         return PolarTypeUtils.convertUnsignedByteToInt(byte)
+    }
+
+    fun streamDisconnectAfterSubscription(target: String, error: String) {
+        PolarStreamRuntimePlanning.planDisconnectAfterSubscription(target, error)
+    }
+
+    fun streamPostCompletionEmissionSuppression(target: String, value: String) {
+        PolarStreamRuntimePlanning.planPostCompletionEmissionSuppression(target, value)
+    }
+
+    fun streamDuplicateCompletion(target: String) {
+        PolarStreamRuntimePlanning.planDuplicateCompletion(target)
+    }
+
+    fun streamCheckedSubscriptionActiveObserverCount(target: String, startConnected: Boolean, checkConnection: Boolean): Int {
+        return PolarStreamRuntimePlanning.planCheckedSubscription(target, startConnected, checkConnection).activeObserverCount
+    }
+
+    fun streamConsumerCancellation(target: String) {
+        PolarStreamRuntimePlanning.planConsumerCancellation(target)
     }
 
     fun locationDataProjection(samples: List<PlannedGnssLocationSample>): List<PlannedLocationDataProjectionSample> {

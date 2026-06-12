@@ -177,6 +177,18 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `stream runtime helpers expose Android adapter primitives`() {
+        Assert.assertEquals(1, PolarRuntimePlannerAdapter.streamCheckedSubscriptionActiveObserverCount("stream", startConnected = true, checkConnection = true))
+        Assert.assertEquals(1, PolarRuntimePlannerAdapter.streamCheckedSubscriptionActiveObserverCount("stream", startConnected = false, checkConnection = false))
+        Assert.assertEquals(0, PolarRuntimePlannerAdapter.streamCheckedSubscriptionActiveObserverCount("stream", startConnected = false, checkConnection = true))
+
+        PolarRuntimePlannerAdapter.streamDisconnectAfterSubscription("stream", "BleDisconnected")
+        PolarRuntimePlannerAdapter.streamPostCompletionEmissionSuppression("stream", "value")
+        PolarRuntimePlannerAdapter.streamDuplicateCompletion("stream")
+        PolarRuntimePlannerAdapter.streamConsumerCancellation("stream")
+    }
+
+    @Test
     fun `feature availability readiness vector uses shared Android runtime planner adapter`() {
         val vector = loadFeatureAvailabilityReadinessVector()
         val input = vector.getAsJsonObject("input")

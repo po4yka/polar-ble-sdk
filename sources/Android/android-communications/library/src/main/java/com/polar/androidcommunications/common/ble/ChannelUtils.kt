@@ -2,7 +2,7 @@ package com.polar.androidcommunications.common.ble
 
 import com.polar.androidcommunications.api.ble.exceptions.BleDisconnected
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattTxInterface
-import com.polar.shared.runtime.PolarStreamRuntimePlanning
+import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
@@ -25,7 +25,7 @@ class ChannelUtils private constructor() {
         }
 
         fun <T : Any> postError(list: AtomicSet<Channel<T>>, throwable: Throwable) {
-            PolarStreamRuntimePlanning.planDisconnectAfterSubscription("stream", throwable.javaClass.simpleName.ifEmpty { throwable.toString() })
+            PolarRuntimePlannerAdapter.streamDisconnectAfterSubscription("stream", throwable.javaClass.simpleName.ifEmpty { throwable.toString() })
             val objects = list.objects()
             for (channel in objects) {
                 val cancellationEx = CancellationException("Channel closed due to error", throwable)
@@ -41,7 +41,7 @@ class ChannelUtils private constructor() {
         fun <T : Any> emitNext(list: AtomicSet<T>, emitter: (T) -> Unit) {
             val objects = list.objects()
             if (objects.isEmpty()) {
-                PolarStreamRuntimePlanning.planPostCompletionEmissionSuppression("stream", "value")
+                PolarRuntimePlannerAdapter.streamPostCompletionEmissionSuppression("stream", "value")
             }
             for (e: T in objects) {
                 emitter(e)
@@ -49,7 +49,7 @@ class ChannelUtils private constructor() {
         }
 
         fun <T : Any> complete(list: AtomicSet<Channel<T>>) {
-            PolarStreamRuntimePlanning.planDuplicateCompletion("stream")
+            PolarRuntimePlannerAdapter.streamDuplicateCompletion("stream")
             val objects = list.objects()
             for (channel in objects) {
                 channel.close()
@@ -72,8 +72,7 @@ class ChannelUtils private constructor() {
         ): Flow<T> {
             return callbackFlow {
                 val connected = !checkConnection || transport.isConnected()
-                val subscriptionPlan = PolarStreamRuntimePlanning.planCheckedSubscription("stream", connected, checkConnection)
-                if (subscriptionPlan.activeObserverCount > 0) {
+                if (PolarRuntimePlannerAdapter.streamCheckedSubscriptionActiveObserverCount("stream", connected, checkConnection) > 0) {
                     val observer = Channel<T>(Channel.BUFFERED)
                     observers.add(observer)
 
@@ -94,7 +93,7 @@ class ChannelUtils private constructor() {
                     }
 
                     awaitClose {
-                        PolarStreamRuntimePlanning.planConsumerCancellation("stream")
+                        PolarRuntimePlannerAdapter.streamConsumerCancellation("stream")
                         observers.remove(observer)
                         observer.close()
                         bridgeJob.cancel()
