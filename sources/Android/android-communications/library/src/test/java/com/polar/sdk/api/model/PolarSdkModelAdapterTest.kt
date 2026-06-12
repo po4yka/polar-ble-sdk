@@ -1,6 +1,5 @@
 package com.polar.sdk.api.model
 
-import com.polar.shared.sdk.PolarUserDeviceSettingsTimestamp
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -123,7 +122,7 @@ class PolarSdkModelAdapterTest {
             telemetryEnabled = true,
             autosFilesEnabled = true
         )
-        val timestamp = PolarUserDeviceSettingsTimestamp(
+        val timestamp = PolarSdkModelAdapter.PlannedUserDeviceSettingsTimestamp(
             year = 2026,
             month = 5,
             day = 28,

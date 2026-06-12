@@ -1,6 +1,5 @@
 package com.polar.sdk.api.model
 
-import com.polar.shared.sdk.PolarUserDeviceSettingsTimestamp
 import fi.polar.remote.representation.protobuf.UserDeviceSettings.PbUserDeviceSettings
 import java.time.ZonedDateTime
 import java.time.ZoneId
@@ -53,7 +52,7 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
         return PbUserDeviceSettings.parseFrom(
             PolarSdkModelAdapter.buildUserDeviceSettingsBytes(
                 model = sharedFields,
-                timestamp = createSharedTimeStamp(),
+                timestamp = createPlannedTimeStamp(),
                 includeTelemetry = false
             )
         )
@@ -74,9 +73,9 @@ data class PolarUserDeviceSettings(val deviceLocation: Int? = null,
     }
 }
 
-private fun createSharedTimeStamp(): PolarUserDeviceSettingsTimestamp {
+private fun createPlannedTimeStamp(): PolarSdkModelAdapter.PlannedUserDeviceSettingsTimestamp {
     val utcTime = ZonedDateTime.now(ZoneId.of("UTC"))
-    return PolarUserDeviceSettingsTimestamp(
+    return PolarSdkModelAdapter.PlannedUserDeviceSettingsTimestamp(
         year = utcTime.year,
         month = utcTime.monthValue,
         day = utcTime.dayOfMonth,

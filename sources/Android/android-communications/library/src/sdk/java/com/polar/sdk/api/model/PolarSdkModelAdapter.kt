@@ -75,6 +75,16 @@ internal object PolarSdkModelAdapter {
         val telemetryEnabled: Boolean?,
         val autosFilesEnabled: Boolean?
     )
+    data class PlannedUserDeviceSettingsTimestamp(
+        val year: Int,
+        val month: Int,
+        val day: Int,
+        val hour: Int,
+        val minute: Int,
+        val seconds: Int,
+        val millis: Int,
+        val trusted: Boolean
+    )
     data class PlannedSkinTemperatureSample(
         val recordingTimeDeltaMs: Long,
         val temperature: Float
@@ -228,10 +238,10 @@ internal object PolarSdkModelAdapter {
         return PolarUserDeviceSettingsModels.parseProtoBytes(bytes).toPlanned()
     }
 
-    fun buildUserDeviceSettingsBytes(model: PlannedUserDeviceSettingsFields, timestamp: PolarUserDeviceSettingsTimestamp, includeTelemetry: Boolean): ByteArray {
+    fun buildUserDeviceSettingsBytes(model: PlannedUserDeviceSettingsFields, timestamp: PlannedUserDeviceSettingsTimestamp, includeTelemetry: Boolean): ByteArray {
         return PolarUserDeviceSettingsModels.buildProtoBytes(
             model = model.toShared(),
-            timestamp = timestamp,
+            timestamp = timestamp.toShared(),
             includeTelemetry = includeTelemetry
         )
     }
@@ -409,6 +419,19 @@ internal object PolarSdkModelAdapter {
             minimumTrainingDurationSeconds = minimumTrainingDurationSeconds,
             telemetryEnabled = telemetryEnabled,
             autosFilesEnabled = autosFilesEnabled
+        )
+    }
+
+    private fun PlannedUserDeviceSettingsTimestamp.toShared(): PolarUserDeviceSettingsTimestamp {
+        return PolarUserDeviceSettingsTimestamp(
+            year = year,
+            month = month,
+            day = day,
+            hour = hour,
+            minute = minute,
+            seconds = seconds,
+            millis = millis,
+            trusted = trusted
         )
     }
 
