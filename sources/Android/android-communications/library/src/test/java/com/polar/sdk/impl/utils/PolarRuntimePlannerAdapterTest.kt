@@ -66,6 +66,74 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared GNSS location projection routes through Android runtime adapter DTOs`() {
+        val summary = PolarRuntimePlannerAdapter.PlannedGnssSatelliteSummary(
+            gpsNbrOfSat = 1u,
+            gpsMaxSnr = 2u,
+            glonassNbrOfSat = 3u,
+            glonassMaxSnr = 4u,
+            galileoNbrOfSat = 5u,
+            galileoMaxSnr = 6u,
+            beidouNbrOfSat = 7u,
+            beidouMaxSnr = 8u,
+            nbrOfSat = 9u,
+            snrTop5Avg = 10u
+        )
+        val projection = PolarRuntimePlannerAdapter.locationDataProjection(
+            listOf(
+                PolarRuntimePlannerAdapter.PlannedGnssCoordinateSample(
+                    timeStamp = 101uL,
+                    latitude = 60.123,
+                    longitude = 24.456,
+                    date = "2026-06-06T10:11:12.123",
+                    cumulativeDistance = 12.3,
+                    speed = 4.5f,
+                    usedAccelerationSpeed = 5.6f,
+                    coordinateSpeed = 6.7f,
+                    accelerationSpeedFactor = 7.8f,
+                    course = 8.9f,
+                    gpsChipSpeed = 9.1f,
+                    fix = true,
+                    speedFlag = -1,
+                    fusionState = 255u
+                ),
+                PolarRuntimePlannerAdapter.PlannedGnssNmeaSample(
+                    timeStamp = 202uL,
+                    measurementPeriod = 1000u,
+                    messageLength = 12u,
+                    statusFlags = 3u,
+                    nmeaMessage = "GPGGA"
+                ),
+                PolarRuntimePlannerAdapter.PlannedGnssSatelliteDilutionSample(
+                    timeStamp = 303uL,
+                    dilution = 1.25f,
+                    altitude = -42,
+                    numberOfSatellites = 7u,
+                    fix = false
+                ),
+                PolarRuntimePlannerAdapter.PlannedGnssSatelliteSummarySample(
+                    timeStamp = 404uL,
+                    seenGnssSatelliteSummaryBand1 = summary,
+                    usedGnssSatelliteSummaryBand1 = summary,
+                    seenGnssSatelliteSummaryBand2 = summary,
+                    usedGnssSatelliteSummaryBand2 = summary,
+                    maxSnr = 99u
+                )
+            )
+        )
+
+        Assert.assertTrue(projection[0] is PolarRuntimePlannerAdapter.PlannedLocationCoordinatesProjectionSample)
+        Assert.assertTrue(projection[1] is PolarRuntimePlannerAdapter.PlannedLocationNmeaProjectionSample)
+        Assert.assertTrue(projection[2] is PolarRuntimePlannerAdapter.PlannedLocationSatelliteDilutionProjectionSample)
+        Assert.assertTrue(projection[3] is PolarRuntimePlannerAdapter.PlannedLocationSatelliteSummaryProjectionSample)
+        val coordinate = projection[0] as PolarRuntimePlannerAdapter.PlannedLocationCoordinatesProjectionSample
+        Assert.assertEquals("2026-06-06T10:11:12.123", coordinate.time)
+        val satelliteSummary = projection[3] as PolarRuntimePlannerAdapter.PlannedLocationSatelliteSummaryProjectionSample
+        Assert.assertEquals(99u, satelliteSummary.maxSnr)
+        Assert.assertEquals(10u.toUByte(), satelliteSummary.seenSatelliteSummaryBand1.snrTop5Avg)
+    }
+
+    @Test
     fun `available data types readiness manifest is pinned before availability migration`() {
         val vector = loadAvailableDataTypesReadinessVector()
         val input = vector.getAsJsonObject("input")

@@ -25,6 +25,19 @@ import com.polar.shared.runtime.PolarStoredDataCleanupScenario
 import com.polar.shared.runtime.PolarWorkflowRuntimePlanning
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.pmd.PolarPmdMeasurementTypeName
+import com.polar.shared.pmd.sensors.PolarGnssCoordinateSample
+import com.polar.shared.pmd.sensors.PolarGnssLocationSample
+import com.polar.shared.pmd.sensors.PolarGnssNmeaSample
+import com.polar.shared.pmd.sensors.PolarGnssSatelliteDilutionSample
+import com.polar.shared.pmd.sensors.PolarGnssSatelliteSummary
+import com.polar.shared.pmd.sensors.PolarGnssSatelliteSummarySample
+import com.polar.shared.pmd.sensors.PolarLocationCoordinatesProjectionSample
+import com.polar.shared.pmd.sensors.PolarLocationDataProjection
+import com.polar.shared.pmd.sensors.PolarLocationDataProjectionSample
+import com.polar.shared.pmd.sensors.PolarLocationNmeaProjectionSample
+import com.polar.shared.pmd.sensors.PolarLocationSatelliteDilutionProjectionSample
+import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjection
+import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjectionSample
 import com.polar.shared.sdk.PolarActivityModels
 import com.polar.shared.sdk.PolarFirmwareUpdateModels
 import com.polar.shared.sdk.PolarKvtxScriptCodec
@@ -118,6 +131,111 @@ internal object PolarRuntimePlannerAdapter {
         val spo2HrvDeviationFromBaseline: String?,
         val altitudeMeters: Float?
     )
+    data class PlannedGnssSatelliteSummary(
+        val gpsNbrOfSat: UByte,
+        val gpsMaxSnr: UByte,
+        val glonassNbrOfSat: UByte,
+        val glonassMaxSnr: UByte,
+        val galileoNbrOfSat: UByte,
+        val galileoMaxSnr: UByte,
+        val beidouNbrOfSat: UByte,
+        val beidouMaxSnr: UByte,
+        val nbrOfSat: UByte,
+        val snrTop5Avg: UByte
+    )
+    sealed class PlannedGnssLocationSample {
+        abstract val timeStamp: ULong
+    }
+    data class PlannedGnssCoordinateSample(
+        override val timeStamp: ULong,
+        val latitude: Double,
+        val longitude: Double,
+        val date: String,
+        val cumulativeDistance: Double,
+        val speed: Float,
+        val usedAccelerationSpeed: Float,
+        val coordinateSpeed: Float,
+        val accelerationSpeedFactor: Float,
+        val course: Float,
+        val gpsChipSpeed: Float,
+        val fix: Boolean,
+        val speedFlag: Int,
+        val fusionState: UInt
+    ) : PlannedGnssLocationSample()
+    data class PlannedGnssNmeaSample(
+        override val timeStamp: ULong,
+        val measurementPeriod: UInt,
+        val messageLength: UInt,
+        val statusFlags: UByte,
+        val nmeaMessage: String
+    ) : PlannedGnssLocationSample()
+    data class PlannedGnssSatelliteDilutionSample(
+        override val timeStamp: ULong,
+        val dilution: Float,
+        val altitude: Int,
+        val numberOfSatellites: UInt,
+        val fix: Boolean
+    ) : PlannedGnssLocationSample()
+    data class PlannedGnssSatelliteSummarySample(
+        override val timeStamp: ULong,
+        val seenGnssSatelliteSummaryBand1: PlannedGnssSatelliteSummary,
+        val usedGnssSatelliteSummaryBand1: PlannedGnssSatelliteSummary,
+        val seenGnssSatelliteSummaryBand2: PlannedGnssSatelliteSummary,
+        val usedGnssSatelliteSummaryBand2: PlannedGnssSatelliteSummary,
+        val maxSnr: UInt
+    ) : PlannedGnssLocationSample()
+    data class PlannedLocationSatelliteSummary(
+        val gpsNbrOfSat: UByte,
+        val gpsMaxSnr: UByte,
+        val glonassNbrOfSat: UByte,
+        val glonassMaxSnr: UByte,
+        val galileoNbrOfSat: UByte,
+        val galileoMaxSnr: UByte,
+        val beidouNbrOfSat: UByte,
+        val beidouMaxSnr: UByte,
+        val nbrOfSat: UByte,
+        val snrTop5Avg: UByte
+    )
+    sealed class PlannedLocationDataProjectionSample {
+        abstract val timeStamp: Long
+    }
+    data class PlannedLocationCoordinatesProjectionSample(
+        override val timeStamp: Long,
+        val latitude: Double,
+        val longitude: Double,
+        val time: String,
+        val cumulativeDistance: Double,
+        val speed: Float,
+        val usedAccelerationSpeed: Float,
+        val coordinateSpeed: Float,
+        val accelerationSpeedFactor: Float,
+        val course: Float,
+        val gpsChipSpeed: Float,
+        val fix: Boolean,
+        val speedFlag: Int,
+        val fusionState: UInt
+    ) : PlannedLocationDataProjectionSample()
+    data class PlannedLocationNmeaProjectionSample(
+        override val timeStamp: Long,
+        val measurementPeriod: UInt,
+        val statusFlags: UByte,
+        val nmeaMessage: String
+    ) : PlannedLocationDataProjectionSample()
+    data class PlannedLocationSatelliteDilutionProjectionSample(
+        override val timeStamp: Long,
+        val dilution: Float,
+        val altitude: Int,
+        val numberOfSatellites: UInt,
+        val fix: Boolean
+    ) : PlannedLocationDataProjectionSample()
+    data class PlannedLocationSatelliteSummaryProjectionSample(
+        override val timeStamp: Long,
+        val seenSatelliteSummaryBand1: PlannedLocationSatelliteSummary,
+        val usedSatelliteSummaryBand1: PlannedLocationSatelliteSummary,
+        val seenSatelliteSummaryBand2: PlannedLocationSatelliteSummary,
+        val usedSatelliteSummaryBand2: PlannedLocationSatelliteSummary,
+        val maxSnr: UInt
+    ) : PlannedLocationDataProjectionSample()
     data class PlannedDateFields(
         val year: Int,
         val month: Int,
@@ -175,6 +293,18 @@ internal object PolarRuntimePlannerAdapter {
 
     fun availableHrServiceDataTypes(hasHrService: Boolean): Set<PolarDeviceDataType> {
         return PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService).mapToPolarDeviceDataTypes()
+    }
+
+    fun pmdMeasurementTypeNameForPublicDataTypeName(publicDataTypeName: String): String? {
+        return PolarSdkModelMappers.pmdMeasurementTypeNameForPublicDataTypeName(publicDataTypeName)
+    }
+
+    fun pmdMeasurementTypeNameFromRawValue(value: Int): String? {
+        return PolarPmdMeasurementTypeName.fromRawValue(value)?.name
+    }
+
+    fun locationDataProjection(samples: List<PlannedGnssLocationSample>): List<PlannedLocationDataProjectionSample> {
+        return PolarLocationDataProjection.fromGnssSamples(samples.map { it.toShared() }).map { it.toPlanned() }
     }
 
     fun featureAvailabilityPreconditionsMet(
@@ -1410,6 +1540,121 @@ internal object PolarRuntimePlannerAdapter {
         return mapNotNull { feature ->
             PolarPmdMeasurementTypeName.fromRawValue(feature.numVal.toInt())?.name
         }.toSet()
+    }
+
+    private fun PlannedGnssLocationSample.toShared(): PolarGnssLocationSample {
+        return when (this) {
+            is PlannedGnssCoordinateSample -> PolarGnssCoordinateSample(
+                timeStamp = timeStamp,
+                latitude = latitude,
+                longitude = longitude,
+                date = date,
+                cumulativeDistance = cumulativeDistance,
+                speed = speed,
+                usedAccelerationSpeed = usedAccelerationSpeed,
+                coordinateSpeed = coordinateSpeed,
+                accelerationSpeedFactor = accelerationSpeedFactor,
+                course = course,
+                gpsChipSpeed = gpsChipSpeed,
+                fix = fix,
+                speedFlag = speedFlag,
+                fusionState = fusionState
+            )
+            is PlannedGnssNmeaSample -> PolarGnssNmeaSample(
+                timeStamp = timeStamp,
+                measurementPeriod = measurementPeriod,
+                messageLength = messageLength,
+                statusFlags = statusFlags,
+                nmeaMessage = nmeaMessage
+            )
+            is PlannedGnssSatelliteDilutionSample -> PolarGnssSatelliteDilutionSample(
+                timeStamp = timeStamp,
+                dilution = dilution,
+                altitude = altitude,
+                numberOfSatellites = numberOfSatellites,
+                fix = fix
+            )
+            is PlannedGnssSatelliteSummarySample -> PolarGnssSatelliteSummarySample(
+                timeStamp = timeStamp,
+                seenGnssSatelliteSummaryBand1 = seenGnssSatelliteSummaryBand1.toShared(),
+                usedGnssSatelliteSummaryBand1 = usedGnssSatelliteSummaryBand1.toShared(),
+                seenGnssSatelliteSummaryBand2 = seenGnssSatelliteSummaryBand2.toShared(),
+                usedGnssSatelliteSummaryBand2 = usedGnssSatelliteSummaryBand2.toShared(),
+                maxSnr = maxSnr
+            )
+        }
+    }
+
+    private fun PlannedGnssSatelliteSummary.toShared(): PolarGnssSatelliteSummary {
+        return PolarGnssSatelliteSummary(
+            gpsNbrOfSat = gpsNbrOfSat,
+            gpsMaxSnr = gpsMaxSnr,
+            glonassNbrOfSat = glonassNbrOfSat,
+            glonassMaxSnr = glonassMaxSnr,
+            galileoNbrOfSat = galileoNbrOfSat,
+            galileoMaxSnr = galileoMaxSnr,
+            beidouNbrOfSat = beidouNbrOfSat,
+            beidouMaxSnr = beidouMaxSnr,
+            nbrOfSat = nbrOfSat,
+            snrTop5Avg = snrTop5Avg
+        )
+    }
+
+    private fun PolarLocationDataProjectionSample.toPlanned(): PlannedLocationDataProjectionSample {
+        return when (this) {
+            is PolarLocationCoordinatesProjectionSample -> PlannedLocationCoordinatesProjectionSample(
+                timeStamp = timeStamp,
+                latitude = latitude,
+                longitude = longitude,
+                time = time,
+                cumulativeDistance = cumulativeDistance,
+                speed = speed,
+                usedAccelerationSpeed = usedAccelerationSpeed,
+                coordinateSpeed = coordinateSpeed,
+                accelerationSpeedFactor = accelerationSpeedFactor,
+                course = course,
+                gpsChipSpeed = gpsChipSpeed,
+                fix = fix,
+                speedFlag = speedFlag,
+                fusionState = fusionState
+            )
+            is PolarLocationNmeaProjectionSample -> PlannedLocationNmeaProjectionSample(
+                timeStamp = timeStamp,
+                measurementPeriod = measurementPeriod,
+                statusFlags = statusFlags,
+                nmeaMessage = nmeaMessage
+            )
+            is PolarLocationSatelliteDilutionProjectionSample -> PlannedLocationSatelliteDilutionProjectionSample(
+                timeStamp = timeStamp,
+                dilution = dilution,
+                altitude = altitude,
+                numberOfSatellites = numberOfSatellites,
+                fix = fix
+            )
+            is PolarLocationSatelliteSummaryProjectionSample -> PlannedLocationSatelliteSummaryProjectionSample(
+                timeStamp = timeStamp,
+                seenSatelliteSummaryBand1 = seenSatelliteSummaryBand1.toPlanned(),
+                usedSatelliteSummaryBand1 = usedSatelliteSummaryBand1.toPlanned(),
+                seenSatelliteSummaryBand2 = seenSatelliteSummaryBand2.toPlanned(),
+                usedSatelliteSummaryBand2 = usedSatelliteSummaryBand2.toPlanned(),
+                maxSnr = maxSnr
+            )
+        }
+    }
+
+    private fun PolarLocationSatelliteSummaryProjection.toPlanned(): PlannedLocationSatelliteSummary {
+        return PlannedLocationSatelliteSummary(
+            gpsNbrOfSat = gpsNbrOfSat,
+            gpsMaxSnr = gpsMaxSnr,
+            glonassNbrOfSat = glonassNbrOfSat,
+            glonassMaxSnr = glonassMaxSnr,
+            galileoNbrOfSat = galileoNbrOfSat,
+            galileoMaxSnr = galileoMaxSnr,
+            beidouNbrOfSat = beidouNbrOfSat,
+            beidouMaxSnr = beidouMaxSnr,
+            nbrOfSat = nbrOfSat,
+            snrTop5Avg = snrTop5Avg
+        )
     }
 
     private fun Set<String>.mapToPolarDeviceDataTypes(): Set<PolarDeviceDataType> {

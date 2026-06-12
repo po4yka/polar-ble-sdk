@@ -20,21 +20,6 @@ import com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.Tempe
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.errors.PolarBleSdkInternalException
 import com.polar.sdk.api.model.*
-import com.polar.shared.pmd.PolarPmdMeasurementTypeName
-import com.polar.shared.pmd.sensors.PolarGnssCoordinateSample
-import com.polar.shared.pmd.sensors.PolarGnssLocationSample
-import com.polar.shared.pmd.sensors.PolarGnssNmeaSample
-import com.polar.shared.pmd.sensors.PolarGnssSatelliteDilutionSample
-import com.polar.shared.pmd.sensors.PolarGnssSatelliteSummary
-import com.polar.shared.pmd.sensors.PolarGnssSatelliteSummarySample
-import com.polar.shared.pmd.sensors.PolarLocationCoordinatesProjectionSample
-import com.polar.shared.pmd.sensors.PolarLocationDataProjection
-import com.polar.shared.pmd.sensors.PolarLocationDataProjectionSample
-import com.polar.shared.pmd.sensors.PolarLocationNmeaProjectionSample
-import com.polar.shared.pmd.sensors.PolarLocationSatelliteDilutionProjectionSample
-import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjection
-import com.polar.shared.pmd.sensors.PolarLocationSatelliteSummaryProjectionSample
-import com.polar.shared.sdk.PolarSdkModelMappers
 import java.util.Collections
 
 internal object PolarDataUtils {
@@ -164,13 +149,13 @@ internal object PolarDataUtils {
     }
 
     fun mapPMDClientLocationDataToPolarLocationData(location: GnssLocationData): PolarLocationData {
-        return PolarLocationData(samples = PolarLocationDataProjection.fromGnssSamples(location.toSharedGnssSamples()).map { it.toPolarLocationDataSample() })
+        return PolarLocationData(samples = PolarRuntimePlannerAdapter.locationDataProjection(location.toPlannedGnssSamples()).map { it.toPolarLocationDataSample() })
     }
 
-    private fun GnssLocationData.toSharedGnssSamples(): List<PolarGnssLocationSample> {
+    private fun GnssLocationData.toPlannedGnssSamples(): List<PolarRuntimePlannerAdapter.PlannedGnssLocationSample> {
         return gnssLocationDataSamples.map { sample ->
             when (sample) {
-                is GnssLocationData.GnssCoordinateSample -> PolarGnssCoordinateSample(
+                is GnssLocationData.GnssCoordinateSample -> PolarRuntimePlannerAdapter.PlannedGnssCoordinateSample(
                     timeStamp = sample.timeStamp,
                     latitude = sample.latitude,
                     longitude = sample.longitude,
@@ -186,34 +171,34 @@ internal object PolarDataUtils {
                     speedFlag = sample.speedFlag,
                     fusionState = sample.fusionState
                 )
-                is GnssLocationData.GnssGpsNMEASample -> PolarGnssNmeaSample(
+                is GnssLocationData.GnssGpsNMEASample -> PolarRuntimePlannerAdapter.PlannedGnssNmeaSample(
                     timeStamp = sample.timeStamp,
                     measurementPeriod = sample.measurementPeriod,
                     messageLength = sample.messageLength,
                     statusFlags = sample.statusFlags,
                     nmeaMessage = sample.nmeaMessage
                 )
-                is GnssLocationData.GnssSatelliteDilutionSample -> PolarGnssSatelliteDilutionSample(
+                is GnssLocationData.GnssSatelliteDilutionSample -> PolarRuntimePlannerAdapter.PlannedGnssSatelliteDilutionSample(
                     timeStamp = sample.timeStamp,
                     dilution = sample.dilution,
                     altitude = sample.altitude,
                     numberOfSatellites = sample.numberOfSatellites,
                     fix = sample.fix
                 )
-                is GnssLocationData.GnssSatelliteSummarySample -> PolarGnssSatelliteSummarySample(
+                is GnssLocationData.GnssSatelliteSummarySample -> PolarRuntimePlannerAdapter.PlannedGnssSatelliteSummarySample(
                     timeStamp = sample.timeStamp,
-                    seenGnssSatelliteSummaryBand1 = sample.seenGnssSatelliteSummaryBand1.toSharedGnssSatelliteSummary(),
-                    usedGnssSatelliteSummaryBand1 = sample.usedGnssSatelliteSummaryBand1.toSharedGnssSatelliteSummary(),
-                    seenGnssSatelliteSummaryBand2 = sample.seenGnssSatelliteSummaryBand2.toSharedGnssSatelliteSummary(),
-                    usedGnssSatelliteSummaryBand2 = sample.usedGnssSatelliteSummaryBand2.toSharedGnssSatelliteSummary(),
+                    seenGnssSatelliteSummaryBand1 = sample.seenGnssSatelliteSummaryBand1.toPlannedGnssSatelliteSummary(),
+                    usedGnssSatelliteSummaryBand1 = sample.usedGnssSatelliteSummaryBand1.toPlannedGnssSatelliteSummary(),
+                    seenGnssSatelliteSummaryBand2 = sample.seenGnssSatelliteSummaryBand2.toPlannedGnssSatelliteSummary(),
+                    usedGnssSatelliteSummaryBand2 = sample.usedGnssSatelliteSummaryBand2.toPlannedGnssSatelliteSummary(),
                     maxSnr = sample.maxSnr
                 )
             }
         }
     }
 
-    private fun GnssLocationData.GnssSatelliteSummary.toSharedGnssSatelliteSummary(): PolarGnssSatelliteSummary {
-        return PolarGnssSatelliteSummary(
+    private fun GnssLocationData.GnssSatelliteSummary.toPlannedGnssSatelliteSummary(): PolarRuntimePlannerAdapter.PlannedGnssSatelliteSummary {
+        return PolarRuntimePlannerAdapter.PlannedGnssSatelliteSummary(
             gpsNbrOfSat = gpsNbrOfSat,
             gpsMaxSnr = gpsMaxSnr,
             glonassNbrOfSat = glonassNbrOfSat,
@@ -227,9 +212,9 @@ internal object PolarDataUtils {
         )
     }
 
-    private fun PolarLocationDataProjectionSample.toPolarLocationDataSample(): PolarLocationDataSample {
+    private fun PolarRuntimePlannerAdapter.PlannedLocationDataProjectionSample.toPolarLocationDataSample(): PolarLocationDataSample {
         return when (this) {
-            is PolarLocationCoordinatesProjectionSample -> GpsCoordinatesSample(
+            is PolarRuntimePlannerAdapter.PlannedLocationCoordinatesProjectionSample -> GpsCoordinatesSample(
                 timeStamp = timeStamp,
                 latitude = latitude,
                 longitude = longitude,
@@ -245,20 +230,20 @@ internal object PolarDataUtils {
                 speedFlag = speedFlag,
                 fusionState = fusionState
             )
-            is PolarLocationNmeaProjectionSample -> GpsNMEASample(
+            is PolarRuntimePlannerAdapter.PlannedLocationNmeaProjectionSample -> GpsNMEASample(
                 timeStamp = timeStamp,
                 measurementPeriod = measurementPeriod,
                 statusFlags = statusFlags,
                 nmeaMessage = nmeaMessage
             )
-            is PolarLocationSatelliteDilutionProjectionSample -> GpsSatelliteDilutionSample(
+            is PolarRuntimePlannerAdapter.PlannedLocationSatelliteDilutionProjectionSample -> GpsSatelliteDilutionSample(
                 timeStamp = timeStamp,
                 dilution = dilution,
                 altitude = altitude,
                 numberOfSatellites = numberOfSatellites,
                 fix = fix
             )
-            is PolarLocationSatelliteSummaryProjectionSample -> GpsSatelliteSummarySample(
+            is PolarRuntimePlannerAdapter.PlannedLocationSatelliteSummaryProjectionSample -> GpsSatelliteSummarySample(
                 timeStamp = timeStamp,
                 seenSatelliteSummaryBand1 = seenSatelliteSummaryBand1.toPolarSatelliteSummary(),
                 usedSatelliteSummaryBand1 = usedSatelliteSummaryBand1.toPolarSatelliteSummary(),
@@ -269,7 +254,7 @@ internal object PolarDataUtils {
         }
     }
 
-    private fun PolarLocationSatelliteSummaryProjection.toPolarSatelliteSummary(): SatelliteSummary {
+    private fun PolarRuntimePlannerAdapter.PlannedLocationSatelliteSummary.toPolarSatelliteSummary(): SatelliteSummary {
         return SatelliteSummary(
             gpsNbrOfSat = gpsNbrOfSat,
             gpsMaxSnr = gpsMaxSnr,
@@ -334,7 +319,7 @@ internal object PolarDataUtils {
     }
 
     fun mapPolarFeatureToPmdClientMeasurementType(polarFeature: PolarBleApi.PolarDeviceDataType): PmdMeasurementType {
-        val sharedTypeName = PolarSdkModelMappers.pmdMeasurementTypeNameForPublicDataTypeName(polarFeature.name)
+        val sharedTypeName = PolarRuntimePlannerAdapter.pmdMeasurementTypeNameForPublicDataTypeName(polarFeature.name)
             ?: throw PolarBleSdkInternalException("Error when map Polar feature $polarFeature to measurement type")
         return when (sharedTypeName) {
             "ECG" -> PmdMeasurementType.ECG
@@ -353,7 +338,7 @@ internal object PolarDataUtils {
     }
 
     fun mapPmdClientFeatureToPolarFeature(pmdMeasurementType: PmdMeasurementType): PolarBleApi.PolarDeviceDataType {
-        return when (PolarPmdMeasurementTypeName.fromRawValue(pmdMeasurementType.numVal.toInt())?.name) {
+        return when (PolarRuntimePlannerAdapter.pmdMeasurementTypeNameFromRawValue(pmdMeasurementType.numVal.toInt())) {
             "ECG" -> PolarBleApi.PolarDeviceDataType.ECG
             "PPG" -> PolarBleApi.PolarDeviceDataType.PPG
             "ACC" -> PolarBleApi.PolarDeviceDataType.ACC
