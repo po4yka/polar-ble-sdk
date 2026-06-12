@@ -1,0 +1,82 @@
+{
+  "id": "bas-battery-status-bitfields",
+  "area": "gatt.bas",
+  "case": "bas_battery_status_bitfields",
+  "source": "Android BleBattClient and iOS BleBasClient characterization distilled into a pure shared KMP codec vector",
+  "description": "Pins BLE Battery Service 1.1 Battery Level Status bitfield parsing for charge state, battery-present state, and wired/wireless external power source state.",
+  "input": {
+    "kind": "basBatteryStatusBitfields",
+    "cases": [
+      {
+        "id": "charging-present-wired-connected-wireless-not-connected",
+        "statusHex": "00a3",
+        "statusByte": 163
+      },
+      {
+        "id": "discharging-active-present-wired-not-connected-wireless-connected",
+        "statusHex": "0049",
+        "statusByte": 73
+      },
+      {
+        "id": "discharging-inactive-present-wired-reserved-wireless-reserved",
+        "statusHex": "007f",
+        "statusByte": 127
+      },
+      {
+        "id": "unknown-not-present-wired-unknown-wireless-unknown",
+        "statusHex": "0014",
+        "statusByte": 20
+      }
+    ]
+  },
+  "expected": {
+    "cases": [
+      {
+        "id": "charging-present-wired-connected-wireless-not-connected",
+        "chargeState": "CHARGING",
+        "batteryPresent": "PRESENT",
+        "wiredExternalPowerConnected": "CONNECTED",
+        "wirelessExternalPowerConnected": "NOT_CONNECTED"
+      },
+      {
+        "id": "discharging-active-present-wired-not-connected-wireless-connected",
+        "chargeState": "DISCHARGING_ACTIVE",
+        "batteryPresent": "PRESENT",
+        "wiredExternalPowerConnected": "NOT_CONNECTED",
+        "wirelessExternalPowerConnected": "CONNECTED"
+      },
+      {
+        "id": "discharging-inactive-present-wired-reserved-wireless-reserved",
+        "chargeState": "DISCHARGING_INACTIVE",
+        "batteryPresent": "PRESENT",
+        "wiredExternalPowerConnected": "RESERVED_FOR_FUTURE_USE",
+        "wirelessExternalPowerConnected": "RESERVED_FOR_FUTURE_USE"
+      },
+      {
+        "id": "unknown-not-present-wired-unknown-wireless-unknown",
+        "chargeState": "UNKNOWN",
+        "batteryPresent": "NOT_PRESENT",
+        "wiredExternalPowerConnected": "UNKNOWN",
+        "wirelessExternalPowerConnected": "UNKNOWN"
+      }
+    ],
+    "commonDecision": "Only the BAS Battery Level Status byte parser moves to shared KMP; characteristic routing, read/notify behavior, stream caching, disconnection, and platform GATT lifecycle stay in Android BleBattClient and iOS BleBasClient."
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleBattClientTest"
+    ],
+    "ios": [
+      "BleBasClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.BasBatteryStatusCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "The vector intentionally excludes battery-level caching and stream semantics because those are client state and remain platform-owned."
+}

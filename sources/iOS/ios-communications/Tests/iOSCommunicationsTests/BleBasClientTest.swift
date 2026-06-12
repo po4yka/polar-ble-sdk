@@ -270,6 +270,33 @@ class BleBasClientTest: XCTestCase {
         XCTAssertEqual(events[10].wirelessExternalPowerConnected, BleBasClient.PowerSourceState.reservedForFutureUse)
     }
 
+    func testBatteryStatusBitfieldGoldenVectorMatchesPlatformClientEnums() async throws {
+        let vector = try loadBasBatteryStatusVector()
+        let input = try XCTUnwrap(vector["input"] as? [String: Any])
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
+        let inputCases = try XCTUnwrap(input["cases"] as? [[String: Any]])
+        let expectedCases = try XCTUnwrap(expected["cases"] as? [[String: Any]])
+        let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any])
+
+        XCTAssertEqual(vector["id"] as? String, "bas-battery-status-bitfields")
+        XCTAssertEqual(vector["area"] as? String, "gatt.bas")
+        XCTAssertEqual(consumerTests["ios"] as? [String], ["BleBasClientTest"])
+        XCTAssertEqual(inputCases.compactMap { $0["id"] as? String }, expectedCases.compactMap { $0["id"] as? String })
+
+        for (inputCase, expectedCase) in zip(inputCases, expectedCases) {
+            let caseId = try XCTUnwrap(inputCase["id"] as? String)
+            let statusByte = try XCTUnwrap(inputCase["statusByte"] as? Int)
+            bleBasClient.processServiceData(BleBasClient.BATTERY_STATUS_CHARACTERISTIC, data: Data([0x00, UInt8(statusByte)]), err: 0)
+
+            XCTAssertEqual(bleBasClient.getChargeState(), chargeState(named: try XCTUnwrap(expectedCase["chargeState"] as? String)), caseId)
+            let stream = bleBasClient.monitorPowerSourcesState(true)
+            let powerState = try await collect(1, from: stream).first
+            XCTAssertEqual(powerState?.batteryPresent, batteryPresentState(named: try XCTUnwrap(expectedCase["batteryPresent"] as? String)), caseId)
+            XCTAssertEqual(powerState?.wiredExternalPowerConnected, powerSourceState(named: try XCTUnwrap(expectedCase["wiredExternalPowerConnected"] as? String)), caseId)
+            XCTAssertEqual(powerState?.wirelessExternalPowerConnected, powerSourceState(named: try XCTUnwrap(expectedCase["wirelessExternalPowerConnected"] as? String)), caseId)
+        }
+    }
+
     // MARK: - Synchronous getter tests
 
     func testGetBatteryLevel_should_return_newest_battery_level_value() throws {
@@ -326,5 +353,36 @@ class BleBasClientTest: XCTestCase {
 
         // Assert
         XCTAssertEqual(result, BleBasClient.ChargeState.unknown)
+    }
+
+    private func loadBasBatteryStatusVector() throws -> [String: Any] {
+        let file = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/protocol/gatt/bas-battery-status-bitfields.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any], file.path)
+    }
+
+    private func chargeState(named name: String) -> BleBasClient.ChargeState {
+        switch name {
+        case "CHARGING": return .charging
+        case "DISCHARGING_ACTIVE": return .dischargingActive
+        case "DISCHARGING_INACTIVE": return .dischargingInactive
+        default: return .unknown
+        }
+    }
+
+    private func batteryPresentState(named name: String) -> BleBasClient.BatteryPresentState {
+        switch name {
+        case "NOT_PRESENT": return .notPresent
+        case "PRESENT": return .present
+        default: return .unknown
+        }
+    }
+
+    private func powerSourceState(named name: String) -> BleBasClient.PowerSourceState {
+        switch name {
+        case "NOT_CONNECTED": return .notConnected
+        case "CONNECTED": return .connected
+        case "RESERVED_FOR_FUTURE_USE": return .reservedForFutureUse
+        default: return .unknown
+        }
     }
 }

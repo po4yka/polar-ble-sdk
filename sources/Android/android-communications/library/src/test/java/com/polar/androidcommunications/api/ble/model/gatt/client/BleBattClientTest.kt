@@ -4,6 +4,7 @@ import com.polar.androidcommunications.api.ble.exceptions.BleDisconnected
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattTxInterface
 import com.polar.androidcommunications.common.ble.AtomicSet
 import com.polar.androidcommunications.common.ble.ChannelUtils
+import com.polar.testutils.GoldenVectorTestData
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -326,6 +327,37 @@ class BleBattClientTest {
         assertEquals(PowerSourceState.CONNECTED, values[8].wirelessExternalPowerConnected)
         assertEquals(PowerSourceState.UNKNOWN, values[9].wirelessExternalPowerConnected)
         assertEquals(PowerSourceState.RESERVED_FOR_FUTURE_USE, values[10].wirelessExternalPowerConnected)
+    }
+
+    @Test
+    fun `battery status bitfield golden vector matches platform client enums`() = runTest {
+        val vector = GoldenVectorTestData.loadObject("protocol/gatt/bas-battery-status-bitfields.json")
+        val inputCases = vector.getAsJsonObject("input").getAsJsonArray("cases").map { it.asJsonObject }
+        val expectedCases = vector.getAsJsonObject("expected").getAsJsonArray("cases").map { it.asJsonObject }
+
+        assertEquals("bas-battery-status-bitfields", vector.get("id").asString)
+        assertEquals("gatt.bas", vector.get("area").asString)
+        assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.BleBattClientTest"), vector.getAsJsonObject("consumerTests").getAsJsonArray("android").map { it.asString })
+
+        inputCases.zip(expectedCases).forEach { (input, expected) ->
+            val statusByte = input.get("statusByte").asInt.toByte()
+            bleBattClient.processServiceData(
+                BleBattClient.BATTERY_LEVEL_STATUS_CHARACTERISTIC,
+                byteArrayOf(0x00, statusByte),
+                0,
+                true
+            )
+
+            val actualPowerSources = mutableListOf<PowerSourcesState>()
+            val powerJob = launch { bleBattClient.monitorPowerSourcesState(true).collect { actualPowerSources.add(it) } }
+            testScheduler.advanceUntilIdle()
+            powerJob.cancel()
+
+            assertEquals(input.get("id").asString, ChargeState.valueOf(expected.get("chargeState").asString), bleBattClient.getChargerStatus())
+            assertEquals(input.get("id").asString, BatteryPresentState.valueOf(expected.get("batteryPresent").asString), actualPowerSources.single().batteryPresent)
+            assertEquals(input.get("id").asString, PowerSourceState.valueOf(expected.get("wiredExternalPowerConnected").asString), actualPowerSources.single().wiredExternalPowerConnected)
+            assertEquals(input.get("id").asString, PowerSourceState.valueOf(expected.get("wirelessExternalPowerConnected").asString), actualPowerSources.single().wirelessExternalPowerConnected)
+        }
     }
 
     @Test

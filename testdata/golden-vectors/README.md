@@ -7,6 +7,7 @@ This directory stores platform-neutral behavior fixtures for the KMP migration. 
 ```text
 testdata/golden-vectors/schema/golden-vector.schema.json
 testdata/golden-vectors/protocol/advertisement/
+testdata/golden-vectors/protocol/gatt/
 testdata/golden-vectors/protocol/device-id/
 testdata/golden-vectors/protocol/pmd/
 testdata/golden-vectors/protocol/sensors/
