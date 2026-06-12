@@ -148,15 +148,19 @@ RUNTIME_PINNED_FACADE_LEDGER_REQUIRED_TERMS = {
     "public error mapping adapter-owned"
   ],
   "REST service discovery and description" => [
-    "facade response-error pinned",
+    "facade response-error and sleep action paths pinned",
     "BDBleApiImplTest.kt",
     "PolarBleApiImplTests.swift",
     "rest-facade-runtime-policy.json",
     "rest-request-transport-policy.json",
+    "rest-service-mapping-readiness.json",
     "RestFacadeRuntimePolicyCommonTest.kt",
+    "RestServiceMappingCommonPolicyTest.kt",
     "RestRequestTransportPolicyCommonTest.kt",
     "response-error platform mapping",
     "empty-success policy pinned through shared transport planning plus platform parse/decode compatibility",
+    "shared sleep REST action-path planning",
+    "sleep REST action-path vector references",
     "facade-level public error compatibility assertions",
     "additional delegated REST operations before shared REST runtime delegation"
   ],
