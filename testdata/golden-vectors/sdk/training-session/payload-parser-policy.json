@@ -241,5 +241,5 @@
     "common": true
   },
   "commonDecision": "This vector converts the existing platform byte-level protobuf coverage into an executable shared selected-field parser policy, while gzip payload decoding and public-model slot planning are already shared production code.",
-  "notes": "The Android and iOS tests construct real protobuf payloads for these parser families. Shared KMP production now parses selected summary and sample fields with the portable training protobuf reader, while platform adapters still build the generated public protobuf models until a broader shared DTO/reconstruction strategy is added."
+  "notes": "The Android and iOS tests construct real protobuf payloads for these parser families. Shared KMP production now parses selected summary, exercise, route, and sample fields with the portable training protobuf reader, while platform adapters still build the generated public protobuf models until a broader shared DTO/reconstruction strategy is added."
 }

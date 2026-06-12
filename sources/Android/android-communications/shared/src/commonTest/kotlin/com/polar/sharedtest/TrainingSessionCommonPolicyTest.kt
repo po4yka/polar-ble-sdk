@@ -203,7 +203,7 @@ class TrainingSessionCommonPolicyTest {
         assertEquals("executable shared parser-policy coverage; gzip decoding and selected protobuf field parsing are shared while generated public model reconstruction remains platform-owned", commonParserPrototype.stringValue("status"), vector.stringValue("id"))
         assertEquals("Selected training payload protobuf field parsing now executes in shared KMP for these parser cases; generated public protobuf object construction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered. Gzip decompression and public-model slot planning are shared KMP production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests.", expected.stringValue("commonDecision"), vector.stringValue("id"))
         assertEquals("This vector converts the existing platform byte-level protobuf coverage into an executable shared selected-field parser policy, while gzip payload decoding and public-model slot planning are already shared production code.", vector.stringValue("commonDecision"), vector.stringValue("id"))
-        assertEquals("The Android and iOS tests construct real protobuf payloads for these parser families. Shared KMP production now parses selected summary and sample fields with the portable training protobuf reader, while platform adapters still build the generated public protobuf models until a broader shared DTO/reconstruction strategy is added.", vector.stringValue("notes"), vector.stringValue("id"))
+        assertEquals("The Android and iOS tests construct real protobuf payloads for these parser families. Shared KMP production now parses selected summary, exercise, route, and sample fields with the portable training protobuf reader, while platform adapters still build the generated public protobuf models until a broader shared DTO/reconstruction strategy is added.", vector.stringValue("notes"), vector.stringValue("id"))
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"), vector.objectValue("consumerTests").stringArrayValue("android"), vector.stringValue("id"))
         assertEquals(listOf("PolarTrainingSessionUtilsTest"), vector.objectValue("consumerTests").stringArrayValue("ios"), vector.stringValue("id"))
         assertEquals(listOf("com.polar.sharedtest.TrainingSessionCommonPolicyTest"), vector.objectValue("consumerTests").stringArrayValue("commonPrototype"), vector.stringValue("id"))
@@ -294,6 +294,59 @@ class TrainingSessionCommonPolicyTest {
         assertEquals(false, samples.malformed)
         assertEquals(false, advanced.malformed)
     }
+
+    @Test
+    fun trainingSessionDecodedPayloadParserProjectsExerciseSummaryAndRouteFieldsFromProtobufBytes() {
+        val exerciseSummaryPayload = protobufBytes {
+            messageField(1) {
+                messageField(2) {
+                    varintField(1, 12)
+                }
+            }
+            messageField(3) {
+                varintField(1, 5)
+            }
+            fixed32Field(18, 10000.0f.toBits())
+        }
+        val routePayload = protobufBytes {
+            fixed64Field(2, 10.0.toBits())
+            fixed64Field(3, 20.0.toBits())
+            packedVarintField(5, listOf(6))
+        }
+        val routeAdvancedPayload = protobufBytes {
+            messageField(1) {
+                varintField(1, 0)
+                messageField(2) {
+                    fixed64Field(1, 10.0.toBits())
+                    fixed64Field(2, 20.0.toBits())
+                }
+            }
+            packedVarintField(2, listOf(3))
+            packedVarint64Field(3, listOf(zigZag64(100)))
+            packedVarint64Field(4, listOf(zigZag64(200)))
+        }
+
+        val exerciseSummary = PolarTrainingSessionModels.parseDecodedPayloadResponse("BASE.BPB", exerciseSummaryPayload)
+        val route = PolarTrainingSessionModels.parseDecodedPayloadResponse("ROUTE.BPB", routePayload)
+        val routeAdvanced = PolarTrainingSessionModels.parseDecodedPayloadResponse("ROUTE2.BPB", routeAdvancedPayload)
+
+        assertEquals(12, exerciseSummary.payload.startHour)
+        assertEquals(5, exerciseSummary.payload.sport)
+        assertEquals(10000, exerciseSummary.payload.walkingDistanceMeters)
+        assertEquals(listOf(10.0), route.payload.latitude)
+        assertEquals(listOf(20.0), route.payload.longitude)
+        assertEquals(listOf(6), route.payload.satelliteAmount)
+        assertEquals(listOf(0), routeAdvanced.payload.syncPointIndex)
+        assertEquals(listOf(10.0), routeAdvanced.payload.syncPointLatitude)
+        assertEquals(listOf(20.0), routeAdvanced.payload.syncPointLongitude)
+        assertEquals(listOf(100L), routeAdvanced.payload.latitudeDeltas)
+        assertEquals(listOf(200L), routeAdvanced.payload.longitudeDeltas)
+        assertEquals(listOf(3), routeAdvanced.payload.satelliteAmount)
+        assertEquals(false, exerciseSummary.malformed)
+        assertEquals(false, route.malformed)
+        assertEquals(false, routeAdvanced.malformed)
+    }
+
 
     @Test
     fun trainingSessionDecodedPayloadParserMarksMalformedProtobufWithoutThrowing() {
@@ -553,12 +606,24 @@ class TrainingSessionCommonPolicyTest {
             lengthDelimitedField(fieldNumber, packed)
         }
 
+        fun packedVarint64Field(fieldNumber: Int, values: List<Long>) {
+            val packed = ProtobufBuilder().apply { values.forEach { writeVarint(it) } }.build().toList()
+            lengthDelimitedField(fieldNumber, packed)
+        }
+
         fun fixed32Field(fieldNumber: Int, value: Int) {
             writeVarint(((fieldNumber shl 3) or 5).toLong())
             bytes += (value and 0xff).toByte()
             bytes += ((value ushr 8) and 0xff).toByte()
             bytes += ((value ushr 16) and 0xff).toByte()
             bytes += ((value ushr 24) and 0xff).toByte()
+        }
+
+        fun fixed64Field(fieldNumber: Int, value: Long) {
+            writeVarint(((fieldNumber shl 3) or 1).toLong())
+            for (index in 0 until 8) {
+                bytes += ((value ushr (8 * index)) and 0xff).toByte()
+            }
         }
 
         fun build(): ByteArray {
@@ -590,6 +655,10 @@ class TrainingSessionCommonPolicyTest {
 
     private fun zigZag32(value: Int): Int {
         return (value shl 1) xor (value shr 31)
+    }
+
+    private fun zigZag64(value: Long): Long {
+        return (value shl 1) xor (value shr 63)
     }
 
     private companion object {

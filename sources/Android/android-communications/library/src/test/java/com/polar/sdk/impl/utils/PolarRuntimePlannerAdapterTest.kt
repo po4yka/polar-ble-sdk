@@ -721,6 +721,63 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `shared training session selected protobuf fields route through Android runtime adapter DTOs`() {
+        val exerciseSummary = PolarRuntimePlannerAdapter.parseTrainingSessionPayloadResponse(
+            "BASE.BPB",
+            protobufBytes {
+                messageField(1) {
+                    messageField(2) {
+                        varintField(1, 12)
+                    }
+                }
+                messageField(3) {
+                    varintField(1, 5)
+                }
+                fixed32Field(18, 10000.0f.toBits())
+            }
+        )
+        val route = PolarRuntimePlannerAdapter.parseTrainingSessionPayloadResponse(
+            "ROUTE.BPB",
+            protobufBytes {
+                fixed64Field(2, 10.0.toBits())
+                fixed64Field(3, 20.0.toBits())
+                packedVarintField(5, listOf(6))
+            }
+        )
+        val routeAdvanced = PolarRuntimePlannerAdapter.parseTrainingSessionPayloadResponse(
+            "ROUTE2.BPB",
+            protobufBytes {
+                messageField(1) {
+                    varintField(1, 0)
+                    messageField(2) {
+                        fixed64Field(1, 10.0.toBits())
+                        fixed64Field(2, 20.0.toBits())
+                    }
+                }
+                packedVarintField(2, listOf(3))
+                packedVarint64Field(3, listOf(zigZag64(100)))
+                packedVarint64Field(4, listOf(zigZag64(200)))
+            }
+        )
+
+        Assert.assertEquals(12, exerciseSummary.startHour)
+        Assert.assertEquals(5, exerciseSummary.sport)
+        Assert.assertEquals(10000, exerciseSummary.walkingDistanceMeters)
+        Assert.assertEquals(listOf(10.0), route.latitude)
+        Assert.assertEquals(listOf(20.0), route.longitude)
+        Assert.assertEquals(listOf(6), route.satelliteAmount)
+        Assert.assertEquals(listOf(0), routeAdvanced.syncPointIndex)
+        Assert.assertEquals(listOf(10.0), routeAdvanced.syncPointLatitude)
+        Assert.assertEquals(listOf(20.0), routeAdvanced.syncPointLongitude)
+        Assert.assertEquals(listOf(100L), routeAdvanced.latitudeDeltas)
+        Assert.assertEquals(listOf(200L), routeAdvanced.longitudeDeltas)
+        Assert.assertEquals(listOf(3), routeAdvanced.satelliteAmount)
+        Assert.assertFalse(exerciseSummary.malformed)
+        Assert.assertFalse(route.malformed)
+        Assert.assertFalse(routeAdvanced.malformed)
+    }
+
+    @Test
     fun `shared time field policy routes through Android runtime adapter`() {
         val fields = PolarRuntimePlannerAdapter.dateTimeFields(
             year = 2026,
@@ -1253,6 +1310,71 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     private fun ByteArray.toHexString(): String = joinToString(separator = "") { "%02x".format(it.toInt() and 0xFF) }
+
+    private class ProtobufBuilder {
+        private val bytes = mutableListOf<Byte>()
+
+        fun varintField(fieldNumber: Int, value: Int) {
+            writeVarint(((fieldNumber shl 3) or 0).toLong())
+            writeVarint(value.toLong())
+        }
+
+        fun messageField(fieldNumber: Int, block: ProtobufBuilder.() -> Unit) {
+            val message = ProtobufBuilder().apply(block).build()
+            writeVarint(((fieldNumber shl 3) or 2).toLong())
+            writeVarint(message.size.toLong())
+            bytes += message.toList()
+        }
+
+        fun packedVarintField(fieldNumber: Int, values: List<Int>) {
+            packedVarint64Field(fieldNumber, values.map(Int::toLong))
+        }
+
+        fun packedVarint64Field(fieldNumber: Int, values: List<Long>) {
+            val packed = ProtobufBuilder().apply { values.forEach(::writeVarint) }.build()
+            writeVarint(((fieldNumber shl 3) or 2).toLong())
+            writeVarint(packed.size.toLong())
+            bytes += packed.toList()
+        }
+
+        fun fixed32Field(fieldNumber: Int, value: Int) {
+            writeVarint(((fieldNumber shl 3) or 5).toLong())
+            for (index in 0 until 4) {
+                bytes += ((value ushr (8 * index)) and 0xff).toByte()
+            }
+        }
+
+        fun fixed64Field(fieldNumber: Int, value: Long) {
+            writeVarint(((fieldNumber shl 3) or 1).toLong())
+            for (index in 0 until 8) {
+                bytes += ((value ushr (8 * index)) and 0xff).toByte()
+            }
+        }
+
+        fun build(): ByteArray {
+            return bytes.toByteArray()
+        }
+
+        private fun writeVarint(value: Long) {
+            var current = value
+            while (true) {
+                if ((current and 0x7f.inv().toLong()) == 0L) {
+                    bytes += current.toByte()
+                    return
+                }
+                bytes += (((current and 0x7f) or 0x80).toByte())
+                current = current ushr 7
+            }
+        }
+    }
+
+    private fun protobufBytes(block: ProtobufBuilder.() -> Unit): ByteArray {
+        return ProtobufBuilder().apply(block).build()
+    }
+
+    private fun zigZag64(value: Long): Long {
+        return (value shl 1) xor (value shr 63)
+    }
 
     private companion object {
         val FEATURE_AVAILABILITY_CASE_IDS = listOf(

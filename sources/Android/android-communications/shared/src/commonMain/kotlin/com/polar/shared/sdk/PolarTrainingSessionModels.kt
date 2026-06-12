@@ -318,6 +318,9 @@ object PolarTrainingSessionModels {
     private fun parsePayloadFields(parser: String, payload: ByteArray): PolarTrainingPayloadFields {
         return when (parser) {
             "PbTrainingSession" -> parseTrainingSessionSummary(payload)
+            "PbExerciseBase" -> parseExerciseSummary(payload)
+            "PbExerciseRouteSamples" -> parseExerciseRouteSamples(payload)
+            "PbExerciseRouteSamples2" -> parseExerciseRouteSamples2(payload)
             "PbExerciseSamples" -> parseExerciseSamples(payload)
             "PbExerciseSamples2" -> parseExerciseSamples2(payload)
             else -> {
@@ -325,6 +328,75 @@ object PolarTrainingSessionModels {
                 PolarTrainingPayloadFields()
             }
         }
+    }
+
+    private fun parseExerciseSummary(payload: ByteArray): PolarTrainingPayloadFields {
+        var startHour: Int? = null
+        var sport: Int? = null
+        var walkingDistanceMeters: Int? = null
+        PolarTrainingProtobufReader(payload).forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                1 -> reader.readLengthDelimitedField(wireType) { startHour = it.readLocalDateTimeHour() }
+                3 -> reader.readLengthDelimitedField(wireType) { sport = it.readSportIdentifier() }
+                18 -> walkingDistanceMeters = reader.readFloatField(wireType).toInt()
+                else -> reader.skip(wireType)
+            }
+        }
+        return PolarTrainingPayloadFields(
+            startHour = startHour,
+            sport = sport,
+            walkingDistanceMeters = walkingDistanceMeters
+        )
+    }
+
+    private fun parseExerciseRouteSamples(payload: ByteArray): PolarTrainingPayloadFields {
+        val latitude = mutableListOf<Double>()
+        val longitude = mutableListOf<Double>()
+        val satelliteAmount = mutableListOf<Int>()
+        PolarTrainingProtobufReader(payload).forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                2 -> latitude += reader.readDoubleRepeatedField(wireType)
+                3 -> longitude += reader.readDoubleRepeatedField(wireType)
+                5 -> satelliteAmount += reader.readUInt32RepeatedField(wireType)
+                else -> reader.skip(wireType)
+            }
+        }
+        return PolarTrainingPayloadFields(
+            latitude = latitude,
+            longitude = longitude,
+            satelliteAmount = satelliteAmount
+        )
+    }
+
+    private fun parseExerciseRouteSamples2(payload: ByteArray): PolarTrainingPayloadFields {
+        val syncPointIndex = mutableListOf<Int>()
+        val syncPointLatitude = mutableListOf<Double>()
+        val syncPointLongitude = mutableListOf<Double>()
+        val latitude = mutableListOf<Long>()
+        val longitude = mutableListOf<Long>()
+        val satelliteAmount = mutableListOf<Int>()
+        PolarTrainingProtobufReader(payload).forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                1 -> reader.readLengthDelimitedField(wireType) {
+                    val syncPoint = it.readRouteSyncPoint()
+                    syncPointIndex += syncPoint.index
+                    syncPointLatitude += syncPoint.latitude
+                    syncPointLongitude += syncPoint.longitude
+                }
+                2 -> satelliteAmount += reader.readUInt32RepeatedField(wireType)
+                3 -> latitude += reader.readSInt64RepeatedField(wireType)
+                4 -> longitude += reader.readSInt64RepeatedField(wireType)
+                else -> reader.skip(wireType)
+            }
+        }
+        return PolarTrainingPayloadFields(
+            latitudeDeltas = latitude,
+            longitudeDeltas = longitude,
+            satelliteAmount = satelliteAmount,
+            syncPointIndex = syncPointIndex,
+            syncPointLatitude = syncPointLatitude,
+            syncPointLongitude = syncPointLongitude
+        )
     }
 
     private fun parseTrainingSessionSummary(payload: ByteArray): PolarTrainingPayloadFields {
@@ -384,6 +456,70 @@ object PolarTrainingSessionModels {
             }
         }
         return hours * 3600 + minutes * 60 + seconds
+    }
+
+    private fun PolarTrainingProtobufReader.readLocalDateTimeHour(): Int {
+        var hour = 0
+        forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                2 -> reader.readLengthDelimitedField(wireType) { hour = it.readTimeHour() }
+                else -> reader.skip(wireType)
+            }
+        }
+        return hour
+    }
+
+    private fun PolarTrainingProtobufReader.readTimeHour(): Int {
+        var hour = 0
+        forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                1 -> hour = reader.readVarintField(wireType).toInt()
+                else -> reader.skip(wireType)
+            }
+        }
+        return hour
+    }
+
+    private fun PolarTrainingProtobufReader.readSportIdentifier(): Int {
+        var sport = 0
+        forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                1 -> sport = reader.readVarintField(wireType).toInt()
+                else -> reader.skip(wireType)
+            }
+        }
+        return sport
+    }
+
+    private fun PolarTrainingProtobufReader.readRouteSyncPoint(): PolarTrainingRouteSyncPoint {
+        var index = 0
+        var latitude = 0.0
+        var longitude = 0.0
+        forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                1 -> index = reader.readVarintField(wireType).toInt()
+                2 -> reader.readLengthDelimitedField(wireType) {
+                    val location = it.readRouteSyncPointLocation()
+                    latitude = location.first
+                    longitude = location.second
+                }
+                else -> reader.skip(wireType)
+            }
+        }
+        return PolarTrainingRouteSyncPoint(index = index, latitude = latitude, longitude = longitude)
+    }
+
+    private fun PolarTrainingProtobufReader.readRouteSyncPointLocation(): Pair<Double, Double> {
+        var latitude = 0.0
+        var longitude = 0.0
+        forEachField { fieldNumber, wireType, reader ->
+            when (fieldNumber) {
+                1 -> latitude = reader.readDoubleField(wireType)
+                2 -> longitude = reader.readDoubleField(wireType)
+                else -> reader.skip(wireType)
+            }
+        }
+        return latitude to longitude
     }
 
     private fun PolarTrainingProtobufReader.readIntervalledSample2List(): PolarTrainingIntervalledSampleList {
@@ -477,6 +613,17 @@ data class PolarTrainingPayloadFields(
     val durationSeconds: Int? = null,
     val distanceMeters: Int? = null,
     val calories: Int? = null,
+    val startHour: Int? = null,
+    val sport: Int? = null,
+    val walkingDistanceMeters: Int? = null,
+    val latitude: List<Double> = emptyList(),
+    val longitude: List<Double> = emptyList(),
+    val latitudeDeltas: List<Long> = emptyList(),
+    val longitudeDeltas: List<Long> = emptyList(),
+    val satelliteAmount: List<Int> = emptyList(),
+    val syncPointIndex: List<Int> = emptyList(),
+    val syncPointLatitude: List<Double> = emptyList(),
+    val syncPointLongitude: List<Double> = emptyList(),
     val heartRateSamples: List<Int> = emptyList(),
     val intervalledSampleLists: List<PolarTrainingIntervalledSampleList> = emptyList()
 )
@@ -497,6 +644,12 @@ data class PolarTrainingPayloadReadPlanEntry(
 data class PolarTrainingIntervalledSampleList(
     val sampleType: String,
     val heartRateSamples: List<Int> = emptyList()
+)
+
+private data class PolarTrainingRouteSyncPoint(
+    val index: Int,
+    val latitude: Double,
+    val longitude: Double
 )
 
 data class PolarTrainingPayloadReadResult(

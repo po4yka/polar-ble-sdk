@@ -32,6 +32,12 @@ internal class PolarTrainingProtobufReader(private val bytes: ByteArray) {
         return Float.fromBits(value)
     }
 
+    fun readDoubleField(wireType: Int): Double {
+        require(wireType == PROTOBUF_WIRE_FIXED64) { "Expected protobuf fixed64 wire type but got $wireType" }
+        val value = readLittleEndian64()
+        return Double.fromBits(value)
+    }
+
     fun readLengthDelimitedField(wireType: Int, block: (PolarTrainingProtobufReader) -> Unit) {
         block(PolarTrainingProtobufReader(readLengthDelimitedBytes(wireType)))
     }
@@ -51,6 +57,32 @@ internal class PolarTrainingProtobufReader(private val bytes: ByteArray) {
 
     fun readSInt32RepeatedField(wireType: Int): List<Int> {
         return readUInt32RepeatedField(wireType).map(::decodeZigZag32)
+    }
+
+    fun readDoubleRepeatedField(wireType: Int): List<Double> {
+        return when (wireType) {
+            PROTOBUF_WIRE_FIXED64 -> listOf(Double.fromBits(readLittleEndian64()))
+            PROTOBUF_WIRE_LENGTH_DELIMITED -> {
+                val packed = PolarTrainingProtobufReader(readLengthDelimitedBytes(wireType))
+                buildList {
+                    while (packed.hasRemaining()) add(Double.fromBits(packed.readLittleEndian64()))
+                }
+            }
+            else -> error("Expected protobuf double repeated wire type but got $wireType")
+        }
+    }
+
+    fun readSInt64RepeatedField(wireType: Int): List<Long> {
+        return when (wireType) {
+            PROTOBUF_WIRE_VARINT -> listOf(decodeZigZag64(readRawVarint()))
+            PROTOBUF_WIRE_LENGTH_DELIMITED -> {
+                val packed = PolarTrainingProtobufReader(readLengthDelimitedBytes(wireType))
+                buildList {
+                    while (packed.hasRemaining()) add(decodeZigZag64(packed.readRawVarint()))
+                }
+            }
+            else -> error("Expected protobuf sint64 repeated wire type but got $wireType")
+        }
     }
 
     fun skip(wireType: Int) {
@@ -91,6 +123,16 @@ internal class PolarTrainingProtobufReader(private val bytes: ByteArray) {
         return value
     }
 
+    private fun readLittleEndian64(): Long {
+        require(offset + 8 <= bytes.size) { "Truncated protobuf fixed64" }
+        var value = 0L
+        for (index in 0 until 8) {
+            value = value or ((bytes[offset + index].toLong() and 0xffL) shl (8 * index))
+        }
+        offset += 8
+        return value
+    }
+
     fun readRawVarint(): Long {
         var result = 0L
         var shift = 0
@@ -108,5 +150,9 @@ internal class PolarTrainingProtobufReader(private val bytes: ByteArray) {
 
     private fun decodeZigZag32(value: Int): Int {
         return (value ushr 1) xor -(value and 1)
+    }
+
+    private fun decodeZigZag64(value: Long): Long {
+        return (value ushr 1) xor -(value and 1L)
     }
 }
