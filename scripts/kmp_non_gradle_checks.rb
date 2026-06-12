@@ -1201,6 +1201,32 @@ PLATFORM_OWNED_COVERAGE_ROWS = {
   "Android Bluedroid host behavior" => ["Platform-specific", "Do not migrate to common code"],
   "iOS CoreBluetooth host behavior" => ["Platform-specific", "Do not migrate to common code"]
 }.freeze
+FEATURE_AVAILABILITY_VECTOR_REQUIRED_TERMS = [
+  "feature_availability_readiness",
+  "service-and-capability-gates",
+  "feature-name-normalization",
+  "h10-filesystem-capability-only-gate",
+  "unknown-feature-pass-through",
+  "platform-client-readiness-boundary",
+  "commonRuntimePrototype"
+].freeze
+FEATURE_AVAILABILITY_DOC_REQUIRED_TERMS = [
+  "feature-availability-readiness.json",
+  "FeatureAvailabilityCommonPolicyTest.kt",
+  "PolarRuntimePlannerAdapterTest.kt",
+  "PolarDataUtilsTest.swift",
+  "GATT client lookup",
+  "`clientReady` waits",
+  "PMD feature reads",
+  "public callback/error behavior"
+].freeze
+FEATURE_AVAILABILITY_TEST_REQUIRED_TERMS = [
+  "firmware-update-requires-psftp-and-firmware-capability",
+  "offline-exercise-v2-uses-h10-filesystem-capability-without-service-gate",
+  "unknown-feature-has-no-shared-preconditions",
+  "platform-client-readiness-boundary",
+  "SDK feature availability migration owns only deterministic service and capability preconditions"
+].freeze
 FULL_COVERAGE_EXIT_CRITERIA_TERMS = [
   "Every row marked `Partial` has either new tests, documented platform-specific ownership, or a migration deferral note.",
   "Every parser that moves to KMP has shared golden vectors covering valid, invalid, empty, boundary, and unknown-value cases.",
@@ -2098,6 +2124,27 @@ PLATFORM_OWNED_COVERAGE_ROWS.each do |behavior, terms|
   combined = "#{row[3]} #{row[4]} #{coverage_inventory}"
   terms.each do |term|
     errors << "documentation/KmpCoverageInventory.md: #{behavior}: missing platform-owned boundary term #{term}" unless combined.include?(term)
+  end
+end
+feature_availability_vector = File.read(File.join(ROOT, "testdata/golden-vectors/sdk/feature-availability/feature-availability-readiness.json"))
+feature_availability_docs = [
+  "documentation/KmpCoverageInventory.md",
+  "documentation/KmpFakeTransportTestPlan.md",
+  "documentation/KmpFullCoverageTddBacklog.md",
+  "documentation/KmpPreMigrationRemainingWork.md"
+].map { |path| File.read(File.join(ROOT, path)) }.join("\n")
+feature_availability_shared_test = File.read(File.join(ROOT, "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/FeatureAvailabilityCommonPolicyTest.kt"))
+feature_availability_android_test = File.read(File.join(ROOT, "sources/Android/android-communications/library/src/test/java/com/polar/sdk/impl/utils/PolarRuntimePlannerAdapterTest.kt"))
+feature_availability_ios_test = File.read(File.join(ROOT, "sources/iOS/ios-communications/Tests/PolarBleSdkTests/PolarDataUtilsTest.swift"))
+FEATURE_AVAILABILITY_VECTOR_REQUIRED_TERMS.each do |term|
+  errors << "testdata/golden-vectors/sdk/feature-availability/feature-availability-readiness.json: missing feature-availability term #{term}" unless feature_availability_vector.include?(term)
+end
+FEATURE_AVAILABILITY_DOC_REQUIRED_TERMS.each do |term|
+  errors << "KMP feature-availability docs: missing #{term}" unless feature_availability_docs.include?(term)
+end
+FEATURE_AVAILABILITY_TEST_REQUIRED_TERMS.each do |term|
+  unless feature_availability_shared_test.include?(term) && feature_availability_android_test.include?(term) && feature_availability_ios_test.include?(term)
+    errors << "Feature availability shared/Android/iOS tests must all assert #{term}"
   end
 end
 full_coverage_exit_section = coverage_inventory.split("## Full-Coverage Exit Criteria Before Migration", 2)[1] || ""

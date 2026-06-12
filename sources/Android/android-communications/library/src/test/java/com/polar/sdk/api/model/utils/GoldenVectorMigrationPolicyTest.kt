@@ -378,6 +378,36 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
+    fun `SDK feature availability readiness remains vector pinned and platform bounded`() {
+        val root = findRepositoryRoot()
+        val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
+        val fakeTransportPlan = root.resolve("documentation/KmpFakeTransportTestPlan.md").readText()
+        val backlog = root.resolve("documentation/KmpFullCoverageTddBacklog.md").readText()
+        val remainingWork = root.resolve("documentation/KmpPreMigrationRemainingWork.md").readText()
+        val vector = root.resolve("testdata/golden-vectors/sdk/feature-availability/feature-availability-readiness.json").readText()
+        val sharedTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/FeatureAvailabilityCommonPolicyTest.kt").readText()
+        val androidTest = root.resolve("sources/Android/android-communications/library/src/test/java/com/polar/sdk/impl/utils/PolarRuntimePlannerAdapterTest.kt").readText()
+        val iosTest = root.resolve("sources/iOS/ios-communications/Tests/PolarBleSdkTests/PolarDataUtilsTest.swift").readText()
+        val docs = "$inventory\n$fakeTransportPlan\n$backlog\n$remainingWork"
+        val violations = mutableListOf<String>()
+
+        FEATURE_AVAILABILITY_VECTOR_REQUIRED_TERMS
+            .filterNot { term -> vector.contains(term) }
+            .mapTo(violations) { term -> "feature-availability-readiness.json missing $term" }
+        FEATURE_AVAILABILITY_DOC_REQUIRED_TERMS
+            .filterNot { term -> docs.contains(term) }
+            .mapTo(violations) { term -> "migration docs missing $term" }
+        FEATURE_AVAILABILITY_TEST_REQUIRED_TERMS
+            .filterNot { term -> sharedTest.contains(term) && androidTest.contains(term) && iosTest.contains(term) }
+            .mapTo(violations) { term -> "shared/Android/iOS tests must all assert $term" }
+
+        assertTrue(
+            "SDK feature availability migration must stay vector-pinned while client readiness and transport behavior remain platform-owned: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
     fun `KMP coverage inventory keeps full coverage exit criteria explicit`() {
         val inventory = findRepositoryRoot().resolve("documentation/KmpCoverageInventory.md").readText()
         val exitCriteriaSection = inventory.substringAfter("## Full-Coverage Exit Criteria Before Migration", missingDelimiterValue = "")
@@ -3636,6 +3666,32 @@ class GoldenVectorMigrationPolicyTest {
             "GATT clients" to listOf("Partial", "platform-owned", "Keep transport clients platform-specific"),
             "Android Bluedroid host behavior" to listOf("Platform-specific", "Do not migrate to common code"),
             "iOS CoreBluetooth host behavior" to listOf("Platform-specific", "Do not migrate to common code")
+        )
+        val FEATURE_AVAILABILITY_VECTOR_REQUIRED_TERMS = listOf(
+            "feature_availability_readiness",
+            "service-and-capability-gates",
+            "feature-name-normalization",
+            "h10-filesystem-capability-only-gate",
+            "unknown-feature-pass-through",
+            "platform-client-readiness-boundary",
+            "commonRuntimePrototype"
+        )
+        val FEATURE_AVAILABILITY_DOC_REQUIRED_TERMS = listOf(
+            "feature-availability-readiness.json",
+            "FeatureAvailabilityCommonPolicyTest.kt",
+            "PolarRuntimePlannerAdapterTest.kt",
+            "PolarDataUtilsTest.swift",
+            "GATT client lookup",
+            "`clientReady` waits",
+            "PMD feature reads",
+            "public callback/error behavior"
+        )
+        val FEATURE_AVAILABILITY_TEST_REQUIRED_TERMS = listOf(
+            "firmware-update-requires-psftp-and-firmware-capability",
+            "offline-exercise-v2-uses-h10-filesystem-capability-without-service-gate",
+            "unknown-feature-has-no-shared-preconditions",
+            "platform-client-readiness-boundary",
+            "SDK feature availability migration owns only deterministic service and capability preconditions"
         )
         val FULL_COVERAGE_EXIT_CRITERIA_TERMS = listOf(
             "Every row marked `Partial` has either new tests, documented platform-specific ownership, or a migration deferral note.",
