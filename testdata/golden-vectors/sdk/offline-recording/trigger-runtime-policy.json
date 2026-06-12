@@ -181,8 +181,8 @@
     ]
   },
   "platformExpectations": {
-    "android": "BDBleApiImplTest pins public facade get/set mapping, secret propagation, and set/get error propagation; BlePmdClientTest pins Android byte-level PMD packet framing with length-prefixed enabled trigger settings and stale wrong-command response discard during offline-trigger status reads",
-    "ios": "PolarBleApiImplTests pins public facade get/set mapping, secret propagation, set-mode error propagation, and get-status error propagation; BlePmdClientTest pins iOS byte-level PMD packet framing without Android's enabled-trigger length prefix and pre-command PMD response queue clearing",
+    "android": "BDBleApiImplTest pins public facade get/set mapping, secret propagation, set-mode, status-read, setting-write, and get-status error propagation; BlePmdClientTest pins Android byte-level PMD packet framing with length-prefixed enabled trigger settings and stale wrong-command response discard during offline-trigger status reads",
+    "ios": "PolarBleApiImplTests pins public facade get/set mapping, secret propagation, set-mode, status-read, setting-write, and get-status error propagation; BlePmdClientTest pins iOS byte-level PMD packet framing without Android's enabled-trigger length prefix and pre-command PMD response queue clearing",
     "common": "executable shared commonTest covers typed trigger runtime steps before platform facade behavior moves"
   },
   "platforms": {
@@ -192,7 +192,7 @@
   },
   "execution": {
     "status": "shared-common-test",
-    "reason": "Shared commonTest now asserts get/set trigger orchestration steps through the common fake transport, Android plus iOS facade tests pin public get/set mapping, secret propagation, and error propagation, and platform PMD adapter tests pin the Android/iOS packet-framing split plus response-queue cleanup policy. Cancellation remains a production-delegation gate because current offline-trigger operations are synchronous control-point commands without stream observers or cancellable fake-runtime tasks."
+    "reason": "Shared commonTest now asserts get/set trigger orchestration steps through the common fake transport, Android plus iOS facade tests pin public get/set mapping, secret propagation, set-mode, status-read, setting-write, and get-status error propagation, and platform PMD adapter tests pin the Android/iOS packet-framing split plus response-queue cleanup policy. Cancellation remains a production-delegation gate because current offline-trigger operations are synchronous control-point commands without stream observers or cancellable fake-runtime tasks."
   },
   "notes": "Android serializes enabled trigger settings with an explicit length byte before setting and secret bytes, while current iOS appends setting and secret bytes directly. Android discards stale PMD control-point responses with an unexpected command byte during offline-trigger status reads; iOS clears the response queue before transmitting a new control-point command. KMP must choose a shared packet and queue-cleanup contract or preserve these platform splits behind platform adapters."
 }
