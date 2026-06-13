@@ -42,7 +42,7 @@ External publication remains disabled. Any future Maven, CocoaPods, or SwiftPM p
 
 - Passed in this final audit slice: `git diff --check`, `ruby scripts/kmp_non_gradle_checks.rb`, `swift package describe`, `pod install --project-directory=sources/iOS/ios-communications`, `pod lib lint PolarBleSdk.podspec --allow-warnings`, and focused XCTest `PolarDataUtilsTest/testPolarBleSdkIosTargetRequiresLinkedSharedFramework`.
 - The current broad iOS XCTest closeout gate is green: `xcodebuild test -workspace sources/iOS/ios-communications/iOSCommunications.xcworkspace -scheme iOSCommunications -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5'` passed with 813 tests and 0 failures. Focused repro runs also passed for the previously recorded stale failures: `PpgDataTest/testPpgGoldenVectorsMatchIOSCommunicationsBehavior`, the REST empty/malformed decoding tests, `PolarBackupManagerTest/testRestoreBackup`, `PolarDataUtilsTest/testTriggerRuntimePolicyVectorIsPinnedBeforeRuntimeMigration`, `PolarDeviceRestApiServiceTests/testReceivesRestApiEventWhenUncompressed`, and `PolarTrainingSessionUtilsTests/testPayloadParserPolicyVectorIsPinnedBeforeByteLevelParserMigration`.
-- Required Android policy validation for this closeout slice is `./gradlew :library:testSdkDebugUnitTest --tests 'com.polar.sdk.api.model.utils.GoldenVectorMigrationPolicyTest' --no-daemon --warning-mode all` from `sources/Android/android-communications`.
+- The required Android policy validation for this closeout slice is green: `./gradlew :library:testSdkDebugUnitTest --tests 'com.polar.sdk.api.model.utils.GoldenVectorMigrationPolicyTest' --no-daemon --warning-mode all` passed from `sources/Android/android-communications`.
 
 ## Regression Guards
 
