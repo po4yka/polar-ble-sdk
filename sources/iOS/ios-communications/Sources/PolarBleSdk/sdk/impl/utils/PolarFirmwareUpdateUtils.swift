@@ -1,7 +1,7 @@
 //  Copyright © 2024 Polar. All rights reserved.
 
 import Foundation
-import Zip
+import ZIPFoundation
 
 protocol FirmwarePackageExtracting {
     func unzipFirmwarePackage(zippedData: Data) -> [String: Data]?
@@ -17,7 +17,7 @@ final class ZipFirmwarePackageExtractor: FirmwarePackageExtracting {
 
             let destinationURL = temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
-            try Zip.unzipFile(zipFilePath, destination: destinationURL, overwrite: true, password: nil)
+            try FileManager.default.unzipItem(at: zipFilePath, to: destinationURL)
 
             let contents = try FileManager.default.contentsOfDirectory(at: destinationURL, includingPropertiesForKeys: nil)
             guard !contents.isEmpty else {

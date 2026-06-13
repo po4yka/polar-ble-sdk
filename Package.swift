@@ -10,7 +10,7 @@ let hasLocalPolarBleSdkSharedXCFramework = FileManager.default.fileExists(atPath
 let hasPolarBleSdkShared = hasRemotePolarBleSdkSharedBinary || hasLocalPolarBleSdkSharedXCFramework
 let polarBleSdkTargetDependencies: [Target.Dependency] = [
     .product(name: "SwiftProtobuf", package: "swift-protobuf"),
-    .product(name: "Zip", package: "Zip")
+    .product(name: "ZIPFoundation", package: "ZIPFoundation")
 ] + (hasPolarBleSdkShared ? [.target(name: "PolarBleSdkShared")] : [])
 let polarBleSdkSharedTargets: [Target] = hasRemotePolarBleSdkSharedBinary ? [
     .binaryTarget(
@@ -44,7 +44,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.6.0"),
-        .package(url: "https://github.com/marmelroy/Zip.git", from: "2.1.2"),
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", from: "0.9.20"),
     ],
     targets: polarBleSdkTargets
 )

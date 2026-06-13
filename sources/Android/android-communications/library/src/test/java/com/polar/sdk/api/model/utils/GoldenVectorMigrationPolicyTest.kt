@@ -1580,7 +1580,7 @@ class GoldenVectorMigrationPolicyTest {
         } else if (sourceRoot.walkTopDown().none { file -> file.isFile && file.extension == "swift" }) {
             violations += "iOS source root ${sourceRoot.relativeTo(root).path} must contain Swift sources"
         }
-        listOf("SwiftProtobuf", "Zip", "sources/iOS/ios-communications/Sources", "POLAR_BLE_SDK_SHARED_BINARY_URL", "POLAR_BLE_SDK_SHARED_BINARY_CHECKSUM")
+        listOf("SwiftProtobuf", "ZIPFoundation", "sources/iOS/ios-communications/Sources", "POLAR_BLE_SDK_SHARED_BINARY_URL", "POLAR_BLE_SDK_SHARED_BINARY_CHECKSUM")
             .filterNot { term -> packageSwift.contains(term) }
             .mapTo(violations) { term -> "Package.swift missing $term" }
         if (!iosReadme.contains("CocoaPods is no longer supported") || !iosReadme.contains("Swift Package Manager")) {
@@ -2578,8 +2578,8 @@ class GoldenVectorMigrationPolicyTest {
         if (xcodeProject.contains("Pods") || xcodeProject.contains("[CP]") || xcodeProject.contains("PODS_ROOT")) {
             violations += "iOS Xcode project must not contain CocoaPods integration after SwiftPM migration"
         }
-        if (!xcodeProject.contains("XCRemoteSwiftPackageReference") || !xcodeProject.contains("SwiftProtobuf") || !xcodeProject.contains("Zip")) {
-            violations += "iOS Xcode project must declare SwiftPM package dependencies for SwiftProtobuf and Zip"
+        if (!xcodeProject.contains("XCRemoteSwiftPackageReference") || !xcodeProject.contains("SwiftProtobuf") || !xcodeProject.contains("ZIPFoundation")) {
+            violations += "iOS Xcode project must declare SwiftPM package dependencies for SwiftProtobuf and ZIPFoundation"
         }
         if (!packageScript.isFile || !packageScript.canExecute()) {
             violations += "package_kmp_xcframework.sh must exist and be executable"

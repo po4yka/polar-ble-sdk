@@ -2,7 +2,7 @@
 
 import XCTest
 @testable import PolarBleSdk
-import Zip
+import ZIPFoundation
 
 class PolarFirmwareUpdateUtilsTest: XCTestCase {
 
@@ -264,11 +264,7 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         try Data("skip".utf8).write(to: sourceDirectory.appendingPathComponent("readme.txt"))
         try Data([0x01]).write(to: sourceDirectory.appendingPathComponent("BTUPDAT.BIN"))
         try Data([0x02]).write(to: sourceDirectory.appendingPathComponent("SYSUPDAT.IMG"))
-        try Zip.zipFiles(paths: [
-            sourceDirectory.appendingPathComponent("readme.txt"),
-            sourceDirectory.appendingPathComponent("BTUPDAT.BIN"),
-            sourceDirectory.appendingPathComponent("SYSUPDAT.IMG")
-        ], zipFilePath: zipURL, password: nil, progress: nil)
+        try FileManager.default.zipItem(at: sourceDirectory, to: zipURL, shouldKeepParent: false)
         let unzipped = try XCTUnwrap(PolarFirmwareUpdateUtils.unzipFirmwarePackage(zippedData: try Data(contentsOf: zipURL)))
         XCTAssertNil(unzipped["readme.txt"])
         XCTAssertEqual(Data([0x01]), unzipped["BTUPDAT.BIN"])
