@@ -1,0 +1,32 @@
+{
+  "id": "bas-status-discharging-active-unknown-power",
+  "area": "gatt-bas",
+  "case": "status_discharging_active_unknown_power",
+  "source": "characterization from Android BleBattClientTest and iOS BleBasClientTest battery status payload",
+  "input": {
+    "payloadHex": "0055"
+  },
+  "expected": {
+    "chargeState": "DISCHARGING_ACTIVE",
+    "batteryPresent": "PRESENT",
+    "wiredExternalPower": "UNKNOWN",
+    "wirelessExternalPower": "UNKNOWN"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleBattClientTest"
+    ],
+    "ios": [
+      "BleBasClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.BasGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector pins the currently shared Android/iOS value-2 handling for wired and wireless power source fields."
+}

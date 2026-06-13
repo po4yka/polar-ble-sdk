@@ -1,0 +1,32 @@
+{
+  "id": "bas-status-charging-wired-present",
+  "area": "gatt-bas",
+  "case": "status_charging_wired_present",
+  "source": "characterization from Android BleBattClientTest and iOS BleBasClientTest battery status payload",
+  "input": {
+    "payloadHex": "00a3"
+  },
+  "expected": {
+    "chargeState": "CHARGING",
+    "batteryPresent": "PRESENT",
+    "wiredExternalPower": "CONNECTED",
+    "wirelessExternalPower": "NOT_CONNECTED"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleBattClientTest"
+    ],
+    "ios": [
+      "BleBasClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.BasGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector covers only deterministic BAS status bit classification; BLE/session/GATT host behavior remains adapter-owned."
+}

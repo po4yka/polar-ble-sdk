@@ -3971,7 +3971,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val PLATFORM_OWNED_COVERAGE_ROWS = mapOf(
             "BLE device session lifecycle" to listOf("Partial", "platform-owned", "Keep platform-specific"),
-            "GATT clients" to listOf("Partial", "platform-owned", "Keep transport clients platform-specific", "HTS temperature measurement byte codec is shared common-owned while notification lifecycle stays platform-owned"),
+            "GATT clients" to listOf("Partial", "platform-owned", "Keep transport clients platform-specific", "HTS temperature measurement byte codec and BAS battery status bitfield codec are shared common-owned while notification lifecycle stays platform-owned"),
             "Android Bluedroid host behavior" to listOf("Platform-specific", "Do not migrate to common code"),
             "iOS CoreBluetooth host behavior" to listOf("Platform-specific", "Do not migrate to common code")
         )

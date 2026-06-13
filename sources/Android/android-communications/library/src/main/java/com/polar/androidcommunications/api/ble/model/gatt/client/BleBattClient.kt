@@ -1,10 +1,10 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client
 
-import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattBase
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattTxInterface
 import com.polar.androidcommunications.common.ble.AtomicSet
 import com.polar.androidcommunications.common.ble.ChannelUtils
+import com.polar.shared.ble.PolarGattBasCodec
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
@@ -13,7 +13,6 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 private const val UNDEFINED_BATTERY_PERCENTAGE = -1
-private const val TAG = "BleBattClient"
 
 enum class ChargeState {
     UNKNOWN, CHARGING, DISCHARGING_ACTIVE, DISCHARGING_INACTIVE
@@ -32,18 +31,6 @@ data class PowerSourcesState(
     val wiredExternalPowerConnected: PowerSourceState,
     val wirelessExternalPowerConnected: PowerSourceState
 )
-
-    private fun parseBatteryStatus(data: ByteArray): ChargeState {
-        return when (val chargeStateValue = (data[1].toInt() and 0x60) shr 5) {
-            1 -> ChargeState.CHARGING
-            2 -> ChargeState.DISCHARGING_ACTIVE
-            3 -> ChargeState.DISCHARGING_INACTIVE
-            else -> {
-                BleLogger.e(TAG, "Unknown charge state value: $chargeStateValue")
-                ChargeState.UNKNOWN
-            }
-        }
-    }
 
 class BleBattClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, BATTERY_SERVICE) {
     private val batteryStatusObservers = AtomicSet<Channel<Int>>()
@@ -99,11 +86,12 @@ class BleBattClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, 
                     }
                 }
                 BATTERY_LEVEL_STATUS_CHARACTERISTIC -> {
-                    cachedChargeState = parseBatteryStatus(data)
+                    val batteryStatus = PolarGattBasCodec.parseBatteryStatus(data)
+                    cachedChargeState = batteryStatus.chargeState.toPlatformChargeState()
                     ChannelUtils.emitNext(batteryChargeStateObservers) { channel ->
                         channel.trySend(cachedChargeState)
                     }
-                    cachedPowerSourcesState = parsePowerSourcesState(data)
+                    cachedPowerSourcesState = batteryStatus.powerSources.toPlatformPowerSourcesState()
                     ChannelUtils.emitNext(powerSourcesStateObservers) { channel ->
                         channel.trySend(cachedPowerSourcesState)
                     }
@@ -177,48 +165,37 @@ class BleBattClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, 
         return batteryPercentage in 0..100
     }
 
-    private fun parsePowerSourcesState(data: ByteArray): PowerSourcesState {
-        val batteryPresent = when (val batteryPresentValue = (data[1].toInt() and 0x01)) {
-            0 -> BatteryPresentState.NOT_PRESENT
-            1 -> BatteryPresentState.PRESENT
-            else -> {
-                BleLogger.e(
-                    TAG,
-                    "Unknown wired battery present value: $batteryPresentValue"
-                )
-                BatteryPresentState.UNKNOWN
-            }
+    private fun PolarGattBasCodec.ChargeStateName.toPlatformChargeState(): ChargeState {
+        return when (this) {
+            PolarGattBasCodec.ChargeStateName.UNKNOWN -> ChargeState.UNKNOWN
+            PolarGattBasCodec.ChargeStateName.CHARGING -> ChargeState.CHARGING
+            PolarGattBasCodec.ChargeStateName.DISCHARGING_ACTIVE -> ChargeState.DISCHARGING_ACTIVE
+            PolarGattBasCodec.ChargeStateName.DISCHARGING_INACTIVE -> ChargeState.DISCHARGING_INACTIVE
         }
-        val wiredExternalPowerConnected =
-            when (val externalPowerConnectedValue = (data[1].toInt() and 0x06) shr 1) {
-                0 -> PowerSourceState.NOT_CONNECTED
-                1 -> PowerSourceState.CONNECTED
-                3 -> PowerSourceState.RESERVED_FOR_FUTURE_USE
-                else -> {
-                    BleLogger.e(
-                        TAG,
-                        "Unknown wired power source state value: $externalPowerConnectedValue"
-                    )
-                    PowerSourceState.UNKNOWN
-                }
-            }
-        val wirelessExternalPowerConnected =
-            when (val externalPowerConnectedValue = data[1].toInt() and 0x18 shr 3) {
-                0 -> PowerSourceState.NOT_CONNECTED
-                1 -> PowerSourceState.CONNECTED
-                3 -> PowerSourceState.RESERVED_FOR_FUTURE_USE
-                else -> {
-                    BleLogger.e(
-                        TAG,
-                        "Unknown wireless power source state value: $externalPowerConnectedValue"
-                    )
-                    PowerSourceState.UNKNOWN
-                }
-            }
+    }
+
+    private fun PolarGattBasCodec.PowerSourcesState.toPlatformPowerSourcesState(): PowerSourcesState {
         return PowerSourcesState(
-            batteryPresent,
-            wiredExternalPowerConnected,
-            wirelessExternalPowerConnected
+            batteryPresent = batteryPresent.toPlatformBatteryPresentState(),
+            wiredExternalPowerConnected = wiredExternalPower.toPlatformPowerSourceState(),
+            wirelessExternalPowerConnected = wirelessExternalPower.toPlatformPowerSourceState()
         )
+    }
+
+    private fun PolarGattBasCodec.BatteryPresentStateName.toPlatformBatteryPresentState(): BatteryPresentState {
+        return when (this) {
+            PolarGattBasCodec.BatteryPresentStateName.NOT_PRESENT -> BatteryPresentState.NOT_PRESENT
+            PolarGattBasCodec.BatteryPresentStateName.PRESENT -> BatteryPresentState.PRESENT
+            PolarGattBasCodec.BatteryPresentStateName.UNKNOWN -> BatteryPresentState.UNKNOWN
+        }
+    }
+
+    private fun PolarGattBasCodec.PowerSourceStateName.toPlatformPowerSourceState(): PowerSourceState {
+        return when (this) {
+            PolarGattBasCodec.PowerSourceStateName.NOT_CONNECTED -> PowerSourceState.NOT_CONNECTED
+            PolarGattBasCodec.PowerSourceStateName.CONNECTED -> PowerSourceState.CONNECTED
+            PolarGattBasCodec.PowerSourceStateName.UNKNOWN -> PowerSourceState.UNKNOWN
+            PolarGattBasCodec.PowerSourceStateName.RESERVED_FOR_FUTURE_USE -> PowerSourceState.RESERVED_FOR_FUTURE_USE
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.polar.shared.ios
 
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.ble.PolarAdvertisementModels
+import com.polar.shared.ble.PolarGattBasCodec
 import com.polar.shared.ble.PolarGattHtsCodec
 import com.polar.shared.ble.PolarTypeUtils
 import com.polar.shared.device.PolarDeviceCapabilities
@@ -216,6 +217,18 @@ object PolarIosSharedBridge {
                 measurement.isFahrenheit,
                 measurement.exponent,
                 measurement.mantissa
+            ).joinToString(separator = ",")
+        }.getOrNull()
+    }
+
+    fun basBatteryStatusCsv(payloadHex: String): String? {
+        return runCatching {
+            val status = PolarGattBasCodec.parseBatteryStatus(payloadHex.hexToBytes())
+            listOf(
+                status.chargeState.name,
+                status.powerSources.batteryPresent.name,
+                status.powerSources.wiredExternalPower.name,
+                status.powerSources.wirelessExternalPower.name
             ).joinToString(separator = ",")
         }.getOrNull()
     }

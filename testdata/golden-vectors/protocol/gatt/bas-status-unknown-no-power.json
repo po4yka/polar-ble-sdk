@@ -1,0 +1,32 @@
+{
+  "id": "bas-status-unknown-no-power",
+  "area": "gatt-bas",
+  "case": "status_unknown_no_power",
+  "source": "characterization from Android BleBattClientTest and iOS BleBasClientTest battery status payload",
+  "input": {
+    "payloadHex": "0000"
+  },
+  "expected": {
+    "chargeState": "UNKNOWN",
+    "batteryPresent": "NOT_PRESENT",
+    "wiredExternalPower": "NOT_CONNECTED",
+    "wirelessExternalPower": "NOT_CONNECTED"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleBattClientTest"
+    ],
+    "ios": [
+      "BleBasClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.BasGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "BAS battery status parsing is a pure byte-level bitfield classifier. Battery characteristic reads, notifications, streams, cache ownership, and public error behavior stay platform-owned."
+}

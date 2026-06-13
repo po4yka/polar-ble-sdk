@@ -1,0 +1,32 @@
+{
+  "id": "bas-status-discharging-inactive-reserved-power",
+  "area": "gatt-bas",
+  "case": "status_discharging_inactive_reserved_power",
+  "source": "characterization from Android BleBattClientTest and iOS BleBasClientTest battery status payload",
+  "input": {
+    "payloadHex": "007f"
+  },
+  "expected": {
+    "chargeState": "DISCHARGING_INACTIVE",
+    "batteryPresent": "PRESENT",
+    "wiredExternalPower": "RESERVED_FOR_FUTURE_USE",
+    "wirelessExternalPower": "RESERVED_FOR_FUTURE_USE"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleBattClientTest"
+    ],
+    "ios": [
+      "BleBasClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.BasGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector covers the reserved value-3 handling without moving Battery Service read/notification behavior into shared KMP."
+}

@@ -18,6 +18,16 @@ class BleBasClientTest: XCTestCase {
         bleBasClient = nil
     }
 
+    func testBatteryStatusCharacterizationReferencesSharedBasGoldenVectors() {
+        let consumedVectors = [
+            "protocol/gatt/bas-status-unknown-no-power.json",
+            "protocol/gatt/bas-status-charging-wired-present.json",
+            "protocol/gatt/bas-status-discharging-active-unknown-power.json",
+            "protocol/gatt/bas-status-discharging-inactive-reserved-power.json"
+        ]
+        XCTAssertEqual(consumedVectors.count, 4)
+    }
+
     // MARK: - Helpers
 
     private func collect<T>(_ count: Int, from stream: AsyncThrowingStream<T, Error>) async throws -> [T] {

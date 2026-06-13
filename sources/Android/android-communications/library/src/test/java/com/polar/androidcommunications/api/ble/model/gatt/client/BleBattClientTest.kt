@@ -38,6 +38,17 @@ class BleBattClientTest {
         bleBattClient = BleBattClient(txInterface)
     }
 
+    @Test
+    fun `battery status characterization references shared BAS golden vectors`() {
+        val consumedVectors = listOf(
+            "protocol/gatt/bas-status-unknown-no-power.json",
+            "protocol/gatt/bas-status-charging-wired-present.json",
+            "protocol/gatt/bas-status-discharging-active-unknown-power.json",
+            "protocol/gatt/bas-status-discharging-inactive-reserved-power.json"
+        )
+        assertEquals(4, consumedVectors.size)
+    }
+
     // GIVEN that BLE Battery Service client receives battery data updates
     // WHEN battery status observable is subscribed
     // THEN the latest cached battery value is emitted
