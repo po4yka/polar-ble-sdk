@@ -1231,7 +1231,7 @@ D2H_STREAM_RUNTIME_COMMON_POLICY_REQUIRED_TERMS = [
 ].freeze
 PLATFORM_OWNED_COVERAGE_ROWS = {
   "BLE device session lifecycle" => ["Partial", "platform-owned", "Keep platform-specific"],
-  "GATT clients" => ["Partial", "platform-owned", "Keep transport clients platform-specific", "HTS temperature measurement byte codec and BAS battery status bitfield codec are shared common-owned while notification lifecycle stays platform-owned"],
+  "GATT clients" => ["Partial", "platform-owned", "Keep transport clients platform-specific", "HTS temperature measurement byte codec, BAS battery status bitfield codec, and HR measurement byte codec are shared common-owned while notification lifecycle stays platform-owned"],
   "Android Bluedroid host behavior" => ["Platform-specific", "Do not migrate to common code"],
   "iOS CoreBluetooth host behavior" => ["Platform-specific", "Do not migrate to common code"]
 }.freeze

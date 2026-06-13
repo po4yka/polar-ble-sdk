@@ -1,0 +1,35 @@
+{
+  "id": "hr-measurement-uint8-max",
+  "area": "gatt-hr",
+  "case": "measurement_uint8_max",
+  "source": "characterization from Android BleHrClientTest and iOS BleHrClientTest HR measurement payload",
+  "input": {
+    "payloadHex": "00ff"
+  },
+  "expected": {
+    "hr": 255,
+    "sensorContact": false,
+    "sensorContactSupported": false,
+    "energy": 0,
+    "rrs": [],
+    "rrsMs": [],
+    "rrPresent": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleHrClientTest"
+    ],
+    "ios": [
+      "BleHrClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.HrGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "HR measurement parsing is a pure byte-level codec. Notification lifecycle, connection checks, stream termination, and public error behavior stay platform-owned."
+}

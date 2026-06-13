@@ -1,0 +1,35 @@
+{
+  "id": "hr-measurement-uint16-boundary",
+  "area": "gatt-hr",
+  "case": "measurement_uint16_boundary",
+  "source": "characterization from Android BleHrClientTest and iOS BleHrClientTest HR measurement payload",
+  "input": {
+    "payloadHex": "018080"
+  },
+  "expected": {
+    "hr": 32896,
+    "sensorContact": false,
+    "sensorContactSupported": false,
+    "energy": 0,
+    "rrs": [],
+    "rrsMs": [],
+    "rrPresent": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleHrClientTest"
+    ],
+    "ios": [
+      "BleHrClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.HrGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector pins uint16 HR value assembly without moving HR subscription behavior into shared KMP."
+}

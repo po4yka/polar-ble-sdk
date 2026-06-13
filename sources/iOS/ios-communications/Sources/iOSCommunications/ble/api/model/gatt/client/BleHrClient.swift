@@ -1,5 +1,8 @@
 import Foundation
 import CoreBluetooth
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class BleHrClient: BleGattClientBase, @unchecked Sendable {
     public static let HR_SERVICE = CBUUID(string: "180D")
@@ -24,36 +27,11 @@ public class BleHrClient: BleGattClientBase, @unchecked Sendable {
 
     override public func processServiceData(_ chr: CBUUID, data: Data, err: Int) {
         if chr.isEqual(BleHrClient.HR_MEASUREMENT) && err == 0 {
-            var offset = 0
-            let hrFormat = data[0] & 0x01
-            let sensorContact = ((data[0] & 0x06) >> 1) == 0x03
-            let contactSupported = (data[0] & 0x04) != 0
-            let energyExpended = (data[0] & 0x08) >> 3
-            let rrPresent = (data[0] & 0x10) >> 4
-            let hrValue = hrFormat == 1 ? (Int(data[1]) + (Int(data[2]) << 8)) : Int(data[1])
-            offset = Int(hrFormat) + 2
-            var energy = 0
-            if energyExpended == 1 {
-                energy = Int(data[offset]) + (Int(data[offset + 1]) << 8)
-                offset += 2
-            }
-            var rrs = [Int]()
-            var rrsMs = [Int]()
-            if rrPresent == 1 {
-                let len = data.count
-                while offset < len {
-                    let rrValueRaw = Int(data[offset]) | (Int(data[offset + 1]) << 8)
-                    offset += 2
-                    rrs.append(rrValueRaw)
-                    rrsMs.append(BleHrClient.mapRr1024ToRrMs(rrsRaw: rrValueRaw))
-                }
-            }
-            hrStreams.yield((hr: hrValue, sensorContact: sensorContact, sensorContactSupported: contactSupported,
-                             energy: energy, rrs: rrs, rrsMs: rrsMs, rrPresent: rrPresent == 1))
+            hrStreams.yield(HrMeasurementRuntimePlanner.hrMeasurement(data: data))
         }
     }
 
-    private static func mapRr1024ToRrMs(rrsRaw: Int) -> Int {
+    fileprivate static func mapRr1024ToRrMs(rrsRaw: Int) -> Int {
         return Int(round((Float(rrsRaw) / 1024.0) * 1000.0))
     }
 
@@ -63,5 +41,89 @@ public class BleHrClient: BleGattClientBase, @unchecked Sendable {
     /// - Returns: AsyncThrowingStream of heart rate data
     public func observeHrNotifications(_ checkConnection: Bool) -> AsyncThrowingStream<BleHrNotification, Error> {
         return hrStreams.makeStream(transport: gattServiceTransmitter, checkConnection: checkConnection)
+    }
+}
+
+private enum HrMeasurementRuntimePlanner {
+    static func hrMeasurement(data: Data) -> BleHrClient.BleHrNotification {
+        #if canImport(PolarBleSdkShared)
+        if let sharedMeasurement = sharedHrMeasurement(data: data) {
+            return sharedMeasurement
+        }
+        #endif
+        return localHrMeasurement(data: data)
+    }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedHrMeasurement(data: Data) -> BleHrClient.BleHrNotification? {
+        guard let csv = PolarIosSharedBridge.shared.hrMeasurementCsv(payloadHex: data.hrHexString()) else {
+            return nil
+        }
+        let fields = csv.split(separator: ",", omittingEmptySubsequences: false)
+        guard fields.count == 7,
+              let hr = Int(fields[0]),
+              let sensorContact = boolValue(String(fields[1])),
+              let sensorContactSupported = boolValue(String(fields[2])),
+              let energy = Int(fields[3]),
+              let rrPresent = boolValue(String(fields[4])) else {
+            return nil
+        }
+        return (
+            hr: hr,
+            sensorContact: sensorContact,
+            sensorContactSupported: sensorContactSupported,
+            energy: energy,
+            rrs: intList(String(fields[5])),
+            rrsMs: intList(String(fields[6])),
+            rrPresent: rrPresent
+        )
+    }
+
+    private static func boolValue(_ value: String) -> Bool? {
+        switch value {
+        case "true": return true
+        case "false": return false
+        default: return nil
+        }
+    }
+
+    private static func intList(_ value: String) -> [Int] {
+        if value.isEmpty { return [] }
+        return value.split(separator: ";").compactMap { Int($0) }
+    }
+    #endif
+
+    private static func localHrMeasurement(data: Data) -> BleHrClient.BleHrNotification {
+        var offset = 0
+        let hrFormat = data[0] & 0x01
+        let sensorContact = ((data[0] & 0x06) >> 1) == 0x03
+        let contactSupported = (data[0] & 0x04) != 0
+        let energyExpended = (data[0] & 0x08) >> 3
+        let rrPresent = (data[0] & 0x10) >> 4
+        let hrValue = hrFormat == 1 ? (Int(data[1]) + (Int(data[2]) << 8)) : Int(data[1])
+        offset = Int(hrFormat) + 2
+        var energy = 0
+        if energyExpended == 1 {
+            energy = Int(data[offset]) + (Int(data[offset + 1]) << 8)
+            offset += 2
+        }
+        var rrs = [Int]()
+        var rrsMs = [Int]()
+        if rrPresent == 1 {
+            let len = data.count
+            while offset < len {
+                let rrValueRaw = Int(data[offset]) | (Int(data[offset + 1]) << 8)
+                offset += 2
+                rrs.append(rrValueRaw)
+                rrsMs.append(BleHrClient.mapRr1024ToRrMs(rrsRaw: rrValueRaw))
+            }
+        }
+        return (hr: hrValue, sensorContact: sensorContact, sensorContactSupported: contactSupported, energy: energy, rrs: rrs, rrsMs: rrsMs, rrPresent: rrPresent == 1)
+    }
+}
+
+private extension Data {
+    func hrHexString() -> String {
+        map { String(format: "%02x", $0) }.joined()
     }
 }

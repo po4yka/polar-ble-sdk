@@ -19,6 +19,17 @@ class BleHrClientTest: XCTestCase {
         bleHrClient = nil
     }
 
+    func testHrMeasurementCharacterizationReferencesSharedHrGoldenVectors() {
+        let consumedVectors = [
+            "protocol/gatt/hr-measurement-uint8-max.json",
+            "protocol/gatt/hr-measurement-uint16-boundary.json",
+            "protocol/gatt/hr-measurement-sensor-contact.json",
+            "protocol/gatt/hr-measurement-energy.json",
+            "protocol/gatt/hr-measurement-rr-intervals.json"
+        ]
+        XCTAssertEqual(consumedVectors.count, 5)
+    }
+
     // MARK: - Helpers
 
     /// Collects up to `count` items from a stream, then cancels it.

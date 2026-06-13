@@ -1,0 +1,35 @@
+{
+  "id": "hr-measurement-rr-intervals",
+  "area": "gatt-hr",
+  "case": "measurement_rr_intervals",
+  "source": "characterization from Android BleHrClientTest and iOS BleHrClientTest HR measurement payload",
+  "input": {
+    "payloadHex": "110000ffff7f80"
+  },
+  "expected": {
+    "hr": 0,
+    "sensorContact": false,
+    "sensorContactSupported": false,
+    "energy": 0,
+    "rrs": [65535, 32895],
+    "rrsMs": [63999, 32124],
+    "rrPresent": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleHrClientTest"
+    ],
+    "ios": [
+      "BleHrClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.HrGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector covers RR interval little-endian parsing and 1/1024-second to millisecond conversion."
+}

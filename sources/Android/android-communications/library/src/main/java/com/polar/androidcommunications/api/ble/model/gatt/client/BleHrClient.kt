@@ -5,12 +5,12 @@ import com.polar.androidcommunications.api.ble.model.gatt.BleGattBase
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattTxInterface
 import com.polar.androidcommunications.common.ble.AtomicSet
 import com.polar.androidcommunications.common.ble.ChannelUtils
+import com.polar.shared.ble.PolarGattHrCodec
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import java.util.*
-import kotlin.math.roundToInt
 
 /**
  * The `BleHrClient` class implements BLE Heart Rate client for receiving heart rate data from BLE Heart Rate service.
@@ -30,10 +30,6 @@ class BleHrClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, HR
         val HR_MEASUREMENT: UUID = UUID.fromString("00002a37-0000-1000-8000-00805f9b34fb")
         val HR_SERVICE: UUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb")
         const val HR_SERVICE_16BIT_UUID = "180D"
-
-        private fun mapRr1024ToRrMs(rrsRaw: Int): Int {
-            return (rrsRaw.toFloat() / 1024.0 * 1000.0).roundToInt()
-        }
     }
 
     /**
@@ -81,41 +77,17 @@ class BleHrClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, HR
         if (data.isNotEmpty()) {
             BleLogger.d(TAG, "Processing service data. Status: " + status + ".  Data length: " + data.size)
             if (status == ATT_SUCCESS && characteristic == HR_MEASUREMENT) {
-                val hrFormat = data[0].toInt() and 0x01
-                val sensorContact = data[0].toInt() and 0x06 shr 1 == 0x03
-                val contactSupported = data[0].toInt() and 0x04 != 0
-                val energyExpended = data[0].toInt() and 0x08 shr 3
-                val rrPresent = data[0].toInt() and 0x10 shr 4
-                val hrValue: Int = (if (hrFormat == 1) (data[1].toInt() and 0xFF) + (data[2].toInt() shl 8) else data[1]).toInt() and if (hrFormat == 1) 0x0000FFFF else 0x000000FF
-                var offset = hrFormat + 2
-                var energy = 0
-                if (energyExpended == 1) {
-                    energy = (data[offset].toInt() and 0xFF) + (data[offset + 1].toInt() and 0xFF shl 8)
-                    offset += 2
-                }
-                val rrs = mutableListOf<Int>()
-                val rrsMs = mutableListOf<Int>()
-                if (rrPresent == 1) {
-                    val len = data.size
-                    while (offset < len) {
-                        val rrValue = (data[offset].toInt() and 0xFF) + (data[offset + 1].toInt() and 0xFF shl 8)
-                        offset += 2
-                        rrs.add(rrValue)
-                        rrsMs.add(mapRr1024ToRrMs(rrValue))
-                    }
-                }
-                val finalEnergy = energy
-
+                val measurement = PolarGattHrCodec.parseHrMeasurement(data)
                 ChannelUtils.emitNext(hrObserverAtomicList) { observer ->
                     observer.trySend(
                         HrNotificationData(
-                            hrValue,
-                            sensorContact,
-                            finalEnergy,
-                            rrs,
-                            rrsMs,
-                            contactSupported,
-                            rrPresent == 1
+                            measurement.hr,
+                            measurement.sensorContact,
+                            measurement.energy,
+                            measurement.rrs,
+                            measurement.rrsMs,
+                            measurement.sensorContactSupported,
+                            measurement.rrPresent
                         )
                     )
                 }

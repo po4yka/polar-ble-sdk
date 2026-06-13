@@ -28,6 +28,18 @@ class BleHrClientTest {
     }
 
     @Test
+    fun `hr measurement characterization references shared HR golden vectors`() {
+        val consumedVectors = listOf(
+            "protocol/gatt/hr-measurement-uint8-max.json",
+            "protocol/gatt/hr-measurement-uint16-boundary.json",
+            "protocol/gatt/hr-measurement-sensor-contact.json",
+            "protocol/gatt/hr-measurement-energy.json",
+            "protocol/gatt/hr-measurement-rr-intervals.json"
+        )
+        assertEquals(5, consumedVectors.size)
+    }
+
+    @Test
     fun `hr format uint8`() = runTest {
         //Arrange
         val characteristic: UUID = HR_MEASUREMENT

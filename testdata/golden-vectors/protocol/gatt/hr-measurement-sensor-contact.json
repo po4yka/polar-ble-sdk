@@ -1,0 +1,35 @@
+{
+  "id": "hr-measurement-sensor-contact",
+  "area": "gatt-hr",
+  "case": "measurement_sensor_contact",
+  "source": "characterization from Android BleHrClientTest and iOS BleHrClientTest HR measurement payload",
+  "input": {
+    "payloadHex": "06ff"
+  },
+  "expected": {
+    "hr": 255,
+    "sensorContact": true,
+    "sensorContactSupported": true,
+    "energy": 0,
+    "rrs": [],
+    "rrsMs": [],
+    "rrPresent": false
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleHrClientTest"
+    ],
+    "ios": [
+      "BleHrClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.HrGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector covers the HR sensor-contact support and contact bits only."
+}
