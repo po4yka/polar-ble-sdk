@@ -489,11 +489,11 @@ object PolarIosSharedBridge {
             val plan = PolarTrainingSessionModels.assemblePayloadReconstructionPlan(reference, decodedPayloadsByPath, fetchOrder)
             val rows = mutableListOf<String>()
             plan.sessionSummary?.let { entry ->
-                rows += listOf("S", entry.fileName, entry.publicModelSlot, entry.path, entry.decodedPayload.toHex()).joinToString("|")
+                rows += (listOf("S", entry.fileName, entry.publicModelSlot, entry.path, entry.decodedPayload.toHex()) + entry.neutralSummaryFieldColumns()).joinToString("|")
             }
             plan.exercises.forEach { exercise ->
                 exercise.entries.forEach { entry ->
-                    rows += listOf("P", exercise.index.toString(), entry.fileName, entry.publicModelSlot, entry.path, entry.decodedPayload.toHex()).joinToString("|")
+                    rows += (listOf("P", exercise.index.toString(), entry.fileName, entry.publicModelSlot, entry.path, entry.decodedPayload.toHex()) + entry.neutralSummaryFieldColumns()).joinToString("|")
                 }
                 if (exercise.malformedFilesIgnored.isNotEmpty()) {
                     rows += listOf("M", exercise.index.toString(), exercise.malformedFilesIgnored.joinToString(";")).joinToString("|")
@@ -2489,5 +2489,14 @@ object PolarIosSharedBridge {
 
     private fun ByteArray.toHex(): String {
         return joinToString(separator = "") { byte -> (byte.toInt() and 0xFF).toString(16).padStart(2, '0') }
+    }
+
+    private fun com.polar.shared.sdk.PolarTrainingPayloadReconstructionEntry.neutralSummaryFieldColumns(): List<String> {
+        return listOf(
+            parsedPayload.modelName?.encodeToByteArray()?.toHex().orEmpty(),
+            parsedPayload.durationSeconds?.toString().orEmpty(),
+            parsedPayload.distanceMeters?.toString().orEmpty(),
+            parsedPayload.calories?.toString().orEmpty()
+        )
     }
 }

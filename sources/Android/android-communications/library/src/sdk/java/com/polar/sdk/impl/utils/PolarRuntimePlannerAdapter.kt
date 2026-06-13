@@ -492,7 +492,14 @@ internal object PolarRuntimePlannerAdapter {
         val fileName: String,
         val publicModelSlot: String,
         val exerciseIndex: Int?,
-        val decodedPayload: ByteArray
+        val decodedPayload: ByteArray,
+        val parsedPayload: PlannedTrainingPayloadReconstructionFields
+    )
+    data class PlannedTrainingPayloadReconstructionFields(
+        val modelName: String?,
+        val durationSeconds: Int?,
+        val distanceMeters: Int?,
+        val calories: Int?
     )
     class PlannedAtomicSet<T : Any> {
         private val items: PolarAtomicSet<T> = PolarAtomicSet()
@@ -2086,7 +2093,13 @@ internal object PolarRuntimePlannerAdapter {
             fileName = fileName,
             publicModelSlot = publicModelSlot,
             exerciseIndex = exerciseIndex,
-            decodedPayload = decodedPayload
+            decodedPayload = decodedPayload,
+            parsedPayload = PlannedTrainingPayloadReconstructionFields(
+                modelName = parsedPayload.modelName,
+                durationSeconds = parsedPayload.durationSeconds,
+                distanceMeters = parsedPayload.distanceMeters,
+                calories = parsedPayload.calories
+            )
         )
     }
 

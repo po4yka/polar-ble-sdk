@@ -368,13 +368,13 @@ internal class PolarTrainingSessionUtils {
                     if PolarRuntimePlanner.trainingSessionPayloadMalformed(fileName: result.type.deviceFileName, payload: result.data) {
                         return nil
                     }
-                    return TrainingSessionPayloadReconstructionEntry(path: result.path, fileName: result.type.deviceFileName, publicModelSlot: result.publicModelSlot, data: result.data)
+                    return TrainingSessionPayloadReconstructionEntry(path: result.path, fileName: result.type.deviceFileName, publicModelSlot: result.publicModelSlot, data: result.data, neutralFields: .empty)
                 }
                 return TrainingSessionPayloadReconstructionExercise(index: index, entries: entries)
             }
             .sorted { $0.index < $1.index }
         return TrainingSessionPayloadReconstructionPlan(
-            sessionSummary: TrainingSessionPayloadReconstructionEntry(path: reference.path, fileName: "TSESS.BPB", publicModelSlot: "sessionSummary", data: summaryPayload),
+            sessionSummary: TrainingSessionPayloadReconstructionEntry(path: reference.path, fileName: "TSESS.BPB", publicModelSlot: "sessionSummary", data: summaryPayload, neutralFields: .empty),
             exercises: exercises
         )
     }
@@ -387,11 +387,11 @@ internal class PolarTrainingSessionUtils {
             let fields = row.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
             switch fields.first {
             case "S":
-                guard fields.count == 5, let data = Data(hex: fields[4]) else { return nil }
-                sessionSummary = TrainingSessionPayloadReconstructionEntry(path: fields[3], fileName: fields[1], publicModelSlot: fields[2], data: data)
+                guard fields.count == 5 || fields.count == 9, let data = Data(hex: fields[4]) else { return nil }
+                sessionSummary = TrainingSessionPayloadReconstructionEntry(path: fields[3], fileName: fields[1], publicModelSlot: fields[2], data: data, neutralFields: neutralPayloadFields(fields: fields, offset: 5))
             case "P":
-                guard fields.count == 6, let index = Int(fields[1]), let data = Data(hex: fields[5]) else { return nil }
-                exercises[index, default: []].append(TrainingSessionPayloadReconstructionEntry(path: fields[4], fileName: fields[2], publicModelSlot: fields[3], data: data))
+                guard fields.count == 6 || fields.count == 10, let index = Int(fields[1]), let data = Data(hex: fields[5]) else { return nil }
+                exercises[index, default: []].append(TrainingSessionPayloadReconstructionEntry(path: fields[4], fileName: fields[2], publicModelSlot: fields[3], data: data, neutralFields: neutralPayloadFields(fields: fields, offset: 6)))
             case "M":
                 continue
             default:
@@ -404,6 +404,12 @@ internal class PolarTrainingSessionUtils {
                 TrainingSessionPayloadReconstructionExercise(index: index, entries: exercises[index] ?? [])
             }
         )
+    }
+
+    private static func neutralPayloadFields(fields: [String], offset: Int) -> TrainingSessionNeutralPayloadFields {
+        guard fields.count >= offset + 4 else { return .empty }
+        let modelName = fields[offset].isEmpty ? nil : Data(hex: fields[offset]).flatMap { String(data: $0, encoding: .utf8) }
+        return TrainingSessionNeutralPayloadFields(modelName: modelName, durationSeconds: Int(fields[offset + 1]), distanceMeters: Int(fields[offset + 2]), calories: Int(fields[offset + 3]))
     }
 
     private static func reconstructionExercisesByIndex(_ exercises: [TrainingSessionPayloadReconstructionExercise]) -> [Int: TrainingSessionPayloadReconstructionExercise] {
@@ -442,6 +448,15 @@ internal class PolarTrainingSessionUtils {
         let fileName: String
         let publicModelSlot: String
         let data: Data
+        let neutralFields: TrainingSessionNeutralPayloadFields
+    }
+
+    private struct TrainingSessionNeutralPayloadFields {
+        static let empty = TrainingSessionNeutralPayloadFields(modelName: nil, durationSeconds: nil, distanceMeters: nil, calories: nil)
+        let modelName: String?
+        let durationSeconds: Int?
+        let distanceMeters: Int?
+        let calories: Int?
     }
 
     static func decodePayload(fileName: String, data: Data) throws -> Data {

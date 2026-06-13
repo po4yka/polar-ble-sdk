@@ -302,7 +302,8 @@ object PolarTrainingSessionModels {
                 fileName = readPlan.fileName,
                 publicModelSlot = readPlan.publicModelSlot,
                 exerciseIndex = readPlan.exerciseIndex,
-                decodedPayload = decodedPayload
+                decodedPayload = decodedPayload,
+                parsedPayload = response.payload
             )
             val exerciseIndex = readPlan.exerciseIndex
             if (exerciseIndex == null && readPlan.publicModelSlot == "sessionSummary") {
@@ -731,7 +732,8 @@ data class PolarTrainingPayloadReconstructionEntry(
     val fileName: String,
     val publicModelSlot: String,
     val exerciseIndex: Int?,
-    val decodedPayload: ByteArray
+    val decodedPayload: ByteArray,
+    val parsedPayload: PolarTrainingPayloadFields
 )
 
 private data class MutableTrainingPayloadReadResult(
