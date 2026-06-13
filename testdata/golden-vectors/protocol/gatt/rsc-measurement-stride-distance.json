@@ -1,0 +1,40 @@
+{
+  "id": "rsc-measurement-stride-distance",
+  "area": "gatt-rsc",
+  "case": "measurement_stride_distance",
+  "source": "characterization from Android BleRscClientTest and iOS BleRscClientTest RSC measurement payload",
+  "description": "RSC measurement with stride length, total distance, and running flags set. Shared KMP owns only deterministic byte parsing; Android and iOS adapters keep public projection units.",
+  "input": {
+    "kind": "rscMeasurement",
+    "payloadHex": "07341256890704030201"
+  },
+  "expected": {
+    "strideLengthPresent": true,
+    "totalDistancePresent": true,
+    "running": true,
+    "speedRaw": 4660,
+    "speedKmh": 65.53125,
+    "cadence": 86,
+    "strideLength": 1929,
+    "totalDistanceRaw": 16909060,
+    "totalDistanceMeters": 1690906.0,
+    "flags": 7
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleRscClientTest"
+    ],
+    "ios": [
+      "BleRscClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.RscGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "RSC measurement parsing is a pure byte-level codec. GATT client lifecycle, notifications, transport execution, cache and stream behavior, and public error mapping stay platform-owned."
+}

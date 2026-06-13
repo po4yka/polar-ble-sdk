@@ -6,6 +6,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.BleGattBase
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattTxInterface
 import com.polar.androidcommunications.common.ble.AtomicSet
 import com.polar.androidcommunications.common.ble.ChannelUtils
+import com.polar.shared.ble.PolarGattRscCodec
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
@@ -41,37 +42,17 @@ class BleRscClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, R
     ) {
         if (status == ATT_SUCCESS && data.isNotEmpty()) {
             if (characteristic == RSC_MEASUREMENT) {
-                // stupid java does not have bit fields
-                var index = 0
-                val flags = data[index++].toLong()
-                val strideLenPresent = (flags and 0x01L) == 0x01L
-                val totalDistancePresent = (flags and 0x02L) == 0x02L
-                val running = (flags and 0x04L) == 0x04L
-
-                val speed = ((data[index++].toInt() and 0xFF) or ((data[index++].toInt() and 0xFF) shl 8)).toLong()
-                val cadence = (data[index++].toInt() and 0xFF).toLong()
-
-                var strideLength: Long = 0
-                var totalDistance: Long = 0
-
-                if (strideLenPresent) strideLength =
-                    ((data[index++].toInt() and 0xFF) or ((data[index++].toInt() and 0xFF) shl 8)).toLong()
-
-                if (totalDistancePresent) totalDistance =
-                    ((data[index++].toInt() and 0xFF) or ((data[index++].toInt() and 0xFF) shl 8) or ((data[index++].toInt() and 0xFF) shl 16) or ((data[index].toInt() and 0xFF) shl 24)).toLong()
-
-                val finalStrideLength = strideLength
-                val finalTotalDistance = totalDistance
+                val measurement = PolarGattRscCodec.parseRscMeasurement(data)
                 ChannelUtils.emitNext(observers) { observer ->
                     observer.trySend(
                         RscNotificationData(
-                            strideLenPresent,
-                            totalDistancePresent,
-                            running,
-                            speed,
-                            cadence,
-                            finalStrideLength,
-                            finalTotalDistance
+                            measurement.strideLengthPresent,
+                            measurement.totalDistancePresent,
+                            measurement.running,
+                            measurement.speedRaw,
+                            measurement.cadence.toLong(),
+                            measurement.strideLength,
+                            measurement.totalDistanceAndroidRaw
                         )
                     )
                 }

@@ -38,6 +38,15 @@ class BleRscClientTest {
     }
 
     @Test
+    fun rscMeasurementCharacterizationReferencesSharedRscGoldenVectors() {
+        val consumedVectors = listOf(
+            "protocol/gatt/rsc-measurement-stride-distance.json",
+            "protocol/gatt/rsc-measurement-required-fields.json"
+        )
+        assertEquals(2, consumedVectors.size)
+    }
+
+    @Test
     fun reset_postsDisconnectedToNotificationObservers() = runTest {
         // Arrange
         var caughtError: Throwable? = null

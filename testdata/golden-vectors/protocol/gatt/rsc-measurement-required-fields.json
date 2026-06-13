@@ -1,0 +1,40 @@
+{
+  "id": "rsc-measurement-required-fields",
+  "area": "gatt-rsc",
+  "case": "measurement_required_fields",
+  "source": "characterization from Android BleRscClientTest and iOS BleRscClientTest RSC measurement payload",
+  "description": "RSC measurement with only required speed and cadence fields present. Optional stride length and total distance stay zero.",
+  "input": {
+    "kind": "rscMeasurement",
+    "payloadHex": "000a0014"
+  },
+  "expected": {
+    "strideLengthPresent": false,
+    "totalDistancePresent": false,
+    "running": false,
+    "speedRaw": 10,
+    "speedKmh": 0.140625,
+    "cadence": 20,
+    "strideLength": 0,
+    "totalDistanceRaw": 0,
+    "totalDistanceMeters": 0.0,
+    "flags": 0
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleRscClientTest"
+    ],
+    "ios": [
+      "BleRscClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.RscGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "RSC measurement parsing is a pure byte-level codec. GATT client lifecycle, notifications, transport execution, cache and stream behavior, and public error mapping stay platform-owned."
+}

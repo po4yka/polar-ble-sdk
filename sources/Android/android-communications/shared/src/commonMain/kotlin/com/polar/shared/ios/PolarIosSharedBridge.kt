@@ -4,6 +4,7 @@ import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.ble.PolarAdvertisementModels
 import com.polar.shared.ble.PolarGattBasCodec
 import com.polar.shared.ble.PolarGattHrCodec
+import com.polar.shared.ble.PolarGattRscCodec
 import com.polar.shared.ble.PolarGattHtsCodec
 import com.polar.shared.ble.PolarTypeUtils
 import com.polar.shared.device.PolarDeviceCapabilities
@@ -245,6 +246,20 @@ object PolarIosSharedBridge {
                 measurement.rrPresent.toString(),
                 measurement.rrs.joinToString(separator = ";"),
                 measurement.rrsMs.joinToString(separator = ";")
+            ).joinToString(separator = ",")
+        }.getOrNull()
+    }
+
+    fun rscMeasurementCsv(payloadHex: String): String? {
+        return runCatching {
+            val measurement = PolarGattRscCodec.parseRscMeasurement(payloadHex.hexToBytes())
+            listOf(
+                measurement.speedKmh.toString(),
+                measurement.cadence.toString(),
+                measurement.strideLength.toString(),
+                measurement.totalDistanceMeters.toString(),
+                measurement.running.toString(),
+                measurement.flags.toString()
             ).joinToString(separator = ",")
         }.getOrNull()
     }
