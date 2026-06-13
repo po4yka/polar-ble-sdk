@@ -267,8 +267,8 @@ public override fun onDestroy() {
 
 **Requirements:**
 - iOS 14.0+
-- Xcode 13.2+
-- Swift 5.x
+- Xcode 15.0+
+- Swift 5.9+
 
 ### Dependencies
 *  [RxSwift 6.0](https://github.com/ReactiveX/RxSwift) or above

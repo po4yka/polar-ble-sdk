@@ -1,4 +1,4 @@
-// swift-tools-version:5.5
+// swift-tools-version:5.9
 import Foundation
 import PackageDescription
 
@@ -9,8 +9,8 @@ let hasRemotePolarBleSdkSharedBinary = polarBleSdkSharedBinaryURL?.isEmpty == fa
 let hasLocalPolarBleSdkSharedXCFramework = FileManager.default.fileExists(atPath: polarBleSdkSharedXCFrameworkPath)
 let hasPolarBleSdkShared = hasRemotePolarBleSdkSharedBinary || hasLocalPolarBleSdkSharedXCFramework
 let polarBleSdkTargetDependencies: [Target.Dependency] = [
-    "SwiftProtobuf",
-    "Zip"
+    .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+    .product(name: "Zip", package: "Zip")
 ] + (hasPolarBleSdkShared ? [.target(name: "PolarBleSdkShared")] : [])
 let polarBleSdkSharedTargets: [Target] = hasRemotePolarBleSdkSharedBinary ? [
     .binaryTarget(
@@ -43,8 +43,8 @@ let package = Package(
         .library( name: "PolarBleSdk", targets: ["PolarBleSdk"]),
     ],
     dependencies: [
-        .package(name: "SwiftProtobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.6.0"),
-	    .package(url: "https://github.com/marmelroy/Zip.git", from: "2.1.2"),
+        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.6.0"),
+        .package(url: "https://github.com/marmelroy/Zip.git", from: "2.1.2"),
     ],
     targets: polarBleSdkTargets
 )
