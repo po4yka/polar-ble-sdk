@@ -3406,7 +3406,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
     }
 
     func test_updateFirmwareFromUrl_mapsNonSystemRebootWriteTerminalToFailedStatus() throws {
@@ -3502,7 +3502,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
     }
 
     func test_updateFirmware_mapsNonSystemRebootWriteTerminalToFailedStatus() throws {
@@ -3748,7 +3748,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertTrue(v2MockClient.queryCalls.contains { $0.id == Protocol_PbPFtpQuery.setLocalTime.rawValue })
     }
 
@@ -3813,7 +3813,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertEqual(resetNotifications, 2)
     }
 
@@ -3879,7 +3879,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertTrue(v2MockClient.sendNotificationCalls.contains { $0.notification == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue })
     }
 
@@ -3925,7 +3925,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertTrue(v2MockClient.queryCalls.contains { $0.id == Protocol_PbPFtpQuery.setLocalTime.rawValue })
     }
 
@@ -3975,7 +3975,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertEqual(resetNotifications, 2)
     }
 
@@ -4026,7 +4026,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertTrue(v2MockClient.sendNotificationCalls.contains { $0.notification == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue })
     }
 
