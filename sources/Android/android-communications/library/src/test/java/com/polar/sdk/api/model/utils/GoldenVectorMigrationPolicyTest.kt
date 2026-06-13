@@ -1400,11 +1400,11 @@ class GoldenVectorMigrationPolicyTest {
             .filterNot { term -> validationDoc.contains(term) }
         val missingArtifactReferences = validationDoc.validationArtifactReferences()
             .filterNot { reference -> root.resolve(reference).exists() }
-        val iosProbe = root.resolve("scripts/ios_xcode_validation_probe.rb")
+        val iosProbe = root.resolve("sources/Android/android-communications/repo-tools/src/main/kotlin/com/polar/tools/RepoTools.kt")
         val missingIosProbeTerms = if (iosProbe.isFile) {
             IOS_XCODE_PROBE_REQUIRED_TERMS.filterNot { term -> iosProbe.readText().contains(term) }
         } else {
-            listOf("scripts/ios_xcode_validation_probe.rb")
+            listOf("sources/Android/android-communications/repo-tools/src/main/kotlin/com/polar/tools/RepoTools.kt")
         }
         val missingAndroidWrapper = if (validationDoc.contains("./gradlew") && !root.resolve("sources/Android/android-communications/gradlew").isFile) {
             listOf("sources/Android/android-communications/gradlew")
@@ -1565,41 +1565,33 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     @Test
-    fun `CocoaPods source paths match iOS source layout`() {
+    fun `SwiftPM source paths match iOS source layout`() {
         val root = findRepositoryRoot()
-        val podspec = root.resolve("PolarBleSdk.podspec").readText()
         val iosReadme = root.resolve("sources/iOS/ios-communications/README.md").readText()
+        val packageSwift = root.resolve("Package.swift").readText()
         val sourceRoot = root.resolve("sources/iOS/ios-communications/Sources")
-        val sourceFilesPath = PODSPEC_SOURCE_FILES.find(podspec)?.groupValues?.get(1)
-        val resources = PODSPEC_RESOURCES.find(podspec)
-            ?.groupValues
-            ?.get(1)
-            ?.let { resourcesDeclaration ->
-                PODSPEC_RESOURCE_REFERENCE.findAll(resourcesDeclaration).map { match -> match.groupValues[1] }.toList()
-            }
-            ?: emptyList()
         val violations = mutableListOf<String>()
 
-        if (sourceFilesPath != "sources/iOS/ios-communications/Sources/**/*.{swift,h}") {
-            violations += "PolarBleSdk.podspec source_files must point to sources/iOS/ios-communications/Sources, found $sourceFilesPath"
+        if (root.resolve("PolarBleSdk.podspec").exists() || root.resolve("sources/iOS/ios-communications/Podfile").exists()) {
+            violations += "CocoaPods files must be removed after SwiftPM migration"
         }
         if (!sourceRoot.isDirectory) {
             violations += "Missing iOS source root ${sourceRoot.relativeTo(root).path}"
         } else if (sourceRoot.walkTopDown().none { file -> file.isFile && file.extension == "swift" }) {
             violations += "iOS source root ${sourceRoot.relativeTo(root).path} must contain Swift sources"
         }
-        resources
-            .filterNot { resource -> root.resolve(resource).isFile }
-            .mapTo(violations) { resource -> "PolarBleSdk.podspec resource does not exist: $resource" }
-        if (resources.isEmpty()) {
-            violations += "PolarBleSdk.podspec must declare the iOS capability resource"
+        listOf("SwiftProtobuf", "Zip", "sources/iOS/ios-communications/Sources", "POLAR_BLE_SDK_SHARED_BINARY_URL", "POLAR_BLE_SDK_SHARED_BINARY_CHECKSUM")
+            .filterNot { term -> packageSwift.contains(term) }
+            .mapTo(violations) { term -> "Package.swift missing $term" }
+        if (!iosReadme.contains("CocoaPods is no longer supported") || !iosReadme.contains("Swift Package Manager")) {
+            violations += "sources/iOS/ios-communications/README.md must document SwiftPM as the supported package path and CocoaPods removal"
         }
         if (iosReadme.contains("<relative_path_to_cloned_repo>/ios-communications/") || iosReadme.contains("`/ios-communications/`")) {
             violations += "sources/iOS/ios-communications/README.md must not reference a nonexistent top-level ios-communications path"
         }
 
         assertTrue(
-            "CocoaPods source paths must match the current iOS source layout before KMP migration: $violations",
+            "SwiftPM source paths must match the current iOS source layout before KMP migration: $violations",
             violations.isEmpty()
         )
     }
@@ -1692,7 +1684,7 @@ class GoldenVectorMigrationPolicyTest {
             ?.groupValues
             ?.get(2)
             .orEmpty()
-        val missingLocalValidationProbeEvidence = !localValidationEvidence.contains("scripts/ios_xcode_validation_probe.rb")
+        val missingLocalValidationProbeEvidence = !localValidationEvidence.contains(":repo-tools:iosXcodeValidationProbe")
 
         assertTrue(
             "Every completed KMP checklist item must have a Completed Item Evidence row: $missingEvidence",
@@ -2582,13 +2574,12 @@ class GoldenVectorMigrationPolicyTest {
         if (!packageSwift.contains("hasPolarBleSdkSharedXCFramework") || !packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework")) {
             violations += "Package.swift must keep SwiftPM/watchOS shared consumption conditional on an explicit PolarBleSdkShared.xcframework binaryTarget"
         }
-        val podspec = root.resolve("PolarBleSdk.podspec").readText()
-        if (!podspec.contains("'OTHER_SWIFT_FLAGS' => '$(inherited) -D POLAR_KMP_SHARED_REQUIRED'")) {
-            violations += "PolarBleSdk.podspec must require linked PolarBleSdkShared for the CocoaPods iOS surface"
-        }
         val xcodeProject = root.resolve("sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj").readText()
-        if (Regex("POLAR_KMP_SHARED_REQUIRED").findAll(xcodeProject).count() != 2) {
-            violations += "iOS Xcode project must define POLAR_KMP_SHARED_REQUIRED only for PolarBleSdk Debug/Release"
+        if (xcodeProject.contains("Pods") || xcodeProject.contains("[CP]") || xcodeProject.contains("PODS_ROOT")) {
+            violations += "iOS Xcode project must not contain CocoaPods integration after SwiftPM migration"
+        }
+        if (!xcodeProject.contains("XCRemoteSwiftPackageReference") || !xcodeProject.contains("SwiftProtobuf") || !xcodeProject.contains("Zip")) {
+            violations += "iOS Xcode project must declare SwiftPM package dependencies for SwiftProtobuf and Zip"
         }
         if (!packageScript.isFile || !packageScript.canExecute()) {
             violations += "package_kmp_xcframework.sh must exist and be executable"
@@ -3082,7 +3073,7 @@ class GoldenVectorMigrationPolicyTest {
     }
 
     private fun String.looksLikeArtifactReference(): Boolean {
-        return contains("/") || endsWith(".md") || endsWith(".json") || endsWith(".kt") || endsWith(".swift") || endsWith(".podspec")
+        return contains("/") || endsWith(".md") || endsWith(".json") || endsWith(".kt") || endsWith(".swift")
     }
 
     private fun File.resolveEvidenceReference(reference: String): File {
@@ -4023,24 +4014,22 @@ class GoldenVectorMigrationPolicyTest {
             "may depend on shared code only when a behavior slice",
             "scripts/verify_android_example_aar_consumption.sh",
             "scripts/verify_android_shared_maven_metadata.sh",
-            "scripts/verify_release_packaging_policy.rb",
+            ":repo-tools:verifyReleasePackagingPolicy",
             "polar-ble-sdk-shared.aar",
             "two-AAR compatibility model",
             "shared local Maven metadata",
             "CI/release remains artifact-only",
-            "No Maven, CocoaPods, or SwiftPM publication is claimed",
+            "No Maven or SwiftPM registry publication is claimed",
             "required secrets are intentionally absent",
-            "SwiftPM/watchOS",
-            "fallback-only",
+            "Swift Package Manager is the supported Apple package path",
             "PolarBleSdkShared.xcframework",
             "binaryTarget",
             "checksum",
             "package_kmp_xcframework.sh",
             "validate_spm_xcframework_consumption.sh",
-            "local-output",
-            "remote `binaryTarget(url:checksum:)`",
+            "POLAR_BLE_SDK_SHARED_BINARY_URL",
+            "POLAR_BLE_SDK_SHARED_BINARY_CHECKSUM",
             "watchOS device and simulator slices",
-            "Do not claim SwiftPM/watchOS shared consumption",
             "rollback path for every shared-module adoption step"
         )
         val KMP_MODERN_STACK_AUDIT_REQUIRED_TERMS = listOf(
@@ -4048,16 +4037,13 @@ class GoldenVectorMigrationPolicyTest {
             "Golden-vector governance is active",
             "Android production consumes shared KMP through `implementation project(':shared')`",
             "two-AAR compatibility model",
-            "iOS CocoaPods and Xcode workspace production surfaces consume `PolarBleSdkShared.framework`",
-            "POLAR_KMP_SHARED_REQUIRED",
-            "Swift Package Manager and watchOS are fallback-only on a clean checkout",
+            "Swift Package Manager first",
             "PolarBleSdkShared.xcframework",
+            "binaryTarget(url:checksum:)",
             "Generated public protobuf reconstruction remains platform-owned",
             "BLE/session/GATT host behavior remains platform-owned",
             "CI and release policy remain artifact-only",
-            "The current broad iOS XCTest closeout gate is green",
-            "passed with 813 tests and 0 failures",
-            "previously recorded stale failures"
+            ":repo-tools:kmpNonGradleChecks"
         )
         val PLATFORM_OWNED_COVERAGE_ROWS = mapOf(
             "BLE device session lifecycle" to listOf("Partial", "platform-owned", "Keep platform-specific"),
@@ -4132,9 +4118,6 @@ class GoldenVectorMigrationPolicyTest {
             "production shared delegation still needs remaining facade compatibility tests",
             "Runtime/facade gaps:"
         )
-        val PODSPEC_SOURCE_FILES = Regex("s\\.source_files\\s*=\\s*'([^']+)'")
-        val PODSPEC_RESOURCES = Regex("s\\.resources\\s*=\\s*\\[(.*)]")
-        val PODSPEC_RESOURCE_REFERENCE = Regex("'(sources/iOS/ios-communications/Sources/[A-Za-z0-9_./-]+)'")
         val REQUIRED_VALIDATION_SECTIONS = listOf("## Android", "## iOS", "## KMP Common")
         val VALIDATION_NON_GRADLE_GATE_TERMS = listOf(
             "consumerTests",
@@ -4145,31 +4128,26 @@ class GoldenVectorMigrationPolicyTest {
             "public facade operation ledger",
             "stale future-fake-transport wording",
             "portability allowlist",
-            "ruby scripts/ios_xcode_validation_probe.rb",
+            ":repo-tools:iosXcodeValidationProbe",
             "xcodebuild -list -project sources/iOS/ios-communications/iOSCommunications.xcodeproj",
-            "workspace discovery succeeds",
-            "sources/iOS/ios-communications/Pods",
-            "is present",
+            "Swift Package Manager",
             "no known local XCTest infrastructure blockers"
         )
         val IOS_XCODE_PROBE_REQUIRED_TERMS = listOf(
-            "EXPECTED_TARGETS",
-            "EXPECTED_SCHEMES",
-            "workspace-not-valid-to-xcodebuild",
-            "pods-absent",
+            "expectedTargets",
+            "expectedSchemes",
+            "Podfile must not exist",
             "coresimulator-unavailable"
         )
         val IOS_XCTEST_EXECUTION_GATE_REQUIRED_TERMS = listOf(
-            "swiftc -parse sources/iOS/ios-communications/Tests/**/*.swift",
             "does not replace the full XCTest execution gate",
-            "xcodebuild test -workspace sources/iOS/ios-communications/iOSCommunications.xcworkspace -scheme iOSCommunications -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5'",
+            "scripts/ci_xcodebuild_test.sh sources/iOS/ios-communications/iOSCommunications.xcodeproj",
             "Use XCTest failures from that command as migration evidence"
         )
         val IOS_XCTEST_CLOSEOUT_REQUIRED_TERMS = listOf(
-            "Historical iOS XCTest closeout evidence exists for earlier slices, and the current broad closeout evidence is recorded in `KmpModernStackAudit.md`",
-            "passed with 813 tests and 0 failures",
-            "Keep full iOS XCTest in the required validation set for future slices",
-            "`swiftc -parse` is only a syntax gate and must not replace the passing simulator XCTest command"
+            "The broad iOS XCTest gate must be treated as current only when",
+            "scripts/ci_xcodebuild_test.sh sources/iOS/ios-communications/iOSCommunications.xcodeproj",
+            "passes in the current checkout"
         )
         val KMP_TDD_STRATEGY_VECTOR_EXAMPLE_TERMS = listOf(
             "\"id\"",
@@ -4240,7 +4218,7 @@ class GoldenVectorMigrationPolicyTest {
         val RELEASE_READINESS_ITEMS = listOf(
             "Android AAR builds and is consumed by the Android example.",
             "Swift Package integration builds and is consumed by the iOS example.",
-            "CocoaPods integration is verified or explicitly deprecated.",
+            "Swift Package integration builds and is consumed by the iOS example.",
             "Generated Android and iOS API docs are regenerated if public APIs changed.",
             "Migration guides are updated for consumer-visible changes.",
             "Known platform differences are documented.",
@@ -4302,7 +4280,7 @@ class GoldenVectorMigrationPolicyTest {
             "14. Public API compatibility adapters."
         )
         val BACKTICK_REFERENCE = Regex("`([^`]+)`")
-        val VALIDATION_ARTIFACT_REFERENCE = Regex("(sources|testdata|documentation)/[A-Za-z0-9_./-]+\\.(md|kt|swift|json|podspec)")
+        val VALIDATION_ARTIFACT_REFERENCE = Regex("(sources|testdata|documentation)/[A-Za-z0-9_./-]+\\.(md|kt|swift|json)")
         val SOURCES_BUILD_PHASE_SECTION = Regex("(?s)/\\* Begin PBXSourcesBuildPhase section \\*/.*?/\\* End PBXSourcesBuildPhase section \\*/")
         val IOS_HELPER_SOURCE_PHASE_REFERENCE = Regex("/\\* GoldenVectorTestData\\.swift in Sources \\*/")
         const val IOS_TEST_TARGET_COUNT = 2

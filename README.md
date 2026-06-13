@@ -274,20 +274,6 @@ public override fun onDestroy() {
 *  [RxSwift 6.0](https://github.com/ReactiveX/RxSwift) or above
 *  [Swift Protobuf 1.18.0](https://github.com/apple/swift-protobuf) or above
 ### Installation
-#### CocoaPods
-
-If you use [CocoaPods](https://guides.cocoapods.org/using/using-cocoapods.html) to manage your dependencies, add PolarBleSdk to your `Podfile`:
-
-```rb
-# Podfile
-
-use_frameworks!
-
-target 'YOUR_TARGET_NAME' do
-    pod 'PolarBleSdk', '~> 7.0.1'
-end
-```
-
 #### Swift Package Manager
 Add PolarBleSdk as a dependency to your `Package.swift` manifest
 
@@ -298,7 +284,7 @@ dependencies: [
 ```
 or alternatively use [XCode package manager](https://developer.apple.com/documentation/swift_packages/adding_package_dependencies_to_your_app) to add Swift package to your project.
 
-Swift Package Manager and watchOS builds use the Swift implementation fallback during the current KMP compatibility phase. CocoaPods and the Xcode workspace are the supported paths that build and link `PolarBleSdkShared.framework`; see [KMP shared artifact consumption](./documentation/KmpSharedArtifactConsumption.md) for the package matrix and rollback rules.
+Swift Package Manager is the supported Apple package path. Shared KMP Apple consumption uses `PolarBleSdkShared.xcframework` as an SPM binary target when a release URL/checksum or local generated XCFramework is available; clean checkouts keep the Swift fallback behind `#if canImport(PolarBleSdkShared)`. CocoaPods is no longer supported; use SPM for new integrations and migrate existing Podfile-based integrations to the Swift package.
 
 > **Note:** Carthage is not supported.
 
@@ -416,7 +402,7 @@ class MyController: UIViewController,
 - [KMP Migration TDD Strategy](./documentation/KmpTddStrategy.md) – Characterization and golden-vector testing strategy before migration
 - [KMP Coverage Inventory](./documentation/KmpCoverageInventory.md) – Current Android/iOS/shared coverage map and guarded platform-owned boundaries
 - [KMP Migration Checklist](./documentation/KmpMigrationChecklist.md) – Per-slice gates for test-first migration work
-- [KMP Shared Artifact Consumption](./documentation/KmpSharedArtifactConsumption.md) – Android AAR, CocoaPods, SwiftPM/watchOS, and rollback packaging contract
+- [KMP Shared Artifact Consumption](./documentation/KmpSharedArtifactConsumption.md) – Android AAR, SwiftPM/XCFramework, and rollback packaging contract
 - [KMP Modern Stack Audit](./documentation/KmpModernStackAudit.md) – Current source of truth for final shared ownership, platform-owned boundaries, packaging ownership, and green closeout validation
 - [CI/CD](./documentation/CiCd.md) – GitHub Actions validation, artifact-only release builds, and failure triage
 

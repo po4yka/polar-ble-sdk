@@ -34,15 +34,11 @@ where `AnyPublisher` is used, and ensure `import Foundation` is present for asyn
 
 ### Remove
 ```swift
-// Podfile — remove these lines
-pod 'RxSwift', '~> 6.8.0'
-pod 'RxBlocking', '~> 6.8.0'   // test targets
-pod 'RxTest', '~> 6.8.0'       // test targets
-```
-```swift
 // Package.swift — remove
 .package(name: "RxSwift", url: "https://github.com/ReactiveX/RxSwift.git", ...)
 ```
+
+CocoaPods is no longer a supported distribution path for the SDK. Migrate package integration to Swift Package Manager and remove any Podfile entries for Polar BLE SDK dependencies.
 
 ### Keep / Add
 ```swift

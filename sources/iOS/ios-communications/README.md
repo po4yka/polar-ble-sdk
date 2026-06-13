@@ -6,14 +6,14 @@ The iOS Communications library provides three functionalities for communication 
 * **Functionality 2 - Polar BLE SDK:** This functionality provides connection and communication with Polar devices and sensors over Bluetooth LE for 3rd party developers. The functionality is achieved by wrapping the base iOS Communications library with an SDK layer. The source code for this functionality is located in the `ios-communications/Sources/PolarBleSdk/`.
 * **Functionality 3 - Polar BLE SDK PROPRIETARY:** The proprietary SDK is intended for internal development at Polar. It is separated into its own branch,  `sdk-proprietary`.
 
-iOS Communications XCode project (i.e. `iOSCommunications.xcworkspace`) contains three targets `iOSCommunications`, `PolarBleSdk` and `PolarBleSdkWatchOs`. `iOSCommunications` target implements the `Functionality 1`. The targets `PolarBleSdk` and `PolarBleSdkWatchOs` implements the `Functionality 2`, both targets dependents on `iOSCommunications` target.
+iOS Communications XCode project (i.e. `iOSCommunications.xcodeproj`) contains three targets `iOSCommunications`, `PolarBleSdk` and `PolarBleSdkWatchOs`. `iOSCommunications` target implements the `Functionality 1`. The targets `PolarBleSdk` and `PolarBleSdkWatchOs` implements the `Functionality 2`, both targets dependents on `iOSCommunications` target.
 
 * [Environment Requirements](#environment-requirements)
 * [Dependencies](#dependencies)
     * [To update dependencies](#to-update-dependencies)
 * [Install](#install)
     * [... using Swift Package Manager](#...-using-Swift-Package-Manager)
-    * [... using CocoaPods](#...-using-CocoaPods)
+    * [CocoaPods](#cocoapods)
     * [... using XCFramework](#...-using-XCFramework)
     * [... using git submodules](#...-using-git-submodules)
     * [... using Carthage](#...-using-Carthage)
@@ -31,30 +31,15 @@ iOS Communications XCode project (i.e. `iOSCommunications.xcworkspace`) contains
    * [SwiftProtobuf](https://github.com/apple/swift-protobuf). `SwiftProtobuf` dependency is only required by the targets `PolarBleSdk` and `PolarBleSdkWatchOs`
    
 ### To update dependencies
- * the dependent libraries are referenced by Cocoapods. To update dependencies please modify the `Podfile`
+ * the dependent libraries are referenced by Swift Package Manager. To update dependencies, modify `Package.swift` and the Xcode Swift package references.
  
 ## Install 
 
 ### ... using Swift Package Manager 
 * iOS Communications project is made available via Swift Package. Please get familiar with [XCode help](https://developer.apple.com/documentation/swift_packages/adding_package_dependencies_to_your_app) how to take Swift Package into use on your project.
 
-### ... using CocoaPods
-* In your `Podfile` add
-```
-source 'https://github.com/CocoaPods/Specs.git'
-
-use_frameworks!
-
-target 'YOUR_TARGET_NAME' do
-    pod 'iOSCommunications', '~> 14.1.6'
-end
-```
-
-And run
-
-```
-$ pod install
-```
+### CocoaPods
+* CocoaPods is no longer supported for this repository. Use Swift Package Manager for package integration.
 
 ### ... using XCFramework
 * From `/scripts` folder run the `./build_ios_communications.sh` or  `./build_sdk.sh` depending on target of your choice. Both scripts builds the XCFrameworks. 
@@ -87,43 +72,10 @@ To debug the iOS communications or Polar BLE SDK target follow the steps provide
    repository_url>.
 2. Follow the steps below depending on which dependency your app uses.
 
-### If you are using CocoaPods as a dependency in your app
-
-#### iOS Communications
-
-Add the following line to your Podfile:
-
-```ruby
-target '<target>' do
-    ...
-    pod 'iOSCommunications', :path => '<relative_path_to_cloned_repo>/sources/iOS/ios-communications/'
-    ...
-end    
-```
-Then, run:
-
-```bash
-    pod update iOSCommunications
-```
-
-#### Polar BLE SDK
-
-Add the following line to your Podfile:
-
-```ruby
-      pod 'PolarBleSdk', :path => '<relative_path_to_cloned_repo>/sources/iOS/ios-communications/'
-```
-
-Then, run:
-
-```bash
-    pod update PolarBleSdk
-```
-
 ### If you are using Swift Package Manager as a dependency in your app
 
 1. Open your app’s Xcode project or workspace.
 
 2. Select the Swift package’s folder (i.e. `/sources/iOS/ios-communications/`) in Finder and drag it into the Project navigator. This action adds your dependency’s Swift package as a local package to your project.
 
-Swift Package Manager and watchOS builds do not link `PolarBleSdkShared.framework` during the current KMP compatibility phase. They continue to use the Swift fallback implementation guarded by `#if canImport(PolarBleSdkShared)`. Use CocoaPods or the Xcode workspace path when you need the generated shared KMP framework in this phase.
+Swift Package Manager and watchOS builds can link shared KMP through `PolarBleSdkShared.xcframework` when a release binary target URL/checksum or local generated XCFramework is available. Clean checkouts continue to use the Swift fallback implementation guarded by `#if canImport(PolarBleSdkShared)`.

@@ -281,7 +281,8 @@ internal class BDScanCallback(
     @SuppressLint("MissingPermission", "NewApi")
     private fun callStartScanL(scanSettings: ScanSettings) {
         try {
-            bluetoothAdapter.bluetoothLeScanner.startScan(scanFilter, scanSettings, leScanCallback)
+            val bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner ?: throw IllegalStateException("Bluetooth LE scanner unavailable")
+            bluetoothLeScanner.startScan(scanFilter, scanSettings, leScanCallback)
         } catch (e: Exception) {
             val errorString = "Failed to start scan. Reason: ${e.message}"
             BleLogger.e(TAG, errorString)
@@ -302,7 +303,8 @@ internal class BDScanCallback(
         delayJob?.cancel()
         delayJob = null
         try {
-            bluetoothAdapter.bluetoothLeScanner.stopScan(leScanCallback)
+            val bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner ?: throw IllegalStateException("Bluetooth LE scanner unavailable")
+            bluetoothLeScanner.stopScan(leScanCallback)
         } catch (ex: Exception) {
             BleLogger.e(TAG, "stopScan did throw exception: " + ex.localizedMessage)
         }

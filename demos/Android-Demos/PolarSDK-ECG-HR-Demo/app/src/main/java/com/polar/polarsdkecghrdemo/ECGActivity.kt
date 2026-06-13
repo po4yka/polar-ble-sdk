@@ -8,16 +8,21 @@ import androidx.appcompat.app.AppCompatActivity
 import com.androidplot.xy.BoundaryMode
 import com.androidplot.xy.StepMode
 import com.androidplot.xy.XYPlot
+import com.polar.androidcommunications.api.ble.model.DisInfo
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.PolarBleApiCallback
 import com.polar.sdk.api.PolarBleApiDefaultImpl.defaultImplementation
 import com.polar.sdk.api.errors.PolarInvalidArgument
+import com.polar.sdk.api.model.EcgSample
 import com.polar.sdk.api.model.PolarDeviceInfo
 import com.polar.sdk.api.model.PolarEcgData
+import com.polar.sdk.api.model.PolarHealthThermometerData
 import com.polar.sdk.api.model.PolarHrData
-import com.polar.sdk.api.model.PolarSensorSetting
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.disposables.Disposable
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.launch
 import java.util.*
 
 class ECGActivity : AppCompatActivity(), PlotterListener {
@@ -33,8 +38,9 @@ class ECGActivity : AppCompatActivity(), PlotterListener {
     private lateinit var textViewFwVersion: TextView
     private lateinit var plot: XYPlot
     private lateinit var ecgPlotter: EcgPlotter
-    private var ecgDisposable: Disposable? = null
-    private var hrDisposable: Disposable? = null
+    private val scope = MainScope()
+    private var ecgJob: Job? = null
+    private var hrJob: Job? = null
 
     private lateinit var deviceId: String
 
@@ -95,6 +101,14 @@ class ECGActivity : AppCompatActivity(), PlotterListener {
                 }
             }
 
+            override fun disInformationReceived(identifier: String, disInfo: DisInfo) {
+                if (disInfo.key == "00002a28-0000-1000-8000-00805f9b34fb") {
+                    val msg = "Firmware: " + disInfo.value.trim { it <= ' ' }
+                    Log.d(TAG, "Firmware: $identifier ${disInfo.value.trim { it <= ' ' }}")
+                    textViewFwVersion.append(msg.trimIndent())
+                }
+            }
+
             override fun batteryLevelReceived(identifier: String, level: Int) {
                 Log.d(TAG, "Battery level $identifier $level%")
                 val batteryLevelText = "Battery level: $level%"
@@ -105,18 +119,7 @@ class ECGActivity : AppCompatActivity(), PlotterListener {
                 // deprecated
             }
 
-            override fun polarFtpFeatureReady(identifier: String) {
-                // deprecated
-            }
-
-            override fun streamingFeaturesReady(identifier: String, features: Set<PolarBleApi.PolarDeviceDataType>) {
-                // deprecated
-            }
-
-            override fun hrFeatureReady(identifier: String) {
-                // deprecated
-            }
-
+            override fun htsNotificationReceived(identifier: String, data: PolarHealthThermometerData) {}
         })
         try {
             api.connectToDevice(deviceId)
@@ -139,48 +142,51 @@ class ECGActivity : AppCompatActivity(), PlotterListener {
 
     public override fun onDestroy() {
         super.onDestroy()
-        ecgDisposable?.let {
-            if (!it.isDisposed) it.dispose()
-        }
+        ecgJob?.cancel()
+        hrJob?.cancel()
+        scope.cancel()
         api.shutDown()
     }
 
     fun streamECG() {
-        val isDisposed = ecgDisposable?.isDisposed ?: true
-        if (isDisposed) {
-            ecgDisposable = api.requestStreamSettings(deviceId, PolarBleApi.PolarDeviceDataType.ECG)
-                .toFlowable()
-                .flatMap { sensorSetting: PolarSensorSetting -> api.startEcgStreaming(deviceId, sensorSetting.maxSettings()) }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                    { polarEcgData: PolarEcgData ->
+        if (ecgJob?.isActive != true) {
+            ecgJob = scope.launch {
+                try {
+                    val sensorSetting = api.requestStreamSettings(deviceId, PolarBleApi.PolarDeviceDataType.ECG)
+                    api.startEcgStreaming(deviceId, sensorSetting.maxSettings())
+                        .catch { error ->
+                            Log.e(TAG, "Ecg stream failed $error")
+                            ecgJob = null
+                        }
+                        .collect { polarEcgData: PolarEcgData ->
                         Log.d(TAG, "ecg update")
                         for (data in polarEcgData.samples) {
-                            ecgPlotter.sendSingleSample((data.voltage.toFloat() / 1000.0).toFloat())
+                            if (data is EcgSample) {
+                                ecgPlotter.sendSingleSample(data.voltage.toFloat() / 1000.0f)
+                            }
                         }
-                    },
-                    { error: Throwable ->
-                        Log.e(TAG, "Ecg stream failed $error")
-                        ecgDisposable = null
-                    },
-                    {
-                        Log.d(TAG, "Ecg stream complete")
                     }
-                )
+                    Log.d(TAG, "Ecg stream complete")
+                } catch (error: Throwable) {
+                    Log.e(TAG, "Ecg stream failed $error")
+                    ecgJob = null
+                }
+            }
         } else {
-            // NOTE stops streaming if it is "running"
-            ecgDisposable?.dispose()
-            ecgDisposable = null
+            ecgJob?.cancel()
+            ecgJob = null
         }
     }
 
     fun streamHR() {
-        val isDisposed = hrDisposable?.isDisposed ?: true
-        if (isDisposed) {
-            hrDisposable = api.startHrStreaming(deviceId)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                    { hrData: PolarHrData ->
+        if (hrJob?.isActive != true) {
+            hrJob = scope.launch {
+                api.startHrStreaming(deviceId)
+                    .catch { error ->
+                        Log.e(TAG, "HR stream failed. Reason $error")
+                        hrJob = null
+                    }
+                    .collect { hrData: PolarHrData ->
                         for (sample in hrData.samples) {
                             Log.d(TAG, "HR " + sample.hr)
                             if (sample.rrsMs.isNotEmpty()) {
@@ -191,17 +197,12 @@ class ECGActivity : AppCompatActivity(), PlotterListener {
                             textViewHR.text = sample.hr.toString()
 
                         }
-                    },
-                    { error: Throwable ->
-                        Log.e(TAG, "HR stream failed. Reason $error")
-                        hrDisposable = null
-                    },
-                    { Log.d(TAG, "HR stream complete") }
-                )
+                    }
+                Log.d(TAG, "HR stream complete")
+            }
         } else {
-            // NOTE stops streaming if it is "running"
-            hrDisposable?.dispose()
-            hrDisposable = null
+            hrJob?.cancel()
+            hrJob = null
         }
     }
 

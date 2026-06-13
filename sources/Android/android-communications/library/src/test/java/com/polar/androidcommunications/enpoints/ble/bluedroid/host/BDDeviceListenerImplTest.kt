@@ -2,6 +2,8 @@ package com.polar.androidcommunications.enpoints.ble.bluedroid.host
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanFilter
@@ -590,9 +592,9 @@ class BDDeviceListenerImplTest {
         every { device.address } returns address
         every { device.type } returns type
         every { device.name } returns "MockDevice-$address"
-        every { device.connectGatt(any(), any(), any()) } returns mockk(relaxed = true)
-        every { device.connectGatt(any(), any(), any(), any()) } returns mockk(relaxed = true)
-        every { device.connectGatt(any(), any(), any(), any(), any()) } returns mockk(relaxed = true)
+        every { device.connectGatt(any<Context>(), any<Boolean>(), any<BluetoothGattCallback>()) } returns mockk<BluetoothGatt>(relaxed = true)
+        every { device.connectGatt(any<Context>(), any<Boolean>(), any<BluetoothGattCallback>(), any<Int>()) } returns mockk<BluetoothGatt>(relaxed = true)
+        every { device.connectGatt(any<Context>(), any<Boolean>(), any<BluetoothGattCallback>(), any<Int>(), any<Int>()) } returns mockk<BluetoothGatt>(relaxed = true)
         return device
     }
 }

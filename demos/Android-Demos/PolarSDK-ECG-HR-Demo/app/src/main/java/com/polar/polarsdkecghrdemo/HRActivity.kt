@@ -9,14 +9,19 @@ import com.androidplot.xy.BoundaryMode
 import com.androidplot.xy.StepMode
 import com.androidplot.xy.XYGraphWidget
 import com.androidplot.xy.XYPlot
+import com.polar.androidcommunications.api.ble.model.DisInfo
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.PolarBleApiCallback
 import com.polar.sdk.api.PolarBleApiDefaultImpl.defaultImplementation
 import com.polar.sdk.api.errors.PolarInvalidArgument
 import com.polar.sdk.api.model.PolarDeviceInfo
+import com.polar.sdk.api.model.PolarHealthThermometerData
 import com.polar.sdk.api.model.PolarHrData
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.disposables.Disposable
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.util.*
 
@@ -33,7 +38,8 @@ class HRActivity : AppCompatActivity(), PlotterListener {
     private lateinit var textViewBattery: TextView
     private lateinit var textViewFwVersion: TextView
     private lateinit var plot: XYPlot
-    private var hrDisposable: Disposable? = null
+    private val scope = MainScope()
+    private var hrJob: Job? = null
 
     private lateinit var deviceId: String
 
@@ -94,6 +100,14 @@ class HRActivity : AppCompatActivity(), PlotterListener {
                 }
             }
 
+            override fun disInformationReceived(identifier: String, disInfo: DisInfo) {
+                if (disInfo.key == "00002a28-0000-1000-8000-00805f9b34fb") {
+                    val msg = "Firmware: " + disInfo.value.trim { it <= ' ' }
+                    Log.d(TAG, "Firmware: $identifier ${disInfo.value.trim { it <= ' ' }}")
+                    textViewFwVersion.append(msg.trimIndent())
+                }
+            }
+
             override fun batteryLevelReceived(identifier: String, level: Int) {
                 Log.d(TAG, "Battery level $identifier $level%")
                 val batteryLevelText = "Battery level: $level%"
@@ -104,17 +118,7 @@ class HRActivity : AppCompatActivity(), PlotterListener {
                 //deprecated
             }
 
-            override fun polarFtpFeatureReady(identifier: String) {
-                //deprecated
-            }
-
-            override fun streamingFeaturesReady(identifier: String, features: Set<PolarBleApi.PolarDeviceDataType>) {
-                //deprecated
-            }
-
-            override fun hrFeatureReady(identifier: String) {
-                //deprecated
-            }
+            override fun htsNotificationReceived(identifier: String, data: PolarHealthThermometerData) {}
         })
 
         try {
@@ -143,6 +147,8 @@ class HRActivity : AppCompatActivity(), PlotterListener {
 
     public override fun onDestroy() {
         super.onDestroy()
+        hrJob?.cancel()
+        scope.cancel()
         api.shutDown()
     }
 
@@ -151,12 +157,14 @@ class HRActivity : AppCompatActivity(), PlotterListener {
     }
 
     fun streamHR() {
-        val isDisposed = hrDisposable?.isDisposed ?: true
-        if (isDisposed) {
-            hrDisposable = api.startHrStreaming(deviceId)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                    { hrData: PolarHrData ->
+        if (hrJob?.isActive != true) {
+            hrJob = scope.launch {
+                api.startHrStreaming(deviceId)
+                    .catch { error ->
+                        Log.e(TAG, "HR stream failed. Reason $error")
+                        hrJob = null
+                    }
+                    .collect { hrData: PolarHrData ->
                         for (sample in hrData.samples) {
                             Log.d(TAG, "HR ${sample.hr} RR ${sample.rrsMs}")
 
@@ -168,17 +176,12 @@ class HRActivity : AppCompatActivity(), PlotterListener {
                             plotter.addValues(sample)
 
                         }
-                    },
-                    { error: Throwable ->
-                        Log.e(TAG, "HR stream failed. Reason $error")
-                        hrDisposable = null
-                    },
-                    { Log.d(TAG, "HR stream complete") }
-                )
+                    }
+                Log.d(TAG, "HR stream complete")
+            }
         } else {
-            // NOTE stops streaming if it is "running"
-            hrDisposable?.dispose()
-            hrDisposable = null
+            hrJob?.cancel()
+            hrJob = null
         }
     }
 }

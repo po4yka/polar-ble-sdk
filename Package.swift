@@ -3,17 +3,28 @@ import Foundation
 import PackageDescription
 
 let polarBleSdkSharedXCFrameworkPath = "sources/iOS/ios-communications/Generated/PolarBleSdkSharedXCFramework/PolarBleSdkShared.xcframework"
-let hasPolarBleSdkSharedXCFramework = FileManager.default.fileExists(atPath: polarBleSdkSharedXCFrameworkPath)
+let polarBleSdkSharedBinaryURL = ProcessInfo.processInfo.environment["POLAR_BLE_SDK_SHARED_BINARY_URL"]
+let polarBleSdkSharedBinaryChecksum = ProcessInfo.processInfo.environment["POLAR_BLE_SDK_SHARED_BINARY_CHECKSUM"]
+let hasRemotePolarBleSdkSharedBinary = polarBleSdkSharedBinaryURL?.isEmpty == false && polarBleSdkSharedBinaryChecksum?.isEmpty == false
+let hasLocalPolarBleSdkSharedXCFramework = FileManager.default.fileExists(atPath: polarBleSdkSharedXCFrameworkPath)
+let hasPolarBleSdkShared = hasRemotePolarBleSdkSharedBinary || hasLocalPolarBleSdkSharedXCFramework
 let polarBleSdkTargetDependencies: [Target.Dependency] = [
     "SwiftProtobuf",
     "Zip"
-] + (hasPolarBleSdkSharedXCFramework ? [.target(name: "PolarBleSdkShared")] : [])
-let polarBleSdkTargets: [Target] = (hasPolarBleSdkSharedXCFramework ? [
+] + (hasPolarBleSdkShared ? [.target(name: "PolarBleSdkShared")] : [])
+let polarBleSdkSharedTargets: [Target] = hasRemotePolarBleSdkSharedBinary ? [
+    .binaryTarget(
+        name: "PolarBleSdkShared",
+        url: polarBleSdkSharedBinaryURL!,
+        checksum: polarBleSdkSharedBinaryChecksum!
+    )
+] : (hasLocalPolarBleSdkSharedXCFramework ? [
     .binaryTarget(
         name: "PolarBleSdkShared",
         path: polarBleSdkSharedXCFrameworkPath
     )
-] : []) + [
+] : [])
+let polarBleSdkTargets: [Target] = polarBleSdkSharedTargets + [
     .target(
         name: "PolarBleSdk",
         dependencies: polarBleSdkTargetDependencies,

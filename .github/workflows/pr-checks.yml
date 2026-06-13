@@ -23,7 +23,7 @@ concurrency:
 
 env:
   ANDROID_PROJECT_DIR: sources/Android/android-communications
-  IOS_WORKSPACE: sources/iOS/ios-communications/iOSCommunications.xcworkspace
+  IOS_PROJECT: sources/iOS/ios-communications/iOSCommunications.xcodeproj
   IOS_SCHEME: iOSCommunications
   IOS_DESTINATION: platform=iOS Simulator,name=iPhone 17,OS=latest
 
@@ -51,7 +51,8 @@ jobs:
           fi
 
       - name: KMP policy mirror
-        run: ruby scripts/kmp_non_gradle_checks.rb
+        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
+        run: ./gradlew :repo-tools:kmpNonGradleChecks --no-daemon --warning-mode all
 
       - name: Generated API docs stay generator-owned
         shell: bash
@@ -68,17 +69,6 @@ jobs:
           if [[ -n "$changed" ]]; then
             echo "Generated API documentation changed outside an explicit release-doc regeneration:"
             echo "$changed"
-            exit 1
-          fi
-
-      - name: CocoaPods generated artifacts stay untracked
-        shell: bash
-        run: |
-          set -euo pipefail
-          tracked="$(git ls-files sources/iOS/ios-communications/Pods sources/iOS/ios-communications/Podfile.lock)"
-          if [[ -n "$tracked" ]]; then
-            echo "Generated CocoaPods artifacts are tracked:"
-            echo "$tracked"
             exit 1
           fi
 
@@ -180,16 +170,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cocoapods
-            sources/iOS/ios-communications/Pods
-          key: cocoapods-${{ runner.os }}-${{ hashFiles('sources/iOS/ios-communications/Podfile', 'PolarBleSdk.podspec') }}
-          restore-keys: |
-            cocoapods-${{ runner.os }}-
-
       - name: Cache SwiftPM
         uses: actions/cache@v4
         with:
@@ -200,17 +180,18 @@ jobs:
           restore-keys: |
             swiftpm-${{ runner.os }}-
 
-      - name: Install CocoaPods
-        run: gem install cocoapods --no-document
-
-      - name: Install Pods
-        run: pod install --project-directory=sources/iOS/ios-communications
-
       - name: iOS Xcode validation probe
-        run: ruby scripts/ios_xcode_validation_probe.rb
+        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
+        run: ./gradlew :repo-tools:iosXcodeValidationProbe --no-daemon --warning-mode all
+
+      - name: Validate Swift Package surface
+        run: swift package describe
+
+      - name: Swift Package iOS build
+        run: xcodebuild -scheme PolarBleSdk -destination "generic/platform=iOS" build
 
       - name: iOS XCTest gate
-        run: sh scripts/ci_xcodebuild_test.sh "${IOS_WORKSPACE}" "${IOS_SCHEME}" "${IOS_DESTINATION}" /tmp/polar-ios-xctest-ci.xcresult
+        run: sh scripts/ci_xcodebuild_test.sh "${IOS_PROJECT}" "${IOS_SCHEME}" "${IOS_DESTINATION}" /tmp/polar-ios-xctest-ci.xcresult
 
       - name: Upload iOS result bundle
         if: always()

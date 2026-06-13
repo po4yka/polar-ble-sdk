@@ -25,7 +25,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Verify release packaging policy
-        run: ruby scripts/verify_release_packaging_policy.rb
+        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
+        run: ./gradlew :repo-tools:verifyReleasePackagingPolicy --no-daemon --warning-mode all
 
   android-artifacts:
     name: Android and shared Android artifacts
@@ -101,17 +102,6 @@ jobs:
             release-konan-${{ runner.os }}-
             konan-${{ runner.os }}-
 
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cocoapods
-            sources/iOS/ios-communications/Pods
-          key: release-cocoapods-${{ runner.os }}-${{ hashFiles('sources/iOS/ios-communications/Podfile', 'PolarBleSdk.podspec') }}
-          restore-keys: |
-            release-cocoapods-${{ runner.os }}-
-            cocoapods-${{ runner.os }}-
-
       - name: Cache SwiftPM
         uses: actions/cache@v4
         with:
@@ -126,29 +116,23 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Install CocoaPods
-        run: gem install cocoapods --no-document
-
-      - name: Install Pods
-        run: pod install --project-directory=sources/iOS/ios-communications
-
       - name: Validate Swift Package surface
         run: swift package describe
 
-      - name: Validate podspec
-        run: pod lib lint PolarBleSdk.podspec --allow-warnings
+      - name: Swift Package iOS build
+        run: xcodebuild -scheme PolarBleSdk -destination "generic/platform=iOS" build
 
-      - name: Build shared Apple frameworks
-        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
-        run: ./gradlew :shared:linkReleaseFrameworkIosArm64 :shared:linkReleaseFrameworkIosSimulatorArm64 :shared:linkReleaseFrameworkIosX64 --no-daemon --warning-mode all
+      - name: Build shared Apple XCFramework
+        run: sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh --configuration Release --zip-output /tmp/polar-release-artifacts/ios/PolarBleSdkShared.xcframework.zip
+
+      - name: Validate SwiftPM XCFramework consumption
+        run: sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh --configuration Release --skip-platform-builds
 
       - name: Stage iOS artifacts
         run: |
           mkdir -p /tmp/polar-release-artifacts/ios
-          for target in iosArm64 iosSimulatorArm64 iosX64; do
-            mkdir -p "/tmp/polar-release-artifacts/ios/$target"
-            cp -R "sources/Android/android-communications/shared/build/bin/$target/releaseFramework/PolarBleSdkShared.framework" "/tmp/polar-release-artifacts/ios/$target/"
-          done
+          swift package compute-checksum /tmp/polar-release-artifacts/ios/PolarBleSdkShared.xcframework.zip > /tmp/polar-release-artifacts/ios/PolarBleSdkShared.xcframework.zip.checksum
+          cp -R sources/iOS/ios-communications/Generated/PolarBleSdkSharedXCFramework/PolarBleSdkShared.xcframework /tmp/polar-release-artifacts/ios/
 
       - name: Upload iOS artifacts
         uses: actions/upload-artifact@v4

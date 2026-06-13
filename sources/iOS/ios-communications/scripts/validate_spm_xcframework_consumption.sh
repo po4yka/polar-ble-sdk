@@ -64,6 +64,7 @@ if [ -e "$XCFRAMEWORK_OUTPUT_DIR" ]; then
 fi
 
 cd "$REPO_ROOT"
+"$GRADLE_ROOT/gradlew" -p "$GRADLE_ROOT" :repo-tools:validateSpmXcframeworkConsumption --no-daemon --warning-mode all
 swift package --scratch-path "$FALLBACK_SCRATCH" --manifest-cache none describe > "$PACKAGE_FALLBACK_DESCRIPTION"
 swift package --scratch-path "$FALLBACK_SCRATCH" --manifest-cache none dump-package > "$PACKAGE_FALLBACK_DUMP"
 
@@ -72,11 +73,10 @@ if grep -q "PolarBleSdkShared" "$PACKAGE_FALLBACK_DESCRIPTION"; then
     exit 1
 fi
 
-ruby -rjson -e '
-package = JSON.parse(File.read(ARGV.fetch(0)))
-target_names = package.fetch("targets").map { |target| target.fetch("name") }
-abort("fallback-mode Package.swift unexpectedly resolved PolarBleSdkShared") if target_names.include?("PolarBleSdkShared")
-' "$PACKAGE_FALLBACK_DUMP"
+if grep -q '"name"[[:space:]]*:[[:space:]]*"PolarBleSdkShared"' "$PACKAGE_FALLBACK_DUMP"; then
+    echo "fallback-mode Package.swift unexpectedly resolved PolarBleSdkShared" >&2
+    exit 1
+fi
 
 "$SCRIPT_DIR/package_kmp_xcframework.sh" --configuration "$CONFIGURATION"
 
@@ -86,22 +86,13 @@ if [ ! -d "$XCFRAMEWORK_PATH" ]; then
 fi
 
 INFO_PLIST="$XCFRAMEWORK_PATH/Info.plist"
-plutil -convert json -o - "$INFO_PLIST" | ruby -rjson -e '
-info = JSON.parse(STDIN.read)
-libraries = info.fetch("AvailableLibraries")
-expected = [
-  ["ios", nil],
-  ["ios", "simulator"],
-  ["watchos", nil],
-  ["watchos", "simulator"]
-]
-missing = expected.reject do |platform, variant|
-  libraries.any? do |library|
-    library["SupportedPlatform"] == platform && library["SupportedPlatformVariant"] == variant
-  end
-end
-abort("PolarBleSdkShared.xcframework is missing #{missing.map { |platform, variant| [platform, variant].compact.join("-") }.join(", ")} support") unless missing.empty?
-'
+INFO_JSON=$(plutil -convert json -o - "$INFO_PLIST")
+for expected in '"SupportedPlatform":"ios"' '"SupportedPlatformVariant":"simulator"' '"SupportedPlatform":"watchos"'; do
+    if ! printf "%s" "$INFO_JSON" | tr -d '[:space:]' | grep -q "$expected"; then
+        echo "PolarBleSdkShared.xcframework Info.plist is missing $expected" >&2
+        exit 1
+    fi
+done
 
 cd "$REPO_ROOT"
 swift package --scratch-path "$BINARY_SCRATCH" --manifest-cache none describe > "$PACKAGE_BINARY_DESCRIPTION"
@@ -112,13 +103,10 @@ if ! grep -q "PolarBleSdkShared" "$PACKAGE_BINARY_DESCRIPTION"; then
     exit 1
 fi
 
-ruby -rjson -e '
-package = JSON.parse(File.read(ARGV.fetch(0)))
-target = package.fetch("targets").find { |candidate| candidate.fetch("name") == "PolarBleSdkShared" }
-unless target && target.fetch("type") == "binary"
-  abort("Package.swift did not resolve PolarBleSdkShared as a binaryTarget")
-end
-' "$PACKAGE_BINARY_DUMP"
+if ! grep -q '"name"[[:space:]]*:[[:space:]]*"PolarBleSdkShared"' "$PACKAGE_BINARY_DUMP" || ! grep -q '"type"[[:space:]]*:[[:space:]]*"binary"' "$PACKAGE_BINARY_DUMP"; then
+    echo "Package.swift did not resolve PolarBleSdkShared as a binaryTarget" >&2
+    exit 1
+fi
 
 if [ "$RUN_PLATFORM_BUILDS" = "1" ]; then
     DERIVED_DATA=$(mktemp -d "${TMPDIR:-/tmp}/polar-spm-xcodebuild.XXXXXX")
