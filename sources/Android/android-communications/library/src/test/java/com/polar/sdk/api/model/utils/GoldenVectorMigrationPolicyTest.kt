@@ -3964,7 +3964,13 @@ class GoldenVectorMigrationPolicyTest {
             ":shared:linkDebugFrameworkIosX64",
             "may depend on shared code only when a behavior slice",
             "scripts/verify_android_example_aar_consumption.sh",
+            "scripts/verify_android_shared_maven_metadata.sh",
+            "scripts/verify_release_packaging_policy.rb",
             "polar-ble-sdk-shared.aar",
+            "shared local Maven metadata validation",
+            "CI/release remains artifact-only",
+            "No Maven, CocoaPods, or SwiftPM publication is claimed",
+            "required secrets are intentionally absent",
             "SwiftPM/watchOS",
             "fallback-only",
             "rollback path for every shared-module adoption step"
