@@ -209,7 +209,6 @@ internal class PolarTrainingSessionUtils {
         BleLogger.trace("readTrainingSession: Starting to read session from path: \(reference.path)")
         let summaryOperation = trainingSessionSummaryReadOperation(path: reference.path)
         let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(summaryOperation))
-        let sessionSummary = try Data_PbTrainingSession(serializedBytes: response as Data)
         let summaryData = response as Data
         let payloadReadPlan = trainingSessionPayloadReadPlan(reference: reference)
         let exerciseReads = try await withThrowingTaskGroup(of: TrainingExerciseReadResult.self) { group in
@@ -224,7 +223,12 @@ internal class PolarTrainingSessionUtils {
         }
         let readResult = trainingSessionPayloadReadResult(reference: reference, summaryPayload: summaryData, exerciseResults: exerciseReads.flatMap { $0.payloadResults })
         BleLogger.trace("Training session payload read result: \(readResult)")
-        let exercises = exerciseReads.map { $0.exercise }
+        let reconstructionPlan = trainingSessionPayloadReconstructionPlan(reference: reference, summaryPayload: summaryData, exerciseResults: exerciseReads.flatMap { $0.payloadResults })
+        let sessionSummary = try Data_PbTrainingSession(serializedBytes: reconstructionPlan.sessionSummary?.data ?? summaryData)
+        let reconstructionExercises = reconstructionExercisesByIndex(reconstructionPlan.exercises)
+        let exercises = exerciseReads.map { read in
+            parseExercise(exercise: read.exercise, entries: reconstructionExercises[read.exercise.index]?.entries ?? [])
+        }
         return PolarTrainingSession(reference: reference, sessionSummary: sessionSummary, exercises: exercises)
     }
     
@@ -256,7 +260,6 @@ internal class PolarTrainingSessionUtils {
         
         let summaryOperation = trainingSessionSummaryReadOperation(path: reference.path)
         let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(summaryOperation))
-        let sessionSummary = try Data_PbTrainingSession(serializedBytes: response as Data)
         let summaryData = response as Data
         let payloadReadPlan = trainingSessionPayloadReadPlan(reference: reference)
         let exerciseReads = try await withThrowingTaskGroup(of: TrainingExerciseReadResult.self) { group in
@@ -269,7 +272,12 @@ internal class PolarTrainingSessionUtils {
         }
         let readResult = trainingSessionPayloadReadResult(reference: reference, summaryPayload: summaryData, exerciseResults: exerciseReads.flatMap { $0.payloadResults })
         BleLogger.trace("Training session payload read result: \(readResult)")
-        let exercises = exerciseReads.map { $0.exercise }
+        let reconstructionPlan = trainingSessionPayloadReconstructionPlan(reference: reference, summaryPayload: summaryData, exerciseResults: exerciseReads.flatMap { $0.payloadResults })
+        let sessionSummary = try Data_PbTrainingSession(serializedBytes: reconstructionPlan.sessionSummary?.data ?? summaryData)
+        let reconstructionExercises = reconstructionExercisesByIndex(reconstructionPlan.exercises)
+        let exercises = exerciseReads.map { read in
+            parseExercise(exercise: read.exercise, entries: reconstructionExercises[read.exercise.index]?.entries ?? [])
+        }
         progressHandler(PolarTrainingSessionProgress(totalBytes: totalBytes, completedBytes: totalBytes, progressPercent: 100, currentFileName: nil))
         return PolarTrainingSession(reference: reference, sessionSummary: sessionSummary, exercises: exercises)
     }
@@ -298,35 +306,33 @@ internal class PolarTrainingSessionUtils {
                     let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(fileOperation))
                     let responseData = response as Data
                     let data: Data = trainingSessionPayloadEncoding(fileName: dataType.deviceFileName) == "gzip-protobuf" ? try decodePayload(fileName: dataType.deviceFileName, data: responseData) : responseData
-                    return TrainingExercisePayloadResult(path: file.path, type: dataType, publicModelSlot: file.publicModelSlot, data: data)
+                    return TrainingExercisePayloadResult(path: file.path, type: dataType, publicModelSlot: file.publicModelSlot, exerciseIndex: exercise.index, data: data)
                 }
             }
             var results: [TrainingExercisePayloadResult] = []
             for try await r in group { results.append(r) }
             return results
         }
+        return TrainingExerciseReadResult(exercise: exercise, payloadResults: dataResults)
+    }
+
+    private static func parseExercise(exercise: PolarExercise, entries: [TrainingSessionPayloadReconstructionEntry]) -> PolarExercise {
         var summary: Data_PbExerciseBase?
         var route: Data_PbExerciseRouteSamples?
         var route2: Data_PbExerciseRouteSamples2?
         var samples: Data_PbExerciseSamples?
         var samples2: Data_PbExerciseSamples2?
-        for result in dataResults {
-            if PolarRuntimePlanner.trainingSessionPayloadMalformed(fileName: result.type.deviceFileName, payload: result.data) {
-                continue
-            }
-            switch result.publicModelSlot {
-            case "exerciseSummary": summary = try? Data_PbExerciseBase(serializedBytes: result.data)
-            case "route": route = try? Data_PbExerciseRouteSamples(serializedBytes: result.data)
-            case "routeAdvanced": route2 = try? Data_PbExerciseRouteSamples2(serializedBytes: result.data)
-            case "samples": samples = try? Data_PbExerciseSamples(serializedBytes: result.data)
-            case "samplesAdvanced": samples2 = try? Data_PbExerciseSamples2(serializedBytes: result.data)
+        for entry in entries {
+            switch entry.publicModelSlot {
+            case "exerciseSummary": summary = try? Data_PbExerciseBase(serializedBytes: entry.data)
+            case "route": route = try? Data_PbExerciseRouteSamples(serializedBytes: entry.data)
+            case "routeAdvanced": route2 = try? Data_PbExerciseRouteSamples2(serializedBytes: entry.data)
+            case "samples": samples = try? Data_PbExerciseSamples(serializedBytes: entry.data)
+            case "samplesAdvanced": samples2 = try? Data_PbExerciseSamples2(serializedBytes: entry.data)
             default: continue
             }
         }
-        return TrainingExerciseReadResult(
-            exercise: PolarExercise(index: exercise.index, path: basePath, exerciseDataTypes: exercise.exerciseDataTypes, exerciseSummary: summary, route: route, routeAdvanced: route2, samples: samples, samplesAdvanced: samples2),
-            payloadResults: dataResults
-        )
+        return PolarExercise(index: exercise.index, path: exercise.path, exerciseDataTypes: exercise.exerciseDataTypes, exerciseSummary: summary, route: route, routeAdvanced: route2, samples: samples, samplesAdvanced: samples2)
     }
 
     private static func trainingSessionPayloadReadResult(reference: PolarTrainingSessionReference, summaryPayload: Data, exerciseResults: [TrainingExercisePayloadResult]) -> String {
@@ -341,6 +347,73 @@ internal class PolarTrainingSessionUtils {
         )
     }
 
+    private static func trainingSessionPayloadReconstructionPlan(reference: PolarTrainingSessionReference, summaryPayload: Data, exerciseResults: [TrainingExercisePayloadResult]) -> TrainingSessionPayloadReconstructionPlan {
+        var responses: [(path: String, fileName: String, payload: Data)] = [(reference.path, "TSESS.BPB", summaryPayload)]
+        responses.append(contentsOf: exerciseResults.filter { !$0.data.isEmpty }.map { result in
+            (result.path, result.type.deviceFileName, result.data)
+        })
+        #if canImport(PolarBleSdkShared)
+        let shared = PolarRuntimePlanner.trainingSessionPayloadReconstructionPlan(
+            referenceText: trainingSessionSharedReferenceText(reference: reference),
+            responses: responses,
+            fetchOrder: responses.map { $0.path }
+        )
+        if let plan = parseTrainingSessionPayloadReconstructionPlan(shared) {
+            return plan
+        }
+        #endif
+        let exercises = Dictionary(grouping: exerciseResults.filter { !$0.data.isEmpty }, by: { $0.exerciseIndex })
+            .map { index, results -> TrainingSessionPayloadReconstructionExercise in
+                let entries = results.compactMap { result -> TrainingSessionPayloadReconstructionEntry? in
+                    if PolarRuntimePlanner.trainingSessionPayloadMalformed(fileName: result.type.deviceFileName, payload: result.data) {
+                        return nil
+                    }
+                    return TrainingSessionPayloadReconstructionEntry(path: result.path, fileName: result.type.deviceFileName, publicModelSlot: result.publicModelSlot, data: result.data)
+                }
+                return TrainingSessionPayloadReconstructionExercise(index: index, entries: entries)
+            }
+            .sorted { $0.index < $1.index }
+        return TrainingSessionPayloadReconstructionPlan(
+            sessionSummary: TrainingSessionPayloadReconstructionEntry(path: reference.path, fileName: "TSESS.BPB", publicModelSlot: "sessionSummary", data: summaryPayload),
+            exercises: exercises
+        )
+    }
+
+    private static func parseTrainingSessionPayloadReconstructionPlan(_ text: String) -> TrainingSessionPayloadReconstructionPlan? {
+        guard !text.isEmpty else { return nil }
+        var sessionSummary: TrainingSessionPayloadReconstructionEntry?
+        var exercises: [Int: [TrainingSessionPayloadReconstructionEntry]] = [:]
+        for row in text.split(separator: "\n") {
+            let fields = row.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+            switch fields.first {
+            case "S":
+                guard fields.count == 5, let data = Data(hex: fields[4]) else { return nil }
+                sessionSummary = TrainingSessionPayloadReconstructionEntry(path: fields[3], fileName: fields[1], publicModelSlot: fields[2], data: data)
+            case "P":
+                guard fields.count == 6, let index = Int(fields[1]), let data = Data(hex: fields[5]) else { return nil }
+                exercises[index, default: []].append(TrainingSessionPayloadReconstructionEntry(path: fields[4], fileName: fields[2], publicModelSlot: fields[3], data: data))
+            case "M":
+                continue
+            default:
+                return nil
+            }
+        }
+        return TrainingSessionPayloadReconstructionPlan(
+            sessionSummary: sessionSummary,
+            exercises: exercises.keys.sorted().map { index in
+                TrainingSessionPayloadReconstructionExercise(index: index, entries: exercises[index] ?? [])
+            }
+        )
+    }
+
+    private static func reconstructionExercisesByIndex(_ exercises: [TrainingSessionPayloadReconstructionExercise]) -> [Int: TrainingSessionPayloadReconstructionExercise] {
+        var result: [Int: TrainingSessionPayloadReconstructionExercise] = [:]
+        for exercise in exercises where result[exercise.index] == nil {
+            result[exercise.index] = exercise
+        }
+        return result
+    }
+
     private struct TrainingExerciseReadResult {
         let exercise: PolarExercise
         let payloadResults: [TrainingExercisePayloadResult]
@@ -349,6 +422,24 @@ internal class PolarTrainingSessionUtils {
     private struct TrainingExercisePayloadResult {
         let path: String
         let type: PolarExerciseDataTypes
+        let publicModelSlot: String
+        let exerciseIndex: Int
+        let data: Data
+    }
+
+    private struct TrainingSessionPayloadReconstructionPlan {
+        let sessionSummary: TrainingSessionPayloadReconstructionEntry?
+        let exercises: [TrainingSessionPayloadReconstructionExercise]
+    }
+
+    private struct TrainingSessionPayloadReconstructionExercise {
+        let index: Int
+        let entries: [TrainingSessionPayloadReconstructionEntry]
+    }
+
+    private struct TrainingSessionPayloadReconstructionEntry {
+        let path: String
+        let fileName: String
         let publicModelSlot: String
         let data: Data
     }
@@ -562,6 +653,21 @@ internal struct TrainingSessionPayloadReadPlanEntry: Equatable {
     let fileName: String
     let publicModelSlot: String
     let exerciseIndex: Int?
+}
+
+private extension Data {
+    init?(hex: String) {
+        guard hex.count.isMultiple(of: 2) else { return nil }
+        var data = Data()
+        var index = hex.startIndex
+        while index < hex.endIndex {
+            let nextIndex = hex.index(index, offsetBy: 2)
+            guard let byte = UInt8(hex[index..<nextIndex], radix: 16) else { return nil }
+            data.append(byte)
+            index = nextIndex
+        }
+        self = data
+    }
 }
 
 private extension PolarTrainingSessionDataTypes {
