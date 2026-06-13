@@ -358,7 +358,7 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         }
         XCTAssertEqual(cases.filter { ($0["encoding"] as? String) == "gzip-protobuf" }.count, 4, "payload-parser-policy")
         XCTAssertEqual(cases.compactMap { $0["publicModelSlot"] as? String }, ["sessionSummary", "exerciseSummary", "route", "route", "routeAdvanced", "routeAdvanced", "samples", "samples", "samplesAdvanced"], "payload-parser-policy")
-        XCTAssertEqual(commonParserPrototype["status"] as? String, "executable shared parser-policy coverage; gzip decoding is shared and protobuf parsing remains gated on common protobuf dependencies", "payload-parser-policy")
+        XCTAssertEqual(commonParserPrototype["status"] as? String, "executable shared parser-policy coverage; gzip decoding and selected protobuf field parsing are shared while generated public model reconstruction remains platform-owned", "payload-parser-policy")
         XCTAssertEqual(expected["commonDecision"] as? String, TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION, "payload-parser-policy")
         XCTAssertEqual(consumerTests["android"] as? [String], ["com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"], "payload-parser-policy")
         XCTAssertEqual(consumerTests["ios"] as? [String], ["PolarTrainingSessionUtilsTest"], "payload-parser-policy")
@@ -920,4 +920,4 @@ private let TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS = [
     "samples-advanced-gzip-protobuf"
 ]
 
-private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies that can execute these parser cases against real bytes; gzip decompression and public-model slot planning are now shared KMP production code, and until protobuf parsing moves this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Selected training payload protobuf field parsing now executes in shared KMP for these parser cases; generated public protobuf object construction remains platform-owned while neutral reconstruction planning maps decoded payload bytes to Android and iOS adapters. Gzip decompression and public-model slot planning are shared KMP production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
