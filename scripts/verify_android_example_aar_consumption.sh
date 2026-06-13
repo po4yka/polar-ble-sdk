@@ -23,5 +23,20 @@ mkdir -p "$EXAMPLE_AAR_DIR"
 cp "$SDK_AAR" "$EXAMPLE_SDK_AAR"
 cp "$SHARED_AAR" "$EXAMPLE_SHARED_AAR"
 
+if [ ! -s "$EXAMPLE_SDK_AAR" ] || [ ! -s "$EXAMPLE_SHARED_AAR" ]; then
+    echo "Expected both polar-ble-sdk.aar and polar-ble-sdk-shared.aar for local Android release consumption" >&2
+    exit 1
+fi
+
+if ! unzip -l "$EXAMPLE_SHARED_AAR" | grep -q 'classes.jar'; then
+    echo "polar-ble-sdk-shared.aar does not contain classes.jar" >&2
+    exit 1
+fi
+
+if ! grep -q "polar-ble-sdk-shared.aar" "$EXAMPLE_ROOT/app/build.gradle"; then
+    echo "Android example must declare the local shared AAR consumption path" >&2
+    exit 1
+fi
+
 cd "$EXAMPLE_ROOT"
 ./gradlew :app:checkDebugAarMetadata :app:checkDebugDuplicateClasses :app:mergeLibDexDebug -PlocalSdk=true --no-daemon --warning-mode all

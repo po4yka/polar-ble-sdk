@@ -1,5 +1,9 @@
 apply plugin: 'org.jetbrains.kotlin.multiplatform'
 apply plugin: 'com.android.kotlin.multiplatform.library'
+apply plugin: 'maven-publish'
+
+group = 'com.github.polarofficial'
+version = '0.0.0-local'
 
 kotlin {
     jvm()
@@ -35,4 +39,13 @@ kotlin {
 def kotlinNativeSimulatorTestClass = Class.forName("org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest")
 tasks.withType(kotlinNativeSimulatorTestClass).configureEach {
     environment("SIMCTL_CHILD_POLAR_BLE_SDK_REPOSITORY_ROOT", rootProject.projectDir.parentFile.parentFile.parentFile.absolutePath)
+}
+
+publishing {
+    repositories {
+        maven {
+            name = 'localKmpReleaseValidation'
+            url = layout.buildDirectory.dir('local-maven-validation')
+        }
+    }
 }
