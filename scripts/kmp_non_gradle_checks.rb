@@ -1457,7 +1457,13 @@ SHARED_CONSUMPTION_REQUIRED_TERMS = [
   ":shared:linkDebugFrameworkIosX64",
   "may depend on shared code only when a behavior slice",
   "scripts/verify_android_example_aar_consumption.sh",
+  "scripts/verify_android_shared_maven_metadata.sh",
+  "scripts/verify_release_packaging_policy.rb",
   "polar-ble-sdk-shared.aar",
+  "shared local Maven metadata validation",
+  "CI/release remains artifact-only",
+  "No Maven, CocoaPods, or SwiftPM publication is claimed",
+  "required secrets are intentionally absent",
   "SwiftPM/watchOS",
   "fallback-only",
   "rollback path for every shared-module adoption step"
@@ -2709,6 +2715,38 @@ else
   consumption_doc = File.read(consumption_doc_path)
   SHARED_CONSUMPTION_REQUIRED_TERMS.each do |term|
     errors << "documentation/KmpSharedArtifactConsumption.md: missing #{term}" unless consumption_doc.include?(term)
+  end
+end
+release_workflow_path = File.join(ROOT, ".github/workflows/release-artifacts.yml")
+if !File.file?(release_workflow_path)
+  errors << ".github/workflows/release-artifacts.yml: missing release artifacts workflow"
+else
+  release_workflow = File.read(release_workflow_path)
+  [
+    "scripts/verify_android_example_aar_consumption.sh",
+    "scripts/verify_android_shared_maven_metadata.sh",
+    "scripts/verify_release_packaging_policy.rb",
+    "polar-ble-sdk.aar",
+    "polar-ble-sdk-shared.aar",
+    "shared-maven-local",
+    "linkReleaseFrameworkIosArm64",
+    "linkReleaseFrameworkIosSimulatorArm64",
+    "linkReleaseFrameworkIosX64",
+    "PolarBleSdkShared.framework",
+    "actions/upload-artifact@v4"
+  ].each do |term|
+    errors << ".github/workflows/release-artifacts.yml: missing release artifact policy term #{term}" unless release_workflow.include?(term)
+  end
+  [
+    "pod trunk push",
+    "pod repo push",
+    "swift package-registry publish",
+    "mvn deploy",
+    "secrets.MAVEN",
+    "secrets.COCOAPODS",
+    "secrets.SWIFT_PACKAGE"
+  ].each do |term|
+    errors << ".github/workflows/release-artifacts.yml: must not enable external publication term #{term}" if release_workflow.include?(term)
   end
 end
 unless shared_build.include?("baseName = 'PolarBleSdkShared'") && shared_build.include?("isStatic = true")

@@ -18,7 +18,9 @@ Product documentation under `documentation/products/` and issue-template-only ch
 
 ## Artifact Policy
 
-Release automation is artifact-only. It does not publish to Maven, CocoaPods, Swift Package registries, GitHub Pages, or any external package host. Release artifacts are uploaded to the workflow run with limited retention and must be reviewed before any manual publication step outside CI.
+CI/release remains artifact-only. Release automation does not publish to Maven, CocoaPods, Swift Package registries, GitHub Pages, or any external package host. No Maven, CocoaPods, or SwiftPM publication is claimed by CI, and the required secrets are intentionally absent from release workflow policy until a separate release-policy document names the external destination, credentials, approval path, and rollback plan. Release artifacts are uploaded to the workflow run with limited retention and must be reviewed before any manual publication step outside CI.
+
+The Android release artifact set has an Android internal project dependency during repository builds, then a local release pair for file consumers: `polar-ble-sdk.aar` and `polar-ble-sdk-shared.aar`. `scripts/verify_android_example_aar_consumption.sh` proves the example can consume that AAR pair, and `scripts/verify_android_shared_maven_metadata.sh` validates shared local Maven metadata validation in a build-local repository only. The Apple release artifact set uploads generated `PolarBleSdkShared.framework` outputs for `iosArm64`, `iosSimulatorArm64`, and `iosX64`; CocoaPods/Xcode consume the generated framework, while SwiftPM/watchOS fallback-only validation remains `swift package describe` unless a real `PolarBleSdkShared.xcframework` binary strategy is added. Rollback is to stop consuming the shared artifact at the platform adapter or local release packaging layer without changing public APIs.
 
 Generated API documentation under `docs/polar-sdk-android` and `docs/polar-sdk-ios` remains checked-in release output. CI fails when those directories change outside an explicit release documentation regeneration change.
 
