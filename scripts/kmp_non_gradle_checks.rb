@@ -324,7 +324,10 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "publicModelReadPlanPolicy",
     "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects",
     "publicModelReconstructionPlanPolicy",
-    "shared-neutral-reconstruction-plan-selects-decoded-payload-bytes-for-platform-generated-model-adapters"
+    "shared-neutral-reconstruction-plan-selects-decoded-payload-bytes-for-platform-generated-model-adapters",
+    "neutralParsedFields",
+    "neutralReconstructionFieldsPolicy",
+    "shared-neutral-reconstruction-plan-carries-session-summary-scalar-fields-with-decoded-bytes"
   ],
   "payload-parser-policy.json" => [
     "Selected training payload protobuf field parsing now executes in shared KMP",

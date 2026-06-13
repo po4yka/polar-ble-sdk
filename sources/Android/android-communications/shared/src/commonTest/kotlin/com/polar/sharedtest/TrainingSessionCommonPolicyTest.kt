@@ -10,6 +10,7 @@ import com.polar.shared.sdk.PolarTrainingSessionReference
 import com.polar.shared.sdk.PolarTrainingSessionModels
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class TrainingSessionCommonPolicyTest {
@@ -116,8 +117,15 @@ class TrainingSessionCommonPolicyTest {
         assertEquals(expectedReconstructionPlan.map { it.stringValue("publicModelSlot") }, actualReconstructionEntries.map { it.publicModelSlot }, vector.stringValue("id"))
         assertEquals(expectedReconstructionPlan.map { it.optionalIntValue("exerciseIndex") }, actualReconstructionEntries.map { it.exerciseIndex }, vector.stringValue("id"))
         assertEquals(expectedReconstructionPlan.map { it.stringValue("fileName") }, actualReconstructionEntries.map { it.fileName }, vector.stringValue("id"))
+        val actualSummaryEntry = assertNotNull(reconstructionPlan.sessionSummary, vector.stringValue("id"))
+        val expectedSummaryNeutralFields = expectedReconstructionPlan.first { it.stringValue("publicModelSlot") == "sessionSummary" }.objectValue("neutralParsedFields")
+        val actualSummaryNeutralFields = actualSummaryEntry.parsedPayload
+        assertEquals(expectedSummaryNeutralFields.stringValue("modelName"), actualSummaryNeutralFields.modelName, vector.stringValue("id"))
+        assertEquals(expectedSummaryNeutralFields.intValue("durationSeconds"), actualSummaryNeutralFields.durationSeconds, vector.stringValue("id"))
+        assertEquals(expectedSummaryNeutralFields.intValue("distanceMeters"), actualSummaryNeutralFields.distanceMeters, vector.stringValue("id"))
+        assertEquals(expectedSummaryNeutralFields.intValue("calories"), actualSummaryNeutralFields.calories, vector.stringValue("id"))
         assertEquals(listOf("ROUTE2.GZB", "SAMPLES.GZB"), reconstructionPlan.exercises.single().malformedFilesIgnored, vector.stringValue("id"))
-        assertEquals("Polar 360", PolarTrainingSessionModels.parseDecodedPayloadResponse("TSESS.BPB", reconstructionPlan.sessionSummary!!.decodedPayload).payload.modelName, vector.stringValue("id"))
+        assertEquals("Polar 360", PolarTrainingSessionModels.parseDecodedPayloadResponse("TSESS.BPB", actualSummaryEntry.decodedPayload).payload.modelName, vector.stringValue("id"))
         assertEquals(listOf(120, 125, 130), PolarTrainingSessionModels.parseDecodedPayloadResponse("SAMPLES.BPB", reconstructionPlan.exercises.single().entries.first { it.publicModelSlot == "samples" }.decodedPayload).payload.heartRateSamples, vector.stringValue("id"))
         val commonDecision = vector.objectValue("platformExpectations").objectValue("commonDecision")
         assertEquals("compute-progress-from-reference-file-sizes-and-last-completed-file", commonDecision.stringValue("progressPolicy"), vector.stringValue("id"))
@@ -125,6 +133,7 @@ class TrainingSessionCommonPolicyTest {
         assertEquals("ignore-unknown-advanced-sample-lists-and-preserve-known-samples", commonDecision.stringValue("unknownSampleListPolicy"), vector.stringValue("id"))
         assertEquals("shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects", commonDecision.stringValue("publicModelReadPlanPolicy"), vector.stringValue("id"))
         assertEquals("shared-neutral-reconstruction-plan-selects-decoded-payload-bytes-for-platform-generated-model-adapters", commonDecision.stringValue("publicModelReconstructionPlanPolicy"), vector.stringValue("id"))
+        assertEquals("shared-neutral-reconstruction-plan-carries-session-summary-scalar-fields-with-decoded-bytes", commonDecision.stringValue("neutralReconstructionFieldsPolicy"), vector.stringValue("id"))
     }
 
     @Test

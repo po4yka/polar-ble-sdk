@@ -412,6 +412,9 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
             $0.start = fixtureLocalDateTime()
             $0.exerciseCount = 1
             $0.deviceID = "ios-public-device"
+            $0.modelName = "iOS 360"
+            $0.duration = PbDuration.with { $0.seconds = 123 }
+            $0.distance = 12.5
             $0.calories = 88
         }.serializedData()
         let samplesPayload = try Data_PbExerciseSamples.with {
@@ -436,9 +439,18 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         let samplesFields = samplesRow.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
         let sessionSummary = try Data_PbTrainingSession(serializedBytes: try data(hex: summaryFields[4]))
         let samples = try Data_PbExerciseSamples(serializedBytes: try data(hex: samplesFields[5]))
+        let neutralModelName = try XCTUnwrap(String(data: try data(hex: summaryFields[5]), encoding: .utf8))
 
+        XCTAssertEqual(summaryFields.count, 9)
         XCTAssertEqual(summaryFields[2], "sessionSummary")
+        XCTAssertEqual(neutralModelName, "iOS 360")
+        XCTAssertEqual(summaryFields[6], "123")
+        XCTAssertEqual(summaryFields[7], "12")
+        XCTAssertEqual(summaryFields[8], "88")
         XCTAssertEqual(sessionSummary.deviceID, "ios-public-device")
+        XCTAssertEqual(sessionSummary.modelName, "iOS 360")
+        XCTAssertEqual(sessionSummary.duration.seconds, 123)
+        XCTAssertEqual(sessionSummary.distance, 12.5)
         XCTAssertEqual(sessionSummary.calories, 88)
         XCTAssertEqual(samplesFields[3], "samples")
         XCTAssertEqual(samples.heartRateSamples, [120, 121])

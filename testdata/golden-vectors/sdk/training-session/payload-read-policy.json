@@ -279,7 +279,13 @@
         "publicModelSlot": "sessionSummary",
         "exerciseIndex": null,
         "fileName": "TSESS.BPB",
-        "payloadOwnership": "decoded-payload-bytes-for-platform-generated-model-adapter"
+        "payloadOwnership": "decoded-payload-bytes-for-platform-generated-model-adapter",
+        "neutralParsedFields": {
+          "modelName": "Polar 360",
+          "durationSeconds": 3600,
+          "distanceMeters": 12,
+          "calories": 400
+        }
       },
       {
         "publicModelSlot": "exerciseSummary",
@@ -342,9 +348,10 @@
       "unknownSampleListPolicy": "ignore-unknown-advanced-sample-lists-and-preserve-known-samples",
       "publicModelReadPlanPolicy": "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects",
       "publicModelReconstructionPlanPolicy": "shared-neutral-reconstruction-plan-selects-decoded-payload-bytes-for-platform-generated-model-adapters",
+      "neutralReconstructionFieldsPolicy": "shared-neutral-reconstruction-plan-carries-session-summary-scalar-fields-with-decoded-bytes",
       "byteLevelParserGate": "selected-common-protobuf-field-parser-active-before-generated-model-reconstruction",
       "byteLevelPayloadStatus": "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred"
     }
   },
-  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, unknown advanced sample-list handling, and decoded-payload reconstruction-slot planning. payload-parser-policy.json now pins parser-family ownership; gzip payload decompression, selected protobuf field parsing, malformed payload isolation, deterministic public-model read planning, and neutral reconstruction planning are owned by shared KMP, while generated public protobuf object reconstruction remains platform-owned in Android and iOS adapters."
+  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, unknown advanced sample-list handling, and decoded-payload reconstruction-slot planning with neutral session-summary scalar fields carried beside the bytes for platform adapters. payload-parser-policy.json now pins parser-family ownership; gzip payload decompression, selected protobuf field parsing, malformed payload isolation, deterministic public-model read planning, neutral session-summary scalar DTO assembly, and neutral reconstruction planning are owned by shared KMP, while generated public protobuf object reconstruction remains platform-owned in Android and iOS adapters. Rollback for this parser-family slice is to ignore the neutral reconstruction fields/bridge columns and continue platform parsing from decoded payload bytes without moving generated public model construction into common KMP."
 }
