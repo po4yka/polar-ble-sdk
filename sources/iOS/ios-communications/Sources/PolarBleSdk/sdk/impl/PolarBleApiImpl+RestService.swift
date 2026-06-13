@@ -148,6 +148,7 @@ public struct PolarDeviceRestApiServiceDescription: Decodable {
 enum PolarRestServiceProjectionPlanner {
     static func serviceList(jsonData: Data) throws -> PolarDeviceRestApiServices {
         #if canImport(PolarBleSdkShared)
+        try validateJsonObject(jsonData)
         let jsonPayload = try jsonPayloadString(jsonData)
         let paths = sharedMap(PolarIosSharedBridge.shared.restServiceJsonPathsForServices(jsonPayload: jsonPayload))
         return PolarDeviceRestApiServices(pathsForServices: PolarIosSharedBridge.shared.restServiceJsonHasServices(jsonPayload: jsonPayload) ? paths : nil)
@@ -158,6 +159,7 @@ enum PolarRestServiceProjectionPlanner {
 
     static func serviceDescription(jsonData: Data) throws -> PolarDeviceRestApiServiceDescription {
         #if canImport(PolarBleSdkShared)
+        try validateJsonObject(jsonData)
         let jsonPayload = try jsonPayloadString(jsonData)
         return PolarDeviceRestApiServiceDescription(
             events: sharedList(PolarIosSharedBridge.shared.restServiceDescriptionJsonEvents(jsonPayload: jsonPayload)),
@@ -249,6 +251,18 @@ private func jsonPayloadString(_ data: Data) throws -> String {
         throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "REST JSON payload is not valid UTF-8"))
     }
     return payload
+}
+
+private func validateJsonObject(_ data: Data) throws {
+    do {
+        guard try JSONSerialization.jsonObject(with: data) is [String: Any] else {
+            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "REST JSON payload root is not an object"))
+        }
+    } catch let error as DecodingError {
+        throw error
+    } catch {
+        throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "REST JSON payload is malformed", underlyingError: error))
+    }
 }
 
 private func sharedList(_ value: String) -> [String] {
