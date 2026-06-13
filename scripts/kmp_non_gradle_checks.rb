@@ -1471,7 +1471,10 @@ SHARED_CONSUMPTION_REQUIRED_TERMS = [
   "binaryTarget",
   "checksum",
   "package_kmp_xcframework.sh",
+  "validate_spm_xcframework_consumption.sh",
   "local-output",
+  "remote `binaryTarget(url:checksum:)`",
+  "watchOS device and simulator slices",
   "Do not claim SwiftPM/watchOS shared consumption",
   "rollback path for every shared-module adoption step"
 ].freeze
@@ -2775,6 +2778,22 @@ end
 package_script = File.join(ROOT, "sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh")
 unless File.file?(package_script) && File.executable?(package_script)
   errors << "sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh: missing executable XCFramework packaging script"
+end
+spm_xcframework_validation_script = File.join(ROOT, "sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh")
+unless File.file?(spm_xcframework_validation_script) && File.executable?(spm_xcframework_validation_script)
+  errors << "sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh: missing executable SwiftPM XCFramework consumption validation script"
+else
+  spm_xcframework_validation_text = File.read(spm_xcframework_validation_script)
+  [
+    "package_kmp_xcframework.sh",
+    "swift package describe",
+    "PolarBleSdkShared",
+    "binaryTarget",
+    "xcodebuild",
+    "watchos"
+  ].each do |term|
+    errors << "sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh: missing #{term}" unless spm_xcframework_validation_text.include?(term)
+  end
 end
 errors << "documentation/KmpMigrationChecklist.md: missing completed shared artifact consumption documentation item" unless completed_items.include?("Document how shared artifacts are consumed by Android and iOS modules")
 if android_library_gradle.include?("implementation project(':shared')") && !device_id_slice_migrated

@@ -112,7 +112,13 @@ sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh --configuratio
 swift package describe
 ```
 
-For release artifacts, run the same script with `--zip-output`, record the printed `swift package compute-checksum` value, and use a `binaryTarget(url:checksum:)` entry that points at the zipped `PolarBleSdkShared.xcframework`. Do not claim SwiftPM/watchOS shared consumption until the package manifest resolves with the binary target present and an iOS/watchOS SwiftPM build or equivalent package integration gate has run against that artifact. CocoaPods and the Xcode workspace remain supported through `PolarBleSdkShared.framework` built by `sources/iOS/ios-communications/scripts/build_kmp_ios_framework.sh`.
+The release-ready local validation gate is:
+
+```bash
+sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh --configuration Debug
+```
+
+That script builds the local `PolarBleSdkShared.xcframework`, verifies the iOS device, iOS simulator, watchOS device, and watchOS simulator libraries, runs `swift package describe`, asserts the conditional `PolarBleSdkShared` binary target is present, runs a SwiftPM package build through `xcodebuild` for generic iOS, and runs the generic watchOS package build when the local Xcode installation exposes an eligible watchOS destination. If watchOS package build destinations are unavailable locally, the script keeps the watchOS claim limited to verified XCFramework device/simulator slices and prints the skip reason. For release artifacts, run `package_kmp_xcframework.sh` with `--zip-output`, record the printed `swift package compute-checksum` value, and use a remote `binaryTarget(url:checksum:)` entry that points at the zipped `PolarBleSdkShared.xcframework`; the local generated artifact path remains only for repository-local validation. Do not claim SwiftPM/watchOS shared consumption until the package manifest resolves with the binary target present and an iOS/watchOS SwiftPM build or equivalent package integration gate has run against that artifact. CocoaPods and the Xcode workspace remain supported through `PolarBleSdkShared.framework` built by `sources/iOS/ios-communications/scripts/build_kmp_ios_framework.sh`.
 
 ## Documentation And Fixture Gates
 

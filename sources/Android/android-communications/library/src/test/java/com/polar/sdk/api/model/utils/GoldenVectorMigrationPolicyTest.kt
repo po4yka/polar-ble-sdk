@@ -2555,6 +2555,7 @@ class GoldenVectorMigrationPolicyTest {
         val consumptionDocFile = root.resolve("documentation/KmpSharedArtifactConsumption.md")
         val packageSwift = root.resolve("Package.swift").readText()
         val packageScript = root.resolve("sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh")
+        val spmXcframeworkValidationScript = root.resolve("sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh")
         val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle").readText()
         val completedItems = CHECKED_CHECKLIST_ITEM.findAll(checklist)
             .map { match -> match.groupValues[1].trimEnd('.') }
@@ -2591,6 +2592,20 @@ class GoldenVectorMigrationPolicyTest {
         }
         if (!packageScript.isFile || !packageScript.canExecute()) {
             violations += "package_kmp_xcframework.sh must exist and be executable"
+        }
+        if (!spmXcframeworkValidationScript.let { it.isFile && it.canExecute() }) {
+            violations += "validate_spm_xcframework_consumption.sh must exist and be executable"
+        } else {
+            val spmXcframeworkValidationText = spmXcframeworkValidationScript.readText()
+            listOf(
+                "package_kmp_xcframework.sh",
+                "swift package describe",
+                "PolarBleSdkShared",
+                "binaryTarget",
+                "xcodebuild",
+                "watchos"
+            ).filterNot { term -> spmXcframeworkValidationText.contains(term) }
+                .mapTo(violations) { term -> "validate_spm_xcframework_consumption.sh missing $term" }
         }
         if (!validationCommands.contains(":shared:bundleAndroidMainAar") || !validationCommands.contains(":shared:linkDebugFrameworkIosX64") || !validationCommands.contains("package_kmp_xcframework.sh --dry-run")) {
             violations += "KmpValidationCommands.md must document shared artifact smoke gates"
@@ -4017,7 +4032,10 @@ class GoldenVectorMigrationPolicyTest {
             "binaryTarget",
             "checksum",
             "package_kmp_xcframework.sh",
+            "validate_spm_xcframework_consumption.sh",
             "local-output",
+            "remote `binaryTarget(url:checksum:)`",
+            "watchOS device and simulator slices",
             "Do not claim SwiftPM/watchOS shared consumption",
             "rollback path for every shared-module adoption step"
         )
