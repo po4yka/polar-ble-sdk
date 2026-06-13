@@ -5,6 +5,7 @@ import com.polar.shared.ble.PolarAdvertisementModels
 import com.polar.shared.ble.PolarGattBasCodec
 import com.polar.shared.ble.PolarGattHrCodec
 import com.polar.shared.ble.PolarGattPfcCodec
+import com.polar.shared.ble.PolarGattPsdCodec
 import com.polar.shared.ble.PolarGattRscCodec
 import com.polar.shared.ble.PolarGattHtsCodec
 import com.polar.shared.ble.PolarTypeUtils
@@ -278,6 +279,18 @@ object PolarIosSharedBridge {
                 feature.antSupported.toString(),
                 feature.securityModeSupported.toString(),
                 feature.sensorInitiatedSecurityModeSupported.toString()
+            ).joinToString(separator = ",")
+        }.getOrNull()
+    }
+
+    fun psdFeatureCsv(payloadHex: String): String? {
+        return runCatching {
+            val feature = PolarGattPsdCodec.parsePsdFeature(payloadHex.hexToBytes())
+            listOf(
+                feature.ecgSupported.toString(),
+                feature.ohrSupported.toString(),
+                feature.accSupported.toString(),
+                feature.ppSupported.toString()
             ).joinToString(separator = ",")
         }.getOrNull()
     }

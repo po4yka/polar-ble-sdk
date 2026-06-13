@@ -1,0 +1,34 @@
+{
+  "id": "psd-feature-all-supported",
+  "area": "gatt-psd",
+  "case": "feature_all_supported",
+  "source": "characterization from Android BlePsdClientTest and iOS BlePsdClientTest PSD feature payload",
+  "description": "PSD feature bitfield with ECG, OHR, ACC, and PP feature flags set.",
+  "input": {
+    "kind": "psdFeature",
+    "payloadHex": "0f"
+  },
+  "expected": {
+    "ecgSupported": true,
+    "ohrSupported": true,
+    "accSupported": true,
+    "ppSupported": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BlePsdClientTest"
+    ],
+    "ios": [
+      "BlePsdClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PsdGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "PSD feature bitfield parsing is a pure byte-level classifier. PSD control-point command/response behavior, PP packet stream splitting/parsing, notification readiness, transport execution, and public error mapping stay platform-owned."
+}

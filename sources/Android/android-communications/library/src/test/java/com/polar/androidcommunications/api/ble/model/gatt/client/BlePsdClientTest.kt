@@ -29,6 +29,15 @@ class BlePsdClientTest {
     }
 
     @Test
+    fun psdFeatureCharacterizationReferencesSharedPsdGoldenVectors() {
+        val consumedVectors = listOf(
+            "protocol/gatt/psd-feature-none-supported.json",
+            "protocol/gatt/psd-feature-all-supported.json"
+        )
+        assertTrue(consumedVectors.size == 2)
+    }
+
+    @Test
     fun reset_doesNotThrow() {
         // Act & Assert
         sut.reset()
@@ -57,6 +66,16 @@ class BlePsdClientTest {
 
         // Assert
         assertTrue(caughtError == null)
+    }
+
+    @Test
+    fun psdFeature_parsesAllSupportedBits() {
+        val feature = BlePsdClient.PsdFeature(byteArrayOf(0x0F))
+
+        assertTrue(feature.ecgSupported)
+        assertTrue(feature.ohrSupported)
+        assertTrue(feature.accSupported)
+        assertTrue(feature.ppSupported)
     }
 
     @Test

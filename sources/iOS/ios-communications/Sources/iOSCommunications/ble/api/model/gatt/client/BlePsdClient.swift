@@ -1,6 +1,9 @@
 import Foundation
 import CoreBluetooth
 import Combine
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public struct Psd {
     public class PPData {
@@ -46,10 +49,11 @@ public struct Psd {
         public let ppSupported: Bool
 
         public init(_ data: Data) {
-            ecgSupported = (data[0] & 0x01) == 1
-            ohrSupported = ((data[0] & 0x02) >> 1) == 1
-            accSupported = ((data[0] & 0x04) >> 2) == 1
-            ppSupported  = (data[0] & 0x08) != 0
+            let feature = PsdFeatureRuntimePlanner.psdFeature(data: data)
+            ecgSupported = feature.ecgSupported
+            ohrSupported = feature.ohrSupported
+            accSupported = feature.accSupported
+            ppSupported = feature.ppSupported
         }
     }
 }
@@ -160,5 +164,68 @@ public class BlePsdClient: BleGattClientBase, @unchecked Sendable {
 
     public override func clientReady(_ checkConnection: Bool) -> AnyPublisher<Never, Error> {
         waitNotificationEnabled(BlePsdClient.PSD_CP, checkConnection: checkConnection)
+    }
+}
+
+private struct PsdFeatureProjection {
+    let ecgSupported: Bool
+    let ohrSupported: Bool
+    let accSupported: Bool
+    let ppSupported: Bool
+}
+
+private enum PsdFeatureRuntimePlanner {
+    static func psdFeature(data: Data) -> PsdFeatureProjection {
+        #if canImport(PolarBleSdkShared)
+        if let sharedFeature = sharedPsdFeature(data: data) {
+            return sharedFeature
+        }
+        #endif
+        return localPsdFeature(data: data)
+    }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedPsdFeature(data: Data) -> PsdFeatureProjection? {
+        guard let csv = PolarIosSharedBridge.shared.psdFeatureCsv(payloadHex: data.psdHexString()) else {
+            return nil
+        }
+        let fields = csv.split(separator: ",", omittingEmptySubsequences: false)
+        guard fields.count == 4,
+              let ecgSupported = boolValue(String(fields[0])),
+              let ohrSupported = boolValue(String(fields[1])),
+              let accSupported = boolValue(String(fields[2])),
+              let ppSupported = boolValue(String(fields[3])) else {
+            return nil
+        }
+        return PsdFeatureProjection(
+            ecgSupported: ecgSupported,
+            ohrSupported: ohrSupported,
+            accSupported: accSupported,
+            ppSupported: ppSupported
+        )
+    }
+
+    private static func boolValue(_ value: String) -> Bool? {
+        switch value {
+        case "true": return true
+        case "false": return false
+        default: return nil
+        }
+    }
+    #endif
+
+    private static func localPsdFeature(data: Data) -> PsdFeatureProjection {
+        return PsdFeatureProjection(
+            ecgSupported: (data[0] & 0x01) == 0x01,
+            ohrSupported: (data[0] & 0x02) == 0x02,
+            accSupported: (data[0] & 0x04) == 0x04,
+            ppSupported: (data[0] & 0x08) == 0x08
+        )
+    }
+}
+
+private extension Data {
+    func psdHexString() -> String {
+        map { String(format: "%02x", $0) }.joined()
     }
 }

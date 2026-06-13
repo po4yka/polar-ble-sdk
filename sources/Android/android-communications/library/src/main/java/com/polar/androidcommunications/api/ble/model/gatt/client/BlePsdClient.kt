@@ -11,6 +11,7 @@ import com.polar.androidcommunications.api.ble.model.gatt.BleGattBase
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattTxInterface
 import com.polar.androidcommunications.common.ble.AtomicSet
 import com.polar.androidcommunications.common.ble.ChannelUtils
+import com.polar.shared.ble.PolarGattPsdCodec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -96,10 +97,11 @@ class BlePsdClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
         constructor()
 
         constructor(data: ByteArray) {
-            ecgSupported = (data[0].toInt() and 0x01) == 1
-            ohrSupported = ((data[0].toInt() and 0x02) shr 1) == 1
-            accSupported = ((data[0].toInt() and 0x04) shr 2) == 1
-            ppSupported = ((data[0].toInt() and 0x08) != 0)
+            val feature = PolarGattPsdCodec.parsePsdFeature(data)
+            ecgSupported = feature.ecgSupported
+            ohrSupported = feature.ohrSupported
+            accSupported = feature.accSupported
+            ppSupported = feature.ppSupported
         }
 
         internal constructor(clone: PsdFeature) {
