@@ -58,7 +58,6 @@ required_doc_terms = [
   "polar-ble-sdk-shared.aar",
   "shared local Maven metadata validation",
   "PolarBleSdkShared.framework",
-  "SwiftPM/watchOS fallback-only",
   "rollback"
 ]
 
@@ -66,13 +65,21 @@ required_doc_terms = [
   required_doc_terms.each do |term|
     errors << "#{path}: missing #{term}" unless text.include?(term)
   end
+
+  unless text.include?("SwiftPM/watchOS fallback-only") || text.include?("Swift Package Manager and watchOS are fallback-only")
+    errors << "#{path}: missing SwiftPM/watchOS fallback-only"
+  end
 end
 
 modern_stack_path = File.join(ROOT, "documentation/KmpModernStackAudit.md")
 if File.exist?(modern_stack_path)
   modern_stack = File.read(modern_stack_path)
-  ["artifact-only", "polar-ble-sdk-shared.aar", "SwiftPM/watchOS fallback-only"].each do |term|
+  ["artifact-only", "polar-ble-sdk-shared.aar"].each do |term|
     errors << "documentation/KmpModernStackAudit.md: missing #{term}" unless modern_stack.include?(term)
+  end
+
+  unless modern_stack.include?("SwiftPM/watchOS fallback-only") || modern_stack.include?("Swift Package Manager and watchOS are fallback-only")
+    errors << "documentation/KmpModernStackAudit.md: missing SwiftPM/watchOS fallback-only"
   end
 end
 
