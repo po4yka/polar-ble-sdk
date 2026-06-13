@@ -276,7 +276,7 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
     func testReceivesRestApiEventWhenUncompressed() async throws {
         
         // Arrange
-        let notificationParameters = self.testNotificationParameters(compressed: false).map { $0.isEmpty ? [] : [$0] }
+        let notificationParameters = self.testNotificationParameters(compressed: false).map { [$0] }
         let notifications = self.testNotificationParameters(compressed: false).map {
             (self.restApiEventNotifiationId, [$0], false)
         }

@@ -417,6 +417,7 @@ class MyController: UIViewController,
 - [KMP Coverage Inventory](./documentation/KmpCoverageInventory.md) – Current Android/iOS/shared coverage map and guarded platform-owned boundaries
 - [KMP Migration Checklist](./documentation/KmpMigrationChecklist.md) – Per-slice gates for test-first migration work
 - [KMP Shared Artifact Consumption](./documentation/KmpSharedArtifactConsumption.md) – Android AAR, CocoaPods, SwiftPM/watchOS, and rollback packaging contract
+- [KMP Modern Stack Audit](./documentation/KmpModernStackAudit.md) – Current closeout checklist for migrated shared ownership, platform-owned boundaries, packaging ownership, and validation state
 - [CI/CD](./documentation/CiCd.md) – GitHub Actions validation, artifact-only release builds, and failure triage
 
 [↑ Back to contents](#contents)

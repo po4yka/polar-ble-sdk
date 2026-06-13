@@ -3406,7 +3406,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
     }
 
     func test_updateFirmwareFromUrl_mapsNonSystemRebootWriteTerminalToFailedStatus() throws {
@@ -3502,7 +3502,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
     }
 
     func test_updateFirmware_mapsNonSystemRebootWriteTerminalToFailedStatus() throws {
@@ -3748,7 +3748,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertTrue(v2MockClient.queryCalls.contains { $0.id == Protocol_PbPFtpQuery.setLocalTime.rawValue })
     }
 
@@ -3813,7 +3813,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertEqual(resetNotifications, 2)
     }
 
@@ -3879,7 +3879,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(service.checkFirmwareUpdateRequests.count, 1)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertTrue(v2MockClient.sendNotificationCalls.contains { $0.notification == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue })
     }
 
@@ -3925,7 +3925,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertTrue(v2MockClient.queryCalls.contains { $0.id == Protocol_PbPFtpQuery.setLocalTime.rawValue })
     }
 
@@ -3975,7 +3975,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertEqual(resetNotifications, 2)
     }
 
@@ -4026,7 +4026,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertTrue(service.checkFirmwareUpdateRequests.isEmpty)
         XCTAssertEqual(service.packageDownloadUrls, ["https://example.invalid/manual-fw.zip"])
         XCTAssertEqual(extractor.zippedPackages, [firmwarePackage])
-        XCTAssertEqual(v2MockClient.writeCalls.count, 1)
+        XCTAssertEqual(v2MockClient.writeCalls.count, 5)
         XCTAssertTrue(v2MockClient.sendNotificationCalls.contains { $0.notification == Protocol_PbPFtpHostToDevNotification.stopSync.rawValue })
     }
 
@@ -4730,6 +4730,60 @@ final class PolarBleApiImplTests: XCTestCase {
         }
         XCTAssertEqual(0x05, errorCode)
         XCTAssertEqual([Data([0x08, 0x01])], gatt.transmittedMessages.map { $0.packet })
+    }
+
+    func test_setOfflineRecordingTrigger_statusReadTransportErrorPropagatesAfterSetMode() throws {
+        try assertOfflineTriggerRuntimePolicyVectorContains("set-trigger-status-read-error")
+        let (api, gatt) = makePmdApi { [self] packet in
+            pmdResponse(opCode: packet.first ?? 0x00)
+        }
+        enum TriggerStatusReadError: Error { case failed }
+        gatt.transmitMessageErrorHandler = { packet in
+            packet == Data([0x07]) ? TriggerStatusReadError.failed : nil
+        }
+        let trigger = PolarOfflineRecordingTrigger(triggerMode: .triggerSystemStart, triggerFeatures: [.acc: nil])
+
+        let error = awaitErrorAsync { try await api.setOfflineRecordingTrigger(self.deviceId, trigger: trigger, secret: nil) }
+
+        XCTAssertNotNil(error)
+        guard case TriggerStatusReadError.failed = error! else {
+            return XCTFail("Expected status-read transport error, got \(String(describing: error))")
+        }
+        XCTAssertEqual([Data([0x08, 0x01]), Data([0x07])], gatt.transmittedMessages.map { $0.packet })
+    }
+
+    func test_setOfflineRecordingTrigger_settingErrorPropagatesAfterStatusRead() throws {
+        try assertOfflineTriggerRuntimePolicyVectorContains("set-trigger-setting-error")
+        let (api, gatt) = makePmdApi { [self] packet in
+            switch packet.first {
+            case 0x08:
+                return pmdResponse(opCode: 0x08)
+            case 0x07:
+                return pmdResponse(opCode: 0x07, parameters: offlineTriggerStatusData())
+            case 0x09:
+                return pmdResponse(opCode: 0x09, measurementType: packet[2], errorCode: packet[2] == PmdMeasurementType.acc.rawValue ? 0x04 : 0x00)
+            default:
+                return pmdResponse(opCode: packet.first ?? 0x00, errorCode: 0x01)
+            }
+        }
+        let trigger = PolarOfflineRecordingTrigger(
+            triggerMode: .triggerSystemStart,
+            triggerFeatures: [.acc: try PolarSensorSetting([.sampleRate: 52])]
+        )
+
+        let error = awaitErrorAsync { try await api.setOfflineRecordingTrigger(self.deviceId, trigger: trigger, secret: nil) }
+
+        XCTAssertNotNil(error)
+        guard case BlePmdError.controlPointRequestFailed(let errorCode, _) = error! else {
+            return XCTFail("Expected setting controlPointRequestFailed, got \(String(describing: error))")
+        }
+        XCTAssertEqual(0x04, errorCode)
+        let packets = gatt.transmittedMessages.map { $0.packet }
+        XCTAssertEqual(Data([0x08, 0x01]), packets.first)
+        XCTAssertEqual(Data([0x07]), packets.dropFirst().first)
+        let settingPacket = try XCTUnwrap(packets.dropFirst(2).first { $0.starts(with: Data([0x09, 0x01, PmdMeasurementType.acc.rawValue])) })
+        XCTAssertTrue(settingPacket.starts(with: Data([0x09, 0x01, PmdMeasurementType.acc.rawValue])), "\(settingPacket as NSData)")
+        XCTAssertNotNil(settingPacket.range(of: Data([0x00, 0x01, 0x34, 0x00])))
     }
 
     func test_getOfflineRecordingTriggerSetup_mapsPmdStatusToPublicTriggerAndPropagatesErrors() throws {

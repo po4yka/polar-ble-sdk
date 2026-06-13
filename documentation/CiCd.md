@@ -8,7 +8,7 @@ This repository uses GitHub Actions for pull-request validation, nightly validat
 |---|---|---|
 | `PR Checks` | Pull requests and pushes to `master`, except product-doc-only and issue-template-only changes | Runs repository policy checks, Android unit tests, shared KMP checks, and iOS XCTest. |
 | `Nightly Validation` | Daily schedule and manual dispatch | Runs the same validation without path skipping and uploads diagnostic artifacts. |
-| `Release Artifacts` | Manual dispatch and version tags | Builds Android AAR, shared KMP Android/iOS artifacts, validates Swift Package and podspec surfaces, and uploads artifacts without publishing. |
+| `Release Artifacts` | Manual dispatch and version tags | Builds Android AAR, shared KMP Android/iOS artifacts, validates Android shared Gradle module metadata in a temporary local repository, validates Swift Package and podspec surfaces, and uploads artifacts without publishing. |
 
 ## Pull Request Gates
 
@@ -38,6 +38,11 @@ cd sources/Android/android-communications
 ./gradlew :library:testSdkDebugUnitTest --no-daemon --warning-mode all
 ./gradlew :shared:jvmTest :shared:compileAndroidMain :shared:compileAndroidHostTest :shared:compileKotlinMetadata --no-daemon --warning-mode all
 ./gradlew :shared:compileKotlinIosX64 :shared:linkDebugFrameworkIosX64 --no-daemon --warning-mode all
+```
+
+```bash
+scripts/verify_android_example_aar_consumption.sh
+scripts/verify_android_shared_maven_publication.sh
 ```
 
 ```bash

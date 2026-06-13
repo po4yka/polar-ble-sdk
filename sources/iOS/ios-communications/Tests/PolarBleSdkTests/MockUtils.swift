@@ -189,6 +189,7 @@ class MockPolarGattServiceTransmitter: BleAttributeTransportProtocol {
     var setCharacteristicsNotifyCache: [(characteristicUuid: CBUUID, notify: Bool)] = []
     var transmittedMessages: [(serviceUuid: CBUUID, characteristicUuid: CBUUID, packet: Data, withResponse: Bool)] = []
     var transmitMessageHandler: ((BleGattClientBase, CBUUID, CBUUID, Data, Bool) -> Void)?
+    var transmitMessageErrorHandler: ((Data) -> Error?)?
     
     func isConnected() -> Bool {
         return mockConnectionStatus
@@ -196,6 +197,9 @@ class MockPolarGattServiceTransmitter: BleAttributeTransportProtocol {
     
     func transmitMessage(_ parent: BleGattClientBase, serviceUuid: CBUUID , characteristicUuid: CBUUID , packet: Data, withResponse: Bool) throws {
         transmittedMessages.append((serviceUuid, characteristicUuid, packet, withResponse))
+        if let error = transmitMessageErrorHandler?(packet) {
+            throw error
+        }
         transmitMessageHandler?(parent, serviceUuid, characteristicUuid, packet, withResponse)
     }
     

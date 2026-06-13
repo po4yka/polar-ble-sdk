@@ -85,6 +85,12 @@ When Android release packaging or example local-AAR consumption changes, run the
 scripts/verify_android_example_aar_consumption.sh
 ```
 
+The Android packaging model is a two-AAR compatibility model for direct file consumers plus Gradle module metadata for Maven-style consumers. Validate the shared metadata only against a temporary local repository; this does not publish externally and keeps the artifact-only release policy intact:
+
+```bash
+scripts/verify_android_shared_maven_metadata.sh
+```
+
 When iOS release packaging changes, validate the SwiftPM manifest surface and the CocoaPods shared-framework path from the repository root:
 
 ```bash
@@ -93,7 +99,26 @@ pod install --project-directory=sources/iOS/ios-communications
 pod lib lint PolarBleSdk.podspec --allow-warnings
 ```
 
-`swift package describe` proves only that the SwiftPM manifest remains valid. During the compatibility phase, SwiftPM iOS and SwiftPM/watchOS do not link `PolarBleSdkShared.framework`; they use the Swift fallback code behind `#if canImport(PolarBleSdkShared)`. CocoaPods and the Xcode workspace are the supported Apple shared-consumption paths until a checked-in or downloaded `PolarBleSdkShared.xcframework` strategy is added.
+`swift package describe` proves only that the SwiftPM manifest remains valid. On a clean checkout, SwiftPM iOS and SwiftPM/watchOS do not link shared KMP; they use the Swift fallback code behind `#if canImport(PolarBleSdkShared)`. The explicit SwiftPM/watchOS shared-consumption path is `PolarBleSdkShared.xcframework` through the conditional `Package.swift` `binaryTarget`, which is active only after the XCFramework exists locally or after a release manifest points to a remote URL/checksum artifact. Validate packaging intent without building native frameworks with:
+
+```bash
+sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh --dry-run --output /tmp/polar-spm-xcframework
+```
+
+Validate the local-output artifact path before claiming SwiftPM/watchOS shared consumption with:
+
+```bash
+sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh --configuration Debug
+swift package describe
+```
+
+The release-ready local validation gate is:
+
+```bash
+sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh --configuration Debug
+```
+
+That script builds the local `PolarBleSdkShared.xcframework`, verifies the iOS device, iOS simulator, watchOS device, and watchOS simulator libraries, runs `swift package describe`, asserts the conditional `PolarBleSdkShared` binary target is present, runs a SwiftPM package build through `xcodebuild` for generic iOS, and runs the generic watchOS package build when the local Xcode installation exposes an eligible watchOS destination. If watchOS package build destinations are unavailable locally, the script keeps the watchOS claim limited to verified XCFramework device/simulator slices and prints the skip reason. For release artifacts, run `package_kmp_xcframework.sh` with `--zip-output`, record the printed `swift package compute-checksum` value, and use a remote `binaryTarget(url:checksum:)` entry that points at the zipped `PolarBleSdkShared.xcframework`; the local generated artifact path remains only for repository-local validation. Do not claim SwiftPM/watchOS shared consumption until the package manifest resolves with the binary target present and an iOS/watchOS SwiftPM build or equivalent package integration gate has run against that artifact. CocoaPods and the Xcode workspace remain supported through `PolarBleSdkShared.framework` built by `sources/iOS/ios-communications/scripts/build_kmp_ios_framework.sh`.
 
 ## Documentation And Fixture Gates
 

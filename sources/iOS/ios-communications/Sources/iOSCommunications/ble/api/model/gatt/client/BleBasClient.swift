@@ -1,5 +1,8 @@
 import Foundation
 import CoreBluetooth
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class BleBasClient: BleGattClientBase, @unchecked Sendable {
     public static let BATTERY_SERVICE = CBUUID(string: "180F")
@@ -91,6 +94,9 @@ public class BleBasClient: BleGattClientBase, @unchecked Sendable {
     }
 
     private func parseChargeState(from data: Data) -> ChargeState {
+        if let shared = BasBatteryStatusRuntimePlanner.decode(data: data) {
+            return chargeState(fromSharedName: shared.chargeState)
+        }
         let dataHex = data.map { String(format: "%02X", $0) }.joined(separator: " ")
         BleLogger.trace("Parsing charge state from data: \(dataHex)")
         guard data.count > 0 else { return .unknown }
@@ -104,6 +110,13 @@ public class BleBasClient: BleGattClientBase, @unchecked Sendable {
     }
 
     private func parsePowerSourcesState(from data: Data) -> PowerSourcesState {
+        if let shared = BasBatteryStatusRuntimePlanner.decode(data: data) {
+            return PowerSourcesState(
+                batteryPresent: batteryPresentState(fromSharedName: shared.batteryPresent),
+                wiredExternalPowerConnected: powerSourceState(fromSharedName: shared.wiredExternalPowerConnected),
+                wirelessExternalPowerConnected: powerSourceState(fromSharedName: shared.wirelessExternalPowerConnected)
+            )
+        }
         guard data.count > 0 else {
             return PowerSourcesState(batteryPresent: .unknown, wiredExternalPowerConnected: .unknown, wirelessExternalPowerConnected: .unknown)
         }
@@ -182,5 +195,61 @@ public class BleBasClient: BleGattClientBase, @unchecked Sendable {
 
     public func getChargeState() -> ChargeState {
         return cachedChargeState
+    }
+
+    private func chargeState(fromSharedName name: String) -> ChargeState {
+        switch name {
+        case "CHARGING": return .charging
+        case "DISCHARGING_ACTIVE": return .dischargingActive
+        case "DISCHARGING_INACTIVE": return .dischargingInactive
+        default: return .unknown
+        }
+    }
+
+    private func batteryPresentState(fromSharedName name: String) -> BatteryPresentState {
+        switch name {
+        case "NOT_PRESENT": return .notPresent
+        case "PRESENT": return .present
+        default: return .unknown
+        }
+    }
+
+    private func powerSourceState(fromSharedName name: String) -> PowerSourceState {
+        switch name {
+        case "NOT_CONNECTED": return .notConnected
+        case "CONNECTED": return .connected
+        case "RESERVED_FOR_FUTURE_USE": return .reservedForFutureUse
+        default: return .unknown
+        }
+    }
+}
+
+private enum BasBatteryStatusRuntimePlanner {
+    struct DecodedStatus {
+        let chargeState: String
+        let batteryPresent: String
+        let wiredExternalPowerConnected: String
+        let wirelessExternalPowerConnected: String
+    }
+
+    static func decode(data: Data) -> DecodedStatus? {
+        #if canImport(PolarBleSdkShared)
+        let fields = PolarIosSharedBridge.shared.basBatteryStatusCsv(statusHex: data.basStatusHex()).split(separator: ",").map(String.init)
+        guard fields.count == 5 else { return nil }
+        return DecodedStatus(
+            chargeState: fields[1],
+            batteryPresent: fields[2],
+            wiredExternalPowerConnected: fields[3],
+            wirelessExternalPowerConnected: fields[4]
+        )
+        #else
+        return nil
+        #endif
+    }
+}
+
+private extension Data {
+    func basStatusHex() -> String {
+        map { String(format: "%02x", $0) }.joined()
     }
 }

@@ -4534,6 +4534,61 @@ class BDBleApiImplTest {
     }
 
     @Test
+    fun `setOfflineRecordingTrigger propagates PMD status read failure after trigger payload mapping`() = runTest {
+        assertOfflineTriggerRuntimePolicyVectorContains("set-trigger-status-read-error")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPmdConnection(deviceId)
+        val capturedTriggers = mutableListOf<PmdOfflineTrigger>()
+        val transportError = RuntimeException("offline trigger status read failed")
+        val trigger = PolarOfflineRecordingTrigger(
+            triggerMode = PolarOfflineRecordingTriggerMode.TRIGGER_SYSTEM_START,
+            triggerFeatures = mapOf(PolarBleApi.PolarDeviceDataType.ACC to null)
+        )
+        coEvery { client.setOfflineRecordingTrigger(capture(capturedTriggers), null) } throws transportError
+
+        try {
+            api.setOfflineRecordingTrigger(deviceId, trigger, null)
+            Assert.fail("Expected offline trigger status read failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+
+        val pmdTrigger = capturedTriggers.single()
+        Assert.assertEquals(PmdOfflineRecTriggerMode.TRIGGER_SYSTEM_START, pmdTrigger.triggerMode)
+        Assert.assertTrue(pmdTrigger.triggers.containsKey(PmdMeasurementType.ACC))
+    }
+
+    @Test
+    fun `setOfflineRecordingTrigger propagates PMD setting failure after selected settings are mapped`() = runTest {
+        assertOfflineTriggerRuntimePolicyVectorContains("set-trigger-setting-error")
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FILE_TRANSFER))
+        val (client, _) = mockPmdConnection(deviceId)
+        val capturedTriggers = mutableListOf<PmdOfflineTrigger>()
+        val transportError = RuntimeException("offline trigger setting write failed")
+        val trigger = PolarOfflineRecordingTrigger(
+            triggerMode = PolarOfflineRecordingTriggerMode.TRIGGER_SYSTEM_START,
+            triggerFeatures = mapOf(
+                PolarBleApi.PolarDeviceDataType.ACC to PolarSensorSetting(
+                    mapOf(PolarSensorSetting.SettingType.SAMPLE_RATE to 52)
+                )
+            )
+        )
+        coEvery { client.setOfflineRecordingTrigger(capture(capturedTriggers), null) } throws transportError
+
+        try {
+            api.setOfflineRecordingTrigger(deviceId, trigger, null)
+            Assert.fail("Expected offline trigger setting failure to propagate")
+        } catch (error: RuntimeException) {
+            Assert.assertSame(transportError, error)
+        }
+
+        val accSettings = capturedTriggers.single().triggers[PmdMeasurementType.ACC]?.second ?: error("ACC trigger missing")
+        Assert.assertEquals(52, accSettings.selected[PmdSetting.PmdSettingType.SAMPLE_RATE])
+    }
+
+    @Test
     fun `getOfflineRecordingTriggerSetup maps PMD status to public trigger and propagates errors`() = runTest {
         assertOfflineTriggerRuntimePolicyVectorContains("get-trigger-success")
         assertOfflineTriggerRuntimePolicyVectorContains("get-trigger-transport-error")

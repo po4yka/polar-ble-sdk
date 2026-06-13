@@ -289,10 +289,37 @@ final class CBScannerTest: XCTestCase {
         XCTAssertFalse(sut.isScanning)
     }
 
+    func testSessionStateMachineOwnershipVectorKeepsCoreBluetoothScannerHostOwned() throws {
+        let vector = try loadSessionStateMachineOwnershipVector()
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any])
+
+        XCTAssertEqual(vector["id"] as? String, "session-state-machine-ownership")
+        XCTAssertEqual(expected["migrationDecision"] as? String, "no_shared_session_state_machine")
+        XCTAssertEqual(consumerTests["ios"] as? [String], ["CBScannerTest"])
+
+        central.mockState = .poweredOff
+        sut.addClient()
+        drainQueue()
+        XCTAssertEqual(.idle, sut.state)
+        XCTAssertFalse(sut.isScanning)
+
+        central.mockState = .poweredOn
+        sut.addClient()
+        drainQueue()
+        XCTAssertEqual(.scanning, sut.state)
+        XCTAssertTrue(sut.isScanning)
+    }
+
     // MARK: - Helpers
 
     private func drainQueue() {
         queue.sync { }
+    }
+
+    private func loadSessionStateMachineOwnershipVector() throws -> [String: Any] {
+        let file = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/ble-session/session-state-machine-ownership.json")
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any], file.path)
     }
 }
 

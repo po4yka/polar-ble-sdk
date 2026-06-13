@@ -298,7 +298,7 @@ enum PolarFirmwareBackupRuntimePlanner {
         return PolarIosSharedBridge.shared.planRuntimeBackupRestoreOperations(filesTsv: filesTsv)
             .split(separator: "\n")
             .compactMap { row in
-                let parts = row.split(separator: "\t", maxSplits: 2).map(String.init)
+                let parts = row.split(separator: "\t", maxSplits: 2, omittingEmptySubsequences: false).map(String.init)
                 guard parts.count == 3, parts[0] == "PUT" else { return nil }
                 return BackupRestoreWrite(command: .put, path: parts[1], payloadHex: parts[2])
             }

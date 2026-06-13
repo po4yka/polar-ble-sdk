@@ -1,10 +1,10 @@
 package com.polar.androidcommunications.api.ble.model.gatt.client
 
-import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattBase
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattTxInterface
 import com.polar.androidcommunications.common.ble.AtomicSet
 import com.polar.androidcommunications.common.ble.ChannelUtils
+import com.polar.shared.ble.PolarBasBatteryStatusCodec
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
@@ -13,7 +13,6 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 private const val UNDEFINED_BATTERY_PERCENTAGE = -1
-private const val TAG = "BleBattClient"
 
 enum class ChargeState {
     UNKNOWN, CHARGING, DISCHARGING_ACTIVE, DISCHARGING_INACTIVE
@@ -34,14 +33,11 @@ data class PowerSourcesState(
 )
 
     private fun parseBatteryStatus(data: ByteArray): ChargeState {
-        return when (val chargeStateValue = (data[1].toInt() and 0x60) shr 5) {
-            1 -> ChargeState.CHARGING
-            2 -> ChargeState.DISCHARGING_ACTIVE
-            3 -> ChargeState.DISCHARGING_INACTIVE
-            else -> {
-                BleLogger.e(TAG, "Unknown charge state value: $chargeStateValue")
-                ChargeState.UNKNOWN
-            }
+        return when (PolarBasBatteryStatusCodec.decode(data).chargeState) {
+            PolarBasBatteryStatusCodec.ChargeState.CHARGING -> ChargeState.CHARGING
+            PolarBasBatteryStatusCodec.ChargeState.DISCHARGING_ACTIVE -> ChargeState.DISCHARGING_ACTIVE
+            PolarBasBatteryStatusCodec.ChargeState.DISCHARGING_INACTIVE -> ChargeState.DISCHARGING_INACTIVE
+            PolarBasBatteryStatusCodec.ChargeState.UNKNOWN -> ChargeState.UNKNOWN
         }
     }
 
@@ -178,47 +174,27 @@ class BleBattClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, 
     }
 
     private fun parsePowerSourcesState(data: ByteArray): PowerSourcesState {
-        val batteryPresent = when (val batteryPresentValue = (data[1].toInt() and 0x01)) {
-            0 -> BatteryPresentState.NOT_PRESENT
-            1 -> BatteryPresentState.PRESENT
-            else -> {
-                BleLogger.e(
-                    TAG,
-                    "Unknown wired battery present value: $batteryPresentValue"
-                )
-                BatteryPresentState.UNKNOWN
-            }
+        val decoded = PolarBasBatteryStatusCodec.decode(data)
+        val batteryPresent = when (decoded.batteryPresent) {
+            PolarBasBatteryStatusCodec.BatteryPresentState.NOT_PRESENT -> BatteryPresentState.NOT_PRESENT
+            PolarBasBatteryStatusCodec.BatteryPresentState.PRESENT -> BatteryPresentState.PRESENT
+            PolarBasBatteryStatusCodec.BatteryPresentState.UNKNOWN -> BatteryPresentState.UNKNOWN
         }
-        val wiredExternalPowerConnected =
-            when (val externalPowerConnectedValue = (data[1].toInt() and 0x06) shr 1) {
-                0 -> PowerSourceState.NOT_CONNECTED
-                1 -> PowerSourceState.CONNECTED
-                3 -> PowerSourceState.RESERVED_FOR_FUTURE_USE
-                else -> {
-                    BleLogger.e(
-                        TAG,
-                        "Unknown wired power source state value: $externalPowerConnectedValue"
-                    )
-                    PowerSourceState.UNKNOWN
-                }
-            }
-        val wirelessExternalPowerConnected =
-            when (val externalPowerConnectedValue = data[1].toInt() and 0x18 shr 3) {
-                0 -> PowerSourceState.NOT_CONNECTED
-                1 -> PowerSourceState.CONNECTED
-                3 -> PowerSourceState.RESERVED_FOR_FUTURE_USE
-                else -> {
-                    BleLogger.e(
-                        TAG,
-                        "Unknown wireless power source state value: $externalPowerConnectedValue"
-                    )
-                    PowerSourceState.UNKNOWN
-                }
-            }
+        val wiredExternalPowerConnected = decoded.wiredExternalPowerConnected.toPlatformPowerSourceState()
+        val wirelessExternalPowerConnected = decoded.wirelessExternalPowerConnected.toPlatformPowerSourceState()
         return PowerSourcesState(
             batteryPresent,
             wiredExternalPowerConnected,
             wirelessExternalPowerConnected
         )
+    }
+
+    private fun PolarBasBatteryStatusCodec.PowerSourceState.toPlatformPowerSourceState(): PowerSourceState {
+        return when (this) {
+            PolarBasBatteryStatusCodec.PowerSourceState.NOT_CONNECTED -> PowerSourceState.NOT_CONNECTED
+            PolarBasBatteryStatusCodec.PowerSourceState.CONNECTED -> PowerSourceState.CONNECTED
+            PolarBasBatteryStatusCodec.PowerSourceState.UNKNOWN -> PowerSourceState.UNKNOWN
+            PolarBasBatteryStatusCodec.PowerSourceState.RESERVED_FOR_FUTURE_USE -> PowerSourceState.RESERVED_FOR_FUTURE_USE
+        }
     }
 }

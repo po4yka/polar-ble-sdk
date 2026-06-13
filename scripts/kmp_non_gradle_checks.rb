@@ -322,7 +322,9 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred",
     "readPlan",
     "publicModelReadPlanPolicy",
-    "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects"
+    "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects",
+    "publicModelReconstructionPlanPolicy",
+    "shared-neutral-reconstruction-plan-selects-decoded-payload-bytes-for-platform-generated-model-adapters"
   ],
   "payload-parser-policy.json" => [
     "Selected training payload protobuf field parsing now executes in shared KMP",
@@ -1460,13 +1462,38 @@ SHARED_CONSUMPTION_REQUIRED_TERMS = [
   "scripts/verify_android_shared_maven_metadata.sh",
   "scripts/verify_release_packaging_policy.rb",
   "polar-ble-sdk-shared.aar",
+  "two-AAR compatibility model",
   "shared local Maven metadata validation",
   "CI/release remains artifact-only",
   "No Maven, CocoaPods, or SwiftPM publication is claimed",
   "required secrets are intentionally absent",
   "SwiftPM/watchOS",
   "fallback-only",
+  "PolarBleSdkShared.xcframework",
+  "binaryTarget",
+  "checksum",
+  "package_kmp_xcframework.sh",
+  "validate_spm_xcframework_consumption.sh",
+  "local-output",
+  "remote `binaryTarget(url:checksum:)`",
+  "watchOS device and simulator slices",
+  "Do not claim SwiftPM/watchOS shared consumption",
   "rollback path for every shared-module adoption step"
+].freeze
+KMP_MODERN_STACK_AUDIT_REQUIRED_TERMS = [
+  "## Fully Migrated Shared KMP Ownership",
+  "Golden-vector governance is active",
+  "Android production consumes shared KMP through `implementation project(':shared')`",
+  "two-AAR compatibility model",
+  "iOS CocoaPods and Xcode workspace production surfaces consume `PolarBleSdkShared.framework`",
+  "POLAR_KMP_SHARED_REQUIRED",
+  "Swift Package Manager and watchOS are fallback-only on a clean checkout",
+  "PolarBleSdkShared.xcframework",
+  "Generated public protobuf reconstruction remains platform-owned",
+  "BLE/session/GATT host behavior remains platform-owned",
+  "CI and release policy remain artifact-only",
+  "The latest broad `xcodebuild test",
+  "must be resolved before claiming a green broad iOS gate"
 ].freeze
 KOTLIN_DOCUMENT_REQUIRED_TERM_TARGETS = {
   "VALIDATION_NON_GRADLE_GATE_TERMS" => "documentation/KmpValidationCommands.md",
@@ -1481,7 +1508,8 @@ KOTLIN_DOCUMENT_REQUIRED_TERM_TARGETS = {
   "IOS_XCODE_PROBE_REQUIRED_TERMS" => "scripts/ios_xcode_validation_probe.rb",
   "IOS_XCTEST_EXECUTION_GATE_REQUIRED_TERMS" => "documentation/KmpValidationCommands.md",
   "IOS_XCTEST_REMAINING_WORK_REQUIRED_TERMS" => "documentation/KmpPreMigrationRemainingWork.md",
-  "SHARED_CONSUMPTION_REQUIRED_TERMS" => "documentation/KmpSharedArtifactConsumption.md"
+  "SHARED_CONSUMPTION_REQUIRED_TERMS" => "documentation/KmpSharedArtifactConsumption.md",
+  "KMP_MODERN_STACK_AUDIT_REQUIRED_TERMS" => "documentation/KmpModernStackAudit.md"
 }.freeze
 KOTLIN_DOCUMENT_FORBIDDEN_TERM_TARGETS = {
   "KMP_TDD_STRATEGY_STALE_VECTOR_EXAMPLE_TERMS" => "documentation/KmpTddStrategy.md"
@@ -2688,8 +2716,8 @@ errors << "documentation/KmpValidationCommands.md: must document :shared:jvmTest
 
 errors << "sources/Android/android-communications/shared/build.gradle: must apply com.android.kotlin.multiplatform.library" unless shared_build.include?("apply plugin: 'com.android.kotlin.multiplatform.library'")
 errors << "sources/Android/android-communications/shared/build.gradle: must declare AGP 9 Android KMP target" unless shared_build.include?("android {")
-unless shared_build.include?("iosX64()") && shared_build.include?("iosArm64()") && shared_build.include?("iosSimulatorArm64()")
-  errors << "sources/Android/android-communications/shared/build.gradle: must declare iosX64, iosArm64, and iosSimulatorArm64"
+unless shared_build.include?("iosX64()") && shared_build.include?("iosArm64()") && shared_build.include?("iosSimulatorArm64()") && shared_build.include?("watchosX64()") && shared_build.include?("watchosArm64()") && shared_build.include?("watchosSimulatorArm64()")
+  errors << "sources/Android/android-communications/shared/build.gradle: must declare iOS and watchOS KMP framework targets"
 end
 unless shared_build.include?("namespace = 'com.polar.shared'") && shared_build.match?(/minSdk(?:Version)?\s*(?:=)?\s*26/)
   errors << "sources/Android/android-communications/shared/build.gradle: must declare Android namespace and minSdk 26"
@@ -2706,6 +2734,11 @@ end
 package_swift = File.join(ROOT, "sources/iOS/ios-communications/Package.swift")
 if File.file?(package_swift) && File.read(package_swift).include?("shared")
   errors << "sources/iOS/ios-communications/Package.swift: iOS package must not consume shared before behavior migration"
+end
+root_package_swift = File.join(ROOT, "Package.swift")
+root_package_text = File.file?(root_package_swift) ? File.read(root_package_swift) : ""
+if root_package_text.include?("PolarBleSdkShared") && !root_package_text.include?(".binaryTarget") && !root_package_text.include?("PolarBleSdkShared.xcframework")
+  errors << "Package.swift: SwiftPM shared consumption must use an explicit PolarBleSdkShared.xcframework binaryTarget"
 end
 
 consumption_doc_path = File.join(ROOT, "documentation/KmpSharedArtifactConsumption.md")
@@ -2752,8 +2785,49 @@ end
 unless shared_build.include?("baseName = 'PolarBleSdkShared'") && shared_build.include?("isStatic = true")
   errors << "sources/Android/android-communications/shared/build.gradle: must define static PolarBleSdkShared framework artifact"
 end
-unless validation_commands.include?(":shared:bundleAndroidMainAar") && validation_commands.include?(":shared:linkDebugFrameworkIosX64")
+unless shared_build.include?("maven-publish") && shared_build.include?("localKmpReleaseValidation") && shared_build.include?("local-maven-validation")
+  errors << "sources/Android/android-communications/shared/build.gradle: must define shared Gradle metadata validation for temporary local repository validation"
+end
+unless validation_commands.include?(":shared:bundleAndroidMainAar") && validation_commands.include?(":shared:linkDebugFrameworkIosX64") && validation_commands.include?("package_kmp_xcframework.sh --dry-run")
   errors << "documentation/KmpValidationCommands.md: must document shared artifact smoke gates"
+end
+unless validation_commands.include?("scripts/verify_android_shared_maven_metadata.sh")
+  errors << "documentation/KmpValidationCommands.md: must document shared Maven metadata validation"
+end
+podspec_text = File.read(File.join(ROOT, "PolarBleSdk.podspec"))
+unless podspec_text.include?("'OTHER_SWIFT_FLAGS' => '$(inherited) -D POLAR_KMP_SHARED_REQUIRED'")
+  errors << "PolarBleSdk.podspec: CocoaPods iOS surface must require linked PolarBleSdkShared at compile time"
+end
+unless root_package_text.include?("hasPolarBleSdkSharedXCFramework") && root_package_text.include?(".binaryTarget") && root_package_text.include?("PolarBleSdkShared.xcframework")
+  errors << "Package.swift: SwiftPM/watchOS shared consumption must stay conditional on an explicit PolarBleSdkShared.xcframework binaryTarget"
+end
+xcode_project_text = File.read(File.join(ROOT, "sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj"))
+unless xcode_project_text.scan("POLAR_KMP_SHARED_REQUIRED").size == 2
+  errors << "sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj: exactly the iOS PolarBleSdk Debug/Release configs must require PolarBleSdkShared"
+end
+shared_metadata_script = File.join(ROOT, "scripts/verify_android_shared_maven_metadata.sh")
+unless File.file?(shared_metadata_script) && File.executable?(shared_metadata_script)
+  errors << "scripts/verify_android_shared_maven_metadata.sh: missing executable shared Maven metadata verification script"
+end
+package_script = File.join(ROOT, "sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh")
+unless File.file?(package_script) && File.executable?(package_script)
+  errors << "sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh: missing executable XCFramework packaging script"
+end
+spm_xcframework_validation_script = File.join(ROOT, "sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh")
+unless File.file?(spm_xcframework_validation_script) && File.executable?(spm_xcframework_validation_script)
+  errors << "sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh: missing executable SwiftPM XCFramework consumption validation script"
+else
+  spm_xcframework_validation_text = File.read(spm_xcframework_validation_script)
+  [
+    "package_kmp_xcframework.sh",
+    "swift package describe",
+    "PolarBleSdkShared",
+    "binaryTarget",
+    "xcodebuild",
+    "watchos"
+  ].each do |term|
+    errors << "sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh: missing #{term}" unless spm_xcframework_validation_text.include?(term)
+  end
 end
 errors << "documentation/KmpMigrationChecklist.md: missing completed shared artifact consumption documentation item" unless completed_items.include?("Document how shared artifacts are consumed by Android and iOS modules")
 if android_library_gradle.include?("implementation project(':shared')") && !device_id_slice_migrated

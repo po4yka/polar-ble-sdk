@@ -2516,8 +2516,8 @@ class GoldenVectorMigrationPolicyTest {
         if (!sharedBuild.contains("android {")) {
             violations += "shared/build.gradle must declare the AGP 9 Android KMP target"
         }
-        if (!sharedBuild.contains("iosX64()") || !sharedBuild.contains("iosArm64()") || !sharedBuild.contains("iosSimulatorArm64()")) {
-            violations += "shared/build.gradle must declare iosX64, iosArm64, and iosSimulatorArm64"
+        if (!sharedBuild.contains("iosX64()") || !sharedBuild.contains("iosArm64()") || !sharedBuild.contains("iosSimulatorArm64()") || !sharedBuild.contains("watchosX64()") || !sharedBuild.contains("watchosArm64()") || !sharedBuild.contains("watchosSimulatorArm64()")) {
+            violations += "shared/build.gradle must declare iOS and watchOS KMP framework targets"
         }
         if (!sharedBuild.contains("namespace = 'com.polar.shared'") || !Regex("minSdk(?:Version)?\\s*(?:=)?\\s*26").containsMatchIn(sharedBuild)) {
             violations += "shared/build.gradle must declare Android namespace and minSdk 26"
@@ -2553,6 +2553,9 @@ class GoldenVectorMigrationPolicyTest {
         val checklist = root.resolve("documentation/KmpMigrationChecklist.md").readText()
         val validationCommands = root.resolve("documentation/KmpValidationCommands.md").readText()
         val consumptionDocFile = root.resolve("documentation/KmpSharedArtifactConsumption.md")
+        val packageSwift = root.resolve("Package.swift").readText()
+        val packageScript = root.resolve("sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh")
+        val spmXcframeworkValidationScript = root.resolve("sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh")
         val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle").readText()
         val completedItems = CHECKED_CHECKLIST_ITEM.findAll(checklist)
             .map { match -> match.groupValues[1].trimEnd('.') }
@@ -2570,8 +2573,48 @@ class GoldenVectorMigrationPolicyTest {
         if (!sharedBuild.contains("baseName = 'PolarBleSdkShared'") || !sharedBuild.contains("isStatic = true")) {
             violations += "shared/build.gradle must define the static PolarBleSdkShared framework artifact"
         }
-        if (!validationCommands.contains(":shared:bundleAndroidMainAar") || !validationCommands.contains(":shared:linkDebugFrameworkIosX64")) {
+        if (!sharedBuild.contains("maven-publish") || !sharedBuild.contains("localKmpReleaseValidation") || !sharedBuild.contains("local-maven-validation")) {
+            violations += "shared/build.gradle must define shared Gradle metadata validation for temporary local repository validation"
+        }
+        if (packageSwift.contains("PolarBleSdkShared") && (!packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework"))) {
+            violations += "Package.swift must use an explicit PolarBleSdkShared.xcframework binaryTarget for SwiftPM shared consumption"
+        }
+        if (!packageSwift.contains("hasPolarBleSdkSharedXCFramework") || !packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework")) {
+            violations += "Package.swift must keep SwiftPM/watchOS shared consumption conditional on an explicit PolarBleSdkShared.xcframework binaryTarget"
+        }
+        val podspec = root.resolve("PolarBleSdk.podspec").readText()
+        if (!podspec.contains("'OTHER_SWIFT_FLAGS' => '$(inherited) -D POLAR_KMP_SHARED_REQUIRED'")) {
+            violations += "PolarBleSdk.podspec must require linked PolarBleSdkShared for the CocoaPods iOS surface"
+        }
+        val xcodeProject = root.resolve("sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj").readText()
+        if (Regex("POLAR_KMP_SHARED_REQUIRED").findAll(xcodeProject).count() != 2) {
+            violations += "iOS Xcode project must define POLAR_KMP_SHARED_REQUIRED only for PolarBleSdk Debug/Release"
+        }
+        if (!packageScript.isFile || !packageScript.canExecute()) {
+            violations += "package_kmp_xcframework.sh must exist and be executable"
+        }
+        if (!spmXcframeworkValidationScript.let { it.isFile && it.canExecute() }) {
+            violations += "validate_spm_xcframework_consumption.sh must exist and be executable"
+        } else {
+            val spmXcframeworkValidationText = spmXcframeworkValidationScript.readText()
+            listOf(
+                "package_kmp_xcframework.sh",
+                "swift package describe",
+                "PolarBleSdkShared",
+                "binaryTarget",
+                "xcodebuild",
+                "watchos"
+            ).filterNot { term -> spmXcframeworkValidationText.contains(term) }
+                .mapTo(violations) { term -> "validate_spm_xcframework_consumption.sh missing $term" }
+        }
+        if (!validationCommands.contains(":shared:bundleAndroidMainAar") || !validationCommands.contains(":shared:linkDebugFrameworkIosX64") || !validationCommands.contains("package_kmp_xcframework.sh --dry-run")) {
             violations += "KmpValidationCommands.md must document shared artifact smoke gates"
+        }
+        if (!validationCommands.contains("scripts/verify_android_shared_maven_metadata.sh")) {
+            violations += "KmpValidationCommands.md must document shared Maven metadata validation"
+        }
+        if (!root.resolve("scripts/verify_android_shared_maven_metadata.sh").let { it.isFile && it.canExecute() }) {
+            violations += "verify_android_shared_maven_metadata.sh must exist and be executable"
         }
         if (!completedItems.contains("Document how shared artifacts are consumed by Android and iOS modules")) {
             violations += "KmpMigrationChecklist.md must mark shared artifact consumption documentation complete"
@@ -2586,6 +2629,19 @@ class GoldenVectorMigrationPolicyTest {
         assertTrue(
             "Shared artifact consumption must be documented before production modules are wired: $violations",
             violations.isEmpty()
+        )
+    }
+
+    @Test
+    fun `modern KMP stack audit keeps final ownership boundaries explicit`() {
+        val root = findRepositoryRoot()
+        val audit = root.resolve("documentation/KmpModernStackAudit.md").readText()
+        val missingTerms = KMP_MODERN_STACK_AUDIT_REQUIRED_TERMS
+            .filterNot { term -> audit.contains(term) }
+
+        assertTrue(
+            "KmpModernStackAudit.md must keep migrated, platform-owned, packaging-owned, and current validation boundaries explicit: $missingTerms",
+            missingTerms.isEmpty()
         )
     }
 
@@ -3967,13 +4023,38 @@ class GoldenVectorMigrationPolicyTest {
             "scripts/verify_android_shared_maven_metadata.sh",
             "scripts/verify_release_packaging_policy.rb",
             "polar-ble-sdk-shared.aar",
+            "two-AAR compatibility model",
             "shared local Maven metadata validation",
             "CI/release remains artifact-only",
             "No Maven, CocoaPods, or SwiftPM publication is claimed",
             "required secrets are intentionally absent",
             "SwiftPM/watchOS",
             "fallback-only",
+            "PolarBleSdkShared.xcframework",
+            "binaryTarget",
+            "checksum",
+            "package_kmp_xcframework.sh",
+            "validate_spm_xcframework_consumption.sh",
+            "local-output",
+            "remote `binaryTarget(url:checksum:)`",
+            "watchOS device and simulator slices",
+            "Do not claim SwiftPM/watchOS shared consumption",
             "rollback path for every shared-module adoption step"
+        )
+        val KMP_MODERN_STACK_AUDIT_REQUIRED_TERMS = listOf(
+            "## Fully Migrated Shared KMP Ownership",
+            "Golden-vector governance is active",
+            "Android production consumes shared KMP through `implementation project(':shared')`",
+            "two-AAR compatibility model",
+            "iOS CocoaPods and Xcode workspace production surfaces consume `PolarBleSdkShared.framework`",
+            "POLAR_KMP_SHARED_REQUIRED",
+            "Swift Package Manager and watchOS are fallback-only on a clean checkout",
+            "PolarBleSdkShared.xcframework",
+            "Generated public protobuf reconstruction remains platform-owned",
+            "BLE/session/GATT host behavior remains platform-owned",
+            "CI and release policy remain artifact-only",
+            "The latest broad `xcodebuild test",
+            "must be resolved before claiming a green broad iOS gate"
         )
         val PLATFORM_OWNED_COVERAGE_ROWS = mapOf(
             "BLE device session lifecycle" to listOf("Partial", "platform-owned", "Keep platform-specific"),
@@ -4082,7 +4163,8 @@ class GoldenVectorMigrationPolicyTest {
             "Use XCTest failures from that command as migration evidence"
         )
         val IOS_XCTEST_REMAINING_WORK_REQUIRED_TERMS = listOf(
-            "The iOS XCTest gate is unblocked and passes with `xcodebuild test -quiet -workspace sources/iOS/ios-communications/iOSCommunications.xcworkspace -scheme iOSCommunications -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5'",
+            "Historical iOS XCTest closeout evidence exists for earlier slices, but the latest broad audit run is no longer treated as green in this document",
+            "see `KmpModernStackAudit.md` for the current full-suite blocker list",
             "Keep full iOS XCTest in the required validation set for future slices",
             "`swiftc -parse` is only a syntax gate and must not replace the passing simulator XCTest command"
         )
@@ -4461,7 +4543,9 @@ class GoldenVectorMigrationPolicyTest {
                 "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred",
                 "readPlan",
                 "publicModelReadPlanPolicy",
-                "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects"
+                "shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects",
+                "publicModelReconstructionPlanPolicy",
+                "shared-neutral-reconstruction-plan-selects-decoded-payload-bytes-for-platform-generated-model-adapters"
             ),
             "payload-parser-policy.json" to listOf(
                 "Selected training payload protobuf field parsing now executes in shared KMP",
