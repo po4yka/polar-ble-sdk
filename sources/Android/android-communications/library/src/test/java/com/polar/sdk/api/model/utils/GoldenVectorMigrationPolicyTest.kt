@@ -1453,7 +1453,7 @@ class GoldenVectorMigrationPolicyTest {
         val remainingWork = root.resolve("documentation/KmpPreMigrationRemainingWork.md").readText()
         val validationMissingTerms = IOS_XCTEST_EXECUTION_GATE_REQUIRED_TERMS
             .filterNot { term -> validationDoc.contains(term) }
-        val remainingWorkMissingTerms = IOS_XCTEST_REMAINING_WORK_REQUIRED_TERMS
+        val remainingWorkMissingTerms = IOS_XCTEST_CLOSEOUT_REQUIRED_TERMS
             .filterNot { term -> remainingWork.contains(term) }
 
         assertTrue(
@@ -4026,7 +4026,7 @@ class GoldenVectorMigrationPolicyTest {
             "scripts/verify_release_packaging_policy.rb",
             "polar-ble-sdk-shared.aar",
             "two-AAR compatibility model",
-            "shared local Maven metadata validation",
+            "shared local Maven metadata",
             "CI/release remains artifact-only",
             "No Maven, CocoaPods, or SwiftPM publication is claimed",
             "required secrets are intentionally absent",
@@ -4165,9 +4165,9 @@ class GoldenVectorMigrationPolicyTest {
             "xcodebuild test -workspace sources/iOS/ios-communications/iOSCommunications.xcworkspace -scheme iOSCommunications -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5'",
             "Use XCTest failures from that command as migration evidence"
         )
-        val IOS_XCTEST_REMAINING_WORK_REQUIRED_TERMS = listOf(
-            "Historical iOS XCTest closeout evidence exists for earlier slices, but the latest broad audit run is no longer treated as green in this document",
-            "see `KmpModernStackAudit.md` for the current full-suite blocker list",
+        val IOS_XCTEST_CLOSEOUT_REQUIRED_TERMS = listOf(
+            "Historical iOS XCTest closeout evidence exists for earlier slices, and the current broad closeout evidence is recorded in `KmpModernStackAudit.md`",
+            "passed with 813 tests and 0 failures",
             "Keep full iOS XCTest in the required validation set for future slices",
             "`swiftc -parse` is only a syntax gate and must not replace the passing simulator XCTest command"
         )

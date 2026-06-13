@@ -1466,7 +1466,7 @@ SHARED_CONSUMPTION_REQUIRED_TERMS = [
   "scripts/verify_release_packaging_policy.rb",
   "polar-ble-sdk-shared.aar",
   "two-AAR compatibility model",
-  "shared local Maven metadata validation",
+  "shared local Maven metadata",
   "CI/release remains artifact-only",
   "No Maven, CocoaPods, or SwiftPM publication is claimed",
   "required secrets are intentionally absent",
@@ -1511,7 +1511,7 @@ KOTLIN_DOCUMENT_REQUIRED_TERM_TARGETS = {
   "FIRST_RECOMMENDED_TDD_SLICE_TERMS" => "documentation/KmpTddStrategy.md",
   "IOS_XCODE_PROBE_REQUIRED_TERMS" => "scripts/ios_xcode_validation_probe.rb",
   "IOS_XCTEST_EXECUTION_GATE_REQUIRED_TERMS" => "documentation/KmpValidationCommands.md",
-  "IOS_XCTEST_REMAINING_WORK_REQUIRED_TERMS" => "documentation/KmpPreMigrationRemainingWork.md",
+  "IOS_XCTEST_CLOSEOUT_REQUIRED_TERMS" => "documentation/KmpPreMigrationRemainingWork.md",
   "SHARED_CONSUMPTION_REQUIRED_TERMS" => "documentation/KmpSharedArtifactConsumption.md",
   "KMP_MODERN_STACK_AUDIT_REQUIRED_TERMS" => "documentation/KmpModernStackAudit.md"
 }.freeze
