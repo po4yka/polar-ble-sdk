@@ -4,7 +4,7 @@ This document records how the `:shared` module is consumed after the Swift Packa
 
 ## Android Consumption Contract
 
-Android production code consumes shared code through `implementation project(':shared')` in `sources/Android/android-communications/library/build.gradle`. The slice that delegates behavior must prove current Android behavior with characterization tests, shared golden vectors, matching KMP common tests, and a green `GoldenVectorMigrationPolicyTest`. Direct local AAR consumers use the two-AAR compatibility model: `polar-ble-sdk.aar` plus `polar-ble-sdk-shared.aar`. `scripts/verify_android_example_aar_consumption.sh` validates that file-consumption path, while `scripts/verify_android_shared_maven_metadata.sh` validates local-only shared KMP metadata without external publication.
+Android production code consumes shared code through `implementation(project(":shared"))` in `sources/Android/android-communications/library/build.gradle.kts`. The slice that delegates behavior must prove current Android behavior with characterization tests, shared golden vectors, matching KMP common tests, and a green `GoldenVectorMigrationPolicyTest`. Direct local AAR consumers use the two-AAR compatibility model: `polar-ble-sdk.aar` plus `polar-ble-sdk-shared.aar`. `scripts/verify_android_example_aar_consumption.sh` validates that file-consumption path, while `scripts/verify_android_shared_maven_metadata.sh` validates local-only shared KMP metadata without external publication.
 
 ## Apple Consumption Contract
 
@@ -18,7 +18,7 @@ CocoaPods is no longer a supported distribution or validation surface. The forme
 
 | Consumer surface | Shared KMP consumption status | Verification |
 |---|---|---|
-| Android Gradle project inside this repository | Direct `implementation project(':shared')` from the SDK library. | `:library:testSdkDebugUnitTest`, `:shared:jvmTest`, and target compile gates in `KmpValidationCommands.md`. |
+| Android Gradle project inside this repository | Direct `implementation(project(":shared"))` from the SDK library. | `:library:testSdkDebugUnitTest`, `:shared:jvmTest`, and target compile gates in `KmpValidationCommands.md`. |
 | Android example local AAR | Supported with `polar-ble-sdk.aar` plus `polar-ble-sdk-shared.aar`. | `scripts/verify_android_example_aar_consumption.sh`. |
 | Android shared local Maven metadata | Validation-only metadata for `:shared` in `shared/build/local-maven-validation`; not an external publication. | `scripts/verify_android_shared_maven_metadata.sh`. |
 | SwiftPM iOS | Supported through remote or local `PolarBleSdkShared.xcframework` binary target; clean checkout falls back to Swift source behavior. | `swift package describe`, and `validate_spm_xcframework_consumption.sh`. |

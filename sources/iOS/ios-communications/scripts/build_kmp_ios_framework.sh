@@ -55,7 +55,7 @@ done
 trap 'rmdir "$LOCK_DIRECTORY"' EXIT
 
 if [ -f "$FRAMEWORK_STAMP" ] && [ -f "$ARCH_STAMP" ] && [ "${POLAR_BLE_SDK_FORCE_KMP_FRAMEWORK_BUILD:-}" != "1" ]; then
-    NEWER_SHARED_INPUT=$(find "$GRADLE_ROOT/shared/src" "$GRADLE_ROOT/shared/build.gradle" -newer "$FRAMEWORK_STAMP" -print -quit)
+    NEWER_SHARED_INPUT=$(find "$GRADLE_ROOT/shared/src" "$GRADLE_ROOT/shared/build.gradle.kts" -newer "$FRAMEWORK_STAMP" -print -quit)
     if [ -z "$NEWER_SHARED_INPUT" ]; then
         if [ -n "${PODS_CONFIGURATION_BUILD_DIR:-}" ]; then
             PODS_FRAMEWORK_DESTINATION="$PODS_CONFIGURATION_BUILD_DIR/PolarBleSdkShared"

@@ -1,3 +1,0 @@
-include ':library'
-include ':shared'
-include ':repo-tools'

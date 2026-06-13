@@ -1510,10 +1510,10 @@ class GoldenVectorMigrationPolicyTest {
     @Test
     fun `Android minimum SDK documentation matches Gradle configuration`() {
         val root = findRepositoryRoot()
-        val gradleMinSdk = ANDROID_MIN_SDK_VERSION.find(root.resolve("sources/Android/android-communications/library/build.gradle").readText())
+        val gradleMinSdk = ANDROID_MIN_SDK_VERSION.find(root.resolve("sources/Android/android-communications/library/build.gradle.kts").readText())
             ?.groupValues
             ?.get(1)
-            ?: error("Could not find minSdk in Android library build.gradle")
+            ?: error("Could not find minSdk in Android library build.gradle.kts")
         val mismatches = ANDROID_MIN_SDK_DOCS.flatMap { relativePath ->
             val documentedValues = ANDROID_MIN_SDK_REFERENCE.findAll(root.resolve(relativePath).readText())
                 .map { match -> match.groupValues[1] }
@@ -1526,7 +1526,7 @@ class GoldenVectorMigrationPolicyTest {
         }
 
         assertTrue(
-            "Android minSdk documentation must match sources/Android/android-communications/library/build.gradle: $mismatches",
+            "Android minSdk documentation must match sources/Android/android-communications/library/build.gradle.kts: $mismatches",
             mismatches.isEmpty()
         )
     }
@@ -1534,22 +1534,22 @@ class GoldenVectorMigrationPolicyTest {
     @Test
     fun `Android Gradle version helper remains tagless safe`() {
         val root = findRepositoryRoot()
-        val gradle = root.resolve("sources/Android/android-communications/library/build.gradle").readText()
+        val gradle = root.resolve("sources/Android/android-communications/library/build.gradle.kts").readText()
         val checklist = root.resolve("documentation/KmpMigrationChecklist.md").readText()
         val migrationPlan = root.resolve("documentation/KmpMigrationPlan.md").readText()
         val violations = mutableListOf<String>()
 
-        if (!gradle.contains("new ProcessBuilder('git', 'describe', '--tags', '--always')")) {
-            violations += "Android build.gradle must use git describe --tags --always"
+        if (!gradle.contains("ProcessBuilder(\"git\", \"describe\", \"--tags\", \"--always\")")) {
+            violations += "Android build.gradle.kts must use git describe --tags --always"
         }
-        if (!gradle.contains("def exitValue = process.waitFor()") || !gradle.contains("exitValue == 0")) {
-            violations += "Android build.gradle must handle nonzero Git describe exits during configuration"
+        if (!gradle.contains("val exitValue = process.waitFor()") || !gradle.contains("exitValue == 0")) {
+            violations += "Android build.gradle.kts must handle nonzero Git describe exits during configuration"
         }
         if (!gradle.contains("matcher.find()")) {
-            violations += "Android build.gradle must extract a semver prefix instead of requiring the full git describe output to be semver"
+            violations += "Android build.gradle.kts must extract a semver prefix instead of requiring the full git describe output to be semver"
         }
-        if (!gradle.contains("def VERSION = \"0.0.0\"")) {
-            violations += "Android build.gradle must fall back to parseable semver 0.0.0"
+        if (!gradle.contains("\"0.0.0\"")) {
+            violations += "Android build.gradle.kts must fall back to parseable semver 0.0.0"
         }
         if (!checklist.contains("- [x] Android Gradle configuration works in a tagless checkout or clearly documents the tag requirement.")) {
             violations += "KmpMigrationChecklist.md must mark Android tagless Gradle readiness complete only while this policy passes"
@@ -1603,7 +1603,7 @@ class GoldenVectorMigrationPolicyTest {
         val validationCommands = root.resolve("documentation/KmpValidationCommands.md").readText()
         val androidIndex = root.resolve("docs/polar-sdk-android/index.html")
         val iosIndex = root.resolve("docs/polar-sdk-ios/index.html")
-        val androidGradle = root.resolve("sources/Android/android-communications/library/build.gradle").readText()
+        val androidGradle = root.resolve("sources/Android/android-communications/library/build.gradle.kts").readText()
         val violations = mutableListOf<String>()
 
         if (!androidIndex.isFile || !androidIndex.readText().contains("dokka-javadoc-stylesheet.css")) {
@@ -1612,8 +1612,8 @@ class GoldenVectorMigrationPolicyTest {
         if (!iosIndex.isFile || !iosIndex.readText().contains("css/jazzy.css")) {
             violations += "docs/polar-sdk-ios/index.html must exist and remain recognizable as Jazzy output"
         }
-        if (!androidGradle.contains("org.jetbrains.dokka") || !androidGradle.contains("tasks.dokkaJavadoc.configure")) {
-            violations += "sources/Android/android-communications/library/build.gradle must keep the Android API doc generator visible"
+        if (!androidGradle.contains("alias(libs.plugins.dokka)") || !androidGradle.contains("tasks.named<DokkaTask>(\"dokkaJavadoc\")")) {
+            violations += "sources/Android/android-communications/library/build.gradle.kts must keep the Android API doc generator visible"
         }
         if (!validationCommands.contains("## Generated API Documentation Ownership")) {
             violations += "KmpValidationCommands.md must document generated API documentation ownership"
@@ -2251,7 +2251,7 @@ class GoldenVectorMigrationPolicyTest {
     @Test
     fun `byte level common dependency deferrals stay explicit until production common codecs exist`() {
         val root = findRepositoryRoot()
-        val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle").readText()
+        val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle.kts").readText()
         val backlog = root.resolve("documentation/KmpFullCoverageTddBacklog.md").readText()
         val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
         val remainingWork = root.resolve("documentation/KmpPreMigrationRemainingWork.md").readText()
@@ -2266,7 +2266,7 @@ class GoldenVectorMigrationPolicyTest {
 
         SHARED_COMMON_PRODUCTION_CODEC_DEPENDENCY_TERMS
             .filter { term -> sharedBuild.contains(term) }
-            .mapTo(violations) { term -> "shared/build.gradle declares $term before this policy is updated with production common codec ownership evidence" }
+            .mapTo(violations) { term -> "shared/build.gradle.kts declares $term before this policy is updated with production common codec ownership evidence" }
         BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS.forEach { (artifact, requiredTerms) ->
             val text = when (artifact) {
                 "KmpFullCoverageTddBacklog.md" -> backlog
@@ -2395,19 +2395,19 @@ class GoldenVectorMigrationPolicyTest {
         val completedItems = CHECKED_CHECKLIST_ITEM.findAll(checklist)
             .map { match -> match.groupValues[1].trimEnd('.') }
             .toSet()
-        val settings = root.resolve("sources/Android/android-communications/settings.gradle").readText()
-        val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle").readText()
+        val settings = root.resolve("sources/Android/android-communications/settings.gradle.kts").readText()
+        val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle.kts").readText()
         val sharedMarker = root.resolve("sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/SharedModule.kt")
         val violations = mutableListOf<String>()
 
-        if (!settings.contains("include ':shared'")) {
-            violations += "settings.gradle must include :shared"
+        if (!settings.contains("include(\":shared\")")) {
+            violations += "settings.gradle.kts must include :shared"
         }
-        if (!sharedBuild.contains("org.jetbrains.kotlin.multiplatform")) {
-            violations += "shared/build.gradle must apply Kotlin Multiplatform"
+        if (!sharedBuild.contains("alias(libs.plugins.kotlin.multiplatform)")) {
+            violations += "shared/build.gradle.kts must apply Kotlin Multiplatform"
         }
         if (!sharedBuild.contains("jvm()")) {
-            violations += "shared/build.gradle must keep a JVM target so commonTest is executable now"
+            violations += "shared/build.gradle.kts must keep a JVM target so commonTest is executable now"
         }
         if (!sharedMarker.isFile || !sharedMarker.readText().contains("object SharedModule")) {
             violations += "shared commonMain must retain the module marker"
@@ -2498,21 +2498,21 @@ class GoldenVectorMigrationPolicyTest {
         val completedItems = CHECKED_CHECKLIST_ITEM.findAll(checklist)
             .map { match -> match.groupValues[1].trimEnd('.') }
             .toSet()
-        val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle").readText()
+        val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle.kts").readText()
         val manifest = root.resolve("sources/Android/android-communications/shared/src/androidMain/AndroidManifest.xml")
         val violations = mutableListOf<String>()
 
-        if (!sharedBuild.contains("apply plugin: 'com.android.kotlin.multiplatform.library'")) {
-            violations += "shared/build.gradle must apply com.android.kotlin.multiplatform.library for the Android KMP target"
+        if (!sharedBuild.contains("alias(libs.plugins.android.kotlin.multiplatform.library)")) {
+            violations += "shared/build.gradle.kts must apply com.android.kotlin.multiplatform.library for the Android KMP target"
         }
         if (!sharedBuild.contains("android {")) {
-            violations += "shared/build.gradle must declare the AGP 9 Android KMP target"
+            violations += "shared/build.gradle.kts must declare the AGP 9 Android KMP target"
         }
         if (!sharedBuild.contains("iosX64()") || !sharedBuild.contains("iosArm64()") || !sharedBuild.contains("iosSimulatorArm64()") || !sharedBuild.contains("watchosX64()") || !sharedBuild.contains("watchosArm64()") || !sharedBuild.contains("watchosSimulatorArm64()")) {
-            violations += "shared/build.gradle must declare iOS and watchOS KMP framework targets"
+            violations += "shared/build.gradle.kts must declare iOS and watchOS KMP framework targets"
         }
-        if (!sharedBuild.contains("namespace = 'com.polar.shared'") || !Regex("minSdk(?:Version)?\\s*(?:=)?\\s*26").containsMatchIn(sharedBuild)) {
-            violations += "shared/build.gradle must declare Android namespace and minSdk 26"
+        if (!sharedBuild.contains("namespace = \"com.polar.shared\"") || !Regex("minSdk(?:Version)?\\s*(?:=)?\\s*26").containsMatchIn(sharedBuild)) {
+            violations += "shared/build.gradle.kts must declare Android namespace and minSdk 26"
         }
         if (!manifest.isFile) {
             violations += "shared Android target must include a minimal AndroidManifest.xml"
@@ -2526,7 +2526,7 @@ class GoldenVectorMigrationPolicyTest {
         if (!validationCommands.contains(":shared:compileAndroidMain") || !validationCommands.contains(":shared:compileAndroidHostTest") || !validationCommands.contains(":shared:compileKotlinIosX64")) {
             violations += "KmpValidationCommands.md must document shared Android and iOS target compile gates"
         }
-        if (root.resolve("sources/Android/android-communications/library/build.gradle").readText().contains("project(':shared')") && !deviceIdSliceMigrated(root)) {
+        if (root.resolve("sources/Android/android-communications/library/build.gradle.kts").readText().contains("project(\":shared\")") && !deviceIdSliceMigrated(root)) {
             violations += "Android library must not consume :shared without concrete migrated behavior evidence"
         }
         if (root.resolve("sources/iOS/ios-communications/Package.swift").takeIf { it.isFile }?.readText()?.contains("shared") == true) {
@@ -2548,7 +2548,7 @@ class GoldenVectorMigrationPolicyTest {
         val packageSwift = root.resolve("Package.swift").readText()
         val packageScript = root.resolve("sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh")
         val spmXcframeworkValidationScript = root.resolve("sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh")
-        val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle").readText()
+        val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle.kts").readText()
         val completedItems = CHECKED_CHECKLIST_ITEM.findAll(checklist)
             .map { match -> match.groupValues[1].trimEnd('.') }
             .toSet()
@@ -2562,11 +2562,11 @@ class GoldenVectorMigrationPolicyTest {
                 .filterNot { term -> consumptionDoc.contains(term) }
                 .mapTo(violations) { term -> "${consumptionDocFile.relativeTo(root).path} missing $term" }
         }
-        if (!sharedBuild.contains("baseName = 'PolarBleSdkShared'") || !sharedBuild.contains("isStatic = true")) {
-            violations += "shared/build.gradle must define the static PolarBleSdkShared framework artifact"
+        if (!sharedBuild.contains("baseName = \"PolarBleSdkShared\"") || !sharedBuild.contains("isStatic = true")) {
+            violations += "shared/build.gradle.kts must define the static PolarBleSdkShared framework artifact"
         }
         if (!sharedBuild.contains("maven-publish") || !sharedBuild.contains("localKmpReleaseValidation") || !sharedBuild.contains("local-maven-validation")) {
-            violations += "shared/build.gradle must define shared Gradle metadata validation for temporary local repository validation"
+            violations += "shared/build.gradle.kts must define shared Gradle metadata validation for temporary local repository validation"
         }
         if (packageSwift.contains("PolarBleSdkShared") && (!packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework"))) {
             violations += "Package.swift must use an explicit PolarBleSdkShared.xcframework binaryTarget for SwiftPM shared consumption"
@@ -2612,7 +2612,7 @@ class GoldenVectorMigrationPolicyTest {
         if (!completedItems.contains("Document how shared artifacts are consumed by Android and iOS modules")) {
             violations += "KmpMigrationChecklist.md must mark shared artifact consumption documentation complete"
         }
-        if (root.resolve("sources/Android/android-communications/library/build.gradle").readText().contains("implementation project(':shared')") && !deviceIdSliceMigrated(root)) {
+        if (root.resolve("sources/Android/android-communications/library/build.gradle.kts").readText().contains("implementation(project(\":shared\"))") && !deviceIdSliceMigrated(root)) {
             violations += "Android production consumption must name a migrated shared behavior slice"
         }
         if (root.resolve("sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj").readText().contains("PolarBleSdkShared.framework") && !iosSharedConsumptionMigrated(root)) {
@@ -4006,7 +4006,7 @@ class GoldenVectorMigrationPolicyTest {
             "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest"
         )
         val SHARED_CONSUMPTION_REQUIRED_TERMS = listOf(
-            "implementation project(':shared')",
+            "implementation(project(\":shared\"))",
             "PolarBleSdkShared.framework",
             "current Swift facade",
             ":shared:bundleAndroidMainAar",
@@ -4035,7 +4035,7 @@ class GoldenVectorMigrationPolicyTest {
         val KMP_MODERN_STACK_AUDIT_REQUIRED_TERMS = listOf(
             "## Fully Migrated Shared KMP Ownership",
             "Golden-vector governance is active",
-            "Android production consumes shared KMP through `implementation project(':shared')`",
+            "Android production consumes shared KMP through `implementation(project(\":shared\"))`",
             "two-AAR compatibility model",
             "Swift Package Manager first",
             "PolarBleSdkShared.xcframework",
