@@ -1492,8 +1492,9 @@ KMP_MODERN_STACK_AUDIT_REQUIRED_TERMS = [
   "Generated public protobuf reconstruction remains platform-owned",
   "BLE/session/GATT host behavior remains platform-owned",
   "CI and release policy remain artifact-only",
-  "The latest broad `xcodebuild test",
-  "must be resolved before claiming a green broad iOS gate"
+  "The current broad iOS XCTest closeout gate is green",
+  "passed with 813 tests and 0 failures",
+  "previously recorded stale failures"
 ].freeze
 KOTLIN_DOCUMENT_REQUIRED_TERM_TARGETS = {
   "VALIDATION_NON_GRADLE_GATE_TERMS" => "documentation/KmpValidationCommands.md",

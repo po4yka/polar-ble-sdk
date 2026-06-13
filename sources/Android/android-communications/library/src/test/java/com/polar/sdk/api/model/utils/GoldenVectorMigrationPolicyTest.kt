@@ -4053,8 +4053,9 @@ class GoldenVectorMigrationPolicyTest {
             "Generated public protobuf reconstruction remains platform-owned",
             "BLE/session/GATT host behavior remains platform-owned",
             "CI and release policy remain artifact-only",
-            "The latest broad `xcodebuild test",
-            "must be resolved before claiming a green broad iOS gate"
+            "The current broad iOS XCTest closeout gate is green",
+            "passed with 813 tests and 0 failures",
+            "previously recorded stale failures"
         )
         val PLATFORM_OWNED_COVERAGE_ROWS = mapOf(
             "BLE device session lifecycle" to listOf("Partial", "platform-owned", "Keep platform-specific"),
