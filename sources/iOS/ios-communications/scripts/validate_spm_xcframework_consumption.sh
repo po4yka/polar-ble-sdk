@@ -4,6 +4,7 @@ set -eu
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 IOS_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 REPO_ROOT=$(cd "$IOS_ROOT/../../.." && pwd)
+GRADLE_ROOT="$REPO_ROOT/sources/Android/android-communications"
 CONFIGURATION=Debug
 RUN_PLATFORM_BUILDS=1
 

@@ -141,7 +141,6 @@ Use this checklist to keep KMP migration work scoped, test-first, and reviewable
 
 - [x] Android AAR builds and is consumed by the Android example.
 - [x] Swift Package integration builds and is consumed by the iOS example.
-- [x] CocoaPods integration is verified or explicitly deprecated.
 - [x] Generated Android and iOS API docs are regenerated if public APIs changed.
 - [x] Migration guides are updated for consumer-visible changes.
 - [x] Known platform differences are documented.

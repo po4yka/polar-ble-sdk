@@ -10,6 +10,8 @@ Android production code consumes shared code through `implementation project(':s
 
 Swift Package Manager is the supported Apple package path. `Package.swift` supports three modes: remote release consumption through `POLAR_BLE_SDK_SHARED_BINARY_URL` and `POLAR_BLE_SDK_SHARED_BINARY_CHECKSUM`, local repository validation through `sources/iOS/ios-communications/Generated/PolarBleSdkSharedXCFramework/PolarBleSdkShared.xcframework`, and clean-checkout Swift fallback when no binary artifact is present. `sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh` builds iOS device, iOS simulator, watchOS device, and watchOS simulator framework slices, creates `PolarBleSdkShared.xcframework`, optionally writes `PolarBleSdkShared.xcframework.zip`, and prints the SwiftPM checksum. `sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh` verifies the fallback mode, builds the local XCFramework, checks the binary target, and runs generic iOS/watchOS package build validation when local destinations permit it.
 
+The binary target exposes `PolarBleSdkShared.framework` only as shared KMP implementation detail behind the current Swift facade; public Swift APIs remain source-owned by the package. Local artifact validation must keep `:shared:bundleAndroidMainAar`, `:shared:linkDebugFrameworkIosX64`, `binaryTarget`, and a rollback path for every shared-module adoption step visible in the release contract.
+
 CocoaPods is no longer a supported distribution or validation surface. The former podspec, Podfile, CocoaPods CI install/lint steps, and CocoaPods Xcode project integration are removed. Existing Podfile consumers must migrate to Swift Package Manager.
 
 ## Release Packaging Matrix

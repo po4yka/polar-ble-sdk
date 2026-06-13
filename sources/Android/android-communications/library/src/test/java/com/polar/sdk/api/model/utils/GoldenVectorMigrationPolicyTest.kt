@@ -2571,7 +2571,7 @@ class GoldenVectorMigrationPolicyTest {
         if (packageSwift.contains("PolarBleSdkShared") && (!packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework"))) {
             violations += "Package.swift must use an explicit PolarBleSdkShared.xcframework binaryTarget for SwiftPM shared consumption"
         }
-        if (!packageSwift.contains("hasPolarBleSdkSharedXCFramework") || !packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework")) {
+        if (!packageSwift.contains("hasLocalPolarBleSdkSharedXCFramework") || !packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework")) {
             violations += "Package.swift must keep SwiftPM/watchOS shared consumption conditional on an explicit PolarBleSdkShared.xcframework binaryTarget"
         }
         val xcodeProject = root.resolve("sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj").readText()
@@ -4217,7 +4217,6 @@ class GoldenVectorMigrationPolicyTest {
         val OPEN_ITEM_RATIONALE_SECTION = Regex("(?s)## Open Item Rationale.*?(?=\\n## |\\z)")
         val RELEASE_READINESS_ITEMS = listOf(
             "Android AAR builds and is consumed by the Android example.",
-            "Swift Package integration builds and is consumed by the iOS example.",
             "Swift Package integration builds and is consumed by the iOS example.",
             "Generated Android and iOS API docs are regenerated if public APIs changed.",
             "Migration guides are updated for consumer-visible changes.",

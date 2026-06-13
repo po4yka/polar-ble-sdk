@@ -2,6 +2,8 @@
 
 Use these commands when preparing or reviewing KMP migration slices. Run the narrowest command that proves the touched behavior, then run the broader command for the module before merging the slice.
 
+Batch several file, test, vector, and documentation edits before invoking Gradle validation so coverage work does not stall on repeated manual app prompts. Prefer the library and shared-module gates below, and do not run broad app or example Gradle tasks unless the slice actually changes app/example surfaces.
+
 ## Android
 
 Run Android commands from `sources/Android/android-communications`.
@@ -45,7 +47,7 @@ Run the shared common golden-vector helper smoke test from `sources/Android/andr
 ./gradlew :shared:jvmTest --no-daemon --warning-mode all
 ```
 
-When shared target wiring changes, also run:
+When shared target wiring changes across JVM, Android, and Apple targets, also run:
 
 ```bash
 ./gradlew :shared:compileAndroidMain :shared:compileAndroidHostTest :shared:compileKotlinIosX64 :shared:compileKotlinMetadata :shared:jvmTest --no-daemon --warning-mode all
@@ -92,6 +94,8 @@ For release artifacts, run `package_kmp_xcframework.sh` with `--zip-output`, rec
 
 `GoldenVectorMigrationPolicyTest` is the repository gate for golden-vector metadata, migration-rationale fields, runtime `consumerTests`, fixture README ownership notes, and coverage-doc test references. Run it whenever a migration slice changes `testdata/golden-vectors` or KMP migration documentation.
 
+`KmpTddStrategy.md` defines the minimum validation before merging a migration slice: KMP common tests, existing Android tests, existing iOS tests or an equivalent documented Apple-platform command, reviewed golden vectors as API contracts, and no unrelated platform refactor. The current executable way to satisfy that minimum validation set is the focused `GoldenVectorMigrationPolicyTest`, the relevant shared common test, the relevant Android characterization test, and the iOS XCTest or documented SwiftPM/Xcode package gate for the touched Apple surface.
+
 Before invoking Gradle repeatedly during coverage expansion, batch edits and run these repository checks:
 
 ```bash
@@ -100,7 +104,7 @@ cd sources/Android/android-communications
 ./gradlew :repo-tools:kmpNonGradleChecks :repo-tools:verifyReleasePackagingPolicy --no-daemon --warning-mode all
 ```
 
-`:repo-tools:kmpNonGradleChecks` is the Kotlin/Gradle batching mirror for the metadata-heavy repository contract. It guards SwiftPM packaging, Kotlin repo-tools entrypoints, CocoaPods removal, Ruby-free validation, and the active validation-documentation terms. Plain `swift build` is intentionally not a validation gate because SwiftPM builds for the macOS host by default while this package is an iOS/watchOS package using Apple platform APIs; use generic iOS/watchOS `xcodebuild` package builds instead. `GoldenVectorMigrationPolicyTest` remains the deep Android-hosted policy gate for vector schema, consumer resolution, common-test coverage, fixture README references, fake-transport ledger coverage, public facade operation ledger coverage, generated-doc cleanliness, and shared `commonTest` portability.
+`:repo-tools:kmpNonGradleChecks` is the Kotlin/Gradle batching mirror for the metadata-heavy repository contract. It guards SwiftPM packaging, Kotlin repo-tools entrypoints, CocoaPods removal, Ruby-free validation, and the active validation-documentation terms, including fixture README `.kt` artifact references, TDD strategy golden-vector example wording, fake-transport runtime matrix coverage, stale future-fake-transport wording, portability allowlist terms, and the Xcode discovery command `xcodebuild -list -project sources/iOS/ios-communications/iOSCommunications.xcodeproj`. Plain `swift build` is intentionally not a validation gate because SwiftPM builds for the macOS host by default while this package is an iOS/watchOS package using Apple platform APIs; use generic iOS/watchOS `xcodebuild` package builds instead. `GoldenVectorMigrationPolicyTest` remains the deep Android-hosted policy gate for vector schema, consumer resolution, common-test coverage, fixture README references, fake-transport ledger coverage, public facade operation ledger coverage, generated-doc cleanliness, and shared `commonTest` portability.
 
 ## Generated API Documentation Ownership
 

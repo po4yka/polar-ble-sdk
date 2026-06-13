@@ -5,6 +5,7 @@ This document records the KMP migration closeout state after the full coverage-p
 ## Current Verified State
 
 - Golden-vector metadata and documentation policy checks pass with `./gradlew :repo-tools:kmpNonGradleChecks`; the current vector count is 376.
+- The broad iOS XCTest gate must be treated as current only when `scripts/ci_xcodebuild_test.sh sources/iOS/ios-communications/iOSCommunications.xcodeproj iOSCommunications 'platform=iOS Simulator,name=iPhone 17,OS=latest' <result-bundle>` passes in the current checkout.
 - Whitespace safety passes with `git diff --check`.
 - iOS test sources parse with `swiftc -parse sources/iOS/ios-communications/Tests/**/*.swift`.
 - Focused shared/Android fake-transport validation passes with `./gradlew :shared:jvmTest :library:testSdkDebugUnitTest --tests 'com.polar.testutils.FakeTransportContractTest' --no-daemon`.
