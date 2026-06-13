@@ -530,10 +530,10 @@ final class PolarDataUtilsTest: XCTestCase {
         XCTAssertEqual(vector["id"] as? String, "trigger-runtime-policy")
         XCTAssertEqual(scenarioIds, triggerRuntimeScenarioIds)
         XCTAssertEqual(caseIds, triggerRuntimeScenarioIds)
-        XCTAssertTrue(try XCTUnwrap(prototype["status"] as? String).contains("prototype"), "trigger-runtime-policy")
-        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "trigger-runtime-policy"), ["com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientTest", "com.polar.sdk.impl.BDBleApiImplTest", "com.polar.sdk.impl.utils.PolarDataUtilsTest", "com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest"])
+        XCTAssertEqual(try XCTUnwrap(prototype["status"] as? String), "executable shared commonTest", "trigger-runtime-policy")
+        XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "trigger-runtime-policy"), ["com.polar.androidcommunications.api.ble.model.gatt.client.pmd.BlePmdClientTest", "com.polar.sdk.impl.BDBleApiImplTest", "com.polar.sdk.impl.utils.PolarDataUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "trigger-runtime-policy"), ["BlePmdClientTest", "PolarBleApiImplTests", "PolarDataUtilsTest"])
-        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "trigger-runtime-policy"), ["com.polar.sdk.impl.utils.OfflineTriggerCommonFakeRuntimeTest", "com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"])
+        XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "trigger-runtime-policy"), ["com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"])
     }
 
     func testTriggerRuntimeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
