@@ -222,7 +222,7 @@
         }
       ]
     },
-    "commonDecision": "Selected training payload protobuf field parsing now executes in shared KMP for these parser cases; generated public protobuf object construction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered. Gzip decompression and public-model slot planning are shared KMP production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+    "commonDecision": "Selected training payload protobuf field parsing now executes in shared KMP for these parser cases; generated public protobuf object construction remains platform-owned while neutral reconstruction planning maps decoded payload bytes to Android and iOS adapters. Gzip decompression and public-model slot planning are shared KMP production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
   },
   "consumerTests": {
     "android": [
@@ -241,5 +241,5 @@
     "common": true
   },
   "commonDecision": "This vector converts the existing platform byte-level protobuf coverage into an executable shared selected-field parser policy, while gzip payload decoding and public-model slot planning are already shared production code.",
-  "notes": "The Android and iOS tests construct real protobuf payloads for these parser families. Shared KMP production now parses selected summary, exercise, route, and sample fields with the portable training protobuf reader, while platform adapters still build the generated public protobuf models until a broader shared DTO/reconstruction strategy is added."
+  "notes": "The Android and iOS tests construct real protobuf payloads for these parser families. Shared KMP production now parses selected summary, exercise, route, and sample fields with the portable training protobuf reader and plans neutral reconstruction slots, while platform adapters still build the generated public protobuf models."
 }

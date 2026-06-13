@@ -358,7 +358,7 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         }
         XCTAssertEqual(cases.filter { ($0["encoding"] as? String) == "gzip-protobuf" }.count, 4, "payload-parser-policy")
         XCTAssertEqual(cases.compactMap { $0["publicModelSlot"] as? String }, ["sessionSummary", "exerciseSummary", "route", "route", "routeAdvanced", "routeAdvanced", "samples", "samples", "samplesAdvanced"], "payload-parser-policy")
-        XCTAssertEqual(commonParserPrototype["status"] as? String, "executable shared parser-policy coverage; gzip decoding is shared and protobuf parsing remains gated on common protobuf dependencies", "payload-parser-policy")
+        XCTAssertEqual(commonParserPrototype["status"] as? String, "executable shared parser-policy coverage; gzip decoding and selected protobuf field parsing are shared while generated public model reconstruction remains platform-owned", "payload-parser-policy")
         XCTAssertEqual(expected["commonDecision"] as? String, TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION, "payload-parser-policy")
         XCTAssertEqual(consumerTests["android"] as? [String], ["com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"], "payload-parser-policy")
         XCTAssertEqual(consumerTests["ios"] as? [String], ["PolarTrainingSessionUtilsTest"], "payload-parser-policy")
@@ -401,6 +401,47 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         )
 
         XCTAssertTrue(result.hasPrefix("5|5|100|SAMPLES.BPB|P|0|0|0"), result)
+    }
+
+    func testTrainingSessionReconstructionPlanPreservesIosGeneratedPublicModelFieldsWhenLinked() throws {
+        let referenceText = [
+            "R|2026-01-02T12:34:56|/U/0/20260102/E/123456/TSESS.BPB|TRAINING_SESSION_SUMMARY|12",
+            "E|0|/U/0/20260102/E/123456/00/BASE.BPB|/U/0/20260102/E/123456/00|SAMPLES|SAMPLES.BPB:2"
+        ].joined(separator: "\n")
+        let sessionPayload = try Data_PbTrainingSession.with {
+            $0.start = fixtureLocalDateTime()
+            $0.exerciseCount = 1
+            $0.deviceID = "ios-public-device"
+            $0.calories = 88
+        }.serializedData()
+        let samplesPayload = try Data_PbExerciseSamples.with {
+            $0.recordingInterval = PbDuration.with { $0.seconds = 1 }
+            $0.heartRateSamples = [120, 121]
+        }.serializedData()
+        let plan = PolarRuntimePlanner.trainingSessionPayloadReconstructionPlan(
+            referenceText: referenceText,
+            responses: [
+                (path: "/U/0/20260102/E/123456/TSESS.BPB", fileName: "TSESS.BPB", payload: sessionPayload),
+                (path: "/U/0/20260102/E/123456/00/SAMPLES.BPB", fileName: "SAMPLES.BPB", payload: samplesPayload)
+            ],
+            fetchOrder: [
+                "/U/0/20260102/E/123456/TSESS.BPB",
+                "/U/0/20260102/E/123456/00/SAMPLES.BPB"
+            ]
+        )
+        let rows = plan.split(separator: "\n").map(String.init)
+        let summaryRow: String = try XCTUnwrap(rows.first(where: { $0.hasPrefix("S|") }))
+        let samplesRow: String = try XCTUnwrap(rows.first(where: { $0.hasPrefix("P|0|") }))
+        let summaryFields = summaryRow.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+        let samplesFields = samplesRow.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+        let sessionSummary = try Data_PbTrainingSession(serializedBytes: try data(hex: summaryFields[4]))
+        let samples = try Data_PbExerciseSamples(serializedBytes: try data(hex: samplesFields[5]))
+
+        XCTAssertEqual(summaryFields[2], "sessionSummary")
+        XCTAssertEqual(sessionSummary.deviceID, "ios-public-device")
+        XCTAssertEqual(sessionSummary.calories, 88)
+        XCTAssertEqual(samplesFields[3], "samples")
+        XCTAssertEqual(samples.heartRateSamples, [120, 121])
     }
 
     func testTrainingSessionReadinessManifestIsPinnedBeforeMigration() throws {
@@ -879,4 +920,4 @@ private let TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS = [
     "samples-advanced-gzip-protobuf"
 ]
 
-private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Before moving byte-level training payload parsing fully to common code, add production common protobuf dependencies that can execute these parser cases against real bytes; gzip decompression and public-model slot planning are now shared KMP production code, and until protobuf parsing moves this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Selected training payload protobuf field parsing now executes in shared KMP for these parser cases; generated public protobuf object construction remains platform-owned while neutral reconstruction planning maps decoded payload bytes to Android and iOS adapters. Gzip decompression and public-model slot planning are shared KMP production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."

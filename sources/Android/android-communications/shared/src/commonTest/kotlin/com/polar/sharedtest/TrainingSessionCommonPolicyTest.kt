@@ -106,11 +106,25 @@ class TrainingSessionCommonPolicyTest {
         assertEquals(expectedExercise.intArrayValue("samplesAdvancedHeartRate"), actualExercise.samplesAdvancedHeartRate, vector.stringValue("id"))
         assertEquals(expectedExercise.intValue("unknownAdvancedSampleListsIgnored"), actualExercise.unknownAdvancedSampleListsIgnored, vector.stringValue("id"))
         assertEquals(expectedExercise.stringArrayValue("malformedFilesIgnored"), actualExercise.malformedFilesIgnored, vector.stringValue("id"))
+        val reconstructionPlan = PolarTrainingSessionModels.assemblePayloadReconstructionPlan(
+            reference = sharedReference,
+            decodedPayloadsByPath = syntheticDecodedPayloadsByPath(),
+            fetchOrder = fetchOrder
+        )
+        val expectedReconstructionPlan = expected.objectArray("reconstructionPlan")
+        val actualReconstructionEntries = listOfNotNull(reconstructionPlan.sessionSummary) + reconstructionPlan.exercises.flatMap { it.entries }
+        assertEquals(expectedReconstructionPlan.map { it.stringValue("publicModelSlot") }, actualReconstructionEntries.map { it.publicModelSlot }, vector.stringValue("id"))
+        assertEquals(expectedReconstructionPlan.map { it.optionalIntValue("exerciseIndex") }, actualReconstructionEntries.map { it.exerciseIndex }, vector.stringValue("id"))
+        assertEquals(expectedReconstructionPlan.map { it.stringValue("fileName") }, actualReconstructionEntries.map { it.fileName }, vector.stringValue("id"))
+        assertEquals(listOf("ROUTE2.GZB", "SAMPLES.GZB"), reconstructionPlan.exercises.single().malformedFilesIgnored, vector.stringValue("id"))
+        assertEquals("Polar 360", PolarTrainingSessionModels.parseDecodedPayloadResponse("TSESS.BPB", reconstructionPlan.sessionSummary!!.decodedPayload).payload.modelName, vector.stringValue("id"))
+        assertEquals(listOf(120, 125, 130), PolarTrainingSessionModels.parseDecodedPayloadResponse("SAMPLES.BPB", reconstructionPlan.exercises.single().entries.first { it.publicModelSlot == "samples" }.decodedPayload).payload.heartRateSamples, vector.stringValue("id"))
         val commonDecision = vector.objectValue("platformExpectations").objectValue("commonDecision")
         assertEquals("compute-progress-from-reference-file-sizes-and-last-completed-file", commonDecision.stringValue("progressPolicy"), vector.stringValue("id"))
         assertEquals("omit-only-the-malformed-component-and-continue-reading-remaining-files", commonDecision.stringValue("malformedPayloadPolicy"), vector.stringValue("id"))
         assertEquals("ignore-unknown-advanced-sample-lists-and-preserve-known-samples", commonDecision.stringValue("unknownSampleListPolicy"), vector.stringValue("id"))
         assertEquals("shared-plan-selects-generated-model-slots-while-platforms-build-public-protobuf-objects", commonDecision.stringValue("publicModelReadPlanPolicy"), vector.stringValue("id"))
+        assertEquals("shared-neutral-reconstruction-plan-selects-decoded-payload-bytes-for-platform-generated-model-adapters", commonDecision.stringValue("publicModelReconstructionPlanPolicy"), vector.stringValue("id"))
     }
 
     @Test
@@ -173,7 +187,7 @@ class TrainingSessionCommonPolicyTest {
 
         assertEquals("selected-common-protobuf-field-parser-active-before-generated-model-reconstruction", commonDecision.stringValue("byteLevelParserGate"), vector.stringValue("id"))
         assertEquals("selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred", commonDecision.stringValue("byteLevelPayloadStatus"), vector.stringValue("id"))
-        assertEquals("This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, and unknown advanced sample-list handling. payload-parser-policy.json now pins parser-family ownership; gzip payload decompression, selected protobuf field parsing, malformed payload isolation, and deterministic public-model read planning are owned by shared KMP, while generated public protobuf object reconstruction remains platform-owned until a broader shared DTO strategy is added.", vector.stringValue("notes"), vector.stringValue("id"))
+        assertEquals("This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, unknown advanced sample-list handling, and decoded-payload reconstruction-slot planning. payload-parser-policy.json now pins parser-family ownership; gzip payload decompression, selected protobuf field parsing, malformed payload isolation, deterministic public-model read planning, and neutral reconstruction planning are owned by shared KMP, while generated public protobuf object reconstruction remains platform-owned in Android and iOS adapters.", vector.stringValue("notes"), vector.stringValue("id"))
     }
 
     @Test
@@ -201,9 +215,9 @@ class TrainingSessionCommonPolicyTest {
         assertEquals(requiredPayloadParserCaseIds, parserCases.map { parserCase -> parserCase.id }, vector.stringValue("id"))
         assertEquals(requiredPayloadParserCaseIds, expectedCaseList.map { testCase -> testCase.stringValue("id") }, vector.stringValue("id"))
         assertEquals("executable shared parser-policy coverage; gzip decoding and selected protobuf field parsing are shared while generated public model reconstruction remains platform-owned", commonParserPrototype.stringValue("status"), vector.stringValue("id"))
-        assertEquals("Selected training payload protobuf field parsing now executes in shared KMP for these parser cases; generated public protobuf object construction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered. Gzip decompression and public-model slot planning are shared KMP production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests.", expected.stringValue("commonDecision"), vector.stringValue("id"))
+        assertEquals("Selected training payload protobuf field parsing now executes in shared KMP for these parser cases; generated public protobuf object construction remains platform-owned while neutral reconstruction planning maps decoded payload bytes to Android and iOS adapters. Gzip decompression and public-model slot planning are shared KMP production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests.", expected.stringValue("commonDecision"), vector.stringValue("id"))
         assertEquals("This vector converts the existing platform byte-level protobuf coverage into an executable shared selected-field parser policy, while gzip payload decoding and public-model slot planning are already shared production code.", vector.stringValue("commonDecision"), vector.stringValue("id"))
-        assertEquals("The Android and iOS tests construct real protobuf payloads for these parser families. Shared KMP production now parses selected summary, exercise, route, and sample fields with the portable training protobuf reader, while platform adapters still build the generated public protobuf models until a broader shared DTO/reconstruction strategy is added.", vector.stringValue("notes"), vector.stringValue("id"))
+        assertEquals("The Android and iOS tests construct real protobuf payloads for these parser families. Shared KMP production now parses selected summary, exercise, route, and sample fields with the portable training protobuf reader and plans neutral reconstruction slots, while platform adapters still build the generated public protobuf models.", vector.stringValue("notes"), vector.stringValue("id"))
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarTrainingSessionUtilsTest"), vector.objectValue("consumerTests").stringArrayValue("android"), vector.stringValue("id"))
         assertEquals(listOf("PolarTrainingSessionUtilsTest"), vector.objectValue("consumerTests").stringArrayValue("ios"), vector.stringValue("id"))
         assertEquals(listOf("com.polar.sharedtest.TrainingSessionCommonPolicyTest"), vector.objectValue("consumerTests").stringArrayValue("commonPrototype"), vector.stringValue("id"))
@@ -360,6 +374,51 @@ class TrainingSessionCommonPolicyTest {
     }
 
     @Test
+    fun trainingSessionNeutralDtoKeepsMissingOptionalFieldsOutOfCommonPublicModelConstruction() {
+        val reference = payloadReference(
+            """
+            {
+              "date": "2025-01-01",
+              "path": "/U/0/20250101/E/101200/TSESS.BPB",
+              "trainingDataTypes": ["TRAINING_SESSION_SUMMARY"],
+              "exercises": [
+                {
+                  "index": 0,
+                  "androidPath": "/U/0/20250101/E/101200/00/BASE.BPB",
+                  "iosPath": "/U/0/20250101/E/101200/00",
+                  "exerciseDataTypes": ["EXERCISE_SUMMARY"],
+                  "fileSizes": {"BASE.BPB": 2}
+                }
+              ],
+              "fileSize": 4
+            }
+            """.trimIndent()
+        )
+        val summaryPayload = protobufBytes {}
+        val exercisePayload = protobufBytes {}
+        val decodedPayloads = mapOf(
+            reference.path to summaryPayload,
+            "/U/0/20250101/E/101200/00/BASE.BPB" to exercisePayload
+        )
+
+        val summaryResponse = PolarTrainingSessionModels.parseDecodedPayloadResponse("TSESS.BPB", summaryPayload)
+        val exerciseResponse = PolarTrainingSessionModels.parseDecodedPayloadResponse("BASE.BPB", exercisePayload)
+        val plan = PolarTrainingSessionModels.assemblePayloadReconstructionPlan(reference, decodedPayloads, decodedPayloads.keys.toList())
+
+        assertEquals("trainingSessionSummary", summaryResponse.kind)
+        assertEquals(null, summaryResponse.payload.modelName)
+        assertEquals(null, summaryResponse.payload.durationSeconds)
+        assertEquals(false, summaryResponse.malformed)
+        assertEquals("exerciseSummary", exerciseResponse.kind)
+        assertEquals(null, exerciseResponse.payload.startHour)
+        assertEquals(null, exerciseResponse.payload.sport)
+        assertEquals(false, exerciseResponse.malformed)
+        assertEquals(summaryPayload.toHexString(), plan.sessionSummary?.decodedPayload?.toHexString())
+        assertEquals(listOf("exerciseSummary"), plan.exercises.single().entries.map { entry -> entry.publicModelSlot })
+        assertEquals(exercisePayload.toHexString(), plan.exercises.single().entries.single().decodedPayload.toHexString())
+    }
+
+    @Test
     fun trainingSessionReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
         val vector = loadGoldenVectorText("sdk/training-session/training-session-readiness.json")
         val input = vector.objectValue("input")
@@ -429,6 +488,52 @@ class TrainingSessionCommonPolicyTest {
                 )
             )
         }
+    }
+
+    private fun syntheticDecodedPayloadsByPath(): Map<String, ByteArray> {
+        return mapOf(
+            "/U/0/20250101/E/101200/TSESS.BPB" to protobufBytes {
+                stringField(4, "Polar 360")
+                messageField(5) {
+                    varintField(1, 1)
+                }
+                fixed32Field(6, 12.0f.toBits())
+                varintField(7, 400)
+            },
+            "/U/0/20250101/E/101200/00/BASE.BPB" to protobufBytes {
+                messageField(3) {
+                    varintField(1, 3)
+                }
+            },
+            "/U/0/20250101/E/101200/00/ROUTE.BPB" to protobufBytes {
+                fixed64Field(2, 60.0.toBits())
+                fixed64Field(3, 24.0.toBits())
+            },
+            "/U/0/20250101/E/101200/00/ROUTE.GZB" to protobufBytes {
+                fixed64Field(2, 60.0.toBits())
+                fixed64Field(3, 24.0.toBits())
+            },
+            "/U/0/20250101/E/101200/00/ROUTE2.BPB" to protobufBytes {
+                messageField(1) {
+                    varintField(1, 0)
+                    messageField(2) {
+                        fixed64Field(1, 61.0.toBits())
+                        fixed64Field(2, 25.0.toBits())
+                    }
+                }
+            },
+            "/U/0/20250101/E/101200/00/ROUTE2.GZB" to byteArrayOf(((1 shl 3) or 2).toByte(), 5, 0x01),
+            "/U/0/20250101/E/101200/00/SAMPLES.BPB" to protobufBytes {
+                packedVarintField(2, listOf(120, 125, 130))
+            },
+            "/U/0/20250101/E/101200/00/SAMPLES.GZB" to byteArrayOf(((2 shl 3) or 2).toByte(), 5, 0x01),
+            "/U/0/20250101/E/101200/00/SAMPLES2.GZB" to protobufBytes {
+                messageField(1) {
+                    varintField(1, 1)
+                    packedVarintField(5, listOf(zigZag32(131), zigZag32(132), zigZag32(133)))
+                }
+            }
+        )
     }
 
     private fun directoryEntries(directories: String, path: String): List<DirectoryEntry> {

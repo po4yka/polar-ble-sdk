@@ -462,6 +462,35 @@ object PolarIosSharedBridge {
         }.getOrDefault("")
     }
 
+    fun trainingSessionPayloadReconstructionPlan(referenceText: String, responsesText: String, fetchOrderText: String): String {
+        val reference = trainingSessionReference(referenceText) ?: return ""
+        val decodedPayloadsByPath = responsesText.lines()
+            .filter { line -> line.isNotEmpty() }
+            .mapNotNull { line ->
+                val fields = line.split('|')
+                if (fields.size != 3) return@mapNotNull null
+                val payload = runCatching { fields[2].hexToBytes() }.getOrNull() ?: return@mapNotNull null
+                fields[0] to payload
+            }.toMap()
+        val fetchOrder = fetchOrderText.lines().filter { line -> line.isNotEmpty() }.ifEmpty { PolarTrainingSessionModels.payloadFetchOrder(reference) }
+        return runCatching {
+            val plan = PolarTrainingSessionModels.assemblePayloadReconstructionPlan(reference, decodedPayloadsByPath, fetchOrder)
+            val rows = mutableListOf<String>()
+            plan.sessionSummary?.let { entry ->
+                rows += listOf("S", entry.fileName, entry.publicModelSlot, entry.path, entry.decodedPayload.toHex()).joinToString("|")
+            }
+            plan.exercises.forEach { exercise ->
+                exercise.entries.forEach { entry ->
+                    rows += listOf("P", exercise.index.toString(), entry.fileName, entry.publicModelSlot, entry.path, entry.decodedPayload.toHex()).joinToString("|")
+                }
+                if (exercise.malformedFilesIgnored.isNotEmpty()) {
+                    rows += listOf("M", exercise.index.toString(), exercise.malformedFilesIgnored.joinToString(";")).joinToString("|")
+                }
+            }
+            rows.joinToString("\n")
+        }.getOrDefault("")
+    }
+
     fun trainingSessionDeleteParentPath(referencePath: String): String {
         return PolarTrainingSessionModels.deleteParentPath(referencePath)
     }

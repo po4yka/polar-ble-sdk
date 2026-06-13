@@ -6,6 +6,30 @@ import Foundation
 import PolarBleSdkShared
 #endif
 
+#if POLAR_KMP_SHARED_REQUIRED
+#if !canImport(PolarBleSdkShared)
+#error("POLAR_KMP_SHARED_REQUIRED builds must link PolarBleSdkShared; SwiftPM/watchOS fallback builds must not define this condition.")
+#endif
+#endif
+
+enum PolarSharedFrameworkLinkGuard {
+    static var isSharedFrameworkRequired: Bool {
+        #if POLAR_KMP_SHARED_REQUIRED
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    static var isSharedFrameworkLinked: Bool {
+        #if canImport(PolarBleSdkShared)
+        return true
+        #else
+        return false
+        #endif
+    }
+}
+
 enum PolarRuntimePlanner {
     @discardableResult
     static func commandQuery(id: String, query: String, parameters: [String] = []) -> String {
@@ -522,6 +546,21 @@ enum PolarRuntimePlanner {
             .map { response in "\(response.path)|\(response.fileName)|\(response.payload.hexString())" }
             .joined(separator: "\n")
         return PolarIosSharedBridge.shared.trainingSessionPayloadReadResult(
+            referenceText: referenceText,
+            responsesText: responsesText,
+            fetchOrderText: fetchOrder.joined(separator: "\n")
+        )
+        #else
+        return ""
+        #endif
+    }
+
+    static func trainingSessionPayloadReconstructionPlan(referenceText: String, responses: [(path: String, fileName: String, payload: Data)], fetchOrder: [String]) -> String {
+        #if canImport(PolarBleSdkShared)
+        let responsesText = responses
+            .map { response in "\(response.path)|\(response.fileName)|\(response.payload.hexString())" }
+            .joined(separator: "\n")
+        return PolarIosSharedBridge.shared.trainingSessionPayloadReconstructionPlan(
             referenceText: referenceText,
             responsesText: responsesText,
             fetchOrderText: fetchOrder.joined(separator: "\n")

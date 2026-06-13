@@ -2335,7 +2335,7 @@ class GoldenVectorMigrationPolicyTest {
             .toList()
 
         assertTrue(
-            "Shared common training-session code may parse selected protobuf fields, but generated public protobuf object reconstruction must stay platform-owned until the DTO/reconstruction strategy is explicit: $violations",
+            "Shared common training-session code may parse selected protobuf fields and plan neutral reconstruction slots, but generated public protobuf object construction must stay platform-owned: $violations",
             violations.isEmpty()
         )
     }
@@ -4040,7 +4040,7 @@ class GoldenVectorMigrationPolicyTest {
             "## Current Shared-Policy State",
             "runtime-pinned Android/iOS facade compatibility evidence in `KmpFakeTransportTestPlan.md`",
             "New runtime/facade work should add operation-specific Android facade tests, iOS facade tests, and shared fake-transport tests only when a later production delegation slice introduces a new operation family",
-            "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
+            "neutral reconstruction-slot planning is shared while generated public protobuf object construction remains platform-owned",
             "BLE/session/GATT host behavior stays platform-owned unless a later slice defines a pure codec or deterministic state-machine contract"
         )
         val STALE_SHARED_POLICY_BACKLOG_TERMS = listOf(
@@ -4430,7 +4430,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = mapOf(
             "KmpFullCoverageTddBacklog.md" to listOf(
-                "generated public protobuf object reconstruction still needs a broader shared DTO/reconstruction strategy",
+                "neutral reconstruction-slot planning is shared while generated public protobuf object construction remains platform-owned",
                 "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
                 "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
                 "shared-common-aes-production-decryption",
@@ -4489,7 +4489,7 @@ class GoldenVectorMigrationPolicyTest {
                 "shared selected protobuf field parsing",
                 "shared public-model read planning",
                 "generated public protobuf construction boundaries",
-                "generated public protobuf model reconstruction remains platform-owned until a broader shared DTO/reconstruction strategy is added and covered"
+                "generated public protobuf model construction remains platform-owned in Android and iOS adapters"
             ),
             "secret-readiness.json" to listOf(
                 "AES block-alignment gating",

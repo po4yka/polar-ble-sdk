@@ -283,6 +283,46 @@ object PolarTrainingSessionModels {
         )
     }
 
+    fun assemblePayloadReconstructionPlan(reference: PolarTrainingSessionReference, decodedPayloadsByPath: Map<String, ByteArray>, fetchOrder: List<String> = payloadFetchOrder(reference)): PolarTrainingPayloadReconstructionPlan {
+        val readPlanByPath = payloadReadPlan(reference).associateBy { entry -> entry.path }
+        val exercises = reference.exercises.associate { exercise ->
+            exercise.index to MutableTrainingPayloadReconstructionExercise(index = exercise.index)
+        }.toMutableMap()
+        var sessionSummary: PolarTrainingPayloadReconstructionEntry? = null
+        fetchOrder.forEach { path ->
+            val decodedPayload = decodedPayloadsByPath[path] ?: return@forEach
+            val readPlan = readPlanByPath[path] ?: return@forEach
+            val response = parseDecodedPayloadResponse(readPlan.fileName, decodedPayload)
+            if (response.malformed) {
+                readPlan.exerciseIndex?.let { index -> exercises.getValue(index).malformedFilesIgnored += readPlan.fileName }
+                return@forEach
+            }
+            val entry = PolarTrainingPayloadReconstructionEntry(
+                path = path,
+                fileName = readPlan.fileName,
+                publicModelSlot = readPlan.publicModelSlot,
+                exerciseIndex = readPlan.exerciseIndex,
+                decodedPayload = decodedPayload
+            )
+            val exerciseIndex = readPlan.exerciseIndex
+            if (exerciseIndex == null && readPlan.publicModelSlot == "sessionSummary") {
+                sessionSummary = entry
+            } else if (exerciseIndex != null) {
+                exercises.getValue(exerciseIndex).entries += entry
+            }
+        }
+        return PolarTrainingPayloadReconstructionPlan(
+            sessionSummary = sessionSummary,
+            exercises = exercises.values.map { exercise ->
+                PolarTrainingPayloadReconstructionExercise(
+                    index = exercise.index,
+                    entries = exercise.entries,
+                    malformedFilesIgnored = exercise.malformedFilesIgnored
+                )
+            }
+        )
+    }
+
     private fun formatDateTime(date: String, time: String): String {
         return "${formatDate(date)}T${time.substring(0, 2)}:${time.substring(2, 4)}:${time.substring(4, 6)}"
     }
@@ -675,6 +715,25 @@ data class PolarTrainingPayloadExercise(
     val malformedFilesIgnored: List<String>
 )
 
+data class PolarTrainingPayloadReconstructionPlan(
+    val sessionSummary: PolarTrainingPayloadReconstructionEntry?,
+    val exercises: List<PolarTrainingPayloadReconstructionExercise>
+)
+
+data class PolarTrainingPayloadReconstructionExercise(
+    val index: Int,
+    val entries: List<PolarTrainingPayloadReconstructionEntry>,
+    val malformedFilesIgnored: List<String>
+)
+
+data class PolarTrainingPayloadReconstructionEntry(
+    val path: String,
+    val fileName: String,
+    val publicModelSlot: String,
+    val exerciseIndex: Int?,
+    val decodedPayload: ByteArray
+)
+
 private data class MutableTrainingPayloadReadResult(
     var totalBytes: Int = 0,
     var completedBytes: Int = 0,
@@ -694,5 +753,11 @@ private data class MutableTrainingPayloadExercise(
     var samplesHeartRate: List<Int> = emptyList(),
     var samplesAdvancedHeartRate: List<Int> = emptyList(),
     var unknownAdvancedSampleListsIgnored: Int = 0,
+    var malformedFilesIgnored: List<String> = emptyList()
+)
+
+private data class MutableTrainingPayloadReconstructionExercise(
+    val index: Int,
+    var entries: List<PolarTrainingPayloadReconstructionEntry> = emptyList(),
     var malformedFilesIgnored: List<String> = emptyList()
 )
