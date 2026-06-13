@@ -2602,6 +2602,8 @@ class GoldenVectorMigrationPolicyTest {
                 "swift package describe",
                 "PolarBleSdkShared",
                 "binaryTarget",
+                "fallback-mode",
+                "--manifest-cache none",
                 "xcodebuild",
                 "watchos"
             ).filterNot { term -> spmXcframeworkValidationText.contains(term) }
