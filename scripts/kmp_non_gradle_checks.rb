@@ -2824,6 +2824,8 @@ else
     "swift package describe",
     "PolarBleSdkShared",
     "binaryTarget",
+    "fallback-mode",
+    "--manifest-cache none",
     "xcodebuild",
     "watchos"
   ].each do |term|
