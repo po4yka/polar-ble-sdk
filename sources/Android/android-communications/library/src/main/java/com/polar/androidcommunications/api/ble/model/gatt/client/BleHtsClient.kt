@@ -6,14 +6,12 @@ import com.polar.androidcommunications.api.ble.model.gatt.BleGattBase
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattTxInterface
 import com.polar.androidcommunications.common.ble.AtomicSet
 import com.polar.androidcommunications.common.ble.ChannelUtils
+import com.polar.shared.ble.PolarGattHtsCodec
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
-import java.nio.ByteBuffer
 import java.util.*
-import kotlin.math.pow
-import kotlin.math.roundToInt
 
 class HealthThermometer {
     companion object {
@@ -58,20 +56,9 @@ class BleHtsClient(txInterface: BleGattTxInterface) :
                     TAG,
                     "TEMPERATURE_MEASUREMENT ${data.let { BleLogger.byteArrayToHex(it) }}"
                 )
-                val flags = data[0].toInt() and 0xFF
-                val isFahrenheit = (flags and 0x01) != 0
-                val exponent = data[4].toInt()
-                val mantissaBytes = byteArrayOf(0x00) + data.sliceArray(1..3).reversedArray()
-                val mantissa = ByteBuffer.wrap(mantissaBytes).int
-                val temperature = ((mantissa * 10.toFloat()
-                    .pow(exponent) * TEMP_ACCURACY).roundToInt() / TEMP_ACCURACY.toFloat())
-
-                val celsius =
-                    if (!isFahrenheit) temperature else (temperature - 32.0f) * 5.0f / 9.0f
-                val fahrenheit =
-                    if (isFahrenheit) temperature else temperature * 9.0f / 5.0f + 32.0f
+                val measurement = PolarGattHtsCodec.parseTemperatureMeasurement(data)
                 ChannelUtils.emitNext(htsObserverAtomicList) { observer ->
-                    observer.trySend(TemperatureMeasurement(celsius, fahrenheit))
+                    observer.trySend(TemperatureMeasurement(measurement.temperatureCelsius, measurement.temperatureFahrenheit))
                 }
             }
             if (characteristic == HealthThermometer.TEMPERATURE_TYPE) {

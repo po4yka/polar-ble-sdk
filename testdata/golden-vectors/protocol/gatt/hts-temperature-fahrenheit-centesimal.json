@@ -1,0 +1,33 @@
+{
+  "id": "hts-temperature-fahrenheit-centesimal",
+  "area": "gatt-hts",
+  "case": "temperature_fahrenheit_centesimal",
+  "source": "characterization of the HTS temperature unit flag and centesimal exponent used by Android and iOS clients",
+  "input": {
+    "payloadHex": "01842600fe"
+  },
+  "expected": {
+    "temperatureCelsius": 37.0,
+    "temperatureFahrenheit": 98.6,
+    "isFahrenheit": true,
+    "exponent": -2,
+    "mantissa": 9860
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleHtsClientTest"
+    ],
+    "ios": [
+      "BleHtsClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.HtsGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector covers only deterministic HTS payload parsing and unit conversion; BLE/session/GATT host behavior remains adapter-owned."
+}

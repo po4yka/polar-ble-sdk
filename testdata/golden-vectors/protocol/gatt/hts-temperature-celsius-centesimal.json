@@ -1,0 +1,33 @@
+{
+  "id": "hts-temperature-celsius-centesimal",
+  "area": "gatt-hts",
+  "case": "temperature_celsius_centesimal",
+  "source": "characterization from Android BleHtsClientTest and iOS BleHtsClientTest temperature measurement payload",
+  "input": {
+    "payloadHex": "00a00a00fe"
+  },
+  "expected": {
+    "temperatureCelsius": 27.2,
+    "temperatureFahrenheit": 80.96,
+    "isFahrenheit": false,
+    "exponent": -2,
+    "mantissa": 2720
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.BleHtsClientTest"
+    ],
+    "ios": [
+      "BleHtsClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.HtsGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "HTS temperature measurement parsing is a pure byte-level codec. GATT client lifecycle, notifications, transport execution, and error mapping stay platform-owned."
+}
