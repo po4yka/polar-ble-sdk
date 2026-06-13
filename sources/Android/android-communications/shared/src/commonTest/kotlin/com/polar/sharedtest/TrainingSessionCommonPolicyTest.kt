@@ -374,6 +374,51 @@ class TrainingSessionCommonPolicyTest {
     }
 
     @Test
+    fun trainingSessionNeutralDtoKeepsMissingOptionalFieldsOutOfCommonPublicModelConstruction() {
+        val reference = payloadReference(
+            """
+            {
+              "date": "2025-01-01",
+              "path": "/U/0/20250101/E/101200/TSESS.BPB",
+              "trainingDataTypes": ["TRAINING_SESSION_SUMMARY"],
+              "exercises": [
+                {
+                  "index": 0,
+                  "androidPath": "/U/0/20250101/E/101200/00/BASE.BPB",
+                  "iosPath": "/U/0/20250101/E/101200/00",
+                  "exerciseDataTypes": ["EXERCISE_SUMMARY"],
+                  "fileSizes": {"BASE.BPB": 2}
+                }
+              ],
+              "fileSize": 4
+            }
+            """.trimIndent()
+        )
+        val summaryPayload = protobufBytes {}
+        val exercisePayload = protobufBytes {}
+        val decodedPayloads = mapOf(
+            reference.path to summaryPayload,
+            "/U/0/20250101/E/101200/00/BASE.BPB" to exercisePayload
+        )
+
+        val summaryResponse = PolarTrainingSessionModels.parseDecodedPayloadResponse("TSESS.BPB", summaryPayload)
+        val exerciseResponse = PolarTrainingSessionModels.parseDecodedPayloadResponse("BASE.BPB", exercisePayload)
+        val plan = PolarTrainingSessionModels.assemblePayloadReconstructionPlan(reference, decodedPayloads, decodedPayloads.keys.toList())
+
+        assertEquals("trainingSessionSummary", summaryResponse.kind)
+        assertEquals(null, summaryResponse.payload.modelName)
+        assertEquals(null, summaryResponse.payload.durationSeconds)
+        assertEquals(false, summaryResponse.malformed)
+        assertEquals("exerciseSummary", exerciseResponse.kind)
+        assertEquals(null, exerciseResponse.payload.startHour)
+        assertEquals(null, exerciseResponse.payload.sport)
+        assertEquals(false, exerciseResponse.malformed)
+        assertEquals(summaryPayload.toHexString(), plan.sessionSummary?.decodedPayload?.toHexString())
+        assertEquals(listOf("exerciseSummary"), plan.exercises.single().entries.map { entry -> entry.publicModelSlot })
+        assertEquals(exercisePayload.toHexString(), plan.exercises.single().entries.single().decodedPayload.toHexString())
+    }
+
+    @Test
     fun trainingSessionReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
         val vector = loadGoldenVectorText("sdk/training-session/training-session-readiness.json")
         val input = vector.objectValue("input")

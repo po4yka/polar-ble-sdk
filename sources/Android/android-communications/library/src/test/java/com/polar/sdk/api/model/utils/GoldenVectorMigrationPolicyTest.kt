@@ -2335,7 +2335,7 @@ class GoldenVectorMigrationPolicyTest {
             .toList()
 
         assertTrue(
-            "Shared common training-session code may parse selected protobuf fields, but generated public protobuf object reconstruction must stay platform-owned until the DTO/reconstruction strategy is explicit: $violations",
+            "Shared common training-session code may parse selected protobuf fields and plan neutral reconstruction slots, but generated public protobuf object construction must stay platform-owned: $violations",
             violations.isEmpty()
         )
     }
@@ -2573,8 +2573,8 @@ class GoldenVectorMigrationPolicyTest {
         if (!sharedBuild.contains("baseName = 'PolarBleSdkShared'") || !sharedBuild.contains("isStatic = true")) {
             violations += "shared/build.gradle must define the static PolarBleSdkShared framework artifact"
         }
-        if (!sharedBuild.contains("maven-publish") || !sharedBuild.contains("polar-ble-sdk-shared") || !sharedBuild.contains("PolarSharedLocal")) {
-            violations += "shared/build.gradle must define shared Gradle metadata publication for temporary local repository validation"
+        if (!sharedBuild.contains("maven-publish") || !sharedBuild.contains("localKmpReleaseValidation") || !sharedBuild.contains("local-maven-validation")) {
+            violations += "shared/build.gradle must define shared Gradle metadata validation for temporary local repository validation"
         }
         if (packageSwift.contains("PolarBleSdkShared") && (!packageSwift.contains(".binaryTarget") || !packageSwift.contains("PolarBleSdkShared.xcframework"))) {
             violations += "Package.swift must use an explicit PolarBleSdkShared.xcframework binaryTarget for SwiftPM shared consumption"
@@ -2610,11 +2610,11 @@ class GoldenVectorMigrationPolicyTest {
         if (!validationCommands.contains(":shared:bundleAndroidMainAar") || !validationCommands.contains(":shared:linkDebugFrameworkIosX64") || !validationCommands.contains("package_kmp_xcframework.sh --dry-run")) {
             violations += "KmpValidationCommands.md must document shared artifact smoke gates"
         }
-        if (!validationCommands.contains("scripts/verify_android_shared_maven_publication.sh")) {
-            violations += "KmpValidationCommands.md must document shared Maven publication validation"
+        if (!validationCommands.contains("scripts/verify_android_shared_maven_metadata.sh")) {
+            violations += "KmpValidationCommands.md must document shared Maven metadata validation"
         }
-        if (!root.resolve("scripts/verify_android_shared_maven_publication.sh").let { it.isFile && it.canExecute() }) {
-            violations += "verify_android_shared_maven_publication.sh must exist and be executable"
+        if (!root.resolve("scripts/verify_android_shared_maven_metadata.sh").let { it.isFile && it.canExecute() }) {
+            violations += "verify_android_shared_maven_metadata.sh must exist and be executable"
         }
         if (!completedItems.contains("Document how shared artifacts are consumed by Android and iOS modules")) {
             violations += "KmpMigrationChecklist.md must mark shared artifact consumption documentation complete"
@@ -4020,12 +4020,14 @@ class GoldenVectorMigrationPolicyTest {
             ":shared:linkDebugFrameworkIosX64",
             "may depend on shared code only when a behavior slice",
             "scripts/verify_android_example_aar_consumption.sh",
+            "scripts/verify_android_shared_maven_metadata.sh",
+            "scripts/verify_release_packaging_policy.rb",
             "polar-ble-sdk-shared.aar",
             "two-AAR compatibility model",
-            "Gradle module metadata",
-            "artifact-only",
-            "scripts/verify_android_shared_maven_publication.sh",
-            "temporary local repository",
+            "shared local Maven metadata validation",
+            "CI/release remains artifact-only",
+            "No Maven, CocoaPods, or SwiftPM publication is claimed",
+            "required secrets are intentionally absent",
             "SwiftPM/watchOS",
             "fallback-only",
             "PolarBleSdkShared.xcframework",
@@ -4056,7 +4058,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val PLATFORM_OWNED_COVERAGE_ROWS = mapOf(
             "BLE device session lifecycle" to listOf("Partial", "platform-owned", "Keep platform-specific"),
-            "GATT clients" to listOf("Partial", "platform-owned", "Keep transport clients platform-specific"),
+            "GATT clients" to listOf("Partial", "platform-owned", "Keep transport clients platform-specific", "HTS temperature measurement byte codec is shared common-owned while notification lifecycle stays platform-owned"),
             "Android Bluedroid host behavior" to listOf("Platform-specific", "Do not migrate to common code"),
             "iOS CoreBluetooth host behavior" to listOf("Platform-specific", "Do not migrate to common code")
         )
@@ -4119,7 +4121,7 @@ class GoldenVectorMigrationPolicyTest {
             "## Current Shared-Policy State",
             "runtime-pinned Android/iOS facade compatibility evidence in `KmpFakeTransportTestPlan.md`",
             "New runtime/facade work should add operation-specific Android facade tests, iOS facade tests, and shared fake-transport tests only when a later production delegation slice introduces a new operation family",
-            "training-session neutral reconstruction planning now exists while generated public protobuf object construction remains platform-owned",
+            "neutral reconstruction-slot planning is shared while generated public protobuf object construction remains platform-owned",
             "BLE/session/GATT host behavior stays platform-owned unless a later slice defines a pure codec or deterministic state-machine contract"
         )
         val STALE_SHARED_POLICY_BACKLOG_TERMS = listOf(
@@ -4510,7 +4512,7 @@ class GoldenVectorMigrationPolicyTest {
         )
         val BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = mapOf(
             "KmpFullCoverageTddBacklog.md" to listOf(
-                "training-session neutral reconstruction planning now exists while generated public protobuf object construction remains platform-owned",
+                "neutral reconstruction-slot planning is shared while generated public protobuf object construction remains platform-owned",
                 "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
                 "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
                 "shared-common-aes-production-decryption",
@@ -4571,7 +4573,7 @@ class GoldenVectorMigrationPolicyTest {
                 "shared selected protobuf field parsing",
                 "shared public-model read planning",
                 "generated public protobuf construction boundaries",
-                "generated public protobuf model construction remains platform-owned"
+                "generated public protobuf model construction remains platform-owned in Android and iOS adapters"
             ),
             "secret-readiness.json" to listOf(
                 "AES block-alignment gating",

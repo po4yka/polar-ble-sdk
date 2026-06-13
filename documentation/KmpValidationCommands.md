@@ -85,10 +85,10 @@ When Android release packaging or example local-AAR consumption changes, run the
 scripts/verify_android_example_aar_consumption.sh
 ```
 
-The Android packaging model is a two-AAR compatibility model for direct file consumers plus Gradle module metadata for Maven-style consumers. Validate the shared metadata publication only against a temporary local repository; this does not publish externally and keeps the artifact-only release policy intact:
+The Android packaging model is a two-AAR compatibility model for direct file consumers plus Gradle module metadata for Maven-style consumers. Validate the shared metadata only against a temporary local repository; this does not publish externally and keeps the artifact-only release policy intact:
 
 ```bash
-scripts/verify_android_shared_maven_publication.sh
+scripts/verify_android_shared_maven_metadata.sh
 ```
 
 When iOS release packaging changes, validate the SwiftPM manifest surface and the CocoaPods shared-framework path from the repository root:

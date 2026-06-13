@@ -1,5 +1,8 @@
 import CoreBluetooth
 import Foundation
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public class HealthThermometer {
     public static let HTS_SERVICE = CBUUID(string: "00001809-0000-1000-8000-00805f9b34fb")
@@ -39,14 +42,7 @@ public class BleHtsClient: BleGattClientBase, @unchecked Sendable {
         if err == 0 {
             if chr == HealthThermometer.TEMPERATURE_MEASUREMENT {
                 BleLogger.trace_hex("TEMPERATURE_MEASUREMENT ", data: data)
-                let flags = UInt8(data[0])
-                let isFahrenheit = (flags & 0x01) != 0
-                let exponent = Int8(bitPattern: data[4])
-                let value = UInt32(data[1]) | (UInt32(data[2]) << 8) | (UInt32(data[3]) << 16)
-                let temperature = (Float(value) * pow(10.0, Float(exponent)) * Float(BleHtsClient.TEMP_ACCURACY)).rounded() / Float(BleHtsClient.TEMP_ACCURACY)
-                let celsius = !isFahrenheit ? temperature : (temperature - 32.0) * 5.0 / 9.0
-                let fahrenheit = isFahrenheit ? temperature : temperature * 9.0 / 5.0 + 32.0
-                let measurement = TemperatureMeasurement(temperatureCelsius: celsius, temperatureFahrenheit: fahrenheit)
+                let measurement = HtsTemperatureRuntimePlanner.temperatureMeasurement(data: data)
                 streamLock.lock()
                 let conts = continuations
                 streamLock.unlock()
@@ -78,5 +74,48 @@ public class BleHtsClient: BleGattClientBase, @unchecked Sendable {
             self?.streamLock.unlock()
         }
         return stream
+    }
+}
+
+private enum HtsTemperatureRuntimePlanner {
+    static func temperatureMeasurement(data: Data) -> BleHtsClient.TemperatureMeasurement {
+        #if canImport(PolarBleSdkShared)
+        if let sharedMeasurement = sharedTemperatureMeasurement(data: data) {
+            return sharedMeasurement
+        }
+        #endif
+        return localTemperatureMeasurement(data: data)
+    }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedTemperatureMeasurement(data: Data) -> BleHtsClient.TemperatureMeasurement? {
+        guard let csv = PolarIosSharedBridge.shared.htsTemperatureMeasurementCsv(payloadHex: data.hexString()) else {
+            return nil
+        }
+        let fields = csv.split(separator: ",")
+        guard fields.count == 5,
+              let celsius = Float(fields[0]),
+              let fahrenheit = Float(fields[1]) else {
+            return nil
+        }
+        return BleHtsClient.TemperatureMeasurement(temperatureCelsius: celsius, temperatureFahrenheit: fahrenheit)
+    }
+    #endif
+
+    private static func localTemperatureMeasurement(data: Data) -> BleHtsClient.TemperatureMeasurement {
+        let flags = UInt8(data[0])
+        let isFahrenheit = (flags & 0x01) != 0
+        let exponent = Int8(bitPattern: data[4])
+        let value = UInt32(data[1]) | (UInt32(data[2]) << 8) | (UInt32(data[3]) << 16)
+        let temperature = (Float(value) * pow(10.0, Float(exponent)) * Float(BleHtsClient.TEMP_ACCURACY)).rounded() / Float(BleHtsClient.TEMP_ACCURACY)
+        let celsius = !isFahrenheit ? temperature : (temperature - 32.0) * 5.0 / 9.0
+        let fahrenheit = isFahrenheit ? temperature : temperature * 9.0 / 5.0 + 32.0
+        return BleHtsClient.TemperatureMeasurement(temperatureCelsius: celsius, temperatureFahrenheit: fahrenheit)
+    }
+}
+
+private extension Data {
+    func hexString() -> String {
+        map { String(format: "%02x", $0) }.joined()
     }
 }

@@ -3,6 +3,7 @@ package com.polar.shared.ios
 import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.ble.PolarAdvertisementModels
 import com.polar.shared.ble.PolarBasBatteryStatusCodec
+import com.polar.shared.ble.PolarGattHtsCodec
 import com.polar.shared.ble.PolarTypeUtils
 import com.polar.shared.device.PolarDeviceCapabilities
 import com.polar.shared.device.PolarDeviceCapabilitiesConfig
@@ -216,6 +217,19 @@ object PolarIosSharedBridge {
 
     fun unsignedLongFromLittleEndianHex(hex: String, offset: Int, size: Int): String {
         return PolarTypeUtils.convertArrayToUnsignedLong(hex.hexToBytes(), offset, size).requireValue()
+    }
+
+    fun htsTemperatureMeasurementCsv(payloadHex: String): String? {
+        return runCatching {
+            val measurement = PolarGattHtsCodec.parseTemperatureMeasurement(payloadHex.hexToBytes())
+            listOf(
+                measurement.temperatureCelsius,
+                measurement.temperatureFahrenheit,
+                measurement.isFahrenheit,
+                measurement.exponent,
+                measurement.mantissa
+            ).joinToString(separator = ",")
+        }.getOrNull()
     }
 
     fun buildKvtxWriteAndCommitHex(kvKey: Long, dataHex: String): String {

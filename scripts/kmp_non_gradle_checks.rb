@@ -291,7 +291,7 @@ SHARED_COMMON_PRODUCTION_CODEC_DEPENDENCY_TERMS = [
 ].freeze
 BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
   "KmpFullCoverageTddBacklog.md" => [
-    "training-session neutral reconstruction planning now exists while generated public protobuf object construction remains platform-owned",
+    "neutral reconstruction-slot planning is shared while generated public protobuf object construction remains platform-owned",
     "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
     "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
     "shared-common-aes-production-decryption",
@@ -352,7 +352,7 @@ BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = {
     "shared selected protobuf field parsing",
     "shared public-model read planning",
     "generated public protobuf construction boundaries",
-    "generated public protobuf model construction remains platform-owned"
+    "generated public protobuf model construction remains platform-owned in Android and iOS adapters"
   ],
   "secret-readiness.json" => [
     "AES block-alignment gating",
@@ -1233,7 +1233,7 @@ D2H_STREAM_RUNTIME_COMMON_POLICY_REQUIRED_TERMS = [
 ].freeze
 PLATFORM_OWNED_COVERAGE_ROWS = {
   "BLE device session lifecycle" => ["Partial", "platform-owned", "Keep platform-specific"],
-  "GATT clients" => ["Partial", "platform-owned", "Keep transport clients platform-specific"],
+  "GATT clients" => ["Partial", "platform-owned", "Keep transport clients platform-specific", "HTS temperature measurement byte codec is shared common-owned while notification lifecycle stays platform-owned"],
   "Android Bluedroid host behavior" => ["Platform-specific", "Do not migrate to common code"],
   "iOS CoreBluetooth host behavior" => ["Platform-specific", "Do not migrate to common code"]
 }.freeze
@@ -1393,7 +1393,7 @@ CURRENT_SHARED_POLICY_STATE_REQUIRED_TERMS = [
   "## Current Shared-Policy State",
   "runtime-pinned Android/iOS facade compatibility evidence in `KmpFakeTransportTestPlan.md`",
   "New runtime/facade work should add operation-specific Android facade tests, iOS facade tests, and shared fake-transport tests only when a later production delegation slice introduces a new operation family",
-  "training-session neutral reconstruction planning now exists while generated public protobuf object construction remains platform-owned",
+  "neutral reconstruction-slot planning is shared while generated public protobuf object construction remains platform-owned",
   "BLE/session/GATT host behavior stays platform-owned unless a later slice defines a pure codec or deterministic state-machine contract"
 ].freeze
 STALE_SHARED_POLICY_BACKLOG_TERMS = [
@@ -1459,12 +1459,14 @@ SHARED_CONSUMPTION_REQUIRED_TERMS = [
   ":shared:linkDebugFrameworkIosX64",
   "may depend on shared code only when a behavior slice",
   "scripts/verify_android_example_aar_consumption.sh",
+  "scripts/verify_android_shared_maven_metadata.sh",
+  "scripts/verify_release_packaging_policy.rb",
   "polar-ble-sdk-shared.aar",
   "two-AAR compatibility model",
-  "Gradle module metadata",
-  "artifact-only",
-  "scripts/verify_android_shared_maven_publication.sh",
-  "temporary local repository",
+  "shared local Maven metadata validation",
+  "CI/release remains artifact-only",
+  "No Maven, CocoaPods, or SwiftPM publication is claimed",
+  "required secrets are intentionally absent",
   "SwiftPM/watchOS",
   "fallback-only",
   "PolarBleSdkShared.xcframework",
@@ -2748,17 +2750,49 @@ else
     errors << "documentation/KmpSharedArtifactConsumption.md: missing #{term}" unless consumption_doc.include?(term)
   end
 end
+release_workflow_path = File.join(ROOT, ".github/workflows/release-artifacts.yml")
+if !File.file?(release_workflow_path)
+  errors << ".github/workflows/release-artifacts.yml: missing release artifacts workflow"
+else
+  release_workflow = File.read(release_workflow_path)
+  [
+    "scripts/verify_android_example_aar_consumption.sh",
+    "scripts/verify_android_shared_maven_metadata.sh",
+    "scripts/verify_release_packaging_policy.rb",
+    "polar-ble-sdk.aar",
+    "polar-ble-sdk-shared.aar",
+    "shared-maven-local",
+    "linkReleaseFrameworkIosArm64",
+    "linkReleaseFrameworkIosSimulatorArm64",
+    "linkReleaseFrameworkIosX64",
+    "PolarBleSdkShared.framework",
+    "actions/upload-artifact@v4"
+  ].each do |term|
+    errors << ".github/workflows/release-artifacts.yml: missing release artifact policy term #{term}" unless release_workflow.include?(term)
+  end
+  [
+    "pod trunk push",
+    "pod repo push",
+    "swift package-registry publish",
+    "mvn deploy",
+    "secrets.MAVEN",
+    "secrets.COCOAPODS",
+    "secrets.SWIFT_PACKAGE"
+  ].each do |term|
+    errors << ".github/workflows/release-artifacts.yml: must not enable external publication term #{term}" if release_workflow.include?(term)
+  end
+end
 unless shared_build.include?("baseName = 'PolarBleSdkShared'") && shared_build.include?("isStatic = true")
   errors << "sources/Android/android-communications/shared/build.gradle: must define static PolarBleSdkShared framework artifact"
 end
-unless shared_build.include?("maven-publish") && shared_build.include?("polar-ble-sdk-shared") && shared_build.include?("PolarSharedLocal")
-  errors << "sources/Android/android-communications/shared/build.gradle: must define shared Gradle metadata publication for temporary local repository validation"
+unless shared_build.include?("maven-publish") && shared_build.include?("localKmpReleaseValidation") && shared_build.include?("local-maven-validation")
+  errors << "sources/Android/android-communications/shared/build.gradle: must define shared Gradle metadata validation for temporary local repository validation"
 end
 unless validation_commands.include?(":shared:bundleAndroidMainAar") && validation_commands.include?(":shared:linkDebugFrameworkIosX64") && validation_commands.include?("package_kmp_xcframework.sh --dry-run")
   errors << "documentation/KmpValidationCommands.md: must document shared artifact smoke gates"
 end
-unless validation_commands.include?("scripts/verify_android_shared_maven_publication.sh")
-  errors << "documentation/KmpValidationCommands.md: must document shared Maven publication validation"
+unless validation_commands.include?("scripts/verify_android_shared_maven_metadata.sh")
+  errors << "documentation/KmpValidationCommands.md: must document shared Maven metadata validation"
 end
 podspec_text = File.read(File.join(ROOT, "PolarBleSdk.podspec"))
 unless podspec_text.include?("'OTHER_SWIFT_FLAGS' => '$(inherited) -D POLAR_KMP_SHARED_REQUIRED'")
@@ -2771,9 +2805,9 @@ xcode_project_text = File.read(File.join(ROOT, "sources/iOS/ios-communications/i
 unless xcode_project_text.scan("POLAR_KMP_SHARED_REQUIRED").size == 2
   errors << "sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj: exactly the iOS PolarBleSdk Debug/Release configs must require PolarBleSdkShared"
 end
-shared_publication_script = File.join(ROOT, "scripts/verify_android_shared_maven_publication.sh")
-unless File.file?(shared_publication_script) && File.executable?(shared_publication_script)
-  errors << "scripts/verify_android_shared_maven_publication.sh: missing executable shared Maven publication verification script"
+shared_metadata_script = File.join(ROOT, "scripts/verify_android_shared_maven_metadata.sh")
+unless File.file?(shared_metadata_script) && File.executable?(shared_metadata_script)
+  errors << "scripts/verify_android_shared_maven_metadata.sh: missing executable shared Maven metadata verification script"
 end
 package_script = File.join(ROOT, "sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh")
 unless File.file?(package_script) && File.executable?(package_script)
