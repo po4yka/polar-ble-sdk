@@ -1,0 +1,39 @@
+{
+  "id": "pfc-feature-all-supported",
+  "area": "gatt-pfc",
+  "case": "feature_all_supported",
+  "source": "characterization from Android BlePfcClientTest and iOS BlePfcClientTest PFC feature payload",
+  "description": "PFC feature bitfield with currently characterized feature flags set.",
+  "input": {
+    "kind": "pfcFeature",
+    "payloadHex": "ff0b"
+  },
+  "expected": {
+    "broadcastSupported": true,
+    "khzSupported": true,
+    "otaUpdateSupported": true,
+    "whisperModeSupported": true,
+    "bleModeConfigureSupported": true,
+    "multiConnectionSupported": true,
+    "antSupported": true,
+    "securityModeSupported": true,
+    "sensorInitiatedSecurityModeSupported": true
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.api.ble.model.gatt.client.pfc.BlePfcClientTest"
+    ],
+    "ios": [
+      "BlePfcClientTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.PfcGattCodecCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "PFC feature bitfield parsing is a pure byte-level classifier. Control-point command construction, response handling, notification readiness, transport execution, and public error mapping stay platform-owned."
+}

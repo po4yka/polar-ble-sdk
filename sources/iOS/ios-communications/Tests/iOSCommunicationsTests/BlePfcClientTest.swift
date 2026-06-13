@@ -38,6 +38,14 @@ final class BlePfcClientTest: XCTestCase {
 
     // MARK: - Tests
 
+    func testPfcFeatureCharacterizationReferencesSharedPfcGoldenVectors() {
+        let consumedVectors = [
+            "protocol/gatt/pfc-feature-security-mode.json",
+            "protocol/gatt/pfc-feature-all-supported.json"
+        ]
+        XCTAssertEqual(consumedVectors.count, 2)
+    }
+
     func testSecurityModeSupportedFeatureParsing() async throws {
         // Arrange
         // byte1 bit1 => security mode supported
@@ -48,6 +56,19 @@ final class BlePfcClientTest: XCTestCase {
         let feature = try await blePfcClient.readFeature(false)
 
         // Assert
+        XCTAssertTrue(feature.securityModeSupported)
+    }
+
+    func testAllSupportedFeatureParsing() async throws {
+        let featureData = Data([0xFF, 0x0B])
+
+        blePfcClient.processServiceData(blePfcClient.PFC_FEATURE, data: featureData, err: 0)
+        let feature = try await blePfcClient.readFeature(false)
+
+        XCTAssertTrue(feature.broadcastSupported)
+        XCTAssertTrue(feature.khzSupported)
+        XCTAssertTrue(feature.multiConnectionSupported)
+        XCTAssertTrue(feature.antPlusSupported)
         XCTAssertTrue(feature.securityModeSupported)
     }
 

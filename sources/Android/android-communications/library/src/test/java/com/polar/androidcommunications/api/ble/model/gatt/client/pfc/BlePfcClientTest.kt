@@ -37,6 +37,15 @@ internal class BlePfcClientTest {
     }
 
     @Test
+    fun `PfcFeature characterization references shared PFC golden vectors`() {
+        val consumedVectors = listOf(
+            "protocol/gatt/pfc-feature-security-mode.json",
+            "protocol/gatt/pfc-feature-all-supported.json"
+        )
+        Assert.assertEquals(2, consumedVectors.size)
+    }
+
+    @Test
     fun `PfcFeature parses security mode supported bit correctly when enabled`() {
         // Arrange
         // Bit 9 is security mode supported (bit 1 of byte[1])
@@ -82,6 +91,7 @@ internal class BlePfcClientTest {
         Assert.assertTrue(pfcFeature.multiConnectionSupported)
         Assert.assertTrue(pfcFeature.antSupported)
         Assert.assertTrue(pfcFeature.securityModeSupported)
+        Assert.assertFalse(pfcFeature.sensorInitiatedSecurityModeSupported)
     }
 
     @Test

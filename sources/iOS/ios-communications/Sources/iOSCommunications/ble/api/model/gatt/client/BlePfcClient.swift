@@ -1,6 +1,9 @@
 import Foundation
 import CoreBluetooth
 import Combine
+#if canImport(PolarBleSdkShared)
+import PolarBleSdkShared
+#endif
 
 public struct Pfc {
     public struct PfcFeature {
@@ -11,11 +14,12 @@ public struct Pfc {
         public let securityModeSupported: Bool
 
         init(_ data: Data) {
-            broadcastSupported       = (data[0] & 0x01) == 0x01
-            khzSupported             = (data[0] & 0x02) == 0x02
-            multiConnectionSupported = (data[0] & 0x80) == 0x80
-            antPlusSupported         = (data[1] & 0x01) == 0x01
-            securityModeSupported    = (data[1] & 0x02) == 0x02
+            let feature = PfcFeatureRuntimePlanner.pfcFeature(data: data)
+            broadcastSupported = feature.broadcastSupported
+            khzSupported = feature.khzSupported
+            multiConnectionSupported = feature.multiConnectionSupported
+            antPlusSupported = feature.antPlusSupported
+            securityModeSupported = feature.securityModeSupported
         }
     }
 
@@ -153,5 +157,72 @@ public class BlePfcClient: BleGattClientBase, @unchecked Sendable {
 
     public override func clientReady(_ checkConnection: Bool) -> AnyPublisher<Never, Error> {
         waitNotificationEnabled(BlePfcClient.PFC_CP, checkConnection: checkConnection)
+    }
+}
+
+private struct PfcFeatureProjection {
+    let broadcastSupported: Bool
+    let khzSupported: Bool
+    let multiConnectionSupported: Bool
+    let antPlusSupported: Bool
+    let securityModeSupported: Bool
+}
+
+private enum PfcFeatureRuntimePlanner {
+    static func pfcFeature(data: Data) -> PfcFeatureProjection {
+        #if canImport(PolarBleSdkShared)
+        if let sharedFeature = sharedPfcFeature(data: data) {
+            return sharedFeature
+        }
+        #endif
+        return localPfcFeature(data: data)
+    }
+
+    #if canImport(PolarBleSdkShared)
+    private static func sharedPfcFeature(data: Data) -> PfcFeatureProjection? {
+        guard let csv = PolarIosSharedBridge.shared.pfcFeatureCsv(payloadHex: data.pfcHexString()) else {
+            return nil
+        }
+        let fields = csv.split(separator: ",", omittingEmptySubsequences: false)
+        guard fields.count == 9,
+              let broadcastSupported = boolValue(String(fields[0])),
+              let khzSupported = boolValue(String(fields[1])),
+              let multiConnectionSupported = boolValue(String(fields[5])),
+              let antPlusSupported = boolValue(String(fields[6])),
+              let securityModeSupported = boolValue(String(fields[7])) else {
+            return nil
+        }
+        return PfcFeatureProjection(
+            broadcastSupported: broadcastSupported,
+            khzSupported: khzSupported,
+            multiConnectionSupported: multiConnectionSupported,
+            antPlusSupported: antPlusSupported,
+            securityModeSupported: securityModeSupported
+        )
+    }
+
+    private static func boolValue(_ value: String) -> Bool? {
+        switch value {
+        case "true": return true
+        case "false": return false
+        default: return nil
+        }
+    }
+    #endif
+
+    private static func localPfcFeature(data: Data) -> PfcFeatureProjection {
+        return PfcFeatureProjection(
+            broadcastSupported: (data[0] & 0x01) == 0x01,
+            khzSupported: (data[0] & 0x02) == 0x02,
+            multiConnectionSupported: (data[0] & 0x80) == 0x80,
+            antPlusSupported: (data[1] & 0x01) == 0x01,
+            securityModeSupported: (data[1] & 0x02) == 0x02
+        )
+    }
+}
+
+private extension Data {
+    func pfcHexString() -> String {
+        map { String(format: "%02x", $0) }.joined()
     }
 }

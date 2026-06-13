@@ -10,6 +10,7 @@ import com.polar.androidcommunications.api.ble.exceptions.BleNotSupported
 import com.polar.androidcommunications.api.ble.exceptions.BleTimeout
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattBase
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattTxInterface
+import com.polar.shared.ble.PolarGattPfcCodec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
@@ -102,15 +103,16 @@ class BlePfcClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
         var sensorInitiatedSecurityModeSupported: Boolean = false
 
         constructor(data: ByteArray) {
-            broadcastSupported = (data[0].toInt() and 0x01) == 1
-            khzSupported = ((data[0].toInt() and 0x02) shr 1) == 1
-            otaUpdateSupported = ((data[0].toInt() and 0x04) shr 2) == 1
-            whisperModeSupported = ((data[0].toInt() and 0x10) shr 4) == 1
-            bleModeConfigureSupported = ((data[0].toInt() and 0x40) shr 6) == 1
-            multiConnectionSupported = ((data[0].toInt() and 0x80) shr 7) == 1
-            antSupported = (data[1].toInt() and 0x01) == 1
-            securityModeSupported = ((data[1].toInt() and 0x02) shr 1) == 1
-            sensorInitiatedSecurityModeSupported = ((data[1].toInt() and 0x08) shr 3) === 1
+            val feature = PolarGattPfcCodec.parsePfcFeature(data)
+            broadcastSupported = feature.broadcastSupported
+            khzSupported = feature.khzSupported
+            otaUpdateSupported = feature.otaUpdateSupported
+            whisperModeSupported = feature.whisperModeSupported
+            bleModeConfigureSupported = feature.bleModeConfigureSupported
+            multiConnectionSupported = feature.multiConnectionSupported
+            antSupported = feature.antSupported
+            securityModeSupported = feature.securityModeSupported
+            sensorInitiatedSecurityModeSupported = feature.sensorInitiatedSecurityModeSupported
         }
 
         constructor(clone: PfcFeature) {

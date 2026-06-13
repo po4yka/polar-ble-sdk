@@ -4,6 +4,7 @@ import com.polar.shared.device.PolarDeviceId
 import com.polar.shared.ble.PolarAdvertisementModels
 import com.polar.shared.ble.PolarGattBasCodec
 import com.polar.shared.ble.PolarGattHrCodec
+import com.polar.shared.ble.PolarGattPfcCodec
 import com.polar.shared.ble.PolarGattRscCodec
 import com.polar.shared.ble.PolarGattHtsCodec
 import com.polar.shared.ble.PolarTypeUtils
@@ -260,6 +261,23 @@ object PolarIosSharedBridge {
                 measurement.totalDistanceMeters.toString(),
                 measurement.running.toString(),
                 measurement.flags.toString()
+            ).joinToString(separator = ",")
+        }.getOrNull()
+    }
+
+    fun pfcFeatureCsv(payloadHex: String): String? {
+        return runCatching {
+            val feature = PolarGattPfcCodec.parsePfcFeature(payloadHex.hexToBytes())
+            listOf(
+                feature.broadcastSupported.toString(),
+                feature.khzSupported.toString(),
+                feature.otaUpdateSupported.toString(),
+                feature.whisperModeSupported.toString(),
+                feature.bleModeConfigureSupported.toString(),
+                feature.multiConnectionSupported.toString(),
+                feature.antSupported.toString(),
+                feature.securityModeSupported.toString(),
+                feature.sensorInitiatedSecurityModeSupported.toString()
             ).joinToString(separator = ",")
         }.getOrNull()
     }
