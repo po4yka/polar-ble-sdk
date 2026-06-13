@@ -36,13 +36,14 @@ while [ "$#" -gt 0 ]; do
 done
 
 TASK_CONFIGURATION=$(printf "%s" "$CONFIGURATION" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
+FRAMEWORK_CONFIGURATION=$(printf "%s" "$CONFIGURATION" | awk '{print tolower($0)}')
 XCFRAMEWORK_OUTPUT="$OUTPUT_DIR/PolarBleSdkShared.xcframework"
-IOS_DEVICE_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/iosArm64/${CONFIGURATION}Framework/PolarBleSdkShared.framework"
-IOS_SIM_ARM64_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/iosSimulatorArm64/${CONFIGURATION}Framework/PolarBleSdkShared.framework"
-IOS_SIM_X64_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/iosX64/${CONFIGURATION}Framework/PolarBleSdkShared.framework"
-WATCH_DEVICE_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/watchosArm64/${CONFIGURATION}Framework/PolarBleSdkShared.framework"
-WATCH_SIM_ARM64_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/watchosSimulatorArm64/${CONFIGURATION}Framework/PolarBleSdkShared.framework"
-WATCH_SIM_X64_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/watchosX64/${CONFIGURATION}Framework/PolarBleSdkShared.framework"
+IOS_DEVICE_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/iosArm64/${FRAMEWORK_CONFIGURATION}Framework/PolarBleSdkShared.framework"
+IOS_SIM_ARM64_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/iosSimulatorArm64/${FRAMEWORK_CONFIGURATION}Framework/PolarBleSdkShared.framework"
+IOS_SIM_X64_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/iosX64/${FRAMEWORK_CONFIGURATION}Framework/PolarBleSdkShared.framework"
+WATCH_DEVICE_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/watchosArm64/${FRAMEWORK_CONFIGURATION}Framework/PolarBleSdkShared.framework"
+WATCH_SIM_ARM64_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/watchosSimulatorArm64/${FRAMEWORK_CONFIGURATION}Framework/PolarBleSdkShared.framework"
+WATCH_SIM_X64_FRAMEWORK="$GRADLE_ROOT/shared/build/bin/watchosX64/${FRAMEWORK_CONFIGURATION}Framework/PolarBleSdkShared.framework"
 BUILD_DIR="$OUTPUT_DIR/.build"
 IOS_SIM_UNIVERSAL="$BUILD_DIR/iossimulator/PolarBleSdkShared.framework"
 WATCH_SIM_UNIVERSAL="$BUILD_DIR/watchsimulator/PolarBleSdkShared.framework"
@@ -75,6 +76,13 @@ fi
 
 cd "$GRADLE_ROOT"
 ./gradlew $GRADLE_TASKS --no-daemon
+
+for framework in "$IOS_DEVICE_FRAMEWORK" "$IOS_SIM_ARM64_FRAMEWORK" "$IOS_SIM_X64_FRAMEWORK" "$WATCH_DEVICE_FRAMEWORK" "$WATCH_SIM_ARM64_FRAMEWORK" "$WATCH_SIM_X64_FRAMEWORK"; do
+    if [ ! -d "$framework" ]; then
+        echo "Missing expected framework: $framework" >&2
+        exit 1
+    fi
+done
 
 rm -rf "$BUILD_DIR" "$XCFRAMEWORK_OUTPUT"
 mkdir -p "$(dirname "$IOS_SIM_UNIVERSAL")" "$(dirname "$WATCH_SIM_UNIVERSAL")" "$OUTPUT_DIR"
