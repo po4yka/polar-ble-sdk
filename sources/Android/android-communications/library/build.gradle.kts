@@ -1,9 +1,5 @@
-@file:Suppress("DEPRECATION")
-
-import com.android.build.api.dsl.ApplicationBaseFlavor
 import com.google.protobuf.gradle.id
 import org.gradle.api.publish.maven.MavenPublication
-import org.jetbrains.dokka.gradle.DokkaTask
 import java.util.regex.Pattern
 
 plugins {
@@ -46,9 +42,11 @@ android {
     defaultConfig {
         compileSdk = 37
         minSdk = 26
-        (this as ApplicationBaseFlavor).targetSdk = 37
-        (this as ApplicationBaseFlavor).versionCode = 14
-        (this as ApplicationBaseFlavor).versionName = "14"
+        @Suppress("DEPRECATION")
+        val applicationFlavor = this as com.android.build.api.dsl.ApplicationBaseFlavor
+        applicationFlavor.targetSdk = 37
+        applicationFlavor.versionCode = 14
+        applicationFlavor.versionName = "14"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -113,7 +111,8 @@ components.matching { it.name == "sdkRelease" }.all {
     }
 }
 
-tasks.named<DokkaTask>("dokkaJavadoc").configure {
+@Suppress("DEPRECATION")
+tasks.named<org.jetbrains.dokka.gradle.DokkaTask>("dokkaJavadoc").configure {
     outputDirectory.set(file("docs/"))
     dokkaSourceSets {
         configureEach {

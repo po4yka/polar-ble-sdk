@@ -7,19 +7,6 @@ plugins {
     alias(libs.plugins.dokka) apply false
 }
 
-buildscript {
-    repositories {
-        mavenCentral()
-        google()
-        gradlePluginPortal()
-    }
-    dependencies {
-        if (project.hasProperty("artifactoryUser") && project.hasProperty("artifactoryPassword")) {
-            classpath(libs.jfrog.build.info.extractor.gradle)
-        }
-    }
-}
-
 allprojects {
     repositories {
         mavenCentral()

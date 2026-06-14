@@ -9,7 +9,6 @@ commons-io = "2.22.0"
 desugar-jdk-libs = "2.1.5"
 dokka = "2.2.0"
 flatbuffers = "25.2.10"
-jfrog-build-info-extractor = "4.28.1"
 junit = "4.13.2"
 kotlin = "2.4.0"
 kotlinx-coroutines = "1.11.0"
@@ -32,7 +31,6 @@ byte-buddy-agent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "b
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar-jdk-libs" }
 flatbuffers-java = { module = "com.google.flatbuffers:flatbuffers-java", version.ref = "flatbuffers" }
-jfrog-build-info-extractor-gradle = { module = "org.jfrog.buildinfo:build-info-extractor-gradle", version.ref = "jfrog-build-info-extractor" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-metadata-jvm = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }

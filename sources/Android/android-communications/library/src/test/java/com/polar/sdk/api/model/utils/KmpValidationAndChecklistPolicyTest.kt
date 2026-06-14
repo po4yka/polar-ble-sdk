@@ -236,7 +236,9 @@ class KmpValidationAndChecklistPolicyTest {
         if (!iosIndex.isFile || !iosIndex.readText().contains("css/jazzy.css")) {
             violations += "docs/polar-sdk-ios/index.html must exist and remain recognizable as Jazzy output"
         }
-        if (!androidGradle.contains("alias(libs.plugins.dokka)") || !androidGradle.contains("tasks.named<DokkaTask>(\"dokkaJavadoc\")")) {
+        val hasDokkaTaskConfiguration = androidGradle.contains("tasks.named<DokkaTask>(\"dokkaJavadoc\")") ||
+            androidGradle.contains("tasks.named<org.jetbrains.dokka.gradle.DokkaTask>(\"dokkaJavadoc\")")
+        if (!androidGradle.contains("alias(libs.plugins.dokka)") || !hasDokkaTaskConfiguration) {
             violations += "sources/Android/android-communications/library/build.gradle.kts must keep the Android API doc generator visible"
         }
         if (!validationCommands.contains("## Generated API Documentation Ownership")) {
