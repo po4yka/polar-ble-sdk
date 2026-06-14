@@ -13,7 +13,7 @@ iOS Communications XCode project (i.e. `iOSCommunications.xcodeproj`) contains t
     * [To update dependencies](#to-update-dependencies)
 * [Install](#install)
     * [... using Swift Package Manager](#...-using-Swift-Package-Manager)
-    * [CocoaPods](#cocoapods)
+    * [CocoaPods (unsupported)](#cocoapods-unsupported)
     * [... using XCFramework](#...-using-XCFramework)
     * [... using git submodules](#...-using-git-submodules)
     * [... using Carthage](#...-using-Carthage)
@@ -39,7 +39,7 @@ iOS Communications XCode project (i.e. `iOSCommunications.xcodeproj`) contains t
 ### ... using Swift Package Manager 
 * iOS Communications project is made available via Swift Package. Please get familiar with [XCode help](https://developer.apple.com/documentation/swift_packages/adding_package_dependencies_to_your_app) how to take Swift Package into use on your project.
 
-### CocoaPods
+### CocoaPods (unsupported)
 * CocoaPods is no longer supported for this repository. Use Swift Package Manager for package integration.
 
 ### ... using XCFramework

@@ -27,6 +27,7 @@ private fun kmpNonGradleChecks() {
         "documentation/KmpSharedArtifactConsumption.md",
         "documentation/KmpModernStackAudit.md",
         "documentation/ReleasePublicationPolicy.md",
+        ".github/dependabot.yml",
         "sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh",
         "sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh",
         "sources/Android/android-communications/repo-tools/src/main/kotlin/com/polar/tools/RepoTools.kt",
@@ -69,6 +70,11 @@ private fun kmpNonGradleChecks() {
     listOf("ruby scripts/", "pod install", "pod lib lint", "PolarBleSdk.podspec")
         .filter { validationDoc.contains(it) }
         .mapTo(errors) { "documentation/KmpValidationCommands.md must not document active legacy validation path $it" }
+
+    val dependabot = repoRoot.resolve(".github/dependabot.yml").readTextIfExists()
+    if (dependabot.contains("package-ecosystem: cocoapods")) {
+        errors += ".github/dependabot.yml must not contain CocoaPods because SwiftPM is the supported Apple package path"
+    }
 
     val spmValidation = repoRoot.resolve("sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh").readTextIfExists()
     if (spmValidation.contains("ruby ")) {

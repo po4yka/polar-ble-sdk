@@ -17,9 +17,3 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
-
-  - package-ecosystem: cocoapods
-    directory: /sources/iOS/ios-communications
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 3

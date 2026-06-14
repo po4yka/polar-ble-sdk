@@ -79,7 +79,7 @@ These interfaces are for internal architecture, not necessarily public API. They
 
 ### Phase 0: Stabilize Build and Test Entry Points
 
-Before moving code, document and fix local validation blockers. The Android Gradle version helper must remain tagless-safe, Android minimum SDK documentation must match Gradle configuration, CocoaPods paths must match the iOS source layout, and generated API documentation under `docs/` must stay generator-owned during migration slices. Use `KmpValidationCommands.md` as the current local validation command list and update it whenever Android, iOS, or shared KMP test entry points change.
+Before moving code, document and fix local validation blockers. The Android Gradle version helper must remain tagless-safe, Android minimum SDK documentation must match Gradle configuration, SwiftPM paths must match the iOS source layout, and generated API documentation under `docs/` must stay generator-owned during migration slices. Use `KmpValidationCommands.md` as the current local validation command list and update it whenever Android, iOS, or shared KMP test entry points change.
 
 ### Phase 1: Characterization Tests
 
@@ -123,9 +123,9 @@ Decide whether a future major release exposes a KMP-first public API. Until then
 
 Android should continue publishing an AAR with the same Maven coordinates during the compatibility phase. The AAR may embed or depend on shared KMP artifacts internally.
 
-iOS should continue supporting Swift Package Manager and CocoaPods during the compatibility phase. The KMP framework should be hidden behind the existing Swift API until a deliberate public API migration is planned.
+iOS should continue supporting Swift Package Manager during the compatibility phase. CocoaPods is no longer a supported repository integration, distribution, or validation path after the SwiftPM migration. The KMP framework should be hidden behind the existing Swift API until a deliberate public API migration is planned.
 
-During the current compatibility phase, direct Android local-AAR consumers need the SDK AAR plus the shared Android AAR unless publication metadata supplies the shared dependency. CocoaPods and the Xcode workspace are the supported Apple shared-consumption paths; SwiftPM and watchOS stay on Swift fallback implementations until a binary `PolarBleSdkShared.xcframework` packaging strategy is added and validated.
+During the current compatibility phase, direct Android local-AAR consumers need the SDK AAR plus the shared Android AAR unless publication metadata supplies the shared dependency. SwiftPM is the supported Apple package path: release consumption uses the explicit `PolarBleSdkShared.xcframework` binary target when URL/checksum metadata is supplied, repository validation may use the generated local XCFramework, and clean checkouts fall back to Swift source behavior when no shared binary artifact is present.
 
 Examples should be updated only after the SDK packaging path they use is validated.
 
