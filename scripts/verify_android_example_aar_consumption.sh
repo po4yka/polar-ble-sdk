@@ -33,7 +33,7 @@ if ! unzip -l "$EXAMPLE_SHARED_AAR" | grep -q 'classes.jar'; then
     exit 1
 fi
 
-if ! grep -q "polar-ble-sdk-shared.aar" "$EXAMPLE_ROOT/app/build.gradle"; then
+if ! grep -q "polar-ble-sdk-shared.aar" "$EXAMPLE_ROOT/app/build.gradle.kts"; then
     echo "Android example must declare the local shared AAR consumption path" >&2
     exit 1
 fi
