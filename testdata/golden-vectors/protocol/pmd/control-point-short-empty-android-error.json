@@ -7,7 +7,7 @@
     "hex": ""
   },
   "expected": {
-    "commonDecision": "KMP should reject an empty control-point response without unsafe indexing."
+    "commonDecision": "Shared code should reject an empty control-point response without unsafe indexing."
   },
   "platformExpectations": {
     "android": {

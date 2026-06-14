@@ -28,5 +28,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Android throws IllegalArgumentException; iOS throws PolarDeviceUuidError.invalidDeviceIdLength. KMP should preserve facade-specific error mapping."
+  "notes": "Android throws IllegalArgumentException; iOS throws PolarDeviceUuidError.invalidDeviceIdLength. Shared code should preserve facade-specific error mapping."
 }

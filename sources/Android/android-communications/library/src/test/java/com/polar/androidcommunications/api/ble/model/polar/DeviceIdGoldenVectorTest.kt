@@ -82,7 +82,7 @@ class DeviceIdGoldenVectorTest {
     }
 
     @Test
-    fun `device ID golden vectors follow neutral KMP vector shape`() {
+    fun `device ID golden vectors follow neutral shared vector shape`() {
         loadDeviceIdVectors().forEach { vector ->
             val id = vector.get("id")?.asString ?: "unknown-vector"
 
@@ -100,7 +100,7 @@ class DeviceIdGoldenVectorTest {
     }
 
     @Test
-    fun `device ID readiness manifest is pinned before checksum and UUID migration`() {
+    fun `device ID readiness manifest is pinned before checksum and UUID shared ownership`() {
         val manifest = loadDeviceIdReadinessManifest()
         val input = manifest.getAsJsonObject("input")
         val expected = manifest.getAsJsonObject("expected")
@@ -186,6 +186,6 @@ class DeviceIdGoldenVectorTest {
             "platform-device-id-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val DEVICE_ID_READINESS_COMMON_DECISION = "Device ID migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS device ID tests continue to reference the same vectors, checksum width 6 and 7 assembly, zero-value assembly, validation, lowercase acceptance, UUID conversion, invalid UUID length errors, invalid identifier rejection, current empty and non-hex platform decisions, platform-specific identifier routing, and compile verification remain explicit before production checksum or UUID logic moves."
+        const val DEVICE_ID_READINESS_COMMON_DECISION = "Device ID shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS device ID tests continue to reference the same vectors, checksum width 6 and 7 assembly, zero-value assembly, validation, lowercase acceptance, UUID conversion, invalid UUID length errors, invalid identifier rejection, current empty and non-hex platform decisions, platform-specific identifier routing, and compile verification remain explicit before production checksum or UUID logic moves."
     }
 }

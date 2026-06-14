@@ -1,8 +1,8 @@
 {
   "id": "firmware-utility-readiness",
   "area": "sdk.firmware-update",
-  "case": "pre_migration_firmware_utility_readiness_manifest",
-  "source": "KMP migration readiness gate for firmware update utility mapping and ordering",
+  "case": "shared_contract_firmware_utility_readiness_manifest",
+  "source": "Shared ownership readiness gate for firmware update utility mapping and ordering",
   "input": {
     "kind": "firmwareUtilityReadiness",
     "policyVectorPaths": [
@@ -23,7 +23,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "compileVerifiedPreMigrationCharacterization",
+    "sharedOwnershipStatus": "compileVerifiedSharedContractCharacterization",
     "coveredBehaviorFamilies": [
       "device-info-protobuf-mapping",
       "zero-version-preservation",

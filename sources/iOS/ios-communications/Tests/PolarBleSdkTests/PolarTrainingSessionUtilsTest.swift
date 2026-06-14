@@ -331,7 +331,7 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         }
     }
 
-    func testPayloadParserPolicyVectorIsPinnedBeforeByteLevelParserMigration() throws {
+    func testPayloadParserPolicyVectorPinsByteLevelParserOwnership() throws {
         let vector = try XCTUnwrap(try loadTrainingSessionGoldenVectors().first { ($0["id"] as? String) == "payload-parser-policy" })
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
@@ -456,7 +456,7 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         XCTAssertEqual(samples.heartRateSamples, [120, 121])
     }
 
-    func testTrainingSessionReadinessManifestIsPinnedBeforeMigration() throws {
+    func testTrainingSessionReadinessManifestPinsSharedOwnership() throws {
         let readiness = try loadTrainingSessionReadinessManifest()
         let input = try XCTUnwrap(readiness["input"] as? [String: Any])
         let expected = try XCTUnwrap(readiness["expected"] as? [String: Any])
@@ -496,7 +496,7 @@ final class PolarTrainingSessionUtilsTests: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared selected protobuf field parsing, shared public-model read planning, shared public-model slot planning, generated public protobuf construction boundaries, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Training-session shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared selected protobuf field parsing, shared public-model read planning, shared public-model slot planning, generated public protobuf construction boundaries, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.")
     }
 
     func test_readTrainingSession_shouldReturnTrainingSessionDataWithExercises() async throws {
@@ -932,4 +932,4 @@ private let TRAINING_SESSION_PAYLOAD_PARSER_CASE_IDS = [
     "samples-advanced-gzip-protobuf"
 ]
 
-private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Selected training payload protobuf field parsing now executes in shared KMP for these parser cases; generated public protobuf object construction remains platform-owned while neutral reconstruction planning maps decoded payload bytes to Android and iOS adapters. Gzip decompression and public-model slot planning are shared KMP production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+private let TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Selected training payload protobuf field parsing now executes in shared for these parser cases; generated public protobuf object construction remains platform-owned while neutral reconstruction planning maps decoded payload bytes to Android and iOS adapters. Gzip decompression and public-model slot planning are shared production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."

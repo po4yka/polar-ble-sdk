@@ -2,8 +2,8 @@
   "id": "sleep-nightly-readiness",
   "area": "sdk.sleep-nightly-recharge",
   "case": "sleep_nightly_readiness",
-  "source": "Sleep and nightly recharge vectors plus shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the sleep and nightly recharge behavior families that must remain covered before model conversion delegates to shared KMP code.",
+  "source": "Sleep and nightly recharge vectors plus shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the sleep and nightly recharge behavior families that must remain covered before model conversion delegates to shared code.",
   "input": {
     "kind": "sleepNightlyReadiness",
     "policyVectorPaths": [
@@ -45,7 +45,7 @@
       "platform-sleep-nightly-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Sleep and nightly recharge model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified."
+    "commonDecision": "Sleep and nightly recharge model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified."
   },
   "consumerTests": {
     "android": [
@@ -63,5 +63,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for sleep and nightly recharge model behavior-family completeness only; public facade request routing and platform compatibility for current sleep offset and omitted-optional differences remain adapter decisions unless deliberately standardized."
+  "notes": "This readiness manifest is a shared ownership gate for sleep and nightly recharge model behavior-family completeness only; public facade request routing and platform compatibility for current sleep offset and omitted-optional differences remain adapter decisions unless deliberately standardized."
 }

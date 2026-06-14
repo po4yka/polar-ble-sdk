@@ -535,7 +535,7 @@ final class PolarFileUtilsTest: XCTestCase {
         }.serializedData()
     }
 
-    func testRuntimeErrorPolicyVectorIsPinnedBeforeRuntimeMigration() throws {
+    func testRuntimeErrorPolicyVectorIsPinnedBeforeRuntimeOwnership() throws {
         let vector = try XCTUnwrap(try loadFileUtilityGoldenVectors().first { ($0["id"] as? String) == "runtime-error-policy" })
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
         let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any])
@@ -544,13 +544,13 @@ final class PolarFileUtilsTest: XCTestCase {
 
         XCTAssertNotNil(vector["execution"], "runtime-error-policy")
         XCTAssertEqual(expectedCaseIds, FILE_RUNTIME_ERROR_POLICY_CASE_IDS, "runtime-error-policy")
-        XCTAssertEqual(expected["migrationRequirement"] as? String, FILE_RUNTIME_ERROR_MIGRATION_REQUIREMENT, "runtime-error-policy")
+        XCTAssertEqual(expected["sharedOwnershipRequirement"] as? String, FILE_RUNTIME_ERROR_SHARED_OWNERSHIP_REQUIREMENT, "runtime-error-policy")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "runtime-error-policy"), ["com.polar.sdk.api.model.utils.PolarFileUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "runtime-error-policy"), ["PolarFileUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "runtime-error-policy"), ["com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"])
     }
 
-    func testRuntimeErrorReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+    func testRuntimeErrorReadinessManifestIsPinnedBeforeRuntimeOwnership() throws {
         let vector = try XCTUnwrap(try loadFileUtilityGoldenVectors().first { ($0["id"] as? String) == "runtime-error-readiness" })
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -566,13 +566,13 @@ final class PolarFileUtilsTest: XCTestCase {
         XCTAssertEqual(expected["commonDecision"] as? String, FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION, "runtime-error-readiness")
         let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], "runtime-error-readiness")
         XCTAssertEqual(commonRuntimePrototype["status"] as? String, "executable shared commonTest runtime planning guard", "runtime-error-readiness")
-        XCTAssertEqual(commonRuntimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", "runtime-error-readiness")
+        XCTAssertEqual(commonRuntimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", "runtime-error-readiness")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "runtime-error-readiness"), ["com.polar.sdk.api.model.utils.PolarFileUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "runtime-error-readiness"), ["PolarFileUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "runtime-error-readiness"), ["com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"])
     }
 
-    func testFileFacadeRuntimePolicyVectorIsPinnedBeforeRuntimeMigration() throws {
+    func testFileFacadeRuntimePolicyVectorIsPinnedBeforeRuntimeOwnership() throws {
         let vector = try XCTUnwrap(try loadFileUtilityGoldenVectors().first { ($0["id"] as? String) == "file-facade-runtime-policy" })
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -596,7 +596,7 @@ final class PolarFileUtilsTest: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "file-facade-runtime-policy"), ["com.polar.sharedtest.FileFacadeRuntimePolicyCommonTest"])
     }
 
-    func testFileFacadeRuntimeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+    func testFileFacadeRuntimeReadinessManifestIsPinnedBeforeRuntimeOwnership() throws {
         let vector = try XCTUnwrap(try loadFileUtilityGoldenVectors().first { ($0["id"] as? String) == "file-facade-runtime-readiness" })
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -612,7 +612,7 @@ final class PolarFileUtilsTest: XCTestCase {
         XCTAssertEqual(expected["commonDecision"] as? String, FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION, "file-facade-runtime-readiness")
         let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], "file-facade-runtime-readiness")
         XCTAssertEqual(commonRuntimePrototype["status"] as? String, "executable shared commonTest runtime planning guard", "file-facade-runtime-readiness")
-        XCTAssertEqual(commonRuntimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", "file-facade-runtime-readiness")
+        XCTAssertEqual(commonRuntimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", "file-facade-runtime-readiness")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "file-facade-runtime-readiness"), ["com.polar.sdk.impl.BDBleApiImplTest", "com.polar.sdk.api.model.utils.PolarFileUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "file-facade-runtime-readiness"), ["PolarBleApiImplTests", "PolarFileUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "file-facade-runtime-readiness"), ["com.polar.sharedtest.FileFacadeRuntimePolicyCommonTest"])
@@ -749,9 +749,9 @@ private let FILE_RUNTIME_ERROR_POLICY_CASE_IDS = [
     "delete-file-response-error"
 ]
 
-private let FILE_RUNTIME_ERROR_MIGRATION_REQUIREMENT = "Before moving file utility orchestration into common KMP code, implement fake PFTP request and write-stream tests that cover malformed directory payloads, request-level transport errors, response-error status mapping, and write-stream failures after the PUT header is prepared."
+private let FILE_RUNTIME_ERROR_SHARED_OWNERSHIP_REQUIREMENT = "Shared ownership of file utility orchestration requires fake PFTP request and write-stream tests that cover malformed directory payloads, request-level transport errors, response-error status mapping, and write-stream failures after the PUT header is prepared."
 
-private let FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified."
+private let FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION = "File runtime error shared ownership remains valid while runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified."
 
 private let FILE_FACADE_RUNTIME_OPERATION_IDS = [
     "read-low-level-file-success",
@@ -796,7 +796,7 @@ private let FILE_FACADE_RUNTIME_READINESS_FAMILIES = [
     "compile-verification-gate"
 ]
 
-private let FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION = "File facade runtime migration may proceed only after file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
+private let FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION = "File facade runtime shared ownership remains valid while file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
 
 // MARK: - DateFormatter helper
 private extension DateFormatter {

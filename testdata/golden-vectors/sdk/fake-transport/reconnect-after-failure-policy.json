@@ -2,7 +2,7 @@
   "id": "reconnect-after-failure-policy",
   "area": "sdk.fake-transport",
   "case": "reconnect_after_failure_policy",
-  "source": "KMP fake-transport reconnect-after-failure planning and shared ScriptedCommonFakeTransport prototype",
+  "source": "shared fake-transport reconnect-after-failure planning and shared ScriptedCommonFakeTransport prototype",
   "description": "Pins deterministic reconnect behavior after a disconnected operation so common runtime tests can model reconnect-before-retry without Android Bluedroid or iOS CoreBluetooth callbacks.",
   "input": {
     "kind": "reconnectAfterFailurePolicy",
@@ -39,7 +39,7 @@
       "READ:/U/0/DEVICE.BPB"
     ],
     "connectedAfterReconnect": true,
-    "commonDecision": "Shared fake transport must make reconnect-after-failure explicit, observable, and deterministic before retry or reconnect-aware runtime planning delegates to KMP."
+    "commonDecision": "Shared fake transport must make reconnect-after-failure explicit, observable, and deterministic before retry or reconnect-aware runtime planning delegates to shared."
   },
   "consumerTests": {
     "android": [
@@ -63,5 +63,5 @@
     "ios": false,
     "common": true
   },
-  "notes": "This vector covers only the deterministic fake-transport reconnect control. Platform adapter reconnect semantics, backoff policy, and public facade error mapping remain feature-specific migration gates."
+  "notes": "This vector covers only the deterministic fake-transport reconnect control. Platform adapter reconnect semantics, backoff policy, and public facade error mapping remain feature-specific shared ownership gates."
 }

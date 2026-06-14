@@ -2,7 +2,7 @@
   "id": "ppg-raw-type5-truncated-operation-mode-malformed",
   "area": "sensor-parser",
   "case": "ppg_raw_type5_truncated_operation_mode_malformed",
-  "source": "Pre-migration shared PPG parser policy",
+  "source": "Shared contract PPG parser policy",
   "input": {
     "dataFrameHex": "01009435770000000005ffffff",
     "previousTimeStamp": 100,

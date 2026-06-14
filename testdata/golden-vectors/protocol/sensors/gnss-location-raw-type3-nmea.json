@@ -10,7 +10,7 @@
     "sampleRate": 0
   },
   "expected": {
-    "migrationOwnership": "Shared common KMP GNSS/location parser owns raw type 0-3 byte decoding and Android production delegates to it; iOS has no current direct GNSS parser surface.",
+    "sharedOwnership": "Shared common GNSS/location parser owns raw type 0-3 byte decoding and Android production delegates to it; iOS has no current direct GNSS parser surface.",
     "measurementType": "LOCATION",
     "frameType": 3,
     "compressed": false,

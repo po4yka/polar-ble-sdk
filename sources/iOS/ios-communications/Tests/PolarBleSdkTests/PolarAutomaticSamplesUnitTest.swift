@@ -373,7 +373,7 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
         }
     }
 
-    func testActivitySummaryReadinessManifestIsPinnedBeforeAutomaticSampleMigration() throws {
+    func testActivitySummaryReadinessManifestPinsAutomaticSampleOwnership() throws {
         let readiness = try loadActivitySummaryReadinessManifest()
         let input = try XCTUnwrap(readiness["input"] as? [String: Any])
         let expected = try XCTUnwrap(readiness["expected"] as? [String: Any])
@@ -411,7 +411,7 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Activity, automatic-sample, and daily-summary shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), [
             "com.polar.sdk.api.model.utils.PolarActivityUtilsTest",
             "com.polar.sdk.api.model.utils.PolarAutomaticSamplesUtilsTest"

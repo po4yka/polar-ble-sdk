@@ -23,7 +23,7 @@
     ]
   },
   "expected": {
-    "migrationOwnership": "Shared PolarAtomicSet owns collection-like set semantics as a compatibility fixture; Android AtomicSet remains the synchronized platform wrapper and BLE/GATT observer primitive.",
+    "sharedOwnership": "Shared PolarAtomicSet owns collection-like set semantics as a compatibility fixture; Android AtomicSet remains the synchronized platform wrapper and BLE/GATT observer primitive.",
     "size": 3,
     "accessAllOrder": ["item3", "item2", "item1"],
     "fetchPrefix": "item",

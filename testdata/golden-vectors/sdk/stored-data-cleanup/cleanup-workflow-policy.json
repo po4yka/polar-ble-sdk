@@ -3,7 +3,7 @@
   "area": "sdk-stored-data-cleanup",
   "case": "cleanup_workflow_policy",
   "source": "BDBleApiImplTest and PolarBleApiImplTests stored-data cleanup characterization",
-  "description": "Pins deterministic stored-data cleanup filtering and command planning before cleanup workflows can delegate to a shared KMP runtime.",
+  "description": "Pins deterministic stored-data cleanup filtering and command planning before cleanup workflows can delegate to a shared runtime.",
   "input": {
     "scenarios": [
       {

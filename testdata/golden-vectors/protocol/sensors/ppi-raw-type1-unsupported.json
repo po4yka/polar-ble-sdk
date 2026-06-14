@@ -21,7 +21,7 @@
     "ios": true,
     "common": true
   },
-  "notes": "PPI currently supports only raw type 0. KMP should keep unsupported frame errors deterministic.",
+  "notes": "PPI currently supports only raw type 0. Shared code should keep unsupported frame errors deterministic.",
   "consumerTests": {
     "android": [
       "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpiDataTest"

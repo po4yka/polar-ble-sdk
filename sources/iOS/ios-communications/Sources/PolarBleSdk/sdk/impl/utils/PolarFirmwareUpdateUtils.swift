@@ -52,7 +52,7 @@ class PolarFirmwareUpdateUtils {
     static let DEVICE_FIRMWARE_INFO_PATH = PolarRuntimePlanner.firmwareDeviceInfoPath()
     static var packageExtractor: FirmwarePackageExtracting = ZipFirmwarePackageExtractor()
 
-    public class FwFileComparator {
+    internal class FwFileComparator {
         static func compare(_ file1: String, _ file2: String) -> ComparisonResult {
             let firstPriority = PolarRuntimePlanner.firmwareFilePriority(file1)
             let secondPriority = PolarRuntimePlanner.firmwareFilePriority(file2)

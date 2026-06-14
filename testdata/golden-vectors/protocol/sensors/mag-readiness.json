@@ -1,8 +1,8 @@
 {
   "id": "mag-readiness",
   "area": "sensors.mag",
-  "case": "pre_migration_readiness_manifest",
-  "source": "KMP migration readiness gate for MAG parser behavior",
+  "case": "shared_contract_readiness_manifest",
+  "source": "Shared ownership readiness gate for MAG parser behavior",
   "input": {
     "kind": "magReadiness",
     "policyVectorPaths": [
@@ -31,7 +31,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "sharedOwnershipStatus": "coveredBySharedContractCharacterization",
     "coveredBehaviorFamilies": [
       "compressed-type0-reference-delta-decoding",
       "compressed-type0-factor-scaling",

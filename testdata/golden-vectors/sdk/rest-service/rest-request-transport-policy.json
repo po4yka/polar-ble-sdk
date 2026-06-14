@@ -2,7 +2,7 @@
   "id": "rest-request-transport-policy",
   "area": "sdk.rest-service",
   "case": "rest_request_transport_policy",
-  "source": "KMP migration fake-transport planning from Android and iOS REST request surfaces",
+  "source": "shared ownership fake-transport planning from Android and iOS REST request surfaces",
   "input": {
     "kind": "restRequestTransportPolicy",
     "requests": [
@@ -49,7 +49,7 @@
     ]
   },
   "expected": {
-    "migrationRequirement": "Before moving REST request orchestration into common KMP code, implement a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads.",
+    "sharedOwnershipRequirement": "Shared ownership of REST request orchestration requires a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads.",
     "observations": [
       "captured request path and operation",
       "terminal platform error for PFTP response-error payloads",

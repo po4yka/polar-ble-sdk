@@ -41,7 +41,7 @@ class PolarFirstTimeUseConfigTest {
     }
 
     @Test
-    fun `first time use readiness manifest is pinned before model migration`() {
+    fun `first time use readiness manifest is pinned for shared model ownership`() {
         val manifest = loadFirstTimeUseReadinessManifest()
         val input = manifest.getAsJsonObject("input")
         val expected = manifest.getAsJsonObject("expected")
@@ -85,6 +85,6 @@ class PolarFirstTimeUseConfigTest {
             "platform-first-time-use-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
+        const val FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
     }
 }

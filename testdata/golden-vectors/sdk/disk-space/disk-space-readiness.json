@@ -2,8 +2,8 @@
   "id": "disk-space-readiness",
   "area": "sdk.disk-space",
   "case": "disk_space_readiness",
-  "source": "Disk-space vectors and shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the disk-space model behavior families that must remain covered before disk-space conversion delegates to shared KMP code.",
+  "source": "Disk-space vectors and shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the disk-space model behavior families that must remain covered before disk-space conversion delegates to shared code.",
   "input": {
     "kind": "diskSpaceReadiness",
     "policyVectorPaths": [
@@ -36,7 +36,7 @@
       "platform-disk-space-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Disk-space model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS disk-space tests continue to reference the same vectors, byte-total and free-byte calculations remain covered, zero-fragment counts remain explicit, fragment size uses the unsigned 32-bit policy instead of inheriting Android signed-int exposure or Swift UInt32 behavior accidentally, malformed truncated varints map to typed parse errors, and the shared tests are compile-verified."
+    "commonDecision": "Disk-space model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS disk-space tests continue to reference the same vectors, byte-total and free-byte calculations remain covered, zero-fragment counts remain explicit, fragment size uses the unsigned 32-bit policy instead of inheriting Android signed-int exposure or Swift UInt32 behavior accidentally, malformed truncated varints map to typed parse errors, and the shared tests are compile-verified."
   },
   "consumerTests": {
     "android": [
@@ -54,5 +54,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for disk-space model behavior-family completeness only; public platform adapters may preserve legacy signed or unsigned scalar exposure only after the shared unsigned policy is compile-verified."
+  "notes": "This readiness manifest is a shared ownership gate for disk-space model behavior-family completeness only; public platform adapters may preserve legacy signed or unsigned scalar exposure only after the shared unsigned policy is compile-verified."
 }

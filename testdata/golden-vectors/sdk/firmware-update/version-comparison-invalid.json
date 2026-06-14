@@ -29,7 +29,7 @@
   },
   "platformExpectations": {
     "commonDecision": {
-      "invalidVersionPolicy": "current-platform-utilities-crash-or-throw-on-non-integer-components; KMP should replace this with a typed parse failure before public workflow migration"
+      "invalidVersionPolicy": "current-platform-utilities-crash-or-throw-on-non-integer-components; Shared code should replace this with a typed parse failure before public workflow shared ownership"
     }
   },
   "platforms": {

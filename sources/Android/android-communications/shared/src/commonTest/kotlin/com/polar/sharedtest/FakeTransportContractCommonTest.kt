@@ -19,7 +19,7 @@ class FakeTransportContractCommonTest {
         assertEquals("WRITE:/U/0/SETTINGS.BPB:0a0b", expected.stringArrayValue("commands").first { command -> command.startsWith("WRITE:") })
         assertEquals(expected.stringArrayValue("outcomes"), actualOutcomes.map(::describeOutcome))
         assertEquals(expected.stringArrayValue("commands"), transport.commands.map(::describeCommand))
-        assertEquals("Shared fake transport must capture request order, write payload bytes, stream subscription targets, and scripted success/error/complete outcomes deterministically before runtime command planning delegates to KMP.", expected.stringValue("commonDecision"))
+        assertEquals("Shared fake transport must capture request order, write payload bytes, stream subscription targets, and scripted success/error/complete outcomes deterministically before runtime command planning delegates to shared.", expected.stringValue("commonDecision"))
     }
 
     @Test
@@ -32,7 +32,7 @@ class FakeTransportContractCommonTest {
 
         assertEquals(expected.stringValue("outcome"), describeOutcome(outcome))
         assertEquals(expected.stringArrayValue("commands"), transport.commands.map(::describeCommand))
-        assertEquals("Shared fake transport must report unscripted operations as deterministic timeouts while still recording the attempted command before runtime code delegates to KMP.", expected.stringValue("commonDecision"))
+        assertEquals("Shared fake transport must report unscripted operations as deterministic timeouts while still recording the attempted command before runtime code delegates to shared.", expected.stringValue("commonDecision"))
     }
 
     @Test
@@ -80,7 +80,7 @@ class FakeTransportContractCommonTest {
         assertEquals(expected.stringArrayValue("outcomes"), actualOutcomes.map(::describeOutcome))
         assertEquals(expected.stringArrayValue("commands"), transport.commands.map(::describeCommand))
         assertEquals(expected.booleanValue("connectedAfterReconnect"), transport.isConnected)
-        assertEquals("Shared fake transport must make reconnect-after-failure explicit, observable, and deterministic before retry or reconnect-aware runtime planning delegates to KMP.", expected.stringValue("commonDecision"))
+        assertEquals("Shared fake transport must make reconnect-after-failure explicit, observable, and deterministic before retry or reconnect-aware runtime planning delegates to shared.", expected.stringValue("commonDecision"))
     }
 
     @Test
@@ -153,7 +153,7 @@ class FakeTransportContractCommonTest {
 
         assertEquals(expected.stringValue("missingTimeoutLabel"), assertIs<CommonFakeTransportOutcome.Timeout>(timeoutOutcome).label)
         assertEquals(expected.stringArrayValue("missingChecks"), neverReady.checks)
-        assertEquals("Service-readiness waits in shared runtime must be bounded, observable, deterministic, and free from wall-clock sleeps before feature readiness is delegated to KMP.", expected.stringValue("commonDecision"))
+        assertEquals("Service-readiness waits in shared runtime must be bounded, observable, deterministic, and free from wall-clock sleeps before feature readiness is delegated to shared.", expected.stringValue("commonDecision"))
     }
 
     @Test
@@ -189,7 +189,7 @@ class FakeTransportContractCommonTest {
         assertEquals(expected.intValue("retryCount"), scheduler.retryTimesMillis.size)
         assertEquals(expected.signedIntArrayValue("retryTimesMillis").map(Int::toLong), scheduler.retryTimesMillis)
         assertEquals(expected.intValue("finalTimeMillis").toLong(), clock.currentTimeMillis)
-        assertEquals("Shared runtime retry tests must schedule retry delays on a virtual clock, assert retry count and elapsed retry times, and avoid wall-clock sleeps before retry policy delegates to KMP.", expected.stringValue("commonDecision"))
+        assertEquals("Shared runtime retry tests must schedule retry delays on a virtual clock, assert retry count and elapsed retry times, and avoid wall-clock sleeps before retry policy delegates to shared.", expected.stringValue("commonDecision"))
     }
 
     @Test
@@ -212,7 +212,7 @@ class FakeTransportContractCommonTest {
         assertEquals(expected.stringArrayValue("pollOutcomes"), listOf(firstPoll, secondPoll).map(::describeOutcome))
         assertEquals(expected.stringArrayValue("polls"), delayedResponse.polls)
         assertEquals(expected.intValue("finalTimeMillis").toLong(), clock.currentTimeMillis)
-        assertEquals("Shared runtime tests must model delayed transport responses with a virtual clock, observable poll attempts, and a distinct pending label before delayed read, write, or notification orchestration delegates to KMP.", expected.stringValue("commonDecision"))
+        assertEquals("Shared runtime tests must model delayed transport responses with a virtual clock, observable poll attempts, and a distinct pending label before delayed read, write, or notification orchestration delegates to shared.", expected.stringValue("commonDecision"))
     }
 
     @Test
@@ -274,7 +274,7 @@ class FakeTransportContractCommonTest {
         "compile-verification-gate"
     )
 
-    private val fakeTransportReadinessCommonDecision = "Fake-transport base runtime migration may proceed only after scripted command outcomes, delayed-response polling, reconnect-after-failure controls, retry-delay scheduling, unscripted-operation timeouts, service readiness, and virtual-clock timeout policy vectors remain executable from shared commonTest, Android and iOS guard the same vector paths, platform facade compatibility stays explicit, and the shared tests are compile-verified."
+    private val fakeTransportReadinessCommonDecision = "Fake-transport base runtime shared ownership remains valid while scripted command outcomes, delayed-response polling, reconnect-after-failure controls, retry-delay scheduling, unscripted-operation timeouts, service readiness, and virtual-clock timeout policy vectors remain executable from shared commonTest, Android and iOS guard the same vector paths, platform facade compatibility stays explicit, and the shared tests are compile-verified."
 
     private val requiredFakeTransportPrototypeStatuses = mapOf(
         "sdk/fake-transport/scripted-command-outcomes-policy.json" to "executable shared commonTest fake-transport contract",

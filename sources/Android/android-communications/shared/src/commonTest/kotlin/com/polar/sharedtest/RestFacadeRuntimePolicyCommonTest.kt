@@ -48,7 +48,7 @@ class RestFacadeRuntimePolicyCommonTest {
     }
 
     @Test
-    fun restFacadeRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun restFacadeRuntimeReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/rest-service/rest-facade-runtime-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -65,7 +65,7 @@ class RestFacadeRuntimePolicyCommonTest {
         assertEquals(restFacadeRuntimeReadinessCommonDecision, expected.stringValue("commonDecision"))
         val commonRuntimePrototype = expected.objectValue("commonRuntimePrototype")
         assertEquals("executable shared commonTest runtime planning guard", commonRuntimePrototype.stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", commonRuntimePrototype.stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", commonRuntimePrototype.stringValue("reason"))
         val consumerTests = manifest.objectValue("consumerTests")
         assertEquals(listOf("com.polar.sdk.impl.BDBleApiImplTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarBleApiImplTests"), consumerTests.stringArrayValue("ios"))
@@ -245,9 +245,9 @@ class RestFacadeRuntimePolicyCommonTest {
 
     private val restFacadeRuntimeCommonDecision = "A shared REST facade runtime may own deterministic service-list and service-description request planning only after platform facades keep public parse behavior, empty-success and malformed-success parse/decode failures, request-failure error mapping, and response-error platform mapping pinned for both service discovery and service-description paths."
 
-    private val restFacadeRuntimeTopLevelDecision = "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
+    private val restFacadeRuntimeTopLevelDecision = "Promote REST facade request planning only while service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
 
-    private val restFacadeRuntimeReadinessCommonDecision = "REST facade runtime migration may proceed only after rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified."
+    private val restFacadeRuntimeReadinessCommonDecision = "REST facade runtime shared ownership remains valid while rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified."
 
     private fun outcomeForRestFacadeTerminal(terminal: String): CommonFakeTransportOutcome {
         return when (terminal) {

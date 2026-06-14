@@ -507,7 +507,7 @@ class PolarDeviceToHostNotificationsApiTests: XCTestCase {
         XCTAssertTrue(scenarioIds.contains(scenarioId), "stream-runtime-policy.json must include \(scenarioId)")
     }
 
-    func testD2HStreamReadinessManifestIsPinnedBeforeStreamRuntimeMigration() throws {
+    func testD2HStreamReadinessManifestPinsStreamRuntimeOwnership() throws {
         let file = try GoldenVectorTestData.repositoryRoot()
             .appendingPathComponent("testdata/golden-vectors/sdk/d2h-notifications/stream-runtime-readiness.json")
         let data = try Data(contentsOf: file)
@@ -542,16 +542,16 @@ class PolarDeviceToHostNotificationsApiTests: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "D2H stream runtime migration may proceed only after stream-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, mapped values emitted before late upstream errors are preserved, consumer cancellation cancels upstream work and suppresses later notifications, unknown notifications are filtered without stopping later known values, failed subscribe paths register no observers, public facade error mapping remains pinned, and the shared tests are compile-verified.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "D2H stream runtime shared ownership remains valid while stream-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, mapped values emitted before late upstream errors are preserved, consumer cancellation cancels upstream work and suppresses later notifications, unknown notifications are filtered without stopping later known values, failed subscribe paths register no observers, public facade error mapping remains pinned, and the shared tests are compile-verified.")
         let prototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], "stream-runtime-readiness.json")
         XCTAssertEqual(prototype["status"] as? String, "executable shared commonTest runtime planning guard")
-        XCTAssertEqual(prototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.")
+        XCTAssertEqual(prototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"], "stream-runtime-readiness")
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarDeviceToHostNotificationsApiTests"], "stream-runtime-readiness")
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.D2hStreamRuntimePolicyCommonTest"], "stream-runtime-readiness")
     }
 
-    func testD2HMappingReadinessManifestIsPinnedBeforeMappingMigration() throws {
+    func testD2HMappingReadinessManifestPinsMappingOwnership() throws {
         let file = try GoldenVectorTestData.repositoryRoot()
             .appendingPathComponent("testdata/golden-vectors/sdk/d2h-notifications/mapping-readiness.json")
         let data = try Data(contentsOf: file)
@@ -590,7 +590,7 @@ class PolarDeviceToHostNotificationsApiTests: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "D2H notification mapping migration may proceed only after every mapping vector named by this readiness manifest is executable from shared commonTest, Android and iOS D2H mapping tests continue to reference the same vectors, known IDs, unknown-ID filtering, raw parameter preservation, typed fields for filesystem, sync-required, autosync, and start-GPS notifications, stop-GPS empty parameters, invalid-payload null parsing, repeated-notification ordering, and the shared tests are compile-verified.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "D2H notification mapping shared ownership remains valid while every mapping vector named by this readiness manifest is executable from shared commonTest, Android and iOS D2H mapping tests continue to reference the same vectors, known IDs, unknown-ID filtering, raw parameter preservation, typed fields for filesystem, sync-required, autosync, and start-GPS notifications, stop-GPS empty parameters, invalid-payload null parsing, repeated-notification ordering, and the shared tests are compile-verified.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"], "mapping-readiness")
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarDeviceToHostNotificationsApiTests"], "mapping-readiness")
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.D2hNotificationCommonPolicyTest"], "mapping-readiness")

@@ -7,9 +7,9 @@ import PolarBleSdkShared
 
 private let TAG = "PolarDeviceBackup"
 private let ARABICA_SYS_FOLDER = "/SYS/"
-public class PolarBackupManager {
+internal class PolarBackupManager {
 
-    public struct BackupFileData {
+    internal struct BackupFileData {
         let data: Data
         let directory: String
         let fileName: String
@@ -23,11 +23,11 @@ public class PolarBackupManager {
 
     let client: BlePsFtpClient
 
-    public init(client: BlePsFtpClient) {
+    internal init(client: BlePsFtpClient) {
         self.client = client
     }
 
-    public func backupDevice() async throws -> [BackupFileData] {
+    internal func backupDevice() async throws -> [BackupFileData] {
         BleLogger.trace("backupDevice() called")
         let rootOperation = PolarRuntimePlanner.fileFacadeOperation(id: "backup-read-root-directory", command: "GET", path: ARABICA_SYS_FOLDER)
         let operation = rootOperation ?? (.get, ARABICA_SYS_FOLDER)
@@ -74,7 +74,7 @@ public class PolarBackupManager {
         }
     }
 
-    public func restoreBackup(backupFiles: [BackupFileData]) async throws {
+    internal func restoreBackup(backupFiles: [BackupFileData]) async throws {
         BleLogger.trace("Starting backup restoration for \(backupFiles.count) files")
         var failedFiles: [(fileName: String, error: Error)] = []
         let restoreInputs = backupFiles.map { backupFileData in

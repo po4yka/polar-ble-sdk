@@ -261,7 +261,7 @@ internal class EcgDataTest {
     }
 
     @Test
-    fun `ecg golden vectors follow neutral KMP vector shape`() {
+    fun `ecg golden vectors follow neutral shared vector shape`() {
         loadEcgVectors().forEach { vector ->
             val id = vector.get("id").asString
             Assert.assertTrue(id, vector.has("area"))
@@ -278,7 +278,7 @@ internal class EcgDataTest {
     }
 
     @Test
-    fun `ECG readiness manifest is pinned before parser migration`() {
+    fun `ECG readiness manifest is pinned for shared parser ownership`() {
         val manifest = loadEcgReadinessManifest()
         val id = manifest.get("id").asString
         val input = manifest.getAsJsonObject("input")

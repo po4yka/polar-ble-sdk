@@ -190,7 +190,7 @@ class PressureDataTest {
     }
 
     @Test
-    fun `pressure golden vectors follow neutral KMP vector shape`() {
+    fun `pressure golden vectors follow neutral shared vector shape`() {
         loadPressureVectors().forEach { vector ->
             val id = vector.get("id").asString
             Assert.assertTrue(id, vector.has("area"))
@@ -207,7 +207,7 @@ class PressureDataTest {
     }
 
     @Test
-    fun `pressure temperature readiness manifest is pinned before scalar parser migration`() {
+    fun `pressure temperature readiness manifest is pinned before scalar parser shared ownership`() {
         val manifest = loadPressureTemperatureReadinessManifest()
         val id = manifest.get("id").asString
         val input = manifest.getAsJsonObject("input")

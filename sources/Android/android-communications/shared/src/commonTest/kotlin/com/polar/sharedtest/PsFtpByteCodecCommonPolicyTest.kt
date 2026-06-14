@@ -110,7 +110,7 @@ class PsFtpByteCodecCommonPolicyTest {
     }
 
     @Test
-    fun psFtpByteCodecReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun psFtpByteCodecReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/psftp-message-stream/byte-codec-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -274,6 +274,6 @@ class PsFtpByteCodecCommonPolicyTest {
             "complete_message_streams",
             "rfc76_frame_splitting"
         )
-        const val PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
+        const val PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec shared ownership remains valid while every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
     }
 }

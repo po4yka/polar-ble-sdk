@@ -19,8 +19,8 @@ class PpgParserCommonPolicyTest {
                 sampleRate = input.intValue("sampleRate")
             )
 
-            expected.optionalStringValue("migrationOwnership")?.let { ownership ->
-                assertEquals(PROTOCOL_ONLY_MIGRATION_OWNERSHIP, ownership, caseId)
+            expected.optionalStringValue("sharedOwnership")?.let { ownership ->
+                assertEquals(PROTOCOL_ONLY_PLATFORM_OWNERSHIP, ownership, caseId)
                 assertEquals(expected.stringValue("measurementType"), parsed.measurementType, caseId)
                 assertEquals(expected.intValue("frameType"), parsed.frameType, caseId)
                 assertEquals(expected.booleanValue("compressed"), parsed.compressed, caseId)
@@ -100,14 +100,14 @@ class PpgParserCommonPolicyTest {
     }
 
     @Test
-    fun ppgFrameFamilyMigrationReadinessManifestNamesEveryPreMigrationParserPolicy() {
+    fun ppgFrameFamilySharedContractReadinessManifestNamesEverySharedContractParserPolicy() {
         val vector = loadGoldenVectorText(PPG_READINESS_MANIFEST)
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
         val requiredVectorPaths = input.stringArrayValue("requiredVectorPaths")
         val requiredFamilies = input.stringArrayValue("requiredFamilies")
         val coveredFamilies = expected.stringArrayValue("coveredFamilies")
-        assertEquals("ppgFrameFamilyMigrationReadiness", input.stringValue("kind"))
+        assertEquals("ppgFrameFamilySharedContractReadiness", input.stringValue("kind"))
         assertEquals(PPG_READINESS_VECTOR_PATHS, requiredVectorPaths)
         assertEquals(REQUIRED_PPG_FRAME_FAMILIES, requiredFamilies)
         assertEquals(REQUIRED_PPG_FRAME_FAMILIES, coveredFamilies)
@@ -437,7 +437,7 @@ class PpgParserCommonPolicyTest {
         const val FRAME_TYPE_MASK = 0x7F
         const val BITS_PER_BYTE = 8
         const val NANOSECONDS_PER_SECOND = 1_000_000_000L
-        const val PPG_READINESS_MANIFEST = "protocol/sensors/ppg-frame-family-migration-readiness.json"
+        const val PPG_READINESS_MANIFEST = "protocol/sensors/ppg-frame-family-shared-contract-readiness.json"
         val PPG_VECTORS = listOf(
             "protocol/sensors/ppg-compressed-type10-full-status.json",
             "protocol/sensors/ppg-compressed-type10-reference-status.json",
@@ -502,7 +502,7 @@ class PpgParserCommonPolicyTest {
             "platform-split-type13-shape",
             "platform-split-integration-gain-shape"
         )
-        const val PPG_READINESS_COMMON_DECISION = "PPG parser migration may proceed only after every required vector path in this manifest is executable from shared commonTest and compile-verified against the common parser prototype; this manifest does not replace parser execution or Gradle commonTest verification."
+        const val PPG_READINESS_COMMON_DECISION = "PPG parser shared ownership remains valid while every required vector path in this manifest is executable from shared commonTest and compile-verified against the common parser prototype; this manifest does not replace parser execution or Gradle commonTest verification."
     }
 
     private enum class IntegrationField {

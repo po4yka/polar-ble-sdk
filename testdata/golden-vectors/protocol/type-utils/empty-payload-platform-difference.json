@@ -7,7 +7,7 @@
     "hex": ""
   },
   "expected": {
-    "commonDecision": "KMP should reject empty parser primitive payloads with a deterministic error."
+    "commonDecision": "Shared code should reject empty parser primitive payloads with a deterministic error."
   },
   "platformExpectations": {
     "android": {

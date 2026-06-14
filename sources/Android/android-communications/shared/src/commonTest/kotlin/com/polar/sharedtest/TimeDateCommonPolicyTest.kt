@@ -32,7 +32,7 @@ class TimeDateCommonPolicyTest {
     }
 
     @Test
-    fun timeDateReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun timeDateReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val vector = loadGoldenVectorText("sdk/time-date/time-date-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -153,6 +153,6 @@ class TimeDateCommonPolicyTest {
             "platform-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val TIME_DATE_READINESS_COMMON_DECISION = "Time/date migration owns portable field mapping, timezone-offset minute conversion, millisecond/nanosecond policy, duration-to-millis math, time-string formatting, and plain-date validation in shared KMP code while platform calendar, timezone database, Date, Calendar, LocalDateTime, protobuf, and public facade conversion remain platform adapters until shared artifacts are consumed by iOS production code."
+        const val TIME_DATE_READINESS_COMMON_DECISION = "Time/date shared ownership owns portable field mapping, timezone-offset minute conversion, millisecond/nanosecond policy, duration-to-millis math, time-string formatting, and plain-date validation in shared code while platform calendar, timezone database, Date, Calendar, LocalDateTime, protobuf, and public facade conversion remain platform adapters until shared artifacts are consumed by iOS production code."
     }
 }

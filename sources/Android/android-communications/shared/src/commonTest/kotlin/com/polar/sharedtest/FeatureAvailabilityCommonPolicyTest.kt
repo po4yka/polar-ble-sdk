@@ -71,7 +71,7 @@ class FeatureAvailabilityCommonPolicyTest {
         assertEquals(FEATURE_AVAILABILITY_CASE_IDS, input.objectArray("cases").map { it.stringValue("id") })
         assertEquals(FEATURE_AVAILABILITY_BEHAVIOR_FAMILIES, input.stringArrayValue("requiredBehaviorFamilies"))
         assertEquals(FEATURE_AVAILABILITY_BEHAVIOR_FAMILIES, expected.stringArrayValue("coveredBehaviorFamilies"))
-        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(FEATURE_AVAILABILITY_COMMON_DECISION, expected.stringValue("commonDecision"))
         assertEquals(true, platforms.booleanValue("android"))
         assertEquals(true, platforms.booleanValue("ios"))
@@ -94,6 +94,6 @@ class FeatureAvailabilityCommonPolicyTest {
             "unknown-feature-pass-through",
             "platform-client-readiness-boundary"
         )
-        const val FEATURE_AVAILABILITY_COMMON_DECISION = "SDK feature availability migration owns only deterministic service and capability preconditions in shared KMP; GATT client lookup, clientReady waits, PMD feature reads, notification readiness, service discovery, BLE transport execution, and public callback/error behavior remain platform-owned."
+        const val FEATURE_AVAILABILITY_COMMON_DECISION = "SDK feature availability shared ownership owns only deterministic service and capability preconditions in shared; GATT client lookup, clientReady waits, PMD feature reads, notification readiness, service discovery, BLE transport execution, and public callback/error behavior remain platform-owned."
     }
 }

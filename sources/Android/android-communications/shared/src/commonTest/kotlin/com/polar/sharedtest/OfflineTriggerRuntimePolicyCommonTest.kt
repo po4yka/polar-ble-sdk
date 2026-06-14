@@ -81,7 +81,7 @@ class OfflineTriggerRuntimePolicyCommonTest {
     }
 
     @Test
-    fun offlineTriggerRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun offlineTriggerRuntimeReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/offline-recording/trigger-runtime-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -98,7 +98,7 @@ class OfflineTriggerRuntimePolicyCommonTest {
         assertTriggerRuntimePolicyVectorShape(policy)
         assertEquals(TRIGGER_RUNTIME_READINESS_COMMON_DECISION, expected.stringValue("commonDecision"))
         assertEquals("executable shared commonTest runtime planning guard", expected.objectValue("commonRuntimePrototype").stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
         assertEquals(listOf("com.polar.sdk.impl.utils.PolarDataUtilsTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarDataUtilsTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.OfflineTriggerRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
@@ -297,7 +297,7 @@ class OfflineTriggerRuntimePolicyCommonTest {
         )
         const val TRIGGER_RUNTIME_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
         const val TRIGGER_RUNTIME_CANCELLATION_DEFERRAL_REASON = "Shared commonTest now asserts get/set trigger orchestration steps through the common fake transport, Android plus iOS facade tests pin public get/set mapping, secret propagation, set-mode, status-read, setting-write, and get-status error propagation, and platform PMD adapter tests pin the Android/iOS packet-framing split plus response-queue cleanup policy. Cancellation remains a production-delegation gate because current offline-trigger operations are synchronous control-point commands without stream observers or cancellable fake-runtime tasks."
-        const val TRIGGER_RUNTIME_READINESS_COMMON_DECISION = "Offline trigger runtime migration may proceed only after trigger-runtime-policy.json and this readiness manifest are executable from shared commonTest, platform facade tests continue to reference the same policy vector, packet-framing differences are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
-        const val TRIGGER_RUNTIME_NOTES = "Android serializes enabled trigger settings with an explicit length byte before setting and secret bytes, while current iOS appends setting and secret bytes directly. Android discards stale PMD control-point responses with an unexpected command byte during offline-trigger status reads; iOS clears the response queue before transmitting a new control-point command. KMP must choose a shared packet and queue-cleanup contract or preserve these platform splits behind platform adapters."
+        const val TRIGGER_RUNTIME_READINESS_COMMON_DECISION = "Offline trigger runtime shared ownership remains valid while trigger-runtime-policy.json and this readiness manifest are executable from shared commonTest, platform facade tests continue to reference the same policy vector, packet-framing differences are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
+        const val TRIGGER_RUNTIME_NOTES = "Android serializes enabled trigger settings with an explicit length byte before setting and secret bytes, while current iOS appends setting and secret bytes directly. Android discards stale PMD control-point responses with an unexpected command byte during offline-trigger status reads; iOS clears the response queue before transmitting a new control-point command. shared must choose a shared packet and queue-cleanup contract or preserve these platform splits behind platform adapters."
     }
 }

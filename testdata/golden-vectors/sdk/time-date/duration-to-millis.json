@@ -2,7 +2,7 @@
   "id": "duration-to-millis",
   "area": "time-date",
   "case": "duration_to_millis",
-  "source": "Android iOS shared migration characterization",
+  "source": "Android iOS shared shared ownership characterization",
   "description": "Pins duration field math used by Android PbDuration and iOS PbDuration adapters.",
   "input": {
     "kind": "durationToMillis",

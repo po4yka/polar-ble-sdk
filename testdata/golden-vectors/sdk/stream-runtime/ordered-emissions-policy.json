@@ -47,5 +47,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Stream utilities can move to shared KMP code only after ordered emissions are preserved before completion on Android, iOS, and the shared fake-stream runtime."
+  "notes": "Stream utilities can move to shared code only after ordered emissions are preserved before completion on Android, iOS, and the shared fake-stream runtime."
 }

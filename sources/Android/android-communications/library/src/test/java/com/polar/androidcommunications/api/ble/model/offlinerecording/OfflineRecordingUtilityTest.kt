@@ -73,12 +73,12 @@ class OfflineRecordingUtilityTest {
     }
 
     @Test
-    fun `offline recording filename mapping golden vector follows neutral KMP vector shape`() {
+    fun `offline recording filename mapping golden vector follows neutral shared vector shape`() {
         assertNeutralKmpVectorShape(loadOfflineRecordingVector("filename-mapping.json"), "filename-mapping.json")
     }
 
     @Test
-    fun `offline recording metadata readiness manifest is pinned before metadata migration`() {
+    fun `offline recording metadata readiness manifest is pinned before metadata shared ownership`() {
         val readiness = loadOfflineRecordingVector("metadata-readiness.json")
         val input = readiness.getAsJsonObject("input")
         val expected = readiness.getAsJsonObject("expected")
@@ -149,6 +149,6 @@ class OfflineRecordingUtilityTest {
             "compile-verification-gate"
         )
 
-        const val OFFLINE_RECORDING_METADATA_READINESS_COMMON_DECISION = "Offline recording metadata migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves."
+        const val OFFLINE_RECORDING_METADATA_READINESS_COMMON_DECISION = "Offline recording metadata shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves."
     }
 }

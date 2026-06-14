@@ -525,7 +525,7 @@ class PolarFileUtilsTest {
     }
 
     @Test
-    fun `file utility golden vectors follow neutral KMP vector shape`() {
+    fun `file utility golden vectors follow neutral shared vector shape`() {
         loadFileUtilityVectors().forEach { vector ->
             val id = vector.get("id").asString
             Assert.assertTrue(id, vector.has("area"))
@@ -580,7 +580,7 @@ class PolarFileUtilsTest {
     }
 
     @Test
-    fun runtimeErrorPolicyVector_isPinnedBeforeRuntimeMigration() {
+    fun runtimeErrorPolicyVector_isPinnedForRuntimeOwnership() {
         val vector = loadFileUtilityVectors().first { it.get("id").asString == "runtime-error-policy" }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -591,14 +591,14 @@ class PolarFileUtilsTest {
         Assert.assertTrue("runtime-error-policy", vector.has("execution"))
         Assert.assertEquals(FILE_RUNTIME_ERROR_CASE_IDS, inputCaseIds)
         Assert.assertEquals(FILE_RUNTIME_ERROR_CASE_IDS, expectedCaseIds)
-        Assert.assertEquals(FILE_RUNTIME_ERROR_MIGRATION_REQUIREMENT, expected.get("migrationRequirement").asString)
+        Assert.assertEquals(FILE_RUNTIME_ERROR_SHARED_OWNERSHIP_REQUIREMENT, expected.get("sharedOwnershipRequirement").asString)
         Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFileUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         Assert.assertEquals(listOf("PolarFileUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
         Assert.assertEquals(listOf("com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
     }
 
     @Test
-    fun runtimeErrorReadinessManifest_isPinnedBeforeRuntimeMigration() {
+    fun runtimeErrorReadinessManifest_isPinnedForRuntimeOwnership() {
         val vector = loadFileUtilityVectors().first { it.get("id").asString == "runtime-error-readiness" }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -614,14 +614,14 @@ class PolarFileUtilsTest {
         Assert.assertEquals(FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION, expected.get("commonDecision").asString)
         val commonRuntimePrototype = expected.getAsJsonObject("commonRuntimePrototype")
         Assert.assertEquals("executable shared commonTest runtime planning guard", commonRuntimePrototype.get("status").asString)
-        Assert.assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", commonRuntimePrototype.get("reason").asString)
+        Assert.assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", commonRuntimePrototype.get("reason").asString)
         Assert.assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFileUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         Assert.assertEquals(listOf("PolarFileUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
         Assert.assertEquals(listOf("com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
     }
 
     @Test
-    fun fileFacadeRuntimePolicyVector_isPinnedBeforeRuntimeMigration() {
+    fun fileFacadeRuntimePolicyVector_isPinnedForRuntimeOwnership() {
         val vector = loadFileUtilityVectors().first { it.get("id").asString == "file-facade-runtime-policy" }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -643,7 +643,7 @@ class PolarFileUtilsTest {
     }
 
     @Test
-    fun fileFacadeRuntimeReadinessManifest_isPinnedBeforeRuntimeMigration() {
+    fun fileFacadeRuntimeReadinessManifest_isPinnedForRuntimeOwnership() {
         val vector = loadFileUtilityVectors().first { it.get("id").asString == "file-facade-runtime-readiness" }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -659,7 +659,7 @@ class PolarFileUtilsTest {
         Assert.assertEquals(FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION, expected.get("commonDecision").asString)
         val commonRuntimePrototype = expected.getAsJsonObject("commonRuntimePrototype")
         Assert.assertEquals("executable shared commonTest runtime planning guard", commonRuntimePrototype.get("status").asString)
-        Assert.assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", commonRuntimePrototype.get("reason").asString)
+        Assert.assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", commonRuntimePrototype.get("reason").asString)
         Assert.assertEquals(listOf("com.polar.sdk.impl.BDBleApiImplTest", "com.polar.sdk.api.model.utils.PolarFileUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         Assert.assertEquals(listOf("PolarBleApiImplTests", "PolarFileUtilsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
         Assert.assertEquals(listOf("com.polar.sharedtest.FileFacadeRuntimePolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
@@ -715,7 +715,7 @@ class PolarFileUtilsTest {
             "compile-verification-gate"
         )
 
-        const val FILE_RUNTIME_ERROR_MIGRATION_REQUIREMENT = "Before moving file utility orchestration into common KMP code, implement fake PFTP request and write-stream tests that cover malformed directory payloads, request-level transport errors, response-error status mapping, and write-stream failures after the PUT header is prepared."
+        const val FILE_RUNTIME_ERROR_SHARED_OWNERSHIP_REQUIREMENT = "Shared ownership of file utility orchestration requires fake PFTP request and write-stream tests that cover malformed directory payloads, request-level transport errors, response-error status mapping, and write-stream failures after the PUT header is prepared."
 
         val FILE_RUNTIME_ERROR_CASE_IDS = listOf(
             "directory-list-response-error-103",
@@ -725,7 +725,7 @@ class PolarFileUtilsTest {
             "delete-file-response-error"
         )
 
-        const val FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified."
+        const val FILE_RUNTIME_ERROR_READINESS_COMMON_DECISION = "File runtime error shared ownership remains valid while runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified."
 
         val FILE_FACADE_RUNTIME_OPERATION_IDS = listOf(
             "read-low-level-file-success",
@@ -743,7 +743,7 @@ class PolarFileUtilsTest {
 
         const val FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION = "A shared file facade runtime may own deterministic GET/PUT/REMOVE planning, empty read payloads, write progress consumption, and payload capture only after platform facades keep public error mapping, read/write/delete request and response-error propagation, and directory-list traversal policies pinned."
 
-        const val FILE_FACADE_RUNTIME_MIGRATION_DECISION = "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
+        const val FILE_FACADE_RUNTIME_MIGRATION_DECISION = "Promote low-level file facade planning only while read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
 
         val FILE_FACADE_RUNTIME_READINESS_FAMILIES = listOf(
             "low-level-file-path-gate",
@@ -770,6 +770,6 @@ class PolarFileUtilsTest {
             "compile-verification-gate"
         )
 
-        const val FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION = "File facade runtime migration may proceed only after file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
+        const val FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION = "File facade runtime shared ownership remains valid while file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
     }
 }

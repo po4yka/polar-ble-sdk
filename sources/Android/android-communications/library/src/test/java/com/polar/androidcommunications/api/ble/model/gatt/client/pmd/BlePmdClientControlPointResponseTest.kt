@@ -130,7 +130,7 @@ class BlePmdClientControlPointResponseTest {
     }
 
     @Test
-    fun `control point response golden vectors follow neutral KMP vector shape`() {
+    fun `control point response golden vectors follow neutral shared vector shape`() {
         loadControlPointVectors().forEach { vector ->
             val id = vector.get("id")?.asString ?: "unknown-vector"
 
@@ -148,7 +148,7 @@ class BlePmdClientControlPointResponseTest {
     }
 
     @Test
-    fun `PMD control point readiness manifest is pinned before response parser migration`() {
+    fun `PMD control point readiness manifest is pinned before response parser shared ownership`() {
         val manifest = loadPmdControlPointReadinessManifest()
         val input = manifest.getAsJsonObject("input")
         val expected = manifest.getAsJsonObject("expected")
@@ -213,7 +213,7 @@ class BlePmdClientControlPointResponseTest {
         "compile-verification-gate"
     )
 
-    private val PMD_CONTROL_POINT_READINESS_COMMON_DECISION = "PMD control-point migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS control-point and active-measurement tests continue to reference the same vectors, active-measurement bit decoding and platform state names, success response parsing, more flag and parameter extraction, settings and measurement-status responses, all status-code mappings, unknown measurement type handling, deterministic short-payload error policy, and compile verification remain explicit before production response parsing moves."
+    private val PMD_CONTROL_POINT_READINESS_COMMON_DECISION = "PMD control-point shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS control-point and active-measurement tests continue to reference the same vectors, active-measurement bit decoding and platform state names, success response parsing, more flag and parameter extraction, settings and measurement-status responses, all status-code mappings, unknown measurement type handling, deterministic short-payload error policy, and compile verification remain explicit before production response parsing moves."
 
     private fun assertParseError(caseId: String, expectedError: String, data: ByteArray) {
         when (expectedError) {

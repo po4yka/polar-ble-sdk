@@ -2,8 +2,8 @@
   "id": "activity-summary-readiness",
   "area": "sdk.activity-summary",
   "case": "activity_summary_readiness",
-  "source": "Activity sample, automatic sample, and daily summary vectors plus shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the activity, automatic sample, and daily summary behavior families that must remain covered before model conversion delegates to shared KMP code.",
+  "source": "Activity sample, automatic sample, and daily summary vectors plus shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the activity, automatic sample, and daily summary behavior families that must remain covered before model conversion delegates to shared code.",
   "input": {
     "kind": "activitySummaryReadiness",
     "policyVectorPaths": [
@@ -53,7 +53,7 @@
       "platform-activity-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves."
+    "commonDecision": "Activity, automatic-sample, and daily-summary shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves."
   },
   "consumerTests": {
     "android": [
@@ -73,5 +73,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest gates activity model behavior-family completeness and now pins unsupported-field, public-model-shape, and facade request/error boundaries as explicit preconditions; final malformed activity-sample normalization and transport runtime behavior remain separate migration decisions."
+  "notes": "This readiness manifest gates activity model behavior-family completeness and now pins unsupported-field, public-model-shape, and facade request/error boundaries as explicit preconditions; final malformed activity-sample normalization and transport runtime behavior remain separate shared ownership decisions."
 }

@@ -312,7 +312,7 @@ internal class AccDataTest {
     }
 
     @Test
-    fun `acc golden vectors follow neutral KMP vector shape`() {
+    fun `acc golden vectors follow neutral shared vector shape`() {
         loadAccVectors().forEach { vector ->
             val id = vector.get("id").asString
             Assert.assertTrue(id, vector.has("area"))
@@ -329,7 +329,7 @@ internal class AccDataTest {
     }
 
     @Test
-    fun `ACC readiness manifest is pinned before parser migration`() {
+    fun `ACC readiness manifest is pinned for shared parser ownership`() {
         val manifest = loadAccReadinessManifest()
         val id = manifest.get("id").asString
         val input = manifest.getAsJsonObject("input")

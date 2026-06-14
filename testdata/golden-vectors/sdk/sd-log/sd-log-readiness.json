@@ -2,8 +2,8 @@
   "id": "sd-log-readiness",
   "area": "sdk.sd-log",
   "case": "sd_log_model_readiness",
-  "source": "Android, iOS, and shared SD-log enum mapping plus facade file-operation characterization before KMP migration",
-  "description": "Pins SD-log configuration behavior families that must remain covered before any broader SD-log model or facade execution moves into shared KMP code.",
+  "source": "Android, iOS, and shared SD-log enum mapping plus facade file-operation characterization under shared ownership",
+  "description": "Pins SD-log configuration behavior families that must remain covered before any broader SD-log model or facade execution moves into shared code.",
   "input": {
     "kind": "sdLogReadiness",
     "requiredBehaviorFamilies": [
@@ -34,7 +34,7 @@
       "platform-sd-log-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "SD-log migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS SD-log facade tests continue to pin trigger and magnetometer-frequency enum projection, unknown enum boundaries, SD-log config file paths, write-progress policy, session-notification boundaries, protobuf construction boundaries, optional field presence, public error mapping boundaries, platform vector references, and compile verification before broader SD-log execution moves."
+    "commonDecision": "SD-log shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS SD-log facade tests continue to pin trigger and magnetometer-frequency enum projection, unknown enum boundaries, SD-log config file paths, write-progress policy, session-notification boundaries, protobuf construction boundaries, optional field presence, public error mapping boundaries, platform vector references, and compile verification before broader SD-log execution moves."
   },
   "consumerTests": {
     "android": [
@@ -52,5 +52,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest gates SD-log enum mapping and facade-operation coverage only. Protobuf message construction, optional field presence, session notifications, BLE transport/write execution, SwiftPM/watchOS fallback, and public error translation remain platform-owned until a later runtime slice deliberately migrates execution."
+  "notes": "This readiness manifest gates SD-log enum mapping and facade-operation coverage only. Protobuf message construction, optional field presence, session notifications, BLE transport/write execution, SwiftPM/watchOS fallback, and public error translation remain platform-owned until a later runtime slice deliberately transfers execution to shared code."
 }

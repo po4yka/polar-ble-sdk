@@ -106,7 +106,7 @@ class PolarSkinTemperatureUtilsTests: XCTestCase {
         }
     }
 
-    func testSkinTemperatureDomainReadinessManifestIsPinnedBeforeModelMigration() throws {
+    func testSkinTemperatureDomainReadinessManifestPinsModelOwnership() throws {
         let readiness = try loadSkinTemperatureDomainReadinessManifest()
         let input = try XCTUnwrap(readiness["input"] as? [String: Any])
         let expected = try XCTUnwrap(readiness["expected"] as? [String: Any])
@@ -135,7 +135,7 @@ class PolarSkinTemperatureUtilsTests: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Skin-temperature domain migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS skin-temperature tests continue to reference the same vectors, sourceDeviceId ownership remains explicit, empty sample lists and sample values are preserved, measurement and sensor-location mappings are covered, unknown enum behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Skin-temperature domain shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS skin-temperature tests continue to reference the same vectors, sourceDeviceId ownership remains explicit, empty sample lists and sample values are preserved, measurement and sensor-location mappings are covered, unknown enum behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.api.model.utils.PolarSkinTemperatureUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarSkinTemperatureUnitTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.SkinTemperatureDomainCommonPolicyTest"])

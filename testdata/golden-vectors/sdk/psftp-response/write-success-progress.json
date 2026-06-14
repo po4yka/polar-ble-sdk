@@ -29,7 +29,7 @@
     "completion": "success",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
-      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership."
     }
   },
   "consumerTests": {
@@ -53,5 +53,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Covers the PSFTP write stream success path with a device success response. Android currently emits an initial negative progress value while RFC60 header bytes are being consumed, then the payload byte count. iOS emits an initial zero progress value, an intermediate header/payload stream position, and the same final payload byte count. Shared KMP runtime should choose one progress policy before moving write orchestration to common code."
+  "notes": "Covers the PSFTP write stream success path with a device success response. Android currently emits an initial negative progress value while RFC60 header bytes are being consumed, then the payload byte count. iOS emits an initial zero progress value, an intermediate header/payload stream position, and the same final payload byte count. Shared shared runtime should choose one progress policy before moving write orchestration to common code."
 }

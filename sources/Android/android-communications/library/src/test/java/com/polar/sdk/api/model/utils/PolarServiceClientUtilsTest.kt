@@ -444,7 +444,7 @@ class PolarServiceClientUtilsTest {
     }
 
     @Test
-    fun `identifier routing golden vectors follow neutral KMP vector shape`() {
+    fun `identifier routing golden vectors follow neutral shared vector shape`() {
         loadIdentifierRoutingVectors().forEach { vector ->
             val id = vector.get("id")?.asString ?: "unknown-vector"
 

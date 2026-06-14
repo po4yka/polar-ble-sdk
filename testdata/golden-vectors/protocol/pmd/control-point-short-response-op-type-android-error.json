@@ -7,7 +7,7 @@
     "hex": "f00102"
   },
   "expected": {
-    "commonDecision": "KMP should reject a control-point response missing status without unsafe indexing."
+    "commonDecision": "Shared code should reject a control-point response missing status without unsafe indexing."
   },
   "platformExpectations": {
     "android": {

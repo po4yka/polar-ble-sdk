@@ -2,7 +2,7 @@
   "id": "manufacturer-polar-gpb-missing-length-platform-policy",
   "area": "advertisement",
   "case": "malformed_polar_gpb_missing_length_platform_policy",
-  "source": "Android BleAdvertisementContentTest characterization and iOS shared-KMP manufacturer parser delegation",
+  "source": "Android BleAdvertisementContentTest characterization and iOS shared-shared manufacturer parser delegation",
   "input": {
     "manufacturerDataHex": "6b0040"
   },
@@ -16,7 +16,7 @@
     },
     "ios": {
       "hrPresent": false,
-      "policy": "shared KMP manufacturer parser ignores malformed GPB segment and clears HR presence when PolarBleSdkShared is linked"
+      "policy": "shared manufacturer parser ignores malformed GPB segment and clears HR presence when PolarBleSdkShared is linked"
     },
     "common": {
       "policy": "reject or ignore malformed GPB segments deterministically without indexing beyond payload bounds"

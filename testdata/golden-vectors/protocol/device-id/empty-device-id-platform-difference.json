@@ -35,5 +35,5 @@
     "ios": true,
     "common": false
   },
-  "notes": "Android currently throws through String.toLong(16), while iOS returns false through strtouq/checksum behavior. Decide the KMP common behavior before migrating validation logic."
+  "notes": "Android currently throws through String.toLong(16), while iOS returns false through strtouq/checksum behavior. Decide the shared common behavior before assigning validation logic to shared code."
 }

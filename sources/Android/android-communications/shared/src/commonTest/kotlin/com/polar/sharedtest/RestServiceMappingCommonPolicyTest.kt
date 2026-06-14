@@ -75,7 +75,7 @@ class RestServiceMappingCommonPolicyTest {
     }
 
     @Test
-    fun restServiceListWrongTypeGoldenVectorPinsPlatformSplitBeforeCommonDecoderMigration() {
+    fun restServiceListWrongTypeGoldenVectorPinsPlatformSplitForCommonDecoderOwnership() {
         val vector = loadGoldenVectorText("sdk/rest-service/service-list-wrong-type-platform-policy.json")
         val expected = vector.objectValue("expected")
         val androidExpected = expected.objectValue("android")
@@ -93,7 +93,7 @@ class RestServiceMappingCommonPolicyTest {
         assertEquals("{}", androidExpected.objectValue("pathsForServices"))
         assertEquals(true, iosExpected.booleanValue("decodeError"))
         assertEquals(REST_WRONG_TYPE_POLICY_DECISION, decision)
-        assertEquals("Malformed service discovery payload where services is present but not an object, preserving current Android/iOS policy before KMP normalization.", vector.stringValue("notes"))
+        assertEquals("Malformed service discovery payload where services is present but not an object, preserving current Android/iOS policy before shared normalization.", vector.stringValue("notes"))
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarDeviceRestApiServiceTests"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.RestServiceMappingCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
@@ -103,7 +103,7 @@ class RestServiceMappingCommonPolicyTest {
     }
 
     @Test
-    fun restServiceMappingReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun restServiceMappingReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/rest-service/rest-service-mapping-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -114,7 +114,7 @@ class RestServiceMappingCommonPolicyTest {
 
         assertEquals("rest-service-mapping-readiness", manifest.stringValue("id"))
         assertEquals("restServiceMappingReadiness", input.stringValue("kind"))
-        assertEquals("compileVerifiedPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("compileVerifiedSharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(REQUIRED_REST_SERVICE_MAPPING_FAMILIES, requiredBehaviorFamilies)
         assertEquals(REQUIRED_REST_SERVICE_MAPPING_FAMILIES, coveredBehaviorFamilies)
         assertEquals(REST_SERVICE_MAPPING_POLICY_VECTORS, policyVectorPaths)
@@ -230,6 +230,6 @@ class RestServiceMappingCommonPolicyTest {
             "platform-rest-service-vector-references",
             "compile-verification-gate"
         )
-        const val REST_WRONG_TYPE_POLICY_DECISION = "Android currently treats a non-object services field as empty while iOS JSONDecoder throws a type mismatch; choose an explicit shared policy before moving service discovery decoding to KMP."
+        const val REST_WRONG_TYPE_POLICY_DECISION = "Android currently treats a non-object services field as empty while iOS JSONDecoder throws a type mismatch; choose an explicit shared policy before moving service discovery decoding to shared."
     }
 }

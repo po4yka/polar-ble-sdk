@@ -118,7 +118,7 @@ class SkinTemperatureDataTest {
     }
 
     @Test
-    fun `skin temperature golden vectors follow neutral KMP vector shape`() {
+    fun `skin temperature golden vectors follow neutral shared vector shape`() {
         loadSkinTemperatureVectors().forEach { vector ->
             val id = vector.get("id").asString
             Assert.assertTrue(id, vector.has("area"))
@@ -135,7 +135,7 @@ class SkinTemperatureDataTest {
     }
 
     @Test
-    fun `skin temperature readiness manifest is pinned before parser migration`() {
+    fun `skin temperature readiness manifest is pinned for shared parser ownership`() {
         val manifest = loadSkinTemperatureReadinessManifest()
         val id = manifest.get("id").asString
         val input = manifest.getAsJsonObject("input")

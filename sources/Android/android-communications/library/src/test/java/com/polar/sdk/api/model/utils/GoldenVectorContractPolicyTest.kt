@@ -65,7 +65,7 @@ class GoldenVectorContractPolicyTest {
     }
 
     @Test
-    fun `golden vector schema matches executable migration policy fields`() {
+    fun `golden vector schema matches executable shared ownership policy fields`() {
         val schema = loadGoldenVectorSchema()
         val schemaRequiredFields = schema.stringArrayAt("required")
         val schemaAdditionalProperties = schema.get("additionalProperties")?.asBoolean
@@ -99,7 +99,7 @@ class GoldenVectorContractPolicyTest {
         val expectedConsumerAnyOf = CONSUMER_TEST_PLATFORMS.map { platform -> listOf(platform) }
 
         assertTrue(
-            "Schema required fields must match GoldenVectorMigrationPolicyTest.REQUIRED_FIELDS: schema=$schemaRequiredFields policy=$REQUIRED_FIELDS",
+            "Schema required fields must match GoldenVectorPolicyTest.REQUIRED_FIELDS: schema=$schemaRequiredFields policy=$REQUIRED_FIELDS",
             schemaRequiredFields == REQUIRED_FIELDS
         )
         assertTrue(
@@ -107,7 +107,7 @@ class GoldenVectorContractPolicyTest {
             schemaAdditionalProperties == false
         )
         assertTrue(
-            "Schema top-level fields must match GoldenVectorMigrationPolicyTest.TOP_LEVEL_FIELDS: schema=$schemaTopLevelFields policy=$TOP_LEVEL_FIELDS",
+            "Schema top-level fields must match GoldenVectorPolicyTest.TOP_LEVEL_FIELDS: schema=$schemaTopLevelFields policy=$TOP_LEVEL_FIELDS",
             schemaTopLevelFields == TOP_LEVEL_FIELDS
         )
         assertTrue(
@@ -115,11 +115,11 @@ class GoldenVectorContractPolicyTest {
             schemaIdPattern == SCHEMA_VECTOR_ID_PATTERN && schemaCasePattern == SCHEMA_VECTOR_CASE_PATTERN && schemaHexPattern == SCHEMA_LOWERCASE_HEX_PATTERN
         )
         assertTrue(
-            "Schema platform fields must match GoldenVectorMigrationPolicyTest.PLATFORM_FIELDS: schema=$schemaPlatformFields policy=$PLATFORM_FIELDS",
+            "Schema platform fields must match GoldenVectorPolicyTest.PLATFORM_FIELDS: schema=$schemaPlatformFields policy=$PLATFORM_FIELDS",
             schemaPlatformFields == PLATFORM_FIELDS.toSet() && schemaRequiredPlatformFields == PLATFORM_FIELDS && !schemaPlatformAdditionalProperties
         )
         assertTrue(
-            "Schema consumerTests platforms must match GoldenVectorMigrationPolicyTest.CONSUMER_TEST_PLATFORMS: schema=$schemaConsumerTestPlatforms policy=$CONSUMER_TEST_PLATFORMS",
+            "Schema consumerTests platforms must match GoldenVectorPolicyTest.CONSUMER_TEST_PLATFORMS: schema=$schemaConsumerTestPlatforms policy=$CONSUMER_TEST_PLATFORMS",
             schemaConsumerTestPlatforms == CONSUMER_TEST_PLATFORMS && !schemaConsumerAdditionalProperties && schemaConsumerAnyOf == expectedConsumerAnyOf
         )
     }
@@ -136,7 +136,7 @@ class GoldenVectorContractPolicyTest {
     }
 
     @Test
-    fun `golden vector directories document migration ownership`() {
+    fun `golden vector directories document shared ownership`() {
         val root = findRepositoryRoot()
         val undocumentedDirectories = root.resolve("testdata/golden-vectors")
             .walkTopDown()
@@ -149,7 +149,7 @@ class GoldenVectorContractPolicyTest {
             .toList()
 
         assertTrue(
-            "Every golden-vector directory with fixtures must include README.md migration ownership notes: $undocumentedDirectories",
+            "Every golden-vector directory with fixtures must include README.md shared ownership notes: $undocumentedDirectories",
             undocumentedDirectories.isEmpty()
         )
     }
@@ -191,23 +191,23 @@ class GoldenVectorContractPolicyTest {
             .filterNot { term -> rootReadme.contains(term) }
 
         assertTrue(
-            "Root golden-vector README must document schema-visible metadata fields and migration gates: $undocumentedTerms",
+            "Root golden-vector README must document schema-visible metadata fields and shared ownership gates: $undocumentedTerms",
             undocumentedTerms.isEmpty()
         )
     }
 
     @Test
-    fun `golden vector readmes describe migration context`() {
+    fun `golden vector readmes describe shared ownership context`() {
         val root = findRepositoryRoot()
         val weakReadmes = root.resolve("testdata/golden-vectors")
             .walkTopDown()
             .filter { file -> file.isFile && file.name == "README.md" }
-            .filterNot { file -> file.readText().hasMigrationContext() }
+            .filterNot { file -> file.readText().hasSharedOwnershipContext() }
             .map { file -> file.relativeTo(root).path }
             .toList()
 
         assertTrue(
-            "Golden-vector README files must mention KMP/common migration context: $weakReadmes",
+            "Golden-vector README files must mention shared/common shared ownership context: $weakReadmes",
             weakReadmes.isEmpty()
         )
     }

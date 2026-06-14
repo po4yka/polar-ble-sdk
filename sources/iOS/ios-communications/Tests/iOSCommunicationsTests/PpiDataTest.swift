@@ -187,7 +187,7 @@ final class PpiDataTest: XCTestCase {
         }
     }
 
-    func testPpiReadinessManifestIsPinnedBeforeParserMigration() throws {
+    func testPpiReadinessManifestPinsParserOwnership() throws {
         let manifest = try loadPpiReadinessManifest()
         let id = try XCTUnwrap(manifest["id"] as? String)
         let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)

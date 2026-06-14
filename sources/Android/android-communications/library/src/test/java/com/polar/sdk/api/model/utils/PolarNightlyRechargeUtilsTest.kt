@@ -201,7 +201,7 @@ class PolarNightlyRechargeUtilsTest {
     }
 
     @Test
-    fun `nightly recharge golden vectors follow neutral KMP vector shape`() {
+    fun `nightly recharge golden vectors follow neutral shared vector shape`() {
         val vectors = loadNightlyRechargeVectors()
         assertTrue("Expected nightly recharge golden vectors", vectors.isNotEmpty())
         vectors.forEach { vector ->
@@ -222,7 +222,7 @@ class PolarNightlyRechargeUtilsTest {
     }
 
     @Test
-    fun `sleep nightly readiness manifest is pinned before model migration`() {
+    fun `sleep nightly readiness manifest is pinned for shared model ownership`() {
         val readiness = loadSleepNightlyReadinessManifest()
         val input = readiness.getAsJsonObject("input")
         val expected = readiness.getAsJsonObject("expected")
@@ -262,7 +262,7 @@ class PolarNightlyRechargeUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "Sleep and nightly recharge model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified.",
+            "Sleep and nightly recharge model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified.",
             expected.get("commonDecision").asString
         )
         assertEquals(

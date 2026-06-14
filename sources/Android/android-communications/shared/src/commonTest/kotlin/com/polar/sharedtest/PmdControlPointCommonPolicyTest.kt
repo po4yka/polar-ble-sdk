@@ -69,7 +69,7 @@ class PmdControlPointCommonPolicyTest {
     }
 
     @Test
-    fun pmdControlPointReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun pmdControlPointReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val vector = loadGoldenVectorText("protocol/pmd/control-point-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -180,6 +180,6 @@ class PmdControlPointCommonPolicyTest {
             "platform-control-point-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val PMD_CONTROL_POINT_READINESS_COMMON_DECISION = "PMD control-point migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS control-point and active-measurement tests continue to reference the same vectors, active-measurement bit decoding and platform state names, success response parsing, more flag and parameter extraction, settings and measurement-status responses, all status-code mappings, unknown measurement type handling, deterministic short-payload error policy, and compile verification remain explicit before production response parsing moves."
+        const val PMD_CONTROL_POINT_READINESS_COMMON_DECISION = "PMD control-point shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS control-point and active-measurement tests continue to reference the same vectors, active-measurement bit decoding and platform state names, success response parsing, more flag and parameter extraction, settings and measurement-status responses, all status-code mappings, unknown measurement type handling, deterministic short-payload error policy, and compile verification remain explicit before production response parsing moves."
     }
 }

@@ -982,7 +982,7 @@ class PpgDataTest {
     }
 
     @Test
-    fun `ppg golden vectors follow neutral KMP vector shape`() {
+    fun `ppg golden vectors follow neutral shared vector shape`() {
         loadPpgVectors().forEach { vector ->
             val id = vector.get("id").asString
             Assert.assertTrue(id, vector.has("area"))
@@ -999,7 +999,7 @@ class PpgDataTest {
     }
 
     @Test
-    fun ppgFrameFamilyReadinessManifestPinsAndroidMigrationGate() {
+    fun ppgFrameFamilyReadinessManifestPinsAndroidSharedOwnershipGate() {
         val vector = loadPpgReadinessManifest()
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -1009,8 +1009,8 @@ class PpgDataTest {
         }
         val requiredFamilies = input.getAsJsonArray("requiredFamilies").map { it.asString }
         val coveredFamilies = expected.getAsJsonArray("coveredFamilies").map { it.asString }
-        Assert.assertEquals("ppg-frame-family-migration-readiness", vector.get("id").asString)
-        Assert.assertEquals("ppgFrameFamilyMigrationReadiness", input.get("kind").asString)
+        Assert.assertEquals("ppg-frame-family-shared-contract-readiness", vector.get("id").asString)
+        Assert.assertEquals("ppgFrameFamilySharedContractReadiness", input.get("kind").asString)
         Assert.assertEquals(PPG_READINESS_VECTOR_PATHS, requiredVectorPaths)
         Assert.assertEquals(parsedVectorPaths, requiredVectorPaths)
         Assert.assertEquals(PPG_READINESS_FAMILIES, requiredFamilies)
@@ -1123,7 +1123,7 @@ class PpgDataTest {
 
     private fun loadPpgReadinessManifest(): JsonObject {
         val manifest = findRepositoryRoot()
-            .resolve("testdata/golden-vectors/protocol/sensors/ppg-frame-family-migration-readiness.json")
+            .resolve("testdata/golden-vectors/protocol/sensors/ppg-frame-family-shared-contract-readiness.json")
         FileReader(manifest).use { reader ->
             return JsonParser.parseReader(reader).asJsonObject
         }
@@ -1192,6 +1192,6 @@ class PpgDataTest {
             "platform-split-integration-gain-shape"
         )
 
-        const val PPG_READINESS_COMMON_DECISION = "PPG parser migration may proceed only after every required vector path in this manifest is executable from shared commonTest and compile-verified against the common parser prototype; this manifest does not replace parser execution or Gradle commonTest verification."
+        const val PPG_READINESS_COMMON_DECISION = "PPG parser shared ownership remains valid while every required vector path in this manifest is executable from shared commonTest and compile-verified against the common parser prototype; this manifest does not replace parser execution or Gradle commonTest verification."
     }
 }

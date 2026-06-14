@@ -7,7 +7,7 @@
     "hex": "80"
   },
   "expected": {
-    "commonDecision": "KMP should return the width-limited unsigned value and avoid iOS sign extension for unsigned parsing."
+    "commonDecision": "Shared code should return the width-limited unsigned value and avoid iOS sign extension for unsigned parsing."
   },
   "platformExpectations": {
     "android": {

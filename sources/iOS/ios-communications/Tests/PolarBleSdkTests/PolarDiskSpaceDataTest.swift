@@ -25,7 +25,7 @@ private let DISK_SPACE_READINESS_FAMILIES = [
     "compile-verification-gate"
 ]
 
-private let DISK_SPACE_READINESS_COMMON_DECISION = "Disk-space model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS disk-space tests continue to reference the same vectors, byte-total and free-byte calculations remain covered, zero-fragment counts remain explicit, fragment size uses the unsigned 32-bit policy instead of inheriting Android signed-int exposure or Swift UInt32 behavior accidentally, malformed truncated varints map to typed parse errors, and the shared tests are compile-verified."
+private let DISK_SPACE_READINESS_COMMON_DECISION = "Disk-space model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS disk-space tests continue to reference the same vectors, byte-total and free-byte calculations remain covered, zero-fragment counts remain explicit, fragment size uses the unsigned 32-bit policy instead of inheriting Android signed-int exposure or Swift UInt32 behavior accidentally, malformed truncated varints map to typed parse errors, and the shared tests are compile-verified."
 
 final class PolarDiskSpaceDataTest: XCTestCase {
 
@@ -128,7 +128,7 @@ final class PolarDiskSpaceDataTest: XCTestCase {
             }
     }
 
-    func testDiskSpaceReadinessManifestIsPinnedBeforeModelMigration() throws {
+    func testDiskSpaceReadinessManifestPinsModelOwnership() throws {
         let file = try GoldenVectorTestData.repositoryRoot()
             .appendingPathComponent("testdata/golden-vectors/sdk/disk-space/disk-space-readiness.json")
         let data = try Data(contentsOf: file)

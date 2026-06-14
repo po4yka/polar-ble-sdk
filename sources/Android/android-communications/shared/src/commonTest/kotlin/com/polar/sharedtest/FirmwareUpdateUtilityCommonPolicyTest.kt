@@ -45,7 +45,7 @@ class FirmwareUpdateUtilityCommonPolicyTest {
     }
 
     @Test
-    fun firmwareInvalidVersionGoldenVectorPinsTypedParseFailureBeforePublicWorkflowMigration() {
+    fun firmwareInvalidVersionGoldenVectorPinsTypedParseFailureForPublicWorkflowOwnership() {
         val vector = loadGoldenVectorText("sdk/firmware-update/version-comparison-invalid.json")
         assertEquals("invalid-version-error", vector.objectValue("expected").stringValue("policy"))
 
@@ -72,7 +72,7 @@ class FirmwareUpdateUtilityCommonPolicyTest {
     }
 
     @Test
-    fun firmwareUtilityReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun firmwareUtilityReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/firmware-update/utility-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -83,7 +83,7 @@ class FirmwareUpdateUtilityCommonPolicyTest {
 
         assertEquals("firmware-utility-readiness", manifest.stringValue("id"))
         assertEquals("firmwareUtilityReadiness", input.stringValue("kind"))
-        assertEquals("compileVerifiedPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("compileVerifiedSharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(REQUIRED_FIRMWARE_UTILITY_FAMILIES, requiredBehaviorFamilies)
         assertEquals(REQUIRED_FIRMWARE_UTILITY_FAMILIES, coveredBehaviorFamilies)
         assertEquals(FIRMWARE_UTILITY_POLICY_VECTORS, policyVectorPaths)
@@ -164,7 +164,7 @@ class FirmwareUpdateUtilityCommonPolicyTest {
             "compile-verification-gate"
         )
         const val FIRMWARE_VERSION_POLICY_DECISION = "compare-dot-separated-integer-components-with-longer-available-version-higher-only-after-equal-prefix"
-        const val FIRMWARE_INVALID_VERSION_POLICY_DECISION = "current-platform-utilities-crash-or-throw-on-non-integer-components; KMP should replace this with a typed parse failure before public workflow migration"
+        const val FIRMWARE_INVALID_VERSION_POLICY_DECISION = "current-platform-utilities-crash-or-throw-on-non-integer-components; Shared code should replace this with a typed parse failure before public workflow shared ownership"
         const val FIRMWARE_FILE_ORDERING_POLICY_DECISION = "move-any-file-containing-SYSUPDAT.IMG-after-all-other-files-and-preserve-relative-order-for-equal-priority-files"
     }
 }

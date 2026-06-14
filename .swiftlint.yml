@@ -1,0 +1,27 @@
+strict: true
+
+included:
+  - sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/api/PolarRestServiceApi.swift
+  - sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarRuntimePlanner.swift
+  - sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarFileRuntimePlanner.swift
+  - sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarRestFacadeRuntimePlanner.swift
+
+excluded:
+  - .build
+  - docs
+  - sources/iOS/ios-communications/Generated
+  - sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/protobuf
+
+only_rules:
+  - colon
+  - comma
+  - control_statement
+  - function_name_whitespace
+  - implicit_optional_initialization
+  - opening_brace
+  - return_arrow_whitespace
+  - statement_position
+  - trailing_semicolon
+  - trailing_whitespace
+  - vertical_whitespace
+  - void_return

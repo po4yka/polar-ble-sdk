@@ -2,8 +2,8 @@
   "id": "session-state-machine-ownership",
   "area": "sdk.ble-session",
   "case": "platform_owned_session_state_machine",
-  "source": "Android BDDeviceSessionImpl/BleDeviceSession tests, iOS CBDeviceSessionImpl/CBDeviceListener/CBScanner tests, and KMP fake transport planning audit",
-  "description": "Pins the no-migration decision for BLE/session state machines because current transitions are coupled to Android BluetoothGatt or iOS CoreBluetooth host behavior.",
+  "source": "Android BDDeviceSessionImpl/BleDeviceSession tests, iOS CBDeviceSessionImpl/CBDeviceListener/CBScanner tests, and shared fake transport planning audit",
+  "description": "Pins the host-owned decision for BLE/session state machines because current transitions are coupled to Android BluetoothGatt or iOS CoreBluetooth host behavior.",
   "input": {
     "kind": "bleSessionPlatformOwnershipAudit",
     "auditedFamilies": [
@@ -28,7 +28,7 @@
     ]
   },
   "expected": {
-    "migrationDecision": "no_shared_session_state_machine",
+    "sharedOwnershipDecision": "host_owned_session_state_machine",
     "commonDecision": "Do not introduce shared BLE/session state-machine planning until a future slice defines a deterministic contract independent of Android BluetoothGatt, Bluedroid callbacks, operation queues, advertisement timestamps, iOS CoreBluetooth manager state, scanner queues, permissions, lifecycle, and public error mapping.",
     "sharedProductionCode": "none",
     "androidEvidence": [
@@ -58,5 +58,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This is a guarded no-migration vector. It does not authorize shared runtime delegation; it documents why the current state transitions remain host-owned."
+  "notes": "This is a guarded host-owned vector. It does not authorize shared runtime delegation; it documents why the current state transitions remain host-owned."
 }

@@ -134,7 +134,7 @@ class PolarSkinTemperatureUtilsTest {
     }
 
     @Test
-    fun `skin temperature golden vectors follow neutral KMP vector shape`() {
+    fun `skin temperature golden vectors follow neutral shared vector shape`() {
         loadSkinTemperatureVectors().forEach { vector ->
             val id = vector.get("id").asString
             assertTrue(id, vector.has("area"))
@@ -152,7 +152,7 @@ class PolarSkinTemperatureUtilsTest {
     }
 
     @Test
-    fun `skin temperature domain readiness manifest is pinned before model migration`() {
+    fun `skin temperature domain readiness manifest is pinned for shared model ownership`() {
         val readiness = loadSkinTemperatureDomainReadinessManifest()
         val input = readiness.getAsJsonObject("input")
         val expected = readiness.getAsJsonObject("expected")
@@ -186,7 +186,7 @@ class PolarSkinTemperatureUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "Skin-temperature domain migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS skin-temperature tests continue to reference the same vectors, sourceDeviceId ownership remains explicit, empty sample lists and sample values are preserved, measurement and sensor-location mappings are covered, unknown enum behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.",
+            "Skin-temperature domain shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS skin-temperature tests continue to reference the same vectors, sourceDeviceId ownership remains explicit, empty sample lists and sample values are preserved, measurement and sensor-location mappings are covered, unknown enum behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.",
             expected.get("commonDecision").asString
         )
         assertEquals(

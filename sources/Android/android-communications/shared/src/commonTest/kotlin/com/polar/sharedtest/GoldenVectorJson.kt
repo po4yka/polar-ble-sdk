@@ -1,6 +1,6 @@
 package com.polar.sharedtest
 
-const val PROTOCOL_ONLY_MIGRATION_OWNERSHIP = "Protocol-only characterization excluded from first common KMP migration because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code."
+const val PROTOCOL_ONLY_PLATFORM_OWNERSHIP = "Protocol-only characterization excluded from current shared parser ownership boundary because current Android/iOS behavior is platform-specific. Use this vector to make an explicit shared parser policy before promoting this behavior to common code."
 
 fun String.objectValue(field: String): String {
     val objectStart = fieldValueStart(field) ?: error("Missing object field $field")

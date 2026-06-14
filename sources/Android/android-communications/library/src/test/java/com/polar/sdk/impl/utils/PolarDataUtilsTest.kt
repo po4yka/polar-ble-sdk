@@ -110,12 +110,12 @@ class PolarDataUtilsTest {
     }
 
     @Test
-    fun `offline recording trigger golden vector follows neutral KMP vector shape`() {
+    fun `offline recording trigger golden vector follows neutral shared vector shape`() {
         assertNeutralKmpVectorShape(loadOfflineRecordingVector("trigger-mapping.json"), "trigger-mapping.json")
     }
 
     @Test
-    fun `offline recording metadata readiness manifest is pinned before metadata migration`() {
+    fun `offline recording metadata readiness manifest is pinned before metadata shared ownership`() {
         val readiness = loadOfflineRecordingVector("metadata-readiness.json")
         val input = readiness.getAsJsonObject("input")
         val expected = readiness.getAsJsonObject("expected")
@@ -136,7 +136,7 @@ class PolarDataUtilsTest {
     }
 
     @Test
-    fun `trigger runtime policy vector is pinned before runtime migration`() {
+    fun `trigger runtime policy vector is pinned before runtime shared ownership`() {
         val vector = loadOfflineRecordingVector("trigger-runtime-policy.json")
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -155,7 +155,7 @@ class PolarDataUtilsTest {
     }
 
     @Test
-    fun `trigger runtime readiness manifest is pinned before runtime migration`() {
+    fun `trigger runtime readiness manifest is pinned before runtime shared ownership`() {
         val vector = loadOfflineRecordingVector("trigger-runtime-readiness.json")
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -184,7 +184,7 @@ class PolarDataUtilsTest {
         Assert.assertEquals(expectedFamilies, requiredFamilies)
         Assert.assertEquals(expectedFamilies, coveredFamilies)
         Assert.assertEquals(
-            "Offline trigger runtime migration may proceed only after trigger-runtime-policy.json and this readiness manifest are executable from shared commonTest, platform facade tests continue to reference the same policy vector, packet-framing differences are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified.",
+            "Offline trigger runtime shared ownership remains valid while trigger-runtime-policy.json and this readiness manifest are executable from shared commonTest, platform facade tests continue to reference the same policy vector, packet-framing differences are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified.",
             expected.get("commonDecision").asString
         )
         Assert.assertEquals(
@@ -192,7 +192,7 @@ class PolarDataUtilsTest {
             expected.getAsJsonObject("commonRuntimePrototype").get("status").asString
         )
         Assert.assertEquals(
-            "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.",
+            "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.",
             expected.getAsJsonObject("commonRuntimePrototype").get("reason").asString
         )
         Assert.assertEquals(listOf("com.polar.sdk.impl.utils.PolarDataUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
@@ -201,7 +201,7 @@ class PolarDataUtilsTest {
     }
 
     @Test
-    fun `GNSS location public model projection is delegated through shared KMP`() {
+    fun `GNSS location public model projection is delegated through shared`() {
         val seenBand1 = GnssLocationData.GnssSatelliteSummary(1u, 2u, 3u, 4u, 5u, 6u, 7u, 8u, 9u, 10u)
         val usedBand1 = GnssLocationData.GnssSatelliteSummary(11u, 12u, 13u, 14u, 15u, 16u, 17u, 18u, 19u, 20u)
         val seenBand2 = GnssLocationData.GnssSatelliteSummary(21u, 22u, 23u, 24u, 25u, 26u, 27u, 28u, 29u, 30u)
@@ -416,7 +416,7 @@ class PolarDataUtilsTest {
             "compile-verification-gate"
         )
 
-        const val OFFLINE_RECORDING_METADATA_READINESS_COMMON_DECISION = "Offline recording metadata migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves."
+        const val OFFLINE_RECORDING_METADATA_READINESS_COMMON_DECISION = "Offline recording metadata shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves."
 
         val TRIGGER_RUNTIME_SCENARIO_IDS = listOf(
             "set-trigger-success-with-secret",

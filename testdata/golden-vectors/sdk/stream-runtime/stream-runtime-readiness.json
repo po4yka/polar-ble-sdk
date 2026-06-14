@@ -2,8 +2,8 @@
   "id": "stream-runtime-readiness",
   "area": "sdk.stream-runtime",
   "case": "stream_runtime_readiness",
-  "source": "Generic stream runtime backlog and StreamRuntimePolicyCommonTest shared common prototypes distilled into a pre-KMP readiness manifest",
-  "description": "Pins the platform-neutral stream lifecycle behavior families that must remain covered before generic stream utilities or facade stream orchestration delegate to shared KMP runtime code.",
+  "source": "Generic stream runtime backlog and StreamRuntimePolicyCommonTest shared common prototypes distilled into a shared-ownership readiness manifest",
+  "description": "Pins the platform-neutral stream lifecycle behavior families that must remain covered before generic stream utilities or facade stream orchestration delegate to shared runtime code.",
   "input": {
     "kind": "streamRuntimeReadiness",
     "policyVectorPaths": [
@@ -57,10 +57,10 @@
       "platform-stream-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, post-cancellation late-event suppression, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified.",
+    "commonDecision": "Generic stream runtime shared ownership remains valid while every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, post-cancellation late-event suppression, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
-      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership."
     }
   },
   "consumerTests": {
@@ -79,5 +79,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for generic stream lifecycle behavior-family completeness only; facade-specific stream mapping, platform adapter references, observer cleanup, disconnect terminal-error mapping, cancellation, and compile verification remain required before production stream runtime code moves to shared KMP."
+  "notes": "This readiness manifest is a shared ownership gate for generic stream lifecycle behavior-family completeness only; facade-specific stream mapping, platform adapter references, observer cleanup, disconnect terminal-error mapping, cancellation, and compile verification remain required before production stream runtime code moves to shared."
 }

@@ -2,8 +2,8 @@
   "id": "psftp-byte-codec-readiness",
   "area": "sdk.psftp-byte-codec",
   "case": "psftp_byte_codec_readiness",
-  "source": "PSFTP byte-codec backlog and PsFtpByteCodecCommonPolicyTest shared common prototypes distilled into a pre-KMP readiness manifest",
-  "description": "Pins the PSFTP RFC60/RFC76 byte-codec behavior families that must remain covered before byte-level PSFTP codec logic delegates to shared KMP code.",
+  "source": "PSFTP byte-codec backlog and PsFtpByteCodecCommonPolicyTest shared common prototypes distilled into a shared-ownership readiness manifest",
+  "description": "Pins the PSFTP RFC60/RFC76 byte-codec behavior families that must remain covered before byte-level PSFTP codec logic delegates to shared code.",
   "input": {
     "kind": "psFtpByteCodecReadiness",
     "policyVectorPaths": [
@@ -51,7 +51,7 @@
       "platform-codec-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
+    "commonDecision": "PSFTP byte-codec shared ownership remains valid while every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
   },
   "consumerTests": {
     "android": [
@@ -69,5 +69,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for PSFTP byte-codec behavior-family completeness only; runtime request/notification/write orchestration has a separate psftp-runtime-readiness.json gate."
+  "notes": "This readiness manifest is a shared ownership gate for PSFTP byte-codec behavior-family completeness only; runtime request/notification/write orchestration has a separate psftp-runtime-readiness.json gate."
 }

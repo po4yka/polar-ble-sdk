@@ -45,7 +45,7 @@
     ],
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
-      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership."
     }
   },
   "consumerTests": {

@@ -182,7 +182,7 @@ class PmdSettingTest {
     }
 
     @Test
-    fun `pmd setting golden vectors follow neutral KMP vector shape`() {
+    fun `pmd setting golden vectors follow neutral shared vector shape`() {
         loadPmdSettingVectors().forEach { vector ->
             val id = vector.get("id")?.asString ?: "unknown-vector"
 
@@ -200,7 +200,7 @@ class PmdSettingTest {
     }
 
     @Test
-    fun `PMD settings readiness manifest is pinned before parser migration`() {
+    fun `PMD settings readiness manifest is pinned for shared parser ownership`() {
         val manifest = loadPmdSettingsReadinessManifest()
         val input = manifest.getAsJsonObject("input")
         val expected = manifest.getAsJsonObject("expected")
@@ -244,7 +244,7 @@ class PmdSettingTest {
         "compile-verification-gate"
     )
 
-    private val PMD_SETTINGS_READINESS_DECISION = "PMD settings migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD settings tests continue to reference the same vectors, baseline parsing, duplicate overwrite behavior, FACTOR parsing, selected-setting serialization, skipped FACTOR serialization, RANGE_MILLIUNIT signedness platform decisions, SECURITY setting parse policy, truncated-value policy, unknown-setting-type policy, and compile verification remain explicit before production PMD settings logic moves."
+    private val PMD_SETTINGS_READINESS_DECISION = "PMD settings shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD settings tests continue to reference the same vectors, baseline parsing, duplicate overwrite behavior, FACTOR parsing, selected-setting serialization, skipped FACTOR serialization, RANGE_MILLIUNIT signedness platform decisions, SECURITY setting parse policy, truncated-value policy, unknown-setting-type policy, and compile verification remain explicit before production PMD settings logic moves."
 
     private fun assertParseError(caseId: String, expectedError: String, data: ByteArray) {
         when (expectedError) {

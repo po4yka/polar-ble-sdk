@@ -37,7 +37,7 @@ class DiskSpaceCommonPolicyTest {
     }
 
     @Test
-    fun diskSpaceReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun diskSpaceReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/disk-space/disk-space-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -161,6 +161,6 @@ class DiskSpaceCommonPolicyTest {
             "platform-disk-space-vector-reference-gate",
             "compile-verification-gate"
         )
-        val DISK_SPACE_READINESS_COMMON_DECISION = "Disk-space model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS disk-space tests continue to reference the same vectors, byte-total and free-byte calculations remain covered, zero-fragment counts remain explicit, fragment size uses the unsigned 32-bit policy instead of inheriting Android signed-int exposure or Swift UInt32 behavior accidentally, malformed truncated varints map to typed parse errors, and the shared tests are compile-verified."
+        val DISK_SPACE_READINESS_COMMON_DECISION = "Disk-space model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS disk-space tests continue to reference the same vectors, byte-total and free-byte calculations remain covered, zero-fragment counts remain explicit, fragment size uses the unsigned 32-bit policy instead of inheriting Android signed-int exposure or Swift UInt32 behavior accidentally, malformed truncated varints map to typed parse errors, and the shared tests are compile-verified."
     }
 }

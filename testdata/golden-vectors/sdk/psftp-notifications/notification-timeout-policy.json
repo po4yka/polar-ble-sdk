@@ -31,7 +31,7 @@
     },
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
-      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership."
     }
   },
   "consumerTests": {
@@ -50,5 +50,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Current Android and iOS wait-notification streams do not emit or fail when no D2H notification packet arrives before the consumer-owned timeout. KMP runtime migration must preserve that initial-silence contract or introduce a deliberate public policy change with facade compatibility tests. Multi-frame continuation timeout is covered by notification-continuation-timeout-policy and still requires fake-clock or injectable-timeout execution."
+  "notes": "Current Android and iOS wait-notification streams do not emit or fail when no D2H notification packet arrives before the consumer-owned timeout. shared runtime shared ownership must preserve that initial-silence contract or introduce a deliberate public policy change with facade compatibility tests. Multi-frame continuation timeout is covered by notification-continuation-timeout-policy and still requires fake-clock or injectable-timeout execution."
 }

@@ -45,7 +45,7 @@ class D2hNotificationCommonPolicyTest {
     }
 
     @Test
-    fun d2hNotificationMappingReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun d2hNotificationMappingReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/d2h-notifications/mapping-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -180,6 +180,6 @@ class D2hNotificationCommonPolicyTest {
             "platform-mapping-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val D2H_MAPPING_READINESS_COMMON_DECISION = "D2H notification mapping migration may proceed only after every mapping vector named by this readiness manifest is executable from shared commonTest, Android and iOS D2H mapping tests continue to reference the same vectors, known IDs, unknown-ID filtering, raw parameter preservation, typed fields for filesystem, sync-required, autosync, and start-GPS notifications, stop-GPS empty parameters, invalid-payload null parsing, repeated-notification ordering, and the shared tests are compile-verified."
+        const val D2H_MAPPING_READINESS_COMMON_DECISION = "D2H notification mapping shared ownership remains valid while every mapping vector named by this readiness manifest is executable from shared commonTest, Android and iOS D2H mapping tests continue to reference the same vectors, known IDs, unknown-ID filtering, raw parameter preservation, typed fields for filesystem, sync-required, autosync, and start-GPS notifications, stop-GPS empty parameters, invalid-payload null parsing, repeated-notification ordering, and the shared tests are compile-verified."
     }
 }

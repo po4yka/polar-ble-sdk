@@ -280,7 +280,7 @@ class TypeUtilsTest {
     }
 
     @Test
-    fun `type utility golden vectors follow neutral KMP vector shape`() {
+    fun `type utility golden vectors follow neutral shared vector shape`() {
         loadTypeUtilsVectors().forEach { vector ->
             val id = vector.get("id")?.asString ?: "unknown-vector"
 
@@ -298,7 +298,7 @@ class TypeUtilsTest {
     }
 
     @Test
-    fun `type utils readiness manifest is pinned before parser primitive migration`() {
+    fun `type utils readiness manifest is pinned before parser primitive shared ownership`() {
         val readiness = loadTypeUtilsReadinessManifest()
         val input = readiness.getAsJsonObject("input")
         val expected = readiness.getAsJsonObject("expected")
@@ -348,7 +348,7 @@ class TypeUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "Type utility migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS type utility tests continue to reference the same vectors, unsigned byte/int/long conversion, signed sign extension, offset and size selection, signed-minimum boundaries, high-bit unsigned platform decisions, empty payload and payload-too-long typed errors, UInt64 max decimal preservation, and compile verification remain explicit before production parser primitives move.",
+            "Type utility shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS type utility tests continue to reference the same vectors, unsigned byte/int/long conversion, signed sign extension, offset and size selection, signed-minimum boundaries, high-bit unsigned platform decisions, empty payload and payload-too-long typed errors, UInt64 max decimal preservation, and compile verification remain explicit before production parser primitives move.",
             expected.get("commonDecision").asString
         )
         assertEquals(listOf("com.polar.androidcommunications.common.ble.TypeUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })

@@ -56,7 +56,7 @@ final class PmdActiveMeasurementTest: XCTestCase {
         }
     }
 
-    func testPmdControlPointReadinessManifestPinsActiveMeasurementCoverageBeforeMigration() throws {
+    func testPmdControlPointReadinessManifestPinsActiveMeasurementCoverage() throws {
         let manifest = try loadPmdControlPointReadinessManifest()
         let input = try XCTUnwrap(manifest["input"] as? [String: Any])
         let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
@@ -165,4 +165,4 @@ private let pmdControlPointReadinessBehaviorFamilies = [
     "compile-verification-gate"
 ]
 
-private let pmdControlPointReadinessCommonDecision = "PMD control-point migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS control-point and active-measurement tests continue to reference the same vectors, active-measurement bit decoding and platform state names, success response parsing, more flag and parameter extraction, settings and measurement-status responses, all status-code mappings, unknown measurement type handling, deterministic short-payload error policy, and compile verification remain explicit before production response parsing moves."
+private let pmdControlPointReadinessCommonDecision = "PMD control-point shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS control-point and active-measurement tests continue to reference the same vectors, active-measurement bit decoding and platform state names, success response parsing, more flag and parameter extraction, settings and measurement-status responses, all status-code mappings, unknown measurement type handling, deterministic short-payload error policy, and compile verification remain explicit before production response parsing moves."

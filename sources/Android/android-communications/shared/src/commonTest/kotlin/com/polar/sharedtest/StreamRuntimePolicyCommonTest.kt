@@ -225,7 +225,7 @@ class StreamRuntimePolicyCommonTest {
     }
 
     @Test
-    fun streamRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun streamRuntimeReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/stream-runtime/stream-runtime-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -245,7 +245,7 @@ class StreamRuntimePolicyCommonTest {
         }
         assertEquals(streamRuntimeReadinessCommonDecision, expected.stringValue("commonDecision"))
         assertEquals("executable shared commonTest runtime planning guard", expected.objectValue("commonRuntimePrototype").stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
         assertEquals(listOf("com.polar.androidcommunications.common.ble.ChannelUtilsTests"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("StreamContinuationListTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.StreamRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
@@ -283,6 +283,6 @@ class StreamRuntimePolicyCommonTest {
         "compile-verification-gate"
     )
 
-    private val streamRuntimeReadinessCommonDecision = "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, post-cancellation late-event suppression, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified."
+    private val streamRuntimeReadinessCommonDecision = "Generic stream runtime shared ownership remains valid while every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, post-cancellation late-event suppression, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified."
 
 }

@@ -2,7 +2,7 @@
   "id": "ppg-raw-type0-truncated-sample-malformed",
   "area": "sensor-parser",
   "case": "ppg_raw_type0_truncated_sample_malformed",
-  "source": "Pre-migration shared PPG parser policy",
+  "source": "Shared contract PPG parser policy",
   "input": {
     "dataFrameHex": "01009435770000000000010203040506ffff7f0000",
     "previousTimeStamp": 100,

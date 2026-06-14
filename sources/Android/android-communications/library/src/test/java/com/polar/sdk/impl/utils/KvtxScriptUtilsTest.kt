@@ -137,7 +137,7 @@ class KvtxScriptUtilsTest {
     }
 
     @Test
-    fun `kvtx golden vectors follow neutral KMP vector shape`() {
+    fun `kvtx golden vectors follow neutral shared vector shape`() {
         loadKvtxVectors().forEach { vector ->
             val id = vector.get("id")?.asString ?: "unknown-vector"
 
@@ -170,7 +170,7 @@ class KvtxScriptUtilsTest {
     }
 
     @Test
-    fun `kvtx readiness manifest is pinned before script migration`() {
+    fun `kvtx readiness manifest is pinned before script shared ownership`() {
         val vector = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/kvtx/kvtx-readiness.json")).use { reader ->
             JsonParser.parseReader(reader).asJsonObject
         }
@@ -219,7 +219,7 @@ class KvtxScriptUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "KVTX migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS KVTX tests continue to reference the same vectors, write-and-commit framing, empty data writes, unsigned 32-bit keys, multiple-key selection, append/remove behavior, EX zero-index behavior, non-empty EX index ignore policy, unknown-command stop policy, malformed-script typed error policy, truncated payload platform vectors, and the shared tests are compile-verified.",
+            "KVTX shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS KVTX tests continue to reference the same vectors, write-and-commit framing, empty data writes, unsigned 32-bit keys, multiple-key selection, append/remove behavior, EX zero-index behavior, non-empty EX index ignore policy, unknown-command stop policy, malformed-script typed error policy, truncated payload platform vectors, and the shared tests are compile-verified.",
             expected.get("commonDecision").asString
         )
         val consumerTests = vector.getAsJsonObject("consumerTests")

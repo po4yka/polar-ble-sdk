@@ -2,7 +2,7 @@
   "id": "runtime-error-policy",
   "area": "sdk.file-utils",
   "case": "runtime_error_policy",
-  "source": "KMP migration fake-transport planning from Android and iOS file utility error tests",
+  "source": "shared ownership fake-transport planning from Android and iOS file utility error tests",
   "input": {
     "kind": "fileRuntimeErrorPolicy",
     "cases": [
@@ -57,7 +57,7 @@
     ]
   },
   "expected": {
-    "migrationRequirement": "Before moving file utility orchestration into common KMP code, implement fake PFTP request and write-stream tests that cover malformed directory payloads, request-level transport errors, response-error status mapping, and write-stream failures after the PUT header is prepared.",
+    "sharedOwnershipRequirement": "Shared ownership of file utility orchestration requires fake PFTP request and write-stream tests that cover malformed directory payloads, request-level transport errors, response-error status mapping, and write-stream failures after the PUT header is prepared.",
     "observations": [
       "captured command and path for every attempted operation",
       "captured PUT payload before write-stream failure mapping",

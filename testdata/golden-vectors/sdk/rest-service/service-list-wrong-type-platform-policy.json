@@ -23,7 +23,7 @@
   },
   "platformExpectations": {
     "commonDecision": {
-      "wrongTypePolicy": "Android currently treats a non-object services field as empty while iOS JSONDecoder throws a type mismatch; choose an explicit shared policy before moving service discovery decoding to KMP."
+      "wrongTypePolicy": "Android currently treats a non-object services field as empty while iOS JSONDecoder throws a type mismatch; choose an explicit shared policy before moving service discovery decoding to shared."
     }
   },
   "platforms": {
@@ -31,7 +31,7 @@
     "ios": true,
     "common": true
   },
-  "notes": "Malformed service discovery payload where services is present but not an object, preserving current Android/iOS policy before KMP normalization.",
+  "notes": "Malformed service discovery payload where services is present but not an object, preserving current Android/iOS policy before shared normalization.",
   "consumerTests": {
     "android": [
       "com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"

@@ -112,7 +112,7 @@ class Spo2CommonPolicyTest {
     }
 
     @Test
-    fun spo2ReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun spo2ReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val vector = loadGoldenVectorText("sdk/spo2-test/spo2-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -190,12 +190,11 @@ class Spo2CommonPolicyTest {
             "empty-recording-device-normalization",
             "time-directory-name-parsing",
             "nullable-trigger-type-policy",
-            "android-no-trigger-field-platform-reference",
-            "ios-trigger-field-platform-reference",
+            "no-generated-trigger-field-platform-reference",
             "unknown-spo2-class-boundary",
             "platform-spo2-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val SPO2_READINESS_COMMON_DECISION = "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, time-directory parsing remains shared and compile-verified, nullable triggerType policy remains explicit, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
+        const val SPO2_READINESS_COMMON_DECISION = "SPo2 model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, time-directory parsing remains shared and compile-verified, nullable triggerType policy remains explicit for generated protos that do not expose the field, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
     }
 }

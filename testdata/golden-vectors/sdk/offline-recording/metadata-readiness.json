@@ -2,8 +2,8 @@
   "id": "offline-recording-metadata-readiness",
   "area": "sdk.offline-recording",
   "case": "offline_recording_metadata_readiness",
-  "source": "Offline recording metadata vectors and shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the offline recording metadata behavior families that must remain covered before metadata conversion delegates to shared KMP code.",
+  "source": "Offline recording metadata vectors and shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the offline recording metadata behavior families that must remain covered before metadata conversion delegates to shared code.",
   "input": {
     "kind": "offlineRecordingMetadataReadiness",
     "policyVectorPaths": [
@@ -39,7 +39,7 @@
       "platform-offline-recording-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Offline recording metadata migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves."
+    "commonDecision": "Offline recording metadata shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves."
   },
   "consumerTests": {
     "android": [
@@ -61,5 +61,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest gates offline recording metadata behavior-family completeness only; trigger runtime, byte-level PMD control-point framing, facade error mapping, and sensor payload decoding remain separate migration gates."
+  "notes": "This readiness manifest gates offline recording metadata behavior-family completeness only; trigger runtime, byte-level PMD control-point framing, facade error mapping, and sensor payload decoding remain separate shared ownership gates."
 }

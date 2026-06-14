@@ -584,7 +584,7 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         }
     }
 
-    func testWorkflowRuntimePolicyVectorIsPinnedBeforeWorkflowMigration() throws {
+    func testWorkflowRuntimePolicyVectorPinsWorkflowOwnership() throws {
         let vector = try XCTUnwrap(try loadFirmwareUpdateGoldenVectors().first { ($0["id"] as? String) == "workflow-runtime-policy" })
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -601,7 +601,7 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(input["kind"] as? String, "firmwareWorkflowRuntimePolicy", "workflow-runtime-policy")
         XCTAssertEqual(FIRMWARE_WORKFLOW_SCENARIOS, scenarioIds, "workflow-runtime-policy")
         XCTAssertEqual(expected["policy"] as? String, "firmware-update-workflow-runtime-matrix", "workflow-runtime-policy")
-        XCTAssertEqual(expected["migrationRequirement"] as? String, FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT, "workflow-runtime-policy")
+        XCTAssertEqual(expected["sharedOwnershipRequirement"] as? String, FIRMWARE_WORKFLOW_SHARED_OWNERSHIP_REQUIREMENT, "workflow-runtime-policy")
         XCTAssertEqual(commonPrototype["status"] as? String, "executable shared commonTest", "workflow-runtime-policy")
         XCTAssertEqual(FIRMWARE_WORKFLOW_SCENARIOS, commonPrototypeCaseIds, "workflow-runtime-policy")
         XCTAssertEqual(execution["common"] as? String, "shared-common-test", "workflow-runtime-policy")
@@ -616,7 +616,7 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "workflow-runtime-policy"), ["com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"])
     }
 
-    func testWorkflowRuntimeReadinessManifestIsPinnedBeforeWorkflowMigration() throws {
+    func testWorkflowRuntimeReadinessManifestPinsWorkflowOwnership() throws {
         let vector = try XCTUnwrap(try loadFirmwareUpdateGoldenVectors().first { ($0["id"] as? String) == "workflow-runtime-readiness" })
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -630,13 +630,13 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         XCTAssertEqual(FIRMWARE_WORKFLOW_READINESS_FAMILIES, coveredFamilies)
         XCTAssertEqual(expected["commonDecision"] as? String, FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION)
         XCTAssertEqual((expected["commonRuntimePrototype"] as? [String: Any])?["status"] as? String, "executable shared commonTest runtime planning guard")
-        XCTAssertEqual((expected["commonRuntimePrototype"] as? [String: Any])?["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.")
+        XCTAssertEqual((expected["commonRuntimePrototype"] as? [String: Any])?["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"], "workflow-runtime-readiness")
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarFirmwareUpdateUtilsTest"], "workflow-runtime-readiness")
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"], "workflow-runtime-readiness")
     }
 
-    func testFirmwareUtilityReadinessManifestIsPinnedBeforeUtilityMigration() throws {
+    func testFirmwareUtilityReadinessManifestPinsUtilityOwnership() throws {
         let vector = try XCTUnwrap(try loadFirmwareUpdateGoldenVectors().first { ($0["id"] as? String) == "firmware-utility-readiness" })
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -646,7 +646,7 @@ class PolarFirmwareUpdateUtilsTest: XCTestCase {
         let policyVectorPaths = try XCTUnwrap(input["policyVectorPaths"] as? [String])
 
         XCTAssertEqual(input["kind"] as? String, "firmwareUtilityReadiness")
-        XCTAssertEqual(expected["migrationReadiness"] as? String, "compileVerifiedPreMigrationCharacterization")
+        XCTAssertEqual(expected["sharedOwnershipStatus"] as? String, "compileVerifiedSharedContractCharacterization")
         XCTAssertEqual(FIRMWARE_UTILITY_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths, "firmware-utility-readiness")
         XCTAssertEqual(FIRMWARE_UTILITY_READINESS_FAMILIES, requiredFamilies, "firmware-utility-readiness")
         XCTAssertEqual(FIRMWARE_UTILITY_READINESS_FAMILIES, coveredFamilies, "firmware-utility-readiness")
@@ -753,15 +753,15 @@ private let FIRMWARE_WORKFLOW_SCENARIOS = [
     "battery-too-low-response-is-terminal-failure"
 ]
 
-private let FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT = "Before moving firmware update orchestration into common KMP code, implement injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors."
+private let FIRMWARE_WORKFLOW_SHARED_OWNERSHIP_REQUIREMENT = "Shared ownership of firmware update orchestration requires injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors."
 
-private let FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, finalization step planning, reboot success, non-system reboot failure, and terminal device errors into typed common workflow states before KMP migration"
+private let FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, finalization step planning, reboot success, non-system reboot failure, and terminal device errors into typed common workflow states before shared ownership"
 
 private let FIRMWARE_WORKFLOW_ANDROID_PRODUCTION_EVIDENCE = "BDBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, finalization step planning, reboot response success, non-system reboot failure, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned."
 
 private let FIRMWARE_WORKFLOW_IOS_PRODUCTION_EVIDENCE = "PolarBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, finalization step planning, reboot response success, non-system reboot failure, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned."
 
-private let FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/finalization-step/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, cancellation cleanup before BLE writes, and shared-planned retry delay execution are pinned, public facade error mapping is pinned, and the shared tests are compile-verified."
+private let FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow shared ownership remains valid while workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/finalization-step/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, cancellation cleanup before BLE writes, and shared-planned retry delay execution are pinned, public facade error mapping is pinned, and the shared tests are compile-verified."
 
 private final class CapturingFirmwareUpdateTransport: FirmwareUpdateNetworkTransport {
     var requests: [URLRequest] = []

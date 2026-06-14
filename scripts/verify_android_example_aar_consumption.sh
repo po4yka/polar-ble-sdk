@@ -5,6 +5,7 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 ANDROID_ROOT="$REPO_ROOT/sources/Android/android-communications"
 EXAMPLE_ROOT="$REPO_ROOT/examples/example-android/polar-sensor-data-collector"
+ECG_HR_DEMO_ROOT="$REPO_ROOT/demos/Android-Demos/PolarSDK-ECG-HR-Demo"
 EXAMPLE_AAR_DIR="$EXAMPLE_ROOT/polarBleSdk"
 SDK_AAR="$ANDROID_ROOT/library/build/outputs/aar/library-sdk-release.aar"
 EXAMPLE_SDK_AAR="$EXAMPLE_AAR_DIR/polar-ble-sdk.aar"
@@ -38,5 +39,13 @@ if ! grep -q "polar-ble-sdk-shared.aar" "$EXAMPLE_ROOT/app/build.gradle.kts"; th
     exit 1
 fi
 
+if ! grep -q "polar-ble-sdk-shared.aar" "$ECG_HR_DEMO_ROOT/app/build.gradle.kts"; then
+    echo "Android ECG/HR demo must declare the local shared AAR consumption path" >&2
+    exit 1
+fi
+
 cd "$EXAMPLE_ROOT"
+./gradlew :app:checkDebugAarMetadata :app:checkDebugDuplicateClasses :app:mergeLibDexDebug -PlocalSdk=true --no-daemon --warning-mode all
+
+cd "$ECG_HR_DEMO_ROOT"
 ./gradlew :app:checkDebugAarMetadata :app:checkDebugDuplicateClasses :app:mergeLibDexDebug -PlocalSdk=true --no-daemon --warning-mode all

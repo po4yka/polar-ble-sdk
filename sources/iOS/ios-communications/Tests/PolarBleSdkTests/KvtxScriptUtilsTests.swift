@@ -218,7 +218,7 @@ final class KvtxScriptUtilsTests: XCTestCase {
             }
     }
 
-    func testKvtxReadinessManifestIsPinnedBeforeScriptMigration() throws {
+    func testKvtxReadinessManifestPinsScriptOwnership() throws {
         let file = try GoldenVectorTestData.repositoryRoot()
             .appendingPathComponent("testdata/golden-vectors/sdk/kvtx/kvtx-readiness.json")
         let data = try Data(contentsOf: file)
@@ -264,7 +264,7 @@ final class KvtxScriptUtilsTests: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "KVTX migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS KVTX tests continue to reference the same vectors, write-and-commit framing, empty data writes, unsigned 32-bit keys, multiple-key selection, append/remove behavior, EX zero-index behavior, non-empty EX index ignore policy, unknown-command stop policy, malformed-script typed error policy, truncated payload platform vectors, and the shared tests are compile-verified.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "KVTX shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS KVTX tests continue to reference the same vectors, write-and-commit framing, empty data writes, unsigned 32-bit keys, multiple-key selection, append/remove behavior, EX zero-index behavior, non-empty EX index ignore policy, unknown-command stop policy, malformed-script typed error policy, truncated payload platform vectors, and the shared tests are compile-verified.")
         let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any], "kvtx-readiness.json")
         let platforms = try XCTUnwrap(vector["platforms"] as? [String: Any], "kvtx-readiness.json")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "kvtx-readiness.json"), ["com.polar.sdk.impl.utils.KvtxScriptUtilsTest"])

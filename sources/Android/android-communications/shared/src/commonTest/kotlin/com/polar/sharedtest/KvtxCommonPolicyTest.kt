@@ -42,7 +42,7 @@ class KvtxCommonPolicyTest {
     }
 
     @Test
-    fun kvtxReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun kvtxReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/kvtx/kvtx-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -144,6 +144,6 @@ class KvtxCommonPolicyTest {
             "platform-kvtx-vector-reference-gate",
             "compile-verification-gate"
         )
-        val kvtxReadinessCommonDecision = "KVTX migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS KVTX tests continue to reference the same vectors, write-and-commit framing, empty data writes, unsigned 32-bit keys, multiple-key selection, append/remove behavior, EX zero-index behavior, non-empty EX index ignore policy, unknown-command stop policy, malformed-script typed error policy, truncated payload platform vectors, and the shared tests are compile-verified."
+        val kvtxReadinessCommonDecision = "KVTX shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS KVTX tests continue to reference the same vectors, write-and-commit framing, empty data writes, unsigned 32-bit keys, multiple-key selection, append/remove behavior, EX zero-index behavior, non-empty EX index ignore policy, unknown-command stop policy, malformed-script typed error policy, truncated payload platform vectors, and the shared tests are compile-verified."
     }
 }

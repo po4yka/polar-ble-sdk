@@ -2887,7 +2887,7 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `LogConfig maps known SD log enum values through shared KMP`() {
+    fun `LogConfig maps known SD log enum values through shared`() {
         val trigger = PbSensorDataLog.PbLogTrigger.valueOf(PolarSdLogTriggerName.fromValue(2)!!.name)
         val magnetometerFrequency = PbSensorDataLog.PbMagnetometerLogFrequency.valueOf(PolarSdLogMagnetometerFrequencyName.fromValue(3)!!.name)
         val proto = PbSensorDataLog.newBuilder()
@@ -2917,7 +2917,7 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `sd log readiness manifest is pinned before facade migration`() {
+    fun `sd log readiness manifest is pinned before facade shared ownership`() {
         val manifest = loadSdkGoldenVector("sdk/sd-log/sd-log-readiness.json")
         val input = manifest.getAsJsonObject("input")
         val expected = manifest.getAsJsonObject("expected")
@@ -3098,7 +3098,7 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `first time use readiness manifest is pinned before facade migration`() {
+    fun `first time use readiness manifest is pinned before facade shared ownership`() {
         val manifest = loadSdkGoldenVector("sdk/first-time-use/first-time-use-readiness.json")
         val input = manifest.getAsJsonObject("input")
         val expected = manifest.getAsJsonObject("expected")
@@ -4718,7 +4718,7 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `command runtime readiness manifest is pinned before runtime migration`() {
+    fun `command runtime readiness manifest is pinned before runtime shared ownership`() {
         assertSinglePolicyReadinessManifest(
             manifestPath = "sdk/command-runtime/reset-sync-h10-command-readiness.json",
             id = "reset-sync-h10-command-readiness",
@@ -4785,7 +4785,7 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `stored data cleanup readiness manifest is pinned before cleanup migration`() {
+    fun `stored data cleanup readiness manifest is pinned before cleanup shared ownership`() {
         assertSinglePolicyReadinessManifest(
             manifestPath = "sdk/stored-data-cleanup/cleanup-workflow-readiness.json",
             id = "stored-data-cleanup-workflow-readiness",
@@ -4857,7 +4857,7 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `disk time readiness manifest is pinned before runtime migration`() {
+    fun `disk time readiness manifest is pinned before runtime shared ownership`() {
         assertSinglePolicyReadinessManifest(
             manifestPath = "sdk/disk-time-runtime/disk-time-query-readiness.json",
             id = "disk-time-query-readiness",
@@ -4907,7 +4907,7 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `user device settings readiness manifest is pinned before runtime migration`() {
+    fun `user device settings readiness manifest is pinned before runtime shared ownership`() {
         assertSinglePolicyReadinessManifest(
             manifestPath = "sdk/user-device-settings-runtime/settings-runtime-readiness.json",
             id = "user-device-settings-runtime-readiness",
@@ -5016,7 +5016,7 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `rest facade readiness manifest is pinned before runtime migration`() {
+    fun `rest facade readiness manifest is pinned before runtime shared ownership`() {
         assertSinglePolicyReadinessManifest(
             manifestPath = "sdk/rest-service/rest-facade-runtime-readiness.json",
             id = "rest-facade-runtime-readiness",
@@ -5153,7 +5153,7 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `offline trigger runtime readiness manifest is pinned before runtime migration`() {
+    fun `offline trigger runtime readiness manifest is pinned before runtime shared ownership`() {
         assertSinglePolicyReadinessManifest(
             manifestPath = "sdk/offline-recording/trigger-runtime-readiness.json",
             id = "trigger-runtime-readiness",
@@ -5178,7 +5178,7 @@ class BDBleApiImplTest {
     }
 
     @Test
-    fun `file facade readiness manifest is pinned before runtime migration`() {
+    fun `file facade readiness manifest is pinned before runtime shared ownership`() {
         assertSinglePolicyReadinessManifest(
             manifestPath = "sdk/file-utils/file-facade-runtime-readiness.json",
             id = "file-facade-runtime-readiness",
@@ -5314,7 +5314,7 @@ class BDBleApiImplTest {
             Assert.assertEquals(commonDecision, actualCommonDecision)
             val commonRuntimePrototype = expected.getAsJsonObject("commonRuntimePrototype")
             Assert.assertEquals("executable shared commonTest runtime planning guard", commonRuntimePrototype.get("status").asString)
-            Assert.assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", commonRuntimePrototype.get("reason").asString)
+            Assert.assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", commonRuntimePrototype.get("reason").asString)
         }
         val consumerTests = manifest.getAsJsonObject("consumerTests")
         androidConsumers?.let { expectedConsumers ->
@@ -5441,16 +5441,16 @@ class BDBleApiImplTest {
     }
 
     private companion object {
-        const val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
-        const val STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup migration may proceed only after cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
-        const val DISK_TIME_RUNTIME_READINESS_COMMON_DECISION = "Disk/time facade runtime migration may proceed only after disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
+        const val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime shared ownership remains valid while reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+        const val STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup shared ownership remains valid while cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
+        const val DISK_TIME_RUNTIME_READINESS_COMMON_DECISION = "Disk/time facade runtime shared ownership remains valid while disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
         const val COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10/exercise command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
         const val STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
-        const val DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
-        const val USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
-        const val USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
-        const val SD_LOG_READINESS_COMMON_DECISION = "SD-log migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS SD-log facade tests continue to pin trigger and magnetometer-frequency enum projection, unknown enum boundaries, SD-log config file paths, write-progress policy, session-notification boundaries, protobuf construction boundaries, optional field presence, public error mapping boundaries, platform vector references, and compile verification before broader SD-log execution moves."
-        const val FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
+        const val DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only while facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
+        const val USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime shared ownership remains valid while settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+        const val USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only while direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+        const val SD_LOG_READINESS_COMMON_DECISION = "SD-log shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS SD-log facade tests continue to pin trigger and magnetometer-frequency enum projection, unknown enum boundaries, SD-log config file paths, write-progress policy, session-notification boundaries, protobuf construction boundaries, optional field presence, public error mapping boundaries, platform vector references, and compile verification before broader SD-log execution moves."
+        const val FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
         val SD_LOG_READINESS_FAMILIES = listOf(
             "log-trigger-enum-projection",
             "magnetometer-frequency-enum-projection",
@@ -5549,8 +5549,8 @@ class BDBleApiImplTest {
             "set-automatic-ohr-measurement-write-failure",
             "set-daylight-saving-time"
         )
-        const val REST_FACADE_RUNTIME_READINESS_COMMON_DECISION = "REST facade runtime migration may proceed only after rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified."
-        const val REST_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
+        const val REST_FACADE_RUNTIME_READINESS_COMMON_DECISION = "REST facade runtime shared ownership remains valid while rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified."
+        const val REST_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote REST facade request planning only while service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
         val REST_FACADE_RUNTIME_POLICY_OPERATION_IDS = listOf(
             "list-rest-api-services-success",
             "get-rest-api-description-success",
@@ -5563,8 +5563,8 @@ class BDBleApiImplTest {
             "get-rest-api-description-empty-success",
             "get-rest-api-description-malformed-success"
         )
-        const val FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION = "File facade runtime migration may proceed only after file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
-        const val FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
+        const val FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION = "File facade runtime shared ownership remains valid while file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
+        const val FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote low-level file facade planning only while read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
         val FILE_FACADE_RUNTIME_POLICY_OPERATION_IDS = listOf(
             "read-low-level-file-success",
             "read-low-level-file-empty-success",

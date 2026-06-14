@@ -123,5 +123,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "D2H stream orchestration can move to shared KMP code only after mapped notifications emitted before a late upstream error are preserved, unknown notification ids are filtered without stopping later known values, consumer cancellation cancels the upstream subscription and suppresses later events, and failed subscriptions do not register observers."
+  "notes": "D2H stream orchestration can move to shared code only after mapped notifications emitted before a late upstream error are preserved, unknown notification ids are filtered without stopping later known values, consumer cancellation cancels the upstream subscription and suppresses later events, and failed subscriptions do not register observers."
 }

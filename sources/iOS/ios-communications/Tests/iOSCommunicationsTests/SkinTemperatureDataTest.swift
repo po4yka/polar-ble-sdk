@@ -162,7 +162,7 @@ final class SkinTemperatureDataTest: XCTestCase {
         }
     }
 
-    func testSkinTemperatureReadinessManifestIsPinnedBeforeParserMigration() throws {
+    func testSkinTemperatureReadinessManifestPinsParserOwnership() throws {
         let manifest = try loadSkinTemperatureReadinessManifest()
         let id = try XCTUnwrap(manifest["id"] as? String)
         let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)

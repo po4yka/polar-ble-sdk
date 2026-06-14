@@ -60,7 +60,7 @@ class StoredDataCleanupRuntimePolicyCommonTest {
     }
 
     @Test
-    fun cleanupWorkflowReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun cleanupWorkflowReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/stored-data-cleanup/cleanup-workflow-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -82,7 +82,7 @@ class StoredDataCleanupRuntimePolicyCommonTest {
         assertCleanupPolicyFields(policy.objectValue("input").objectArray("scenarios").associateBy { it.stringValue("id") })
         assertEquals(STORED_DATA_CLEANUP_READINESS_COMMON_DECISION, expected.stringValue("commonDecision"))
         assertEquals("executable shared commonTest runtime planning guard", expected.objectValue("commonRuntimePrototype").stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
         assertEquals(listOf("com.polar.sdk.impl.BDBleApiImplTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarBleApiImplTests"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.StoredDataCleanupRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
@@ -222,7 +222,7 @@ class StoredDataCleanupRuntimePolicyCommonTest {
     private val STORED_DATA_CLEANUP_PLATFORM_SPLIT_DECISION = "Keep cleanup failure and empty-directory path policy platform-specific until public facade compatibility is resolved."
     private val STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
 
-    private val STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup migration may proceed only after cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
+    private val STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup shared ownership remains valid while cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
 
     private fun outcomesForCleanupCommands(commands: List<String>, terminal: String): List<CommonFakeTransportOutcome> {
         if (terminal == "platform-split") {

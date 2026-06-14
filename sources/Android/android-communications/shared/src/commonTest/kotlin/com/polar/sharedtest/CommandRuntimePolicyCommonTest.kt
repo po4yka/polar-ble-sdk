@@ -53,7 +53,7 @@ class CommandRuntimePolicyCommonTest {
     }
 
     @Test
-    fun resetSyncH10CommandReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun resetSyncH10CommandReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/command-runtime/reset-sync-h10-command-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -75,7 +75,7 @@ class CommandRuntimePolicyCommonTest {
         assertCommandRuntimePolicyFields(policy.objectValue("input").objectArray("operations").associateBy { it.stringValue("id") })
         assertEquals(COMMAND_RUNTIME_READINESS_COMMON_DECISION, expected.stringValue("commonDecision"))
         assertEquals("executable shared commonTest runtime planning guard", expected.objectValue("commonRuntimePrototype").stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
         assertEquals(listOf("com.polar.sdk.impl.BDBleApiImplTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarBleApiImplTests"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.CommandRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
@@ -250,10 +250,10 @@ class CommandRuntimePolicyCommonTest {
     private val COMMAND_POLICY_ANDROID_SYNC_STOP_NOTIFICATION_FAILURE = "swallows the notification error after STOP_SYNC is attempted"
     private val COMMAND_POLICY_IOS_SYNC_START_QUERY_FAILURE = "propagates the query error and sends no notifications"
     private val COMMAND_POLICY_IOS_SYNC_STOP_NOTIFICATION_FAILURE = "propagates the notification error after STOP_SYNC is attempted"
-    private val COMMAND_POLICY_PLATFORM_SPLIT_DECISION = "Keep sync failure policy platform-specific until the public API migration has an approved compatibility decision."
+    private val COMMAND_POLICY_PLATFORM_SPLIT_DECISION = "Keep sync failure policy platform-specific until the public API shared ownership has an approved compatibility decision."
     private val COMMAND_POLICY_COMMON_DECISION = "Promote reset/H10/exercise command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
 
-    private val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+    private val COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime shared ownership remains valid while reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
 
     private fun outcomesForCommandTransport(commands: List<CommonFakeTransportCommand>, terminal: String): List<CommonFakeTransportOutcome> {
         if (terminal == "transport-error" || terminal == "platform-split") {

@@ -266,7 +266,7 @@ final class OfflineHrDataTest: XCTestCase {
         }
     }
 
-    func testOfflineHrReadinessManifestIsPinnedBeforeParserMigration() throws {
+    func testOfflineHrReadinessManifestPinsParserOwnership() throws {
         let manifest = try loadOfflineHrReadinessManifest()
         let id = try XCTUnwrap(manifest["id"] as? String)
         let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)

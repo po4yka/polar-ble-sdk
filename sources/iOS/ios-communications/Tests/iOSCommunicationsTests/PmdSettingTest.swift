@@ -245,7 +245,7 @@ final class PmdSettingTest: XCTestCase {
         }
     }
 
-    func testPmdSettingsReadinessManifestIsPinnedBeforeParserMigration() throws {
+    func testPmdSettingsReadinessManifestPinsParserOwnership() throws {
         let manifest = try loadPmdSettingsReadinessManifest()
         let input = try XCTUnwrap(manifest["input"] as? [String: Any])
         let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
@@ -353,7 +353,7 @@ private let pmdSettingsReadinessBehaviorFamilies = [
     "compile-verification-gate"
 ]
 
-private let pmdSettingsReadinessDecision = "PMD settings migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD settings tests continue to reference the same vectors, baseline parsing, duplicate overwrite behavior, FACTOR parsing, selected-setting serialization, skipped FACTOR serialization, RANGE_MILLIUNIT signedness platform decisions, SECURITY setting parse policy, truncated-value policy, unknown-setting-type policy, and compile verification remain explicit before production PMD settings logic moves."
+private let pmdSettingsReadinessDecision = "PMD settings shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD settings tests continue to reference the same vectors, baseline parsing, duplicate overwrite behavior, FACTOR parsing, selected-setting serialization, skipped FACTOR serialization, RANGE_MILLIUNIT signedness platform decisions, SECURITY setting parse policy, truncated-value policy, unknown-setting-type policy, and compile verification remain explicit before production PMD settings logic moves."
 
 private extension Data {
     var hexString: String {

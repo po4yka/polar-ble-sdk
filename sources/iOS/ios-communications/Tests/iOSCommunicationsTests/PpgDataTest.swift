@@ -1236,7 +1236,7 @@ final class PpgDataTest: XCTestCase {
         }
     }
 
-    func testPpgFrameFamilyReadinessManifestPinsIOSMigrationGate() throws {
+    func testPpgFrameFamilyReadinessManifestPinsIOSSharedOwnershipGate() throws {
         let vector = try loadPpgReadinessManifest()
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -1246,8 +1246,8 @@ final class PpgDataTest: XCTestCase {
         }
         let requiredFamilies = try XCTUnwrap(input["requiredFamilies"] as? [String])
         let coveredFamilies = try XCTUnwrap(expected["coveredFamilies"] as? [String])
-        XCTAssertEqual("ppg-frame-family-migration-readiness", vector["id"] as? String)
-        XCTAssertEqual("ppgFrameFamilyMigrationReadiness", input["kind"] as? String)
+        XCTAssertEqual("ppg-frame-family-shared-contract-readiness", vector["id"] as? String)
+        XCTAssertEqual("ppgFrameFamilySharedContractReadiness", input["kind"] as? String)
         XCTAssertEqual(PPG_READINESS_VECTOR_PATHS, requiredVectorPaths)
         XCTAssertEqual(parsedVectorPaths, requiredVectorPaths)
         XCTAssertEqual(PPG_READINESS_FAMILIES, requiredFamilies)
@@ -1280,7 +1280,7 @@ final class PpgDataTest: XCTestCase {
 
     private func loadPpgReadinessManifest() throws -> [String: Any] {
         let manifest = try GoldenVectorTestData.repositoryRoot()
-            .appendingPathComponent("testdata/golden-vectors/protocol/sensors/ppg-frame-family-migration-readiness.json")
+            .appendingPathComponent("testdata/golden-vectors/protocol/sensors/ppg-frame-family-shared-contract-readiness.json")
         let data = try Data(contentsOf: manifest)
         return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], manifest.path)
     }
@@ -1329,7 +1329,7 @@ final class PpgDataTest: XCTestCase {
         "platform-split-integration-gain-shape"
     ]
 
-    private let PPG_READINESS_COMMON_DECISION = "PPG parser migration may proceed only after every required vector path in this manifest is executable from shared commonTest and compile-verified against the common parser prototype; this manifest does not replace parser execution or Gradle commonTest verification."
+    private let PPG_READINESS_COMMON_DECISION = "PPG parser shared ownership remains valid while every required vector path in this manifest is executable from shared commonTest and compile-verified against the common parser prototype; this manifest does not replace parser execution or Gradle commonTest verification."
 
 }
 

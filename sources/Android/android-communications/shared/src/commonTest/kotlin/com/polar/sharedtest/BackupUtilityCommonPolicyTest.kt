@@ -60,7 +60,7 @@ class BackupUtilityCommonPolicyTest {
     }
 
     @Test
-    fun restoreFailureGoldenVectorPinsPlatformSplitBeforeCommonWorkflowMigration() {
+    fun restoreFailureGoldenVectorPinsPlatformSplitForCommonWorkflowOwnership() {
         val vector = loadGoldenVectorText("sdk/backup-utils/restore-failure-platform-policy.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -87,11 +87,11 @@ class BackupUtilityCommonPolicyTest {
         assertEquals(true, vector.objectValue("platforms").booleanValue("android"), vector.stringValue("id"))
         assertEquals(true, vector.objectValue("platforms").booleanValue("ios"), vector.stringValue("id"))
         assertEquals(true, vector.objectValue("platforms").booleanValue("common"), vector.stringValue("id"))
-        assertEquals("KMP should choose whether restore failure aggregation belongs in shared code or remains platform-specific compatibility behavior.", vector.stringValue("notes"), vector.stringValue("id"))
+        assertEquals("Shared code should choose whether restore failure aggregation belongs in shared code or remains platform-specific compatibility behavior.", vector.stringValue("notes"), vector.stringValue("id"))
     }
 
     @Test
-    fun backupWorkflowReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun backupWorkflowReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/backup-utils/backup-workflow-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -174,7 +174,7 @@ class BackupUtilityCommonPolicyTest {
         "compile-verification-gate"
     )
 
-    private val backupWorkflowReadinessDecision = "Backup workflow migration may proceed only after backup-expansion-and-restore-writes.json, restore-failure-platform-policy.json, and this readiness manifest are executable from shared commonTest, Android and iOS backup tests continue to reference the same vectors, BACKUP.TXT expansion and default user-file inclusion stay covered, restore PUT command order and payload bytes remain pinned, restore failure aggregation is deliberately standardized or deliberately preserved as a platform split, and the shared tests are compile-verified."
+    private val backupWorkflowReadinessDecision = "Backup workflow shared ownership remains valid while backup-expansion-and-restore-writes.json, restore-failure-platform-policy.json, and this readiness manifest are executable from shared commonTest, Android and iOS backup tests continue to reference the same vectors, BACKUP.TXT expansion and default user-file inclusion stay covered, restore PUT command order and payload bytes remain pinned, restore failure aggregation is deliberately standardized or deliberately preserved as a platform split, and the shared tests are compile-verified."
 
     private fun String.toBackupRestoreFile(): PolarBackupRestoreFile {
         return PolarBackupRestoreFile(

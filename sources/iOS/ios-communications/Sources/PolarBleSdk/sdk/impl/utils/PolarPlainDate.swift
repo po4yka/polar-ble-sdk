@@ -12,13 +12,13 @@ import Foundation
 import PolarBleSdkShared
 #endif
 
-public struct PolarPlainDate {
+internal struct PolarPlainDate {
     /// Returns a date string initialized using their ISO 8601 representation.
     /// - Parameters:
     ///   - dateAsString: The ISO 8601 representation of the date. For instance, `2022-03-02`for March 2nd of 2022.
     ///   - calendar: The calendar — including the time zone — to use. The default is the current calendar.
     /// - Returns: A date string, or `nil` if a valid date could not be created from `dateAsString`.
-    public init?(from dateAsString: String, calendar: Calendar = .current) {
+    internal init?(from dateAsString: String, calendar: Calendar = .current) {
         #if canImport(PolarBleSdkShared)
         guard let sharedDateString = Self.sharedPlainDateString(from: dateAsString) else { return nil }
         #else
@@ -35,7 +35,7 @@ public struct PolarPlainDate {
     /// - Parameters:
     ///   - date: The date to represent.
     ///   - calendar: The calendar — including the time zone — to use. The default is the current calendar.
-    public init(date: Date, calendar: Calendar = .current) {
+    internal init(date: Date, calendar: Calendar = .current) {
         self.init(date: date, calendar: calendar, formatter: Self.createFormatter(timeZone: calendar.timeZone))
     }
 
@@ -101,7 +101,7 @@ enum PolarPlainDateRuntimePlanner {
 
 extension PolarPlainDate: CustomStringConvertible {
     /// A string description of the `PlainDate` in ISO 8601 format.
-    public var description: String {
+    internal var description: String {
         #if canImport(PolarBleSdkShared)
         if let sharedDateString = Self.sharedPlainDateString(date: date, calendar: calendar) {
             return sharedDateString
@@ -112,19 +112,19 @@ extension PolarPlainDate: CustomStringConvertible {
 }
 
 extension PolarPlainDate: ExpressibleByStringLiteral {
-    public init(stringLiteral value: String) {
+    internal init(stringLiteral value: String) {
         self.init(from: value)!
     }
 }
 
 extension PolarPlainDate: Decodable {
-    public init(from decoder: Decoder) throws {
+    internal init(from decoder: Decoder) throws {
         try self.init(stringLiteral: decoder.singleValueContainer().decode(String.self))
     }
 }
 
 extension PolarPlainDate: Encodable {
-    public func encode(to encoder: Encoder) throws {
+    internal func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(description)
     }

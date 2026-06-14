@@ -47,7 +47,7 @@ private let RFC76_FRAME_SPLITTING_CASE_IDS = [
     "sequence-wraps-after-fifteen"
 ]
 
-private let PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
+private let PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec shared ownership remains valid while every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
 
 class BlePsFtpUtilityTest: XCTestCase {
 
@@ -417,7 +417,7 @@ class BlePsFtpUtilityTest: XCTestCase {
         }
     }
 
-    func testPsFtpByteCodecReadinessManifestIsPinnedBeforeCodecMigration() throws {
+    func testPsFtpByteCodecReadinessManifestPinsCodecOwnership() throws {
         let vector = try loadPsFtpVector(directoryName: "psftp-message-stream", fileName: "byte-codec-readiness.json")
         XCTAssertEqual(vector["id"] as? String, "psftp-byte-codec-readiness")
         let input = try XCTUnwrap(vector["input"] as? [String: Any], "psftp-byte-codec-readiness")

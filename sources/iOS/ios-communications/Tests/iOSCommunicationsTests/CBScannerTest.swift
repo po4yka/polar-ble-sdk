@@ -295,7 +295,7 @@ final class CBScannerTest: XCTestCase {
         let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any])
 
         XCTAssertEqual(vector["id"] as? String, "session-state-machine-ownership")
-        XCTAssertEqual(expected["migrationDecision"] as? String, "no_shared_session_state_machine")
+        XCTAssertEqual(expected["sharedOwnershipDecision"] as? String, "host_owned_session_state_machine")
         XCTAssertEqual(consumerTests["ios"] as? [String], ["CBScannerTest"])
 
         central.mockState = .poweredOff

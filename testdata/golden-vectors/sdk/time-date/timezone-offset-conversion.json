@@ -2,7 +2,7 @@
   "id": "timezone-offset-conversion",
   "area": "time-date",
   "case": "timezone_offset_conversion",
-  "source": "Android iOS shared KMP migration characterization",
+  "source": "Android iOS shared shared ownership characterization",
   "description": "Pins timezone offset conversion between seconds and the protobuf minute field.",
   "input": {
     "kind": "timezoneOffset",
@@ -53,5 +53,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Timezone database lookup remains platform-owned; shared KMP owns only seconds/minutes arithmetic once the platform adapter has selected an offset."
+  "notes": "Timezone database lookup remains platform-owned; shared owns only seconds/minutes arithmetic once the platform adapter has selected an offset."
 }

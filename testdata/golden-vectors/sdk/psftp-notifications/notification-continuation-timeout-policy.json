@@ -60,5 +60,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This vector intentionally documents a long-duration timeout path that should not be executed against wall-clock protocol time. Android waits for the next D2H packet after a MORE frame and wraps the timeout as Notification receive failed. iOS waits for the next D2H packet and currently maps an absent packet to BlePsFtpException.responseError(errorCode: -1). KMP migration should introduce a typed continuation-timeout error and facade adapters should intentionally preserve or normalize the current public error split."
+  "notes": "This vector intentionally documents a long-duration timeout path that should not be executed against wall-clock protocol time. Android waits for the next D2H packet after a MORE frame and wraps the timeout as Notification receive failed. iOS waits for the next D2H packet and currently maps an absent packet to BlePsFtpException.responseError(errorCode: -1). shared ownership should introduce a typed continuation-timeout error and facade adapters should intentionally preserve or normalize the current public error split."
 }

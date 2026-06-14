@@ -332,7 +332,7 @@ final class MagDataTest: XCTestCase {
         }
     }
 
-    func testMagReadinessManifestIsPinnedBeforeParserMigration() throws {
+    func testMagReadinessManifestPinsParserOwnership() throws {
         let manifest = try loadMagReadinessManifest()
         let id = try XCTUnwrap(manifest["id"] as? String)
         let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)

@@ -135,7 +135,7 @@ final class PolarServiceClientUtilsTest: XCTestCase {
         }
     }
 
-    func testDeviceIdReadinessManifestIsPinnedBeforeIdentifierRoutingMigration() throws {
+    func testDeviceIdReadinessManifestPinsIdentifierRoutingOwnership() throws {
         let manifest = try loadDeviceIdReadinessManifest()
         let input = try XCTUnwrap(manifest["input"] as? [String: Any])
         let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
@@ -459,7 +459,7 @@ final class PolarServiceClientUtilsTest: XCTestCase {
         "compile-verification-gate"
     ]
 
-    private let DEVICE_ID_READINESS_COMMON_DECISION = "Device ID migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS device ID tests continue to reference the same vectors, checksum width 6 and 7 assembly, zero-value assembly, validation, lowercase acceptance, UUID conversion, invalid UUID length errors, invalid identifier rejection, current empty and non-hex platform decisions, platform-specific identifier routing, and compile verification remain explicit before production checksum or UUID logic moves."
+    private let DEVICE_ID_READINESS_COMMON_DECISION = "Device ID shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS device ID tests continue to reference the same vectors, checksum width 6 and 7 assembly, zero-value assembly, validation, lowercase acceptance, UUID conversion, invalid UUID length errors, invalid identifier rejection, current empty and non-hex platform decisions, platform-specific identifier routing, and compile verification remain explicit before production checksum or UUID logic moves."
 
 }
 

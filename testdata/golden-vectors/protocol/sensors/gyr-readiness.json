@@ -1,8 +1,8 @@
 {
   "id": "gyr-readiness",
   "area": "sensors.gyr",
-  "case": "pre_migration_readiness_manifest",
-  "source": "KMP migration readiness gate for GYR parser behavior",
+  "case": "shared_contract_readiness_manifest",
+  "source": "Shared ownership readiness gate for GYR parser behavior",
   "input": {
     "kind": "gyrReadiness",
     "policyVectorPaths": [
@@ -30,7 +30,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "sharedOwnershipStatus": "coveredBySharedContractCharacterization",
     "coveredBehaviorFamilies": [
       "compressed-type0-reference-delta-decoding",
       "compressed-type0-factor-scaling",

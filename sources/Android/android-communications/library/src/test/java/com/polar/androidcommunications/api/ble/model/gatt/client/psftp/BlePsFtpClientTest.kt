@@ -470,7 +470,7 @@ internal class BlePsFtpClientTest {
     }
 
     @Test
-    fun `psftp notification golden vectors follow neutral KMP vector shape`() {
+    fun `psftp notification golden vectors follow neutral shared vector shape`() {
         loadPsFtpNotificationVectors().forEach { vector ->
             assertNeutralKmpVectorShape(vector)
             val id = vector.get("id").asString
@@ -480,7 +480,7 @@ internal class BlePsFtpClientTest {
     }
 
     @Test
-    fun `psftp response golden vectors follow neutral KMP vector shape`() {
+    fun `psftp response golden vectors follow neutral shared vector shape`() {
         loadPsFtpVectors("psftp-response").forEach { vector ->
             if (vector.getAsJsonObject("input").get("kind").asString == "psFtpRuntimeReadiness") return@forEach
             assertNeutralKmpVectorShape(vector)
@@ -526,7 +526,7 @@ internal class BlePsFtpClientTest {
     }
 
     @Test
-    fun `psftp timeout planning vectors require fake clock before shared runtime migration`() {
+    fun `psftp timeout planning vectors require fake clock before shared runtime shared ownership`() {
         assertFakeClockPlanningVector(
             vector = loadPsFtpNotificationVector("notification-continuation-timeout-policy"),
             androidExecution = "injectable-timeout-unit-test",
@@ -543,7 +543,7 @@ internal class BlePsFtpClientTest {
     }
 
     @Test
-    fun `psftp runtime readiness manifest is pinned before shared runtime migration`() {
+    fun `psftp runtime readiness manifest is pinned before shared runtime shared ownership`() {
         val vector = loadPsFtpResponseVector("psftp-runtime-readiness")
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -559,7 +559,7 @@ internal class BlePsFtpClientTest {
         Assert.assertEquals(requiredPsFtpRuntimeFamilies, coveredFamilies)
         Assert.assertEquals(PSFTP_RUNTIME_READINESS_COMMON_DECISION, expected.get("commonDecision").asString)
         Assert.assertEquals("executable shared commonTest runtime planning guard", runtimePrototype.get("status").asString)
-        Assert.assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", runtimePrototype.get("reason").asString)
+        Assert.assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", runtimePrototype.get("reason").asString)
         Assert.assertEquals(
             listOf("com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest"),
             consumerTests.getAsJsonArray("android").map { test -> test.asString }
@@ -635,7 +635,7 @@ internal class BlePsFtpClientTest {
         val NOTIFICATION_REASSEMBLY_CASE_IDS = listOf("single-frame", "multi-frame")
         val NOTIFICATION_ERROR_CASE_IDS = listOf("rfc76-error-first-frame", "transport-error-first-packet")
         val NOTIFICATION_CONTINUATION_TIMEOUT_CASE_IDS = listOf("missing-last-frame-after-more")
-        const val PSFTP_RUNTIME_READINESS_COMMON_DECISION = "PSFTP runtime migration may proceed only after every policy vector listed in this readiness manifest is executable from shared commonTest, Android and iOS PSFTP client tests continue to reference the same vectors, request response reassembly, response-error mapping, notification reassembly and ordering, initial-silence policy, consumer timeout cleanup, notification error platform split, continuation timeout, write progress split, write interruption, transport failure, write acknowledgement timeout, fake-clock timeout gates, and the shared tests are compile-verified."
+        const val PSFTP_RUNTIME_READINESS_COMMON_DECISION = "PSFTP runtime shared ownership remains valid while every policy vector listed in this readiness manifest is executable from shared commonTest, Android and iOS PSFTP client tests continue to reference the same vectors, request response reassembly, response-error mapping, notification reassembly and ordering, initial-silence policy, consumer timeout cleanup, notification error platform split, continuation timeout, write progress split, write interruption, transport failure, write acknowledgement timeout, fake-clock timeout gates, and the shared tests are compile-verified."
     }
 
     private fun assertNeutralKmpVectorShape(vector: JsonObject) {

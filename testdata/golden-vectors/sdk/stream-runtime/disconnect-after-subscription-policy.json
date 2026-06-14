@@ -46,5 +46,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Stream utilities can move to shared KMP code only after disconnect-after-subscription termination clears observers and preserves platform terminal-error mapping on Android, iOS, and the shared fake-stream runtime."
+  "notes": "Stream utilities can move to shared code only after disconnect-after-subscription termination clears observers and preserves platform terminal-error mapping on Android, iOS, and the shared fake-stream runtime."
 }

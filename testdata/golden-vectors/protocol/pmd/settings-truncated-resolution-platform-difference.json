@@ -7,7 +7,7 @@
     "hex": "01010e"
   },
   "expected": {
-    "commonDecision": "KMP should reject truncated PMD setting values with a deterministic parse error."
+    "commonDecision": "Shared code should reject truncated PMD setting values with a deterministic parse error."
   },
   "platformExpectations": {
     "android": {
@@ -25,7 +25,7 @@
     "ios": true,
     "common": false
   },
-  "notes": "This vector documents that both platforms fail on the malformed payload today, but with platform-specific error surfaces. KMP should intentionally choose one deterministic parse error.",
+  "notes": "This vector documents that both platforms fail on the malformed payload today, but with platform-specific error surfaces. Shared code should intentionally choose one deterministic parse error.",
   "consumerTests": {
     "android": [
       "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSettingTest"

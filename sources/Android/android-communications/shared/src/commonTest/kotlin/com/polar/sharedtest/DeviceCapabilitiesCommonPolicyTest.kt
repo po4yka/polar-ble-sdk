@@ -86,7 +86,7 @@ class DeviceCapabilitiesCommonPolicyTest {
             ),
             input.stringArrayValue("commonScope")
         )
-        assertEquals("platformOwnedResourceBoundary", expected.stringValue("migrationReadiness"))
+        assertEquals("platformOwnedResourceBoundary", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(CAPABILITY_RESOURCE_PLATFORM_DECISION, expected.stringValue("platformDecision"))
         assertEquals(CAPABILITY_RESOURCE_COMMON_DECISION, expected.stringValue("commonDecision"))
         assertEquals(
@@ -100,7 +100,7 @@ class DeviceCapabilitiesCommonPolicyTest {
     }
 
     @Test
-    fun deviceCapabilityReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun deviceCapabilityReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/device-capabilities/capability-lookup-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -112,7 +112,7 @@ class DeviceCapabilitiesCommonPolicyTest {
         assertEquals(DEVICE_CAPABILITY_VECTORS, input.stringArrayValue("policyVectorPaths"))
         assertEquals(DEVICE_CAPABILITY_READINESS_FAMILIES, input.stringArrayValue("requiredBehaviorFamilies"))
         assertEquals(DEVICE_CAPABILITY_READINESS_FAMILIES, expected.stringArrayValue("coveredBehaviorFamilies"))
-        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(CAPABILITY_LOOKUP_COMMON_DECISION, expected.stringValue("commonDecision"))
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtilityTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarBleApiImplTests"), consumerTests.stringArrayValue("ios"))
@@ -180,8 +180,8 @@ class DeviceCapabilitiesCommonPolicyTest {
             "platform-capability-vector-references",
             "compile-verification-gate"
         )
-        const val CAPABILITY_LOOKUP_COMMON_DECISION = "Capability lookup migration may proceed only after these vectors are executable from shared commonTest, Android and iOS tests continue to reference the same capability fixtures, firmware-update/activity/sensor flags and version-mismatch user-config merge behavior are covered by shared vectors, resource override behavior is explicitly kept platform-owned, and the shared tests are compile-verified."
+        const val CAPABILITY_LOOKUP_COMMON_DECISION = "Capability lookup shared ownership remains valid while these vectors are executable from shared commonTest, Android and iOS tests continue to reference the same capability fixtures, firmware-update/activity/sensor flags and version-mismatch user-config merge behavior are covered by shared vectors, resource override behavior is explicitly kept platform-owned, and the shared tests are compile-verified."
         const val CAPABILITY_RESOURCE_PLATFORM_DECISION = "Resource selection and app-level override precedence remain platform-owned until common resource loading is deliberately introduced with Android asset/external-file tests, iOS Bundle.main/SDK-bundle/sandbox tests, and shared common parser tests."
-        const val CAPABILITY_RESOURCE_COMMON_DECISION = "Shared KMP capability code may own parsing, lookup, defaults, boolean fields, and version-mismatch config merge, but must receive an already selected config and must not choose Android AssetManager, external Documents/PolarConfig files, iOS Bundle.main, SDK bundles, or sandbox files."
+        const val CAPABILITY_RESOURCE_COMMON_DECISION = "Shared shared capability code may own parsing, lookup, defaults, boolean fields, and version-mismatch config merge, but must receive an already selected config and must not choose Android AssetManager, external Documents/PolarConfig files, iOS Bundle.main, SDK bundles, or sandbox files."
     }
 }

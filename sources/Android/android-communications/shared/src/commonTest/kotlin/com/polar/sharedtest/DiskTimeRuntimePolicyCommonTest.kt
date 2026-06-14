@@ -44,7 +44,7 @@ class DiskTimeRuntimePolicyCommonTest {
     }
 
     @Test
-    fun diskTimeQueryReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun diskTimeQueryReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/disk-time-runtime/disk-time-query-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -65,7 +65,7 @@ class DiskTimeRuntimePolicyCommonTest {
         assertEquals(diskTimeReadinessCommonDecision, expected.stringValue("commonDecision"))
         val commonRuntimePrototype = expected.objectValue("commonRuntimePrototype")
         assertEquals("executable shared commonTest runtime planning guard", commonRuntimePrototype.stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", commonRuntimePrototype.stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", commonRuntimePrototype.stringValue("reason"))
         val consumerTests = manifest.objectValue("consumerTests")
         assertEquals(listOf("com.polar.sdk.impl.BDBleApiImplTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarBleApiImplTests"), consumerTests.stringArrayValue("ios"))
@@ -127,9 +127,9 @@ class DiskTimeRuntimePolicyCommonTest {
         "compile-verification-gate"
     )
 
-    private val diskTimeReadinessCommonDecision = "Disk/time facade runtime migration may proceed only after disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
+    private val diskTimeReadinessCommonDecision = "Disk/time facade runtime shared ownership remains valid while disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
 
-    private val diskTimePolicyCommonDecision = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
+    private val diskTimePolicyCommonDecision = "Promote disk/time query planning only while facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
 
     private fun outcomesForDiskTimeTransport(commands: List<CommonFakeTransportCommand>, terminal: String): List<CommonFakeTransportOutcome> {
         if (terminal == "transport-error") {

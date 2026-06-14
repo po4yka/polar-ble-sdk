@@ -2,8 +2,8 @@
   "id": "file-facade-runtime-readiness",
   "area": "sdk.file-utils",
   "case": "file_facade_runtime_readiness",
-  "source": "File facade runtime backlog and file-facade-runtime-policy shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the low-level public file facade behavior families that must remain covered before read, write, and delete command planning delegates to shared KMP runtime code.",
+  "source": "File facade runtime backlog and file-facade-runtime-policy shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the low-level public file facade behavior families that must remain covered before read, write, and delete command planning delegates to shared runtime code.",
   "input": {
     "kind": "fileFacadeRuntimeReadiness",
     "policyVectorPath": "sdk/file-utils/file-facade-runtime-policy.json",
@@ -57,10 +57,10 @@
       "platform-facade-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "File facade runtime migration may proceed only after file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified.",
+    "commonDecision": "File facade runtime shared ownership remains valid while file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
-      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership."
     }
   },
   "consumerTests": {
@@ -81,5 +81,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for low-level public file facade behavior-family completeness only; empty read payloads, delete request failures, write progress before completion, directory traversal, malformed directory parsing, response-error mapping, public facade error mapping, platform adapter references, and compile verification remain required before production file facade runtime code moves to shared KMP."
+  "notes": "This readiness manifest is a shared ownership gate for low-level public file facade behavior-family completeness only; empty read payloads, delete request failures, write progress before completion, directory traversal, malformed directory parsing, response-error mapping, public facade error mapping, platform adapter references, and compile verification remain required before production file facade runtime code moves to shared."
 }

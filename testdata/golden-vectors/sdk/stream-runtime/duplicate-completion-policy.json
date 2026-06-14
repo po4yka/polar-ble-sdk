@@ -38,5 +38,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Stream utilities can move to shared KMP code only after duplicate completion is preserved as a single terminal completion with no active observer leak on Android, iOS, and the shared fake-stream runtime."
+  "notes": "Stream utilities can move to shared code only after duplicate completion is preserved as a single terminal completion with no active observer leak on Android, iOS, and the shared fake-stream runtime."
 }

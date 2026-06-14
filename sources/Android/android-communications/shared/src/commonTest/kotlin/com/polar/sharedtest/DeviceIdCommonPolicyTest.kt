@@ -41,7 +41,7 @@ class DeviceIdCommonPolicyTest {
             expected.optionalStringValue("status")?.let { status ->
                 assertEquals("undecided", status, caseId)
             }
-            expected.optionalStringValue("migrationOwnership")?.let { ownership ->
+            expected.optionalStringValue("sharedOwnership")?.let { ownership ->
                 assertEquals("platform-specific", PolarDeviceId.classifyIdentifier(input.stringValue("identifier")).ownership, caseId)
                 assertEquals(true, ownership.contains("platform-specific"), caseId)
             }
@@ -49,7 +49,7 @@ class DeviceIdCommonPolicyTest {
     }
 
     @Test
-    fun deviceIdReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun deviceIdReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val vector = loadGoldenVectorText("protocol/device-id/device-id-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -165,6 +165,6 @@ class DeviceIdCommonPolicyTest {
             "platform-device-id-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val DEVICE_ID_READINESS_COMMON_DECISION = "Device ID migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS device ID tests continue to reference the same vectors, checksum width 6 and 7 assembly, zero-value assembly, validation, lowercase acceptance, UUID conversion, invalid UUID length errors, invalid identifier rejection, current empty and non-hex platform decisions, platform-specific identifier routing, and compile verification remain explicit before production checksum or UUID logic moves."
+        const val DEVICE_ID_READINESS_COMMON_DECISION = "Device ID shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS device ID tests continue to reference the same vectors, checksum width 6 and 7 assembly, zero-value assembly, validation, lowercase acceptance, UUID conversion, invalid UUID length errors, invalid identifier rejection, current empty and non-hex platform decisions, platform-specific identifier routing, and compile verification remain explicit before production checksum or UUID logic moves."
     }
 }

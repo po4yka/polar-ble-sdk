@@ -2,8 +2,8 @@
   "id": "skin-temperature-domain-readiness",
   "area": "sdk.skin-temperature",
   "case": "skin_temperature_domain_readiness",
-  "source": "Skin-temperature domain vectors and shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the skin-temperature domain behavior families that must remain covered before model conversion delegates to shared KMP code.",
+  "source": "Skin-temperature domain vectors and shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the skin-temperature domain behavior families that must remain covered before model conversion delegates to shared code.",
   "input": {
     "kind": "skinTemperatureDomainReadiness",
     "policyVectorPaths": [
@@ -37,7 +37,7 @@
       "platform-skin-temperature-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Skin-temperature domain migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS skin-temperature tests continue to reference the same vectors, sourceDeviceId ownership remains explicit, empty sample lists and sample values are preserved, measurement and sensor-location mappings are covered, unknown enum behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
+    "commonDecision": "Skin-temperature domain shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS skin-temperature tests continue to reference the same vectors, sourceDeviceId ownership remains explicit, empty sample lists and sample values are preserved, measurement and sensor-location mappings are covered, unknown enum behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
   },
   "consumerTests": {
     "android": [
@@ -55,5 +55,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for skin-temperature domain behavior-family completeness only; Android deviceId exposure and iOS sourceDeviceId omission remain platform adapter decisions unless the shared public model deliberately standardizes them."
+  "notes": "This readiness manifest is a shared ownership gate for skin-temperature domain behavior-family completeness only; Android deviceId exposure and iOS sourceDeviceId omission remain platform adapter decisions unless the shared public model deliberately standardizes them."
 }

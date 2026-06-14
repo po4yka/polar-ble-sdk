@@ -28,7 +28,7 @@ class RestRequestTransportPolicyCommonTest {
 
         assertEquals("restRequestTransportPolicy", input.stringValue("kind"))
         assertEquals(requiredRequestScenarioIds, requests.map { it.id })
-        assertEquals(restRequestTransportMigrationRequirement, expected.stringValue("migrationRequirement"))
+        assertEquals(restRequestTransportSharedOwnershipRequirement, expected.stringValue("sharedOwnershipRequirement"))
         assertEquals("executable shared commonTest", expectedPrototype.stringValue("status"))
         assertEquals(requiredRequestScenarioIds, expectedCases.keys.toList())
         assertEquals(restRequestTransportCommonDecision, expected.stringValue("commonDecision"))
@@ -48,7 +48,7 @@ class RestRequestTransportPolicyCommonTest {
     }
 
     @Test
-    fun restRequestTransportReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun restRequestTransportReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/rest-service/rest-request-transport-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -66,7 +66,7 @@ class RestRequestTransportPolicyCommonTest {
         assertRestRequestTransportPolicyVectorShape(policy)
         assertEquals(restRequestTransportReadinessCommonDecision, expected.stringValue("commonDecision"))
         assertEquals("executable shared commonTest runtime planning guard", expected.objectValue("commonRuntimePrototype").stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarDeviceRestApiTests"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.RestRequestTransportPolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
@@ -86,7 +86,7 @@ class RestRequestTransportPolicyCommonTest {
         assertEquals("restRequestTransportPolicy", input.stringValue("kind"))
         assertEquals(requiredRequestScenarioIds, requests.keys.toList())
         assertEquals(requiredRequestScenarioIds, cases.keys.toList())
-        assertEquals(restRequestTransportMigrationRequirement, expected.stringValue("migrationRequirement"))
+        assertEquals(restRequestTransportSharedOwnershipRequirement, expected.stringValue("sharedOwnershipRequirement"))
         assertEquals(restRequestTransportCommonDecision, expected.stringValue("commonDecision"))
         assertEquals("shared-common-test", policy.objectValue("execution").stringValue("status"))
         assertEquals("executable shared commonTest covers command capture, response errors, and empty-response policy before facade mapping moves", policy.objectValue("platformExpectations").stringValue("common"))
@@ -131,11 +131,11 @@ class RestRequestTransportPolicyCommonTest {
         "compile-verification-gate"
     )
 
-    private val restRequestTransportMigrationRequirement = "Before moving REST request orchestration into common KMP code, implement a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads."
+    private val restRequestTransportSharedOwnershipRequirement = "Shared ownership of REST request orchestration requires a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads."
 
     private val restRequestTransportCommonDecision = "Characterize current Android and iOS behavior first, then choose whether common code preserves platform-specific empty-response behavior or normalizes it to a typed empty-response parse failure."
 
-    private val restRequestTransportReadinessCommonDecision = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping stays pinned through rest-facade-runtime-policy.json, and the shared tests are compile-verified."
+    private val restRequestTransportReadinessCommonDecision = "REST request transport shared ownership remains valid while rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping stays pinned through rest-facade-runtime-policy.json, and the shared tests are compile-verified."
 
     private fun assertOutcome(caseId: String, expected: String, outcome: PolarRuntimePlan) {
         when (expected.stringValue("outcome")) {

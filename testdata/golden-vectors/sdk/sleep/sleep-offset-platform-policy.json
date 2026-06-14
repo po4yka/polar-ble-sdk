@@ -36,8 +36,8 @@
   },
   "platformExpectations": {
     "commonDecision": {
-      "recommendedKmpPolicy": "Map sleepEndOffsetSeconds from the protobuf sleepEndOffsetSeconds field; linked iOS production code uses the shared KMP policy while non-shared SwiftPM/watchOS fallback preserves the legacy start-offset copy."
+      "recommendedKmpPolicy": "Map sleepEndOffsetSeconds from the protobuf sleepEndOffsetSeconds field; linked iOS production code uses the shared policy while non-shared SwiftPM/watchOS fallback preserves the legacy start-offset copy."
     }
   },
-  "notes": "Sleep analysis protobuf start/end offset mapping with distinct values so migration cannot accidentally copy one field to both public model properties."
+  "notes": "Sleep analysis protobuf start/end offset mapping with distinct values so shared ownership cannot accidentally copy one field to both public model properties."
 }

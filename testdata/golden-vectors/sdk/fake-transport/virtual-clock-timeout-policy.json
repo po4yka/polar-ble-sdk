@@ -2,7 +2,7 @@
   "id": "virtual-clock-timeout-policy",
   "area": "sdk.fake-transport",
   "case": "virtual_clock_timeout_policy",
-  "source": "KMP fake-transport timeout planning and shared CommonFakeVirtualClock prototype",
+  "source": "shared fake-transport timeout planning and shared CommonFakeVirtualClock prototype",
   "description": "Pins wall-clock-free timeout checks before retry, notification, or request timeout policy moves into shared runtime code.",
   "input": {
     "kind": "virtualClockTimeoutPolicy",

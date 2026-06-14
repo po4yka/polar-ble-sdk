@@ -10,7 +10,7 @@
     }
   },
   "expected": {
-    "commonDecision": "KMP common parsing should preserve protobuf field presence: omitted automatic-training numeric fields and AUTOS state are nullable in the shared model. Android facade code may apply legacy defaults when exposing the current Android public API."
+    "commonDecision": "shared common parsing should preserve protobuf field presence: omitted automatic-training numeric fields and AUTOS state are nullable in the shared model. Android facade code may apply legacy defaults when exposing the current Android public API."
   },
   "platformExpectations": {
     "android": {
@@ -53,7 +53,7 @@
     "ios": true,
     "common": false
   },
-  "notes": "Android currently defaults omitted training numeric fields to 0 and omitted AUTOS state to true. iOS currently defaults omitted USB connection settings and automatic-training detection state to false while keeping omitted training numeric fields and AUTOS nil when the corresponding messages are absent. Shared KMP code should use nullable presence-preserving semantics and leave platform compatibility defaults in platform facades.",
+  "notes": "Android currently defaults omitted training numeric fields to 0 and omitted AUTOS state to true. iOS currently defaults omitted USB connection settings and automatic-training detection state to false while keeping omitted training numeric fields and AUTOS nil when the corresponding messages are absent. Shared shared code should use nullable presence-preserving semantics and leave platform compatibility defaults in platform facades.",
   "consumerTests": {
     "android": [
       "com.polar.sdk.api.model.PolarUserDeviceSettingsTest"

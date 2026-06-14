@@ -12,8 +12,8 @@ class OfflineHrParserCommonPolicyTest {
             val expected = vector.objectValue("expected")
             val parsed = parseOfflineHr(vector.objectValue("input").stringValue("dataFrameHex"))
 
-            expected.optionalStringValue("migrationOwnership")?.let { ownership ->
-                assertEquals(PROTOCOL_ONLY_MIGRATION_OWNERSHIP, ownership, caseId)
+            expected.optionalStringValue("sharedOwnership")?.let { ownership ->
+                assertEquals(PROTOCOL_ONLY_PLATFORM_OWNERSHIP, ownership, caseId)
             }
             assertEquals(expected.stringValue("measurementType"), parsed.measurementType, caseId)
             assertEquals(expected.intValue("frameType"), parsed.frameType, caseId)
@@ -35,7 +35,7 @@ class OfflineHrParserCommonPolicyTest {
     }
 
     @Test
-    fun offlineHrReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun offlineHrReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("protocol/sensors/offline-hr-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -46,9 +46,9 @@ class OfflineHrParserCommonPolicyTest {
         assertEquals("offline-hr-readiness", manifest.stringValue("id"))
         assertEquals("offlineHrReadiness", input.stringValue("kind"))
         assertEquals(OFFLINE_HR_VECTORS, input.stringArrayValue("policyVectorPaths"))
-        assertEquals(REQUIRED_OFFLINE_HR_FAMILIES, requiredFamilies, "Offline HR readiness manifest must name every pre-migration behavior family")
+        assertEquals(REQUIRED_OFFLINE_HR_FAMILIES, requiredFamilies, "Offline HR readiness manifest must name every shared-contract behavior family")
         assertEquals(REQUIRED_OFFLINE_HR_FAMILIES, coveredFamilies, "Offline HR readiness manifest must keep expected coverage aligned with required families")
-        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.OfflineHrDataTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("OfflineHrDataTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.OfflineHrParserCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))

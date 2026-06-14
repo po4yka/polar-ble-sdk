@@ -268,7 +268,7 @@ class PolarAutomaticSamplesUtilsTest {
     }
 
     @Test
-    fun `ppi sample status mapping ignores high bits through shared KMP policy`() {
+    fun `ppi sample status mapping ignores high bits through shared policy`() {
         Assert.assertEquals(
             PPiSampleStatus(
                 skinContact = SkinContact.SKIN_CONTACT_DETECTED,
@@ -402,7 +402,7 @@ class PolarAutomaticSamplesUtilsTest {
     }
 
     @Test
-    fun `automatic sample golden vectors follow neutral KMP vector shape`() {
+    fun `automatic sample golden vectors follow neutral shared vector shape`() {
         loadAutomaticSampleVectors().forEach { vector ->
             val id = vector.get("id").asString
             Assert.assertTrue(id, vector.has("area"))
@@ -422,7 +422,7 @@ class PolarAutomaticSamplesUtilsTest {
     }
 
     @Test
-    fun `activity summary readiness manifest is pinned before automatic sample migration`() {
+    fun `activity summary readiness manifest is pinned before automatic sample shared ownership`() {
         val readiness = loadActivitySummaryReadinessManifest()
         val input = readiness.getAsJsonObject("input")
         val expected = readiness.getAsJsonObject("expected")
@@ -465,7 +465,7 @@ class PolarAutomaticSamplesUtilsTest {
         Assert.assertEquals(expectedFamilies, requiredFamilies)
         Assert.assertEquals(expectedFamilies, coveredFamilies)
         Assert.assertEquals(
-            "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves.",
+            "Activity, automatic-sample, and daily-summary shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves.",
             expected.get("commonDecision").asString
         )
         Assert.assertEquals(

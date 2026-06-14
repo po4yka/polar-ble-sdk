@@ -61,8 +61,8 @@
   },
   "platformExpectations": {
     "commonDecision": {
-      "missingExerciseFilePolicy": "Android currently returns a partial exercise when an exercise data file request fails; iOS currently propagates the request failure. Choose an explicit shared policy before moving training-session read orchestration to KMP."
+      "missingExerciseFilePolicy": "Android currently returns a partial exercise when an exercise data file request fails; iOS currently propagates the request failure. Choose an explicit shared policy before moving training-session read orchestration to shared."
     }
   },
-  "notes": "Training-session read where one exercise file is missing, preserving current Android/iOS policy before shared runtime migration."
+  "notes": "Training-session read where one exercise file is missing, preserving current Android/iOS policy before shared runtime shared ownership."
 }

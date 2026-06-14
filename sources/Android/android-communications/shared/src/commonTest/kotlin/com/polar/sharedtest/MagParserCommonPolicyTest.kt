@@ -21,8 +21,8 @@ class MagParserCommonPolicyTest {
                 sampleRate = input.intValue("sampleRate")
             )
 
-            expected.optionalStringValue("migrationOwnership")?.let { ownership ->
-                assertEquals(PROTOCOL_ONLY_MIGRATION_OWNERSHIP, ownership, caseId)
+            expected.optionalStringValue("sharedOwnership")?.let { ownership ->
+                assertEquals(PROTOCOL_ONLY_PLATFORM_OWNERSHIP, ownership, caseId)
                 assertEquals(expected.stringValue("measurementType"), parsed.measurementType, caseId)
                 assertEquals(expected.intValue("frameType"), parsed.frameType, caseId)
                 assertEquals(expected.booleanValue("compressed"), parsed.compressed, caseId)
@@ -56,7 +56,7 @@ class MagParserCommonPolicyTest {
     }
 
     @Test
-    fun magReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun magReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("protocol/sensors/mag-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -67,9 +67,9 @@ class MagParserCommonPolicyTest {
         assertEquals("mag-readiness", manifest.stringValue("id"))
         assertEquals("magReadiness", input.stringValue("kind"))
         assertEquals(MAG_VECTORS, input.stringArrayValue("policyVectorPaths"))
-        assertEquals(REQUIRED_MAG_FAMILIES, requiredFamilies, "MAG readiness manifest must name every pre-migration behavior family")
+        assertEquals(REQUIRED_MAG_FAMILIES, requiredFamilies, "MAG readiness manifest must name every shared-contract behavior family")
         assertEquals(REQUIRED_MAG_FAMILIES, coveredFamilies, "MAG readiness manifest must keep expected coverage aligned with required families")
-        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.MagDataTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("MagDataTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.MagParserCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))

@@ -359,7 +359,7 @@ final class AccDataTest: XCTestCase {
         }
     }
 
-    func testAccReadinessManifestIsPinnedBeforeParserMigration() throws {
+    func testAccReadinessManifestPinsParserOwnership() throws {
         let manifest = try loadAccReadinessManifest()
         let id = try XCTUnwrap(manifest["id"] as? String)
         let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)

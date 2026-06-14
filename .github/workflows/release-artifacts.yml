@@ -2,6 +2,20 @@ name: Release Artifacts
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Version tag to publish or dry-run, for example 1.2.3
+        required: false
+        type: string
+      artifact_run_id:
+        description: Optional successful Release Artifacts run id to promote instead of the current run artifacts
+        required: false
+        type: string
+      publish_to_github_release:
+        description: Create or update a draft GitHub Release after protected approval
+        required: true
+        default: false
+        type: boolean
   push:
     tags:
       - '*.*.*'
@@ -82,6 +96,10 @@ jobs:
         with:
           key-prefix: release-
 
+      - name: Generated Xcode project validation
+        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
+        run: ./gradlew :repo-tools:validateGeneratedXcodeProject --no-daemon --warning-mode all
+
       - name: Validate Swift Package surface
         run: swift package describe
 
@@ -107,3 +125,72 @@ jobs:
           path: /tmp/polar-release-artifacts/ios
           if-no-files-found: error
           retention-days: 30
+
+  github-release-assets:
+    name: GitHub Release asset publication
+    runs-on: ubuntu-latest
+    needs:
+      - release-policy
+      - android-artifacts
+      - ios-artifacts
+    if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+    environment: release-publication
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download current run artifacts
+        if: inputs.artifact_run_id == ''
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/polar-release-publication/artifacts
+
+      - name: Download supplied run artifacts
+        if: inputs.artifact_run_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id }}
+        run: |
+          mkdir -p /tmp/polar-release-publication/artifacts
+          gh run download "${ARTIFACT_RUN_ID}" --name android-release-artifacts --dir /tmp/polar-release-publication/artifacts/android-release-artifacts
+          gh run download "${ARTIFACT_RUN_ID}" --name ios-release-artifacts --dir /tmp/polar-release-publication/artifacts/ios-release-artifacts
+
+      - name: Import release signing key
+        env:
+          POLAR_RELEASE_SIGNING_KEY_ASC: ${{ secrets.POLAR_RELEASE_SIGNING_KEY_ASC }}
+          POLAR_RELEASE_SIGNING_KEY_PASSPHRASE: ${{ secrets.POLAR_RELEASE_SIGNING_KEY_PASSPHRASE }}
+        run: |
+          test -n "${POLAR_RELEASE_SIGNING_KEY_ASC}"
+          gpg --batch --import <(printf '%s' "${POLAR_RELEASE_SIGNING_KEY_ASC}")
+          printf '%s' "${POLAR_RELEASE_SIGNING_KEY_PASSPHRASE}" > /tmp/polar-release-signing-passphrase
+          chmod 600 /tmp/polar-release-signing-passphrase
+
+      - name: Prepare release assets
+        env:
+          POLAR_RELEASE_SIGNING_KEY_ID: ${{ secrets.POLAR_RELEASE_SIGNING_KEY_ID }}
+          POLAR_RELEASE_SIGNING_KEY_PASSPHRASE_FILE: /tmp/polar-release-signing-passphrase
+        run: |
+          scripts/prepare_github_release_assets.sh \
+            --artifacts-dir /tmp/polar-release-publication/artifacts \
+            --output-dir /tmp/polar-release-publication/assets \
+            --release-tag "${{ inputs.release_tag }}" \
+            --sign
+
+      - name: Upload dry-run publication manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-release-publication-dry-run
+          path: /tmp/polar-release-publication/assets
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create or update draft GitHub Release
+        if: inputs.publish_to_github_release == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          gh release view "${RELEASE_TAG}" >/dev/null 2>&1 || gh release create "${RELEASE_TAG}" --draft --title "${RELEASE_TAG}" --notes "Draft release assets promoted from Release Artifacts workflow."
+          gh release upload "${RELEASE_TAG}" /tmp/polar-release-publication/assets/* --clobber

@@ -133,7 +133,7 @@
     "ios": true,
     "common": true
   },
-  "notes": "Compressed PPG type-10 currently assigns the first two channel groups to different color names on Android and iOS; KMP should choose an explicit common color mapping before migration.",
+  "notes": "Compressed PPG type-10 currently assigns the first two channel groups to different color names on Android and iOS; Shared code should choose an explicit common color mapping before shared ownership.",
   "consumerTests": {
     "android": [
       "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpgDataTest"

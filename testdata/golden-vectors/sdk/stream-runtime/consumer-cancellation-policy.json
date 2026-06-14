@@ -43,5 +43,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Stream utilities can move to shared KMP code only after consumer cancellation removes observers and cancels upstream work idempotently on Android, iOS, and the shared fake-stream runtime."
+  "notes": "Stream utilities can move to shared code only after consumer cancellation removes observers and cancels upstream work idempotently on Android, iOS, and the shared fake-stream runtime."
 }

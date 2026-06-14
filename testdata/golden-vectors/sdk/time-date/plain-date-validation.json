@@ -2,8 +2,8 @@
   "id": "plain-date-validation",
   "area": "time-date",
   "case": "plain_date_validation",
-  "source": "iOS KMP shared migration characterization",
-  "description": "Pins ISO full-date parsing rules used by the Swift PolarPlainDate API and the shared KMP plain-date helper.",
+  "source": "iOS shared shared ownership characterization",
+  "description": "Pins ISO full-date parsing rules used by the Swift PolarPlainDate API and the shared plain-date helper.",
   "input": {
     "kind": "plainDateValidation",
     "cases": [
@@ -52,5 +52,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Swift `PolarPlainDate` remains the public iOS API; shared KMP owns the portable validation contract for future common model consumption."
+  "notes": "Swift `PolarPlainDate` remains the public iOS API; shared owns the portable validation contract for future common model consumption."
 }

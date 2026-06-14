@@ -137,7 +137,7 @@ internal class PpiDataTest {
     }
 
     @Test
-    fun `ppi golden vectors follow neutral KMP vector shape`() {
+    fun `ppi golden vectors follow neutral shared vector shape`() {
         loadPpiVectors().forEach { vector ->
             val id = vector.get("id").asString
             assertTrue(id, vector.has("area"))
@@ -154,7 +154,7 @@ internal class PpiDataTest {
     }
 
     @Test
-    fun `PPI readiness manifest is pinned before parser migration`() {
+    fun `PPI readiness manifest is pinned for shared parser ownership`() {
         val manifest = loadPpiReadinessManifest()
         val id = manifest.get("id").asString
         val input = manifest.getAsJsonObject("input")

@@ -1,6 +1,6 @@
 # Golden Vector Test Data
 
-This directory stores platform-neutral behavior fixtures for the KMP migration. Vectors in this directory are contracts: Android tests, iOS tests, and future KMP common tests should load the same inputs and assert equivalent outputs.
+This directory stores platform-neutral behavior fixtures for the shared ownership. Vectors in this directory are contracts: Android tests, iOS tests, and future shared common tests should load the same inputs and assert equivalent outputs.
 
 ## Directory Layout
 
@@ -60,10 +60,10 @@ Create directories as slices need them. Do not add broad fixture dumps without a
 - Keep `id` values in lowercase kebab-case and `case` values in lowercase snake_case.
 - Use lowercase hex strings without separators for binary payloads.
 - Include `id`, `area`, `case`, `source`, `input`, `expected`, `consumerTests`, and `platforms`.
-- Make `source` traceable: it must name characterization, readiness, planning, policy, prototype, migration, Android, iOS, KMP, or shared evidence rather than a generic label.
+- Make `source` traceable: it must name characterization, readiness, planning, policy, prototype, shared ownership, Android, iOS, shared, or shared evidence rather than a generic label.
 - Use optional `description` for short human context when the `case` name is not enough.
 - Do not store real user data, personal identifiers, secrets, or production device dumps.
-- If Android and iOS currently disagree, keep both expectations under `platformExpectations` and document the migration decision in `notes`.
+- If Android and iOS currently disagree, keep both expectations under `platformExpectations` and document the shared ownership decision in `notes`.
 - Use top-level `commonDecision` only for a shared decision that is not naturally part of `expected` or `platformExpectations.commonDecision`.
 - Use `execution` only for runtime/planning vectors that need fake time, fake transport, or other non-pure execution controls.
 - Keep each vector focused on one behavior unless a larger end-to-end fixture is necessary.
@@ -98,16 +98,16 @@ Create directories as slices need them. Do not add broad fixture dumps without a
     "ios": true,
     "common": true
   },
-  "notes": "Use for the first low-risk shared utility migration slice."
+  "notes": "Use for the first low-risk shared utility shared ownership slice."
 }
 ```
 
 ## Review Requirements
 
-Every vector addition must be consumed or explicitly guarded before it is treated as migration-ready. Pure protocol and model fixtures may be guarded by area-level Android/iOS characterization tests plus shared commonTest policy files that reference the fixture path, and every vector still names those concrete guards in `consumerTests`. Runtime planning vectors, fake-transport vectors, and common-style prototype vectors must identify the concrete consumer tests that execute or guard them with `consumerTests`.
+Every vector addition must be consumed or explicitly guarded before it is treated as shared ownership-ready. Pure protocol and model fixtures may be guarded by area-level Android/iOS characterization tests plus shared commonTest policy files that reference the fixture path, and every vector still names those concrete guards in `consumerTests`. Runtime planning vectors, fake-transport vectors, and common-style prototype vectors must identify the concrete consumer tests that execute or guard them with `consumerTests`.
 
-`GoldenVectorMigrationPolicyTest` enforces the repository-wide metadata contract: vectors must include the required fields, all `*Hex` fields must be lowercase even-length byte strings, every fixture directory must have README migration ownership notes, and every vector excluded from common KMP must carry an explicit migration rationale. The same policy test also locks `schema/golden-vector.schema.json` to the executable field allowlists, required fields, platform keys, and `consumerTests` platform keys so schema changes cannot drift from the migration gate.
+`GoldenVectorPolicyTest` enforces the repository-wide metadata contract: vectors must include the required fields, all `*Hex` fields must be lowercase even-length byte strings, every fixture directory must have README shared ownership notes, and every vector excluded from common must carry an explicit shared ownership rationale. The same policy test also locks `schema/golden-vector.schema.json` to the executable field allowlists, required fields, platform keys, and `consumerTests` platform keys so schema changes cannot drift from the shared ownership gate.
 
-Common-owned vectors and vectors with a shared common decision must be explicitly referenced from shared commonTest sources before production KMP migration. This path-level reference is paired with required per-vector `consumerTests` metadata so broad pure fixtures cannot drift away from their executable Android, iOS, or shared guards.
+Common-owned vectors and vectors with a shared common decision must be explicitly referenced from shared commonTest sources before production shared ownership. This path-level reference is paired with required per-vector `consumerTests` metadata so broad pure fixtures cannot drift away from their executable Android, iOS, or shared guards.
 
-Runtime planning vectors and common-style prototype vectors must include `consumerTests` so the fixture names the Android, iOS, and common-prototype tests that execute or guard it. Runtime/planning vectors must populate all three keys: `android`, `ios`, and `commonPrototype`, and each populated key must contain at least one non-empty test name. Android and common-prototype entries use fully qualified Kotlin test class names, and iOS entries use Swift test type names. `GoldenVectorMigrationPolicyTest` verifies that every non-schema vector declares `consumerTests`, that each declared consumer resolves to an existing test file or Swift test type, and that the consumer file explicitly references the vector ID, filename, exact vector directory, or an owning readiness manifest that names the vector path.
+Runtime planning vectors and common-style prototype vectors must include `consumerTests` so the fixture names the Android, iOS, and common-prototype tests that execute or guard it. Runtime/planning vectors must populate all three keys: `android`, `ios`, and `commonPrototype`, and each populated key must contain at least one non-empty test name. Android and common-prototype entries use fully qualified Kotlin test class names, and iOS entries use Swift test type names. `GoldenVectorPolicyTest` verifies that every non-schema vector declares `consumerTests`, that each declared consumer resolves to an existing test file or Swift test type, and that the consumer file explicitly references the vector ID, filename, exact vector directory, or an owning readiness manifest that names the vector path.

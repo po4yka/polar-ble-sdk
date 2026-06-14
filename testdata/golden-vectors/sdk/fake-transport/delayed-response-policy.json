@@ -2,7 +2,7 @@
   "id": "delayed-response-policy",
   "area": "sdk.fake-transport",
   "case": "delayed_response_policy",
-  "source": "KMP fake-transport delayed-response planning and shared CommonFakeDelayedResponse prototype",
+  "source": "shared fake-transport delayed-response planning and shared CommonFakeDelayedResponse prototype",
   "description": "Pins deterministic delayed-response polling on a virtual clock so common runtime tests can distinguish pending transport responses from released payloads without wall-clock sleeps.",
   "input": {
     "kind": "delayedResponsePolicy",
@@ -21,7 +21,7 @@
       "/U/0/DELAYED.BPB@150"
     ],
     "finalTimeMillis": 150,
-    "commonDecision": "Shared runtime tests must model delayed transport responses with a virtual clock, observable poll attempts, and a distinct pending label before delayed read, write, or notification orchestration delegates to KMP."
+    "commonDecision": "Shared runtime tests must model delayed transport responses with a virtual clock, observable poll attempts, and a distinct pending label before delayed read, write, or notification orchestration delegates to shared."
   },
   "consumerTests": {
     "android": [
@@ -45,5 +45,5 @@
     "ios": false,
     "common": true
   },
-  "notes": "This vector covers only delayed-response polling as a base fake-transport control. Operation-specific timeout policy, notification collector behavior, cancellation cleanup, and public facade error mapping remain feature-specific migration gates."
+  "notes": "This vector covers only delayed-response polling as a base fake-transport control. Operation-specific timeout policy, notification collector behavior, cancellation cleanup, and public facade error mapping remain feature-specific shared ownership gates."
 }

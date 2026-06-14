@@ -46,7 +46,7 @@ class PmdSettingsCommonPolicyTest {
     }
 
     @Test
-    fun pmdSettingsReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun pmdSettingsReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val vector = loadGoldenVectorText("protocol/pmd/settings-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -186,7 +186,7 @@ class PmdSettingsCommonPolicyTest {
             "platform-pmd-settings-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val PMD_SETTINGS_READINESS_DECISION = "PMD settings migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD settings tests continue to reference the same vectors, baseline parsing, duplicate overwrite behavior, FACTOR parsing, selected-setting serialization, skipped FACTOR serialization, RANGE_MILLIUNIT signedness platform decisions, SECURITY setting parse policy, truncated-value policy, unknown-setting-type policy, and compile verification remain explicit before production PMD settings logic moves."
+        const val PMD_SETTINGS_READINESS_DECISION = "PMD settings shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD settings tests continue to reference the same vectors, baseline parsing, duplicate overwrite behavior, FACTOR parsing, selected-setting serialization, skipped FACTOR serialization, RANGE_MILLIUNIT signedness platform decisions, SECURITY setting parse policy, truncated-value policy, unknown-setting-type policy, and compile verification remain explicit before production PMD settings logic moves."
         val SELECTED_SETTING_ORDER = listOf("SAMPLE_RATE", "RESOLUTION", "RANGE", "RANGE_MILLIUNIT", "CHANNELS", "FACTOR")
     }
 }

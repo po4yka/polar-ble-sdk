@@ -207,7 +207,7 @@ class PolarWatchFaceUtilsTest {
     }
 
     @Test
-    fun `watch face golden vectors follow neutral KMP vector shape`() {
+    fun `watch face golden vectors follow neutral shared vector shape`() {
         loadWatchFaceVectors().forEach { vector ->
             val id = vector.get("id")?.asString ?: "unknown-vector"
 
@@ -285,7 +285,7 @@ class PolarWatchFaceUtilsTest {
     }
 
     @Test
-    fun `watch face readiness manifest is pinned before model migration`() {
+    fun `watch face readiness manifest is pinned for shared model ownership`() {
         val vector = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/watch-face/watch-face-readiness.json")).use { reader ->
             JsonParser.parseReader(reader).asJsonObject
         }
@@ -324,7 +324,7 @@ class PolarWatchFaceUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, shared FlatBuffer byte input parsing, shared FlatBuffer byte output construction, KVTX wrapper metadata, and the shared tests are compile-verified.",
+            "Watch-face model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, shared FlatBuffer byte input parsing, shared FlatBuffer byte output construction, KVTX wrapper metadata, and the shared tests are compile-verified.",
             expected.get("commonDecision").asString
         )
         val consumerTests = vector.getAsJsonObject("consumerTests")

@@ -182,7 +182,7 @@ class PolarNightlyRechargeUtilsTests: XCTestCase {
         }
     }
 
-    func testSleepNightlyReadinessManifestIsPinnedBeforeModelMigration() throws {
+    func testSleepNightlyReadinessManifestPinsModelOwnership() throws {
         let readiness = try loadSleepNightlyReadinessManifest()
         let input = try XCTUnwrap(readiness["input"] as? [String: Any])
         let expected = try XCTUnwrap(readiness["expected"] as? [String: Any])
@@ -217,7 +217,7 @@ class PolarNightlyRechargeUtilsTests: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Sleep and nightly recharge model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Sleep and nightly recharge model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.api.model.utils.PolarNightlyRechargeUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarNightlyRechargeUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.SleepNightlyRechargeCommonPolicyTest"])

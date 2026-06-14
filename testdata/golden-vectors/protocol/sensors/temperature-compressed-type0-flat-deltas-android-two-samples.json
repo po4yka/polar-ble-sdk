@@ -2,7 +2,7 @@
   "id": "temperature-compressed-type0-flat-deltas-android-two-samples",
   "area": "sensor-parser",
   "case": "temperature_compressed_type0_reference_sample_with_zero_deltas_android_two_samples",
-  "source": "Android TemperatureDataTest and shared KMP parser; linked iOS consumes the shared compressed temperature parser",
+  "source": "Android TemperatureDataTest and shared parser; linked iOS consumes the shared compressed temperature parser",
   "input": {
     "dataFrameHex": "0c009435770000000080ec51dc41030200",
     "previousTimeStamp": 120,
@@ -34,7 +34,7 @@
     "ios": true,
     "common": true
   },
-  "notes": "Shared KMP preserves the Android-compatible compressed temperature type-0 interpretation for this zero-delta payload: one reference sample followed by two zero-delta samples.",
+  "notes": "Shared shared preserves the Android-compatible compressed temperature type-0 interpretation for this zero-delta payload: one reference sample followed by two zero-delta samples.",
   "consumerTests": {
     "android": [
       "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PressureDataTest",

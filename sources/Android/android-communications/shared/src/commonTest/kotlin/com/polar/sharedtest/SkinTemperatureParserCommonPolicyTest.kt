@@ -15,8 +15,8 @@ class SkinTemperatureParserCommonPolicyTest {
             val expected = vector.objectValue("expected")
             val parsed = parseSkinTemperature(input.stringValue("dataFrameHex"), input.intValue("sampleRate"))
 
-            expected.optionalStringValue("migrationOwnership")?.let { ownership ->
-                assertEquals(PROTOCOL_ONLY_MIGRATION_OWNERSHIP, ownership, caseId)
+            expected.optionalStringValue("sharedOwnership")?.let { ownership ->
+                assertEquals(PROTOCOL_ONLY_PLATFORM_OWNERSHIP, ownership, caseId)
                 assertEquals(expected.stringValue("measurementType"), parsed.measurementType, caseId)
                 assertEquals(expected.intValue("frameType"), parsed.frameType, caseId)
                 assertEquals(expected.booleanValue("compressed"), parsed.compressed, caseId)
@@ -53,7 +53,7 @@ class SkinTemperatureParserCommonPolicyTest {
     }
 
     @Test
-    fun skinTemperatureReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun skinTemperatureReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("protocol/sensors/skin-temperature-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -64,9 +64,9 @@ class SkinTemperatureParserCommonPolicyTest {
         assertEquals("skin-temperature-readiness", manifest.stringValue("id"))
         assertEquals("skinTemperatureReadiness", input.stringValue("kind"))
         assertEquals(SKIN_TEMPERATURE_VECTORS, input.stringArrayValue("policyVectorPaths"))
-        assertEquals(REQUIRED_SKIN_TEMPERATURE_FAMILIES, requiredFamilies, "Skin-temperature readiness manifest must name every pre-migration behavior family")
+        assertEquals(REQUIRED_SKIN_TEMPERATURE_FAMILIES, requiredFamilies, "Skin-temperature readiness manifest must name every shared-contract behavior family")
         assertEquals(REQUIRED_SKIN_TEMPERATURE_FAMILIES, coveredFamilies, "Skin-temperature readiness manifest must keep expected coverage aligned with required families")
-        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.SkinTemperatureDataTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("SkinTemperatureDataTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.SkinTemperatureParserCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))

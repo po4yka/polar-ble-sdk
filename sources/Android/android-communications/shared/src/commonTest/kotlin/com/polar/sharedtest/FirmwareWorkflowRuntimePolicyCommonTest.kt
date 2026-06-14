@@ -20,7 +20,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         assertEquals("firmwareWorkflowRuntimePolicy", input.stringValue("kind"))
         assertEquals(REQUIRED_FIRMWARE_WORKFLOW_SCENARIOS, scenarios.map { it.stringValue("id") })
         assertEquals("firmware-update-workflow-runtime-matrix", expected.stringValue("policy"))
-        assertEquals(FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT, expected.stringValue("migrationRequirement"))
+        assertEquals(FIRMWARE_WORKFLOW_SHARED_OWNERSHIP_REQUIREMENT, expected.stringValue("sharedOwnershipRequirement"))
         assertEquals("executable shared commonTest", expectedPrototype.stringValue("status"))
         assertEquals(REQUIRED_FIRMWARE_WORKFLOW_SCENARIOS, expectedCases.keys.toList())
         assertEquals(FIRMWARE_WORKFLOW_COMMON_DECISION, vector.objectValue("commonDecision").stringValue("workflowPolicy"))
@@ -54,7 +54,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
     }
 
     @Test
-    fun firmwareWorkflowRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun firmwareWorkflowRuntimeReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/firmware-update/workflow-runtime-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -72,7 +72,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         val decision = expected.stringValue("commonDecision")
         assertEquals(FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION, decision)
         assertEquals("executable shared commonTest runtime planning guard", expected.objectValue("commonRuntimePrototype").stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFirmwareUpdateUtilsTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarFirmwareUpdateUtilsTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.FirmwareWorkflowRuntimePolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
@@ -203,7 +203,7 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
         assertEquals(REQUIRED_FIRMWARE_WORKFLOW_SCENARIOS, scenarios.keys.toList())
         assertEquals(REQUIRED_FIRMWARE_WORKFLOW_SCENARIOS, expectedCases.keys.toList())
         assertEquals("firmware-update-workflow-runtime-matrix", expected.stringValue("policy"))
-        assertEquals(FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT, expected.stringValue("migrationRequirement"))
+        assertEquals(FIRMWARE_WORKFLOW_SHARED_OWNERSHIP_REQUIREMENT, expected.stringValue("sharedOwnershipRequirement"))
         assertEquals("executable shared commonTest", commonWorkflowPrototype.stringValue("status"))
         assertEquals(FIRMWARE_WORKFLOW_COMMON_DECISION, policy.objectValue("commonDecision").stringValue("workflowPolicy"))
         assertEquals("shared-common-test", policy.objectValue("execution").stringValue("common"))
@@ -494,9 +494,9 @@ class FirmwareWorkflowRuntimePolicyCommonTest {
             "facade-error-mapping-gate",
             "compile-verification-gate"
         )
-        const val FIRMWARE_WORKFLOW_MIGRATION_REQUIREMENT = "Before moving firmware update orchestration into common KMP code, implement injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors."
-        const val FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, finalization step planning, reboot success, non-system reboot failure, and terminal device errors into typed common workflow states before KMP migration"
-        const val FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow migration may proceed only after workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/finalization-step/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, cancellation cleanup before BLE writes, and shared-planned retry delay execution are pinned, public facade error mapping is pinned, and the shared tests are compile-verified."
-        const val FIRMWARE_WORKFLOW_NOTES = "This vector is intentionally a runtime planning matrix, not a parser vector. The shared commonTest now executes the status, fake retryable server failure, fake download, fake filesystem/zip, fake BLE write-order, cancellation cleanup before BLE writes, reboot-success, non-system reboot failure, and battery-too-low policies. Android and iOS production code already consume shared file-order, write-path, progress, retry delay execution, finalization step planning, reboot-success, non-system reboot failure, and battery-too-low terminal policy while platform adapters still own network, zip parsing, backup/reconnect/filesystem/BLE execution, full public facade error mapping, and real artifact integration before firmware update workflow orchestration moves to shared KMP code."
+        const val FIRMWARE_WORKFLOW_SHARED_OWNERSHIP_REQUIREMENT = "Shared ownership of firmware update orchestration requires injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors."
+        const val FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, finalization step planning, reboot success, non-system reboot failure, and terminal device errors into typed common workflow states under shared ownership"
+        const val FIRMWARE_WORKFLOW_READINESS_COMMON_DECISION = "Firmware workflow shared ownership remains valid while workflow-runtime-policy.json and this readiness manifest are executable from shared commonTest, fake network/filesystem/BLE writer dependencies are injectable, shared production file-order/progress/finalization-step/terminal write policy consumption remains pinned on Android and iOS, retryable fake-network server failure classification, terminal device errors, cancellation cleanup before BLE writes, and shared-planned retry delay execution are pinned, public facade error mapping is pinned, and the shared tests are compile-verified."
+        const val FIRMWARE_WORKFLOW_NOTES = "This vector is intentionally a runtime planning matrix, not a parser vector. The shared commonTest now executes the status, fake retryable server failure, fake download, fake filesystem/zip, fake BLE write-order, cancellation cleanup before BLE writes, reboot-success, non-system reboot failure, and battery-too-low policies. Android and iOS production code already consume shared file-order, write-path, progress, retry delay execution, finalization step planning, reboot-success, non-system reboot failure, and battery-too-low terminal policy while platform adapters still own network, zip parsing, backup/reconnect/filesystem/BLE execution, full public facade error mapping, and real artifact integration before firmware update workflow orchestration moves to shared code."
     }
 }

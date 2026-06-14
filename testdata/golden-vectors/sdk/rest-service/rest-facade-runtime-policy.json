@@ -3,7 +3,7 @@
   "area": "sdk.rest-service",
   "case": "rest_facade_runtime_policy",
   "source": "BDBleApiImplTest and PolarBleApiImplTests REST public facade characterization",
-  "description": "Pins public REST service discovery and description PSFTP request planning before REST facade orchestration can delegate to a shared KMP runtime.",
+  "description": "Pins public REST service discovery and description PSFTP request planning before REST facade orchestration can delegate to a shared runtime.",
   "input": {
     "kind": "restFacadeRuntimePolicy",
     "operations": [
@@ -255,6 +255,6 @@
     "transport": "public-facade-psftp-request-capture",
     "wallClockSafe": true
   },
-  "commonDecision": "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered.",
+  "commonDecision": "Promote REST facade request planning only while service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered.",
   "notes": "This vector complements rest-request-transport-policy.json. The older policy owns low-level response-error and empty-success transport behavior; this facade vector owns the public API paths, decoded success fields, empty-success and malformed-success public parse/decode failures, request-failure propagation, and response-error platform mapping currently asserted by Android and iOS facade tests."
 }

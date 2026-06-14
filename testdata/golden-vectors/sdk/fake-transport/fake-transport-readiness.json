@@ -2,8 +2,8 @@
   "id": "fake-transport-readiness",
   "area": "sdk.fake-transport",
   "case": "fake_transport_readiness",
-  "source": "KMP fake-transport service-readiness and virtual-clock policy vectors distilled into a pre-migration readiness manifest",
-  "description": "Pins the base fake-transport controls that must remain executable before deterministic runtime orchestration delegates to shared KMP code.",
+  "source": "shared fake-transport service-readiness and virtual-clock policy vectors distilled into a shared-contract readiness manifest",
+  "description": "Pins the base fake-transport controls that must remain executable before deterministic runtime orchestration delegates to shared code.",
   "input": {
     "kind": "fakeTransportReadiness",
     "policyVectorPaths": [
@@ -57,7 +57,7 @@
       "platform-facade-compatibility-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Fake-transport base runtime migration may proceed only after scripted command outcomes, delayed-response polling, reconnect-after-failure controls, retry-delay scheduling, unscripted-operation timeouts, service readiness, and virtual-clock timeout policy vectors remain executable from shared commonTest, Android and iOS guard the same vector paths, platform facade compatibility stays explicit, and the shared tests are compile-verified.",
+    "commonDecision": "Fake-transport base runtime shared ownership remains valid while scripted command outcomes, delayed-response polling, reconnect-after-failure controls, retry-delay scheduling, unscripted-operation timeouts, service readiness, and virtual-clock timeout policy vectors remain executable from shared commonTest, Android and iOS guard the same vector paths, platform facade compatibility stays explicit, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest fake-transport readiness guard",
       "wallClockSafe": true

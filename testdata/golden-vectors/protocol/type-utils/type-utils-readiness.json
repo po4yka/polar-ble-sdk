@@ -2,8 +2,8 @@
   "id": "type-utils-readiness",
   "area": "type-utils",
   "case": "type_utils_readiness",
-  "source": "Type utility byte-conversion vectors and shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the byte conversion behavior families that must remain covered before parser primitives delegate to shared KMP code.",
+  "source": "Type utility byte-conversion vectors and shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the byte conversion behavior families that must remain covered before parser primitives delegate to shared code.",
   "input": {
     "kind": "typeUtilsReadiness",
     "policyVectorPaths": [
@@ -55,7 +55,7 @@
       "platform-type-utils-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Type utility migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS type utility tests continue to reference the same vectors, unsigned byte/int/long conversion, signed sign extension, offset and size selection, signed-minimum boundaries, high-bit unsigned platform decisions, empty payload and payload-too-long typed errors, UInt64 max decimal preservation, and compile verification remain explicit before production parser primitives move."
+    "commonDecision": "Type utility shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS type utility tests continue to reference the same vectors, unsigned byte/int/long conversion, signed sign extension, offset and size selection, signed-minimum boundaries, high-bit unsigned platform decisions, empty payload and payload-too-long typed errors, UInt64 max decimal preservation, and compile verification remain explicit before production parser primitives move."
   },
   "consumerTests": {
     "android": [
@@ -73,5 +73,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest gates byte-conversion behavior-family completeness only; platform-specific channel, phone MTU, and host utility behavior remain separate migration decisions."
+  "notes": "This readiness manifest gates byte-conversion behavior-family completeness only; platform-specific channel, phone MTU, and host utility behavior remain separate shared ownership decisions."
 }

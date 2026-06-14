@@ -1530,7 +1530,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         throw PolarErrors.polarOfflineRecordingError(description: "Invalid data")
     }
 
-    public func getOfflineRecordWithProgress(
+    func getOfflineRecordWithProgress(
         _ identifier: String,
         entry: PolarOfflineRecordingEntry,
         secret: PolarRecordingSecret?
@@ -2675,7 +2675,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
     
-    public func startExercise(identifier: String, profile: PolarExerciseSession.SportProfile) async throws {
+    func startExercise(identifier: String, profile: PolarExerciseSession.SportProfile) async throws {
         BleLogger.trace("Start exercise pressed for \(identifier) with profile=\(profile)")
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
@@ -2690,7 +2690,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
 
-    public func pauseExercise(identifier: String) async throws {
+    func pauseExercise(identifier: String) async throws {
         BleLogger.trace("Pause exercise pressed for \(identifier)")
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
@@ -2700,7 +2700,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
 
-    public func resumeExercise(identifier: String) async throws {
+    func resumeExercise(identifier: String) async throws {
         BleLogger.trace("Resume exercise pressed for \(identifier)")
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
@@ -2710,7 +2710,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
 
-    public func stopExercise(identifier: String) async throws {
+    func stopExercise(identifier: String) async throws {
         BleLogger.trace("Stop exercise pressed for \(identifier)")
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
@@ -2723,7 +2723,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
 
-    public func getExerciseStatus(identifier: String) async throws -> PolarExerciseSession.ExerciseInfo {
+    func getExerciseStatus(identifier: String) async throws -> PolarExerciseSession.ExerciseInfo {
         BleLogger.trace("Get exercise status pressed for \(identifier)")
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
@@ -3110,7 +3110,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
 
-    public func setTelemetryEnabled(_ identifier: String, enabled: Bool) async throws {
+    func setTelemetryEnabled(_ identifier: String, enabled: Bool) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         let settingsPath = getDeviceSettingsPath(session)
@@ -3256,7 +3256,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
     
-    public func setAutomaticOHRMeasurementEnabled(_ identifier: String, enabled: Bool) async throws {
+    func setAutomaticOHRMeasurementEnabled(_ identifier: String, enabled: Bool) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         let settingsPath = getDeviceSettingsPath(session)

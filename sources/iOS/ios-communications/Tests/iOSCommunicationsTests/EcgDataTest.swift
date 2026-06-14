@@ -117,7 +117,7 @@ final class EcgDataTest: XCTestCase {
         }
     }
 
-    func testEcgReadinessManifestIsPinnedBeforeParserMigration() throws {
+    func testEcgReadinessManifestPinsParserOwnership() throws {
         let manifest = try loadEcgReadinessManifest()
         let id = try XCTUnwrap(manifest["id"] as? String)
         let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)

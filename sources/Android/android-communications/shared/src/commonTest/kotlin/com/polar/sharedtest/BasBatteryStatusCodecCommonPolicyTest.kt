@@ -38,7 +38,7 @@ class BasBatteryStatusCodecCommonPolicyTest {
     }
 }
 
-private const val BAS_BATTERY_STATUS_COMMON_DECISION = "Only the BAS Battery Level Status byte parser moves to shared KMP; characteristic routing, read/notify behavior, stream caching, disconnection, and platform GATT lifecycle stay in Android BleBattClient and iOS BleBasClient."
+private const val BAS_BATTERY_STATUS_COMMON_DECISION = "Only the BAS Battery Level Status byte parser moves to shared; characteristic routing, read/notify behavior, stream caching, disconnection, and platform GATT lifecycle stay in Android BleBattClient and iOS BleBasClient."
 
 private val BAS_BATTERY_STATUS_CASE_IDS = listOf(
     "charging-present-wired-connected-wireless-not-connected",

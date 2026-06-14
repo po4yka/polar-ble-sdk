@@ -69,5 +69,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Covers request-level RFC76 error response mapping. Android currently wraps the response into a generic Exception message with a known enum name or UNKNOWN and retains the existing RFC76 high-byte masking behavior for unknown FE/7F-style codes, while iOS preserves BlePsFtpException.responseError(errorCode:) with the little-endian UInt16 value. Shared KMP runtime should use typed internal errors and facade adapters should intentionally preserve or normalize this split."
+  "notes": "Covers request-level RFC76 error response mapping. Android currently wraps the response into a generic Exception message with a known enum name or UNKNOWN and retains the existing RFC76 high-byte masking behavior for unknown FE/7F-style codes, while iOS preserves BlePsFtpException.responseError(errorCode:) with the little-endian UInt16 value. Shared shared runtime should use typed internal errors and facade adapters should intentionally preserve or normalize this split."
 }

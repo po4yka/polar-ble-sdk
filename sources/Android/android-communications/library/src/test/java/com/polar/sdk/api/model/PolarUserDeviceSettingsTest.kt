@@ -44,7 +44,7 @@ class PolarUserDeviceSettingsTest {
     }
 
     @Test
-    fun `user device settings golden vectors follow neutral KMP vector shape`() {
+    fun `user device settings golden vectors follow neutral shared vector shape`() {
         loadUserDeviceSettingsVectors().forEach { vector ->
             val id = vector.get("id")?.asString ?: "unknown-vector"
 
@@ -62,7 +62,7 @@ class PolarUserDeviceSettingsTest {
     }
 
     @Test
-    fun `user device settings model readiness manifest is pinned before model migration`() {
+    fun `user device settings model readiness manifest is pinned for shared model ownership`() {
         val manifest = loadUserDeviceSettingsModelReadinessManifest()
         val input = manifest.getAsJsonObject("input")
         val expected = manifest.getAsJsonObject("expected")
@@ -73,7 +73,7 @@ class PolarUserDeviceSettingsTest {
 
         assertEquals("user-device-settings-model-readiness", manifest.get("id").asString)
         assertEquals("userDeviceSettingsModelReadiness", input.get("kind").asString)
-        assertEquals("compileVerifiedPreMigrationCharacterization", expected.get("migrationReadiness").asString)
+        assertEquals("compileVerifiedSharedContractCharacterization", expected.get("sharedOwnershipStatus").asString)
         assertEquals(USER_DEVICE_SETTINGS_MODEL_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths)
         val expectedBehaviorFamilies = listOf(
             "protobuf-presence-preservation",

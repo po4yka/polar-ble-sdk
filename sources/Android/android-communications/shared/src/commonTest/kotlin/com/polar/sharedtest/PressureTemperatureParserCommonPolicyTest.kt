@@ -23,8 +23,8 @@ class PressureTemperatureParserCommonPolicyTest {
                 input.intValue("sampleRate")
             )
 
-            expected.optionalStringValue("migrationOwnership")?.let { ownership ->
-                assertEquals(PROTOCOL_ONLY_MIGRATION_OWNERSHIP, ownership, caseId)
+            expected.optionalStringValue("sharedOwnership")?.let { ownership ->
+                assertEquals(PROTOCOL_ONLY_PLATFORM_OWNERSHIP, ownership, caseId)
                 assertEquals(expected.stringValue("measurementType"), parsed.measurementType, caseId)
                 assertEquals(expected.intValue("frameType"), parsed.frameType, caseId)
                 assertEquals(expected.booleanValue("compressed"), parsed.compressed, caseId)
@@ -82,7 +82,7 @@ class PressureTemperatureParserCommonPolicyTest {
     }
 
     @Test
-    fun pressureTemperatureReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun pressureTemperatureReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("protocol/sensors/pressure-temperature-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -93,9 +93,9 @@ class PressureTemperatureParserCommonPolicyTest {
         assertEquals("pressure-temperature-readiness", manifest.stringValue("id"))
         assertEquals("pressureTemperatureReadiness", input.stringValue("kind"))
         assertEquals(PRESSURE_TEMPERATURE_VECTORS, input.stringArrayValue("policyVectorPaths"))
-        assertEquals(REQUIRED_PRESSURE_TEMPERATURE_FAMILIES, requiredFamilies, "Pressure/temperature readiness manifest must name every pre-migration behavior family")
+        assertEquals(REQUIRED_PRESSURE_TEMPERATURE_FAMILIES, requiredFamilies, "Pressure/temperature readiness manifest must name every shared-contract behavior family")
         assertEquals(REQUIRED_PRESSURE_TEMPERATURE_FAMILIES, coveredFamilies, "Pressure/temperature readiness manifest must keep expected coverage aligned with required families")
-        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PressureDataTest", "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.TemperatureDataTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("TemperatureDataTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.PressureTemperatureParserCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
@@ -237,9 +237,9 @@ class PressureTemperatureParserCommonPolicyTest {
 
 private fun String.compressedScalarDecisionNote(): String {
     return when (this) {
-        "pressure-compressed-type0-android-factor-half" -> "Shared KMP decodes compressed pressure type-0 as an IEEE-754 reference sample and applies frame.factor; Android production and linked iOS production consume this shared parser while unlinked SwiftPM/watchOS keeps the legacy Swift fallback."
-        "temperature-compressed-type0-flat-deltas" -> "Shared KMP decodes this compressed temperature type-0 zero-delta payload as the reference sample plus two zero-delta samples with the Android-compatible IEEE-754 bit-pattern interpretation; Android production and linked iOS production consume this shared parser."
-        "temperature-compressed-type0-flat-deltas-android-two-samples" -> "Shared KMP preserves the Android-compatible compressed temperature type-0 interpretation for this zero-delta payload: one reference sample followed by two zero-delta samples."
+        "pressure-compressed-type0-android-factor-half" -> "Shared shared decodes compressed pressure type-0 as an IEEE-754 reference sample and applies frame.factor; Android production and linked iOS production consume this shared parser while unlinked SwiftPM/watchOS keeps the legacy Swift fallback."
+        "temperature-compressed-type0-flat-deltas" -> "Shared shared decodes this compressed temperature type-0 zero-delta payload as the reference sample plus two zero-delta samples with the Android-compatible IEEE-754 bit-pattern interpretation; Android production and linked iOS production consume this shared parser."
+        "temperature-compressed-type0-flat-deltas-android-two-samples" -> "Shared shared preserves the Android-compatible compressed temperature type-0 interpretation for this zero-delta payload: one reference sample followed by two zero-delta samples."
         else -> error("Unexpected compressed scalar vector $this")
     }
 }

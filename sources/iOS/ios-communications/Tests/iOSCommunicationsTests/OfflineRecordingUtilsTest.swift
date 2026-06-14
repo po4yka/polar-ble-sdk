@@ -91,7 +91,7 @@ final class OfflineRecordingUtilsTest: XCTestCase {
         }
     }
 
-    func testOfflineRecordingMetadataReadinessManifestIsPinnedBeforeMetadataMigration() throws {
+    func testOfflineRecordingMetadataReadinessManifestPinsMetadataOwnership() throws {
         let readiness = try loadOfflineRecordingVector("metadata-readiness.json")
         let input = try XCTUnwrap(readiness["input"] as? [String: Any])
         let expected = try XCTUnwrap(readiness["expected"] as? [String: Any])
@@ -168,4 +168,4 @@ private let OFFLINE_RECORDING_METADATA_READINESS_FAMILIES = [
     "compile-verification-gate"
 ]
 
-private let OFFLINE_RECORDING_METADATA_READINESS_COMMON_DECISION = "Offline recording metadata migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves."
+private let OFFLINE_RECORDING_METADATA_READINESS_COMMON_DECISION = "Offline recording metadata shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves."

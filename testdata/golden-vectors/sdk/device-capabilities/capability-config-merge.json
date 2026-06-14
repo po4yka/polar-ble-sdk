@@ -2,7 +2,7 @@
   "id": "capability-config-merge",
   "area": "sdk.device-capabilities",
   "case": "version_mismatch_user_config_merge",
-  "source": "Android and iOS BlePolarDeviceCapabilitiesUtility version-mismatch merge characterization before KMP capability loading migration",
+  "source": "Android and iOS BlePolarDeviceCapabilitiesUtility version-mismatch merge characterization before shared capability loading shared ownership",
   "input": {
     "kind": "deviceCapabilityConfigMerge",
     "bundledConfig": {
@@ -131,5 +131,5 @@
       "com.polar.sharedtest.DeviceCapabilitiesCommonPolicyTest"
     ]
   },
-  "notes": "This vector characterizes version-mismatch user-config migration only. App main-bundle or Android asset override behavior remains platform-owned unless common resource loading is deliberately introduced."
+  "notes": "This vector characterizes version-mismatch user-config shared ownership only. App main-bundle or Android asset override behavior remains platform-owned unless common resource loading is deliberately introduced."
 }

@@ -8,7 +8,7 @@
     "extractKey": 36
   },
   "expected": {
-    "commonDecision": "KMP common KVTX parsing should fail malformed WRITE_BYTES payloads with a typed malformed-script parse error. iOS nil-on-truncation compatibility should remain in an adapter only if required.",
+    "commonDecision": "shared common KVTX parsing should fail malformed WRITE_BYTES payloads with a typed malformed-script parse error. iOS nil-on-truncation compatibility should remain in an adapter only if required.",
     "parseError": "malformedScript"
   },
   "platforms": {

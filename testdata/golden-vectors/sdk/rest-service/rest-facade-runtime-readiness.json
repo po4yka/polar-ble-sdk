@@ -2,8 +2,8 @@
   "id": "rest-facade-runtime-readiness",
   "area": "sdk.rest-service",
   "case": "rest_facade_runtime_readiness",
-  "source": "REST facade runtime backlog and rest-facade-runtime-policy shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the public REST facade behavior families that must remain covered before service discovery and service-description request planning delegates to shared KMP runtime code.",
+  "source": "REST facade runtime backlog and rest-facade-runtime-policy shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the public REST facade behavior families that must remain covered before service discovery and service-description request planning delegates to shared runtime code.",
   "input": {
     "kind": "restFacadeRuntimeReadiness",
     "policyVectorPath": "sdk/rest-service/rest-facade-runtime-policy.json",
@@ -55,10 +55,10 @@
       "platform-facade-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "REST facade runtime migration may proceed only after rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified.",
+    "commonDecision": "REST facade runtime shared ownership remains valid while rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
-      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership."
     }
   },
   "consumerTests": {
@@ -77,5 +77,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for REST facade behavior-family completeness only; service JSON model mapping, empty-response transport behavior, facade empty-success and malformed-success parse/decode failures, response-error transport behavior, public facade response-error mapping, platform adapter references, and compile verification remain required before production REST facade runtime code moves to shared KMP."
+  "notes": "This readiness manifest is a shared ownership gate for REST facade behavior-family completeness only; service JSON model mapping, empty-response transport behavior, facade empty-success and malformed-success parse/decode failures, response-error transport behavior, public facade response-error mapping, platform adapter references, and compile verification remain required before production REST facade runtime code moves to shared."
 }

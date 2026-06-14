@@ -1,8 +1,8 @@
 {
   "id": "acc-readiness",
   "area": "sensors.acc",
-  "case": "pre_migration_readiness_manifest",
-  "source": "KMP migration readiness gate for ACC parser behavior",
+  "case": "shared_contract_readiness_manifest",
+  "source": "Shared ownership readiness gate for ACC parser behavior",
   "input": {
     "kind": "accReadiness",
     "policyVectorPaths": [
@@ -37,7 +37,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "sharedOwnershipStatus": "coveredBySharedContractCharacterization",
     "coveredBehaviorFamilies": [
       "raw-type0-signed-axis-boundaries",
       "raw-type1-signed-axis-parsing",

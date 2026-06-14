@@ -2,7 +2,7 @@
   "id": "bas-battery-status-bitfields",
   "area": "gatt.bas",
   "case": "bas_battery_status_bitfields",
-  "source": "Android BleBattClient and iOS BleBasClient characterization distilled into a pure shared KMP codec vector",
+  "source": "Android BleBattClient and iOS BleBasClient characterization distilled into a pure shared codec vector",
   "description": "Pins BLE Battery Service 1.1 Battery Level Status bitfield parsing for charge state, battery-present state, and wired/wireless external power source state.",
   "input": {
     "kind": "basBatteryStatusBitfields",
@@ -60,7 +60,7 @@
         "wirelessExternalPowerConnected": "UNKNOWN"
       }
     ],
-    "commonDecision": "Only the BAS Battery Level Status byte parser moves to shared KMP; characteristic routing, read/notify behavior, stream caching, disconnection, and platform GATT lifecycle stay in Android BleBattClient and iOS BleBasClient."
+    "commonDecision": "Only the BAS Battery Level Status byte parser moves to shared; characteristic routing, read/notify behavior, stream caching, disconnection, and platform GATT lifecycle stay in Android BleBattClient and iOS BleBasClient."
   },
   "consumerTests": {
     "android": [

@@ -2,7 +2,7 @@
   "id": "ppg-raw-type6-truncated-sport-id-malformed",
   "area": "sensor-parser",
   "case": "ppg_raw_type6_truncated_sport_id_malformed",
-  "source": "Pre-migration shared PPG parser policy",
+  "source": "Shared contract PPG parser policy",
   "input": {
     "dataFrameHex": "010094357700000000061b000000000000",
     "previousTimeStamp": 100,

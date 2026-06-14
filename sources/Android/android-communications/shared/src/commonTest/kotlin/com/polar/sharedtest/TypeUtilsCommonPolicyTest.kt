@@ -43,7 +43,7 @@ class TypeUtilsCommonPolicyTest {
     }
 
     @Test
-    fun typeUtilsReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun typeUtilsReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val vector = loadGoldenVectorText("protocol/type-utils/type-utils-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -179,6 +179,6 @@ class TypeUtilsCommonPolicyTest {
             "platform-type-utils-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val TYPE_UTILS_READINESS_COMMON_DECISION = "Type utility migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS type utility tests continue to reference the same vectors, unsigned byte/int/long conversion, signed sign extension, offset and size selection, signed-minimum boundaries, high-bit unsigned platform decisions, empty payload and payload-too-long typed errors, UInt64 max decimal preservation, and compile verification remain explicit before production parser primitives move."
+        const val TYPE_UTILS_READINESS_COMMON_DECISION = "Type utility shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS type utility tests continue to reference the same vectors, unsigned byte/int/long conversion, signed sign extension, offset and size selection, signed-minimum boundaries, high-bit unsigned platform decisions, empty payload and payload-too-long typed errors, UInt64 max decimal preservation, and compile verification remain explicit before production parser primitives move."
     }
 }

@@ -120,6 +120,10 @@ dokka {
             matchingRegex.set(".*\\.androidcommunications.*")
             suppress.set(true)
         }
+        perPackageOption {
+            matchingRegex.set("com\\.polar\\.sdk\\.impl(\\..*)?")
+            suppress.set(true)
+        }
     }
 }
 

@@ -44,7 +44,7 @@ class WatchFaceCommonPolicyTest {
     }
 
     @Test
-    fun watchFaceReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun watchFaceReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/watch-face/watch-face-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -248,6 +248,6 @@ class WatchFaceCommonPolicyTest {
             "platform-watch-face-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val WATCH_FACE_READINESS_COMMON_DECISION = "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, shared FlatBuffer byte input parsing, shared FlatBuffer byte output construction, KVTX wrapper metadata, and the shared tests are compile-verified."
+        const val WATCH_FACE_READINESS_COMMON_DECISION = "Watch-face model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, shared FlatBuffer byte input parsing, shared FlatBuffer byte output construction, KVTX wrapper metadata, and the shared tests are compile-verified."
     }
 }

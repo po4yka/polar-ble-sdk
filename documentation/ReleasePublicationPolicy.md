@@ -1,16 +1,16 @@
 # Release Publication Policy
 
-This document defines the next safe release publication step after the current artifact-only workflow. The policy is intentionally staged and manual-first: `.github/workflows/release-artifacts.yml` continues to upload workflow artifacts only, and no external publication automation is enabled until the repository has the protected environment, signing credentials, and rollback process described here.
+This document defines the supported release publication automation after the artifact build workflow. The policy is intentionally staged and manual-first: `.github/workflows/release-artifacts.yml` builds workflow artifacts first, then an optional protected job can promote those immutable artifacts to a draft GitHub Release when `workflow_dispatch` supplies a `release_tag` and `publish_to_github_release` is explicitly enabled.
 
 ## Decision
 
-The next safe publication path is GitHub Release asset promotion from an already green `Release Artifacts` workflow run. Maven Central publishing and Swift package registry publication remain deferred because they require public package-coordinate ownership, long-lived publishing credentials, consumer-facing dependency metadata, and expanded rollback policy. Local Maven validation under `shared/build/local-maven-validation` remains validation-only and must not be described as external publication.
+The supported publication path is GitHub Release asset promotion from an already green `Release Artifacts` workflow run. Maven Central publishing and Swift package registry publication remain deferred because they require public package-coordinate ownership, long-lived publishing credentials, consumer-facing dependency metadata, and expanded rollback policy. Local Maven validation under `shared/build/local-maven-validation` remains validation-only and must not be described as external publication.
 
-This policy does not replace artifact-only release behavior. Until an approved publication workflow is added, release automation may upload only workflow artifacts: `polar-ble-sdk.aar`, `polar-ble-sdk-shared.aar`, shared local Maven validation metadata, `PolarBleSdkShared.xcframework`, `PolarBleSdkShared.xcframework.zip`, and `PolarBleSdkShared.xcframework.zip.checksum`.
+This policy does not replace artifact-only release behavior for package registries. Release automation may build and retain workflow artifacts for `polar-ble-sdk.aar`, `polar-ble-sdk-shared.aar`, shared local Maven validation metadata, `PolarBleSdkShared.xcframework`, `PolarBleSdkShared.xcframework.zip`, and `PolarBleSdkShared.xcframework.zip.checksum`; the protected publication job may promote the AARs, the XCFramework zip, the SwiftPM checksum, SHA-256 checksums, detached signatures, and the release manifest to a draft GitHub Release only.
 
 ## Required GitHub Settings
 
-Before any GitHub Release asset publication job is added, repository administrators must create a protected environment named `release-publication`. The environment must require manual reviewer approval, restrict deployment branches or tags to version release refs, and expose no publishing credentials outside that environment.
+Repository administrators must maintain a protected environment named `release-publication`. The environment must require manual reviewer approval, restrict deployment branches or tags to version release refs, and expose no signing credentials outside that environment.
 
 The publication job must request `permissions: contents: write` only in the protected publication job. The job must not rely on broad repository permissions inherited by validation or artifact-building jobs.
 
@@ -18,15 +18,15 @@ The protected environment must provide signing material as environment secrets: 
 
 ## Required Publication Workflow Shape
 
-Publication must be a separate job that depends on a successful artifact build and runs only through `workflow_dispatch` for a specific version tag. The job must download the immutable workflow artifacts from the same run or from an explicitly supplied successful run id, verify that the tag in the request matches the artifact version, and fail before upload when any required artifact is missing.
+Publication must stay in the separate `github-release-assets` job, depend on successful Android and iOS artifact jobs, and run only through `workflow_dispatch` for a specific version tag. The job must download immutable workflow artifacts from the same run or from an explicitly supplied successful `artifact_run_id`, verify the requested `release_tag`, and fail before upload when any required artifact is missing.
 
 The job must generate SHA-256 checksums for every uploaded asset and detached signatures for the Android AARs, `PolarBleSdkShared.xcframework.zip`, and checksum files. The existing SwiftPM checksum for `PolarBleSdkShared.xcframework.zip` must remain present and must be recomputed in the publication job before upload.
 
-The job must publish assets to a draft GitHub Release first. A human reviewer must compare the artifact list, SHA-256 checksums, detached signatures, and SwiftPM checksum against the workflow output before the release is marked non-draft. The workflow must not publish to Maven Central, a Swift package registry, CocoaPods, GitHub Pages, or any package host.
+The job must publish assets to a draft GitHub Release first and only when `publish_to_github_release` is true. A human reviewer must compare the artifact list, SHA-256 checksums, detached signatures, SwiftPM checksum, and release manifest against the workflow output before the release is marked non-draft. The workflow must not publish to Maven Central, a Swift package registry, CocoaPods, GitHub Pages, or any package host.
 
 ## Required Dry Run
 
-Before the first real publication job is enabled, a dry-run mode must exist and pass in CI. The dry run must build the same artifacts, verify `scripts/verify_android_example_aar_consumption.sh`, verify `scripts/verify_android_shared_maven_metadata.sh`, run `sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh --configuration Release --zip-output <tmp>/PolarBleSdkShared.xcframework.zip`, run `swift package compute-checksum <tmp>/PolarBleSdkShared.xcframework.zip`, generate checksums and detached signatures, and write a local release manifest without creating or modifying a GitHub Release.
+The default `workflow_dispatch` mode is a dry-run mode because `publish_to_github_release` defaults to false. The dry run builds the same artifacts, verifies `scripts/verify_android_example_aar_consumption.sh` against the Android full example and ECG/HR demo, verifies `scripts/verify_android_shared_maven_metadata.sh`, runs `sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh --configuration Release --zip-output <tmp>/PolarBleSdkShared.xcframework.zip`, runs `swift package compute-checksum <tmp>/PolarBleSdkShared.xcframework.zip`, generates SHA-256 checksums and detached signatures through `scripts/prepare_github_release_assets.sh`, writes a local release manifest, and uploads the prepared publication directory as `github-release-publication-dry-run` without creating or modifying a GitHub Release.
 
 ## Rollback
 
@@ -34,4 +34,4 @@ Rollback for GitHub Release asset publication is to keep the release draft unpub
 
 ## Guardrail Updates Required Before Automation
 
-Any workflow change that uploads GitHub Release assets must update `:repo-tools:verifyReleasePackagingPolicy` to require the protected environment, manual approval job shape, signing secrets, checksum generation, dry-run validation, and rollback documentation. Any workflow change that adds Maven Central publication, `gradle publish`, or Swift package registry publication must also update `documentation/KmpSharedArtifactConsumption.md`, `documentation/CiCd.md`, this document, and repo-tools guardrails before the workflow change lands.
+Any workflow change that uploads GitHub Release assets must keep `:repo-tools:verifyReleasePackagingPolicy` aligned with the protected environment, manual approval job shape, signing secrets, checksum generation, dry-run validation, draft GitHub Release upload, release manifest, and rollback documentation. Any workflow change that adds Maven Central publication, `gradle publish`, or Swift package registry publication must also update `documentation/KmpSharedArtifactConsumption.md`, `documentation/CiCd.md`, this document, and repo-tools guardrails before the workflow change lands.

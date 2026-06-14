@@ -30,7 +30,7 @@ The current SDK APIs use Kotlin Coroutines on Android and Swift Concurrency on i
 ├── demos/              # Contains Android ecg demo application
 ├── documentation/      # SDK documentation and product guides
 ├── technical_documentation/  # Technical specs and diagrams
-└── docs/               # Generated API documentation
+└── docs/               # Lightweight API docs landing page; generated platform docs are CI/release artifacts
 ```
 ---
 ## Supported products
@@ -93,7 +93,7 @@ android {
 }
 ```
 
-2. Add the SDK artifacts from the release artifact bundle. Current CI/release policy is artifact-only: release automation uploads Android AARs and does not claim Maven Central, JitPack, or any other external registry publication. Local AAR consumers need both `polar-ble-sdk.aar` and `polar-ble-sdk-shared.aar`.
+2. Add the SDK artifacts from the release artifact bundle. Current CI/release policy is artifact-only for package distribution: release automation uploads Android AARs, may promote signed assets to a draft GitHub Release after protected approval, and does not claim Maven Central, JitPack, or any other external registry publication. Local AAR consumers need both `polar-ble-sdk.aar` and `polar-ble-sdk-shared.aar`.
 
 ```gradle
 repositories {
@@ -388,6 +388,8 @@ class MyController: UIViewController,
 | [examples/example-ios](examples/example-ios) | Full-featured iOS app demonstrating all SDK capabilities |
 | [demos/Android-Demos](demos/Android-Demos) | Android ECG + HR demo application |
 
+Android example and demo applications consume generated local release AARs instead of checked-in binaries. Run `scripts/verify_android_example_aar_consumption.sh` from the repository root to build `polar-ble-sdk.aar` and `polar-ble-sdk-shared.aar`, copy them into `examples/example-android/polar-sensor-data-collector/polarBleSdk/`, and verify both Android apps against the same local artifacts.
+
 [↑ Back to contents](#contents)
 
 ---
@@ -399,7 +401,7 @@ class MyController: UIViewController,
 - [KMP Shared Artifact Consumption](./documentation/KmpSharedArtifactConsumption.md) – Android AAR, SwiftPM/XCFramework, and rollback packaging contract
 - [KMP Modern Stack Audit](./documentation/KmpModernStackAudit.md) – Current source of truth for final shared ownership, platform-owned boundaries, packaging ownership, and green closeout validation
 - [KMP Validation Commands](./documentation/KmpValidationCommands.md) – Current Android, iOS, SwiftPM, and shared-module validation commands
-- [CI/CD](./documentation/CiCd.md) – GitHub Actions validation, artifact-only release builds, and failure triage
+- [CI/CD](./documentation/CiCd.md) – GitHub Actions validation, artifact-only release builds, protected GitHub Release asset promotion, and failure triage
 
 RxJava and RxSwift references in these migration guides describe historical migration paths for older SDK versions. They are not current SDK dependency requirements.
 

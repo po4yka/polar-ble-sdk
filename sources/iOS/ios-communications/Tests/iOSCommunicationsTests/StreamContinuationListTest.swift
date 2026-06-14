@@ -292,7 +292,7 @@ final class StreamContinuationListTest: XCTestCase {
         XCTAssertEqual(consumerTests["commonPrototype"] as? [String], ["com.polar.sharedtest.StreamRuntimePolicyCommonTest"])
     }
 
-    func testStreamRuntimeReadinessManifestIsPinnedBeforeStreamRuntimeMigration() throws {
+    func testStreamRuntimeReadinessManifestPinsStreamRuntimeOwnership() throws {
         let file = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/stream-runtime/stream-runtime-readiness.json")
         let vector = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
         let input = try XCTUnwrap(vector["input"] as? [String: Any], "stream-runtime-readiness")
@@ -311,7 +311,7 @@ final class StreamContinuationListTest: XCTestCase {
         XCTAssertEqual(commonDecision, STREAM_RUNTIME_READINESS_COMMON_DECISION, "stream-runtime-readiness")
         let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], "stream-runtime-readiness")
         XCTAssertEqual(commonRuntimePrototype["status"] as? String, "executable shared commonTest runtime planning guard", "stream-runtime-readiness")
-        XCTAssertEqual(commonRuntimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", "stream-runtime-readiness")
+        XCTAssertEqual(commonRuntimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", "stream-runtime-readiness")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "stream-runtime-readiness"), ["com.polar.androidcommunications.common.ble.ChannelUtilsTests"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "stream-runtime-readiness"), ["StreamContinuationListTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "stream-runtime-readiness"), ["com.polar.sharedtest.StreamRuntimePolicyCommonTest"])
@@ -540,7 +540,7 @@ private let STREAM_RUNTIME_POLICY_CONTRACTS = [
     "late-emission-after-completion-policy": StreamRuntimePolicyContract(inputKind: "genericStreamCompletionPolicy", executionTransport: "generic-stream-completion", commonDecision: "Values emitted after terminal completion must not surface to consumers and must not re-register observers.")
 ]
 
-private let STREAM_RUNTIME_READINESS_COMMON_DECISION = "Generic stream runtime migration may proceed only after every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, post-cancellation late-event suppression, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified."
+private let STREAM_RUNTIME_READINESS_COMMON_DECISION = "Generic stream runtime shared ownership remains valid while every stream runtime policy vector listed in this readiness manifest is executable from shared commonTest, Android ChannelUtils tests and iOS StreamContinuationList tests continue to reference the same vectors, ordered emissions, terminal errors, connection guards, consumer cancellation, post-cancellation late-event suppression, disconnect-after-subscription termination, duplicate completion, post-completion emission suppression, active observer cleanup, and upstream cancellation remain pinned, and the shared tests are compile-verified."
 
 private struct StreamRuntimePolicyContract {
     let inputKind: String
@@ -579,14 +579,14 @@ private let FAKE_TRANSPORT_READINESS_FAMILIES = [
     "compile-verification-gate"
 ]
 
-private let SERVICE_READINESS_POLICY_COMMON_DECISION = "Service-readiness waits in shared runtime must be bounded, observable, deterministic, and free from wall-clock sleeps before feature readiness is delegated to KMP."
-private let SCRIPTED_COMMAND_OUTCOMES_POLICY_COMMON_DECISION = "Shared fake transport must capture request order, write payload bytes, stream subscription targets, and scripted success/error/complete outcomes deterministically before runtime command planning delegates to KMP."
-private let DELAYED_RESPONSE_POLICY_COMMON_DECISION = "Shared runtime tests must model delayed transport responses with a virtual clock, observable poll attempts, and a distinct pending label before delayed read, write, or notification orchestration delegates to KMP."
-private let RECONNECT_AFTER_FAILURE_POLICY_COMMON_DECISION = "Shared fake transport must make reconnect-after-failure explicit, observable, and deterministic before retry or reconnect-aware runtime planning delegates to KMP."
-private let RETRY_DELAY_POLICY_COMMON_DECISION = "Shared runtime retry tests must schedule retry delays on a virtual clock, assert retry count and elapsed retry times, and avoid wall-clock sleeps before retry policy delegates to KMP."
-private let UNSCRIPTED_OPERATION_TIMEOUT_POLICY_COMMON_DECISION = "Shared fake transport must report unscripted operations as deterministic timeouts while still recording the attempted command before runtime code delegates to KMP."
+private let SERVICE_READINESS_POLICY_COMMON_DECISION = "Service-readiness waits in shared runtime must be bounded, observable, deterministic, and free from wall-clock sleeps before feature readiness is delegated to shared."
+private let SCRIPTED_COMMAND_OUTCOMES_POLICY_COMMON_DECISION = "Shared fake transport must capture request order, write payload bytes, stream subscription targets, and scripted success/error/complete outcomes deterministically before runtime command planning delegates to shared."
+private let DELAYED_RESPONSE_POLICY_COMMON_DECISION = "Shared runtime tests must model delayed transport responses with a virtual clock, observable poll attempts, and a distinct pending label before delayed read, write, or notification orchestration delegates to shared."
+private let RECONNECT_AFTER_FAILURE_POLICY_COMMON_DECISION = "Shared fake transport must make reconnect-after-failure explicit, observable, and deterministic before retry or reconnect-aware runtime planning delegates to shared."
+private let RETRY_DELAY_POLICY_COMMON_DECISION = "Shared runtime retry tests must schedule retry delays on a virtual clock, assert retry count and elapsed retry times, and avoid wall-clock sleeps before retry policy delegates to shared."
+private let UNSCRIPTED_OPERATION_TIMEOUT_POLICY_COMMON_DECISION = "Shared fake transport must report unscripted operations as deterministic timeouts while still recording the attempted command before runtime code delegates to shared."
 private let VIRTUAL_CLOCK_TIMEOUT_POLICY_COMMON_DECISION = "Shared runtime timeout tests must advance virtual time deterministically and must not wait for wall-clock protocol constants."
-private let FAKE_TRANSPORT_READINESS_COMMON_DECISION = "Fake-transport base runtime migration may proceed only after scripted command outcomes, delayed-response polling, reconnect-after-failure controls, retry-delay scheduling, unscripted-operation timeouts, service readiness, and virtual-clock timeout policy vectors remain executable from shared commonTest, Android and iOS guard the same vector paths, platform facade compatibility stays explicit, and the shared tests are compile-verified."
+private let FAKE_TRANSPORT_READINESS_COMMON_DECISION = "Fake-transport base runtime shared ownership remains valid while scripted command outcomes, delayed-response polling, reconnect-after-failure controls, retry-delay scheduling, unscripted-operation timeouts, service readiness, and virtual-clock timeout policy vectors remain executable from shared commonTest, Android and iOS guard the same vector paths, platform facade compatibility stays explicit, and the shared tests are compile-verified."
 
 private class MockConnectedTransport: BleAttributeTransportProtocol {
     func isConnected() -> Bool { return true }

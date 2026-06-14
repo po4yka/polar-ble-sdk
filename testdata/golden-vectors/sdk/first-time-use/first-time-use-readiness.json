@@ -2,8 +2,8 @@
   "id": "first-time-use-readiness",
   "area": "sdk.first-time-use",
   "case": "first_time_use_model_readiness",
-  "source": "Android, iOS, and shared first-time-use physical configuration enum mapping plus facade file-operation characterization before KMP migration",
-  "description": "Pins first-time-use physical configuration behavior families that must remain covered before any broader FTU model or facade execution moves into shared KMP code.",
+  "source": "Android, iOS, and shared first-time-use physical configuration enum mapping plus facade file-operation characterization under shared ownership",
+  "description": "Pins first-time-use physical configuration behavior families that must remain covered before any broader FTU model or facade execution moves into shared code.",
   "input": {
     "kind": "firstTimeUseReadiness",
     "requiredBehaviorFamilies": [
@@ -36,7 +36,7 @@
       "platform-first-time-use-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
+    "commonDecision": "First-time-use shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
   },
   "consumerTests": {
     "android": [
@@ -55,5 +55,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest gates FTU enum mapping and facade-operation coverage only. Date parsing/building, protobuf payload construction, validation ranges, BLE transport/write execution, sync notification implementation, SwiftPM/watchOS fallback, and public error translation remain platform-owned until a later runtime slice deliberately migrates execution."
+  "notes": "This readiness manifest gates FTU enum mapping and facade-operation coverage only. Date parsing/building, protobuf payload construction, validation ranges, BLE transport/write execution, sync notification implementation, SwiftPM/watchOS fallback, and public error translation remain platform-owned until a later runtime slice deliberately transfers execution to shared code."
 }

@@ -251,7 +251,7 @@ final class TemperatureDataTest: XCTestCase {
         }
     }
 
-    func testPressureTemperatureReadinessManifestIsPinnedBeforeScalarParserMigration() throws {
+    func testPressureTemperatureReadinessManifestPinsScalarParserOwnership() throws {
         let manifest = try loadPressureTemperatureReadinessManifest()
         let id = try XCTUnwrap(manifest["id"] as? String)
         let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)

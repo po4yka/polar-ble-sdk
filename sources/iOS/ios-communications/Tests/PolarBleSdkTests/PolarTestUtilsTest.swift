@@ -430,7 +430,7 @@ class PolarTestUtilsTests: XCTestCase {
         }
     }
 
-    func testSpo2ReadinessManifestIsPinnedBeforeModelMigration() throws {
+    func testSpo2ReadinessManifestPinsModelOwnership() throws {
         let readiness = try loadSpo2ReadinessManifest()
         let input = try XCTUnwrap(readiness["input"] as? [String: Any])
         let expected = try XCTUnwrap(readiness["expected"] as? [String: Any])
@@ -459,7 +459,7 @@ class PolarTestUtilsTests: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "SPo2 model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, time-directory parsing remains shared and compile-verified, nullable triggerType policy remains explicit for generated protos that do not expose the field, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "SPo2 model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS SPo2 tests continue to reference the same vectors, optional protobuf presence and empty recording-device normalization remain covered, time-directory parsing remains shared and compile-verified, nullable triggerType policy remains explicit for generated protos that do not expose the field, unknown SPo2 class behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.sdk.api.model.utils.PolarTestUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["PolarTestUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.Spo2CommonPolicyTest"])

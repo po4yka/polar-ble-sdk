@@ -2,8 +2,8 @@
 
 import Foundation
 
-public let DEVICE_SETTINGS_FILE_PATH = "/U/0/S/UDEVSET.BPB"
-public let SENSOR_SETTINGS_FILE_PATH = "/UDEVSET.BPB"
+internal let DEVICE_SETTINGS_FILE_PATH = "/U/0/S/UDEVSET.BPB"
+internal let SENSOR_SETTINGS_FILE_PATH = "/UDEVSET.BPB"
 private let TAG = "PolarUserDeviceSettingsUtils"
 
 internal class PolarUserDeviceSettingsUtils {

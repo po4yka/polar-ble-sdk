@@ -125,7 +125,7 @@ internal class OfflineHrDataTest {
     }
 
     @Test
-    fun `offline HR raw parsing uses shared KMP parser`() {
+    fun `offline HR raw parsing uses shared parser`() {
         val dataFrame = PmdDataFrame(
             data = "0e000000000000000001485647514052".hexToByteArray(),
             getPreviousTimeStamp = { _, _ -> 0uL },
@@ -221,7 +221,7 @@ internal class OfflineHrDataTest {
     }
 
     @Test
-    fun `offline HR golden vectors follow neutral KMP vector shape`() {
+    fun `offline HR golden vectors follow neutral shared vector shape`() {
         loadOfflineHrVectors().forEach { vector ->
             val id = vector.get("id").asString
             Assert.assertTrue(id, vector.has("area"))
@@ -238,7 +238,7 @@ internal class OfflineHrDataTest {
     }
 
     @Test
-    fun `offline HR readiness manifest is pinned before parser migration`() {
+    fun `offline HR readiness manifest is pinned for shared parser ownership`() {
         val manifest = loadOfflineHrReadinessManifest()
         val id = manifest.get("id").asString
         val input = manifest.getAsJsonObject("input")

@@ -6,7 +6,7 @@ import org.junit.Test
 class KmpValidationAndChecklistPolicyTest {
 
     @Test
-    fun `KMP validation commands stay current and artifact backed`() {
+    fun `shared validation commands stay current and artifact backed`() {
         val root = findRepositoryRoot()
         val validationDoc = root.resolve("documentation/KmpValidationCommands.md").readText()
         val missingSections = REQUIRED_VALIDATION_SECTIONS
@@ -32,7 +32,7 @@ class KmpValidationAndChecklistPolicyTest {
         }
 
         assertTrue(
-            "KmpValidationCommands.md must cover Android, iOS, and KMP common validation: $missingSections",
+            "KmpValidationCommands.md must cover Android, iOS, and shared common validation: $missingSections",
             missingSections.isEmpty()
         )
         assertTrue(
@@ -64,7 +64,7 @@ class KmpValidationAndChecklistPolicyTest {
             .filterNot { term -> validationDoc.contains(term) }
 
         assertTrue(
-            "KmpValidationCommands.md must keep full simulator XCTest as the required iOS execution gate after swiftc and Xcode probe checks: $validationMissingTerms",
+            "KmpValidationCommands.md must keep simulator XCTest execution shards documented after swiftc and Xcode probe checks: $validationMissingTerms",
             validationMissingTerms.isEmpty()
         )
     }
@@ -126,7 +126,7 @@ class KmpValidationAndChecklistPolicyTest {
         val violations = mutableListOf<String>()
 
         if (root.resolve("PolarBleSdk.podspec").exists() || root.resolve("sources/iOS/ios-communications/Podfile").exists() || root.resolve("sources/iOS/ios-communications/iOSCommunications.xcworkspace").exists()) {
-            violations += "CocoaPods files must be removed after SwiftPM migration"
+            violations += "CocoaPods files must be removed after SwiftPM shared ownership"
         }
         if (!sourceRoot.isDirectory) {
             violations += "Missing iOS source root ${sourceRoot.relativeTo(root).path}"
@@ -153,19 +153,57 @@ class KmpValidationAndChecklistPolicyTest {
     }
 
     @Test
+    fun `Xcode project model remains generated and package first`() {
+        val root = findRepositoryRoot()
+        val projectSpec = root.resolve("sources/iOS/ios-communications/project.yml")
+        val validator = root.resolve("scripts/validate_generated_xcode_project.sh")
+        val workflow = root.resolve("sources/iOS/ios-communications/XcodeProjectWorkflow.md").readText()
+        val violations = mutableListOf<String>()
+
+        if (!projectSpec.isFile) {
+            violations += "sources/iOS/ios-communications/project.yml must exist"
+        } else {
+            val spec = projectSpec.readText()
+            listOf("XcodeGen", "SwiftProtobuf", "ZIPFoundation", "Build PolarBleSdkShared KMP Framework", "scripts/build_kmp_ios_framework.sh", "POLAR_KMP_SHARED_REQUIRED", "PolarBleSdkWatchOs", "PolarBleSdkTests.xctestplan")
+                .filterNot { term -> spec.contains(term) }
+                .mapTo(violations) { term -> "project.yml missing $term" }
+        }
+        if (!validator.isFile || !validator.canExecute()) {
+            violations += "scripts/validate_generated_xcode_project.sh must exist and be executable"
+        } else {
+            val script = validator.readText()
+            listOf("xcodegen generate", "xcodebuild -list", "Generated/PolarBleSdkShared/$(PLATFORM_NAME)", "POLAR_KMP_SHARED_REQUIRED")
+                .filterNot { term -> script.contains(term) }
+                .mapTo(violations) { term -> "validate_generated_xcode_project.sh missing $term" }
+        }
+        listOf("project.yml", "XcodeGen", "generated/package-first", ":repo-tools:validateGeneratedXcodeProject", "committed compatibility harness")
+            .filterNot { term -> workflow.contains(term) }
+            .mapTo(violations) { term -> "XcodeProjectWorkflow.md missing $term" }
+
+        assertTrue(
+            "Xcode project model must stay generated/package-first while the committed project remains a compatibility harness: $violations",
+            violations.isEmpty()
+        )
+    }
+
+    @Test
     fun `generated API documentation remains generator owned`() {
         val root = findRepositoryRoot()
-        val androidDocs = root.resolve("docs/polar-sdk-android")
-        val iosDocs = root.resolve("docs/polar-sdk-ios/documentation/polarblesdk")
+        val docsGitignore = root.resolve("docs/.gitignore")
         val generateScript = root.resolve("scripts/generate_api_docs.sh")
+        val swiftProtobufScript = root.resolve("scripts/generate_swift_protobuf.sh")
+        val androidProtoDir = root.resolve("sources/Android/android-communications/library/src/sdk/proto")
+        val swiftProtobufDir = root.resolve("sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/protobuf")
         val androidGradle = root.resolve("sources/Android/android-communications/library/build.gradle.kts").readText()
         val violations = mutableListOf<String>()
 
-        if (!androidDocs.isDirectory || androidDocs.walkTopDown().none { file -> file.isFile && file.name == "index.html" }) {
-            violations += "Generated Android API docs must stay under docs/polar-sdk-android"
-        }
-        if (!iosDocs.isDirectory || iosDocs.walkTopDown().none { file -> file.isFile && file.name == "index.html" }) {
-            violations += "Generated iOS DocC static output must stay under docs/polar-sdk-ios/documentation/polarblesdk"
+        if (!docsGitignore.isFile) {
+            violations += "docs/.gitignore must exist"
+        } else {
+            val ignored = docsGitignore.readText()
+            listOf("/polar-sdk-android/", "/polar-sdk-ios/")
+                .filterNot { term -> ignored.contains(term) }
+                .mapTo(violations) { term -> "docs/.gitignore must ignore $term" }
         }
         if (!generateScript.isFile || !generateScript.canExecute()) {
             violations += "scripts/generate_api_docs.sh must exist and be executable"
@@ -181,13 +219,78 @@ class KmpValidationAndChecklistPolicyTest {
         if (!androidGradle.contains("alias(libs.plugins.dokka)") || !androidGradle.contains("dokkaPublications.html")) {
             violations += "Android docs generation must stay on Dokka HTML configuration"
         }
+        listOf(""".*\\.androidcommunications.*""", """com\\.polar\\.sdk\\.impl(\\..*)?""")
+            .filterNot { term -> androidGradle.contains(term) }
+            .mapTo(violations) { term -> "Android Dokka public docs surface must suppress $term" }
+        val swiftImplPublicSymbols = root.resolve("sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl")
+            .walkTopDown()
+            .filter { file -> file.isFile && file.extension == "swift" && !file.name.endsWith(".pb.swift") }
+            .flatMap { file ->
+                file.readLines().mapIndexedNotNull { index, line ->
+                    if (Regex("""^\s*(public|open)\s+(class|struct|enum|protocol|actor|func|var|let|typealias|extension)\b""").containsMatchIn(line)) {
+                        "${file.relativeTo(root).path}:${index + 1}: ${line.trim()}"
+                    } else {
+                        null
+                    }
+                }
+            }
+            .toList()
+        if (swiftImplPublicSymbols.isNotEmpty()) {
+            violations += "Swift implementation package must not expose public API symbols: $swiftImplPublicSymbols"
+        }
         val repoToolsBuild = root.resolve("sources/Android/android-communications/repo-tools/build.gradle.kts").readText()
         listOf("generateApiDocs", "packageGeneratedApiDocs", ":library:dokkaGeneratePublicationHtml", "xcodebuild", "docbuild", "docc", "transform-for-static-hosting", "polar-generated-api-docs.tar.gz")
             .filterNot { term -> repoToolsBuild.contains(term) }
             .mapTo(violations) { term -> "repo-tools Gradle docs generation missing $term" }
+        val trackedGeneratedDocs = runCatching {
+            ProcessBuilder("git", "ls-files", "docs/polar-sdk-android", "docs/polar-sdk-ios")
+                .directory(root)
+                .redirectErrorStream(true)
+                .start()
+                .inputStream
+                .bufferedReader()
+                .readText()
+                .lineSequence()
+                .filter { it.isNotBlank() }
+                .toList()
+        }.getOrElse { listOf("git ls-files failed: ${it.message}") }
+        if (trackedGeneratedDocs.isNotEmpty()) {
+            violations += "Generated API docs must stay untracked: $trackedGeneratedDocs"
+        }
+        if (!swiftProtobufScript.isFile || !swiftProtobufScript.canExecute()) {
+            violations += "scripts/generate_swift_protobuf.sh must exist and be executable"
+        } else {
+            val script = swiftProtobufScript.readText()
+            listOf("proto_version", "swift_protobuf_version", "PROTOC", "PROTOC_GEN_SWIFT", "--swift_opt=Visibility=Public", "protoc-gen-swift version must match Package.swift SwiftProtobuf")
+                .filterNot { term -> script.contains(term) }
+                .mapTo(violations) { term -> "scripts/generate_swift_protobuf.sh missing $term" }
+        }
+        val androidProtoReadme = androidProtoDir.resolve("README.md").readText()
+        listOf("protobuf schema source of truth", "scripts/generate_swift_protobuf.sh", "Do not place generated protobuf output")
+            .filterNot { term -> androidProtoReadme.contains(term) }
+            .mapTo(violations) { term -> "Android proto README missing $term" }
+        val swiftProtobufReadme = swiftProtobufDir.resolve("README.md").readText()
+        listOf("checked-in Swift protobuf output", "Do not hand-edit", "scripts/generate_swift_protobuf.sh", "Package.swift")
+            .filterNot { term -> swiftProtobufReadme.contains(term) }
+            .mapTo(violations) { term -> "Swift protobuf README missing $term" }
+        val generatedSwiftProtobufFiles = swiftProtobufDir.walkTopDown()
+            .filter { file -> file.isFile && file.name.endsWith(".pb.swift") }
+            .toList()
+        if (generatedSwiftProtobufFiles.isEmpty()) {
+            violations += "Swift generated protobuf directory must contain checked-in *.pb.swift output"
+        }
+        generatedSwiftProtobufFiles.flatMap { file ->
+            val text = file.readText()
+            listOf("// DO NOT EDIT.", "swift-format-ignore-file", "swiftlint:disable all", "Generated by the Swift generator plugin for the protocol buffer compiler.", "Source:")
+                .filterNot { term -> text.contains(term) }
+                .map { term -> "${file.relativeTo(root).path} missing generated header term $term" }
+        }.let(violations::addAll)
+        if (androidProtoDir.walkTopDown().none { file -> file.isFile && file.extension == "proto" }) {
+            violations += "Android SDK protobuf schema directory must contain checked-in *.proto schema files"
+        }
 
         assertTrue(
-            "Generated API docs must remain generator-owned and reproducible: $violations",
+            "Generated API docs and protobuf outputs must remain generator-owned and untracked where applicable: $violations",
             violations.isEmpty()
         )
     }

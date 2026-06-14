@@ -2,7 +2,7 @@
   "id": "pressure-compressed-type0-android-factor-half",
   "area": "sensor-parser",
   "case": "pressure_compressed_type0_android_factor_applied_to_reference_sample",
-  "source": "Android PressureDataTest and shared KMP parser; linked iOS consumes the shared compressed pressure parser",
+  "source": "Android PressureDataTest and shared parser; linked iOS consumes the shared compressed pressure parser",
   "input": {
     "dataFrameHex": "0b660000000000000080ae277b44",
     "previousTimeStamp": 100,
@@ -26,7 +26,7 @@
     "ios": true,
     "common": true
   },
-  "notes": "Shared KMP decodes compressed pressure type-0 as an IEEE-754 reference sample and applies frame.factor; Android production and linked iOS production consume this shared parser while unlinked SwiftPM/watchOS keeps the legacy Swift fallback.",
+  "notes": "Shared shared decodes compressed pressure type-0 as an IEEE-754 reference sample and applies frame.factor; Android production and linked iOS production consume this shared parser while unlinked SwiftPM/watchOS keeps the legacy Swift fallback.",
   "consumerTests": {
     "android": [
       "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PressureDataTest",

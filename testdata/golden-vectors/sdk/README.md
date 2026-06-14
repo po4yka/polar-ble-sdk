@@ -1,6 +1,6 @@
 # SDK Domain Golden Vectors
 
-This directory holds higher-level SDK vectors for behavior that is deterministic but not a raw sensor frame. These fixtures are pre-KMP migration contracts: Android, iOS, and future common tests should consume the same inputs before a domain model, parser helper, runtime workflow, or facade delegation moves into shared code.
+This directory holds higher-level SDK vectors for behavior that is deterministic but not a raw sensor frame. These fixtures are shared-ownership shared ownership contracts: Android, iOS, and future common tests should consume the same inputs before a domain model, parser helper, runtime workflow, or facade delegation moves into shared code.
 
 Recommended groups:
 
@@ -18,4 +18,4 @@ Recommended groups:
 - Product capability JSON parsing.
 - Watch-face and complication models.
 
-Each child directory with JSON fixtures must include a local README that states the migration ownership boundary, unresolved platform policy, or common-test prerequisite for that slice.
+Each child directory with JSON fixtures must include a local README that states the shared ownership boundary, unresolved platform policy, or common-test prerequisite for that slice.

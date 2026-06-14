@@ -51,5 +51,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Covers the PSFTP write stream device-interruption path where the peer sends an RFC76 error response while the host still has more write frames to send. Shared KMP runtime should model this as a typed write-interrupted response error and let platform facades adapt to existing public error types if compatibility requires it."
+  "notes": "Covers the PSFTP write stream device-interruption path where the peer sends an RFC76 error response while the host still has more write frames to send. Shared shared runtime should model this as a typed write-interrupted response error and let platform facades adapt to existing public error types if compatibility requires it."
 }

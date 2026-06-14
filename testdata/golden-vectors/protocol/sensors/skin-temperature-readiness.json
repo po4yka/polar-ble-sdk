@@ -1,8 +1,8 @@
 {
   "id": "skin-temperature-readiness",
   "area": "sensors.skin-temperature",
-  "case": "pre_migration_readiness_manifest",
-  "source": "KMP migration readiness gate for skin-temperature parser behavior",
+  "case": "shared_contract_readiness_manifest",
+  "source": "Shared ownership readiness gate for skin-temperature parser behavior",
   "input": {
     "kind": "skinTemperatureReadiness",
     "policyVectorPaths": [
@@ -23,7 +23,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "sharedOwnershipStatus": "coveredBySharedContractCharacterization",
     "coveredBehaviorFamilies": [
       "raw-type0-ieee754-skin-temperature-parsing",
       "sample-rate-timestamp-estimation-policy",

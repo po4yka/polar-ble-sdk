@@ -2,7 +2,7 @@
   "id": "payload-read-policy",
   "area": "sdk.training-session",
   "case": "payload_read_progress_malformed_and_unknown_sample_policy",
-  "source": "Android and iOS PolarTrainingSessionUtils payload-read characterization tests distilled into a shared pre-migration contract",
+  "source": "Android and iOS PolarTrainingSessionUtils payload-read characterization tests distilled into a shared-contract contract",
   "input": {
     "kind": "payloadReadPolicy",
     "reference": {
@@ -353,5 +353,5 @@
       "byteLevelPayloadStatus": "selected-protobuf-fields-parsed-in-common-generated-model-reconstruction-deferred"
     }
   },
-  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared migration contract for request ordering, progress, parsed component presence, malformed component isolation, unknown advanced sample-list handling, and decoded-payload reconstruction-slot planning with neutral session-summary scalar fields carried beside the bytes for platform adapters. payload-parser-policy.json now pins parser-family ownership; gzip payload decompression, selected protobuf field parsing, malformed payload isolation, deterministic public-model read planning, neutral session-summary scalar DTO assembly, and neutral reconstruction planning are owned by shared KMP, while generated public protobuf object reconstruction remains platform-owned in Android and iOS adapters. Rollback for this parser-family slice is to ignore the neutral reconstruction fields/bridge columns and continue platform parsing from decoded payload bytes without moving generated public model construction into common KMP."
+  "notes": "This neutral vector does not embed protobuf bytes; it turns the existing Android and iOS payload-read tests into a shared ownership contract for request ordering, progress, parsed component presence, malformed component isolation, unknown advanced sample-list handling, and decoded-payload reconstruction-slot planning with neutral session-summary scalar fields carried beside the bytes for platform adapters. payload-parser-policy.json now pins parser-family ownership; gzip payload decompression, selected protobuf field parsing, malformed payload isolation, deterministic public-model read planning, neutral session-summary scalar DTO assembly, and neutral reconstruction planning are owned by shared, while generated public protobuf object reconstruction remains platform-owned in Android and iOS adapters. Rollback for this parser-family slice is to ignore the neutral reconstruction fields/bridge columns and continue platform parsing from decoded payload bytes without moving generated public model construction into common."
 }

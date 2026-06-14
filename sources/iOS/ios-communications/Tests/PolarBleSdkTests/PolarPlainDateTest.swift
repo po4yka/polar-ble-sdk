@@ -156,7 +156,7 @@ final class PolarPlainDateTest: XCTestCase {
         XCTAssertEqual(original.day.description, decoded.day.description)
     }
 
-    func testPlainDateGoldenVectorPinsMigrationPolicy() throws {
+    func testPlainDateGoldenVectorPinsSharedOwnershipPolicy() throws {
         let vector = try GoldenVectorTestData.loadObject("sdk/time-date/plain-date-validation.json")
         let input = try objectValue(vector, "input")
         XCTAssertEqual("plain-date-validation", try stringValue(vector, "id"))
@@ -236,6 +236,6 @@ final class PolarPlainDateTest: XCTestCase {
     }
 
     private var timeDateReadinessCommonDecision: String {
-        "Time/date migration owns portable field mapping, timezone-offset minute conversion, millisecond/nanosecond policy, duration-to-millis math, time-string formatting, and plain-date validation in shared KMP code while platform calendar, timezone database, Date, Calendar, LocalDateTime, protobuf, and public facade conversion remain platform adapters until shared artifacts are consumed by iOS production code."
+        "Time/date shared ownership owns portable field mapping, timezone-offset minute conversion, millisecond/nanosecond policy, duration-to-millis math, time-string formatting, and plain-date validation in shared code while platform calendar, timezone database, Date, Calendar, LocalDateTime, protobuf, and public facade conversion remain platform adapters until shared artifacts are consumed by iOS production code."
     }
 }

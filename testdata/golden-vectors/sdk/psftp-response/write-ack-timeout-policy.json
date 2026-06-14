@@ -52,5 +52,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This vector intentionally documents a long-duration timeout path that should not be executed against wall-clock protocol time. Android waits in BlePsFtpClient.waitPacketsWritten until PROTOCOL_TIMEOUT_SECONDS, then throws PftpOperationTimeout and maps it through the write flow. iOS waits through AtomicInteger.checkAndWait and surfaces AtomicIntegerException.waitTimeout. KMP migration must add fake-clock or injectable-timeout support before moving PSFTP write acknowledgement orchestration to common code."
+  "notes": "This vector intentionally documents a long-duration timeout path that should not be executed against wall-clock protocol time. Android waits in BlePsFtpClient.waitPacketsWritten until PROTOCOL_TIMEOUT_SECONDS, then throws PftpOperationTimeout and maps it through the write flow. iOS waits through AtomicInteger.checkAndWait and surfaces AtomicIntegerException.waitTimeout. shared ownership must add fake-clock or injectable-timeout support before moving PSFTP write acknowledgement orchestration to common code."
 }

@@ -3,7 +3,7 @@
   "area": "sdk-disk-time-runtime",
   "case": "disk_time_query_policy",
   "source": "BDBleApiImplTest and PolarBleApiImplTests disk/time facade characterization",
-  "description": "Pins disk-space and local-time PSFTP query planning before disk/time public facade orchestration can delegate to a shared KMP runtime.",
+  "description": "Pins disk-space and local-time PSFTP query planning before disk/time public facade orchestration can delegate to a shared runtime.",
   "input": {
     "operations": [
       {
@@ -182,6 +182,6 @@
     "transport": "public-facade-query-capture",
     "wallClockSafe": true
   },
-  "commonDecision": "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned.",
+  "commonDecision": "Promote disk/time query planning only while facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned.",
   "notes": "Disk-space model conversion remains covered by sdk/disk-space vectors. This runtime vector owns query IDs, query parameters, V2 system/local time sequencing, H10 single local-time query behavior, local-time read failures, and transport-error propagation planning."
 }

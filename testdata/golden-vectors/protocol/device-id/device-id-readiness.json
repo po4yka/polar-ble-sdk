@@ -2,8 +2,8 @@
   "id": "device-id-readiness",
   "area": "device-id",
   "case": "device_id_readiness",
-  "source": "Device ID and UUID vectors plus shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the device ID behavior families that must remain covered before checksum, validation, and UUID conversion delegate to shared KMP code.",
+  "source": "Device ID and UUID vectors plus shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the device ID behavior families that must remain covered before checksum, validation, and UUID conversion delegate to shared code.",
   "input": {
     "kind": "deviceIdReadiness",
     "policyVectorPaths": [
@@ -54,7 +54,7 @@
       "platform-device-id-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Device ID migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS device ID tests continue to reference the same vectors, checksum width 6 and 7 assembly, zero-value assembly, validation, lowercase acceptance, UUID conversion, invalid UUID length errors, invalid identifier rejection, current empty and non-hex platform decisions, platform-specific identifier routing, and compile verification remain explicit before production checksum or UUID logic moves."
+    "commonDecision": "Device ID shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS device ID tests continue to reference the same vectors, checksum width 6 and 7 assembly, zero-value assembly, validation, lowercase acceptance, UUID conversion, invalid UUID length errors, invalid identifier rejection, current empty and non-hex platform decisions, platform-specific identifier routing, and compile verification remain explicit before production checksum or UUID logic moves."
   },
   "consumerTests": {
     "android": [

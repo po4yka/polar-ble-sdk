@@ -19,7 +19,7 @@ class PolarExerciseSessionTest {
     }
 
     @Test
-    fun `exercise session readiness manifest is pinned before model migration`() {
+    fun `exercise session readiness manifest is pinned for shared model ownership`() {
         val manifest = loadExerciseSessionReadinessManifest()
         val input = manifest.getAsJsonObject("input")
         val expected = manifest.getAsJsonObject("expected")
@@ -63,6 +63,6 @@ class PolarExerciseSessionTest {
             "platform-exercise-session-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val EXERCISE_SESSION_READINESS_COMMON_DECISION = "Exercise-session migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS exercise-session tests continue to pin sport-profile ID mapping, unknown sport-profile fallback, offline exercise command planning, offline exercise file read/remove paths, device-info path planning, protobuf construction boundaries, status-result platform boundaries, public error mapping boundaries, platform vector references, and compile verification before broader exercise execution moves."
+        const val EXERCISE_SESSION_READINESS_COMMON_DECISION = "Exercise-session shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS exercise-session tests continue to pin sport-profile ID mapping, unknown sport-profile fallback, offline exercise command planning, offline exercise file read/remove paths, device-info path planning, protobuf construction boundaries, status-result platform boundaries, public error mapping boundaries, platform vector references, and compile verification before broader exercise execution moves."
     }
 }

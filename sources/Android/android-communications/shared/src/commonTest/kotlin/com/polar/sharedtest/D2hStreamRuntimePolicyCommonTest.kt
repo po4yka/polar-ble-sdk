@@ -29,7 +29,7 @@ class D2hStreamRuntimePolicyCommonTest {
     }
 
     @Test
-    fun d2hStreamRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun d2hStreamRuntimeReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/d2h-notifications/stream-runtime-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -64,7 +64,7 @@ class D2hStreamRuntimePolicyCommonTest {
         assertEquals(requiredD2hStreamConsumersCommon, readinessConsumers.stringArrayValue("commonPrototype"))
         assertEquals(d2hStreamRuntimeReadinessCommonDecision, expected.stringValue("commonDecision"))
         assertEquals("executable shared commonTest runtime planning guard", expected.objectValue("commonRuntimePrototype").stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
     }
 
     private val requiredD2hStreamRuntimeFamilies = listOf(
@@ -92,7 +92,7 @@ class D2hStreamRuntimePolicyCommonTest {
     private val requiredD2hStreamConsumersIos = listOf("PolarDeviceToHostNotificationsApiTests")
     private val requiredD2hStreamConsumersCommon = listOf("com.polar.sharedtest.D2hStreamRuntimePolicyCommonTest")
 
-    private val d2hStreamRuntimeReadinessCommonDecision = "D2H stream runtime migration may proceed only after stream-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, mapped values emitted before late upstream errors are preserved, consumer cancellation cancels upstream work and suppresses later notifications, unknown notifications are filtered without stopping later known values, failed subscribe paths register no observers, public facade error mapping remains pinned, and the shared tests are compile-verified."
+    private val d2hStreamRuntimeReadinessCommonDecision = "D2H stream runtime shared ownership remains valid while stream-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, mapped values emitted before late upstream errors are preserved, consumer cancellation cancels upstream work and suppresses later notifications, unknown notifications are filtered without stopping later known values, failed subscribe paths register no observers, public facade error mapping remains pinned, and the shared tests are compile-verified."
 
     private fun runScenario(target: String, scenario: String): D2hStreamOutcome {
         val terminal = scenario.optionalObjectValue("terminal")

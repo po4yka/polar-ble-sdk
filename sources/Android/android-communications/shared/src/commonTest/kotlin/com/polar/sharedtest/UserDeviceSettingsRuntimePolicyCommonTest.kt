@@ -105,7 +105,7 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
     }
 
     @Test
-    fun userDeviceSettingsRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun userDeviceSettingsRuntimeReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/user-device-settings-runtime/settings-runtime-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -128,7 +128,7 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         assertEquals(userDeviceSettingsRuntimeReadinessCommonDecision, expected.stringValue("commonDecision"))
         val commonRuntimePrototype = expected.objectValue("commonRuntimePrototype")
         assertEquals("executable shared commonTest runtime planning guard", commonRuntimePrototype.stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", commonRuntimePrototype.stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", commonRuntimePrototype.stringValue("reason"))
         val consumerTests = manifest.objectValue("consumerTests")
         assertEquals(listOf("com.polar.sdk.impl.BDBleApiImplTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarBleApiImplTests"), consumerTests.stringArrayValue("ios"))
@@ -186,9 +186,9 @@ class UserDeviceSettingsRuntimePolicyCommonTest {
         "compile-verification-gate"
     )
 
-    private val userDeviceSettingsRuntimeReadinessCommonDecision = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+    private val userDeviceSettingsRuntimeReadinessCommonDecision = "User-device-settings runtime shared ownership remains valid while settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
 
-    private val userDeviceSettingsRuntimePolicyCommonDecision = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
+    private val userDeviceSettingsRuntimePolicyCommonDecision = "Promote user-device-settings runtime only while direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
 
     private val readFailureNoWriteBehavior = "read-failure no-write behavior"
 

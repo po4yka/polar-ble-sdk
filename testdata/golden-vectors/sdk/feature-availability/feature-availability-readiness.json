@@ -2,7 +2,7 @@
   "id": "feature-availability-readiness",
   "area": "sdk.feature-availability",
   "case": "feature_availability_readiness",
-  "source": "SDK feature availability KMP migration readiness planning with Android, iOS, and shared precondition characterization",
+  "source": "SDK feature availability shared ownership readiness planning with Android, iOS, and shared precondition characterization",
   "description": "Pins deterministic SDK feature service and capability preconditions while platform adapters keep service discovery, GATT client readiness, PMD feature reads, notifications, BLE transport, and public callbacks.",
   "input": {
     "kind": "featureAvailabilityReadiness",
@@ -59,7 +59,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "sharedOwnershipStatus": "coveredBySharedContractCharacterization",
     "coveredBehaviorFamilies": [
       "service-and-capability-gates",
       "feature-name-normalization",
@@ -67,10 +67,10 @@
       "unknown-feature-pass-through",
       "platform-client-readiness-boundary"
     ],
-    "commonDecision": "SDK feature availability migration owns only deterministic service and capability preconditions in shared KMP; GATT client lookup, clientReady waits, PMD feature reads, notification readiness, service discovery, BLE transport execution, and public callback/error behavior remain platform-owned.",
+    "commonDecision": "SDK feature availability shared ownership owns only deterministic service and capability preconditions in shared; GATT client lookup, clientReady waits, PMD feature reads, notification readiness, service discovery, BLE transport execution, and public callback/error behavior remain platform-owned.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest feature-availability planning guard",
-      "reason": "Declared because this vector is consumed by shared commonTest and platform adapter tests before feature availability runtime delegation moves further into shared KMP."
+      "reason": "Declared because this vector is consumed by shared commonTest and platform adapter tests before feature availability runtime delegation moves further into shared."
     }
   },
   "consumerTests": {
@@ -83,5 +83,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for pure service/capability preconditions only. Android and iOS must continue to own platform service discovery names, GATT client lookup, clientReady waits, PMD feature reads, notification readiness, BLE transport execution, public callbacks, and public error mapping unless a later slice extracts a pure state machine with facade compatibility tests."
+  "notes": "This readiness manifest is a shared ownership gate for pure service/capability preconditions only. Android and iOS must continue to own platform service discovery names, GATT client lookup, clientReady waits, PMD feature reads, notification readiness, BLE transport execution, public callbacks, and public error mapping unless a later slice extracts a pure state machine with facade compatibility tests."
 }

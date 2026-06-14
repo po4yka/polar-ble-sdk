@@ -7,7 +7,7 @@
     "hex": "0080"
   },
   "expected": {
-    "commonDecision": "KMP should return the width-limited unsigned value and avoid Swift's current unsigned sign-extension mask behavior."
+    "commonDecision": "Shared code should return the width-limited unsigned value and avoid Swift's current unsigned sign-extension mask behavior."
   },
   "platformExpectations": {
     "android": {

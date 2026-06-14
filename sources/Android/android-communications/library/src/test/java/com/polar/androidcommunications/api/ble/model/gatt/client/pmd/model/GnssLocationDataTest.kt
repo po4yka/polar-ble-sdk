@@ -335,7 +335,7 @@ internal class GnssLocationDataTest {
     }
 
     @Test
-    fun `gnss location golden vectors follow neutral KMP vector shape`() {
+    fun `gnss location golden vectors follow neutral shared vector shape`() {
         loadGnssLocationVectors().forEach { vector ->
             val id = vector.get("id")?.asString ?: "unknown-vector"
 
@@ -365,7 +365,7 @@ internal class GnssLocationDataTest {
 
         Assert.assertEquals("gnss-location-readiness", manifest.get("id").asString)
         Assert.assertEquals("gnssLocationReadiness", input.get("kind").asString)
-        Assert.assertEquals("sharedParserAndroidProductionDelegation", expected.get("migrationReadiness").asString)
+        Assert.assertEquals("sharedParserAndroidProductionDelegation", expected.get("sharedOwnershipStatus").asString)
         Assert.assertEquals(GNSS_LOCATION_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths)
         val expectedBehaviorFamilies = listOf(
             "shared-parser-raw-type0-coordinate",

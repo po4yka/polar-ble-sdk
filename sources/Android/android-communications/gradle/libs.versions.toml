@@ -13,6 +13,7 @@ junit = "4.13.2"
 kotlin = "2.4.0"
 kotlinx-coroutines = "1.11.0"
 kotlinx-serialization-json = "1.11.0"
+ktlint-gradle = "14.2.0"
 mockito = "5.23.0"
 mockk = "1.14.11"
 protobuf-gradle-plugin = "0.10.0"
@@ -51,4 +52,5 @@ android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobuf-gradle-plugin" }

@@ -1,8 +1,8 @@
 {
   "id": "capability-lookup-readiness",
   "area": "sdk.device-capabilities",
-  "case": "pre_migration_lookup_readiness_manifest",
-  "source": "KMP migration readiness gate for product capability lookup",
+  "case": "shared_contract_lookup_readiness_manifest",
+  "source": "Shared ownership readiness gate for product capability lookup",
   "input": {
     "kind": "deviceCapabilityLookupReadiness",
     "policyVectorPaths": [
@@ -28,7 +28,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "sharedOwnershipStatus": "coveredBySharedContractCharacterization",
     "coveredBehaviorFamilies": [
       "filesystem-type-mapping",
       "unknown-filesystem-default",
@@ -43,7 +43,7 @@
       "platform-capability-vector-references",
       "compile-verification-gate"
     ],
-    "commonDecision": "Capability lookup migration may proceed only after these vectors are executable from shared commonTest, Android and iOS tests continue to reference the same capability fixtures, firmware-update/activity/sensor flags and version-mismatch user-config merge behavior are covered by shared vectors, resource override behavior is explicitly kept platform-owned, and the shared tests are compile-verified."
+    "commonDecision": "Capability lookup shared ownership remains valid while these vectors are executable from shared commonTest, Android and iOS tests continue to reference the same capability fixtures, firmware-update/activity/sensor flags and version-mismatch user-config merge behavior are covered by shared vectors, resource override behavior is explicitly kept platform-owned, and the shared tests are compile-verified."
   },
   "platforms": {
     "android": true,

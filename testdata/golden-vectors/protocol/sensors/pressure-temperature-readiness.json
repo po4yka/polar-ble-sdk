@@ -1,8 +1,8 @@
 {
   "id": "pressure-temperature-readiness",
   "area": "sensors.pressure-temperature",
-  "case": "pre_migration_readiness_manifest",
-  "source": "KMP migration readiness gate for pressure and temperature scalar parser behavior",
+  "case": "shared_contract_readiness_manifest",
+  "source": "Shared ownership readiness gate for pressure and temperature scalar parser behavior",
   "input": {
     "kind": "pressureTemperatureReadiness",
     "policyVectorPaths": [
@@ -34,7 +34,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "sharedOwnershipStatus": "coveredBySharedContractCharacterization",
     "coveredBehaviorFamilies": [
       "pressure-raw-type0-ieee754-parsing",
       "temperature-raw-type0-ieee754-parsing",

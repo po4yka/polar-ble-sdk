@@ -2,7 +2,7 @@
   "id": "service-readiness-policy",
   "area": "sdk.fake-transport",
   "case": "service_readiness_policy",
-  "source": "KMP fake-transport readiness planning and shared CommonFakeServiceReadinessGate prototype",
+  "source": "shared fake-transport readiness planning and shared CommonFakeServiceReadinessGate prototype",
   "description": "Pins deterministic service-readiness waiting before feature readiness or service discovery waits move into shared runtime code.",
   "input": {
     "kind": "serviceReadinessPolicy",
@@ -34,7 +34,7 @@
       "psftp",
       "psftp"
     ],
-    "commonDecision": "Service-readiness waits in shared runtime must be bounded, observable, deterministic, and free from wall-clock sleeps before feature readiness is delegated to KMP."
+    "commonDecision": "Service-readiness waits in shared runtime must be bounded, observable, deterministic, and free from wall-clock sleeps before feature readiness is delegated to shared."
   },
   "consumerTests": {
     "android": [

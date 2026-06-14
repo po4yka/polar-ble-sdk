@@ -376,7 +376,7 @@ class AtomicSetTest {
     }
 
     @Test
-    fun `atomic set golden vectors follow neutral KMP vector shape`() {
+    fun `atomic set golden vectors follow neutral shared vector shape`() {
         loadAtomicSetVectors().forEach { vector ->
             val id = vector.get("id")?.asString ?: "unknown-vector"
 

@@ -1,10 +1,11 @@
 # iOS Xcode Project Workflow
 
-This checkout currently uses a package-first workflow for source membership and dependency validation, while keeping `iOSCommunications.xcodeproj` as the committed Xcode harness for XCTest, local KMP framework builds, iOS/watchOS framework targets, and shared schemes.
+This checkout uses a generated/package-first workflow for source membership, dependency validation, and Xcode project modeling. `project.yml` is the XcodeGen source of truth for the generated project contract, while `iOSCommunications.xcodeproj` remains the committed compatibility harness for XCTest, local KMP framework builds, iOS/watchOS framework targets, and shared schemes until a separately validated replacement commit swaps the generated project into place.
 
 ## Current Project Responsibilities
 
 - `Package.swift` at the repository root is the SwiftPM source of truth for the package product `PolarBleSdk`, the `SwiftProtobuf` and `ZIPFoundation` dependencies, the processed `Sources/iOSCommunications/Resources` resource directory, and the optional `PolarBleSdkShared` binary target.
+- `project.yml` is the XcodeGen source of truth for the local Xcode harness contract: targets, schemes, SwiftPM product dependencies, KMP script phases, linker/search-path settings, strict `POLAR_KMP_SHARED_REQUIRED` enforcement, watchOS target differences, and XCTest resource wiring.
 - `iOSCommunications.xcodeproj` owns five Xcode targets: `iOSCommunications`, `iOSCommunicationsTests`, `PolarBleSdk`, `PolarBleSdkWatchOs`, and `PolarBleSdkTests`.
 - The shared schemes are `iOSCommunications`, `PolarBleSdk`, and `PolarBleSdkWatchOs`; `iOSCommunications` and `PolarBleSdk` both run `iOSCommunicationsTests` and `PolarBleSdkTests`, while `PolarBleSdkWatchOs` is build-only.
 - `iOSCommunications` and `PolarBleSdk` both run the `Build PolarBleSdkShared KMP Framework` shell script phase before Swift compilation, using `scripts/build_kmp_ios_framework.sh` and the Android shared Gradle sources as declared inputs.
@@ -18,14 +19,14 @@ This checkout currently uses a package-first workflow for source membership and 
 
 ## Chosen Path
 
-Use package-first cleanup for the current safe slice. Keep `Package.swift` as the canonical source/package/resource manifest and keep the committed `.xcodeproj` as the Xcode harness until a generated project can be proven equivalent in a temporary directory.
+Use generated/package-first cleanup for the current safe slice. Keep `Package.swift` as the canonical public package manifest, keep `project.yml` as the generated Xcode harness manifest, and keep the committed `.xcodeproj` as the compatibility harness until the generated project passes replacement-level build and XCTest validation in the same commit that swaps it in.
 
-XcodeGen is available locally, but no generator config is committed yet because replacing this project in one step would risk losing handwritten behavior that is not covered by a simple target/source listing: the two always-out-of-date KMP script phases, platform-specific `POLAR_KMP_SHARED_REQUIRED` enforcement, watchOS target differences, test resource wiring, skipped test metadata in the `iOSCommunications` scheme, and package product attachment differences across targets. Tuist is not available in the current environment, so it is not a lower-risk immediate path.
+XcodeGen is the selected project generator. `scripts/validate_generated_xcode_project.sh` generates a candidate project in a temporary directory and verifies the expected targets, schemes, SwiftPM products, KMP script phases, strict shared-KMP Swift flag, generated framework search path, and XCTest resource contract without modifying the committed `.xcodeproj`. Use `scripts/validate_generated_xcode_project.sh --build` for the stronger temporary repo-layout build check before replacing the committed project.
 
 ## Update Workflow
 
 1. Prefer SwiftPM/package changes for source membership, package dependencies, and resources when they affect the public package build.
-2. Edit `iOSCommunications.xcodeproj` only for Xcode-only responsibilities: target build settings, scheme membership, XCTest resources, KMP script phases, framework search paths, or Xcode-specific platform targets.
+2. Edit `project.yml` first for Xcode-only responsibilities: target build settings, scheme membership, XCTest resources, KMP script phases, framework search paths, or Xcode-specific platform targets. Mirror changes into `iOSCommunications.xcodeproj` only while it remains the committed compatibility harness.
 3. Keep `SwiftProtobuf` and `ZIPFoundation` as SwiftPM dependencies unless a separate approved task changes ZIPFoundation.
 4. Keep `POLAR_KMP_SHARED_REQUIRED` on the `PolarBleSdk` iOS target for both Debug and Release.
 5. Keep `scripts/build_kmp_ios_framework.sh` wired into both `iOSCommunications` and `PolarBleSdk` before Swift compilation.
@@ -33,9 +34,9 @@ XcodeGen is available locally, but no generator config is committed yet because 
 7. Do not hand-edit generated protobuf Swift files, generated documentation, or generated KMP framework outputs as part of project maintenance.
 8. After any project or package maintenance, run the validation bundle in the section below before committing.
 
-## Generator Adoption Gate
+## Generated Project Gate
 
-Do not replace `iOSCommunications.xcodeproj` with generated output until a candidate config satisfies all of these checks in a temporary path:
+Run `scripts/validate_generated_xcode_project.sh` or `./gradlew :repo-tools:validateGeneratedXcodeProject --no-daemon --warning-mode all` after any project/package maintenance. Do not replace `iOSCommunications.xcodeproj` with generated output until a candidate generated from `project.yml` satisfies all of these checks in a temporary path and then passes the build/test validation bundle:
 
 - The generated project lists the same targets, build configurations, and shared schemes as `xcodebuild -list -project sources/iOS/ios-communications/iOSCommunications.xcodeproj`.
 - `SwiftProtobuf` and `ZIPFoundation` remain SwiftPM package products with the same target attachment boundaries.
@@ -52,9 +53,11 @@ Run these commands from the repository root unless a command specifies the Andro
 git diff --check
 swift package describe
 xcodebuild -list -project sources/iOS/ios-communications/iOSCommunications.xcodeproj
+scripts/validate_generated_xcode_project.sh
+scripts/validate_generated_xcode_project.sh --build
 scripts/ci_xcodebuild_build.sh sources/iOS/ios-communications/iOSCommunications.xcodeproj PolarBleSdk "generic/platform=iOS" Debug
-scripts/ci_xcodebuild_test.sh sources/iOS/ios-communications/iOSCommunications.xcodeproj iOSCommunications 'platform=iOS Simulator,name=iPhone 17,OS=latest' /tmp/polar-ios-projectgen.xcresult
-cd sources/Android/android-communications && ./gradlew :repo-tools:iosXcodeValidationProbe :repo-tools:kmpNonGradleChecks --no-daemon --warning-mode all
+scripts/ci_xcodebuild_test.sh sources/iOS/ios-communications/iOSCommunications.xcodeproj iOSCommunications 'platform=iOS Simulator,name=iPhone 17,OS=latest' /tmp/polar-ios-projectgen.xcresult fast
+cd sources/Android/android-communications && ./gradlew :repo-tools:iosXcodeValidationProbe :repo-tools:validateGeneratedXcodeProject :repo-tools:kmpNonGradleChecks --no-daemon --warning-mode all
 ```
 
-Run the focused `GoldenVectorMigrationPolicyTest` only when project workflow changes also alter KMP guardrail wording, packaging-boundary wording, or mirrored migration policy terms.
+Run the focused `GoldenVectorPolicyTest` only when project workflow changes also alter KMP guardrail wording, packaging-boundary wording, or mirrored shared ownership policy terms.

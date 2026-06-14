@@ -32,7 +32,7 @@ class FirstTimeUseModelsCommonPolicyTest {
     }
 
     @Test
-    fun firstTimeUseReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun firstTimeUseReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/first-time-use/first-time-use-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -67,6 +67,6 @@ class FirstTimeUseModelsCommonPolicyTest {
             "platform-first-time-use-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
+        const val FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
     }
 }

@@ -355,7 +355,7 @@ class PolarBackupManagerTest {
     }
 
     @Test
-    fun `backup golden vectors follow neutral KMP vector shape`() {
+    fun `backup golden vectors follow neutral shared vector shape`() {
         listOf("backup-expansion-and-restore-writes", "restore-failure-platform-policy", "backup-workflow-readiness").forEach { id ->
             val vector = loadBackupVector(id)
             Assert.assertEquals(id, vector.get("id").asString)
@@ -373,7 +373,7 @@ class PolarBackupManagerTest {
     }
 
     @Test
-    fun `backup workflow readiness manifest is pinned before workflow migration`() {
+    fun `backup workflow readiness manifest is pinned before workflow shared ownership`() {
         val vector = loadBackupVector("backup-workflow-readiness")
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -463,6 +463,6 @@ class PolarBackupManagerTest {
             "compile-verification-gate"
         )
 
-        const val BACKUP_WORKFLOW_READINESS_COMMON_DECISION = "Backup workflow migration may proceed only after backup-expansion-and-restore-writes.json, restore-failure-platform-policy.json, and this readiness manifest are executable from shared commonTest, Android and iOS backup tests continue to reference the same vectors, BACKUP.TXT expansion and default user-file inclusion stay covered, restore PUT command order and payload bytes remain pinned, restore failure aggregation is deliberately standardized or deliberately preserved as a platform split, and the shared tests are compile-verified."
+        const val BACKUP_WORKFLOW_READINESS_COMMON_DECISION = "Backup workflow shared ownership remains valid while backup-expansion-and-restore-writes.json, restore-failure-platform-policy.json, and this readiness manifest are executable from shared commonTest, Android and iOS backup tests continue to reference the same vectors, BACKUP.TXT expansion and default user-file inclusion stay covered, restore PUT command order and payload bytes remain pinned, restore failure aggregation is deliberately standardized or deliberately preserved as a platform split, and the shared tests are compile-verified."
     }
 }

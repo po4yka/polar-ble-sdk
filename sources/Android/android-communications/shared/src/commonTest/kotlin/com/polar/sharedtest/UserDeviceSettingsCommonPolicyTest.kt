@@ -39,7 +39,7 @@ class UserDeviceSettingsCommonPolicyTest {
     }
 
     @Test
-    fun userDeviceSettingsModelReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun userDeviceSettingsModelReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/user-device-settings/settings-model-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -50,7 +50,7 @@ class UserDeviceSettingsCommonPolicyTest {
 
         assertEquals("user-device-settings-model-readiness", manifest.stringValue("id"))
         assertEquals("userDeviceSettingsModelReadiness", input.stringValue("kind"))
-        assertEquals("compileVerifiedPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("compileVerifiedSharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(REQUIRED_USER_DEVICE_SETTINGS_MODEL_FAMILIES, requiredBehaviorFamilies)
         assertEquals(REQUIRED_USER_DEVICE_SETTINGS_MODEL_FAMILIES, coveredBehaviorFamilies)
         assertEquals(USER_DEVICE_SETTINGS_VECTORS, policyVectorPaths)

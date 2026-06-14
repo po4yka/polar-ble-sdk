@@ -41,5 +41,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Stream utilities can move to shared KMP code only after terminal errors are propagated and observer cleanup is preserved on Android, iOS, and the shared fake-stream runtime."
+  "notes": "Stream utilities can move to shared code only after terminal errors are propagated and observer cleanup is preserved on Android, iOS, and the shared fake-stream runtime."
 }

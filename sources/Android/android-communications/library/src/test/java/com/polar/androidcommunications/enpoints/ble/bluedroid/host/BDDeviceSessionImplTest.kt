@@ -541,7 +541,7 @@ class BDDeviceSessionImplTest {
         val consumerTests = vector.getAsJsonObject("consumerTests")
 
         assertEquals("session-state-machine-ownership", vector.get("id").asString)
-        assertEquals("no_shared_session_state_machine", expected.get("migrationDecision").asString)
+        assertEquals("host_owned_session_state_machine", expected.get("sharedOwnershipDecision").asString)
         assertEquals(
             listOf("com.polar.androidcommunications.enpoints.ble.bluedroid.host.BDDeviceSessionImplTest"),
             consumerTests.getAsJsonArray("android").map { it.asString }

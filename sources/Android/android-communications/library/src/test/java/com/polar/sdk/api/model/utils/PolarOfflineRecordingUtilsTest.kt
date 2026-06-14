@@ -168,7 +168,7 @@ class PolarOfflineRecordingUtilsTest {
     }
 
     @Test
-    fun `offline recording golden vectors follow neutral KMP vector shape`() {
+    fun `offline recording golden vectors follow neutral shared vector shape`() {
         loadOfflineRecordingVectors().forEach { vector ->
             val id = vector.get("id").asString
             assertTrue(id, vector.has("area"))
@@ -185,7 +185,7 @@ class PolarOfflineRecordingUtilsTest {
     }
 
     @Test
-    fun `offline recording metadata readiness manifest is pinned before migration`() {
+    fun `offline recording metadata readiness manifest is pinned before shared ownership`() {
         val readiness = loadOfflineRecordingVector("metadata-readiness.json")
         val input = readiness.getAsJsonObject("input")
         val expected = readiness.getAsJsonObject("expected")
@@ -220,7 +220,7 @@ class PolarOfflineRecordingUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "Offline recording metadata migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves.",
+            "Offline recording metadata shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS metadata tests continue to reference the same vectors, filename classification, split-file normalization, invalid filename handling, PMDFILES grouping, zero-size and invalid-entry filtering, representative path policy, trigger model projection, disabled-trigger filtering, and compile verification remain explicit before production metadata mapping moves.",
             expected.get("commonDecision").asString
         )
         assertEquals(

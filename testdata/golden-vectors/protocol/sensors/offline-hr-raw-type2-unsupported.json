@@ -20,7 +20,7 @@
     "ios": true,
     "common": true
   },
-  "notes": "Offline HR currently supports only raw type 0 and raw type 1. KMP should keep unsupported raw-frame errors deterministic.",
+  "notes": "Offline HR currently supports only raw type 0 and raw type 1. Shared code should keep unsupported raw-frame errors deterministic.",
   "consumerTests": {
     "android": [
       "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.OfflineHrDataTest"

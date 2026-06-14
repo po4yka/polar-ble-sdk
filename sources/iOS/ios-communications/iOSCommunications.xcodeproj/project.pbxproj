@@ -250,6 +250,8 @@
 		A57728B527CE860600855884 /* PolarBleApiObservers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289927CE860600855884 /* PolarBleApiObservers.swift */; };
 		A57728B627CE860600855884 /* PolarBleApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289A27CE860600855884 /* PolarBleApi.swift */; };
 		A57728B727CE860600855884 /* PolarBleApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289A27CE860600855884 /* PolarBleApi.swift */; };
+		A57728B82FB6700000855884 /* PolarRestServiceApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289C2FB6700000855884 /* PolarRestServiceApi.swift */; };
+		A57728B92FB6700000855884 /* PolarRestServiceApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289C2FB6700000855884 /* PolarRestServiceApi.swift */; };
 		A57728B827CE860600855884 /* PolarSensorSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289C27CE860600855884 /* PolarSensorSetting.swift */; };
 		A57728B927CE860600855884 /* PolarSensorSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289C27CE860600855884 /* PolarSensorSetting.swift */; };
 		A57728BA27CE860600855884 /* PolarBleApiDefaultImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289D27CE860600855884 /* PolarBleApiDefaultImpl.swift */; };
@@ -650,6 +652,7 @@
 		A577289727CE860600855884 /* nanopb.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = nanopb.pb.swift; sourceTree = "<group>"; };
 		A577289927CE860600855884 /* PolarBleApiObservers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PolarBleApiObservers.swift; sourceTree = "<group>"; };
 		A577289A27CE860600855884 /* PolarBleApi.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PolarBleApi.swift; sourceTree = "<group>"; };
+		A577289C2FB6700000855884 /* PolarRestServiceApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarRestServiceApi.swift; sourceTree = "<group>"; };
 		A577289C27CE860600855884 /* PolarSensorSetting.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PolarSensorSetting.swift; sourceTree = "<group>"; };
 		A577289D27CE860600855884 /* PolarBleApiDefaultImpl.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PolarBleApiDefaultImpl.swift; sourceTree = "<group>"; };
 		A577289F27CE860600855884 /* PolarErrors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PolarErrors.swift; sourceTree = "<group>"; };
@@ -1231,6 +1234,7 @@
 				842B36072DE471340059C207 /* PolarTrainingSessionApi.swift */,
 				A577289927CE860600855884 /* PolarBleApiObservers.swift */,
 				A577289A27CE860600855884 /* PolarBleApi.swift */,
+				A577289C2FB6700000855884 /* PolarRestServiceApi.swift */,
 				A577289B27CE860600855884 /* model */,
 				A577289D27CE860600855884 /* PolarBleApiDefaultImpl.swift */,
 				A577289E27CE860600855884 /* errors */,
@@ -1852,6 +1856,7 @@
 				6C39E8DB209B07BC001F7E44 /* CBDeviceSessionImpl.swift in Sources */,
 				AADCC3F12FB4450300AD3881 /* BleGattClientFactory.swift in Sources */,
 				A57728B727CE860600855884 /* PolarBleApi.swift in Sources */,
+				A57728B92FB6700000855884 /* PolarRestServiceApi.swift in Sources */,
 				6C39E8DC209B07BC001F7E44 /* CBScanner.swift in Sources */,
 				8413CA782F4D917B0089BE4D /* PolarOfflineExerciseV2Api.swift in Sources */,
 				842B36122DE4724D0059C207 /* exercise_route2.pb.swift in Sources */,
@@ -1974,6 +1979,7 @@
 				A57D05482930B217002824D9 /* PpgData.swift in Sources */,
 				6C770B88206B77F300F3D51D /* CBScanner.swift in Sources */,
 				A57728B627CE860600855884 /* PolarBleApi.swift in Sources */,
+				A57728B82FB6700000855884 /* PolarRestServiceApi.swift in Sources */,
 				849051E32F9F4A120082195B /* PolarWatchFaceComplication.swift in Sources */,
 				6C770B8A206B77F300F3D51D /* BleDeviceSession.swift in Sources */,
 				AA818E5B2C06F8A000D45B3C /* PolarSleepData.swift in Sources */,

@@ -127,7 +127,7 @@ final class TypeUtilsTest: XCTestCase {
         }
     }
 
-    func testTypeUtilsReadinessManifestIsPinnedBeforeParserPrimitiveMigration() throws {
+    func testTypeUtilsReadinessManifestPinsParserPrimitiveOwnership() throws {
         let readiness = try loadTypeUtilsReadinessManifest()
         let input = try XCTUnwrap(readiness["input"] as? [String: Any])
         let expected = try XCTUnwrap(readiness["expected"] as? [String: Any])
@@ -173,7 +173,7 @@ final class TypeUtilsTest: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Type utility migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS type utility tests continue to reference the same vectors, unsigned byte/int/long conversion, signed sign extension, offset and size selection, signed-minimum boundaries, high-bit unsigned platform decisions, empty payload and payload-too-long typed errors, UInt64 max decimal preservation, and compile verification remain explicit before production parser primitives move.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Type utility shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS type utility tests continue to reference the same vectors, unsigned byte/int/long conversion, signed sign extension, offset and size selection, signed-minimum boundaries, high-bit unsigned platform decisions, empty payload and payload-too-long typed errors, UInt64 max decimal preservation, and compile verification remain explicit before production parser primitives move.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.androidcommunications.common.ble.TypeUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["TypeUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.TypeUtilsCommonPolicyTest"])

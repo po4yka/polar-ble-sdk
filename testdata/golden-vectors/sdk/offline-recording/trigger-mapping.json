@@ -165,5 +165,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This vector covers pure trigger mapping only. BLE command sequencing, encryption-secret handling, and get/set trigger transport errors still need fake-transport coverage before shared workflow migration."
+  "notes": "This vector covers pure trigger mapping only. BLE command sequencing, encryption-secret handling, and get/set trigger transport errors still need fake-transport coverage before shared workflow shared ownership."
 }

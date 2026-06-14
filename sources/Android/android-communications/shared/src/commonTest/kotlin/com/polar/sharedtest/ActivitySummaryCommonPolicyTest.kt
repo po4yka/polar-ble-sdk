@@ -52,7 +52,7 @@ class ActivitySummaryCommonPolicyTest {
         assertEquals(0, malformedExpected.objectValue("androidSamples").intValue("count"), malformed.stringValue("id"))
         assertEquals(false, malformedExpected.objectValue("androidSamples").booleanValue("throws"), malformed.stringValue("id"))
         assertEquals(true, malformedExpected.objectValue("iosSamples").booleanValue("throws"), malformed.stringValue("id"))
-        assertEquals("Activity sample directory where the listed ASAMPL file contains malformed protobuf bytes, preserving current Android/iOS policy before KMP normalization. KMP must choose one shared malformed activity sample policy before moving the parser or wrappers into common code; Android currently returns an empty/default result while iOS propagates the parse error for sample reads.", malformed.stringValue("notes"), malformed.stringValue("id"))
+        assertEquals("Activity sample directory where the listed ASAMPL file contains malformed protobuf bytes, preserving current Android/iOS policy before shared normalization. shared must choose one shared malformed activity sample policy before moving the parser or wrappers into common code; Android currently returns an empty/default result while iOS propagates the parse error for sample reads.", malformed.stringValue("notes"), malformed.stringValue("id"))
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarActivityUtilsTest"), malformedConsumerTests.stringArrayValue("android"), malformed.stringValue("id"))
         assertEquals(listOf("PolarActivityUtilsTest"), malformedConsumerTests.stringArrayValue("ios"), malformed.stringValue("id"))
         assertEquals(listOf("com.polar.sharedtest.ActivitySummaryCommonPolicyTest"), malformedConsumerTests.stringArrayValue("commonPrototype"), malformed.stringValue("id"))
@@ -136,7 +136,7 @@ class ActivitySummaryCommonPolicyTest {
     }
 
     @Test
-    fun activitySummaryReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun activitySummaryReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val vector = loadGoldenVectorText("sdk/activity-samples/activity-summary-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -319,7 +319,7 @@ class ActivitySummaryCommonPolicyTest {
             "platform-activity-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val ACTIVITY_SUMMARY_READINESS_COMMON_DECISION = "Activity, automatic-sample, and daily-summary migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves."
+        const val ACTIVITY_SUMMARY_READINESS_COMMON_DECISION = "Activity, automatic-sample, and daily-summary shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS activity/automatic/daily tests continue to reference the same vectors, activity request paths, aggregation, intervals, activity-info projection, malformed activity-sample behavior, automatic HR trigger and heart-rate arrays, PPI delta/status decoding, daily-summary path/scalar/duration projection, unsupported-field deferral, public model shape, facade request/error boundaries, and compile verification remain explicit before production model mapping moves."
         val PPI_STATUS_POLICY_TERMS = listOf("SKIN_CONTACT_DETECTED", "NO_SKIN_CONTACT", "MOVING_DETECTED", "NO_MOVING_DETECTED", "INTERVAL_DENOTES_OFFLINE_PERIOD", "INTERVAL_IS_ONLINE")
     }
 }

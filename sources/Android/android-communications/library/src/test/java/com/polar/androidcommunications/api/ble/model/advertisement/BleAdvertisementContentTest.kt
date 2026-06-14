@@ -130,7 +130,7 @@ internal class BleAdvertisementContentTest {
     }
 
     @Test
-    fun `manufacturer HR payload extraction delegates to shared KMP policy`() {
+    fun `manufacturer HR payload extraction delegates to shared policy`() {
         val gpbAndHrManufacturerData = byteArrayOf(
             0x6b.toByte(), 0x00.toByte(),
             0x72.toByte(), 0x08.toByte(), 0x97.toByte(), 0xc9.toByte(), 0xc3.toByte(), 0x00.toByte(), 0x00.toByte(),
@@ -384,7 +384,7 @@ internal class BleAdvertisementContentTest {
     }
 
     @Test
-    fun `advertisement golden vectors follow neutral KMP vector shape`() {
+    fun `advertisement golden vectors follow neutral shared vector shape`() {
         loadAdvertisementVectors().forEach { vector ->
             val id = vector.get("id").asString
             Assert.assertTrue(id, vector.has("area"))
@@ -401,7 +401,7 @@ internal class BleAdvertisementContentTest {
     }
 
     @Test
-    fun `advertisement readiness manifest is pinned before parser migration`() {
+    fun `advertisement readiness manifest is pinned for shared parser ownership`() {
         val manifest = loadAdvertisementReadinessManifest()
         val input = manifest.getAsJsonObject("input")
         val expected = manifest.getAsJsonObject("expected")
@@ -451,7 +451,7 @@ internal class BleAdvertisementContentTest {
         Assert.assertEquals(expectedFamilies, requiredFamilies)
         Assert.assertEquals(expectedFamilies, coveredFamilies)
         Assert.assertEquals(
-            "Advertisement parsing migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS advertisement tests continue to reference the same vectors, Polar and custom-prefix local-name parsing, seven-digit device ID assembly, non-Polar local-name platform decisions, manufacturer HR presence and absence, non-Polar and unknown company behavior, unknown Polar segment handling, malformed GPB missing-length and truncated HR-candidate policies, service UUID membership, RSSI median calculation, and compile verification remain explicit before production advertisement parsing moves.",
+            "Advertisement parsing shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS advertisement tests continue to reference the same vectors, Polar and custom-prefix local-name parsing, seven-digit device ID assembly, non-Polar local-name platform decisions, manufacturer HR presence and absence, non-Polar and unknown company behavior, unknown Polar segment handling, malformed GPB missing-length and truncated HR-candidate policies, service UUID membership, RSSI median calculation, and compile verification remain explicit before production advertisement parsing moves.",
             expected.get("commonDecision").asString
         )
         Assert.assertEquals(listOf("com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"), consumerTests.getAsJsonArray("android").map { it.asString })

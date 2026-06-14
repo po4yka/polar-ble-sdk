@@ -2,7 +2,7 @@
   "id": "ppg-raw-type4-truncated-integration-gain-malformed",
   "area": "sensor-parser",
   "case": "ppg_raw_type4_truncated_integration_gain_malformed",
-  "source": "Pre-migration shared PPG parser policy",
+  "source": "Shared contract PPG parser policy",
   "input": {
     "dataFrameHex": "01009435770000000004027f060206040206030201ff0107ff000000000000000001f87f0000000000000102ef",
     "previousTimeStamp": 100,

@@ -2,7 +2,7 @@
   "id": "capability-resource-override-ownership",
   "area": "sdk.device-capabilities",
   "case": "resource_override_platform_ownership",
-  "source": "KMP migration boundary for platform resource override behavior",
+  "source": "shared ownership boundary for platform resource override behavior",
   "input": {
     "kind": "deviceCapabilityResourceOverrideOwnership",
     "resourceSurfaces": [
@@ -22,9 +22,9 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "platformOwnedResourceBoundary",
+    "sharedOwnershipStatus": "platformOwnedResourceBoundary",
     "platformDecision": "Resource selection and app-level override precedence remain platform-owned until common resource loading is deliberately introduced with Android asset/external-file tests, iOS Bundle.main/SDK-bundle/sandbox tests, and shared common parser tests.",
-    "commonDecision": "Shared KMP capability code may own parsing, lookup, defaults, boolean fields, and version-mismatch config merge, but must receive an already selected config and must not choose Android AssetManager, external Documents/PolarConfig files, iOS Bundle.main, SDK bundles, or sandbox files.",
+    "commonDecision": "Shared shared capability code may own parsing, lookup, defaults, boolean fields, and version-mismatch config merge, but must receive an already selected config and must not choose Android AssetManager, external Documents/PolarConfig files, iOS Bundle.main, SDK bundles, or sandbox files.",
     "coveredBehaviorFamilies": [
       "android-asset-and-external-config-boundary",
       "ios-main-bundle-sdk-bundle-sandbox-boundary",
@@ -47,5 +47,5 @@
       "com.polar.sharedtest.DeviceCapabilitiesCommonPolicyTest"
     ]
   },
-  "notes": "This vector deliberately keeps resource selection platform-owned instead of moving app or SDK bundle precedence into common KMP code during the lookup and merge migration slice."
+  "notes": "This vector deliberately keeps resource selection platform-owned instead of moving app or SDK bundle precedence into common code during the lookup and merge shared ownership slice."
 }

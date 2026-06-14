@@ -17,7 +17,7 @@ class BleSessionPlatformOwnershipCommonPolicyTest {
         assertEquals("bleSessionPlatformOwnershipAudit", input.stringValue("kind"))
         assertEquals(REQUIRED_BLE_SESSION_AUDITED_FAMILIES, input.stringArrayValue("auditedFamilies"))
         assertEquals(REQUIRED_BLE_SESSION_HOST_BOUNDARIES, input.stringArrayValue("hostBoundaries"))
-        assertEquals("no_shared_session_state_machine", expected.stringValue("migrationDecision"))
+        assertEquals("host_owned_session_state_machine", expected.stringValue("sharedOwnershipDecision"))
         assertEquals(BLE_SESSION_PLATFORM_OWNERSHIP_DECISION, expected.stringValue("commonDecision"))
         assertEquals("none", expected.stringValue("sharedProductionCode"))
         assertEquals(REQUIRED_ANDROID_EVIDENCE, expected.stringArrayValue("androidEvidence"))

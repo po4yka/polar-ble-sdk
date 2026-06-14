@@ -7,7 +7,7 @@
     "hex": "f0"
   },
   "expected": {
-    "commonDecision": "KMP should reject a control-point response missing op code, measurement type, and status without unsafe indexing."
+    "commonDecision": "Shared code should reject a control-point response missing op code, measurement type, and status without unsafe indexing."
   },
   "platformExpectations": {
     "android": {

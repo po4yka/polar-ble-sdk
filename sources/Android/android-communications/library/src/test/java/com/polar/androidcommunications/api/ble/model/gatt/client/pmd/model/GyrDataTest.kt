@@ -265,7 +265,7 @@ class GyrDataTest {
     }
 
     @Test
-    fun `gyr golden vectors follow neutral KMP vector shape`() {
+    fun `gyr golden vectors follow neutral shared vector shape`() {
         loadGyrVectors().forEach { vector ->
             val id = vector.get("id").asString
             Assert.assertTrue(id, vector.has("area"))
@@ -282,7 +282,7 @@ class GyrDataTest {
     }
 
     @Test
-    fun `GYR readiness manifest is pinned before parser migration`() {
+    fun `GYR readiness manifest is pinned for shared parser ownership`() {
         val manifest = loadGyrReadinessManifest()
         val id = manifest.get("id").asString
         val input = manifest.getAsJsonObject("input")

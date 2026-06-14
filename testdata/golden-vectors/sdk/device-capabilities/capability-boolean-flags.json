@@ -2,7 +2,7 @@
   "id": "capability-boolean-flags",
   "area": "sdk.device-capabilities",
   "case": "firmware_activity_sensor_lookup",
-  "source": "Android BlePolarDeviceCapabilitiesUtilityTest and iOS PolarBleApiImplTests characterization before KMP capability parsing migration",
+  "source": "Android BlePolarDeviceCapabilitiesUtilityTest and iOS PolarBleApiImplTests characterization before shared capability parsing shared ownership",
   "input": {
     "kind": "deviceCapabilityLookup",
     "config": {

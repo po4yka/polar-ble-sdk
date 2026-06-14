@@ -2,8 +2,8 @@
   "id": "user-device-settings-runtime-readiness",
   "area": "sdk.user-device-settings-runtime",
   "case": "user_device_settings_runtime_readiness",
-  "source": "User-device-settings runtime backlog and settings-runtime-policy shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the public facade user-device-settings read/write behavior families that must remain covered before settings runtime planning delegates to shared KMP runtime code.",
+  "source": "User-device-settings runtime backlog and settings-runtime-policy shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the public facade user-device-settings read/write behavior families that must remain covered before settings runtime planning delegates to shared runtime code.",
   "input": {
     "kind": "userDeviceSettingsRuntimeReadiness",
     "policyVectorPath": "sdk/user-device-settings-runtime/settings-runtime-policy.json",
@@ -63,10 +63,10 @@
       "platform-facade-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified.",
+    "commonDecision": "User-device-settings runtime shared ownership remains valid while settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
-      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership."
     }
   },
   "consumerTests": {
@@ -85,5 +85,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for user-device-settings runtime behavior-family completeness only; protobuf model mapping, field preservation, public facade error mapping, platform adapter references, and compile verification remain required before production settings runtime code moves to shared KMP."
+  "notes": "This readiness manifest is a shared ownership gate for user-device-settings runtime behavior-family completeness only; protobuf model mapping, field preservation, public facade error mapping, platform adapter references, and compile verification remain required before production settings runtime code moves to shared."
 }

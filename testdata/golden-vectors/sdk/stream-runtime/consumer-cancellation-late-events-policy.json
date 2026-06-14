@@ -55,5 +55,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Stream utilities can move to shared KMP code only after late emissions, late terminal errors, and late completion signals after consumer cancellation are suppressed on Android, iOS, and the shared fake-stream runtime."
+  "notes": "Stream utilities can move to shared code only after late emissions, late terminal errors, and late completion signals after consumer cancellation are suppressed on Android, iOS, and the shared fake-stream runtime."
 }

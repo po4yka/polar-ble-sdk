@@ -19,8 +19,8 @@ class AccParserCommonPolicyTest {
                 sampleRate = input.intValue("sampleRate")
             )
 
-            expected.optionalStringValue("migrationOwnership")?.let { ownership ->
-                assertEquals(PROTOCOL_ONLY_MIGRATION_OWNERSHIP, ownership, caseId)
+            expected.optionalStringValue("sharedOwnership")?.let { ownership ->
+                assertEquals(PROTOCOL_ONLY_PLATFORM_OWNERSHIP, ownership, caseId)
                 assertEquals(expected.stringValue("measurementType"), parsed.measurementType, caseId)
                 assertEquals(expected.intValue("frameType"), parsed.frameType, caseId)
                 assertEquals(expected.optionalBooleanValue("compressed") ?: false, parsed.compressed, caseId)
@@ -53,7 +53,7 @@ class AccParserCommonPolicyTest {
     }
 
     @Test
-    fun accReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun accReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("protocol/sensors/acc-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -64,9 +64,9 @@ class AccParserCommonPolicyTest {
         assertEquals("acc-readiness", manifest.stringValue("id"))
         assertEquals("accReadiness", input.stringValue("kind"))
         assertEquals(ACC_VECTORS, input.stringArrayValue("policyVectorPaths"))
-        assertEquals(REQUIRED_ACC_FAMILIES, requiredFamilies, "ACC readiness manifest must name every pre-migration behavior family")
+        assertEquals(REQUIRED_ACC_FAMILIES, requiredFamilies, "ACC readiness manifest must name every shared-contract behavior family")
         assertEquals(REQUIRED_ACC_FAMILIES, coveredFamilies, "ACC readiness manifest must keep expected coverage aligned with required families")
-        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.AccDataTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("AccDataTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.AccParserCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))

@@ -2,8 +2,8 @@
   "id": "psftp-runtime-readiness",
   "area": "sdk.psftp-runtime",
   "case": "psftp_runtime_readiness",
-  "source": "PSFTP runtime backlog and PsFtpRuntimePolicyCommonTest shared common prototypes distilled into a pre-KMP readiness manifest",
-  "description": "Pins the PSFTP request, notification, and write runtime behavior families that must remain covered before higher-level PSFTP runtime orchestration delegates to shared KMP code.",
+  "source": "PSFTP runtime backlog and PsFtpRuntimePolicyCommonTest shared common prototypes distilled into a shared-ownership readiness manifest",
+  "description": "Pins the PSFTP request, notification, and write runtime behavior families that must remain covered before higher-level PSFTP runtime orchestration delegates to shared code.",
   "input": {
     "kind": "psFtpRuntimeReadiness",
     "policyVectorPaths": [
@@ -57,10 +57,10 @@
       "platform-client-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "PSFTP runtime migration may proceed only after every policy vector listed in this readiness manifest is executable from shared commonTest, Android and iOS PSFTP client tests continue to reference the same vectors, request response reassembly, response-error mapping, notification reassembly and ordering, initial-silence policy, consumer timeout cleanup, notification error platform split, continuation timeout, write progress split, write interruption, transport failure, write acknowledgement timeout, fake-clock timeout gates, and the shared tests are compile-verified.",
+    "commonDecision": "PSFTP runtime shared ownership remains valid while every policy vector listed in this readiness manifest is executable from shared commonTest, Android and iOS PSFTP client tests continue to reference the same vectors, request response reassembly, response-error mapping, notification reassembly and ordering, initial-silence policy, consumer timeout cleanup, notification error platform split, continuation timeout, write progress split, write interruption, transport failure, write acknowledgement timeout, fake-clock timeout gates, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
-      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership."
     }
   },
   "consumerTests": {
@@ -79,5 +79,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for PSFTP runtime behavior-family completeness only; byte-codec migration, timeout injection, platform progress/error compatibility, platform client references, and compile verification remain required before production PSFTP runtime code moves to shared KMP."
+  "notes": "This readiness manifest is a shared ownership gate for PSFTP runtime behavior-family completeness only; byte-codec shared ownership, timeout injection, platform progress/error compatibility, platform client references, and compile verification remain required before production PSFTP runtime code moves to shared."
 }

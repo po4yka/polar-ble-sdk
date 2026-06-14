@@ -445,7 +445,7 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         }
     }
 
-    func testRestRequestTransportPolicyVectorIsPinnedBeforeRuntimeMigration() throws {
+    func testRestRequestTransportPolicyVectorIsPinnedBeforeRuntimeOwnership() throws {
         let vector = try XCTUnwrap(try loadRestServiceGoldenVectors().first { ($0["id"] as? String) == "rest-request-transport-policy" })
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -458,13 +458,13 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         XCTAssertNotNil(vector["execution"], "rest-request-transport-policy")
         XCTAssertEqual(requestIds, REST_REQUEST_TRANSPORT_POLICY_CASE_IDS, "rest-request-transport-policy")
         XCTAssertEqual(expectedCaseIds, REST_REQUEST_TRANSPORT_POLICY_CASE_IDS, "rest-request-transport-policy")
-        XCTAssertEqual(expected["migrationRequirement"] as? String, REST_REQUEST_TRANSPORT_MIGRATION_REQUIREMENT, "rest-request-transport-policy")
+        XCTAssertEqual(expected["sharedOwnershipRequirement"] as? String, REST_REQUEST_TRANSPORT_SHARED_OWNERSHIP_REQUIREMENT, "rest-request-transport-policy")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "rest-request-transport-policy"), ["com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "rest-request-transport-policy"), ["PolarDeviceRestApiTests"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "rest-request-transport-policy"), ["com.polar.sharedtest.RestRequestTransportPolicyCommonTest"])
     }
 
-    func testRestRequestTransportReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+    func testRestRequestTransportReadinessManifestIsPinnedBeforeRuntimeOwnership() throws {
         let vector = try XCTUnwrap(try loadRestServiceGoldenVectors().first { ($0["id"] as? String) == "rest-request-transport-readiness" })
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -480,13 +480,13 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         XCTAssertEqual(expected["commonDecision"] as? String, REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION, "rest-request-transport-readiness")
         let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], "rest-request-transport-readiness")
         XCTAssertEqual(commonRuntimePrototype["status"] as? String, "executable shared commonTest runtime planning guard", "rest-request-transport-readiness")
-        XCTAssertEqual(commonRuntimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", "rest-request-transport-readiness")
+        XCTAssertEqual(commonRuntimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", "rest-request-transport-readiness")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "rest-request-transport-readiness"), ["com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "rest-request-transport-readiness"), ["PolarDeviceRestApiTests"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "rest-request-transport-readiness"), ["com.polar.sharedtest.RestRequestTransportPolicyCommonTest"])
     }
 
-    func testRestEventCompressionReadinessManifestIsPinnedBeforeCodecMigration() throws {
+    func testRestEventCompressionReadinessManifestIsPinnedBeforeCodecOwnership() throws {
         let vector = try XCTUnwrap(try loadRestServiceGoldenVectors().first { ($0["id"] as? String) == "rest-event-compression-readiness" })
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -505,7 +505,7 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "rest-event-compression-readiness"), ["com.polar.sharedtest.RestEventCompressionPolicyCommonTest"])
     }
 
-    func testRestServiceMappingReadinessManifestIsPinnedBeforeModelMigration() throws {
+    func testRestServiceMappingReadinessManifestIsPinnedBeforeModelOwnership() throws {
         let vector = try XCTUnwrap(try loadRestServiceGoldenVectors().first { ($0["id"] as? String) == "rest-service-mapping-readiness" })
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -515,7 +515,7 @@ class PolarDeviceRestApiServiceTests: XCTestCase {
         let coveredFamilies = try XCTUnwrap(expected["coveredBehaviorFamilies"] as? [String])
 
         XCTAssertEqual(input["kind"] as? String, "restServiceMappingReadiness")
-        XCTAssertEqual(expected["migrationReadiness"] as? String, "compileVerifiedPreMigrationCharacterization")
+        XCTAssertEqual(expected["sharedOwnershipStatus"] as? String, "compileVerifiedSharedContractCharacterization")
         XCTAssertEqual(REST_SERVICE_MAPPING_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths, "rest-service-mapping-readiness")
         XCTAssertEqual(REST_SERVICE_MAPPING_READINESS_FAMILIES, requiredFamilies, "rest-service-mapping-readiness")
         XCTAssertEqual(REST_SERVICE_MAPPING_READINESS_FAMILIES, coveredFamilies, "rest-service-mapping-readiness")
@@ -598,9 +598,9 @@ private let REST_REQUEST_TRANSPORT_POLICY_CASE_IDS = [
     "service-description-empty-transport-response"
 ]
 
-private let REST_REQUEST_TRANSPORT_MIGRATION_REQUIREMENT = "Before moving REST request orchestration into common KMP code, implement a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads."
+private let REST_REQUEST_TRANSPORT_SHARED_OWNERSHIP_REQUIREMENT = "Shared ownership of REST request orchestration requires a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads."
 
-private let REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping stays pinned through rest-facade-runtime-policy.json, and the shared tests are compile-verified."
+private let REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION = "REST request transport shared ownership remains valid while rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping stays pinned through rest-facade-runtime-policy.json, and the shared tests are compile-verified."
 
 private let REST_EVENT_COMPRESSION_READINESS_FAMILIES = [
     "uncompressed-batch-payload-preservation",
@@ -615,7 +615,7 @@ private let REST_EVENT_COMPRESSION_READINESS_FAMILIES = [
     "compile-verification-gate"
 ]
 
-private let REST_EVENT_COMPRESSION_READINESS_COMMON_DECISION = "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior are preserved through shared KMP platform actual codecs, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
+private let REST_EVENT_COMPRESSION_READINESS_COMMON_DECISION = "REST event compression shared ownership remains valid while rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior are preserved through shared platform actual codecs, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
 
 private let REST_SERVICE_MAPPING_READINESS_FAMILIES = [
     "service-list-name-path-mapping",

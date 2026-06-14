@@ -10,7 +10,7 @@
     "sampleRate": 0
   },
   "expected": {
-    "migrationOwnership": "Shared common KMP GNSS/location parser owns raw type 0-3 byte decoding and Android production delegates to it; iOS has no current direct GNSS parser surface.",
+    "sharedOwnership": "Shared common GNSS/location parser owns raw type 0-3 byte decoding and Android production delegates to it; iOS has no current direct GNSS parser surface.",
     "measurementType": "LOCATION",
     "frameType": 2,
     "compressed": false,
@@ -76,7 +76,7 @@
     "ios": false,
     "common": true
   },
-  "notes": "Shared KMP GNSS raw type 2 satellite summary sample consumed by Android production delegation. iOS has no current direct GNSS parser implementation.",
+  "notes": "Shared shared GNSS raw type 2 satellite summary sample consumed by Android production delegation. iOS has no current direct GNSS parser implementation.",
   "consumerTests": {
     "android": [
       "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GnssLocationDataTest"

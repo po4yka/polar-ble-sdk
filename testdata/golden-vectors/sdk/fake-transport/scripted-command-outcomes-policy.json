@@ -2,7 +2,7 @@
   "id": "scripted-command-outcomes-policy",
   "area": "sdk.fake-transport",
   "case": "scripted_command_outcomes_policy",
-  "source": "KMP fake-transport command-capture planning and shared ScriptedCommonFakeTransport prototype",
+  "source": "shared fake-transport command-capture planning and shared ScriptedCommonFakeTransport prototype",
   "description": "Pins deterministic command ordering, payload capture, and scripted transport outcomes before request/write/stream command planning moves into shared runtime code.",
   "input": {
     "kind": "scriptedCommandOutcomesPolicy",
@@ -57,7 +57,7 @@
       "SUBSCRIBE:d2h",
       "UNSUBSCRIBE:d2h"
     ],
-    "commonDecision": "Shared fake transport must capture request order, write payload bytes, stream subscription targets, and scripted success/error/complete outcomes deterministically before runtime command planning delegates to KMP."
+    "commonDecision": "Shared fake transport must capture request order, write payload bytes, stream subscription targets, and scripted success/error/complete outcomes deterministically before runtime command planning delegates to shared."
   },
   "consumerTests": {
     "android": [
@@ -81,5 +81,5 @@
     "ios": false,
     "common": true
   },
-  "notes": "This vector covers the shared fake-transport command contract only. Public facade request success, response-error mapping, transport-error mapping, and stream error mapping remain feature-specific migration gates."
+  "notes": "This vector covers the shared fake-transport command contract only. Public facade request success, response-error mapping, transport-error mapping, and stream error mapping remain feature-specific shared ownership gates."
 }

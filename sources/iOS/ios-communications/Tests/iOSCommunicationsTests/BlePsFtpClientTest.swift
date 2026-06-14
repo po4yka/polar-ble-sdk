@@ -574,7 +574,7 @@ class BlePsFtpClientTest: XCTestCase {
         }
     }
 
-    func testPsFtpTimeoutPlanningVectorsRequireFakeClockBeforeSharedRuntimeMigration() throws {
+    func testPsFtpTimeoutPlanningVectorsRequireFakeClockForSharedRuntimeOwnership() throws {
         try assertFakeClockPlanningVector(
             try loadPsFtpNotificationVector(id: "notification-continuation-timeout-policy"),
             androidExecution: "injectable-timeout-unit-test",
@@ -632,7 +632,7 @@ class BlePsFtpClientTest: XCTestCase {
         }
     }
 
-    func testPsFtpRuntimeReadinessManifestIsPinnedBeforeSharedRuntimeMigration() throws {
+    func testPsFtpRuntimeReadinessManifestPinsSharedRuntimeOwnership() throws {
         let vector = try loadPsFtpVector(directoryName: "psftp-response", id: "psftp-runtime-readiness")
         let input = try XCTUnwrap(vector["input"] as? [String: Any], "psftp-runtime-readiness")
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any], "psftp-runtime-readiness")
@@ -649,7 +649,7 @@ class BlePsFtpClientTest: XCTestCase {
         let commonDecision = try XCTUnwrap(expected["commonDecision"] as? String, "psftp-runtime-readiness")
         XCTAssertEqual(commonDecision, psFtpRuntimeReadinessCommonDecision)
         XCTAssertEqual(runtimePrototype["status"] as? String, "executable shared commonTest runtime planning guard")
-        XCTAssertEqual(runtimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.")
+        XCTAssertEqual(runtimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String], "psftp-runtime-readiness"), ["com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String], "psftp-runtime-readiness"), ["BlePsFtpClientTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String], "psftp-runtime-readiness"), ["com.polar.sharedtest.PsFtpRuntimePolicyCommonTest"])
@@ -724,7 +724,7 @@ class BlePsFtpClientTest: XCTestCase {
     private let notificationErrorCaseIds = ["rfc76-error-first-frame", "transport-error-first-packet"]
     private let notificationContinuationTimeoutCaseIds = ["missing-last-frame-after-more"]
 
-    private let psFtpRuntimeReadinessCommonDecision = "PSFTP runtime migration may proceed only after every policy vector listed in this readiness manifest is executable from shared commonTest, Android and iOS PSFTP client tests continue to reference the same vectors, request response reassembly, response-error mapping, notification reassembly and ordering, initial-silence policy, consumer timeout cleanup, notification error platform split, continuation timeout, write progress split, write interruption, transport failure, write acknowledgement timeout, fake-clock timeout gates, and the shared tests are compile-verified."
+    private let psFtpRuntimeReadinessCommonDecision = "PSFTP runtime shared ownership remains valid while every policy vector listed in this readiness manifest is executable from shared commonTest, Android and iOS PSFTP client tests continue to reference the same vectors, request response reassembly, response-error mapping, notification reassembly and ordering, initial-silence policy, consumer timeout cleanup, notification error platform split, continuation timeout, write progress split, write interruption, transport failure, write acknowledgement timeout, fake-clock timeout gates, and the shared tests are compile-verified."
 
     private func assertNeutralKmpVectorShape(_ vector: [String: Any]) throws -> String {
         let id = try XCTUnwrap(vector["id"] as? String)

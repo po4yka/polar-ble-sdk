@@ -39,7 +39,7 @@
     "ios": true,
     "common": false
   },
-  "notes": "Android sign-extends 0xFFFFFFFF to -1; iOS preserves UInt32.max. Decide common signedness before migrating RANGE_MILLIUNIT parsing.",
+  "notes": "Android sign-extends 0xFFFFFFFF to -1; iOS preserves UInt32.max. Decide common signedness before assigning RANGE_MILLIUNIT parsing to shared code.",
   "consumerTests": {
     "android": [
       "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.PmdSettingTest"

@@ -837,7 +837,7 @@ internal class PolarTimeUtilsTest {
     }
 
     @Test
-    fun `time date golden vectors pin Android utility migration`() {
+    fun `time date golden vectors pin Android utility shared ownership`() {
         TIME_DATE_VECTORS.forEach { relativePath ->
             val vector = GoldenVectorTestData.loadObject(relativePath)
             val input = vector.objectValue("input")
@@ -890,7 +890,7 @@ internal class PolarTimeUtilsTest {
     }
 
     @Test
-    fun `time date readiness manifest is pinned before utility migration`() {
+    fun `time date readiness manifest is pinned before utility shared ownership`() {
         val vector = GoldenVectorTestData.loadObject("sdk/time-date/time-date-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -944,7 +944,7 @@ internal class PolarTimeUtilsTest {
             "platform-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val TIME_DATE_READINESS_COMMON_DECISION = "Time/date migration owns portable field mapping, timezone-offset minute conversion, millisecond/nanosecond policy, duration-to-millis math, time-string formatting, and plain-date validation in shared KMP code while platform calendar, timezone database, Date, Calendar, LocalDateTime, protobuf, and public facade conversion remain platform adapters until shared artifacts are consumed by iOS production code."
+        const val TIME_DATE_READINESS_COMMON_DECISION = "Time/date shared ownership owns portable field mapping, timezone-offset minute conversion, millisecond/nanosecond policy, duration-to-millis math, time-string formatting, and plain-date validation in shared code while platform calendar, timezone database, Date, Calendar, LocalDateTime, protobuf, and public facade conversion remain platform adapters until shared artifacts are consumed by iOS production code."
     }
 
 }

@@ -3,7 +3,7 @@
   "area": "sdk-user-device-settings-runtime",
   "case": "user_device_settings_runtime_policy",
   "source": "BDBleApiImplTest and PolarBleApiImplTests user-device-settings facade characterization",
-  "description": "Pins user-device-settings PSFTP read/write orchestration before settings facade operations can delegate to a shared KMP runtime.",
+  "description": "Pins user-device-settings PSFTP read/write orchestration before settings facade operations can delegate to a shared runtime.",
   "input": {
     "settingsPath": "/U/0/S/UDEVSET.BPB",
     "operations": [
@@ -380,6 +380,6 @@
     "transport": "public-facade-psftp-read-write-capture",
     "wallClockSafe": true
   },
-  "commonDecision": "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors.",
+  "commonDecision": "Promote user-device-settings runtime only while direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors.",
   "notes": "Model/protobuf field mapping remains covered by sdk/user-device-settings vectors. This runtime vector owns PSFTP path usage, get/read failures, direct-write command planning, read-then-write command planning, writable settings payload fields, daylight-saving write shape, and transport-error terminals."
 }

@@ -2,8 +2,8 @@
   "id": "pmd-control-point-readiness",
   "area": "pmd.control-point",
   "case": "pmd_control_point_readiness",
-  "source": "PMD control-point and active-measurement vectors plus shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the PMD control-point response and active-measurement behavior families that must remain covered before response parsing delegates to shared KMP code.",
+  "source": "PMD control-point and active-measurement vectors plus shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the PMD control-point response and active-measurement behavior families that must remain covered before response parsing delegates to shared code.",
   "input": {
     "kind": "pmdControlPointReadiness",
     "policyVectorPaths": [
@@ -64,7 +64,7 @@
       "platform-control-point-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "PMD control-point migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS control-point and active-measurement tests continue to reference the same vectors, active-measurement bit decoding and platform state names, success response parsing, more flag and parameter extraction, settings and measurement-status responses, all status-code mappings, unknown measurement type handling, deterministic short-payload error policy, and compile verification remain explicit before production response parsing moves."
+    "commonDecision": "PMD control-point shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS control-point and active-measurement tests continue to reference the same vectors, active-measurement bit decoding and platform state names, success response parsing, more flag and parameter extraction, settings and measurement-status responses, all status-code mappings, unknown measurement type handling, deterministic short-payload error policy, and compile verification remain explicit before production response parsing moves."
   },
   "consumerTests": {
     "android": [
@@ -84,5 +84,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest gates PMD control-point response and active-measurement parser behavior-family completeness only; command request planning, offline-trigger runtime behavior, PMD settings, and PMD secret strategy handling remain separate migration gates."
+  "notes": "This readiness manifest gates PMD control-point response and active-measurement parser behavior-family completeness only; command request planning, offline-trigger runtime behavior, PMD settings, and PMD secret strategy handling remain separate shared ownership gates."
 }

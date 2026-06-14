@@ -48,5 +48,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Activity sample directory where the listed ASAMPL file contains malformed protobuf bytes, preserving current Android/iOS policy before KMP normalization. KMP must choose one shared malformed activity sample policy before moving the parser or wrappers into common code; Android currently returns an empty/default result while iOS propagates the parse error for sample reads."
+  "notes": "Activity sample directory where the listed ASAMPL file contains malformed protobuf bytes, preserving current Android/iOS policy before shared normalization. shared must choose one shared malformed activity sample policy before moving the parser or wrappers into common code; Android currently returns an empty/default result while iOS propagates the parse error for sample reads."
 }

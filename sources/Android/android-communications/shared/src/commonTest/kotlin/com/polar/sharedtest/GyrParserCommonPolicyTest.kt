@@ -21,8 +21,8 @@ class GyrParserCommonPolicyTest {
                 sampleRate = input.intValue("sampleRate")
             )
 
-            expected.optionalStringValue("migrationOwnership")?.let { ownership ->
-                assertEquals(PROTOCOL_ONLY_MIGRATION_OWNERSHIP, ownership, caseId)
+            expected.optionalStringValue("sharedOwnership")?.let { ownership ->
+                assertEquals(PROTOCOL_ONLY_PLATFORM_OWNERSHIP, ownership, caseId)
                 assertEquals(expected.stringValue("measurementType"), parsed.measurementType, caseId)
                 assertEquals(expected.intValue("frameType"), parsed.frameType, caseId)
                 assertEquals(expected.booleanValue("compressed"), parsed.compressed, caseId)
@@ -55,7 +55,7 @@ class GyrParserCommonPolicyTest {
     }
 
     @Test
-    fun gyrReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun gyrReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("protocol/sensors/gyr-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -66,9 +66,9 @@ class GyrParserCommonPolicyTest {
         assertEquals("gyr-readiness", manifest.stringValue("id"))
         assertEquals("gyrReadiness", input.stringValue("kind"))
         assertEquals(GYR_VECTORS, input.stringArrayValue("policyVectorPaths"))
-        assertEquals(REQUIRED_GYR_FAMILIES, requiredFamilies, "GYR readiness manifest must name every pre-migration behavior family")
+        assertEquals(REQUIRED_GYR_FAMILIES, requiredFamilies, "GYR readiness manifest must name every shared-contract behavior family")
         assertEquals(REQUIRED_GYR_FAMILIES, coveredFamilies, "GYR readiness manifest must keep expected coverage aligned with required families")
-        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.GyrDataTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("GyrDataTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.GyrParserCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))

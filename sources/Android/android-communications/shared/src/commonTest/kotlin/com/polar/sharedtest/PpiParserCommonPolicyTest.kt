@@ -13,8 +13,8 @@ class PpiParserCommonPolicyTest {
             val expected = vector.objectValue("expected")
             val parsed = parsePpi(input.stringValue("dataFrameHex"))
 
-            expected.optionalStringValue("migrationOwnership")?.let { ownership ->
-                assertEquals(PROTOCOL_ONLY_MIGRATION_OWNERSHIP, ownership, caseId)
+            expected.optionalStringValue("sharedOwnership")?.let { ownership ->
+                assertEquals(PROTOCOL_ONLY_PLATFORM_OWNERSHIP, ownership, caseId)
             }
             assertEquals(expected.stringValue("measurementType"), parsed.measurementType, caseId)
             assertEquals(expected.intValue("frameType"), parsed.frameType, caseId)
@@ -41,7 +41,7 @@ class PpiParserCommonPolicyTest {
     }
 
     @Test
-    fun ppiReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun ppiReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("protocol/sensors/ppi-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -52,9 +52,9 @@ class PpiParserCommonPolicyTest {
         assertEquals("ppi-readiness", manifest.stringValue("id"))
         assertEquals("ppiReadiness", input.stringValue("kind"))
         assertEquals(PPI_VECTORS, input.stringArrayValue("policyVectorPaths"))
-        assertEquals(REQUIRED_PPI_FAMILIES, requiredFamilies, "PPI readiness manifest must name every pre-migration behavior family")
+        assertEquals(REQUIRED_PPI_FAMILIES, requiredFamilies, "PPI readiness manifest must name every shared-contract behavior family")
         assertEquals(REQUIRED_PPI_FAMILIES, coveredFamilies, "PPI readiness manifest must keep expected coverage aligned with required families")
-        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.PpiDataTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PpiDataTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.PpiParserCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))

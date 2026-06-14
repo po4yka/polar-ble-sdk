@@ -249,7 +249,7 @@ class PolarBackupManagerTest: XCTestCase {
         }
     }
 
-    func testBackupWorkflowReadinessManifestIsPinnedBeforeWorkflowMigration() throws {
+    func testBackupWorkflowReadinessManifestPinsWorkflowOwnership() throws {
         let vector = try loadBackupVector(id: "backup-workflow-readiness")
         let input = try XCTUnwrap(vector["input"] as? [String: Any])
         let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
@@ -355,7 +355,7 @@ private let BACKUP_WORKFLOW_READINESS_FAMILIES = [
     "compile-verification-gate"
 ]
 
-private let BACKUP_WORKFLOW_READINESS_COMMON_DECISION = "Backup workflow migration may proceed only after backup-expansion-and-restore-writes.json, restore-failure-platform-policy.json, and this readiness manifest are executable from shared commonTest, Android and iOS backup tests continue to reference the same vectors, BACKUP.TXT expansion and default user-file inclusion stay covered, restore PUT command order and payload bytes remain pinned, restore failure aggregation is deliberately standardized or deliberately preserved as a platform split, and the shared tests are compile-verified."
+private let BACKUP_WORKFLOW_READINESS_COMMON_DECISION = "Backup workflow shared ownership remains valid while backup-expansion-and-restore-writes.json, restore-failure-platform-policy.json, and this readiness manifest are executable from shared commonTest, Android and iOS backup tests continue to reference the same vectors, BACKUP.TXT expansion and default user-file inclusion stay covered, restore PUT command order and payload bytes remain pinned, restore failure aggregation is deliberately standardized or deliberately preserved as a platform split, and the shared tests are compile-verified."
 
 extension Data {
     var hexString: String {

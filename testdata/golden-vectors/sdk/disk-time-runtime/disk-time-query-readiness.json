@@ -2,8 +2,8 @@
   "id": "disk-time-query-readiness",
   "area": "sdk.disk-time-runtime",
   "case": "disk_time_query_readiness",
-  "source": "Disk/time facade runtime backlog and disk-time-query-policy shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the disk/time facade behavior families that must remain covered before disk-space and local-time orchestration delegate to shared KMP runtime code.",
+  "source": "Disk/time facade runtime backlog and disk-time-query-policy shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the disk/time facade behavior families that must remain covered before disk-space and local-time orchestration delegate to shared runtime code.",
   "input": {
     "kind": "diskTimeQueryReadiness",
     "policyVectorPath": "sdk/disk-time-runtime/disk-time-query-policy.json",
@@ -39,10 +39,10 @@
       "platform-facade-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Disk/time facade runtime migration may proceed only after disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified.",
+    "commonDecision": "Disk/time facade runtime shared ownership remains valid while disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
-      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership."
     }
   },
   "consumerTests": {
@@ -61,5 +61,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for disk/time query-planning behavior-family completeness only; disk-space model conversion, platform filesystem capability checks, public facade error mapping, and compile verification remain required before production disk/time runtime code moves to shared KMP."
+  "notes": "This readiness manifest is a shared ownership gate for disk/time query-planning behavior-family completeness only; disk-space model conversion, platform filesystem capability checks, public facade error mapping, and compile verification remain required before production disk/time runtime code moves to shared."
 }

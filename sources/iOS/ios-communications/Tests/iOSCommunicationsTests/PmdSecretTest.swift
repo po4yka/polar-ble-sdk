@@ -233,7 +233,7 @@ final class PmdSecretTest: XCTestCase {
         }
     }
 
-    func testPmdSecretReadinessManifestIsPinnedBeforeSecretStrategyMigration() throws {
+    func testPmdSecretReadinessManifestPinsSecretStrategyOwnership() throws {
         let manifest = try loadPmdSecretReadinessManifest()
         let input = try XCTUnwrap(manifest["input"] as? [String: Any])
         let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
@@ -380,4 +380,4 @@ private let pmdSecretReadinessBehaviorFamilies = [
     "compile-verification-gate"
 ]
 
-private let pmdSecretReadinessDecision = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, shared production NONE/XOR decryption, AES fixture pinning, AES block-alignment gating, shared common AES production decryption, and compile verification remain explicit before remaining fallback removal moves."
+private let pmdSecretReadinessDecision = "PMD secret strategy shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, shared production NONE/XOR decryption, AES fixture pinning, AES block-alignment gating, shared common AES production decryption, and compile verification remain explicit before remaining fallback removal moves."

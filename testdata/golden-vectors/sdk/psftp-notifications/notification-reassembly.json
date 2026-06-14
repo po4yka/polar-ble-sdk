@@ -53,5 +53,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Covers PSFTP D2H notification payload reassembly above raw RFC76 frame-header decoding. Timeout notification-stream policies now have dedicated planning vectors and executable shared common runtime coverage; production PSFTP runtime migration still needs fake-clock integration before timeout orchestration moves to shared KMP code."
+  "notes": "Covers PSFTP D2H notification payload reassembly above raw RFC76 frame-header decoding. Timeout notification-stream policies now have dedicated planning vectors and executable shared common runtime coverage; production PSFTP runtime shared ownership still needs fake-clock integration before timeout orchestration moves to shared code."
 }

@@ -71,7 +71,7 @@ class SkinTemperatureDomainCommonPolicyTest {
     }
 
     @Test
-    fun skinTemperatureDomainReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun skinTemperatureDomainReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val vector = loadGoldenVectorText("sdk/skin-temperature/skin-temperature-domain-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -172,6 +172,6 @@ class SkinTemperatureDomainCommonPolicyTest {
             "platform-skin-temperature-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val SKIN_TEMPERATURE_DOMAIN_READINESS_COMMON_DECISION = "Skin-temperature domain migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS skin-temperature tests continue to reference the same vectors, sourceDeviceId ownership remains explicit, empty sample lists and sample values are preserved, measurement and sensor-location mappings are covered, unknown enum behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
+        const val SKIN_TEMPERATURE_DOMAIN_READINESS_COMMON_DECISION = "Skin-temperature domain shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS skin-temperature tests continue to reference the same vectors, sourceDeviceId ownership remains explicit, empty sample lists and sample values are preserved, measurement and sensor-location mappings are covered, unknown enum behavior is handled at a typed boundary before public model exposure, and the shared tests are compile-verified."
     }
 }

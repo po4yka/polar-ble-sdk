@@ -100,7 +100,7 @@ class FakeTransportContractTest {
         val vector = loadFakeTransportVector("service-readiness-policy.json")
         val expected = vector.getAsJsonObject("expected")
 
-        assertFakeTransportPolicyVector(vector, "service-readiness-policy", "serviceReadinessPolicy", "Service-readiness waits in shared runtime must be bounded, observable, deterministic, and free from wall-clock sleeps before feature readiness is delegated to KMP.")
+        assertFakeTransportPolicyVector(vector, "service-readiness-policy", "serviceReadinessPolicy", "Service-readiness waits in shared runtime must be bounded, observable, deterministic, and free from wall-clock sleeps before feature readiness is delegated to shared.")
         assertEquals("complete", expected.get("readyOutcome").asString)
         assertEquals(listOf("pmd", "pmd", "pmd"), expected.getAsJsonArray("readyChecks").map { it.asString })
         assertEquals("timeout", expected.get("missingOutcome").asString)
@@ -113,7 +113,7 @@ class FakeTransportContractTest {
         val vector = loadFakeTransportVector("scripted-command-outcomes-policy.json")
         val expected = vector.getAsJsonObject("expected")
 
-        assertFakeTransportPolicyVector(vector, "scripted-command-outcomes-policy", "scriptedCommandOutcomesPolicy", "Shared fake transport must capture request order, write payload bytes, stream subscription targets, and scripted success/error/complete outcomes deterministically before runtime command planning delegates to KMP.")
+        assertFakeTransportPolicyVector(vector, "scripted-command-outcomes-policy", "scriptedCommandOutcomesPolicy", "Shared fake transport must capture request order, write payload bytes, stream subscription targets, and scripted success/error/complete outcomes deterministically before runtime command planning delegates to shared.")
         assertEquals(listOf("bytes:0102", "response-error:103:missing", "transport-error:link lost", "complete"), expected.getAsJsonArray("outcomes").map { it.asString })
         assertEquals(listOf("READ:/U/0/DEVICE.BPB", "WRITE:/U/0/SETTINGS.BPB:0a0b", "SUBSCRIBE:d2h", "UNSUBSCRIBE:d2h"), expected.getAsJsonArray("commands").map { it.asString })
     }
@@ -123,7 +123,7 @@ class FakeTransportContractTest {
         val vector = loadFakeTransportVector("delayed-response-policy.json")
         val expected = vector.getAsJsonObject("expected")
 
-        assertFakeTransportPolicyVector(vector, "delayed-response-policy", "delayedResponsePolicy", "Shared runtime tests must model delayed transport responses with a virtual clock, observable poll attempts, and a distinct pending label before delayed read, write, or notification orchestration delegates to KMP.", "executable shared commonTest delayed-response contract")
+        assertFakeTransportPolicyVector(vector, "delayed-response-policy", "delayedResponsePolicy", "Shared runtime tests must model delayed transport responses with a virtual clock, observable poll attempts, and a distinct pending label before delayed read, write, or notification orchestration delegates to shared.", "executable shared commonTest delayed-response contract")
         assertEquals(listOf("timeout:delayed-response", "bytes:0708"), expected.getAsJsonArray("pollOutcomes").map { it.asString })
         assertEquals(listOf("/U/0/DELAYED.BPB@0", "/U/0/DELAYED.BPB@150"), expected.getAsJsonArray("polls").map { it.asString })
         assertEquals(150, expected.get("finalTimeMillis").asInt)
@@ -134,7 +134,7 @@ class FakeTransportContractTest {
         val vector = loadFakeTransportVector("reconnect-after-failure-policy.json")
         val expected = vector.getAsJsonObject("expected")
 
-        assertFakeTransportPolicyVector(vector, "reconnect-after-failure-policy", "reconnectAfterFailurePolicy", "Shared fake transport must make reconnect-after-failure explicit, observable, and deterministic before retry or reconnect-aware runtime planning delegates to KMP.", "executable shared commonTest reconnect-after-failure contract")
+        assertFakeTransportPolicyVector(vector, "reconnect-after-failure-policy", "reconnectAfterFailurePolicy", "Shared fake transport must make reconnect-after-failure explicit, observable, and deterministic before retry or reconnect-aware runtime planning delegates to shared.", "executable shared commonTest reconnect-after-failure contract")
         assertEquals(listOf("transport-error:disconnected", "complete", "bytes:0506"), expected.getAsJsonArray("outcomes").map { it.asString })
         assertEquals(listOf("READ:/U/0/DEVICE.BPB", "RECONNECT:transport", "READ:/U/0/DEVICE.BPB"), expected.getAsJsonArray("commands").map { it.asString })
         assertTrue(expected.get("connectedAfterReconnect").asBoolean)
@@ -145,7 +145,7 @@ class FakeTransportContractTest {
         val vector = loadFakeTransportVector("retry-delay-policy.json")
         val expected = vector.getAsJsonObject("expected")
 
-        assertFakeTransportPolicyVector(vector, "retry-delay-policy", "retryDelayPolicy", "Shared runtime retry tests must schedule retry delays on a virtual clock, assert retry count and elapsed retry times, and avoid wall-clock sleeps before retry policy delegates to KMP.", "executable shared commonTest retry-delay scheduler contract")
+        assertFakeTransportPolicyVector(vector, "retry-delay-policy", "retryDelayPolicy", "Shared runtime retry tests must schedule retry delays on a virtual clock, assert retry count and elapsed retry times, and avoid wall-clock sleeps before retry policy delegates to shared.", "executable shared commonTest retry-delay scheduler contract")
         assertEquals(3, expected.get("retryCount").asInt)
         assertEquals(listOf(100, 300, 700), expected.getAsJsonArray("retryTimesMillis").map { it.asInt })
         assertEquals(700, expected.get("finalTimeMillis").asInt)
@@ -156,7 +156,7 @@ class FakeTransportContractTest {
         val vector = loadFakeTransportVector("unscripted-operation-timeout-policy.json")
         val expected = vector.getAsJsonObject("expected")
 
-        assertFakeTransportPolicyVector(vector, "unscripted-operation-timeout-policy", "unscriptedOperationTimeoutPolicy", "Shared fake transport must report unscripted operations as deterministic timeouts while still recording the attempted command before runtime code delegates to KMP.")
+        assertFakeTransportPolicyVector(vector, "unscripted-operation-timeout-policy", "unscriptedOperationTimeoutPolicy", "Shared fake transport must report unscripted operations as deterministic timeouts while still recording the attempted command before runtime code delegates to shared.")
         assertEquals("timeout:unscripted-operation", expected.get("outcome").asString)
         assertEquals(listOf("READ:/missing"), expected.getAsJsonArray("commands").map { it.asString })
     }
@@ -273,6 +273,6 @@ class FakeTransportContractTest {
             "compile-verification-gate"
         )
 
-        const val FAKE_TRANSPORT_READINESS_COMMON_DECISION = "Fake-transport base runtime migration may proceed only after scripted command outcomes, delayed-response polling, reconnect-after-failure controls, retry-delay scheduling, unscripted-operation timeouts, service readiness, and virtual-clock timeout policy vectors remain executable from shared commonTest, Android and iOS guard the same vector paths, platform facade compatibility stays explicit, and the shared tests are compile-verified."
+        const val FAKE_TRANSPORT_READINESS_COMMON_DECISION = "Fake-transport base runtime shared ownership remains valid while scripted command outcomes, delayed-response polling, reconnect-after-failure controls, retry-delay scheduling, unscripted-operation timeouts, service readiness, and virtual-clock timeout policy vectors remain executable from shared commonTest, Android and iOS guard the same vector paths, platform facade compatibility stays explicit, and the shared tests are compile-verified."
     }
 }

@@ -564,7 +564,7 @@ class PolarTimeUtilsTests: XCTestCase {
         XCTAssertEqual(result, 23*60*60*1000 + 59*60*1000 + 59*1000 + 999)
     }
 
-    func testTimeDateGoldenVectorsPinIOSUtilityMigration() throws {
+    func testTimeDateGoldenVectorsPinIOSUtilityOwnership() throws {
         for relativePath in timeDateUtilityVectorPaths {
             let vector = try GoldenVectorTestData.loadObject(relativePath)
             let input = try objectValue(vector, "input")
@@ -616,7 +616,7 @@ class PolarTimeUtilsTests: XCTestCase {
         }
     }
 
-    func testTimeDateReadinessManifestIsPinnedBeforeUtilityMigration() throws {
+    func testTimeDateReadinessManifestPinsUtilityOwnership() throws {
         let vector = try GoldenVectorTestData.loadObject("sdk/time-date/time-date-readiness.json")
         let input = try objectValue(vector, "input")
         let expected = try objectValue(vector, "expected")
@@ -723,7 +723,7 @@ class PolarTimeUtilsTests: XCTestCase {
     }
 
     private var timeDateReadinessCommonDecision: String {
-        "Time/date migration owns portable field mapping, timezone-offset minute conversion, millisecond/nanosecond policy, duration-to-millis math, time-string formatting, and plain-date validation in shared KMP code while platform calendar, timezone database, Date, Calendar, LocalDateTime, protobuf, and public facade conversion remain platform adapters until shared artifacts are consumed by iOS production code."
+        "Time/date shared ownership owns portable field mapping, timezone-offset minute conversion, millisecond/nanosecond policy, duration-to-millis math, time-string formatting, and plain-date validation in shared code while platform calendar, timezone database, Date, Calendar, LocalDateTime, protobuf, and public facade conversion remain platform adapters until shared artifacts are consumed by iOS production code."
     }
 }
 

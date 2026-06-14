@@ -4,7 +4,7 @@ import XCTest
 import Foundation
 @testable import PolarBleSdk
 
-private let EXERCISE_SESSION_READINESS_COMMON_DECISION = "Exercise-session migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS exercise-session tests continue to pin sport-profile ID mapping, unknown sport-profile fallback, offline exercise command planning, offline exercise file read/remove paths, device-info path planning, protobuf construction boundaries, status-result platform boundaries, public error mapping boundaries, platform vector references, and compile verification before broader exercise execution moves."
+private let EXERCISE_SESSION_READINESS_COMMON_DECISION = "Exercise-session shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS exercise-session tests continue to pin sport-profile ID mapping, unknown sport-profile fallback, offline exercise command planning, offline exercise file read/remove paths, device-info path planning, protobuf construction boundaries, status-result platform boundaries, public error mapping boundaries, platform vector references, and compile verification before broader exercise execution moves."
 private let EXERCISE_SESSION_READINESS_FAMILIES = ["sport-profile-id-mapping", "unknown-sport-profile-fallback", "offline-exercise-start-command-planning", "offline-exercise-stop-command-planning", "offline-exercise-status-command-planning", "offline-exercise-file-read-remove-paths", "offline-exercise-device-info-path", "protobuf-construction-platform-boundary", "status-result-platform-boundary", "public-error-mapping-boundary", "platform-exercise-session-vector-reference-gate", "compile-verification-gate"]
 
 final class PolarOfflineExerciseV2Tests: XCTestCase {
@@ -310,7 +310,7 @@ final class PolarOfflineExerciseV2Tests: XCTestCase {
         #endif
     }
 
-    func testExerciseSessionReadinessManifestIsPinnedBeforeOfflineExerciseMigration() throws {
+    func testExerciseSessionReadinessManifestPinsOfflineExerciseOwnership() throws {
         let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/exercise-session/exercise-session-readiness.json")
         let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any])
         let input = try XCTUnwrap(manifest["input"] as? [String: Any])

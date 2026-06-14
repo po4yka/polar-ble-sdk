@@ -7,7 +7,7 @@
     "hex": "0601000102030405060708090a0b0c0d0e0f"
   },
   "expected": {
-    "commonDecision": "KMP should define whether SECURITY belongs in PMD settings parsing and expose one deterministic parse result."
+    "commonDecision": "Shared code should define whether SECURITY belongs in PMD settings parsing and expose one deterministic parse result."
   },
   "platformExpectations": {
     "android": {

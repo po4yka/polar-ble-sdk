@@ -10,7 +10,7 @@
     }
   },
   "expected": {
-    "commonDecision": "KMP common serialization should write telemetrySettings only when telemetryEnabled is explicitly present in the shared model. Android's deprecated whole-settings setter may strip telemetry in an adapter if legacy behavior must be preserved."
+    "commonDecision": "shared common serialization should write telemetrySettings only when telemetryEnabled is explicitly present in the shared model. Android's deprecated whole-settings setter may strip telemetry in an adapter if legacy behavior must be preserved."
   },
   "platformExpectations": {
     "android": {

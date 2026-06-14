@@ -2,7 +2,7 @@
   "id": "nanos-to-millis-rounding",
   "area": "time-date",
   "case": "nanos_to_millis_rounding",
-  "source": "iOS Android KMP migration characterization",
+  "source": "iOS Android shared ownership characterization",
   "description": "Pins the round-half-up millisecond policy used when platform nanosecond components are copied into protobuf millisecond fields.",
   "input": {
     "kind": "nanosToMillis",

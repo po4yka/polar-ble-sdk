@@ -22,7 +22,7 @@ class SdLogModelsCommonPolicyTest {
     }
 
     @Test
-    fun sdLogReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun sdLogReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/sd-log/sd-log-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -56,6 +56,6 @@ class SdLogModelsCommonPolicyTest {
             "platform-sd-log-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val SD_LOG_READINESS_COMMON_DECISION = "SD-log migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS SD-log facade tests continue to pin trigger and magnetometer-frequency enum projection, unknown enum boundaries, SD-log config file paths, write-progress policy, session-notification boundaries, protobuf construction boundaries, optional field presence, public error mapping boundaries, platform vector references, and compile verification before broader SD-log execution moves."
+        const val SD_LOG_READINESS_COMMON_DECISION = "SD-log shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS SD-log facade tests continue to pin trigger and magnetometer-frequency enum projection, unknown enum boundaries, SD-log config file paths, write-progress policy, session-notification boundaries, protobuf construction boundaries, optional field presence, public error mapping boundaries, platform vector references, and compile verification before broader SD-log execution moves."
     }
 }

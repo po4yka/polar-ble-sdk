@@ -39,7 +39,7 @@ class RestEventCompressionPolicyCommonTest {
     }
 
     @Test
-    fun restEventCompressionReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun restEventCompressionReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/rest-service/rest-event-compression-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -93,9 +93,9 @@ class RestEventCompressionPolicyCommonTest {
 
     private val restEventCompressionMalformedIosPolicy = "logs inflate failure and emits the original payload bytes"
 
-    private val restEventCompressionCommonCodecDecision = "Shared KMP owns REST event compression dispatch while platform actuals deliberately preserve Android GZIPInputStream-compatible gzip decoding and iOS zlib inflate behavior."
+    private val restEventCompressionCommonCodecDecision = "Shared shared owns REST event compression dispatch while platform actuals deliberately preserve Android GZIPInputStream-compatible gzip decoding and iOS zlib inflate behavior."
 
-    private val restEventCompressionReadinessDecision = "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior are preserved through shared KMP platform actual codecs, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
+    private val restEventCompressionReadinessDecision = "REST event compression shared ownership remains valid while rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior are preserved through shared platform actual codecs, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
 
     private fun decodeRestEventPayloads(testCase: String): List<String> {
         return if (testCase.booleanValue("uncompressed")) {

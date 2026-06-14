@@ -51,7 +51,7 @@ class FileFacadeRuntimePolicyCommonTest {
             }
         })
         assertEquals(fileFacadeRuntimePolicyDecision, expected.stringValue("commonDecision"))
-        assertEquals(fileFacadeRuntimeMigrationDecision, vector.stringValue("commonDecision"))
+        assertEquals(fileFacadeRuntimeOwnershipDecision, vector.stringValue("commonDecision"))
         assertEquals("fake-file-facade-runtime-policy", vector.objectValue("execution").stringValue("kind"))
         assertEquals("public-facade-psftp-command-capture", vector.objectValue("execution").stringValue("transport"))
         assertEquals(fileFacadeRuntimeNotes, vector.stringValue("notes"))
@@ -72,7 +72,7 @@ class FileFacadeRuntimePolicyCommonTest {
     }
 
     @Test
-    fun fileFacadeRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun fileFacadeRuntimeReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/file-utils/file-facade-runtime-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -89,7 +89,7 @@ class FileFacadeRuntimePolicyCommonTest {
         assertEquals(requiredFileFacadeRuntimeFamilies, coveredFamilies)
         assertEquals(fileFacadeRuntimeReadinessDecision, expected.stringValue("commonDecision"))
         assertEquals("executable shared commonTest runtime planning guard", expected.objectValue("commonRuntimePrototype").stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
         assertEquals("file-facade-runtime-policy", policy.stringValue("id"))
         assertEquals(requiredFileFacadeRuntimeOperationIds, policy.objectValue("input").objectArray("operations").map { it.stringValue("id") })
         assertEquals(fileFacadeLinkedPolicyVectorPaths, listOf("list-files-shallow-all.json", "list-files-recursive-filtered.json"))
@@ -212,9 +212,9 @@ class FileFacadeRuntimePolicyCommonTest {
 
     private val fileFacadeRuntimePolicyDecision = "A shared file facade runtime may own deterministic GET/PUT/REMOVE planning, empty read payloads, write progress consumption, and payload capture only after platform facades keep public error mapping, read/write/delete request and response-error propagation, and directory-list traversal policies pinned."
 
-    private val fileFacadeRuntimeMigrationDecision = "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
+    private val fileFacadeRuntimeOwnershipDecision = "Promote low-level file facade planning only while read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
 
-    private val fileFacadeRuntimeReadinessDecision = "File facade runtime migration may proceed only after file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
+    private val fileFacadeRuntimeReadinessDecision = "File facade runtime shared ownership remains valid while file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
 
     private val fileFacadeRuntimeNotes = "This vector complements file-read-write-delete-operations.json and runtime-error-policy.json. It owns the public facade command paths, payload capture, empty read payload success, delete request failure, write progress success, and read/write/delete response-error propagation for low-level read/write/delete calls; directory-list traversal remains covered by list-files-shallow-all.json and list-files-recursive-filtered.json."
 

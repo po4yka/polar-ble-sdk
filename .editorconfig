@@ -30,3 +30,8 @@ trim_trailing_whitespace = unset
 [sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/protobuf/**]
 insert_final_newline = unset
 trim_trailing_whitespace = unset
+
+[sources/Android/android-communications/repo-tools/src/main/kotlin/**]
+ktlint_standard = disabled
+ktlint_standard_import-ordering = enabled
+ktlint_standard_no-wildcard-imports = enabled

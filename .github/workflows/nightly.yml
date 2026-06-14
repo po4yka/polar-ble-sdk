@@ -40,12 +40,16 @@ jobs:
         shell: bash
         run: ${{ steps.get_actionlint.outputs.executable }} .github/workflows/*.yml
 
-      - name: KMP policy mirror
+      - name: Kotlin lint check-mode
+        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
+        run: ./gradlew :lintCheck --no-daemon --warning-mode all
+
+      - name: shared policy mirror
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
         run: ./gradlew :repo-tools:kmpNonGradleChecks :repo-tools:verifyApiDocsGenerationPolicy --no-daemon --warning-mode all
 
-      - name: Generated API docs stay generator-owned
-        run: test -z "$(git diff --name-only -- docs/polar-sdk-android docs/polar-sdk-ios)"
+      - name: Generated API docs stay untracked
+        run: test -z "$(git ls-files docs/polar-sdk-android docs/polar-sdk-ios)"
 
   android-unit:
     name: Android unit tests
@@ -73,7 +77,7 @@ jobs:
           retention-days: 14
 
   shared-kmp:
-    name: Shared KMP (${{ matrix.os }})
+    name: Shared shared (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -96,7 +100,7 @@ jobs:
         with:
           key-prefix: nightly-
 
-      - name: Shared KMP gate
+      - name: Shared shared gate
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
         run: ./gradlew ${{ matrix.tasks }} --no-daemon --warning-mode all
 
@@ -130,16 +134,8 @@ jobs:
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
         run: ./gradlew :repo-tools:packageGeneratedApiDocs --no-daemon --warning-mode all
 
-      - name: Verify generated API docs are reproducible
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! git diff --quiet -- docs/polar-sdk-android docs/polar-sdk-ios; then
-            echo "Generated API docs are not reproducible. Compact changed-file summary:"
-            git diff --name-status -- docs/polar-sdk-android docs/polar-sdk-ios
-            git diff --stat -- docs/polar-sdk-android docs/polar-sdk-ios
-            exit 1
-          fi
+      - name: Verify generated API docs stay untracked
+        run: test -z "$(git ls-files docs/polar-sdk-android docs/polar-sdk-ios)"
 
       - name: Upload generated API docs archive
         if: always()
@@ -166,14 +162,24 @@ jobs:
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
         run: ./gradlew :repo-tools:iosXcodeValidationProbe --no-daemon --warning-mode all
 
+      - name: Generated Xcode project validation
+        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
+        run: ./gradlew :repo-tools:validateGeneratedXcodeProject --no-daemon --warning-mode all
+
       - name: Validate Swift Package surface
         run: swift package describe
+
+      - name: Install SwiftLint
+        run: command -v swiftlint >/dev/null 2>&1 || brew install swiftlint
+
+      - name: SwiftLint check-mode
+        run: swiftlint lint --strict --config .swiftlint.yml
 
       - name: Swift Package iOS build
         run: sh scripts/ci_xcodebuild_build.sh "${IOS_PROJECT}" PolarBleSdk "generic/platform=iOS" Debug
 
       - name: iOS XCTest gate
-        run: sh scripts/ci_xcodebuild_test.sh "${IOS_PROJECT}" "${IOS_SCHEME}" "${IOS_DESTINATION}" /tmp/polar-ios-nightly.xcresult
+        run: sh scripts/ci_xcodebuild_test.sh "${IOS_PROJECT}" "${IOS_SCHEME}" "${IOS_DESTINATION}" /tmp/polar-ios-nightly.xcresult fast
 
       - name: Upload iOS result bundle
         if: always()

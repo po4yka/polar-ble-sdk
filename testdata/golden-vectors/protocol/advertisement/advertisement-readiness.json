@@ -2,8 +2,8 @@
   "id": "advertisement-readiness",
   "area": "advertisement",
   "case": "advertisement_readiness",
-  "source": "Advertisement vectors and shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the advertisement behavior families that must remain covered before BLE advertisement parsing delegates to shared KMP code.",
+  "source": "Advertisement vectors and shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the advertisement behavior families that must remain covered before BLE advertisement parsing delegates to shared code.",
   "input": {
     "kind": "advertisementReadiness",
     "policyVectorPaths": [
@@ -58,7 +58,7 @@
       "platform-advertisement-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Advertisement parsing migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS advertisement tests continue to reference the same vectors, Polar and custom-prefix local-name parsing, seven-digit device ID assembly, non-Polar local-name platform decisions, manufacturer HR presence and absence, non-Polar and unknown company behavior, unknown Polar segment handling, malformed GPB missing-length and truncated HR-candidate policies, service UUID membership, RSSI median calculation, and compile verification remain explicit before production advertisement parsing moves."
+    "commonDecision": "Advertisement parsing shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS advertisement tests continue to reference the same vectors, Polar and custom-prefix local-name parsing, seven-digit device ID assembly, non-Polar local-name platform decisions, manufacturer HR presence and absence, non-Polar and unknown company behavior, unknown Polar segment handling, malformed GPB missing-length and truncated HR-candidate policies, service UUID membership, RSSI median calculation, and compile verification remain explicit before production advertisement parsing moves."
   },
   "consumerTests": {
     "android": [

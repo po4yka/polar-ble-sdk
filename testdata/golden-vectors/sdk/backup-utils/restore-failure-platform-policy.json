@@ -67,5 +67,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "KMP should choose whether restore failure aggregation belongs in shared code or remains platform-specific compatibility behavior."
+  "notes": "Shared code should choose whether restore failure aggregation belongs in shared code or remains platform-specific compatibility behavior."
 }

@@ -356,7 +356,7 @@ class PolarTrainingSessionUtilsTest {
     }
 
     @Test
-    fun `training session golden vectors follow neutral KMP vector shape`() {
+    fun `training session golden vectors follow neutral shared vector shape`() {
         val vectors = loadTrainingSessionVectors()
         assertTrue("Expected training-session golden vectors", vectors.isNotEmpty())
         vectors.forEach { vector ->
@@ -376,7 +376,7 @@ class PolarTrainingSessionUtilsTest {
     }
 
     @Test
-    fun `payload parser policy vector is pinned before byte level parser migration`() {
+    fun `payload parser policy vector is pinned before byte level parser shared ownership`() {
         val vector = loadTrainingSessionVectors().first { it.get("id").asString == "payload-parser-policy" }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -426,7 +426,7 @@ class PolarTrainingSessionUtilsTest {
     }
 
     @Test
-    fun `training session readiness manifest is pinned before migration`() {
+    fun `training session readiness manifest is pinned before shared ownership`() {
         val readiness = loadTrainingSessionReadinessManifest()
         val input = readiness.getAsJsonObject("input")
         val expected = readiness.getAsJsonObject("expected")
@@ -471,7 +471,7 @@ class PolarTrainingSessionUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared selected protobuf field parsing, shared public-model read planning, shared public-model slot planning, generated public protobuf construction boundaries, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.",
+            "Training-session shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared selected protobuf field parsing, shared public-model read planning, shared public-model slot planning, generated public protobuf construction boundaries, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves.",
             expected.get("commonDecision").asString
         )
     }
@@ -799,6 +799,6 @@ class PolarTrainingSessionUtilsTest {
             "samples-advanced-gzip-protobuf"
         )
 
-        const val TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Selected training payload protobuf field parsing now executes in shared KMP for these parser cases; generated public protobuf object construction remains platform-owned while neutral reconstruction planning maps decoded payload bytes to Android and iOS adapters. Gzip decompression and public-model slot planning are shared KMP production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
+        const val TRAINING_SESSION_PAYLOAD_PARSER_COMMON_DECISION = "Selected training payload protobuf field parsing now executes in shared for these parser cases; generated public protobuf object construction remains platform-owned while neutral reconstruction planning maps decoded payload bytes to Android and iOS adapters. Gzip decompression and public-model slot planning are shared production code, and this vector remains the shared parser ownership contract consumed by commonTest and pinned by Android/iOS byte-level characterization tests."
     }
 }

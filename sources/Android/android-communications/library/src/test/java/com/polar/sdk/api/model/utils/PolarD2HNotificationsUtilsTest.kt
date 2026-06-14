@@ -495,7 +495,7 @@ class PolarD2HNotificationsUtilsTest {
     }
 
     @Test
-    fun `d2h notification golden vectors follow neutral KMP vector shape`() {
+    fun `d2h notification golden vectors follow neutral shared vector shape`() {
         loadD2HNotificationVectors().forEach { vector ->
             val id = vector.get("id")?.asString ?: "unknown-vector"
 
@@ -582,7 +582,7 @@ class PolarD2HNotificationsUtilsTest {
     }
 
     @Test
-    fun `d2h stream readiness manifest is pinned before stream runtime migration`() {
+    fun `d2h stream readiness manifest is pinned before stream runtime shared ownership`() {
         val vector = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/d2h-notifications/stream-runtime-readiness.json")).use { reader ->
             JsonParser.parseReader(reader).asJsonObject
         }
@@ -622,18 +622,18 @@ class PolarD2HNotificationsUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "D2H stream runtime migration may proceed only after stream-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, mapped values emitted before late upstream errors are preserved, consumer cancellation cancels upstream work and suppresses later notifications, unknown notifications are filtered without stopping later known values, failed subscribe paths register no observers, public facade error mapping remains pinned, and the shared tests are compile-verified.",
+            "D2H stream runtime shared ownership remains valid while stream-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, mapped values emitted before late upstream errors are preserved, consumer cancellation cancels upstream work and suppresses later notifications, unknown notifications are filtered without stopping later known values, failed subscribe paths register no observers, public facade error mapping remains pinned, and the shared tests are compile-verified.",
             expected.get("commonDecision").asString
         )
         assertEquals("executable shared commonTest runtime planning guard", expected.getAsJsonObject("commonRuntimePrototype").get("status").asString)
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", expected.getAsJsonObject("commonRuntimePrototype").get("reason").asString)
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", expected.getAsJsonObject("commonRuntimePrototype").get("reason").asString)
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         assertEquals(listOf("PolarDeviceToHostNotificationsApiTests"), consumerTests.getAsJsonArray("ios").map { it.asString })
         assertEquals(listOf("com.polar.sharedtest.D2hStreamRuntimePolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
     }
 
     @Test
-    fun `d2h mapping readiness manifest is pinned before mapping migration`() {
+    fun `d2h mapping readiness manifest is pinned before mapping shared ownership`() {
         val vector = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/d2h-notifications/mapping-readiness.json")).use { reader ->
             JsonParser.parseReader(reader).asJsonObject
         }
@@ -675,7 +675,7 @@ class PolarD2HNotificationsUtilsTest {
         assertEquals(expectedFamilies, requiredFamilies)
         assertEquals(expectedFamilies, coveredFamilies)
         assertEquals(
-            "D2H notification mapping migration may proceed only after every mapping vector named by this readiness manifest is executable from shared commonTest, Android and iOS D2H mapping tests continue to reference the same vectors, known IDs, unknown-ID filtering, raw parameter preservation, typed fields for filesystem, sync-required, autosync, and start-GPS notifications, stop-GPS empty parameters, invalid-payload null parsing, repeated-notification ordering, and the shared tests are compile-verified.",
+            "D2H notification mapping shared ownership remains valid while every mapping vector named by this readiness manifest is executable from shared commonTest, Android and iOS D2H mapping tests continue to reference the same vectors, known IDs, unknown-ID filtering, raw parameter preservation, typed fields for filesystem, sync-required, autosync, and start-GPS notifications, stop-GPS empty parameters, invalid-payload null parsing, repeated-notification ordering, and the shared tests are compile-verified.",
             expected.get("commonDecision").asString
         )
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarD2HNotificationsUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })

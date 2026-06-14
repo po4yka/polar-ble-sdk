@@ -155,7 +155,7 @@ class PsFtpRuntimePolicyCommonTest {
         assertCommonRuntimePrototype(vector.objectValue("expected"))
         assertPsFtpRuntimeConsumerAndPlatformShape(vector)
         assertEquals("characterize-current-platform-notification-error-semantics", vector.objectValue("expected").stringValue("policy"))
-        assertEquals("RFC76 error frames are ignored on both platforms. Nonzero transport status is a current platform split: Android drops the packet before the notification queue, while iOS terminates the wait-notification stream with a response error. KMP runtime migration must intentionally choose the shared policy and preserve or adapt platform facade compatibility.", vector.stringValue("notes"))
+        assertEquals("RFC76 error frames are ignored on both platforms. Nonzero transport status is a current platform split: Android drops the packet before the notification queue, while iOS terminates the wait-notification stream with a response error. shared runtime shared ownership must intentionally choose the shared policy and preserve or adapt platform facade compatibility.", vector.stringValue("notes"))
 
         vector.objectValue("input").objectArray("cases").forEach { testCase ->
             val notifications = PolarWorkflowRuntimePlanning.reassembleNotifications(testCase.objectArray("packets").map { packet ->
@@ -298,7 +298,7 @@ class PsFtpRuntimePolicyCommonTest {
         assertEquals("android-currently-emits-negative-header-overhead-progress-before-payload-count-while-ios-emits-initial-zero-header-progress-and-final-payload-count", decision)
         assertCommonRuntimePrototype(expected)
         assertPsFtpRuntimeConsumerAndPlatformShape(vector)
-        assertEquals("Covers the PSFTP write stream success path with a device success response. Android currently emits an initial negative progress value while RFC60 header bytes are being consumed, then the payload byte count. iOS emits an initial zero progress value, an intermediate header/payload stream position, and the same final payload byte count. Shared KMP runtime should choose one progress policy before moving write orchestration to common code.", vector.stringValue("notes"))
+        assertEquals("Covers the PSFTP write stream success path with a device success response. Android currently emits an initial negative progress value while RFC60 header bytes are being consumed, then the payload byte count. iOS emits an initial zero progress value, an intermediate header/payload stream position, and the same final payload byte count. Shared shared runtime should choose one progress policy before moving write orchestration to common code.", vector.stringValue("notes"))
     }
 
     @Test
@@ -354,7 +354,7 @@ class PsFtpRuntimePolicyCommonTest {
     }
 
     @Test
-    fun psFtpRuntimeReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun psFtpRuntimeReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/psftp-response/psftp-runtime-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -376,7 +376,7 @@ class PsFtpRuntimePolicyCommonTest {
         }
         assertEquals(PSFTP_RUNTIME_READINESS_COMMON_DECISION, expected.stringValue("commonDecision"))
         assertEquals("executable shared commonTest runtime planning guard", runtimePrototype.stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", runtimePrototype.stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", runtimePrototype.stringValue("reason"))
         assertEquals(
             listOf("com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClientTest"),
             consumerTests.stringArrayValue("android")
@@ -473,7 +473,7 @@ class PsFtpRuntimePolicyCommonTest {
     private fun assertCommonRuntimePrototype(container: String) {
         val prototype = container.objectValue("commonRuntimePrototype")
         assertEquals("executable shared commonTest runtime planning guard", prototype.stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", prototype.stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", prototype.stringValue("reason"))
     }
 
     private fun assertPsFtpRuntimeConsumerAndPlatformShape(vector: String) {
@@ -492,7 +492,7 @@ class PsFtpRuntimePolicyCommonTest {
     private fun assertPsFtpRuntimePolicyExecutionEvidence(policy: String, path: String) {
         policy.objectValue("expected").optionalObjectValue("commonRuntimePrototype")?.let { prototype ->
             assertEquals("executable shared commonTest runtime planning guard", prototype.stringValue("status"), path)
-            assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", prototype.stringValue("reason"), path)
+            assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", prototype.stringValue("reason"), path)
             return
         }
         policy.optionalObjectValue("execution")?.let { execution ->
@@ -506,7 +506,7 @@ class PsFtpRuntimePolicyCommonTest {
             assertEquals("shared-common-test", common, path)
             return
         }
-        error("$path must declare exact PSFTP runtime execution evidence before migration")
+        error("$path must declare exact PSFTP runtime execution evidence before shared ownership")
     }
 
     private companion object {
@@ -517,7 +517,7 @@ class PsFtpRuntimePolicyCommonTest {
         val NOTIFICATION_TIMEOUT_CASE_IDS = listOf("initial-silence")
         val NOTIFICATION_ERROR_CASE_IDS = listOf("rfc76-error-first-frame", "transport-error-first-packet")
         val NOTIFICATION_CONTINUATION_TIMEOUT_CASE_IDS = listOf("missing-last-frame-after-more")
-        const val PSFTP_RUNTIME_READINESS_COMMON_DECISION = "PSFTP runtime migration may proceed only after every policy vector listed in this readiness manifest is executable from shared commonTest, Android and iOS PSFTP client tests continue to reference the same vectors, request response reassembly, response-error mapping, notification reassembly and ordering, initial-silence policy, consumer timeout cleanup, notification error platform split, continuation timeout, write progress split, write interruption, transport failure, write acknowledgement timeout, fake-clock timeout gates, and the shared tests are compile-verified."
+        const val PSFTP_RUNTIME_READINESS_COMMON_DECISION = "PSFTP runtime shared ownership remains valid while every policy vector listed in this readiness manifest is executable from shared commonTest, Android and iOS PSFTP client tests continue to reference the same vectors, request response reassembly, response-error mapping, notification reassembly and ordering, initial-silence policy, consumer timeout cleanup, notification error platform split, continuation timeout, write progress split, write interruption, transport failure, write acknowledgement timeout, fake-clock timeout gates, and the shared tests are compile-verified."
     }
 }
 

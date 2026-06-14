@@ -13,8 +13,8 @@ class EcgParserCommonPolicyTest {
             val expected = vector.objectValue("expected")
             val parsed = parseEcg(input.stringValue("dataFrameHex"), input.longValue("previousTimeStamp"))
 
-            expected.optionalStringValue("migrationOwnership")?.let { ownership ->
-                assertEquals(PROTOCOL_ONLY_MIGRATION_OWNERSHIP, ownership, caseId)
+            expected.optionalStringValue("sharedOwnership")?.let { ownership ->
+                assertEquals(PROTOCOL_ONLY_PLATFORM_OWNERSHIP, ownership, caseId)
                 assertEquals(expected.intValue("frameType"), parsed.frameType, caseId)
                 if (expected.optionalStringValue("parseError") != null) {
                     assertEquals(expected.stringValue("parseError"), parsed.error, caseId)
@@ -36,7 +36,7 @@ class EcgParserCommonPolicyTest {
     }
 
     @Test
-    fun ecgReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun ecgReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("protocol/sensors/ecg-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -48,9 +48,9 @@ class EcgParserCommonPolicyTest {
         assertEquals("ecg-readiness", manifest.stringValue("id"))
         assertEquals("ecgReadiness", input.stringValue("kind"))
         assertEquals(ECG_VECTORS, input.stringArrayValue("policyVectorPaths"))
-        assertEquals(REQUIRED_ECG_FAMILIES, requiredFamilies, "ECG readiness manifest must name every pre-migration behavior family")
+        assertEquals(REQUIRED_ECG_FAMILIES, requiredFamilies, "ECG readiness manifest must name every shared-contract behavior family")
         assertEquals(REQUIRED_ECG_FAMILIES, coveredFamilies, "ECG readiness manifest must keep expected coverage aligned with required families")
-        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.EcgDataTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("EcgDataTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.EcgParserCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))

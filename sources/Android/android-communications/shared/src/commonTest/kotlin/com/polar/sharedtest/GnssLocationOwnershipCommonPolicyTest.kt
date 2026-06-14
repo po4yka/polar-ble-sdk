@@ -21,7 +21,7 @@ class GnssLocationOwnershipCommonPolicyTest {
             assertEquals(false, expected.booleanValue("compressed"), vectorCase.caseId)
             assertEquals(false, header.compressed, vectorCase.caseId)
             assertEquals(vectorCase.sampleKind, sample.stringValue("sampleKind"), vectorCase.caseId)
-            assertEquals(SHARED_GNSS_LOCATION_MIGRATION_OWNERSHIP, expected.stringValue("migrationOwnership"), vectorCase.caseId)
+            assertEquals(SHARED_GNSS_LOCATION_MIGRATION_OWNERSHIP, expected.stringValue("sharedOwnership"), vectorCase.caseId)
             assertEquals(true, platforms.booleanValue("android"), "${vectorCase.caseId} android ownership")
             assertEquals(false, platforms.booleanValue("ios"), "${vectorCase.caseId} ios ownership")
             assertEquals(true, platforms.booleanValue("common"), "${vectorCase.caseId} common ownership")
@@ -40,7 +40,7 @@ class GnssLocationOwnershipCommonPolicyTest {
 
         assertEquals("gnss-location-readiness", manifest.stringValue("id"))
         assertEquals("gnssLocationReadiness", input.stringValue("kind"))
-        assertEquals("sharedParserAndroidProductionDelegation", expected.stringValue("migrationReadiness"))
+        assertEquals("sharedParserAndroidProductionDelegation", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(REQUIRED_GNSS_LOCATION_SHARED_PARSER_FAMILIES, requiredBehaviorFamilies)
         assertEquals(REQUIRED_GNSS_LOCATION_SHARED_PARSER_FAMILIES, coveredBehaviorFamilies)
         assertEquals(GNSS_LOCATION_SHARED_PARSER_VECTORS.map { it.relativePath }, policyVectorPaths)
@@ -92,7 +92,7 @@ class GnssLocationOwnershipCommonPolicyTest {
 
     private companion object {
         const val HEADER_SIZE = 10
-        const val SHARED_GNSS_LOCATION_MIGRATION_OWNERSHIP = "Shared common KMP GNSS/location parser owns raw type 0-3 byte decoding and Android production delegates to it; iOS has no current direct GNSS parser surface."
+        const val SHARED_GNSS_LOCATION_MIGRATION_OWNERSHIP = "Shared common GNSS/location parser owns raw type 0-3 byte decoding and Android production delegates to it; iOS has no current direct GNSS parser surface."
         const val GNSS_LOCATION_IOS_CONSUMER_BOUNDARY = "No direct iOS parser surface; gnss-location-readiness intentionally has no iOS consumer."
         val REQUIRED_GNSS_LOCATION_SHARED_PARSER_FAMILIES = listOf(
             "shared-parser-raw-type0-coordinate",

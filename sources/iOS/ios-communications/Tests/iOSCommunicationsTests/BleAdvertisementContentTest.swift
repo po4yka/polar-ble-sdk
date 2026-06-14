@@ -292,7 +292,7 @@ class BleAdvertisementContentTest: XCTestCase {
         }
     }
 
-    func testAdvertisementReadinessManifestIsPinnedBeforeParserMigration() throws {
+    func testAdvertisementReadinessManifestPinsParserOwnership() throws {
         let manifest = try loadAdvertisementReadinessManifest()
         let input = try XCTUnwrap(manifest["input"] as? [String: Any])
         let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
@@ -339,7 +339,7 @@ class BleAdvertisementContentTest: XCTestCase {
         ]
         XCTAssertEqual(requiredFamilies, expectedFamilies)
         XCTAssertEqual(coveredFamilies, expectedFamilies)
-        XCTAssertEqual(expected["commonDecision"] as? String, "Advertisement parsing migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS advertisement tests continue to reference the same vectors, Polar and custom-prefix local-name parsing, seven-digit device ID assembly, non-Polar local-name platform decisions, manufacturer HR presence and absence, non-Polar and unknown company behavior, unknown Polar segment handling, malformed GPB missing-length and truncated HR-candidate policies, service UUID membership, RSSI median calculation, and compile verification remain explicit before production advertisement parsing moves.")
+        XCTAssertEqual(expected["commonDecision"] as? String, "Advertisement parsing shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS advertisement tests continue to reference the same vectors, Polar and custom-prefix local-name parsing, seven-digit device ID assembly, non-Polar local-name platform decisions, manufacturer HR presence and absence, non-Polar and unknown company behavior, unknown Polar segment handling, malformed GPB missing-length and truncated HR-candidate policies, service UUID membership, RSSI median calculation, and compile verification remain explicit before production advertisement parsing moves.")
         XCTAssertEqual(try XCTUnwrap(consumerTests["android"] as? [String]), ["com.polar.androidcommunications.api.ble.model.advertisement.BleAdvertisementContentTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["ios"] as? [String]), ["BleAdvertisementContentTest"])
         XCTAssertEqual(try XCTUnwrap(consumerTests["commonPrototype"] as? [String]), ["com.polar.sharedtest.AdvertisementCommonPolicyTest"])

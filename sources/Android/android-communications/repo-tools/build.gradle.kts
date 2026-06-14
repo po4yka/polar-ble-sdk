@@ -2,10 +2,22 @@ import org.gradle.api.tasks.bundling.Compression
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ktlint)
 }
 
 dependencies {
     implementation(libs.kotlin.stdlib)
+}
+
+ktlint {
+    filter {
+        include("**/repo-tools/src/main/kotlin/**/*.kt")
+        exclude("**/build/**")
+    }
+}
+
+tasks.matching { task -> task.name.contains("KotlinScript") }.configureEach {
+    enabled = false
 }
 
 val repositoryRoot = rootProject.projectDir.parentFile.parentFile.parentFile
@@ -39,6 +51,7 @@ repoToolTask("verifyReleasePackagingPolicy", "verifyReleasePackagingPolicy")
 repoToolTask("iosXcodeValidationProbe", "iosXcodeValidationProbe")
 repoToolTask("validateSpmXcframeworkConsumption", "validateSpmXcframeworkConsumption")
 repoToolTask("verifyApiDocsGenerationPolicy", "verifyApiDocsGenerationPolicy")
+repoToolTask("validateGeneratedXcodeProject", "validateGeneratedXcodeProject")
 
 tasks.register("generateApiDocs") {
     group = "documentation"

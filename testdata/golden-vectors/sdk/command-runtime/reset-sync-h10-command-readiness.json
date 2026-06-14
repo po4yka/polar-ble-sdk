@@ -2,8 +2,8 @@
   "id": "reset-sync-h10-command-readiness",
   "area": "sdk.command-runtime",
   "case": "reset_sync_h10_command_readiness",
-  "source": "Command runtime backlog and reset-sync-h10-command-policy shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the public facade command behavior families that must remain covered before reset, sync, H10 recording, and exercise command planning delegates to shared KMP runtime code.",
+  "source": "Command runtime backlog and reset-sync-h10-command-policy shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the public facade command behavior families that must remain covered before reset, sync, H10 recording, and exercise command planning delegates to shared runtime code.",
   "input": {
     "kind": "resetSyncH10CommandReadiness",
     "policyVectorPath": "sdk/command-runtime/reset-sync-h10-command-policy.json",
@@ -75,10 +75,10 @@
       "platform-facade-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified.",
+    "commonDecision": "Command runtime shared ownership remains valid while reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
-      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership."
     }
   },
   "consumerTests": {
@@ -97,5 +97,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for public facade command-planning behavior-family completeness only; H10 query failure semantics, live/offline exercise query planning, reset-style notification failure semantics, sync failure semantics, public facade error mapping, platform adapter references, and compile verification remain required before production command runtime code moves to shared KMP."
+  "notes": "This readiness manifest is a shared ownership gate for public facade command-planning behavior-family completeness only; H10 query failure semantics, live/offline exercise query planning, reset-style notification failure semantics, sync failure semantics, public facade error mapping, platform adapter references, and compile verification remain required before production command runtime code moves to shared."
 }

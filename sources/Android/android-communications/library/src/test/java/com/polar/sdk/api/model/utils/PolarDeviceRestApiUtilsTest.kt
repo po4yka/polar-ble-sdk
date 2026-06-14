@@ -176,7 +176,7 @@ class PolarDeviceRestApiUtilsTest {
     }
 
     @Test
-    fun restRequestTransportPolicyVector_isPinnedBeforeRuntimeMigration() {
+    fun restRequestTransportPolicyVector_isPinnedForRuntimeOwnership() {
         val vector = loadRestServiceVectors().first { it.get("id").asString == "rest-request-transport-policy" }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -186,14 +186,14 @@ class PolarDeviceRestApiUtilsTest {
         assertTrue("rest-request-transport-policy", vector.has("execution"))
         assertEquals(REST_REQUEST_TRANSPORT_SCENARIO_IDS, input.getAsJsonArray("requests").map { it.asJsonObject.get("id").asString })
         assertEquals(REST_REQUEST_TRANSPORT_SCENARIO_IDS, commonRuntimePrototype.getAsJsonArray("cases").map { it.asJsonObject.get("id").asString })
-        assertEquals(REST_REQUEST_TRANSPORT_MIGRATION_REQUIREMENT, expected.get("migrationRequirement").asString)
+        assertEquals(REST_REQUEST_TRANSPORT_SHARED_OWNERSHIP_REQUIREMENT, expected.get("sharedOwnershipRequirement").asString)
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         assertEquals(listOf("PolarDeviceRestApiTests"), consumerTests.getAsJsonArray("ios").map { it.asString })
         assertEquals(listOf("com.polar.sharedtest.RestRequestTransportPolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
     }
 
     @Test
-    fun restRequestTransportReadinessManifest_isPinnedBeforeRuntimeMigration() {
+    fun restRequestTransportReadinessManifest_isPinnedForRuntimeOwnership() {
         val vector = loadRestServiceVectors().first { it.get("id").asString == "rest-request-transport-readiness" }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -209,14 +209,14 @@ class PolarDeviceRestApiUtilsTest {
         assertEquals(REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION, expected.get("commonDecision").asString)
         val commonRuntimePrototype = expected.getAsJsonObject("commonRuntimePrototype")
         assertEquals("executable shared commonTest runtime planning guard", commonRuntimePrototype.get("status").asString)
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", commonRuntimePrototype.get("reason").asString)
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", commonRuntimePrototype.get("reason").asString)
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarDeviceRestApiUtilsTest"), consumerTests.getAsJsonArray("android").map { it.asString })
         assertEquals(listOf("PolarDeviceRestApiTests"), consumerTests.getAsJsonArray("ios").map { it.asString })
         assertEquals(listOf("com.polar.sharedtest.RestRequestTransportPolicyCommonTest"), consumerTests.getAsJsonArray("commonPrototype").map { it.asString })
     }
 
     @Test
-    fun restEventCompressionReadinessManifest_isPinnedBeforeCodecMigration() {
+    fun restEventCompressionReadinessManifest_isPinnedForCodecOwnership() {
         val vector = loadRestServiceVectors().first { it.get("id").asString == "rest-event-compression-readiness" }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -236,7 +236,7 @@ class PolarDeviceRestApiUtilsTest {
     }
 
     @Test
-    fun restServiceMappingReadinessManifest_isPinnedBeforeModelMigration() {
+    fun restServiceMappingReadinessManifest_isPinnedForModelOwnership() {
         val vector = loadRestServiceVectors().first { it.get("id").asString == "rest-service-mapping-readiness" }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -246,7 +246,7 @@ class PolarDeviceRestApiUtilsTest {
         val coveredFamilies = expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString }
 
         assertEquals("restServiceMappingReadiness", input.get("kind").asString)
-        assertEquals("compileVerifiedPreMigrationCharacterization", expected.get("migrationReadiness").asString)
+        assertEquals("compileVerifiedSharedContractCharacterization", expected.get("sharedOwnershipStatus").asString)
         assertEquals(REST_SERVICE_MAPPING_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths)
         assertEquals(REST_SERVICE_MAPPING_READINESS_FAMILIES, requiredFamilies)
         assertEquals(REST_SERVICE_MAPPING_READINESS_FAMILIES, coveredFamilies)
@@ -366,9 +366,9 @@ class PolarDeviceRestApiUtilsTest {
             "service-description-empty-transport-response"
         )
 
-        const val REST_REQUEST_TRANSPORT_MIGRATION_REQUIREMENT = "Before moving REST request orchestration into common KMP code, implement a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads."
+        const val REST_REQUEST_TRANSPORT_SHARED_OWNERSHIP_REQUIREMENT = "Shared ownership of REST request orchestration requires a fake PFTP request harness that can inject response-error payloads and byte-for-byte empty successful responses for service discovery and service-description reads."
 
-        const val REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION = "REST request transport migration may proceed only after rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping stays pinned through rest-facade-runtime-policy.json, and the shared tests are compile-verified."
+        const val REST_REQUEST_TRANSPORT_READINESS_COMMON_DECISION = "REST request transport shared ownership remains valid while rest-request-transport-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS REST tests continue to reference the same vectors, service-list and service-description GET paths remain pinned, response-error status and message mapping stay covered, empty successful responses are deliberately normalized or deliberately preserved as platform facade behavior, public facade error mapping stays pinned through rest-facade-runtime-policy.json, and the shared tests are compile-verified."
 
         val REST_EVENT_COMPRESSION_READINESS_FAMILIES = listOf(
             "uncompressed-batch-payload-preservation",
@@ -383,7 +383,7 @@ class PolarDeviceRestApiUtilsTest {
             "compile-verification-gate"
         )
 
-        const val REST_EVENT_COMPRESSION_READINESS_COMMON_DECISION = "REST event compression migration may proceed only after rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior are preserved through shared KMP platform actual codecs, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
+        const val REST_EVENT_COMPRESSION_READINESS_COMMON_DECISION = "REST event compression shared ownership remains valid while rest-event-compression-platform-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS event tests continue to reference the same vectors, uncompressed and empty batches preserve current payload semantics, Android gzip and iOS deflate behavior are preserved through shared platform actual codecs, malformed compressed payload handling remains explicit for both platforms, notification payload order is pinned, and the shared tests are compile-verified."
 
         val REST_SERVICE_MAPPING_READINESS_FAMILIES = listOf(
             "service-list-name-path-mapping",

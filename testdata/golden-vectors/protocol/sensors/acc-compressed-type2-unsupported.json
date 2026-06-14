@@ -21,7 +21,7 @@
     "ios": true,
     "common": true
   },
-  "notes": "ACC currently supports compressed frame types 0 and 1. KMP should keep unsupported compressed frame errors deterministic.",
+  "notes": "ACC currently supports compressed frame types 0 and 1. Shared code should keep unsupported compressed frame errors deterministic.",
   "consumerTests": {
     "android": [
       "com.polar.androidcommunications.api.ble.model.gatt.client.pmd.model.AccDataTest"

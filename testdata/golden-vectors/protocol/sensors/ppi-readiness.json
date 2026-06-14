@@ -1,8 +1,8 @@
 {
   "id": "ppi-readiness",
   "area": "sensors.ppi",
-  "case": "pre_migration_readiness_manifest",
-  "source": "KMP migration readiness gate for PPI parser behavior",
+  "case": "shared_contract_readiness_manifest",
+  "source": "Shared ownership readiness gate for PPI parser behavior",
   "input": {
     "kind": "ppiReadiness",
     "policyVectorPaths": [
@@ -24,7 +24,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "sharedOwnershipStatus": "coveredBySharedContractCharacterization",
     "coveredBehaviorFamilies": [
       "raw-type0-hr-rr-error-status-parsing",
       "raw-type0-zero-timestamp-policy",

@@ -2,8 +2,8 @@
   "id": "pmd-settings-readiness",
   "area": "pmd.settings",
   "case": "pmd_settings_readiness",
-  "source": "PMD settings vectors and shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the PMD settings behavior families that must remain covered before settings parsing and selected-setting serialization delegate to shared KMP code.",
+  "source": "PMD settings vectors and shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the PMD settings behavior families that must remain covered before settings parsing and selected-setting serialization delegate to shared code.",
   "input": {
     "kind": "pmdSettingsReadiness",
     "policyVectorPaths": [
@@ -43,7 +43,7 @@
       "platform-pmd-settings-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "PMD settings migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD settings tests continue to reference the same vectors, baseline parsing, duplicate overwrite behavior, FACTOR parsing, selected-setting serialization, skipped FACTOR serialization, RANGE_MILLIUNIT signedness platform decisions, SECURITY setting parse policy, truncated-value policy, unknown-setting-type policy, and compile verification remain explicit before production PMD settings logic moves."
+    "commonDecision": "PMD settings shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD settings tests continue to reference the same vectors, baseline parsing, duplicate overwrite behavior, FACTOR parsing, selected-setting serialization, skipped FACTOR serialization, RANGE_MILLIUNIT signedness platform decisions, SECURITY setting parse policy, truncated-value policy, unknown-setting-type policy, and compile verification remain explicit before production PMD settings logic moves."
   },
   "consumerTests": {
     "android": [
@@ -61,5 +61,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest gates PMD settings parser and selected-setting serialization behavior-family completeness only; PMD control-point responses, secret strategy handling, active measurements, and facade request orchestration remain separate migration gates."
+  "notes": "This readiness manifest gates PMD settings parser and selected-setting serialization behavior-family completeness only; PMD control-point responses, secret strategy handling, active measurements, and facade request orchestration remain separate shared ownership gates."
 }

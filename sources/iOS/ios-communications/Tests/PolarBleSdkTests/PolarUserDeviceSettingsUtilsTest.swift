@@ -263,7 +263,7 @@ final class PolarUserDeviceSettingsUtilsTest: XCTestCase {
         }
     }
 
-    func testUserDeviceSettingsModelReadinessManifestIsPinnedBeforeModelMigration() throws {
+    func testUserDeviceSettingsModelReadinessManifestIsPinnedBeforeModelOwnership() throws {
         let manifest = try loadUserDeviceSettingsModelReadinessManifest()
         let id = try XCTUnwrap(manifest["id"] as? String)
         let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)
@@ -275,7 +275,7 @@ final class PolarUserDeviceSettingsUtilsTest: XCTestCase {
 
         XCTAssertEqual("user-device-settings-model-readiness", id)
         XCTAssertEqual("userDeviceSettingsModelReadiness", try XCTUnwrap(input["kind"] as? String, id))
-        XCTAssertEqual("compileVerifiedPreMigrationCharacterization", try XCTUnwrap(expected["migrationReadiness"] as? String, id))
+        XCTAssertEqual("compileVerifiedSharedContractCharacterization", try XCTUnwrap(expected["sharedOwnershipStatus"] as? String, id))
         XCTAssertEqual(USER_DEVICE_SETTINGS_MODEL_READINESS_POLICY_VECTOR_PATHS, policyVectorPaths, id)
         XCTAssertEqual(USER_DEVICE_SETTINGS_MODEL_READINESS_FAMILIES, requiredFamilies, id)
         XCTAssertEqual(USER_DEVICE_SETTINGS_MODEL_READINESS_FAMILIES, coveredFamilies, id)

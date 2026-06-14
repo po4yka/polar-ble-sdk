@@ -2,7 +2,7 @@
   "id": "time-string-formatting",
   "area": "time-date",
   "case": "time_string_formatting",
-  "source": "iOS KMP shared migration characterization",
+  "source": "iOS shared shared ownership characterization",
   "description": "Pins current protobuf time string formatting, including the existing two-digit minimum millisecond width.",
   "input": {
     "kind": "timeString",

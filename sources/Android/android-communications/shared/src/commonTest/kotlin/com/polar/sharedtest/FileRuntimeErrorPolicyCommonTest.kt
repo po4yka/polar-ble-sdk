@@ -82,7 +82,7 @@ class FileRuntimeErrorPolicyCommonTest {
 
         assertEquals("fileRuntimeErrorPolicy", input.stringValue("kind"))
         assertEquals(requiredFileRuntimeErrorCaseIds, cases.map { it.id })
-        assertEquals(fileRuntimeErrorMigrationRequirement, expected.stringValue("migrationRequirement"))
+        assertEquals(fileRuntimeErrorSharedOwnershipRequirement, expected.stringValue("sharedOwnershipRequirement"))
         assertEquals("executable shared commonTest", expectedPrototype.stringValue("status"))
         assertEquals(requiredFileRuntimeErrorCaseIds, expectedCases.keys.toList())
         assertEquals(fileRuntimeErrorCommonDecision, expected.stringValue("commonDecision"))
@@ -106,7 +106,7 @@ class FileRuntimeErrorPolicyCommonTest {
     }
 
     @Test
-    fun fileRuntimeErrorReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun fileRuntimeErrorReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/file-utils/runtime-error-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -123,7 +123,7 @@ class FileRuntimeErrorPolicyCommonTest {
         assertFileRuntimeErrorPolicyVectorShape(policy)
         assertEquals(fileRuntimeErrorReadinessCommonDecision, expected.stringValue("commonDecision"))
         assertEquals("executable shared commonTest runtime planning guard", expected.objectValue("commonRuntimePrototype").stringValue("status"))
-        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", expected.objectValue("commonRuntimePrototype").stringValue("reason"))
         assertEquals(listOf("com.polar.sdk.api.model.utils.PolarFileUtilsTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarFileUtilsTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.FileRuntimeErrorPolicyCommonTest"), consumerTests.stringArrayValue("commonPrototype"))
@@ -140,7 +140,7 @@ class FileRuntimeErrorPolicyCommonTest {
         assertEquals("fileRuntimeErrorPolicy", input.stringValue("kind"))
         assertEquals(requiredFileRuntimeErrorCaseIds, cases.keys.toList())
         assertEquals(requiredFileRuntimeErrorCaseIds, expectedCases.keys.toList())
-        assertEquals(fileRuntimeErrorMigrationRequirement, expected.stringValue("migrationRequirement"))
+        assertEquals(fileRuntimeErrorSharedOwnershipRequirement, expected.stringValue("sharedOwnershipRequirement"))
         assertEquals(fileRuntimeErrorCommonDecision, expected.stringValue("commonDecision"))
         assertEquals("shared-common-test", policy.objectValue("execution").stringValue("status"))
         assertEquals("executable shared commonTest covers file command capture and typed runtime errors before facade mapping moves", policy.objectValue("platformExpectations").stringValue("common"))
@@ -197,11 +197,11 @@ class FileRuntimeErrorPolicyCommonTest {
         "compile-verification-gate"
     )
 
-    private val fileRuntimeErrorMigrationRequirement = "Before moving file utility orchestration into common KMP code, implement fake PFTP request and write-stream tests that cover malformed directory payloads, request-level transport errors, response-error status mapping, and write-stream failures after the PUT header is prepared."
+    private val fileRuntimeErrorSharedOwnershipRequirement = "Shared ownership of file utility orchestration requires fake PFTP request and write-stream tests that cover malformed directory payloads, request-level transport errors, response-error status mapping, and write-stream failures after the PUT header is prepared."
 
     private val fileRuntimeErrorCommonDecision = "Preserve documented platform-specific policies only where required for public compatibility; otherwise normalize shared runtime errors to typed request, parse, response, and write-stream failures."
 
-    private val fileRuntimeErrorReadinessCommonDecision = "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified."
+    private val fileRuntimeErrorReadinessCommonDecision = "File runtime error shared ownership remains valid while runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified."
 
     private fun assertOutcome(caseId: String, expected: String, outcome: PolarFileRuntimeErrorPlan) {
         assertEquals(expected.stringValue("outcome"), outcome.outcome, caseId)

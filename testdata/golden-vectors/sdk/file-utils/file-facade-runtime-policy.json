@@ -3,7 +3,7 @@
   "area": "sdk.file-utils",
   "case": "file_facade_runtime_policy",
   "source": "BDBleApiImplTest and PolarBleApiImplTests low-level file public facade characterization",
-  "description": "Pins low-level public file facade PSFTP command planning before file read/write/delete orchestration can delegate to a shared KMP runtime.",
+  "description": "Pins low-level public file facade PSFTP command planning before file read/write/delete orchestration can delegate to a shared runtime.",
   "input": {
     "kind": "fileFacadeRuntimePolicy",
     "operations": [
@@ -235,6 +235,6 @@
     "transport": "public-facade-psftp-command-capture",
     "wallClockSafe": true
   },
-  "commonDecision": "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned.",
+  "commonDecision": "Promote low-level file facade planning only while read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned.",
   "notes": "This vector complements file-read-write-delete-operations.json and runtime-error-policy.json. It owns the public facade command paths, payload capture, empty read payload success, delete request failure, write progress success, and read/write/delete response-error propagation for low-level read/write/delete calls; directory-list traversal remains covered by list-files-shallow-all.json and list-files-recursive-filtered.json."
 }

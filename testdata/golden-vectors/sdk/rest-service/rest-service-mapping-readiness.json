@@ -1,8 +1,8 @@
 {
   "id": "rest-service-mapping-readiness",
   "area": "sdk.rest-service",
-  "case": "pre_migration_rest_service_json_mapping_readiness_manifest",
-  "source": "KMP migration readiness gate for REST service-list and service-description model mapping",
+  "case": "shared_contract_rest_service_json_mapping_readiness_manifest",
+  "source": "Shared ownership readiness gate for REST service-list and service-description model mapping",
   "input": {
     "kind": "restServiceMappingReadiness",
     "policyVectorPaths": [
@@ -25,7 +25,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "compileVerifiedPreMigrationCharacterization",
+    "sharedOwnershipStatus": "compileVerifiedSharedContractCharacterization",
     "coveredBehaviorFamilies": [
       "service-list-name-path-mapping",
       "service-list-empty-defaults",

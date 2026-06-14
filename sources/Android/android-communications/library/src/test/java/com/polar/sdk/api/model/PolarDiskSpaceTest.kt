@@ -64,7 +64,7 @@ class PolarDiskSpaceTest {
     }
 
     @Test
-    fun `disk space golden vectors follow neutral KMP vector shape`() {
+    fun `disk space golden vectors follow neutral shared vector shape`() {
         loadDiskSpaceVectors().forEach { vector ->
             val id = vector.get("id").asString
             assertTrue(id, vector.has("area"))
@@ -96,7 +96,7 @@ class PolarDiskSpaceTest {
     }
 
     @Test
-    fun `disk space readiness manifest is pinned before model migration`() {
+    fun `disk space readiness manifest is pinned for shared model ownership`() {
         val vector = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/disk-space/disk-space-readiness.json")).use { reader ->
             JsonParser.parseReader(reader).asJsonObject
         }
@@ -136,7 +136,7 @@ class PolarDiskSpaceTest {
         "compile-verification-gate"
     )
 
-    private val DISK_SPACE_READINESS_COMMON_DECISION = "Disk-space model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS disk-space tests continue to reference the same vectors, byte-total and free-byte calculations remain covered, zero-fragment counts remain explicit, fragment size uses the unsigned 32-bit policy instead of inheriting Android signed-int exposure or Swift UInt32 behavior accidentally, malformed truncated varints map to typed parse errors, and the shared tests are compile-verified."
+    private val DISK_SPACE_READINESS_COMMON_DECISION = "Disk-space model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS disk-space tests continue to reference the same vectors, byte-total and free-byte calculations remain covered, zero-fragment counts remain explicit, fragment size uses the unsigned 32-bit policy instead of inheriting Android signed-int exposure or Swift UInt32 behavior accidentally, malformed truncated varints map to typed parse errors, and the shared tests are compile-verified."
 
     private fun String.hexToBytes(): ByteArray {
         require(length % 2 == 0)

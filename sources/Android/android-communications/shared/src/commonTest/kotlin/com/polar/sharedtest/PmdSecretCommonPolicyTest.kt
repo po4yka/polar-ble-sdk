@@ -49,7 +49,7 @@ class PmdSecretCommonPolicyTest {
     }
 
     @Test
-    fun pmdSecretReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun pmdSecretReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val vector = loadGoldenVectorText("protocol/pmd/secret-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -120,6 +120,6 @@ class PmdSecretCommonPolicyTest {
             "pmd-secret-invalid-xor-empty-key" to "XOR must reject an empty key because decrypt reads the first key byte.",
             "pmd-secret-strategy-from-byte-unknown" to "Unknown strategy bytes must be rejected deterministically."
         )
-        const val PMD_SECRET_READINESS_DECISION = "PMD secret strategy migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, shared production NONE/XOR decryption, AES fixture pinning, AES block-alignment gating, shared common AES production decryption, and compile verification remain explicit before remaining fallback removal moves."
+        const val PMD_SECRET_READINESS_DECISION = "PMD secret strategy shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS PMD secret tests continue to reference the same vectors, security strategy byte mapping, unknown strategy rejection, SECURITY setting serialization, NONE/XOR/AES key validation, shared production NONE/XOR decryption, AES fixture pinning, AES block-alignment gating, shared common AES production decryption, and compile verification remain explicit before remaining fallback removal moves."
     }
 }

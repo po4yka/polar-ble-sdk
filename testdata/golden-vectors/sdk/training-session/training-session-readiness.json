@@ -2,8 +2,8 @@
   "id": "training-session-readiness",
   "area": "sdk.training-session",
   "case": "training_session_readiness",
-  "source": "Training-session discovery, payload-read, and parser-ownership vectors plus shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the training-session behavior families that must remain covered before discovery/read orchestration delegates to shared KMP code.",
+  "source": "Training-session discovery, payload-read, and parser-ownership vectors plus shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the training-session behavior families that must remain covered before discovery/read orchestration delegates to shared code.",
   "input": {
     "kind": "trainingSessionReadiness",
     "policyVectorPaths": [
@@ -60,7 +60,7 @@
       "public-generated-model-reconstruction-boundary",
       "compile-verification-gate"
     ],
-    "commonDecision": "Training-session migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared selected protobuf field parsing, shared public-model read planning, shared public-model slot planning, generated public protobuf construction boundaries, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves."
+    "commonDecision": "Training-session shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS training-session tests continue to reference the same vectors, directory traversal, summary discovery, exercise classification, unknown-file ignoring, aggregate size, exercise path policy, missing exercise-file policy, payload fetch order, progress, malformed component isolation, unknown advanced sample-list handling, known sample preservation, parser-family ownership, shared gzip payload decoding, shared selected protobuf field parsing, shared public-model read planning, shared public-model slot planning, generated public protobuf construction boundaries, public generated-model reconstruction boundaries, and compile verification remain explicit before production discovery/read orchestration moves."
   },
   "consumerTests": {
     "android": [
@@ -78,5 +78,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest gates training-session discovery/read orchestration behavior-family completeness only; gzip payload decoding, selected protobuf field parsing, deterministic public-model slot planning, and neutral reconstruction-slot planning now use shared KMP production code, while generated public protobuf model construction remains platform-owned in Android and iOS adapters."
+  "notes": "This readiness manifest gates training-session discovery/read orchestration behavior-family completeness only; gzip payload decoding, selected protobuf field parsing, deterministic public-model slot planning, and neutral reconstruction-slot planning now use shared production code, while generated public protobuf model construction remains platform-owned in Android and iOS adapters."
 }

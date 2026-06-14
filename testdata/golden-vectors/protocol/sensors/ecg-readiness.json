@@ -1,8 +1,8 @@
 {
   "id": "ecg-readiness",
   "area": "sensors.ecg",
-  "case": "pre_migration_readiness_manifest",
-  "source": "KMP migration readiness gate for ECG parser behavior",
+  "case": "shared_contract_readiness_manifest",
+  "source": "Shared ownership readiness gate for ECG parser behavior",
   "input": {
     "kind": "ecgReadiness",
     "policyVectorPaths": [
@@ -26,7 +26,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "coveredByPreMigrationCharacterization",
+    "sharedOwnershipStatus": "coveredBySharedContractCharacterization",
     "coveredBehaviorFamilies": [
       "raw-type0-signed-24bit-parsing",
       "raw-type0-boundary-values",

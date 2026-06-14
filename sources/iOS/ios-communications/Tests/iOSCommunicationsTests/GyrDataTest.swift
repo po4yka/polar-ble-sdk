@@ -176,7 +176,7 @@ final class GyrDataTest: XCTestCase {
         }
     }
 
-    func testGyrReadinessManifestIsPinnedBeforeParserMigration() throws {
+    func testGyrReadinessManifestPinsParserOwnership() throws {
         let manifest = try loadGyrReadinessManifest()
         let id = try XCTUnwrap(manifest["id"] as? String)
         let input = try XCTUnwrap(manifest["input"] as? [String: Any], id)

@@ -36,7 +36,7 @@ class KmpSharedBoundaryPolicyTest {
             !retiredFrameAdapter.exists()
         )
         assertTrue(
-            "PolarRuntimePlannerAdapter must keep parser bridge methods for every migrated PMD sensor family: $missingAdapterMethods",
+            "PolarRuntimePlannerAdapter must keep parser bridge methods for every shared-owned PMD sensor family: $missingAdapterMethods",
             missingAdapterMethods.isEmpty()
         )
     }
@@ -74,7 +74,7 @@ class KmpSharedBoundaryPolicyTest {
         }
 
         assertTrue(
-            "Byte-level protobuf/gzip/crypto/codec migration must remain explicitly deferred until production common dependencies and byte-identical ownership are added: $violations",
+            "Byte-level protobuf/gzip/crypto/codec shared ownership must remain explicitly deferred until production common dependencies and byte-identical ownership are added: $violations",
             violations.isEmpty()
         )
     }
@@ -120,7 +120,7 @@ class KmpSharedBoundaryPolicyTest {
     }
 
     @Test
-    fun `KMP common vector helper remains gated until shared common tests exist`() {
+    fun `shared common vector helper remains gated until shared common tests exist`() {
         val root = findRepositoryRoot()
         val validationCommands = root.resolve("documentation/KmpValidationCommands.md").readText()
         val commonTestSourceSets = root
@@ -131,11 +131,11 @@ class KmpSharedBoundaryPolicyTest {
 
         if (commonTestSourceSets.isEmpty()) {
             val violations = mutableListOf<String>()
-            if (!validationCommands.contains("No shared KMP module exists yet")) {
-                violations += "KmpValidationCommands.md must state that no shared KMP module exists yet"
+            if (!validationCommands.contains("No shared module exists yet")) {
+                violations += "KmpValidationCommands.md must state that no shared module exists yet"
             }
             assertTrue(
-                "KMP common helper validation state must match the current absence of a shared module: $violations",
+                "shared common helper validation state must match the current absence of a shared module: $violations",
                 violations.isEmpty()
             )
         } else {
@@ -145,7 +145,7 @@ class KmpSharedBoundaryPolicyTest {
             }
             KMP_COMMON_VECTOR_HELPER_ARTIFACTS
                 .filterNot { relativePath -> root.resolve(relativePath).isFile }
-                .mapTo(violations) { relativePath -> "missing KMP common vector helper artifact $relativePath" }
+                .mapTo(violations) { relativePath -> "missing shared common vector helper artifact $relativePath" }
             val commonTest = root.resolve("sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/GoldenVectorTestDataCommonTest.kt")
             val commonTestText = if (commonTest.isFile) commonTest.readText() else ""
             if (commonTest.isFile && !commonTestText.contains("polar-device-uuid-valid")) {
@@ -155,14 +155,14 @@ class KmpSharedBoundaryPolicyTest {
                 violations += "${commonTest.relativeTo(root).path} must prove missing fixture paths fail fast"
             }
             assertTrue(
-                "KMP common helper validation state must match existing commonTest source sets $commonTestSourceSets: $violations",
+                "shared common helper validation state must match existing commonTest source sets $commonTestSourceSets: $violations",
                 violations.isEmpty()
             )
         }
     }
 
     @Test
-    fun `minimal shared KMP module stays behavior free and test executable`() {
+    fun `minimal shared module stays behavior free and test executable`() {
         val root = findRepositoryRoot()
         val validationCommands = root.resolve("documentation/KmpValidationCommands.md").readText()
         val settings = root.resolve("sources/Android/android-communications/settings.gradle.kts").readText()
@@ -187,7 +187,7 @@ class KmpSharedBoundaryPolicyTest {
         }
 
         assertTrue(
-            "Shared KMP module must retain the minimal marker and expose an executable commonTest gate: $violations",
+            "Shared shared module must retain the minimal marker and expose an executable commonTest gate: $violations",
             violations.isEmpty()
         )
     }
@@ -214,7 +214,7 @@ class KmpSharedBoundaryPolicyTest {
             .toList()
 
         assertTrue(
-            "Shared commonTest files must stay portable before KMP migration; use common-safe APIs or add a reviewed allowlist entry for false positives: $portabilityViolations",
+            "Shared commonTest files must stay portable under shared ownership; use common-safe APIs or add a reviewed allowlist entry for false positives: $portabilityViolations",
             portabilityViolations.isEmpty()
         )
     }
@@ -239,13 +239,13 @@ class KmpSharedBoundaryPolicyTest {
             .toList()
 
         assertTrue(
-            "Shared commonMain code must avoid platform-only APIs before production KMP migration: $portabilityViolations",
+            "Shared commonMain code must avoid platform-only APIs before production shared ownership: $portabilityViolations",
             portabilityViolations.isEmpty()
         )
     }
 
     @Test
-    fun `shared KMP module declares Android and Apple targets without production consumption`() {
+    fun `shared module declares Android and Apple targets without production consumption`() {
         val root = findRepositoryRoot()
         val validationCommands = root.resolve("documentation/KmpValidationCommands.md").readText()
         val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle.kts").readText()
@@ -253,13 +253,13 @@ class KmpSharedBoundaryPolicyTest {
         val violations = mutableListOf<String>()
 
         if (!sharedBuild.contains("alias(libs.plugins.android.kotlin.multiplatform.library)")) {
-            violations += "shared/build.gradle.kts must apply com.android.kotlin.multiplatform.library for the Android KMP target"
+            violations += "shared/build.gradle.kts must apply com.android.kotlin.multiplatform.library for the Android shared target"
         }
         if (!sharedBuild.contains("android {")) {
-            violations += "shared/build.gradle.kts must declare the AGP 9 Android KMP target"
+            violations += "shared/build.gradle.kts must declare the AGP 9 Android shared target"
         }
         if (!sharedBuild.contains("iosX64()") || !sharedBuild.contains("iosArm64()") || !sharedBuild.contains("iosSimulatorArm64()") || !sharedBuild.contains("watchosX64()") || !sharedBuild.contains("watchosArm64()") || !sharedBuild.contains("watchosSimulatorArm64()")) {
-            violations += "shared/build.gradle.kts must declare iOS and watchOS KMP framework targets"
+            violations += "shared/build.gradle.kts must declare iOS and watchOS shared framework targets"
         }
         if (!sharedBuild.contains("namespace = \"com.polar.shared\"") || !Regex("minSdk(?:Version)?\\s*(?:=)?\\s*26").containsMatchIn(sharedBuild)) {
             violations += "shared/build.gradle.kts must declare Android namespace and minSdk 26"
@@ -274,14 +274,14 @@ class KmpSharedBoundaryPolicyTest {
             violations += "KmpValidationCommands.md must document shared Android and iOS target compile gates"
         }
         if (root.resolve("sources/Android/android-communications/library/build.gradle.kts").readText().contains("project(\":shared\")") && !deviceIdSliceMigrated(root)) {
-            violations += "Android library must not consume :shared without concrete migrated behavior evidence"
+            violations += "Android library must not consume :shared without concrete shared-owned behavior evidence"
         }
         if (root.resolve("sources/iOS/ios-communications/Package.swift").takeIf { it.isFile }?.readText()?.contains("shared") == true) {
-            violations += "iOS package must not consume shared before a behavior migration slice"
+            violations += "iOS package must not consume shared before a behavior shared ownership slice"
         }
 
         assertTrue(
-            "Shared KMP module must declare Android and Apple targets without production consumption: $violations",
+            "Shared shared module must declare Android and Apple targets without production consumption: $violations",
             violations.isEmpty()
         )
     }
@@ -319,7 +319,7 @@ class KmpSharedBoundaryPolicyTest {
         }
         val xcodeProject = root.resolve("sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj").readText()
         if (xcodeProject.contains("Pods") || xcodeProject.contains("[CP]") || xcodeProject.contains("PODS_ROOT")) {
-            violations += "iOS Xcode project must not contain CocoaPods integration after SwiftPM migration"
+            violations += "iOS Xcode project must not contain CocoaPods integration after SwiftPM shared ownership"
         }
         if (!xcodeProject.contains("XCRemoteSwiftPackageReference") || !xcodeProject.contains("SwiftProtobuf") || !xcodeProject.contains("ZIPFoundation")) {
             violations += "iOS Xcode project must declare SwiftPM package dependencies for SwiftProtobuf and ZIPFoundation"
@@ -353,10 +353,10 @@ class KmpSharedBoundaryPolicyTest {
             violations += "verify_android_shared_maven_metadata.sh must exist and be executable"
         }
         if (root.resolve("sources/Android/android-communications/library/build.gradle.kts").readText().contains("implementation(project(\":shared\"))") && !deviceIdSliceMigrated(root)) {
-            violations += "Android production consumption must name a migrated shared behavior slice"
+            violations += "Android production consumption must name a shared-owned behavior slice"
         }
         if (root.resolve("sources/iOS/ios-communications/iOSCommunications.xcodeproj/project.pbxproj").readText().contains("PolarBleSdkShared.framework") && !iosSharedConsumptionMigrated(root)) {
-            violations += "iOS production consumption must name a migrated shared behavior slice"
+            violations += "iOS production consumption must name a shared-owned behavior slice"
         }
 
         assertTrue(
@@ -366,30 +366,30 @@ class KmpSharedBoundaryPolicyTest {
     }
 
     @Test
-    fun `modern KMP stack audit keeps final ownership boundaries explicit`() {
+    fun `modern shared stack audit keeps final ownership boundaries explicit`() {
         val root = findRepositoryRoot()
         val audit = root.resolve("documentation/KmpModernStackAudit.md").readText()
         val missingTerms = KMP_MODERN_STACK_AUDIT_REQUIRED_TERMS
             .filterNot { term -> audit.contains(term) }
 
         assertTrue(
-            "KmpModernStackAudit.md must keep migrated, platform-owned, packaging-owned, and current validation boundaries explicit: $missingTerms",
+            "KmpModernStackAudit.md must keep shared-owned, platform-owned, packaging-owned, and current validation boundaries explicit: $missingTerms",
             missingTerms.isEmpty()
         )
     }
 
     @Test
-    fun `vectors excluded from common KMP declare migration policy rationale`() {
+    fun `vectors excluded from common declare shared ownership policy rationale`() {
         val missingPolicy = loadAllGoldenVectors()
             .filter { vector ->
                 val platforms = vector.json.getAsJsonObject("platforms")
                 platforms.has("common") && !platforms.get("common").asBoolean
             }
-            .filterNot { it.json.hasMigrationPolicyRationale() }
+            .filterNot { it.json.hasSharedOwnershipRationale() }
             .map { vector -> vector.file.relativeTo(findRepositoryRoot()).path }
 
         assertTrue(
-            "Vectors with platforms.common=false must declare expected.commonDecision, platformExpectations.commonDecision, expected.commonRuntimePrototype, expected.commonWorkflowPrototype, or migrationOwnership: $missingPolicy",
+            "Vectors with platforms.common=false must declare expected.commonDecision, platformExpectations.commonDecision, expected.commonRuntimePrototype, expected.commonWorkflowPrototype, or sharedOwnership: $missingPolicy",
             missingPolicy.isEmpty()
         )
     }
@@ -433,7 +433,7 @@ class KmpSharedBoundaryPolicyTest {
             }
 
         assertTrue(
-            "Runtime or planning vectors must name Android, iOS, and commonPrototype consumers before shared migration: $incompleteConsumers",
+            "Runtime or planning vectors must name Android, iOS, and commonPrototype consumers before shared ownership: $incompleteConsumers",
             incompleteConsumers.isEmpty()
         )
     }
@@ -447,7 +447,7 @@ class KmpSharedBoundaryPolicyTest {
             .map { vector -> vector.file.relativeTo(root).path }
 
         assertTrue(
-            "Runtime planning vectors must name executable shared commonTest consumers before production KMP migration: $missingSharedConsumers",
+            "Runtime planning vectors must name executable shared commonTest consumers before production shared ownership: $missingSharedConsumers",
             missingSharedConsumers.isEmpty()
         )
     }

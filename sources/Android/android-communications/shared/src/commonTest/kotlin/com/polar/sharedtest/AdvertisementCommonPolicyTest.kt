@@ -62,7 +62,7 @@ class AdvertisementCommonPolicyTest {
     }
 
     @Test
-    fun advertisementReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun advertisementReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val vector = loadGoldenVectorText("protocol/advertisement/advertisement-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -201,7 +201,7 @@ class AdvertisementCommonPolicyTest {
             "platform-advertisement-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val ADVERTISEMENT_READINESS_DECISION = "Advertisement parsing migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS advertisement tests continue to reference the same vectors, Polar and custom-prefix local-name parsing, seven-digit device ID assembly, non-Polar local-name platform decisions, manufacturer HR presence and absence, non-Polar and unknown company behavior, unknown Polar segment handling, malformed GPB missing-length and truncated HR-candidate policies, service UUID membership, RSSI median calculation, and compile verification remain explicit before production advertisement parsing moves."
+        const val ADVERTISEMENT_READINESS_DECISION = "Advertisement parsing shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS advertisement tests continue to reference the same vectors, Polar and custom-prefix local-name parsing, seven-digit device ID assembly, non-Polar local-name platform decisions, manufacturer HR presence and absence, non-Polar and unknown company behavior, unknown Polar segment handling, malformed GPB missing-length and truncated HR-candidate policies, service UUID membership, RSSI median calculation, and compile verification remain explicit before production advertisement parsing moves."
         const val ADVERTISEMENT_MALFORMED_GPB_COMMON_POLICY = "reject or ignore malformed GPB segments deterministically without indexing beyond payload bounds"
     }
 }

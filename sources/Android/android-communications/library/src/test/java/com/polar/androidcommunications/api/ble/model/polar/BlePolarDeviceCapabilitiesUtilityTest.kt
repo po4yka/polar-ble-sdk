@@ -250,7 +250,7 @@ class BlePolarDeviceCapabilitiesUtilityTest {
     }
 
     @Test
-    fun capabilityLookupReadinessManifest_isPinnedBeforeCapabilityMigration() {
+    fun capabilityLookupReadinessManifest_isPinnedForCapabilityOwnership() {
         val manifest = loadCapabilityLookupReadinessManifest()
         val input = manifest.getAsJsonObject("input")
         val expected = manifest.getAsJsonObject("expected")
@@ -282,7 +282,7 @@ class BlePolarDeviceCapabilitiesUtilityTest {
             ),
             input.getAsJsonArray("policyVectorPaths").map { it.asString }
         )
-        assertEquals("coveredByPreMigrationCharacterization", expected.get("migrationReadiness").asString)
+        assertEquals("coveredBySharedContractCharacterization", expected.get("sharedOwnershipStatus").asString)
         assertEquals(expectedFamilies, input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString })
         assertEquals(expectedFamilies, expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString })
         assertEquals(listOf("com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtilityTest"), consumerTests.getAsJsonArray("android").map { it.asString })
@@ -292,7 +292,7 @@ class BlePolarDeviceCapabilitiesUtilityTest {
         val resourceInput = resourceOwnership.getAsJsonObject("input")
         val resourceExpected = resourceOwnership.getAsJsonObject("expected")
         assertEquals("deviceCapabilityResourceOverrideOwnership", resourceInput.get("kind").asString)
-        assertEquals("platformOwnedResourceBoundary", resourceExpected.get("migrationReadiness").asString)
+        assertEquals("platformOwnedResourceBoundary", resourceExpected.get("sharedOwnershipStatus").asString)
         assertEquals(
             "Resource selection and app-level override precedence remain platform-owned until common resource loading is deliberately introduced with Android asset/external-file tests, iOS Bundle.main/SDK-bundle/sandbox tests, and shared common parser tests.",
             resourceExpected.get("platformDecision").asString

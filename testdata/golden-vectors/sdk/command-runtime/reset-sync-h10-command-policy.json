@@ -3,7 +3,7 @@
   "area": "sdk-command-runtime",
   "case": "reset_sync_h10_command_policy",
   "source": "BDBleApiImplTest and PolarBleApiImplTests public facade command characterization",
-  "description": "Pins H10 recording PSFTP queries, live/offline exercise command queries, reset notification flag payloads, and sync start/stop sequencing before these public facade command families can delegate to a shared KMP runtime.",
+  "description": "Pins H10 recording PSFTP queries, live/offline exercise command queries, reset notification flag payloads, and sync start/stop sequencing before these public facade command families can delegate to a shared runtime.",
   "input": {
     "operations": [
       {
@@ -476,7 +476,7 @@
       "syncStartQueryFailure": "propagates the query error and sends no notifications",
       "syncStopNotificationFailure": "propagates the notification error after STOP_SYNC is attempted"
     },
-    "commonDecision": "Keep sync failure policy platform-specific until the public API migration has an approved compatibility decision."
+    "commonDecision": "Keep sync failure policy platform-specific until the public API shared ownership has an approved compatibility decision."
   },
   "consumerTests": {
     "android": [
@@ -500,5 +500,5 @@
     "wallClockSafe": true
   },
   "commonDecision": "Promote reset/H10/exercise command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates.",
-  "notes": "Android and iOS agree on the command/query IDs, H10 query failure propagation, exercise query planning, reset payload flags, and reset notification failure propagation. Sync start and stop error handling intentionally differs today, so the KMP migration must keep this vector as a decision gate rather than silently choosing one platform behavior."
+  "notes": "Android and iOS agree on the command/query IDs, H10 query failure propagation, exercise query planning, reset payload flags, and reset notification failure propagation. Sync start and stop error handling intentionally differs today, so the shared ownership must keep this vector as a decision gate rather than silently choosing one platform behavior."
 }

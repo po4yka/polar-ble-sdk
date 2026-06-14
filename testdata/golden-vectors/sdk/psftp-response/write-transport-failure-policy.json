@@ -55,5 +55,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Covers the PSFTP write path when the local BLE transport fails while sending the first MTU packet. Shared KMP runtime should treat this as a transport-layer write failure distinct from peer-side RFC76 response errors and write-ack protocol timeouts."
+  "notes": "Covers the PSFTP write path when the local BLE transport fails while sending the first MTU packet. Shared shared runtime should treat this as a transport-layer write failure distinct from peer-side RFC76 response errors and write-ack protocol timeouts."
 }

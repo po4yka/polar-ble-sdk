@@ -7,18 +7,18 @@ import Foundation
 
 @testable import PolarBleSdk
 
-private let REST_FACADE_RUNTIME_READINESS_COMMON_DECISION = "REST facade runtime migration may proceed only after rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified."
-private let FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION = "File facade runtime migration may proceed only after file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
-private let COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime migration may proceed only after reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
-private let STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup migration may proceed only after cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
-private let DISK_TIME_RUNTIME_READINESS_COMMON_DECISION = "Disk/time facade runtime migration may proceed only after disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
+private let REST_FACADE_RUNTIME_READINESS_COMMON_DECISION = "REST facade runtime shared ownership remains valid while rest-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, model JSON mapping vectors remain linked, empty-response and malformed-response parse/decode failures plus response-error transport policies stay covered, public facade error mapping is pinned for service-list and service-description response errors, and the shared tests are compile-verified."
+private let FILE_FACADE_RUNTIME_READINESS_COMMON_DECISION = "File facade runtime shared ownership remains valid while file-facade-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, directory-list traversal vectors remain linked, runtime-error-policy.json keeps malformed-directory, response-error, transport-error, empty read payload, delete request failure, write progress before completion, read/write/delete response-error, and write-stream failure behavior covered, public facade error mapping is pinned, and the shared tests are compile-verified."
+private let COMMAND_RUNTIME_READINESS_COMMON_DECISION = "Command runtime shared ownership remains valid while reset-sync-h10-command-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, H10 query failure propagation, live/offline exercise query planning, every reset-style notification failure propagation, and public facade error mapping are pinned, sync-start and sync-stop platform splits are preserved or explicitly reconciled, and the shared tests are compile-verified."
+private let STORED_DATA_CLEANUP_READINESS_COMMON_DECISION = "Stored-data cleanup shared ownership remains valid while cleanup-workflow-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, cleanup list-failure and empty-parent remove-path splits are preserved in adapters or reconciled explicitly, public facade error mapping is pinned, and the shared tests are compile-verified."
+private let DISK_TIME_RUNTIME_READINESS_COMMON_DECISION = "Disk/time facade runtime shared ownership remains valid while disk-time-query-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, filesystem capability gates remain platform-owned, public facade error mapping is pinned for disk-space and local-time query failures, V2 two-query time setting and H10 single-query behavior are preserved or explicitly reconciled, and the shared tests are compile-verified."
 private let COMMAND_RUNTIME_POLICY_COMMON_DECISION = "Promote reset/H10/exercise command planning before sync error handling; H10 query failures and reset notification failures are shared transport-error propagation, while sync failure terminals remain platform compatibility gates."
 private let STORED_DATA_CLEANUP_POLICY_COMMON_DECISION = "Promote cleanup traversal and filtering before platform-specific public error/path adapters; do not normalize Android/iOS cleanup failure behavior implicitly."
 private let DISK_TIME_RUNTIME_POLICY_COMMON_DECISION = "Promote disk/time query planning only after facade tests keep current H10 capability behavior and V2 two-query time-setting semantics pinned."
-private let USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime migration may proceed only after settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
+private let USER_DEVICE_SETTINGS_RUNTIME_READINESS_COMMON_DECISION = "User-device-settings runtime shared ownership remains valid while settings-runtime-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS facade tests continue to reference the same vectors, protobuf field preservation and public facade error mapping are pinned, direct whole-settings writes, read-failure no-write behavior for telemetry, location, USB, automatic-training-detection, and automatic-OHR setters, and write-failure-after-payload behavior for whole-settings, telemetry, location, USB, automatic-training-detection, and automatic-OHR writes remain covered, daylight-saving payload shape is preserved, and the shared tests are compile-verified."
 private let USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION = "Promote user-device-settings runtime only after direct-write, read/write sequencing, no-write read failures, write-failure payload preservation, and platform protobuf serializer differences remain covered by executable facade and model vectors."
-private let SD_LOG_READINESS_COMMON_DECISION = "SD-log migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS SD-log facade tests continue to pin trigger and magnetometer-frequency enum projection, unknown enum boundaries, SD-log config file paths, write-progress policy, session-notification boundaries, protobuf construction boundaries, optional field presence, public error mapping boundaries, platform vector references, and compile verification before broader SD-log execution moves."
-private let FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
+private let SD_LOG_READINESS_COMMON_DECISION = "SD-log shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS SD-log facade tests continue to pin trigger and magnetometer-frequency enum projection, unknown enum boundaries, SD-log config file paths, write-progress policy, session-notification boundaries, protobuf construction boundaries, optional field presence, public error mapping boundaries, platform vector references, and compile verification before broader SD-log execution moves."
+private let FIRST_TIME_USE_READINESS_COMMON_DECISION = "First-time-use shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS first-time-use facade tests continue to pin physical config enum projection, unknown enum boundaries, physical-config and user-id file paths, write-progress policy, sync sequencing, protobuf construction boundaries, public error mapping boundaries, platform vector references, and compile verification before broader FTU execution moves."
 private let REST_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote REST facade request planning only after service-list and description success cases, service-list and service-description request failures, response-error platform mapping, empty-success and malformed-success parse/decode failures, model JSON mapping vectors, and lower-level empty-response/response-error transport policy remain explicitly covered."
 private let FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION = "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
 private let OFFLINE_TRIGGER_RUNTIME_POLICY_COMMON_DECISION = "Shared offline trigger runtime code should model set-mode, status-read, per-feature setting writes, optional secret attachment, and get/set transport failures as typed steps before mapping them back to Android and iOS public errors."
@@ -92,7 +92,7 @@ final class PolarBleApiImplTests: XCTestCase {
             XCTAssertEqual(commonDecision, actualCommonDecision, file: file, line: line)
             let commonRuntimePrototype = try XCTUnwrap(expected["commonRuntimePrototype"] as? [String: Any], file: file, line: line)
             XCTAssertEqual(commonRuntimePrototype["status"] as? String, "executable shared commonTest runtime planning guard", file: file, line: line)
-            XCTAssertEqual(commonRuntimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration.", file: file, line: line)
+            XCTAssertEqual(commonRuntimePrototype["reason"] as? String, "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership.", file: file, line: line)
         } else {
             XCTAssertTrue(actualCommonDecision.contains("compile-verified"), file: file, line: line)
         }
@@ -248,7 +248,7 @@ final class PolarBleApiImplTests: XCTestCase {
         }
     }
 
-    func testCapabilityLookupReadinessManifestIsPinnedBeforeCapabilityMigration() throws {
+    func testCapabilityLookupReadinessManifestIsPinnedBeforeCapabilityOwnership() throws {
         let manifest = try loadCapabilityLookupReadinessManifest()
         let input = try XCTUnwrap(manifest["input"] as? [String: Any])
         let expected = try XCTUnwrap(manifest["expected"] as? [String: Any])
@@ -271,7 +271,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual("capability-lookup-readiness", manifest["id"] as? String)
         XCTAssertEqual("deviceCapabilityLookupReadiness", input["kind"] as? String)
         XCTAssertEqual(["sdk/device-capabilities/capability-boolean-flags.json", "sdk/device-capabilities/capability-config-merge.json", "sdk/device-capabilities/capability-lookup-basic.json", "sdk/device-capabilities/capability-lookup-default-h10.json", "sdk/device-capabilities/capability-resource-override-ownership.json"], input["policyVectorPaths"] as? [String])
-        XCTAssertEqual("coveredByPreMigrationCharacterization", expected["migrationReadiness"] as? String)
+        XCTAssertEqual("coveredBySharedContractCharacterization", expected["sharedOwnershipStatus"] as? String)
         XCTAssertEqual(families, input["requiredBehaviorFamilies"] as? [String])
         XCTAssertEqual(families, expected["coveredBehaviorFamilies"] as? [String])
         XCTAssertEqual(["com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtilityTest"], consumerTests["android"] as? [String])
@@ -281,11 +281,11 @@ final class PolarBleApiImplTests: XCTestCase {
         let resourceInput = try XCTUnwrap(resourceOwnership["input"] as? [String: Any])
         let resourceExpected = try XCTUnwrap(resourceOwnership["expected"] as? [String: Any])
         XCTAssertEqual("deviceCapabilityResourceOverrideOwnership", resourceInput["kind"] as? String)
-        XCTAssertEqual("platformOwnedResourceBoundary", resourceExpected["migrationReadiness"] as? String)
-        XCTAssertEqual("Shared KMP capability code may own parsing, lookup, defaults, boolean fields, and version-mismatch config merge, but must receive an already selected config and must not choose Android AssetManager, external Documents/PolarConfig files, iOS Bundle.main, SDK bundles, or sandbox files.", resourceExpected["commonDecision"] as? String)
+        XCTAssertEqual("platformOwnedResourceBoundary", resourceExpected["sharedOwnershipStatus"] as? String)
+        XCTAssertEqual("Shared shared capability code may own parsing, lookup, defaults, boolean fields, and version-mismatch config merge, but must receive an already selected config and must not choose Android AssetManager, external Documents/PolarConfig files, iOS Bundle.main, SDK bundles, or sandbox files.", resourceExpected["commonDecision"] as? String)
     }
 
-    func testCommandRuntimeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+    func testCommandRuntimeReadinessManifestIsPinnedBeforeRuntimeOwnership() throws {
         try assertSinglePolicyReadinessManifest(
             path: "sdk/command-runtime/reset-sync-h10-command-readiness.json",
             id: "reset-sync-h10-command-readiness",
@@ -352,7 +352,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(vector["commonDecision"] as? String, STORED_DATA_CLEANUP_POLICY_COMMON_DECISION, file: file, line: line)
     }
 
-    func testStoredDataCleanupReadinessManifestIsPinnedBeforeCleanupMigration() throws {
+    func testStoredDataCleanupReadinessManifestPinsCleanupOwnership() throws {
         try assertSinglePolicyReadinessManifest(
             path: "sdk/stored-data-cleanup/cleanup-workflow-readiness.json",
             id: "stored-data-cleanup-workflow-readiness",
@@ -397,7 +397,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(vector["commonDecision"] as? String, DISK_TIME_RUNTIME_POLICY_COMMON_DECISION, file: file, line: line)
     }
 
-    func testDiskTimeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+    func testDiskTimeReadinessManifestIsPinnedBeforeRuntimeOwnership() throws {
         try assertSinglePolicyReadinessManifest(
             path: "sdk/disk-time-runtime/disk-time-query-readiness.json",
             id: "disk-time-query-readiness",
@@ -454,7 +454,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(vector["commonDecision"] as? String, USER_DEVICE_SETTINGS_RUNTIME_POLICY_COMMON_DECISION, file: file, line: line)
     }
 
-    func testUserDeviceSettingsReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+    func testUserDeviceSettingsReadinessManifestIsPinnedBeforeRuntimeOwnership() throws {
         try assertSinglePolicyReadinessManifest(
             path: "sdk/user-device-settings-runtime/settings-runtime-readiness.json",
             id: "user-device-settings-runtime-readiness",
@@ -541,7 +541,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(vector["commonDecision"] as? String, REST_FACADE_RUNTIME_POLICY_COMMON_DECISION, file: file, line: line)
     }
 
-    func testRestFacadeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+    func testRestFacadeReadinessManifestIsPinnedBeforeRuntimeOwnership() throws {
         try assertSinglePolicyReadinessManifest(
             path: "sdk/rest-service/rest-facade-runtime-readiness.json",
             id: "rest-facade-runtime-readiness",
@@ -682,7 +682,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual((vector["execution"] as? [String: Any])?["status"] as? String, "shared-common-test", file: file, line: line)
     }
 
-    func testOfflineTriggerRuntimeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+    func testOfflineTriggerRuntimeReadinessManifestIsPinnedBeforeRuntimeOwnership() throws {
         try assertSinglePolicyReadinessManifest(
             path: "sdk/offline-recording/trigger-runtime-readiness.json",
             id: "trigger-runtime-readiness",
@@ -706,7 +706,7 @@ final class PolarBleApiImplTests: XCTestCase {
         )
     }
 
-    func testFileFacadeReadinessManifestIsPinnedBeforeRuntimeMigration() throws {
+    func testFileFacadeReadinessManifestIsPinnedBeforeRuntimeOwnership() throws {
         try assertSinglePolicyReadinessManifest(
             path: "sdk/file-utils/file-facade-runtime-readiness.json",
             id: "file-facade-runtime-readiness",
@@ -1744,7 +1744,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(writeOperation.path, SERVICE_DATALOG_CONFIG_FILEPATH)
     }
 
-    func testSdLogReadinessManifestIsPinnedBeforeFacadeMigration() throws {
+    func testSdLogReadinessManifestPinsFacadeOwnership() throws {
         let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/sd-log/sd-log-readiness.json")
         let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any])
         let input = try XCTUnwrap(manifest["input"] as? [String: Any])
@@ -1946,7 +1946,7 @@ final class PolarBleApiImplTests: XCTestCase {
         XCTAssertEqual(physicalConfigWriteOperation.path, PolarFirstTimeUseConfig.FTU_CONFIG_FILEPATH)
     }
 
-    func testFirstTimeUseReadinessManifestIsPinnedBeforeFacadeMigration() throws {
+    func testFirstTimeUseReadinessManifestPinsFacadeOwnership() throws {
         let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/first-time-use/first-time-use-readiness.json")
         let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any])
         let input = try XCTUnwrap(manifest["input"] as? [String: Any])

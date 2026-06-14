@@ -91,7 +91,7 @@ internal class BlePsFtpUtilsTest {
     }
 
     @Test
-    fun `rfc76 golden vectors follow neutral KMP vector shape`() {
+    fun `rfc76 golden vectors follow neutral shared vector shape`() {
         val vectors = loadRfc76Vectors()
         Assert.assertTrue("Expected PSFTP RFC76 golden vectors", vectors.isNotEmpty())
         vectors.forEach { vector ->
@@ -158,7 +158,7 @@ internal class BlePsFtpUtilsTest {
     }
 
     @Test
-    fun `message stream golden vectors follow neutral KMP vector shape`() {
+    fun `message stream golden vectors follow neutral shared vector shape`() {
         listOf("complete-message-streams.json", "rfc76-frame-splitting.json").forEach { fileName ->
             val vector = loadPsFtpVector("psftp-message-stream", fileName)
             val id = vector.get("id").asString
@@ -177,7 +177,7 @@ internal class BlePsFtpUtilsTest {
     }
 
     @Test
-    fun `psftp byte codec readiness manifest is pinned before codec migration`() {
+    fun `psftp byte codec readiness manifest is pinned before codec shared ownership`() {
         val vector = loadPsFtpVector("psftp-message-stream", "byte-codec-readiness.json")
         Assert.assertEquals("psftp-byte-codec-readiness", vector.get("id").asString)
         val input = vector.getAsJsonObject("input")
@@ -242,7 +242,7 @@ internal class BlePsFtpUtilsTest {
             "two-frames",
             "sequence-wraps-after-fifteen"
         )
-        const val PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec migration may proceed only after every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
+        const val PSFTP_BYTE_CODEC_READINESS_COMMON_DECISION = "PSFTP byte-codec shared ownership remains valid while every RFC76 and RFC60 vector listed in this readiness manifest is executable from shared commonTest, Android and iOS codec tests continue to reference the same vectors, header next/status/sequence/payload decoding, RFC76 error-frame platform split, complete-message stream encoding, Android file-data append behavior, iOS request write frame splitting, MTU frame splitting, sequence wrap, and the shared tests are compile-verified."
     }
 
     private fun loadRfc76Vectors(): List<JsonObject> {

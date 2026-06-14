@@ -2,8 +2,8 @@
   "id": "runtime-error-readiness",
   "area": "sdk.file-utils",
   "case": "runtime_error_readiness",
-  "source": "File runtime error policy and common fake-transport prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the low-level file runtime error behavior families that must remain covered before file utility orchestration delegates to shared KMP code.",
+  "source": "File runtime error policy and common fake-transport prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the low-level file runtime error behavior families that must remain covered before file utility orchestration delegates to shared code.",
   "input": {
     "kind": "fileRuntimeErrorReadiness",
     "policyVectorPath": "sdk/file-utils/runtime-error-policy.json",
@@ -33,10 +33,10 @@
       "platform-runtime-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "File runtime error migration may proceed only after runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified.",
+    "commonDecision": "File runtime error shared ownership remains valid while runtime-error-policy.json and this readiness manifest are executable from shared commonTest, Android and iOS file tests continue to reference the same vectors, directory missing status 103, malformed directory payload parse failure, read transport errors, write PUT header and payload capture before stream failure, delete response-error status/message mapping, command/path capture, public facade error mapping stays pinned through file-facade-runtime-policy.json, and the shared tests are compile-verified.",
     "commonRuntimePrototype": {
       "status": "executable shared commonTest runtime planning guard",
-      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production KMP migration."
+      "reason": "Declared because this vector is consumed by runtime or fake-transport policy tests before production shared ownership."
     }
   },
   "consumerTests": {
@@ -55,5 +55,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for file runtime error behavior-family completeness only; public Android and iOS facade error shapes are pinned through file-facade-runtime-policy.json and must remain adapter-owned or be standardized intentionally before production file utility orchestration moves to shared KMP."
+  "notes": "This readiness manifest is a shared ownership gate for file runtime error behavior-family completeness only; public Android and iOS facade error shapes are pinned through file-facade-runtime-policy.json and must remain adapter-owned or be standardized intentionally before production file utility orchestration moves to shared."
 }

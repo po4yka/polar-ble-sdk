@@ -98,7 +98,7 @@ class SleepNightlyRechargeCommonPolicyTest {
     }
 
     @Test
-    fun sleepNightlyReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun sleepNightlyReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val vector = loadGoldenVectorText("sdk/nightly-recharge/sleep-nightly-readiness.json")
         val input = vector.objectValue("input")
         val expected = vector.objectValue("expected")
@@ -322,7 +322,7 @@ class SleepNightlyRechargeCommonPolicyTest {
             "compile-verification-gate"
         )
         const val SLEEP_PARTIAL_NIGHT_COMMON_DECISION = "Shared sleep mapping preserves empty repeated fields as empty lists, absent optional scalar defaults as explicit zero only when that is the existing public contract, and maps absent original sleep range plus absent sleep skin-temperature date to absent public submodels in shared-backed production code."
-        const val SLEEP_OFFSET_PLATFORM_COMMON_DECISION = "Map sleepEndOffsetSeconds from the protobuf sleepEndOffsetSeconds field; linked iOS production code uses the shared KMP policy while non-shared SwiftPM/watchOS fallback preserves the legacy start-offset copy."
-        const val SLEEP_NIGHTLY_READINESS_COMMON_DECISION = "Sleep and nightly recharge model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified."
+        const val SLEEP_OFFSET_PLATFORM_COMMON_DECISION = "Map sleepEndOffsetSeconds from the protobuf sleepEndOffsetSeconds field; linked iOS production code uses the shared policy while non-shared SwiftPM/watchOS fallback preserves the legacy start-offset copy."
+        const val SLEEP_NIGHTLY_READINESS_COMMON_DECISION = "Sleep and nightly recharge model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS sleep/nightly tests continue to reference the same vectors, nightly date/timestamp/default and malformed-payload behavior stays covered, sleep end-offset, timezone, hypnogram, cycle, enum, and partial-night optional policies remain explicit, and the shared tests are compile-verified."
     }
 }

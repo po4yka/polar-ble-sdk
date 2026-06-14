@@ -62,7 +62,7 @@ class AvailableDataTypesCommonPolicyTest {
     }
 
     @Test
-    fun availableDataTypesReadinessManifestNamesEveryPreMigrationBehaviorFamily() {
+    fun availableDataTypesReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/available-data-types/available-data-types-readiness.json")
         val input = manifest.objectValue("input")
         val expected = manifest.objectValue("expected")
@@ -72,12 +72,12 @@ class AvailableDataTypesCommonPolicyTest {
         assertEquals("available-data-types-readiness", manifest.stringValue("id"))
         assertEquals("availableDataTypesReadiness", input.stringValue("kind"))
         assertEquals(AVAILABLE_DATA_TYPES_READINESS_FAMILIES, input.stringArrayValue("requiredBehaviorFamilies"))
-        assertEquals("coveredByPreMigrationCharacterization", expected.stringValue("migrationReadiness"))
+        assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(AVAILABLE_DATA_TYPES_READINESS_FAMILIES, expected.stringArrayValue("coveredBehaviorFamilies"))
         assertEquals(AVAILABLE_DATA_TYPES_READINESS_COMMON_DECISION, expected.stringValue("commonDecision"))
         val prototype = expected.objectValue("commonRuntimePrototype")
         assertEquals("executable shared commonTest available-data-types planning guard", prototype.stringValue("status"))
-        assertEquals("Declared because this vector is consumed by shared commonTest and platform adapter tests before available-data-types runtime delegation moves further into shared KMP.", prototype.stringValue("reason"))
+        assertEquals("Declared because this vector is consumed by shared commonTest and platform adapter tests before available-data-types runtime delegation moves further into shared.", prototype.stringValue("reason"))
         assertEquals(listOf("com.polar.sdk.impl.utils.PolarRuntimePlannerAdapterTest"), consumerTests.stringArrayValue("android"))
         assertEquals(listOf("PolarDataUtilsTest"), consumerTests.stringArrayValue("ios"))
         assertEquals(listOf("com.polar.sharedtest.AvailableDataTypesCommonPolicyTest"), consumerTests.stringArrayValue("commonPrototype"))
@@ -101,6 +101,6 @@ class AvailableDataTypesCommonPolicyTest {
             "platform-available-data-type-vector-reference-gate",
             "compile-verification-gate"
         )
-        const val AVAILABLE_DATA_TYPES_READINESS_COMMON_DECISION = "Available-data-types migration may proceed only after this readiness manifest is executable from shared commonTest, Android and iOS data utility tests continue to pin offline and online PMD-to-public mapping, HR-service availability projection, iOS location/pressure filters, Android full public surface, public-to-PMD measurement lookup, unknown public type boundaries, PMD feature-read boundaries, HR-service discovery boundaries, public error mapping boundaries, platform vector references, and compile verification before broader availability facade behavior moves."
+        const val AVAILABLE_DATA_TYPES_READINESS_COMMON_DECISION = "Available-data-types shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS data utility tests continue to pin offline and online PMD-to-public mapping, HR-service availability projection, iOS location/pressure filters, Android full public surface, public-to-PMD measurement lookup, unknown public type boundaries, PMD feature-read boundaries, HR-service discovery boundaries, public error mapping boundaries, platform vector references, and compile verification before broader availability facade behavior moves."
     }
 }

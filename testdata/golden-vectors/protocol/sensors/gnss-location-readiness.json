@@ -2,7 +2,7 @@
   "id": "gnss-location-readiness",
   "area": "sensors.gnss-location",
   "case": "shared_parser_android_delegation_readiness_manifest",
-  "source": "KMP migration readiness gate for GNSS/location shared parser ownership",
+  "source": "Shared ownership readiness gate for GNSS/location shared parser ownership",
   "input": {
     "kind": "gnssLocationReadiness",
     "policyVectorPaths": [
@@ -23,7 +23,7 @@
     ]
   },
   "expected": {
-    "migrationReadiness": "sharedParserAndroidProductionDelegation",
+    "sharedOwnershipStatus": "sharedParserAndroidProductionDelegation",
     "coveredBehaviorFamilies": [
       "shared-parser-raw-type0-coordinate",
       "shared-parser-raw-type1-satellite-dilution",

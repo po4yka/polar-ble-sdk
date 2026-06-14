@@ -2,8 +2,8 @@
   "id": "watch-face-readiness",
   "area": "sdk.watch-face",
   "case": "watch_face_readiness",
-  "source": "Watch-face semantic vectors and shared common prototype distilled into a pre-KMP readiness manifest",
-  "description": "Pins the watch-face FlatBuffer and KVTX behavior families that must remain covered before watch-face model code delegates to shared KMP code.",
+  "source": "Watch-face semantic vectors and shared common prototype distilled into a shared-ownership readiness manifest",
+  "description": "Pins the watch-face FlatBuffer and KVTX behavior families that must remain covered before watch-face model code delegates to shared code.",
   "input": {
     "kind": "watchFaceReadiness",
     "policyVectorPaths": [
@@ -45,7 +45,7 @@
       "platform-watch-face-vector-reference-gate",
       "compile-verification-gate"
     ],
-    "commonDecision": "Watch-face model migration may proceed only after every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, shared FlatBuffer byte input parsing, shared FlatBuffer byte output construction, KVTX wrapper metadata, and the shared tests are compile-verified."
+    "commonDecision": "Watch-face model shared ownership remains valid while every vector named by this readiness manifest is executable from shared commonTest, Android and iOS watch-face tests continue to reference the same vectors, default fields, scalar fields, complication ordering, empty complication IDs, known complication lookup, unknown raw complication ID preservation with null enum lookup, malformed too-short defaulting, shared FlatBuffer byte input parsing, shared FlatBuffer byte output construction, KVTX wrapper metadata, and the shared tests are compile-verified."
   },
   "consumerTests": {
     "android": [
@@ -63,5 +63,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "This readiness manifest is a migration gate for watch-face semantic behavior-family completeness plus shared FlatBuffer byte input parsing and byte output construction. KVTX wrapping and BLE/file execution remain adapter-owned."
+  "notes": "This readiness manifest is a shared ownership gate for watch-face semantic behavior-family completeness plus shared FlatBuffer byte input parsing and byte output construction. KVTX wrapping and BLE/file execution remain adapter-owned."
 }

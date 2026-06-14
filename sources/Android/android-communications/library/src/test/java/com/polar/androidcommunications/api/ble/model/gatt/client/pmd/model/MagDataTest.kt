@@ -283,7 +283,7 @@ class MagDataTest {
     }
 
     @Test
-    fun `mag golden vectors follow neutral KMP vector shape`() {
+    fun `mag golden vectors follow neutral shared vector shape`() {
         loadMagVectors().forEach { vector ->
             val id = vector.get("id").asString
             Assert.assertTrue(id, vector.has("area"))
@@ -300,7 +300,7 @@ class MagDataTest {
     }
 
     @Test
-    fun `MAG readiness manifest is pinned before parser migration`() {
+    fun `MAG readiness manifest is pinned for shared parser ownership`() {
         val manifest = loadMagReadinessManifest()
         val id = manifest.get("id").asString
         val input = manifest.getAsJsonObject("input")
