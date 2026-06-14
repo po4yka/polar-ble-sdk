@@ -27,7 +27,7 @@ object GoldenVectorTestData {
 
     fun loadObject(relativePath: String): JsonObject {
         return FileReader(root().resolve(relativePath)).use { reader ->
-            JsonParser().parse(reader).asJsonObject
+            JsonParser.parseReader(reader).asJsonObject
         }
     }
 
@@ -38,7 +38,7 @@ object GoldenVectorTestData {
             .sortedBy { file -> file.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
     }

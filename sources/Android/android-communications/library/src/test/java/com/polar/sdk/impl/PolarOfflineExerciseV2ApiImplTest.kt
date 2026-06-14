@@ -532,7 +532,7 @@ class PolarOfflineExerciseV2ApiImplTest {
     }
 
     private fun loadExerciseSessionReadinessManifest(): JsonObject {
-        return JsonParser().parse(
+        return JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/exercise-session/exercise-session-readiness.json")
                 .readText()

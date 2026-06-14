@@ -368,7 +368,7 @@ class PolarNightlyRechargeUtilsTest {
                 .sortedBy { it.name }
                 .map { file ->
                     FileReader(file).use { reader ->
-                        JsonParser().parse(reader).asJsonObject
+                        JsonParser.parseReader(reader).asJsonObject
                     }
                 }
                 .filterNot { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString == "sleepNightlyReadiness" }
@@ -378,7 +378,7 @@ class PolarNightlyRechargeUtilsTest {
         val vectorFile = findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/nightly-recharge/sleep-nightly-readiness.json")
         FileReader(vectorFile).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 

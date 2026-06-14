@@ -1138,13 +1138,13 @@ class PolarActivityUtilsTest {
 
     private fun loadActivitySamplesVector(fileName: String): JsonObject {
         FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/activity-samples/$fileName")).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 
     private fun loadDailySummaryVector(fileName: String): JsonObject {
         FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/daily-summary/$fileName")).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 

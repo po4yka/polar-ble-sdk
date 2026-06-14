@@ -92,9 +92,9 @@ For release artifacts, run `package_kmp_xcframework.sh` with `--zip-output`, rec
 
 ## Documentation And Fixture Gates
 
-`GoldenVectorMigrationPolicyTest` is the repository gate for golden-vector metadata, migration-rationale fields, runtime `consumerTests`, fixture README ownership notes, and coverage-doc test references. Run it whenever a migration slice changes `testdata/golden-vectors` or KMP migration documentation.
+`GoldenVectorMigrationPolicyTest` is the repository gate for golden-vector metadata, migration-rationale fields, runtime `consumerTests`, and fixture README ownership notes. Run it whenever a shared-policy slice changes `testdata/golden-vectors` or KMP ownership documentation.
 
-`KmpTddStrategy.md` defines the minimum validation before merging a migration slice: KMP common tests, existing Android tests, existing iOS tests or an equivalent documented Apple-platform command, reviewed golden vectors as API contracts, and no unrelated platform refactor. The current executable way to satisfy that minimum validation set is the focused `GoldenVectorMigrationPolicyTest`, the relevant shared common test, the relevant Android characterization test, and the iOS XCTest or documented SwiftPM/Xcode package gate for the touched Apple surface.
+The minimum validation before merging a shared-policy slice is KMP common tests, existing Android tests, existing iOS tests or an equivalent documented Apple-platform command, reviewed golden vectors as API contracts, and no unrelated platform refactor. The current executable way to satisfy that minimum validation set is the focused `GoldenVectorMigrationPolicyTest`, the relevant shared common test, the relevant Android characterization test, and the iOS XCTest or documented SwiftPM/Xcode package gate for the touched Apple surface.
 
 Before invoking Gradle repeatedly during coverage expansion, batch edits and run these repository checks:
 

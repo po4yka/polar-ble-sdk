@@ -174,7 +174,7 @@ class FakeTransportContractTest {
 
     @Test
     fun `fake transport readiness manifest is pinned before shared runtime delegation`() {
-        val vector = JsonParser().parse(
+        val vector = JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/fake-transport/fake-transport-readiness.json")
                 .readText()
@@ -201,7 +201,7 @@ class FakeTransportContractTest {
     }
 
     private fun loadFakeTransportVector(fileName: String): JsonObject {
-        return JsonParser().parse(
+        return JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/fake-transport/$fileName")
                 .readText()

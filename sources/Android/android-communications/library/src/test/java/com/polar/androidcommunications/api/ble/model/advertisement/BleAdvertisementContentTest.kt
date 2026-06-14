@@ -468,7 +468,7 @@ internal class BleAdvertisementContentTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .filter { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString != "advertisementReadiness" }
@@ -478,7 +478,7 @@ internal class BleAdvertisementContentTest {
         val manifestFile = findRepositoryRoot()
             .resolve("testdata/golden-vectors/protocol/advertisement/advertisement-readiness.json")
         FileReader(manifestFile).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 

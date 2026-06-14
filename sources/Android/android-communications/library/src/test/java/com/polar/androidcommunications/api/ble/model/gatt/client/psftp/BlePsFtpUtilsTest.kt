@@ -254,14 +254,14 @@ internal class BlePsFtpUtilsTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
     }
 
     private fun loadPsFtpVector(directoryName: String, fileName: String): JsonObject {
         FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/$directoryName/$fileName")).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 

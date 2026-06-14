@@ -61,7 +61,7 @@ class PolarFirstTimeUseConfigTest {
 
     private fun loadFirstTimeUseReadinessManifest(): JsonObject {
         return FileReader(File(findRepositoryRoot(), "testdata/golden-vectors/sdk/first-time-use/first-time-use-readiness.json")).use { reader ->
-            JsonParser().parse(reader).asJsonObject
+            JsonParser.parseReader(reader).asJsonObject
         }
     }
 

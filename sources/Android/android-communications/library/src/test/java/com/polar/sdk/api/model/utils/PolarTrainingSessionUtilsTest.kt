@@ -754,7 +754,7 @@ class PolarTrainingSessionUtilsTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .filterNot { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString == "trainingSessionReadiness" }
@@ -764,7 +764,7 @@ class PolarTrainingSessionUtilsTest {
         val vectorFile = findRepositoryRoot()
             .resolve("testdata/golden-vectors/sdk/training-session/training-session-readiness.json")
         FileReader(vectorFile).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 

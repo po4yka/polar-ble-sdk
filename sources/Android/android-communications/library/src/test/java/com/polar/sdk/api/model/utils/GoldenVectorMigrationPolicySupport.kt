@@ -190,7 +190,7 @@ internal fun File.owningManifestReferencesVector(testSource: String, vector: Vec
         .walkTopDown()
         .filter { file -> file.isFile && file.extension == "json" && file != vector.file && !file.relativeTo(this).path.contains("/schema/") }
         .map { manifestFile ->
-            val manifest = FileReader(manifestFile).use { reader -> JsonParser().parse(reader).asJsonObject }
+            val manifest = FileReader(manifestFile).use { reader -> JsonParser.parseReader(reader).asJsonObject }
             manifestFile to manifest
         }
         .filter { (_, manifest) -> manifest.containsStringValue(vectorRelativePath) }
@@ -236,11 +236,6 @@ internal fun String.validationArtifactReferences(): List<String> {
         .filterNot { reference -> reference.startsWith("Pods/") }
         .distinct()
         .toList()
-}
-
-internal fun String.completedItemEvidenceRows(): Sequence<MatchResult> {
-    val section = COMPLETED_ITEM_EVIDENCE_SECTION.find(this)?.value ?: ""
-    return CHECKLIST_EVIDENCE_ROW.findAll(section)
 }
 
 internal fun deviceIdSliceMigrated(root: File): Boolean {
@@ -353,7 +348,7 @@ internal fun loadAllGoldenVectors(): List<VectorFile> {
             VectorFile(
                 file = file,
                 json = FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             )
         }
@@ -371,7 +366,7 @@ internal fun loadSdkGoldenVectors(): List<VectorFile> {
             VectorFile(
                 file = file,
                 json = FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             )
         }
@@ -380,7 +375,7 @@ internal fun loadSdkGoldenVectors(): List<VectorFile> {
 
 internal fun loadGoldenVectorSchema(): JsonObject {
     return FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/schema/golden-vector.schema.json")).use { reader ->
-        JsonParser().parse(reader).asJsonObject
+        JsonParser.parseReader(reader).asJsonObject
     }
 }
 

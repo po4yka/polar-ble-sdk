@@ -524,7 +524,7 @@ class PolarTestUtilsTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .filterNot { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString == "spo2Readiness" }
@@ -534,7 +534,7 @@ class PolarTestUtilsTest {
         val vectorFile = findRepositoryRoot()
             .resolve("testdata/golden-vectors/sdk/spo2-test/spo2-readiness.json")
         FileReader(vectorFile).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 

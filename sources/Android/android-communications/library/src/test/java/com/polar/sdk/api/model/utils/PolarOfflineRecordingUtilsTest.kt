@@ -258,7 +258,7 @@ class PolarOfflineRecordingUtilsTest {
 
     private fun loadOfflineRecordingVector(fileName: String): JsonObject {
         FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/offline-recording/$fileName")).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 
@@ -271,7 +271,7 @@ class PolarOfflineRecordingUtilsTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .filterNot { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString == "offlineRecordingMetadataReadiness" }

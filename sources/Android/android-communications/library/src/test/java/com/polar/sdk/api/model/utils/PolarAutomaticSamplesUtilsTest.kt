@@ -535,7 +535,7 @@ class PolarAutomaticSamplesUtilsTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
     }
@@ -544,7 +544,7 @@ class PolarAutomaticSamplesUtilsTest {
         val vectorFile = findRepositoryRoot()
             .resolve("testdata/golden-vectors/sdk/activity-samples/activity-summary-readiness.json")
         FileReader(vectorFile).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 

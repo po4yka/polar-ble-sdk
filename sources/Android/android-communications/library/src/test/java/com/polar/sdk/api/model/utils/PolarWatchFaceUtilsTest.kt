@@ -278,7 +278,7 @@ class PolarWatchFaceUtilsTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .filterNot { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString == "watchFaceReadiness" }
@@ -287,7 +287,7 @@ class PolarWatchFaceUtilsTest {
     @Test
     fun `watch face readiness manifest is pinned before model migration`() {
         val vector = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/watch-face/watch-face-readiness.json")).use { reader ->
-            JsonParser().parse(reader).asJsonObject
+            JsonParser.parseReader(reader).asJsonObject
         }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")

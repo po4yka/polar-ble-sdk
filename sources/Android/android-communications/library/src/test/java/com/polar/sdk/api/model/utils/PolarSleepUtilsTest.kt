@@ -458,7 +458,7 @@ class PolarSleepUtilsTest {
             .orEmpty()
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .first { it.get("id").asString == id }

@@ -561,7 +561,7 @@ class PolarD2HNotificationsUtilsTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .filterNot { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString == "d2hStreamRuntimePolicy" }
@@ -571,7 +571,7 @@ class PolarD2HNotificationsUtilsTest {
 
     private fun assertD2HStreamRuntimePolicyVectorContains(scenarioId: String) {
         val vector = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/d2h-notifications/stream-runtime-policy.json")).use { reader ->
-            JsonParser().parse(reader).asJsonObject
+            JsonParser.parseReader(reader).asJsonObject
         }
         assertEquals("stream-runtime-policy", vector.get("id").asString)
         assertEquals("fake-stream-runtime-policy", vector.getAsJsonObject("execution").get("kind").asString)
@@ -584,7 +584,7 @@ class PolarD2HNotificationsUtilsTest {
     @Test
     fun `d2h stream readiness manifest is pinned before stream runtime migration`() {
         val vector = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/d2h-notifications/stream-runtime-readiness.json")).use { reader ->
-            JsonParser().parse(reader).asJsonObject
+            JsonParser.parseReader(reader).asJsonObject
         }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")
@@ -596,7 +596,7 @@ class PolarD2HNotificationsUtilsTest {
         val policyVectorPath = input.get("policyVectorPath").asString
         assertEquals("sdk/d2h-notifications/stream-runtime-policy.json", policyVectorPath)
         val policy = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/$policyVectorPath")).use { reader ->
-            JsonParser().parse(reader).asJsonObject
+            JsonParser.parseReader(reader).asJsonObject
         }
         val scenarioIds = policy.getAsJsonObject("input").getAsJsonArray("scenarios").map { scenario ->
             scenario.asJsonObject.get("id").asString
@@ -635,7 +635,7 @@ class PolarD2HNotificationsUtilsTest {
     @Test
     fun `d2h mapping readiness manifest is pinned before mapping migration`() {
         val vector = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/d2h-notifications/mapping-readiness.json")).use { reader ->
-            JsonParser().parse(reader).asJsonObject
+            JsonParser.parseReader(reader).asJsonObject
         }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")

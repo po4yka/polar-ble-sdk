@@ -172,7 +172,7 @@ class ChannelUtilsTests {
 
     @Test
     fun streamRuntimeReadinessManifestIsPinnedBeforeStreamRuntimeMigration() {
-        val vector = JsonParser().parse(
+        val vector = JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/stream-runtime/stream-runtime-readiness.json")
                 .readText()
@@ -199,7 +199,7 @@ class ChannelUtilsTests {
     }
 
     private fun loadStreamRuntimeVector(fileName: String): JsonObject {
-        return JsonParser().parse(
+        return JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/stream-runtime/$fileName")
                 .readText()

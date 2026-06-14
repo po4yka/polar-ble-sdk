@@ -1409,7 +1409,6 @@ class BDBleApiImplTest {
             if (firstArg<Int>() == PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal && ++resetNotifications == 2) {
                 throw restartFailure
             }
-            Unit
         }
         coEvery { client.write(any(), any()) } returns flowOf(2L)
         val firmwareApi = CapturingFirmwareUpdateApi(
@@ -1451,7 +1450,6 @@ class BDBleApiImplTest {
             if (firstArg<Int>() == PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE) {
                 throw stopSyncFailure
             }
-            Unit
         }
         coEvery { client.write(any(), any()) } returns flowOf(2L)
         val firmwareApi = CapturingFirmwareUpdateApi(
@@ -1559,7 +1557,6 @@ class BDBleApiImplTest {
             if (firstArg<Int>() == PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal && ++resetNotifications == 2) {
                 throw restartFailure
             }
-            Unit
         }
         coEvery { client.write(any(), any()) } returns flowOf(2L)
         val firmwareApi = CapturingFirmwareUpdateApi(
@@ -1593,7 +1590,6 @@ class BDBleApiImplTest {
             if (firstArg<Int>() == PftpNotification.PbPFtpHostToDevNotification.STOP_SYNC_VALUE) {
                 throw stopSyncFailure
             }
-            Unit
         }
         coEvery { client.write(any(), any()) } returns flowOf(2L)
         val firmwareApi = CapturingFirmwareUpdateApi(
@@ -4702,7 +4698,7 @@ class BDBleApiImplTest {
     }
 
     private fun assertCommandRuntimePolicyVectorContains(vectorTerm: String) {
-        val vector = JsonParser().parse(
+        val vector = JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/command-runtime/reset-sync-h10-command-policy.json")
                 .readText()
@@ -4769,7 +4765,7 @@ class BDBleApiImplTest {
     }
 
     private fun assertStoredDataCleanupWorkflowVectorContains(vectorTerm: String) {
-        val vector = JsonParser().parse(
+        val vector = JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/stored-data-cleanup/cleanup-workflow-policy.json")
                 .readText()
@@ -4841,7 +4837,7 @@ class BDBleApiImplTest {
     }
 
     private fun assertDiskTimeRuntimePolicyVectorContains(vectorTerm: String) {
-        val vector = JsonParser().parse(
+        val vector = JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/disk-time-runtime/disk-time-query-policy.json")
                 .readText()
@@ -4890,7 +4886,7 @@ class BDBleApiImplTest {
     }
 
     private fun assertUserDeviceSettingsRuntimePolicyVectorContains(vectorTerm: String) {
-        val vector = JsonParser().parse(
+        val vector = JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/user-device-settings-runtime/settings-runtime-policy.json")
                 .readText()
@@ -5123,7 +5119,7 @@ class BDBleApiImplTest {
     }
 
     private fun assertOfflineTriggerRuntimePolicyVectorContains(vectorTerm: String) {
-        val vector = JsonParser().parse(
+        val vector = JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/offline-recording/trigger-runtime-policy.json")
                 .readText()
@@ -5297,7 +5293,7 @@ class BDBleApiImplTest {
         iosConsumers: List<String>? = null,
         commonPrototypeConsumers: List<String>? = null
     ) {
-        val manifest = JsonParser().parse(
+        val manifest = JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/$manifestPath")
                 .readText()
@@ -5333,7 +5329,7 @@ class BDBleApiImplTest {
     }
 
     private fun loadSdkGoldenVector(relativePath: String): JsonObject {
-        return JsonParser().parse(
+        return JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/$relativePath")
                 .readText()

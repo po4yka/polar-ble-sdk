@@ -346,7 +346,7 @@ class MagDataTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .filter { vector -> vector.getAsJsonObject("input").get("kind")?.asString != "magReadiness" }
@@ -356,7 +356,7 @@ class MagDataTest {
         val vectorFile = findRepositoryRoot()
             .resolve("testdata/golden-vectors/protocol/sensors/mag-readiness.json")
         FileReader(vectorFile).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 

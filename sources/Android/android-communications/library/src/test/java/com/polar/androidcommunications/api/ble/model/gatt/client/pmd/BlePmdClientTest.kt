@@ -793,7 +793,7 @@ internal class BlePmdClientTest {
     }
 
     private fun assertOfflineTriggerRuntimePolicyVectorContains(vectorTerm: String) {
-        val vector = JsonParser().parse(
+        val vector = JsonParser.parseString(
             findRepositoryRoot()
                 .resolve("testdata/golden-vectors/sdk/offline-recording/trigger-runtime-policy.json")
                 .readText()

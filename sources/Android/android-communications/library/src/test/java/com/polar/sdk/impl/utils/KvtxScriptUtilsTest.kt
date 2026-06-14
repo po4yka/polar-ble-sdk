@@ -163,7 +163,7 @@ class KvtxScriptUtilsTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .filterNot { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString == "kvtxReadiness" }
@@ -172,7 +172,7 @@ class KvtxScriptUtilsTest {
     @Test
     fun `kvtx readiness manifest is pinned before script migration`() {
         val vector = FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/kvtx/kvtx-readiness.json")).use { reader ->
-            JsonParser().parse(reader).asJsonObject
+            JsonParser.parseReader(reader).asJsonObject
         }
         val input = vector.getAsJsonObject("input")
         val expected = vector.getAsJsonObject("expected")

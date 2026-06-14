@@ -129,7 +129,7 @@ class DeviceIdGoldenVectorTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .filter { vector -> vector.getAsJsonObject("input")?.get("kind")?.asString != "deviceIdReadiness" }
@@ -139,7 +139,7 @@ class DeviceIdGoldenVectorTest {
         val manifestFile = findRepositoryRoot()
             .resolve("testdata/golden-vectors/protocol/device-id/device-id-readiness.json")
         FileReader(manifestFile).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 

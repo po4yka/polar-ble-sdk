@@ -6,8 +6,6 @@ import org.junit.runners.Suite
 @RunWith(Suite::class)
 @Suite.SuiteClasses(
     GoldenVectorContractPolicyTest::class,
-    KmpDocumentationPolicyTest::class,
-    GoldenVectorCommonCoveragePolicyTest::class,
     KmpValidationAndChecklistPolicyTest::class,
     KmpSharedBoundaryPolicyTest::class
 )

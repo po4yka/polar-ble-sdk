@@ -1355,13 +1355,13 @@ class PolarRuntimePlannerAdapterTest {
 
     private fun loadFeatureAvailabilityReadinessVector(): JsonObject {
         FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/feature-availability/feature-availability-readiness.json")).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 
     private fun loadAvailableDataTypesReadinessVector(): JsonObject {
         FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/available-data-types/available-data-types-readiness.json")).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 

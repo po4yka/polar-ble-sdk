@@ -478,7 +478,7 @@ internal class GnssLocationDataTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .filter { vector -> vector.getAsJsonObject("input").get("kind")?.asString != "gnssLocationReadiness" }
@@ -488,7 +488,7 @@ internal class GnssLocationDataTest {
         val file = findRepositoryRoot()
             .resolve("testdata/golden-vectors/protocol/sensors/gnss-location-readiness.json")
         return FileReader(file).use { reader ->
-            JsonParser().parse(reader).asJsonObject
+            JsonParser.parseReader(reader).asJsonObject
         }
     }
 

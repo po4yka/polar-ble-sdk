@@ -39,7 +39,7 @@ class PolarExerciseSessionTest {
 
     private fun loadExerciseSessionReadinessManifest(): JsonObject {
         return FileReader(File(findRepositoryRoot(), "testdata/golden-vectors/sdk/exercise-session/exercise-session-readiness.json")).use { reader ->
-            JsonParser().parse(reader).asJsonObject
+            JsonParser.parseReader(reader).asJsonObject
         }
     }
 

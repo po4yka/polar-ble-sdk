@@ -277,7 +277,7 @@ class PolarUserDeviceSettingsTest {
             .sortedBy { it.name }
             .map { file ->
                 FileReader(file).use { reader ->
-                    JsonParser().parse(reader).asJsonObject
+                    JsonParser.parseReader(reader).asJsonObject
                 }
             }
             .filter { vector -> vector.getAsJsonObject("input").get("kind")?.asString != "userDeviceSettingsModelReadiness" }
@@ -287,7 +287,7 @@ class PolarUserDeviceSettingsTest {
         val file = findRepositoryRoot()
             .resolve("testdata/golden-vectors/sdk/user-device-settings/settings-model-readiness.json")
         return FileReader(file).use { reader ->
-            JsonParser().parse(reader).asJsonObject
+            JsonParser.parseReader(reader).asJsonObject
         }
     }
 

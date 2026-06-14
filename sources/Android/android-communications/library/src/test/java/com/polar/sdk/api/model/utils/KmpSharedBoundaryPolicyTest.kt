@@ -45,9 +45,6 @@ class KmpSharedBoundaryPolicyTest {
     fun `byte level common dependency deferrals stay explicit until production common codecs exist`() {
         val root = findRepositoryRoot()
         val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle.kts").readText()
-        val backlog = root.resolve("documentation/KmpFullCoverageTddBacklog.md").readText()
-        val inventory = root.resolve("documentation/KmpCoverageInventory.md").readText()
-        val remainingWork = root.resolve("documentation/KmpPreMigrationRemainingWork.md").readText()
         val trainingSessionPayloadRead = root.resolve("testdata/golden-vectors/sdk/training-session/payload-read-policy.json").readText()
         val trainingSessionPayloadParser = root.resolve("testdata/golden-vectors/sdk/training-session/payload-parser-policy.json").readText()
         val trainingSessionReadiness = root.resolve("testdata/golden-vectors/sdk/training-session/training-session-readiness.json").readText()
@@ -62,9 +59,6 @@ class KmpSharedBoundaryPolicyTest {
             .mapTo(violations) { term -> "shared/build.gradle.kts declares $term before this policy is updated with production common codec ownership evidence" }
         BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS.forEach { (artifact, requiredTerms) ->
             val text = when (artifact) {
-                "KmpFullCoverageTddBacklog.md" -> backlog
-                "KmpCoverageInventory.md" -> inventory
-                "KmpPreMigrationRemainingWork.md" -> remainingWork
                 "payload-read-policy.json" -> trainingSessionPayloadRead
                 "payload-parser-policy.json" -> trainingSessionPayloadParser
                 "training-session-readiness.json" -> trainingSessionReadiness
@@ -128,11 +122,7 @@ class KmpSharedBoundaryPolicyTest {
     @Test
     fun `KMP common vector helper remains gated until shared common tests exist`() {
         val root = findRepositoryRoot()
-        val checklist = root.resolve("documentation/KmpMigrationChecklist.md").readText()
         val validationCommands = root.resolve("documentation/KmpValidationCommands.md").readText()
-        val completedItems = CHECKED_CHECKLIST_ITEM.findAll(checklist)
-            .map { match -> match.groupValues[1].trimEnd('.') }
-            .toSet()
         val commonTestSourceSets = root
             .walkTopDown()
             .filter { file -> file.isDirectory && file.name == "commonTest" }
@@ -141,24 +131,15 @@ class KmpSharedBoundaryPolicyTest {
 
         if (commonTestSourceSets.isEmpty()) {
             val violations = mutableListOf<String>()
-            if (completedItems.contains("Add vector-loading helpers for KMP common tests")) {
-                violations += "KMP common vector-loading helpers cannot be completed before a commonTest source set exists"
-            }
             if (!validationCommands.contains("No shared KMP module exists yet")) {
                 violations += "KmpValidationCommands.md must state that no shared KMP module exists yet"
             }
-            if (!checklist.contains("No shared KMP module or `commonTest` source set exists yet")) {
-                violations += "KmpMigrationChecklist.md must explain why KMP common vector-loading helpers remain open"
-            }
             assertTrue(
-                "KMP common helper checklist state must match the current absence of a shared module: $violations",
+                "KMP common helper validation state must match the current absence of a shared module: $violations",
                 violations.isEmpty()
             )
         } else {
             val violations = mutableListOf<String>()
-            if (!completedItems.contains("Add vector-loading helpers for KMP common tests")) {
-                violations += "commonTest exists but KMP common vector-loading helpers are not completed"
-            }
             if (!validationCommands.contains(":shared:jvmTest") || !validationCommands.contains("commonTest")) {
                 violations += "KmpValidationCommands.md must name the executable shared commonTest command once commonTest exists"
             }
@@ -174,7 +155,7 @@ class KmpSharedBoundaryPolicyTest {
                 violations += "${commonTest.relativeTo(root).path} must prove missing fixture paths fail fast"
             }
             assertTrue(
-                "KMP common helper checklist state must match existing commonTest source sets $commonTestSourceSets: $violations",
+                "KMP common helper validation state must match existing commonTest source sets $commonTestSourceSets: $violations",
                 violations.isEmpty()
             )
         }
@@ -183,11 +164,7 @@ class KmpSharedBoundaryPolicyTest {
     @Test
     fun `minimal shared KMP module stays behavior free and test executable`() {
         val root = findRepositoryRoot()
-        val checklist = root.resolve("documentation/KmpMigrationChecklist.md").readText()
         val validationCommands = root.resolve("documentation/KmpValidationCommands.md").readText()
-        val completedItems = CHECKED_CHECKLIST_ITEM.findAll(checklist)
-            .map { match -> match.groupValues[1].trimEnd('.') }
-            .toSet()
         val settings = root.resolve("sources/Android/android-communications/settings.gradle.kts").readText()
         val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle.kts").readText()
         val sharedMarker = root.resolve("sources/Android/android-communications/shared/src/commonMain/kotlin/com/polar/shared/SharedModule.kt")
@@ -204,15 +181,6 @@ class KmpSharedBoundaryPolicyTest {
         }
         if (!sharedMarker.isFile || !sharedMarker.readText().contains("object SharedModule")) {
             violations += "shared commonMain must retain the module marker"
-        }
-        if (!completedItems.contains("Add a minimal shared KMP module without moving behavior")) {
-            violations += "KmpMigrationChecklist.md must mark the minimal shared module complete"
-        }
-        if (!completedItems.contains("Add `commonMain`, `commonTest`, and platform-specific test source sets only as needed")) {
-            violations += "KmpMigrationChecklist.md must mark minimal source sets complete"
-        }
-        if (!completedItems.contains("Add a trivial common test and run it in local validation")) {
-            violations += "KmpMigrationChecklist.md must mark the trivial common test complete"
         }
         if (!validationCommands.contains(":shared:jvmTest")) {
             violations += "KmpValidationCommands.md must document :shared:jvmTest"
@@ -255,7 +223,6 @@ class KmpSharedBoundaryPolicyTest {
     fun `shared common production code avoids platform only APIs`() {
         val root = findRepositoryRoot()
         val commonMainRoot = root.resolve("sources/Android/android-communications/shared/src/commonMain/kotlin")
-        val migrationPlan = root.resolve("documentation/KmpMigrationPlan.md").readText()
         val portabilityViolations = commonMainRoot
             .walkTopDown()
             .filter { file -> file.isFile && file.extension == "kt" }
@@ -270,27 +237,17 @@ class KmpSharedBoundaryPolicyTest {
                 }
             }
             .toList()
-        val missingPlanTerms = COMMON_MAIN_PORTABILITY_PLAN_TERMS
-            .filterNot { term -> migrationPlan.contains(term) }
 
         assertTrue(
             "Shared commonMain code must avoid platform-only APIs before production KMP migration: $portabilityViolations",
             portabilityViolations.isEmpty()
-        )
-        assertTrue(
-            "KmpMigrationPlan.md must keep the common-code portability boundary explicit: $missingPlanTerms",
-            missingPlanTerms.isEmpty()
         )
     }
 
     @Test
     fun `shared KMP module declares Android and Apple targets without production consumption`() {
         val root = findRepositoryRoot()
-        val checklist = root.resolve("documentation/KmpMigrationChecklist.md").readText()
         val validationCommands = root.resolve("documentation/KmpValidationCommands.md").readText()
-        val completedItems = CHECKED_CHECKLIST_ITEM.findAll(checklist)
-            .map { match -> match.groupValues[1].trimEnd('.') }
-            .toSet()
         val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle.kts").readText()
         val manifest = root.resolve("sources/Android/android-communications/shared/src/androidMain/AndroidManifest.xml")
         val violations = mutableListOf<String>()
@@ -309,9 +266,6 @@ class KmpSharedBoundaryPolicyTest {
         }
         if (!manifest.isFile) {
             violations += "shared Android target must include a minimal AndroidManifest.xml"
-        }
-        if (!completedItems.contains("Configure Android and Apple targets")) {
-            violations += "KmpMigrationChecklist.md must mark Android and Apple target configuration complete"
         }
         if (!validationCommands.contains("JVM, Android, and Apple targets")) {
             violations += "KmpValidationCommands.md must document shared target shape"
@@ -335,16 +289,12 @@ class KmpSharedBoundaryPolicyTest {
     @Test
     fun `shared artifact consumption contract is documented before production wiring`() {
         val root = findRepositoryRoot()
-        val checklist = root.resolve("documentation/KmpMigrationChecklist.md").readText()
         val validationCommands = root.resolve("documentation/KmpValidationCommands.md").readText()
         val consumptionDocFile = root.resolve("documentation/KmpSharedArtifactConsumption.md")
         val packageSwift = root.resolve("Package.swift").readText()
         val packageScript = root.resolve("sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh")
         val spmXcframeworkValidationScript = root.resolve("sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh")
         val sharedBuild = root.resolve("sources/Android/android-communications/shared/build.gradle.kts").readText()
-        val completedItems = CHECKED_CHECKLIST_ITEM.findAll(checklist)
-            .map { match -> match.groupValues[1].trimEnd('.') }
-            .toSet()
         val violations = mutableListOf<String>()
 
         if (!consumptionDocFile.isFile) {
@@ -401,9 +351,6 @@ class KmpSharedBoundaryPolicyTest {
         }
         if (!root.resolve("scripts/verify_android_shared_maven_metadata.sh").let { it.isFile && it.canExecute() }) {
             violations += "verify_android_shared_maven_metadata.sh must exist and be executable"
-        }
-        if (!completedItems.contains("Document how shared artifacts are consumed by Android and iOS modules")) {
-            violations += "KmpMigrationChecklist.md must mark shared artifact consumption documentation complete"
         }
         if (root.resolve("sources/Android/android-communications/library/build.gradle.kts").readText().contains("implementation(project(\":shared\"))") && !deviceIdSliceMigrated(root)) {
             violations += "Android production consumption must name a migrated shared behavior slice"

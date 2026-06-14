@@ -37,28 +37,6 @@ internal val PMD_SENSOR_RUNTIME_ADAPTER_METHODS = listOf(
     "pmdSkinTemperatureSamples",
     "pmdTemperatureSamples"
 )
-internal val KMP_COVERAGE_DOCS = listOf(
-    "documentation/KmpCoverageInventory.md",
-    "documentation/KmpFakeTransportTestPlan.md",
-    "documentation/KmpTddStrategy.md"
-)
-internal val KMP_SHARED_COMMON_TEST_DOCS = listOf(
-    "documentation/KmpCoverageInventory.md",
-    "documentation/KmpFakeTransportTestPlan.md",
-    "documentation/KmpFullCoverageTddBacklog.md",
-    "documentation/KmpTddStrategy.md",
-    "documentation/KmpValidationCommands.md"
-)
-internal val SHARED_COMMON_TEST_DOC_EXCLUSIONS = setOf(
-    "GoldenVectorJson.kt",
-    "GoldenVectorTestData.kt"
-)
-internal val KMP_DOCS_THAT_MUST_LINK_VALIDATION = listOf(
-    "documentation/KmpMigrationPlan.md",
-    "documentation/KmpFullCoverageTddBacklog.md",
-    "documentation/KmpTddStrategy.md"
-)
-internal val CURRENT_EXECUTABLE_COMMON_COVERAGE_SECTION = Regex("## Current Executable Common Coverage.*?(?=\\n## |\\z)", RegexOption.DOT_MATCHES_ALL)
 internal val ANDROID_MIN_SDK_DOCS = listOf(
     "README.md",
     "documentation/MigrationGuide7.0.0-Android.md"
@@ -823,14 +801,6 @@ internal val FEATURE_AVAILABILITY_TEST_REQUIRED_TERMS = listOf(
     "platform-client-readiness-boundary",
     "SDK feature availability migration owns only deterministic service and capability preconditions"
 )
-internal val FULL_COVERAGE_EXIT_CRITERIA_TERMS = listOf(
-    "Every row marked `Partial` has either new tests, documented platform-specific ownership, or a migration deferral note.",
-    "Every parser that moves to KMP has shared golden vectors covering valid, invalid, empty, boundary, and unknown-value cases.",
-    "Android and iOS characterization tests use the same vectors or prove equivalent expected behavior.",
-    "Public facade tests prove Android and iOS APIs keep current semantics after shared delegation.",
-    "Hardware-dependent tests are limited to smoke coverage; deterministic behavior is covered without physical devices.",
-    "Validation commands are documented and runnable for the migrated slice."
-)
 internal val HARDWARE_SMOKE_VALIDATION_TERMS = listOf(
     "## Hardware And Device Smoke Boundary",
     "Physical BLE hardware validation is smoke coverage for adapter wiring, radio availability, and real-device compatibility only",
@@ -842,27 +812,6 @@ internal val GRADLE_BATCH_VALIDATION_TERMS = listOf(
     "coverage work does not stall on repeated manual app prompts",
     "Prefer the library and shared-module gates below",
     "do not run broad app or example Gradle tasks unless the slice actually changes app/example surfaces"
-)
-internal val VALIDATION_MINIMUM_TDD_LINK_TERMS = listOf(
-    "`KmpTddStrategy.md` defines the minimum validation before merging a migration slice",
-    "KMP common tests, existing Android tests, existing iOS tests or an equivalent documented Apple-platform command, reviewed golden vectors as API contracts, and no unrelated platform refactor",
-    "current executable way to satisfy that minimum validation set"
-)
-internal val PLATFORM_OWNED_BACKLOG_REQUIRED_TERMS = listOf(
-    "Platform-owned gaps: Android Bluedroid host behavior, iOS CoreBluetooth host behavior, GATT client host interactions, and platform identifier routing should stay platform-specific unless a future slice defines a pure codec or deterministic state machine contract.",
-    "BLE device lifecycle and GATT clients: keep platform-owned unless a slice extracts a pure codec or deterministic state machine with common fake-transport tests."
-)
-internal val CURRENT_SHARED_POLICY_STATE_REQUIRED_TERMS = listOf(
-    "## Current Shared-Policy State",
-    "runtime-pinned Android/iOS facade compatibility evidence in `KmpFakeTransportTestPlan.md`",
-    "New runtime/facade work should add operation-specific Android facade tests, iOS facade tests, and shared fake-transport tests only when a later production delegation slice introduces a new operation family",
-    "neutral reconstruction-slot planning is shared while generated public protobuf object construction remains platform-owned",
-    "BLE/session/GATT host behavior stays platform-owned unless a later slice defines a pure codec or deterministic state-machine contract"
-)
-internal val STALE_SHARED_POLICY_BACKLOG_TERMS = listOf(
-    "## Remaining Shared-Policy Gaps",
-    "production shared delegation still needs remaining facade compatibility tests",
-    "Runtime/facade gaps:"
 )
 internal val REQUIRED_VALIDATION_SECTIONS = listOf("## Android", "## iOS", "## KMP Common")
 internal val VALIDATION_NON_GRADLE_GATE_TERMS = listOf(
@@ -891,63 +840,6 @@ internal val IOS_XCTEST_EXECUTION_GATE_REQUIRED_TERMS = listOf(
     "scripts/ci_xcodebuild_test.sh sources/iOS/ios-communications/iOSCommunications.xcodeproj",
     "Use XCTest failures from that command as migration evidence"
 )
-internal val IOS_XCTEST_CLOSEOUT_REQUIRED_TERMS = listOf(
-    "The broad iOS XCTest gate must be treated as current only when",
-    "scripts/ci_xcodebuild_test.sh sources/iOS/ios-communications/iOSCommunications.xcodeproj",
-    "passes in the current checkout"
-)
-internal val KMP_TDD_STRATEGY_VECTOR_EXAMPLE_TERMS = listOf(
-    "\"id\"",
-    "\"area\"",
-    "\"case\"",
-    "\"source\"",
-    "\"input\"",
-    "\"expected\"",
-    "\"consumerTests\"",
-    "\"platforms\"",
-    "\"android\": true",
-    "\"ios\": true",
-    "\"common\": true"
-)
-internal val KMP_TDD_STRATEGY_STALE_VECTOR_EXAMPLE_TERMS = listOf(
-    "\"feature\":"
-)
-internal val TDD_MINIMUM_VALIDATION_TERMS = listOf(
-    "## Minimum Validation Before Merging a Slice",
-    "KMP common tests for the slice pass.",
-    "Existing Android tests for the slice pass.",
-    "Existing iOS tests for the slice pass or an equivalent Apple-platform command is documented.",
-    "New golden vectors are reviewed as API contracts.",
-    "No unrelated platform code is refactored in the same slice."
-)
-internal val TDD_REGRESSION_POLICY_TERMS = listOf(
-    "## Regression Policy",
-    "current behavior is documented by a characterization test",
-    "new behavior is documented by an updated expected output",
-    "reason is written in the migration slice notes",
-    "consumer-visible only if release notes or a migration guide are updated"
-)
-internal val TDD_COVERAGE_EXPECTATION_TERMS = listOf(
-    "## Coverage Expectations",
-    "Line coverage is less important than input coverage.",
-    "every supported frame version",
-    "every field boundary",
-    "malformed payloads",
-    "empty payloads",
-    "unknown enum values",
-    "every state transition and cancellation path"
-)
-internal val FIRST_RECOMMENDED_TDD_SLICE_TERMS = listOf(
-    "## First Recommended TDD Slice",
-    "Start with a low-risk deterministic parser",
-    "`PolarDeviceUuid`",
-    "time utilities",
-    "one PMD sensor parser with strong existing tests",
-    "Do not start with BLE scanning, connection lifecycle, firmware network calls, or public API redesign."
-)
-internal const val COVERAGE_INVENTORY_COLUMN_COUNT = 5
-internal const val COVERAGE_BEHAVIOR_COLUMN = 0
-internal const val COVERAGE_STATUS_COLUMN = 3
 internal const val COVERAGE_REQUIRED_COLUMN = 4
 internal val PARTIAL_ROW_GATE_TERMS = listOf("before", "keep ", "do not migrate", "platform-specific", "common fake", "fake-transport", "implement", "add ")
 internal val MIGRATION_README_TERMS = listOf("common", "shared", "migrat")
@@ -958,73 +850,6 @@ internal val FIXTURE_README_KOTLIN_ARTIFACT_REFERENCE = Regex("`([^`]+\\.kt)`")
 internal val RUNTIME_POLICY_CONSUMER_TEST = Regex(".*(Runtime|FakeWorkflow|FakeRuntime|TransportPolicy).*")
 internal val ANDROID_MIN_SDK_VERSION = Regex("minSdk(?:Version)?\\s*(?:=)?\\s*(\\d+)")
 internal val ANDROID_MIN_SDK_REFERENCE = Regex("minSdk(?:Version)?\\s*(?:=)?\\s*\\**\\s*(\\d+)")
-internal val CHECKED_CHECKLIST_ITEM = Regex("(?m)^- \\[x] (.+)$")
-internal val CHECKLIST_EVIDENCE_ROW = Regex("(?m)^\\| ([^|]+) \\| ([^|]+) \\|$")
-internal val COMPLETED_ITEM_EVIDENCE_SECTION = Regex("(?s)## Completed Item Evidence.*?(?=\\n## |\\z)")
-internal val OPEN_ITEM_RATIONALE_SECTION = Regex("(?s)## Open Item Rationale.*?(?=\\n## |\\z)")
-internal val RELEASE_READINESS_ITEMS = listOf(
-    "Android AAR builds and is consumed by the Android example.",
-    "Swift Package integration builds and is consumed by the iOS example.",
-    "Generated Android and iOS API docs are regenerated if public APIs changed.",
-    "Migration guides are updated for consumer-visible changes.",
-    "Known platform differences are documented.",
-    "A rollback path exists for every shared module adoption step."
-)
-internal val MIGRATION_STOP_CONDITION_TERMS = listOf(
-    "## Stop Conditions",
-    "Android and iOS current behavior disagree without a documented decision",
-    "a parser has no golden-vector coverage",
-    "a shared implementation requires platform APIs",
-    "a platform facade changes public behavior unintentionally",
-    "validation requires physical hardware for logic that should be fakeable"
-)
-internal val PER_SLICE_TDD_CHECKLIST_TERMS = listOf(
-    "## Per-Slice TDD Checklist",
-    "Choose one behavior slice.",
-    "List current Android implementation files.",
-    "List current iOS implementation files.",
-    "List existing Android tests.",
-    "List existing iOS tests.",
-    "Add or update Android characterization tests.",
-    "Add or update iOS characterization tests.",
-    "Add shared golden vectors.",
-    "Add failing KMP common tests.",
-    "Implement shared code.",
-    "Delegate Android implementation to shared code.",
-    "Delegate iOS implementation to shared code.",
-    "Re-run Android, iOS, and KMP tests.",
-    "Remove duplicated platform logic only after both facades pass.",
-    "Update docs if public behavior changed."
-)
-internal val REVIEW_CHECKLIST_TERMS = listOf(
-    "## Review Checklist",
-    "The pull request moves only one coherent behavior slice.",
-    "Tests fail without the shared implementation.",
-    "Golden vectors are understandable and minimal.",
-    "Android and iOS public APIs remain compatible unless the change is explicitly documented.",
-    "Platform-specific BLE behavior remains platform-specific.",
-    "New common code has no hidden Android/JVM or Apple-only dependency.",
-    "Error mapping is covered by tests.",
-    "Cancellation and timeout behavior is covered when streams or suspend functions are involved.",
-    "Build metadata does not depend on Android `BuildConfig` in common code."
-)
-internal val SUGGESTED_SLICE_ORDER_TERMS = listOf(
-    "## Suggested Slice Order",
-    "1. Device ID and UUID utilities.",
-    "2. Time and date utilities.",
-    "3. Product capability JSON parsing.",
-    "4. PMD settings and control-point response parsing.",
-    "5. ECG parser.",
-    "6. ACC, GYR, and MAG parsers.",
-    "7. PPG and PPI parsers.",
-    "8. Pressure, temperature, and skin-temperature parsers.",
-    "9. Offline recording metadata and status parsing.",
-    "10. Training-session metadata parsing.",
-    "11. Firmware/status mapping.",
-    "12. Shared fake transport contract.",
-    "13. Runtime state machines.",
-    "14. Public API compatibility adapters."
-)
 internal val BACKTICK_REFERENCE = Regex("`([^`]+)`")
 internal val VALIDATION_ARTIFACT_REFERENCE = Regex("(sources|testdata|documentation)/[A-Za-z0-9_./-]+\\.(md|kt|swift|json)")
 internal val SOURCES_BUILD_PHASE_SECTION = Regex("(?s)/\\* Begin PBXSourcesBuildPhase section \\*/.*?/\\* End PBXSourcesBuildPhase section \\*/")
@@ -1200,29 +1025,6 @@ internal val PSFTP_TIMEOUT_LEDGER_REQUIRED_TERMS = mapOf(
         "fake-clock facade compatibility before production PSFTP write-timeout delegation"
     )
 )
-internal val FAKE_TRANSPORT_PRE_MIGRATION_GATE_REQUIRED_TERMS = listOf(
-    "A runtime migration slice must name the exact rows from the matrix that it implements.",
-    "A slice that delegates only parser/model code does not need fake transport tests unless it changes stream or facade behavior.",
-    "A slice that delegates public facade operations must include both platform facade tests and common fake-transport tests for success, error, cancellation, and timeout where applicable.",
-    "A slice that keeps a transport area platform-specific must update `KmpCoverageInventory.md` with the ownership reason and the existing platform tests that remain authoritative.",
-    "A runtime test must assert observer cleanup or cancellation propagation whenever it opens a stream, registers a listener, or starts an internal task."
-)
-internal val FAKE_TRANSPORT_HARNESS_DESCRIPTION_REQUIRED_TERMS = listOf(
-    "deterministic command capture",
-    "payload capture",
-    "scripted byte responses",
-    "response errors",
-    "transport errors",
-    "completion",
-    "timeout behavior",
-    "connection-state guards",
-    "disconnect-after-operation limits",
-    "active observer counts",
-    "idempotent stream cancellation",
-    "cleanup callback counts",
-    "upstream cancellation observation",
-    "virtual clock for timeout checks without wall-clock sleeps"
-)
 internal val SHARED_COMMON_PRODUCTION_CODEC_DEPENDENCY_TERMS = listOf(
     "protobuf",
     "flatbuffers",
@@ -1238,32 +1040,6 @@ internal val SHARED_COMMON_PRODUCTION_CODEC_DEPENDENCY_TERMS = listOf(
     "kotlinx-io"
 )
 internal val BYTE_LEVEL_COMMON_DEPENDENCY_DEFERRAL_TERMS = mapOf(
-    "KmpFullCoverageTddBacklog.md" to listOf(
-        "neutral reconstruction-slot planning is shared while generated public protobuf object construction remains platform-owned",
-        "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
-        "REST service-list/service-description JSON decoding now has Android and linked iOS production shared KMP consumption through `PolarRestServiceModels.serviceListJson` and `serviceDescriptionJson`",
-        "shared-common-aes-production-decryption",
-        "REST gzip/deflate behavior now uses shared KMP platform actual codecs",
-        "training-session gzip payload decompression now uses shared KMP platform actuals",
-        "Watch-face FlatBuffer byte input parsing and output construction now live in shared production code",
-        "KVTX"
-    ),
-    "KmpCoverageInventory.md" to listOf(
-        "REST event compressed payload decoding now uses shared KMP platform actual codecs while generic iOS `Data.deflated`/`Data.inflated` remains platform-specific.",
-        "linked iOS `PolarRestServiceProjectionPlanner` now consume shared REST JSON parsing",
-        "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
-        "Keep iOS nil-on-truncation compatibility adapter-owned if required while common parsing uses typed malformed-script errors.",
-        "semantic and codec-ownership/readiness policy executable"
-    ),
-    "KmpPreMigrationRemainingWork.md" to listOf(
-        "Generated public protobuf object reconstruction remains platform-owned",
-        "User-device-settings mapped protobuf byte parsing/building now has shared production codec ownership with Android and linked iOS consumption",
-        "training-session payloads",
-        "Training-session gzip payload decoding now uses shared KMP platform actuals",
-        "PMD AES ECB/no-padding decryption now lives in shared common production code",
-        "watch-face FlatBuffer input/output construction lives in shared common production code",
-        "training-session deferral artifacts"
-    ),
     "payload-read-policy.json" to listOf(
         "byteLevelParserGate",
         "selected-common-protobuf-field-parser-active-before-generated-model-reconstruction",
@@ -2140,10 +1916,6 @@ internal val FAKE_TRANSPORT_COMMON_USER_DEVICE_SETTINGS_RUNTIME_TEST_REQUIRED_TE
 )
 internal val COMMON_TEST_PORTABILITY_FORBIDDEN = Regex("digitToInt|toBooleanStrict|uppercase\\(|lowercase\\(|replaceFirstChar|ifEmpty|UL|UInt|UByte|ULong|java\\.|android\\.|com\\.google")
 internal val COMMON_MAIN_PLATFORM_FORBIDDEN = Regex("android\\.|java\\.|javax\\.|CoreBluetooth|UIKit|Foundation|CryptoKit|SwiftUI|platform\\.Core|com\\.google|Bluetooth|BluetoothGatt|Context\\b|GlobalScope|Dispatchers\\.Main")
-internal val COMMON_MAIN_PORTABILITY_PLAN_TERMS = listOf(
-    "Common code must not depend on Android Bluetooth APIs, CoreBluetooth, UIKit, Swift-only concurrency types, JVM-only classes, Apple-only cryptography, or global mutable platform state.",
-    "Shared code should receive byte arrays, timestamps, settings, and command results; platform code should translate those to Android or iOS BLE calls."
-)
 internal val COMMON_TEST_PORTABILITY_ALLOWED_LINES = listOf(
     AllowedCommonTestPortabilityLine(
         file = "sources/Android/android-communications/shared/src/commonTest/kotlin/com/polar/sharedtest/DeviceIdCommonPolicyTest.kt",

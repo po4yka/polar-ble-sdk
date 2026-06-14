@@ -376,7 +376,7 @@ class PolarDataUtilsTest {
 
     private fun loadOfflineRecordingVector(fileName: String): JsonObject {
         FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/sdk/offline-recording/$fileName")).use { reader ->
-            return JsonParser().parse(reader).asJsonObject
+            return JsonParser.parseReader(reader).asJsonObject
         }
     }
 
