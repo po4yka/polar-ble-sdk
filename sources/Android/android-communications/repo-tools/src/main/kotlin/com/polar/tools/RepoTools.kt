@@ -26,6 +26,7 @@ private fun kmpNonGradleChecks() {
         "documentation/KmpValidationCommands.md",
         "documentation/KmpSharedArtifactConsumption.md",
         "documentation/KmpModernStackAudit.md",
+        "documentation/ReleasePublicationPolicy.md",
         "sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh",
         "sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh",
         "sources/Android/android-communications/repo-tools/src/main/kotlin/com/polar/tools/RepoTools.kt",
@@ -83,6 +84,8 @@ private fun verifyReleasePackagingPolicy() {
     val workflow = repoRoot.resolve(workflowPath).readTextIfExists()
     val ciDoc = repoRoot.resolve("documentation/CiCd.md").readTextIfExists()
     val consumptionDoc = repoRoot.resolve("documentation/KmpSharedArtifactConsumption.md").readTextIfExists()
+    val publicationDocPath = "documentation/ReleasePublicationPolicy.md"
+    val publicationDoc = repoRoot.resolve(publicationDocPath).readTextIfExists()
 
     listOf(
         ":repo-tools:verifyReleasePackagingPolicy",
@@ -113,10 +116,28 @@ private fun verifyReleasePackagingPolicy() {
             "CI/release remains artifact-only",
             "No Maven or SwiftPM registry publication is claimed",
             "required secrets are intentionally absent",
+            "ReleasePublicationPolicy.md",
             "Swift Package Manager is the supported Apple package path",
             "PolarBleSdkShared.xcframework.zip",
         ).filterNot { text.contains(it) }.mapTo(errors) { "$path missing $it" }
     }
+
+    listOf(
+        "GitHub Release asset promotion",
+        "release-publication",
+        "manual reviewer approval",
+        "POLAR_RELEASE_SIGNING_KEY_ASC",
+        "POLAR_RELEASE_SIGNING_KEY_ID",
+        "POLAR_RELEASE_SIGNING_KEY_PASSPHRASE",
+        "SHA-256 checksums",
+        "detached signatures",
+        "swift package compute-checksum",
+        "dry-run mode",
+        "rollback",
+        "Maven Central publishing and Swift package registry publication remain deferred",
+        "two-AAR compatibility model",
+        "PolarBleSdkShared.xcframework.zip",
+    ).filterNot { publicationDoc.contains(it) }.mapTo(errors) { "$publicationDocPath missing $it" }
 
     finish(errors, "Release packaging policy static inspection OK")
 }
