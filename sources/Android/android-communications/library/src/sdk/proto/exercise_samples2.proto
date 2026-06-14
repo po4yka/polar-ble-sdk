@@ -4,8 +4,6 @@ syntax = "proto2";
 package data;
 
 import "types.proto";
-import "structures.proto";
-import "exercise_rr_samples.proto";
 
 option java_package = "fi.polar.remote.representation.protobuf";
 option java_outer_classname = "ExerciseSamples2";
@@ -145,4 +143,3 @@ message PbExerciseSamples2 {
     // Exercise samples with sample type specific recording intervals
     repeated PbExerciseIntervalledSample2List exercise_intervalled_sample2_list = 1;
 };
-

@@ -549,9 +549,6 @@ class PolarTestUtilsTests: XCTestCase {
             proto.spo2HrvDeviationFromBaseline = try XCTUnwrap(Data_PbDeviationFromBaseline(rawValue: value.intValue), id)
         }
         if let value = fields["altitudeMeters"] as? NSNumber { proto.altitudeMeters = value.floatValue }
-        if let value = fields["triggerType"] as? NSNumber {
-            proto.triggerType = try XCTUnwrap(Data_PbSpo2TestTriggerType(rawValue: value.intValue), id)
-        }
         return proto
     }
 

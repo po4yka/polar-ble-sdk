@@ -4,7 +4,6 @@ syntax = "proto2";
 package data;
 
 import "types.proto";
-import "structures.proto";
 
 option java_package = "fi.polar.remote.representation.protobuf";
 option java_outer_classname = "ExerciseRouteSamples";
@@ -21,22 +20,22 @@ message PbExerciseRouteSamples {
 
     // latitude, value is positive on northern hemisphere
     repeated double latitude = 2;
-    
+
     // longitude, value is positive on eastern hemisphere
     repeated double longitude = 3;
-    
+
     // gps altitude
     repeated sint32 gps_altitude = 4 [packed = true];
-    
+
     // number of satellites
     repeated uint32 satellite_amount = 5 [packed = true];
-     
+
     // fix status
     repeated bool OBSOLETE_fix = 6 [packed = true];
-    
+
     // indicate start and stop indexes when there has not been connection to gps sensor
     repeated PbSensorOffline OBSOLETE_gps_offline = 7;
-    
+
     // GPS date and time in UTC
     repeated PbSystemDateTime OBSOLETE_gps_date_time = 8;
 
@@ -44,4 +43,3 @@ message PbExerciseRouteSamples {
     optional PbSystemDateTime first_location_time = 9;
 
 };
-

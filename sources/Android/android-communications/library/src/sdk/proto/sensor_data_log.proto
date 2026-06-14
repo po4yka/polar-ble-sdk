@@ -3,8 +3,6 @@ syntax = "proto2";
 
 package data;
 
-import "types.proto";
-
 /*
  * Sensor data log settings
  */

@@ -15,177 +15,144 @@ import SwiftProtobuf
 // incompatible with the version of SwiftProtobuf to which you are linking.
 // Please ensure that you are building against the same version of the API
 // that was used to generate this file.
-fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
+fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
   struct _2: SwiftProtobuf.ProtobufAPIVersion_2 {}
   typealias Version = _2
 }
 
-struct Data_PbActivityInfo: Sendable {
+public nonisolated struct Data_PbActivityInfo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var value: Data_PbActivityInfo.ActivityClass {
-    get {return _value ?? .sleep}
+  public var value: Data_PbActivityInfo.ActivityClass {
+    get {_value ?? .sleep}
     set {_value = newValue}
   }
   /// Returns true if `value` has been explicitly set.
-  var hasValue: Bool {return self._value != nil}
+  public var hasValue: Bool {self._value != nil}
   /// Clears the value of `value`. Subsequent reads from it will return its default value.
-  mutating func clearValue() {self._value = nil}
+  public mutating func clearValue() {self._value = nil}
 
   /// Local time is used, because the design is originally implemented in local time
-  var timeStamp: PbLocalDateTime {
-    get {return _timeStamp ?? PbLocalDateTime()}
+  public var timeStamp: PbLocalDateTime {
+    get {_timeStamp ?? PbLocalDateTime()}
     set {_timeStamp = newValue}
   }
   /// Returns true if `timeStamp` has been explicitly set.
-  var hasTimeStamp: Bool {return self._timeStamp != nil}
+  public var hasTimeStamp: Bool {self._timeStamp != nil}
   /// Clears the value of `timeStamp`. Subsequent reads from it will return its default value.
-  mutating func clearTimeStamp() {self._timeStamp = nil}
+  public mutating func clearTimeStamp() {self._timeStamp = nil}
 
-  var factor: Float {
-    get {return _factor ?? 0}
+  public var factor: Float {
+    get {_factor ?? 0}
     set {_factor = newValue}
   }
   /// Returns true if `factor` has been explicitly set.
-  var hasFactor: Bool {return self._factor != nil}
+  public var hasFactor: Bool {self._factor != nil}
   /// Clears the value of `factor`. Subsequent reads from it will return its default value.
-  mutating func clearFactor() {self._factor = nil}
+  public mutating func clearFactor() {self._factor = nil}
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  enum ActivityClass: SwiftProtobuf.Enum, Swift.CaseIterable {
-    typealias RawValue = Int
-    case sleep // = 1
-    case sedentary // = 2
-    case light // = 3
-    case continuousModerate // = 4
-    case intermittentModerate // = 5
-    case continuousVigorous // = 6
-    case intermittentVigorous // = 7
-    case nonWear // = 8
+  public nonisolated enum ActivityClass: Int, SwiftProtobuf.Enum, Swift.CaseIterable {
+    case sleep = 1
+    case sedentary = 2
+    case light = 3
+    case continuousModerate = 4
+    case intermittentModerate = 5
+    case continuousVigorous = 6
+    case intermittentVigorous = 7
+    case nonWear = 8
 
-    init() {
+    public init() {
       self = .sleep
-    }
-
-    init?(rawValue: Int) {
-      switch rawValue {
-      case 1: self = .sleep
-      case 2: self = .sedentary
-      case 3: self = .light
-      case 4: self = .continuousModerate
-      case 5: self = .intermittentModerate
-      case 6: self = .continuousVigorous
-      case 7: self = .intermittentVigorous
-      case 8: self = .nonWear
-      default: return nil
-      }
-    }
-
-    var rawValue: Int {
-      switch self {
-      case .sleep: return 1
-      case .sedentary: return 2
-      case .light: return 3
-      case .continuousModerate: return 4
-      case .intermittentModerate: return 5
-      case .continuousVigorous: return 6
-      case .intermittentVigorous: return 7
-      case .nonWear: return 8
-      }
     }
 
   }
 
-  init() {}
+  public init() {}
 
   fileprivate var _value: Data_PbActivityInfo.ActivityClass? = nil
   fileprivate var _timeStamp: PbLocalDateTime? = nil
   fileprivate var _factor: Float? = nil
 }
 
-struct Data_PbActivitySamples: @unchecked Sendable {
+public nonisolated struct Data_PbActivitySamples: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Date and time when the sample was created for the first time
   /// Local time is used, because the design is originally implemented in local time
-  var startTime: PbLocalDateTime {
-    get {return _storage._startTime ?? PbLocalDateTime()}
+  public var startTime: PbLocalDateTime {
+    get {_storage._startTime ?? PbLocalDateTime()}
     set {_uniqueStorage()._startTime = newValue}
   }
   /// Returns true if `startTime` has been explicitly set.
-  var hasStartTime: Bool {return _storage._startTime != nil}
+  public var hasStartTime: Bool {_storage._startTime != nil}
   /// Clears the value of `startTime`. Subsequent reads from it will return its default value.
-  mutating func clearStartTime() {_uniqueStorage()._startTime = nil}
+  public mutating func clearStartTime() {_uniqueStorage()._startTime = nil}
 
   /// Recording interval of met samples in this file
-  var metRecordingInterval: PbDuration {
-    get {return _storage._metRecordingInterval ?? PbDuration()}
+  public var metRecordingInterval: PbDuration {
+    get {_storage._metRecordingInterval ?? PbDuration()}
     set {_uniqueStorage()._metRecordingInterval = newValue}
   }
   /// Returns true if `metRecordingInterval` has been explicitly set.
-  var hasMetRecordingInterval: Bool {return _storage._metRecordingInterval != nil}
+  public var hasMetRecordingInterval: Bool {_storage._metRecordingInterval != nil}
   /// Clears the value of `metRecordingInterval`. Subsequent reads from it will return its default value.
-  mutating func clearMetRecordingInterval() {_uniqueStorage()._metRecordingInterval = nil}
+  public mutating func clearMetRecordingInterval() {_uniqueStorage()._metRecordingInterval = nil}
 
   /// Recording interval of step samples in this file
-  var stepsRecordingInterval: PbDuration {
-    get {return _storage._stepsRecordingInterval ?? PbDuration()}
+  public var stepsRecordingInterval: PbDuration {
+    get {_storage._stepsRecordingInterval ?? PbDuration()}
     set {_uniqueStorage()._stepsRecordingInterval = newValue}
   }
   /// Returns true if `stepsRecordingInterval` has been explicitly set.
-  var hasStepsRecordingInterval: Bool {return _storage._stepsRecordingInterval != nil}
+  public var hasStepsRecordingInterval: Bool {_storage._stepsRecordingInterval != nil}
   /// Clears the value of `stepsRecordingInterval`. Subsequent reads from it will return its default value.
-  mutating func clearStepsRecordingInterval() {_uniqueStorage()._stepsRecordingInterval = nil}
+  public mutating func clearStepsRecordingInterval() {_uniqueStorage()._stepsRecordingInterval = nil}
 
   /// met samples
-  var metSamples: [Float] {
-    get {return _storage._metSamples}
+  public var metSamples: [Float] {
+    get {_storage._metSamples}
     set {_uniqueStorage()._metSamples = newValue}
   }
 
   /// step samples
-  var stepsSamples: [UInt32] {
-    get {return _storage._stepsSamples}
+  public var stepsSamples: [UInt32] {
+    get {_storage._stepsSamples}
     set {_uniqueStorage()._stepsSamples = newValue}
   }
 
   /// Activity class changes
-  var activityInfo: [Data_PbActivityInfo] {
-    get {return _storage._activityInfo}
+  public var activityInfo: [Data_PbActivityInfo] {
+    get {_storage._activityInfo}
     set {_uniqueStorage()._activityInfo = newValue}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  public init() {}
 
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-fileprivate let _protobuf_package = "data"
+fileprivate nonisolated let _protobuf_package = "data"
 
-extension Data_PbActivityInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".PbActivityInfo"
-  @available(*, deprecated, message: "Generated by legacy SwiftProtobuf plugin")
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "value"),
-    2: .standard(proto: "time_stamp"),
-    3: .same(proto: "factor"),
-  ]
+nonisolated extension Data_PbActivityInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".PbActivityInfo"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}value\0\u{3}time_stamp\0\u{1}factor\0")
 
   public var isInitialized: Bool {
     if let v = self._timeStamp, !v.isInitialized {return false}
     return true
   }
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -199,7 +166,7 @@ extension Data_PbActivityInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -216,7 +183,7 @@ extension Data_PbActivityInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Data_PbActivityInfo, rhs: Data_PbActivityInfo) -> Bool {
+  public static func ==(lhs: Data_PbActivityInfo, rhs: Data_PbActivityInfo) -> Bool {
     if lhs._value != rhs._value {return false}
     if lhs._timeStamp != rhs._timeStamp {return false}
     if lhs._factor != rhs._factor {return false}
@@ -225,31 +192,13 @@ extension Data_PbActivityInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   }
 }
 
-extension Data_PbActivityInfo.ActivityClass: SwiftProtobuf._ProtoNameProviding {
-  @available(*, deprecated, message: "Generated by legacy SwiftProtobuf plugin")
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "SLEEP"),
-    2: .same(proto: "SEDENTARY"),
-    3: .same(proto: "LIGHT"),
-    4: .same(proto: "CONTINUOUS_MODERATE"),
-    5: .same(proto: "INTERMITTENT_MODERATE"),
-    6: .same(proto: "CONTINUOUS_VIGOROUS"),
-    7: .same(proto: "INTERMITTENT_VIGOROUS"),
-    8: .same(proto: "NON_WEAR"),
-  ]
+nonisolated extension Data_PbActivityInfo.ActivityClass: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}SLEEP\0\u{1}SEDENTARY\0\u{1}LIGHT\0\u{1}CONTINUOUS_MODERATE\0\u{1}INTERMITTENT_MODERATE\0\u{1}CONTINUOUS_VIGOROUS\0\u{1}INTERMITTENT_VIGOROUS\0\u{1}NON_WEAR\0")
 }
 
-extension Data_PbActivitySamples: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".PbActivitySamples"
-  @available(*, deprecated, message: "Generated by legacy SwiftProtobuf plugin")
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "start_time"),
-    2: .standard(proto: "met_recording_interval"),
-    3: .standard(proto: "steps_recording_interval"),
-    4: .standard(proto: "met_samples"),
-    5: .standard(proto: "steps_samples"),
-    7: .standard(proto: "activity_info"),
-  ]
+nonisolated extension Data_PbActivitySamples: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".PbActivitySamples"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}start_time\0\u{3}met_recording_interval\0\u{3}steps_recording_interval\0\u{3}met_samples\0\u{3}steps_samples\0\u{4}\u{2}activity_info\0")
 
   fileprivate class _StorageClass {
     var _startTime: PbLocalDateTime? = nil
@@ -259,15 +208,11 @@ extension Data_PbActivitySamples: SwiftProtobuf.Message, SwiftProtobuf._MessageI
     var _stepsSamples: [UInt32] = []
     var _activityInfo: [Data_PbActivityInfo] = []
 
-    #if swift(>=5.10)
       // This property is used as the initial default value for new instances of the type.
       // The type itself is protecting the reference to its storage via CoW semantics.
       // This will force a copy to be made of this reference when the first mutation occurs;
       // hence, it is safe to mark this as `nonisolated(unsafe)`.
       static nonisolated(unsafe) let defaultInstance = _StorageClass()
-    #else
-      static let defaultInstance = _StorageClass()
-    #endif
 
     private init() {}
 
@@ -290,13 +235,16 @@ extension Data_PbActivitySamples: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 
   public var isInitialized: Bool {
     return withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      if _storage._startTime == nil {return false}
+      if _storage._metRecordingInterval == nil {return false}
+      if _storage._stepsRecordingInterval == nil {return false}
       if let v = _storage._startTime, !v.isInitialized {return false}
       if !SwiftProtobuf.Internal.areAllInitialized(_storage._activityInfo) {return false}
       return true
     }
   }
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     _ = _uniqueStorage()
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
@@ -316,7 +264,7 @@ extension Data_PbActivitySamples: SwiftProtobuf.Message, SwiftProtobuf._MessageI
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every if/case branch local when no optimizations
@@ -344,7 +292,7 @@ extension Data_PbActivitySamples: SwiftProtobuf.Message, SwiftProtobuf._MessageI
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Data_PbActivitySamples, rhs: Data_PbActivitySamples) -> Bool {
+  public static func ==(lhs: Data_PbActivitySamples, rhs: Data_PbActivitySamples) -> Bool {
     if lhs._storage !== rhs._storage {
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0

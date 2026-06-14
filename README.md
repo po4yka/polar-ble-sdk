@@ -269,7 +269,7 @@ public override fun onDestroy() {
 - Swift 5.9+
 
 ### Dependencies
-*  [Swift Protobuf](https://github.com/apple/swift-protobuf) 1.6.0 or above, up to the next major version
+*  [Swift Protobuf](https://github.com/apple/swift-protobuf) 1.38.0 or above, up to the next major version
 *  [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) 0.9.20 or above, up to the next major version
 *  Swift Concurrency for async APIs and `AsyncThrowingStream`; Combine is used only where SDK APIs still expose `AnyPublisher`
 ### Installation

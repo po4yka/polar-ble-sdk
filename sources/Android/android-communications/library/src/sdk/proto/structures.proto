@@ -8,12 +8,12 @@ option java_package = "fi.polar.remote.representation.protobuf";
 /*
   Definitions for common composite data structures used in data transfer.
 
-  This file contains definitions for messages which are commonly used in other messages. 
+  This file contains definitions for messages which are commonly used in other messages.
 
   For intended usage of this data, see "File System Structure in Genesis ecosystem devices"
   (https://swa.polar.fi/sag/wiki/SAGRFC/SAGRFC2)
-    
-  The "products" column is used for optimizing the collector software 
+
+  The "products" column is used for optimizing the collector software
   by removing unused "optional" fields from the generated code.
 
 */
@@ -32,10 +32,10 @@ message PbVolumeTarget {
 
     // Duration target
     optional PbDuration duration = 2;
-    
+
     // Distance target
     optional float distance = 3 [(type)=DISTANCE];
-    
+
     // Calories target
     optional uint32 calories = 4 [(type)=CALORIES];
 };
@@ -104,7 +104,7 @@ message PbTrainingLoad {
 
     // Fat consumption in grams
     optional float fat_grams = 8;
-    
+
     // Size of the meal set for the exercise. Default 20 grams
     optional float meal_size = 9;
 
@@ -115,10 +115,10 @@ message PbTrainingLoad {
 
 message PbHeartRateZone {
 
-    //Heart rate zone lower limit, range [0 -250] 1/min	
+    //Heart rate zone lower limit, range [0 -250] 1/min
     required uint32 lower_limit = 1         [(type)=HEARTRATE];
 
-    //Heart rate zone upper limit, range [0 -250] 1/min	
+    //Heart rate zone upper limit, range [0 -250] 1/min
     required uint32 higher_limit = 2        [(type)=HEARTRATE];
 };
 
@@ -145,7 +145,7 @@ message PbZones {
     repeated PbHeartRateZone heart_rate_zone = 1          [(nanopb).max_count = 7];
     repeated PbSpeedZone speed_zone = 2                   [(nanopb).max_count = 7];
     repeated PbPowerZone power_zone = 3                   [(nanopb).max_count = 7];
-    
+
     optional PbHeartRateZoneSettingSource heart_rate_setting_source = 10;
     optional PbPowerZoneSettingSource power_setting_source = 11;
     optional PbSpeedZoneSettingSource speed_setting_source = 12;
@@ -223,25 +223,25 @@ message PbLanguageId {
 
 message PbTrainingSessionTargetId {
     // Ecosystem training session target identifier
-    // 
+    //
     required uint64 value = 1;
-    
+
     // Last modified timestamp from the referenced training session target
     optional PbSystemDateTime last_modified = 2;
 };
 
 message PbTrainingSessionFavoriteId {
     // Ecosystem training session favorite identifier
-    // 
+    //
     required uint64 value = 1;
-    
+
     // Last modified timestamp from the referenced favorite training session target
     optional PbSystemDateTime last_modified = 2;
 };
 
 message PbRouteId {
     // Ecosystem route identifier
-    // 
+    //
     required uint64 value = 1;
 };
 
@@ -355,12 +355,12 @@ message PbBleService{
     repeated PbBleCharacteristic characteristics = 2 [(nanopb).max_count = 10];
 }
 
-/* 
+/*
    Metadata for identifying the source of a data
 
    Each field must be set in the case the value is available.
 
-   If no suitable data is available for the only required field (i.e. no way to name the device), 
+   If no suitable data is available for the only required field (i.e. no way to name the device),
    then there's obviously no need to create this source message.
 */
 message PbSourceDevice {
@@ -376,7 +376,7 @@ message PbSourceDevice {
     required string name = 1;
 
     // Device or app manufacturer
-    // 
+    //
     // Polar device and mobile app: "Polar Electro Oy"
     // 3rd party device: Manufacturer from DIS if available (e.g. "Stryd")
     optional string manufacturer = 2;
@@ -421,17 +421,17 @@ message PbSourceDevice {
     // This field is set only if the source device is an exernal sensor.
     // Collector is the device (or app) that connects to the sensor and
     // creates the data this PbSourceDevice is for.
-    // 
-    // E.g. If the source of HR data is OH1, then the collector here 
+    //
+    // E.g. If the source of HR data is OH1, then the collector here
     // could be e.g. Polar Beat
     repeated PbSourceDevice collector = 8;
 }
 
 message PbSampleSourceDevice {
 
-    // On a sample array merged from multiple sources, this is the start index for 
-    // samples that have been produced by the device described by source_device. 
-    // The subsequence of samples produced by the source implicitly ends where the 
+    // On a sample array merged from multiple sources, this is the start index for
+    // samples that have been produced by the device described by source_device.
+    // The subsequence of samples produced by the source implicitly ends where the
     // next starts (or at the end of the sample array).
     required uint32 start_index = 1;
 

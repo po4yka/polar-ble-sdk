@@ -2,8 +2,6 @@ syntax = "proto2";
 
 package protocol;
 
-import "types.proto";
-
 /*
  * Error codes.
  */

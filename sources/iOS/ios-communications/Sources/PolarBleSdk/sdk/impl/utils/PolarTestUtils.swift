@@ -108,7 +108,7 @@ internal class PolarTestUtils {
             heartRateVariabilityMs: proto.hasHeartRateVariabilityMs ? proto.heartRateVariabilityMs : nil,
             spo2HrvDeviationFromBaseline: proto.hasSpo2HrvDeviationFromBaseline ? PolarSpo2TestData.DeviationFromBaseline.fromSharedOrRaw(value: proto.spo2HrvDeviationFromBaseline.rawValue) : nil,
             altitudeMeters: proto.hasAltitudeMeters ? proto.altitudeMeters : nil,
-            triggerType: proto.hasTriggerType ? PolarSpo2TestData.Spo2TestTriggerType.fromSharedOrRaw(value: proto.triggerType.rawValue) : nil
+            triggerType: nil
         )
     }
 
@@ -219,7 +219,7 @@ private enum PolarSpo2RuntimePlanner {
             heartRateVariabilityMs: proto.hasHeartRateVariabilityMs ? String(proto.heartRateVariabilityMs) : "",
             spo2HrvDeviationFromBaseline: proto.hasSpo2HrvDeviationFromBaseline ? String(proto.spo2HrvDeviationFromBaseline.rawValue) : "",
             altitudeMeters: proto.hasAltitudeMeters ? String(proto.altitudeMeters) : "",
-            triggerType: proto.hasTriggerType ? String(proto.triggerType.rawValue) : ""
+            triggerType: ""
         ).split(separator: "\u{1F}", omittingEmptySubsequences: false).map(String.init)
         #else
         return nil

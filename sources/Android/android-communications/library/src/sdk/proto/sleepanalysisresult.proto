@@ -50,7 +50,7 @@ message PbSleepCycle {
 };
 
 /*
- Complete summary of a night's sleep. 
+ Complete summary of a night's sleep.
  Note! Optional sleep_cycles fields can be found only as output of new Sleep Structure features and this can be used to
  check if sleep result is coming from "old" or "new" algorithm and separate field for version is not needed.
 */

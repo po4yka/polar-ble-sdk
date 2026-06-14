@@ -10,27 +10,27 @@ option java_package = "fi.polar.remote.representation.protobuf";
 
   For intended usage of this data, see "File System Structure in Genesis ecosystem devices"
   (https://swa.polar.fi/sag/wiki/SAGRFC/SAGRFC2)
-  
-  The "products" column is used for optimizing the collector software 
+
+  The "products" column is used for optimizing the collector software
   by removing unused "optional" fields from the generated code.
 */
 
 enum PbDataType {
 
 	UNDEFINED = 0;     // Not defined
-	INHERITED = 1;     // Inherited from parent field (for generics) 
+	INHERITED = 1;     // Inherited from parent field (for generics)
 	ENUM      = 2;     // Reserved for enumerations
-	
+
 	MILLIS    = 3;     // Milliseconds
 	SECOND    = 4;     // Seconds
 	MINUTE    = 5;     // Minutes
 	HOUR      = 6;     // Hours
 	HOURS     = 7;     // Hours
-	
+
 	DAY       = 8;     // Day of month
 	MONTH     = 9;     // Month
 	YEAR      = 10;    // Year
-	
+
 	WEIGHT    = 11;    // Kilograms
 	HEIGHT    = 12;    // Centimeters
 	VO2MAX    = 13;    // ml/kg/min
@@ -46,7 +46,7 @@ enum PbDataType {
 	POWER_PI    = 28;    // 0-100 ("Percentage")
 	TEMPERATURE = 29;    // Celsius
 	ACTIVITY    = 30;    // Metabolic Equivalent of Task (MET)
-    
+
 	STRIDE_LENGTH = 31;  // Stride length while running (cm)
 	INCLINE       = 32;  // Climbing angle (%)
 	DECLINE       = 33;  // Descending angle (%)
@@ -81,17 +81,17 @@ enum PbDataType {
     MAXIMUM_AEROBIC_POWER   = 78;    // MAP value in watts
     MAXIMUM_AEROBIC_SPEED   = 79;    // MAS value in km/h
     MUSCLE_LOAD             = 80;    // Muscle load of an exercise. Related to power measurement (kJ)
-    PERCEIVED_LOAD          = 81;    // Perceived load of an exercise, float       
+    PERCEIVED_LOAD          = 81;    // Perceived load of an exercise, float
 }
-      
+
 message PbRangeOptions {
   optional int32 min_value = 1;
   optional int32 max_value = 2;
 }
 
 /*
-Custom field option for field value validation. 
-It uses field id 50000 as the range 50000-99999 is reserved for internal use within individual organizations, 
+Custom field option for field value validation.
+It uses field id 50000 as the range 50000-99999 is reserved for internal use within individual organizations,
 so we can use numbers in this range freely for in-house applications.
 */
 extend google.protobuf.FieldOptions {
@@ -100,8 +100,8 @@ extend google.protobuf.FieldOptions {
 
 
 /*
-Custom message option for union messages. 
-It uses field id 50001 as the range 50000-99999 is reserved for internal use within individual organizations, 
+Custom message option for union messages.
+It uses field id 50001 as the range 50000-99999 is reserved for internal use within individual organizations,
 so we can use numbers in this range freely for in-house applications.
 */
 extend google.protobuf.MessageOptions {
@@ -110,17 +110,17 @@ extend google.protobuf.MessageOptions {
 
 /*
 Custom field option for specifying range of a value
-It uses field id 50000 as the range 50000-99999 is reserved for internal use within individual organizations, 
+It uses field id 50000 as the range 50000-99999 is reserved for internal use within individual organizations,
 so we can use numbers in this range freely for in-house applications.
 */
 extend google.protobuf.FieldOptions {
   optional PbRangeOptions range = 50003;
-}    
+}
 
 message PbDate {
 	required uint32 year = 1    [(type)=YEAR];
 	required uint32 month = 2   [(type)=MONTH];
-	required uint32 day = 3     [(type)=DAY];	
+	required uint32 day = 3     [(type)=DAY];
 };
 
 message PbTime {
@@ -133,19 +133,19 @@ message PbTime {
 message PbSystemDateTime {
     required PbDate date = 1;
     required PbTime time = 2;
-    
+
     /*
      The flag defines if the date & time combination originated
      from a trusted time source, such as PPT.com servers, GPS satelites,
-     GPRS network, atomic clocks etc. 
-     
+     GPRS network, atomic clocks etc.
+
      If the trusted flag is "false"
      the date time originated from untrusted source such as "set by user manually"
      or not set at all (some default value).
-     
+
      For more information about "trusted time", please see SAGRFC27:
      (https://swa.polar.fi/sag/wiki/SAGRFC/SAGRFC27)
-     
+
     */
     required bool trusted = 3;
 };
@@ -379,7 +379,7 @@ enum PbMacType {
 
 enum PbSwimmingStyle {
     OTHER             = -1;    // Other (not swimming)
-    TURN              = 0;     // Between swimming styles 
+    TURN              = 0;     // Between swimming styles
     OTHER_SWIMMING    = 10;    // Swimming style not definable but still swimming
     FREESTYLE         = 11;    // Freestyle
     BREASTSTROKE      = 12;    // Breaststroke
@@ -407,13 +407,13 @@ enum PbExerciseTargetType {
 message PbWeek {
     // ISO-8601 week number
     required uint32 week_number_ISO8601 = 1 [(type)=WEEK];
-    
+
     // Year
     required uint32 year = 2 [(type)=YEAR];
 
     // Range [-720 - 840] minutes
     required int32 time_zone_offset = 3 [(type)=TIME_ZONE_OFFSET];
-    
+
     // Start day of the week at creation
     required PbStartDayOfWeek week_start_day  = 4;
 };
@@ -421,7 +421,7 @@ message PbWeek {
 //Enums for transferring button state to/from device
 enum Buttons {
     //Guitar, Archer: up
-    BUTTON_PLUS = 0; 
+    BUTTON_PLUS = 0;
     //Guitar, Archer: down
     BUTTON_MINUS = 1;
     //Guitar, Archer: start
@@ -433,7 +433,7 @@ enum Buttons {
 };
 
 enum ButtonState {
-    BUTTON_PRESSED = 0; 
+    BUTTON_PRESSED = 0;
     BUTTON_RELEASED = 1;
 };
 
@@ -442,20 +442,20 @@ enum ButtonState {
 */
 enum PbSampleType {
     SAMPLE_TYPE_UNDEFINED                       = 0;   // Not defined
-    SAMPLE_TYPE_HEART_RATE                      = 1;   // Heart rate, bpm 
+    SAMPLE_TYPE_HEART_RATE                      = 1;   // Heart rate, bpm
     SAMPLE_TYPE_CADENCE                         = 2;   // Cadence, Rotations per minute (rpm)
-    SAMPLE_TYPE_ALTITUDE                        = 3;   // Altitude, meters 
-    SAMPLE_TYPE_ALTITUDE_CALIBRATION            = 4;   // Calibration info for altitude: indicate start and stop indexes, used calibration value and operation type of calibration 
+    SAMPLE_TYPE_ALTITUDE                        = 3;   // Altitude, meters
+    SAMPLE_TYPE_ALTITUDE_CALIBRATION            = 4;   // Calibration info for altitude: indicate start and stop indexes, used calibration value and operation type of calibration
     SAMPLE_TYPE_TEMPERATURE                     = 5;   // Temperature, celcius
     SAMPLE_TYPE_SPEED                           = 6;   // Speed, km/h
-    SAMPLE_TYPE_DISTANCE                        = 7;   // Distance, meters  
+    SAMPLE_TYPE_DISTANCE                        = 7;   // Distance, meters
     SAMPLE_TYPE_STRIDE_LENGTH                   = 8;   // Stride length while running, cm
-    SAMPLE_TYPE_STRIDE_CALIBRATION              = 9;   // Calibration info for stride: indicate start and stop indexes, used calibration value and operation type of calibration 
+    SAMPLE_TYPE_STRIDE_CALIBRATION              = 9;   // Calibration info for stride: indicate start and stop indexes, used calibration value and operation type of calibration
     SAMPLE_TYPE_FORWARD_ACCELERATION            = 10;  // Forward acceleration, m/s^2
-    SAMPLE_TYPE_MOVING_TYPE                     = 11;  // Moving type, walking running, standing 
+    SAMPLE_TYPE_MOVING_TYPE                     = 11;  // Moving type, walking running, standing
     SAMPLE_TYPE_LEFT_PEDAL_POWER                = 12;  // Power info from left pedal
     SAMPLE_TYPE_RIGHT_PEDAL_POWER               = 13;  // Power info from right pedal
-    SAMPLE_TYPE_LEFT_PEDAL_POWER_CALIBRATION    = 14;  // Calibration info for left power: indicate start and stop indexes, used calibration value and operation type of calibration 
+    SAMPLE_TYPE_LEFT_PEDAL_POWER_CALIBRATION    = 14;  // Calibration info for left power: indicate start and stop indexes, used calibration value and operation type of calibration
     SAMPLE_TYPE_RIGHT_PEDAL_POWER_CALIBRATION   = 15;  // Calibration info for right power: indicate start and stop indexes, used calibration value and operation type of calibration
     SAMPLE_TYPE_RR_INTERVAL                     = 16;  // RR-interval, ms
     SAMPLE_TYPE_ACCELERATION_MAD                = 17;  // Acceleration based Mean Amplitude Deviation (MAD), mg
@@ -467,25 +467,26 @@ enum PbSampleType {
 enum PbSampleSourceType {
     SAMPLE_SOURCE_TYPE_UNDEFINED                           = 0;  // Not defined
     SAMPLE_SOURCE_TYPE_OFFLINE                             = 1;  // Sample has no source, i.e., sample is offline
-    SAMPLE_SOURCE_TYPE_HEART_RATE                          = 2;  // Heart rate measurement based samples   
-    SAMPLE_SOURCE_TYPE_HEART_RATE_BLE                      = 3;  // BLE heart rate measurement based samples  
-    SAMPLE_SOURCE_TYPE_HEART_RATE_5_KHZ                    = 4;  // 5 kHz heart rate measurement based samples  
-    SAMPLE_SOURCE_TYPE_HEART_RATE_OPTICAL                  = 5;  // Optical heart rate measurement based samples  
-    SAMPLE_SOURCE_TYPE_GPS                                 = 6;  // GPS measurement based samples                          
+    SAMPLE_SOURCE_TYPE_HEART_RATE                          = 2;  // Heart rate measurement based samples
+    SAMPLE_SOURCE_TYPE_HEART_RATE_BLE                      = 3;  // BLE heart rate measurement based samples
+    SAMPLE_SOURCE_TYPE_HEART_RATE_5_KHZ                    = 4;  // 5 kHz heart rate measurement based samples
+    SAMPLE_SOURCE_TYPE_HEART_RATE_OPTICAL                  = 5;  // Optical heart rate measurement based samples
+    SAMPLE_SOURCE_TYPE_GPS                                 = 6;  // GPS measurement based samples
     SAMPLE_SOURCE_TYPE_STRIDE                              = 7;  // Stride measurement based samples
-    SAMPLE_SOURCE_TYPE_WRIST_METRICS                       = 8;  // Samples that are based on wrist metrics like inertial (accelometer etc.) measurements 
-    SAMPLE_SOURCE_TYPE_CHEST_METRICS                       = 9;  // Samples that are based on chest metrics like inertial (accelometer etc.) measurements 
-    SAMPLE_SOURCE_TYPE_BIKE_PEDAL                          = 10; // Bike pedal measurement based samples 
-    SAMPLE_SOURCE_TYPE_BIKE_WHEEL                          = 11; // Bike wheel measurement based samples 
-    SAMPLE_SOURCE_TYPE_BIKE_CRANK                          = 12; // Bike crank measurement based samples 
-    SAMPLE_SOURCE_TYPE_COMBINED_CHEST_METRICS_AND_GPS      = 13; // Samples that are combined from chest metrics and gps measurements 
-    SAMPLE_SOURCE_TYPE_UPPER_BACK_METRICS                  = 14; // Samples that are based on upper back metrics like inertial (accelometer etc.) measurements 
-    SAMPLE_SOURCE_TYPE_COMBINED_UPPER_BACK_METRICS_AND_GPS = 15; // Samples that are combined from upper back metrics and gps measurements 
+    SAMPLE_SOURCE_TYPE_WRIST_METRICS                       = 8;  // Samples that are based on wrist metrics like inertial (accelometer etc.) measurements
+    SAMPLE_SOURCE_TYPE_CHEST_METRICS                       = 9;  // Samples that are based on chest metrics like inertial (accelometer etc.) measurements
+    SAMPLE_SOURCE_TYPE_BIKE_PEDAL                          = 10; // Bike pedal measurement based samples
+    SAMPLE_SOURCE_TYPE_BIKE_WHEEL                          = 11; // Bike wheel measurement based samples
+    SAMPLE_SOURCE_TYPE_BIKE_CRANK                          = 12; // Bike crank measurement based samples
+    SAMPLE_SOURCE_TYPE_COMBINED_CHEST_METRICS_AND_GPS      = 13; // Samples that are combined from chest metrics and gps measurements
+    SAMPLE_SOURCE_TYPE_UPPER_BACK_METRICS                  = 14; // Samples that are based on upper back metrics like inertial (accelometer etc.) measurements
+    SAMPLE_SOURCE_TYPE_COMBINED_UPPER_BACK_METRICS_AND_GPS = 15; // Samples that are combined from upper back metrics and gps measurements
 };
 
 /* Altitude recording setting values.
 *  NOTE: DO NOT CHANGE THE NUMBERS, instead add new ones at the end
-*  of the enum */
+	*  of the enum
+	*/
 enum PbAltitudeSetting {
     ALTITUDE_OFF = 0;   // Off
     ALTITUDE_ON = 1;    // On
@@ -493,13 +494,14 @@ enum PbAltitudeSetting {
 
 /* GPS recording setting values.
 *  NOTE: DO NOT CHANGE THE NUMBERS, instead add new ones at the end
-*  of the enum */
+	*  of the enum
+	*/
 enum PbGPSSetting {
     GPS_OFF       = 0;      // Off
     GPS_ON_NORMAL = 1;      // On, normal, 1 sec rec rate
     GPS_ON_LONG   = 2;      // On, long, 60 sec rec rate
     GPS_ON_10_HZ  = 3;      // On, 10 Hz, 0.1 sec rec rate
-    GPS_ON_MEDIUM = 4;      // On, medium, 30 sec rec rate  
+    GPS_ON_MEDIUM = 4;      // On, medium, 30 sec rec rate
 };
 
 /*
@@ -507,7 +509,7 @@ enum PbGPSSetting {
  ! All fields are required.
 */
 message PbSampleSource {
-    // Sample source 
+    // Sample source
     required PbSampleSourceType sample_source_type = 1;
     // Index of first point for a certain sample source
     required uint32 start_index = 2;
@@ -528,10 +530,10 @@ message PbCalibrationSettings
 {
     // The type of the calibrate-able measurement (SAMPLE_TYPE_SPEED etc.)
     required PbSampleType sample_type = 1;
- 
+
     // Calibration value use enable on/off (existing calibration value is used if true).
     optional bool calibration_enabled = 2;
-     
+
     // Calibration calculation enable on/off. New calibration offset value for exercise is calculated if true.
     optional bool calibration_calculation_enabled = 3;
 };
@@ -546,7 +548,7 @@ message PbAccelerationMetrics
 };
 
 
-   
+
 message PbAutoPause {
 
     // Available trigger types
@@ -555,9 +557,9 @@ message PbAutoPause {
         AUTO_PAUSE_TRIGGER_SPEED = 1;
     };
 
-    // Used trigger 
+    // Used trigger
     required PbAutoPauseTrigger trigger = 1;
-    
+
     // Speed threshold for pausing/resuming
     optional float speed_threshold = 2 [(type)=SPEED];
 };
@@ -567,7 +569,8 @@ message PbAutoLapSettings {
 
     /* Automatic lap setting modes.
     *  NOTE: DO NOT CHANGE THE NUMBERS, instead add new ones at the end
-    *  of the enum */
+    *  of the enum
+    */
     enum PbAutomaticLap {
         AUTOMATIC_LAP_OFF = 1;
         AUTOMATIC_LAP_DISTANCE = 2;
@@ -656,9 +659,9 @@ enum PbSessionRPE {
  Note! session_rpe can be modified afterwards in TC, mobile or service
 */
 message PbPerceivedLoad {
-    // Hardness of the exercise    
+    // Hardness of the exercise
     required PbSessionRPE session_rpe = 1 [default = RPE_MODERATE];
-    
+
     // duration in seconds
     required uint32 duration = 2;
 };

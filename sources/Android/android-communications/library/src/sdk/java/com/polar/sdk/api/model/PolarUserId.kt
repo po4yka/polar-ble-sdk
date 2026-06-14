@@ -9,6 +9,7 @@ import java.util.*
 import fi.polar.remote.representation.protobuf.UserIds.PbUserIdentifier
 import fi.polar.remote.representation.protobuf.Types
 
+@kotlin.ConsistentCopyVisibility
 data class UserIdentifierType private constructor(
     val userIdLastModified: String
 ) {

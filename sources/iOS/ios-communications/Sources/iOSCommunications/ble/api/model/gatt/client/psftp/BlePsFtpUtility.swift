@@ -30,7 +30,7 @@ public enum BlePsFtpException: Error {
         case .protocolError:
             return "ProtocolError"
         case .responseError(let errorCode):
-            if let protoError = Communications_PbPFtpError(rawValue: errorCode) {
+            if let protoError = Protocol_PbPFtpError(rawValue: errorCode) {
                 return "ResponseError.\(protoError)"
             } else {
                 return "ResponseError.unknown(\(errorCode))"

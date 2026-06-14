@@ -43,7 +43,7 @@ let package = Package(
         .library( name: "PolarBleSdk", targets: ["PolarBleSdk"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.6.0"),
+        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.38.0"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", from: "0.9.20"),
     ],
     targets: polarBleSdkTargets
