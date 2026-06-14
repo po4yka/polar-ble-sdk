@@ -11,6 +11,8 @@ class MockGattServiceTransmitterImpl: BleAttributeTransportProtocol {
     var setCharacteristicsNotifyCache: [(characteristicUuid: CBUUID, notify: Bool)] = []
     var transmittedMessages: [(serviceUuid: CBUUID, characteristicUuid: CBUUID, packet: Data, withResponse: Bool)] = []
     var transmitMessageHandler: ((BleGattClientBase, CBUUID, CBUUID, Data, Bool) -> Void)?
+    var setCharacteristicNotifyHandler: ((BleGattClientBase, CBUUID, CBUUID, Bool) -> Void)?
+    var setCharacteristicNotifyError: Error?
     
     func isConnected() -> Bool {
         return mockConnectionStatus
@@ -35,7 +37,14 @@ class MockGattServiceTransmitterImpl: BleAttributeTransportProtocol {
     
     func setCharacteristicNotify(_ parent: BleGattClientBase, serviceUuid: CBUUID, characteristicUuid: CBUUID, notify: Bool) throws {
         setCharacteristicsNotifyCache.append((characteristicUuid, notify))
-        parent.notifyDescriptorWritten(characteristicUuid, enabled: notify, err: 0)
+        if let setCharacteristicNotifyError {
+            throw setCharacteristicNotifyError
+        }
+        if let setCharacteristicNotifyHandler {
+            setCharacteristicNotifyHandler(parent, serviceUuid, characteristicUuid, notify)
+        } else {
+            parent.notifyDescriptorWritten(characteristicUuid, enabled: notify, err: 0)
+        }
     }
     
     func attributeOperationStarted(){

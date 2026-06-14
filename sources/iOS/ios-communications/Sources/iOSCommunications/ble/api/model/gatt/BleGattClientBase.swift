@@ -59,19 +59,18 @@ open class BleGattClientBase: Hashable, @unchecked Sendable {
     private var serviceWaitObservers = AtomicList<ServiceWaitObserver>()
 
     private class NotificationWaitObserver {
-        let promise: (Result<Void, Error>) -> Void
+        private let promise: (Result<Void, Error>) -> Void
         let uuid: CBUUID
         private let lock = NSLock()
         private var cancelled = false
+        private var resolved = false
 
         init(_ promise: @escaping (Result<Void, Error>) -> Void, uuid: CBUUID) {
             self.promise = promise
             self.uuid = uuid
         }
 
-        /// Mark this observer as cancelled so that a concurrent delivery in
-        /// `notifyDescriptorWritten` is safely ignored (mirrors the former RxSwift
-        /// `markDisposed` / `isNotDisposed` pattern).
+        /// Mark this observer as cancelled so that a concurrent delivery in `notifyDescriptorWritten` is safely ignored.
         func markCancelled() {
             lock.lock(); defer { lock.unlock() }
             cancelled = true
@@ -80,6 +79,35 @@ open class BleGattClientBase: Hashable, @unchecked Sendable {
         func isActive() -> Bool {
             lock.lock(); defer { lock.unlock() }
             return !cancelled
+        }
+
+        func resolve(with result: Result<Void, Error>) {
+            lock.lock()
+            guard !cancelled && !resolved else {
+                lock.unlock()
+                return
+            }
+            resolved = true
+            lock.unlock()
+            promise(result)
+        }
+    }
+
+    private final class NotificationWaitCancellationToken: @unchecked Sendable {
+        private let lock = NSLock()
+        private var observer: NotificationWaitObserver?
+
+        func set(_ observer: NotificationWaitObserver) {
+            lock.lock(); defer { lock.unlock() }
+            self.observer = observer
+        }
+
+        func cancel() -> NotificationWaitObserver? {
+            lock.lock(); defer { lock.unlock() }
+            observer?.markCancelled()
+            let cancelledObserver = observer
+            observer = nil
+            return cancelledObserver
         }
     }
 
@@ -109,51 +137,18 @@ open class BleGattClientBase: Hashable, @unchecked Sendable {
 
     /// Enable characteristic notification/indication.
     func enableCharacteristicNotification(chr: CBUUID, disableOnDisconnect: Bool = false) -> AnyPublisher<Never, Error> {
-        return Deferred {
-            Future<Void, Error> { [weak self] promise in
-                guard let self = self else { promise(.success(())); return }
-                if !self.containsNotifyCharacteristic(chr) {
-                    BleLogger.trace("GATT Base request notification enable for chr: \(chr)")
-                    self.addCharacteristicNotification(chr, disableOnDisconnect: disableOnDisconnect)
-                    self.writeCharacteristicNotification(chr: chr, enable: true)
-                        .sink(
-                            receiveCompletion: { completion in
-                                if case .failure(let error) = completion { promise(.failure(error)) }
-                            },
-                            receiveValue: { _ in promise(.success(())) }
-                        )
-                        .store(in: &self.cancellables)
-                } else {
-                    promise(.success(()))
-                }
-            }
+        return gattAsyncVoidPublisher { [weak self] in
+            guard let self = self else { return }
+            try await self.enableCharacteristicNotificationAsync(chr: chr, disableOnDisconnect: disableOnDisconnect)
         }
-        .ignoreOutput()
-        .eraseToAnyPublisher()
     }
 
     /// Disable characteristic notification/indication.
     func disableCharacteristicNotification(chr: CBUUID) -> AnyPublisher<Never, Error> {
-        return Deferred {
-            Future<Void, Error> { [weak self] promise in
-                guard let self = self else { promise(.success(())); return }
-                if self.containsNotifyCharacteristic(chr) {
-                    BleLogger.trace("GATT Base request notification disable for chr: \(chr)")
-                    self.writeCharacteristicNotification(chr: chr, enable: false)
-                        .sink(
-                            receiveCompletion: { completion in
-                                if case .failure(let error) = completion { promise(.failure(error)) }
-                            },
-                            receiveValue: { _ in promise(.success(())) }
-                        )
-                        .store(in: &self.cancellables)
-                } else {
-                    promise(.success(()))
-                }
-            }
+        return gattAsyncVoidPublisher { [weak self] in
+            guard let self = self else { return }
+            try await self.disableCharacteristicNotificationAsync(chr: chr)
         }
-        .ignoreOutput()
-        .eraseToAnyPublisher()
     }
 
     func containsCharacteristic(_ chr: CBUUID) -> Bool {
@@ -180,7 +175,7 @@ open class BleGattClientBase: Hashable, @unchecked Sendable {
         notificationCharacteristics.forEach { pair in
             pair.state.set(ATT_NOTIFY_OR_INDICATE_STATE_UNKNOWN)
         }
-        notificationWaitObservers.list().forEach { $0.promise(.failure(BleGattException.gattDisconnected)) }
+        notificationWaitObservers.list().forEach { $0.resolve(with: .failure(BleGattException.gattDisconnected)) }
         notificationWaitObservers.removeAll()
         serviceWaitObservers.list().forEach { $0.resolve(with: .failure(BleGattException.gattDisconnected)) }
         serviceWaitObservers.removeAll()
@@ -209,13 +204,16 @@ open class BleGattClientBase: Hashable, @unchecked Sendable {
         for object in list {
             guard object.isActive() else { continue }
             if err == 0 {
-                object.promise(.success(()))
+                object.resolve(with: .success(()))
             } else {
-                object.promise(.failure(BleGattException.gattCharacteristicNotifyError(
+                object.resolve(with: .failure(BleGattException.gattCharacteristicNotifyError(
                     errorCode: err,
                     errorDescription: "notify description write failed"
                 )))
             }
+        }
+        notificationWaitObservers.remove { observer in
+            list.contains { $0 === observer }
         }
     }
 
@@ -316,31 +314,28 @@ open class BleGattClientBase: Hashable, @unchecked Sendable {
         }
     }
 
-    private func writeCharacteristicNotification(chr: CBUUID, enable: Bool) -> AnyPublisher<Void, Error> {
-        return Deferred {
-            Future<Void, Error> { [weak self] promise in
-                guard let self = self else { promise(.success(())); return }
-                if let notifChr = self.notificationCharacteristics.first(where: { $0.uuid.isEqual(chr) }) {
-                    notifChr.state.set(self.ATT_NOTIFY_OR_INDICATE_STATE_UNKNOWN)
-                }
-                do {
-                    try self.gattServiceTransmitter?.setCharacteristicNotify(
-                        self, serviceUuid: self.serviceUuid, characteristicUuid: chr, notify: enable)
-                    promise(.success(()))
-                } catch {
-                    promise(.failure(error))
-                }
-            }
+    private func enableCharacteristicNotificationAsync(chr: CBUUID, disableOnDisconnect: Bool = false) async throws {
+        if !containsNotifyCharacteristic(chr) {
+            BleLogger.trace("GATT Base request notification enable for chr: \(chr)")
+            addCharacteristicNotification(chr, disableOnDisconnect: disableOnDisconnect)
+            try await writeCharacteristicNotificationAsync(chr: chr, enable: true)
         }
-        .flatMap { [weak self] _ -> AnyPublisher<Void, Error> in
-            guard let self = self else {
-                return Fail(error: BleGattException.gattDisconnected).eraseToAnyPublisher()
-            }
-            return self.waitNotification(chr, true, toBeEnabled: enable)
-                .map { _ -> Void in }
-                .eraseToAnyPublisher()
+    }
+
+    private func disableCharacteristicNotificationAsync(chr: CBUUID) async throws {
+        if containsNotifyCharacteristic(chr) {
+            BleLogger.trace("GATT Base request notification disable for chr: \(chr)")
+            try await writeCharacteristicNotificationAsync(chr: chr, enable: false)
         }
-        .eraseToAnyPublisher()
+    }
+
+    private func writeCharacteristicNotificationAsync(chr: CBUUID, enable: Bool) async throws {
+        if let notifChr = notificationCharacteristics.first(where: { $0.uuid.isEqual(chr) }) {
+            notifChr.state.set(ATT_NOTIFY_OR_INDICATE_STATE_UNKNOWN)
+        }
+        try gattServiceTransmitter?.setCharacteristicNotify(
+            self, serviceUuid: serviceUuid, characteristicUuid: chr, notify: enable)
+        try await waitNotificationAsync(chr, true, toBeEnabled: enable)
     }
 
     private func addCharacteristicNotification(_ chr: CBUUID, disableOnDisconnect: Bool = false) {
@@ -364,34 +359,8 @@ open class BleGattClientBase: Hashable, @unchecked Sendable {
     private func waitNotification(_ chr: CBUUID, _ checkConnection: Bool, toBeEnabled: Bool) -> AnyPublisher<Never, Error> {
         return Deferred {
             Future<Void, Error> { [weak self] promise in
-                guard let self = self else { promise(.failure(BleGattException.gattDisconnected)); return }
-                let integer = self.getNotificationCharacteristicState(chr)
-                guard integer != nil else {
-                    promise(.failure(BleGattException.gattCharacteristicNotFound))
-                    return
-                }
-                guard !checkConnection || self.gattServiceTransmitter?.isConnected() ?? false else {
-                    promise(.failure(BleGattException.gattDisconnected))
-                    return
-                }
-                if integer?.get() != self.ATT_NOTIFY_OR_INDICATE_STATE_UNKNOWN {
-                    if (toBeEnabled && integer?.get() == self.ATT_NOTIFY_OR_INDICATE_ON)
-                        || (!toBeEnabled && integer?.get() == self.ATT_NOTIFY_OR_INDICATE_OFF) {
-                        promise(.success(()))
-                    } else if toBeEnabled && integer?.get() == self.ATT_NOTIFY_OR_INDICATE_OFF {
-                        promise(.failure(BleGattException.gattCharacteristicNotifyNotEnabled))
-                    } else if !toBeEnabled && integer?.get() == self.ATT_NOTIFY_OR_INDICATE_ON {
-                        promise(.failure(BleGattException.gattCharacteristicNotifyNotDisabled))
-                    } else {
-                        promise(.failure(BleGattException.gattCharacteristicNotifyError(
-                            errorCode: -1,
-                            errorDescription: "notify description failed. Waiting for enable: \(toBeEnabled). Error code is not known report as -1"
-                        )))
-                    }
-                } else {
-                    let subscriber = NotificationWaitObserver(promise, uuid: chr)
-                    self.notificationWaitObservers.append(subscriber)
-                }
+                self?.startWaitNotification(chr, checkConnection, toBeEnabled: toBeEnabled, promise: promise)
+                    ?? promise(.failure(BleGattException.gattDisconnected))
             }
             .handleEvents(receiveCancel: { [weak self] in
                 self?.notificationWaitObservers.remove {
@@ -403,6 +372,81 @@ open class BleGattClientBase: Hashable, @unchecked Sendable {
         .ignoreOutput()
         .eraseToAnyPublisher()
     }
+
+    private func waitNotificationAsync(_ chr: CBUUID, _ checkConnection: Bool, toBeEnabled: Bool) async throws {
+        let token = NotificationWaitCancellationToken()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                startWaitNotification(chr, checkConnection, toBeEnabled: toBeEnabled) { result in
+                    continuation.resume(with: result)
+                } onObserver: { observer in
+                    token.set(observer)
+                }
+            }
+        } onCancel: { [weak self] in
+            guard let observer = token.cancel() else { return }
+            self?.notificationWaitObservers.remove { $0 === observer }
+        }
+    }
+
+    private func startWaitNotification(
+        _ chr: CBUUID,
+        _ checkConnection: Bool,
+        toBeEnabled: Bool,
+        promise: @escaping (Result<Void, Error>) -> Void,
+        onObserver: ((NotificationWaitObserver) -> Void)? = nil
+    ) {
+        let integer = getNotificationCharacteristicState(chr)
+        guard integer != nil else {
+            promise(.failure(BleGattException.gattCharacteristicNotFound))
+            return
+        }
+        guard !checkConnection || gattServiceTransmitter?.isConnected() ?? false else {
+            promise(.failure(BleGattException.gattDisconnected))
+            return
+        }
+        if integer?.get() != ATT_NOTIFY_OR_INDICATE_STATE_UNKNOWN {
+            if (toBeEnabled && integer?.get() == ATT_NOTIFY_OR_INDICATE_ON)
+                || (!toBeEnabled && integer?.get() == ATT_NOTIFY_OR_INDICATE_OFF) {
+                promise(.success(()))
+            } else if toBeEnabled && integer?.get() == ATT_NOTIFY_OR_INDICATE_OFF {
+                promise(.failure(BleGattException.gattCharacteristicNotifyNotEnabled))
+            } else if !toBeEnabled && integer?.get() == ATT_NOTIFY_OR_INDICATE_ON {
+                promise(.failure(BleGattException.gattCharacteristicNotifyNotDisabled))
+            } else {
+                promise(.failure(BleGattException.gattCharacteristicNotifyError(
+                    errorCode: -1,
+                    errorDescription: "notify description failed. Waiting for enable: \(toBeEnabled). Error code is not known report as -1"
+                )))
+            }
+        } else {
+            let subscriber = NotificationWaitObserver(promise, uuid: chr)
+            notificationWaitObservers.append(subscriber)
+            onObserver?(subscriber)
+        }
+    }
+}
+
+private func gattAsyncVoidPublisher(_ operation: @escaping () async throws -> Void) -> AnyPublisher<Never, Error> {
+    Deferred {
+        var task: Task<Void, Never>?
+        return Future<Void, Error> { promise in
+            task = Task {
+                do {
+                    try await operation()
+                    promise(.success(()))
+                } catch is CancellationError {
+                    promise(.success(()))
+                } catch {
+                    promise(.failure(error))
+                }
+            }
+        }
+            .handleEvents(receiveCancel: { task?.cancel() })
+            .ignoreOutput()
+            .eraseToAnyPublisher()
+    }
+    .eraseToAnyPublisher()
 }
 
 public func == (lhs: BleGattClientBase, rhs: BleGattClientBase) -> Bool {
