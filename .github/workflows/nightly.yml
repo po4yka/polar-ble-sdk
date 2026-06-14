@@ -31,6 +31,15 @@ jobs:
       - name: Whitespace check
         run: git diff --check HEAD^ HEAD
 
+      - name: Download actionlint
+        id: get_actionlint
+        shell: bash
+        run: bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.12
+
+      - name: GitHub Actions workflow lint
+        shell: bash
+        run: ${{ steps.get_actionlint.outputs.executable }} .github/workflows/*.yml
+
       - name: KMP policy mirror
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
         run: ./gradlew :repo-tools:kmpNonGradleChecks --no-daemon --warning-mode all

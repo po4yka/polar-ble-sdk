@@ -12,7 +12,7 @@ This repository uses GitHub Actions for pull-request validation, nightly validat
 
 ## Pull Request Gates
 
-The repository policy job runs whitespace checks, the Kotlin `:repo-tools:kmpNonGradleChecks` policy mirror, and generated API documentation cleanliness checks. The Android job runs the full `:library:testSdkDebugUnitTest` gate from `sources/Android/android-communications`. The shared KMP jobs run JVM/common, Android, metadata, and iOS framework compile/link checks. The iOS job runs `:repo-tools:iosXcodeValidationProbe`, `swift package describe`, a generic iOS `xcodebuild` package build, and the `iOSCommunications` XCTest scheme through `scripts/ci_xcodebuild_test.sh` against `iOSCommunications.xcodeproj`.
+The repository policy job runs whitespace checks, `actionlint` for `.github/workflows/*.yml`, the Kotlin `:repo-tools:kmpNonGradleChecks` policy mirror, and generated API documentation cleanliness checks. The Android job runs the full `:library:testSdkDebugUnitTest` gate from `sources/Android/android-communications`. The shared KMP jobs run JVM/common, Android, metadata, and iOS framework compile/link checks. The iOS job runs `:repo-tools:iosXcodeValidationProbe`, `swift package describe`, a generic iOS `xcodebuild` package build, and the `iOSCommunications` XCTest scheme through `scripts/ci_xcodebuild_test.sh` against `iOSCommunications.xcodeproj`.
 
 Product documentation under `documentation/products/` and issue-template-only changes are allowed to skip PR checks. KMP documentation, validation scripts, Gradle files, Android sources, iOS sources, workflows, and `testdata` changes must run the relevant checks.
 
@@ -32,6 +32,7 @@ Run these commands before merging CI-sensitive changes:
 
 ```bash
 git diff --check
+actionlint .github/workflows/*.yml
 cd sources/Android/android-communications
 ./gradlew :repo-tools:kmpNonGradleChecks :repo-tools:verifyReleasePackagingPolicy :repo-tools:iosXcodeValidationProbe --no-daemon --warning-mode all
 ```
@@ -55,6 +56,12 @@ sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh --configuratio
 sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh --configuration Debug --skip-platform-builds
 sh scripts/ci_xcodebuild_test.sh sources/iOS/ios-communications/iOSCommunications.xcodeproj iOSCommunications 'platform=iOS Simulator,name=iPhone 17,OS=latest' /tmp/polar-ios-local.xcresult
 ```
+
+## Lint And Formatting Baseline
+
+The checked-in `.editorconfig` sets LF line endings, UTF-8, final newlines, four-space Kotlin/Swift/Gradle indentation, two-space YAML/JSON/TOML indentation, and no prose `max_line_length` so Markdown and text paragraphs remain soft-wrapped by editors rather than hard-wrapped in source. Generated API docs and generated Swift protobuf sources are excluded from editor-driven newline and trailing-whitespace normalization.
+
+SwiftLint and ktlint were evaluated for check-mode adoption. They are intentionally not CI gates yet because default rules produce broad existing noise across SwiftPM checkouts, generated protobuf Swift, historical Swift style, Android Kotlin sources, shared KMP tests, and Gradle scripts. Future SwiftLint or ktlint adoption should start with a small checked-in configuration that excludes generated outputs and historical examples, then prove check mode locally before adding CI enforcement.
 
 ## Failure Triage
 
