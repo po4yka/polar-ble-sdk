@@ -147,6 +147,28 @@ internal class ConnectionHandlerTest {
     }
 
     @Test
+    fun `connect to device parks session when bluetooth powers off before connection starts`() {
+        // Arrange
+        every { mockConnectionInterface.isPowered } returns false
+        val capturedSessionStates = mutableListOf<BleDeviceSession.DeviceSessionState>()
+        every { mockDeviceSession.setSessionStates(capture(capturedSessionStates)) } just runs
+        every { mockDeviceSession.sessionState } answers {
+            capturedSessionStates.lastOrNull() ?: BleDeviceSession.DeviceSessionState.SESSION_CLOSED
+        }
+
+        // Act
+        connectionHandler.connectDevice(mockDeviceSession, true)
+
+        // Assert
+        verify(exactly = 1) { mockScannerInterface.connectionHandlerRequestStopScanning() }
+        verify(exactly = 1) { mockScannerInterface.connectionHandlerResumeScanning() }
+        verify(exactly = 0) { mockConnectionInterface.connectDevice(any()) }
+        verify(exactly = 1) { mockConnectionHandlerObserver.deviceSessionStateChanged(any()) }
+        assertEquals(listOf(BleDeviceSession.DeviceSessionState.SESSION_OPEN_PARK), capturedSessionStates)
+        assertEquals(ConnectionHandler.ConnectionHandlerState.FREE, connectionHandler.state)
+    }
+
+    @Test
     fun `test connection steps opening, open, openpark and open`() {
         // Arrange
         val capturedSessionStates = mutableListOf<BleDeviceSession.DeviceSessionState>()

@@ -48,7 +48,7 @@ class BleHtsClient(txInterface: BleGattTxInterface) :
     ) {
         BleLogger.d(
             TAG, "processServiceData uuid=$characteristic status=$status" +
-                    "notifying=$notifying len(data)=${data?.size}"
+                    "notifying=$notifying len(data)=${data.size}"
         )
         if (status == ATT_SUCCESS && data.isNotEmpty()) {
             if (characteristic == HealthThermometer.TEMPERATURE_MEASUREMENT) {
@@ -68,7 +68,7 @@ class BleHtsClient(txInterface: BleGattTxInterface) :
     }
 
     override fun processServiceDataWritten(characteristic: UUID, status: Int) {
-        BleLogger.d(TAG, "processServiceDataWritten TODO")
+        BleLogger.d(TAG, "processServiceDataWritten uuid=$characteristic status=$status")
     }
 
     fun observeHtsNotifications(checkConnection: Boolean): Flow<TemperatureMeasurement> {

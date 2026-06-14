@@ -205,7 +205,7 @@ public class BlePsFtpUtility {
     ///   - sequenceNumber: RFC76 ring counter
     /// - Returns: air packet
     public static func buildRfc76MessageFrame(_ header: InputStream, data: InputStream?, next: Int, mtuSize: Int, sequenceNumber: BlePsFtpRfc76SequenceNumber) -> Data {
-        // sorry as swift(stupids) does not support bit fields, needed have this verbose style
+        // RFC76 packs control bits into the first byte.
         let packet: Data
         if header.hasBytesAvailable {
             var frameData = [UInt8](repeating: 0, count: mtuSize)

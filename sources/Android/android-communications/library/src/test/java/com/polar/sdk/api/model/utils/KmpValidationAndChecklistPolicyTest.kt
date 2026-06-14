@@ -171,13 +171,20 @@ class KmpValidationAndChecklistPolicyTest {
             violations += "scripts/generate_api_docs.sh must exist and be executable"
         } else {
             val script = generateScript.readText()
-            listOf("dokkaGeneratePublicationHtml", "docc process-archive transform-for-static-hosting", "docs/polar-sdk-ios")
+            listOf(":repo-tools:generateApiDocs", "--no-daemon", "--warning-mode all")
                 .filterNot { term -> script.contains(term) }
                 .mapTo(violations) { term -> "scripts/generate_api_docs.sh missing $term" }
+            listOf("xcodebuild docbuild", "docc process-archive", "perl -0pi")
+                .filter { term -> script.contains(term) }
+                .mapTo(violations) { term -> "scripts/generate_api_docs.sh must delegate docs generation to Gradle instead of containing $term" }
         }
         if (!androidGradle.contains("alias(libs.plugins.dokka)") || !androidGradle.contains("dokkaPublications.html")) {
             violations += "Android docs generation must stay on Dokka HTML configuration"
         }
+        val repoToolsBuild = root.resolve("sources/Android/android-communications/repo-tools/build.gradle.kts").readText()
+        listOf("generateApiDocs", "packageGeneratedApiDocs", ":library:dokkaGeneratePublicationHtml", "xcodebuild", "docbuild", "docc", "transform-for-static-hosting", "polar-generated-api-docs.tar.gz")
+            .filterNot { term -> repoToolsBuild.contains(term) }
+            .mapTo(violations) { term -> "repo-tools Gradle docs generation missing $term" }
 
         assertTrue(
             "Generated API docs must remain generator-owned and reproducible: $violations",

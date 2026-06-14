@@ -89,6 +89,13 @@ import com.polar.shared.time.PolarTimeUtils
 import protocol.PftpNotification
 import protocol.PftpRequest
 
+internal object PolarFileFacadePlanIds {
+    const val LIST_DIRECTORY_SUCCESS = "list-low-level-directory-success"
+    const val READ_FILE_SUCCESS = "read-low-level-file-success"
+    const val WRITE_FILE_SUCCESS = "write-low-level-file-success"
+    const val DELETE_FILE_SUCCESS = "delete-low-level-file-success"
+}
+
 internal object PolarRuntimePlannerAdapter {
     data class PlannedFirmwareWorkflow(
         val statuses: List<String>,

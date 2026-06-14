@@ -41,7 +41,7 @@ class BleRscClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, R
     ) {
         if (status == ATT_SUCCESS && data.isNotEmpty()) {
             if (characteristic == RSC_MEASUREMENT) {
-                // stupid java does not have bit fields
+                // Bluetooth RSC flags are packed into the first byte.
                 var index = 0
                 val flags = data[index++].toLong()
                 val strideLenPresent = (flags and 0x01L) == 0x01L

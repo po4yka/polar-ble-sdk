@@ -1,7 +1,7 @@
 {
   "id": "ios-trigger-automatic",
   "area": "sdk.spo2-test",
-  "case": "ios_trigger_automatic",
+  "case": "legacy_trigger_automatic_ignored",
   "source": "Android and iOS PolarTestUtils characterization tests",
   "input": {
     "date": "2026-04-14",
@@ -14,7 +14,7 @@
     }
   },
   "expected": {
-    "policy": "map-spo2-trigger-type-when-platform-exposes-it"
+    "policy": "ignore-spo2-trigger-type-when-generated-proto-does-not-expose-it"
   },
   "platformExpectations": {
     "android": {
@@ -25,10 +25,10 @@
       "timeZoneOffsetMinutes": 180,
       "testStatus": "passed",
       "bloodOxygenPercent": 96,
-      "triggerType": "automatic"
+      "triggerType": null
     },
     "commonDecision": {
-      "triggerTypePolicy": "include-nullable-trigger-type-in-shared-model-when-source-proto-exposes-it"
+      "triggerTypePolicy": "keep-public-trigger-type-null-when-generated-proto-does-not-expose-it"
     }
   },
   "consumerTests": {
@@ -47,5 +47,5 @@
     "ios": true,
     "common": true
   },
-  "notes": "Current iOS-only public triggerType mapping; Android generated/public mapping does not currently expose this field."
+  "notes": "Legacy triggerType input is retained as a compatibility vector; current generated Android and iOS protos do not expose this field, so public triggerType remains null."
 }

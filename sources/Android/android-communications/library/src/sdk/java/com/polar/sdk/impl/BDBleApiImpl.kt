@@ -78,6 +78,7 @@ import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarFeatureToPmdClientMeasure
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarOfflineTriggerToPmdOfflineTrigger
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarSecretToPmdSecret
 import com.polar.sdk.impl.utils.PolarDataUtils.mapPolarSettingsToPmdSettings
+import com.polar.sdk.impl.utils.PolarFileFacadePlanIds
 import com.polar.sdk.impl.utils.PolarFirmwareUpdateUtils
 import com.polar.sdk.impl.utils.PolarOfflineRecordingUtils
 import com.polar.sdk.impl.utils.PolarRuntimePlannerAdapter
@@ -1589,7 +1590,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             ?: throw PolarServiceNotAvailable()
         return when (getFileSystemType(session.polarDeviceType)) {
             FileSystemType.POLAR_FILE_SYSTEM_V2 -> {
-                val plan = PolarRuntimePlannerAdapter.planFileFacade("read-low-level-file-success", "GET", path)
+                val plan = PolarRuntimePlannerAdapter.planFileFacade(PolarFileFacadePlanIds.READ_FILE_SUCCESS, "GET", path)
                 try {
                     client.request(PolarRuntimePlannerAdapter.fileOperationBytes(plan)).toByteArray()
                 } catch (throwable: Throwable) {

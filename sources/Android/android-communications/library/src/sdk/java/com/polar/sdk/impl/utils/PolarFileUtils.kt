@@ -33,7 +33,7 @@ internal object PolarFileUtils {
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
 
-        val plan = PolarRuntimePlannerAdapter.planFileFacade("delete-low-level-file-success", "REMOVE", filePath)
+        val plan = PolarRuntimePlannerAdapter.planFileFacade(PolarFileFacadePlanIds.DELETE_FILE_SUCCESS, "REMOVE", filePath)
         return try {
             client.request(PolarRuntimePlannerAdapter.fileOperationBytes(plan))
         } catch (error: Throwable) {
@@ -86,7 +86,7 @@ internal object PolarFileUtils {
     ): Flow<Pair<String, Long>> = flow {
         BleLogger.d(tag, "fetchRecursively: Starting fetch for path: $path")
 
-        val plan = PolarRuntimePlannerAdapter.planFileFacade("list-low-level-directory-success", "GET", path)
+        val plan = PolarRuntimePlannerAdapter.planFileFacade(PolarFileFacadePlanIds.LIST_DIRECTORY_SUCCESS, "GET", path)
 
         try {
             val byteArrayOutputStream = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(plan))
@@ -146,7 +146,7 @@ internal object PolarFileUtils {
         val session = sessionPsFtpClientReady(identifier, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
-        val plan = PolarRuntimePlannerAdapter.planFileFacade("write-low-level-file-success", "PUT", path, data.toHexString())
+        val plan = PolarRuntimePlannerAdapter.planFileFacade(PolarFileFacadePlanIds.WRITE_FILE_SUCCESS, "PUT", path, data.toHexString())
         val requestBytes = PolarRuntimePlannerAdapter.fileOperationBytes(plan)
         val dataInputStream = ByteArrayInputStream(data)
 
@@ -199,7 +199,7 @@ internal object PolarFileUtils {
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
 
-        val plan = PolarRuntimePlannerAdapter.planFileFacade("read-low-level-file-success", "GET", filePath)
+        val plan = PolarRuntimePlannerAdapter.planFileFacade(PolarFileFacadePlanIds.READ_FILE_SUCCESS, "GET", filePath)
         return try {
             val data = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(plan))
             BleLogger.d(tag, "readFile at path filePath $filePath")
@@ -257,7 +257,7 @@ internal object PolarFileUtils {
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient?
             ?: throw PolarServiceNotAvailable()
 
-        val plan = PolarRuntimePlannerAdapter.planFileFacade("delete-low-level-file-success", "REMOVE", filePath)
+        val plan = PolarRuntimePlannerAdapter.planFileFacade(PolarFileFacadePlanIds.DELETE_FILE_SUCCESS, "REMOVE", filePath)
         try {
             client.request(PolarRuntimePlannerAdapter.fileOperationBytes(plan))
             BleLogger.d(tag, "All items successfully removed from filePath $filePath from device $identifier.")

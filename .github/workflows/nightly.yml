@@ -42,7 +42,7 @@ jobs:
 
       - name: KMP policy mirror
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
-        run: ./gradlew :repo-tools:kmpNonGradleChecks --no-daemon --warning-mode all
+        run: ./gradlew :repo-tools:kmpNonGradleChecks :repo-tools:verifyApiDocsGenerationPolicy --no-daemon --warning-mode all
 
       - name: Generated API docs stay generator-owned
         run: test -z "$(git diff --name-only -- docs/polar-sdk-android docs/polar-sdk-ios)"
@@ -111,6 +111,45 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  api-docs:
+    name: API docs generation
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Android Gradle
+        uses: ./.github/actions/setup-android-gradle
+
+      - name: Cache SwiftPM
+        uses: ./.github/actions/cache-swiftpm
+        with:
+          key-prefix: nightly-docs-
+
+      - name: Generate and package API docs
+        working-directory: ${{ env.ANDROID_PROJECT_DIR }}
+        run: ./gradlew :repo-tools:packageGeneratedApiDocs --no-daemon --warning-mode all
+
+      - name: Verify generated API docs are reproducible
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet -- docs/polar-sdk-android docs/polar-sdk-ios; then
+            echo "Generated API docs are not reproducible. Compact changed-file summary:"
+            git diff --name-status -- docs/polar-sdk-android docs/polar-sdk-ios
+            git diff --stat -- docs/polar-sdk-android docs/polar-sdk-ios
+            exit 1
+          fi
+
+      - name: Upload generated API docs archive
+        if: always()
+        uses: ./.github/actions/upload-ci-artifact
+        with:
+          name: nightly-generated-api-docs
+          path: sources/Android/android-communications/repo-tools/build/api-docs-artifacts/polar-generated-api-docs.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
   ios-xctest:
     name: iOS XCTest
     runs-on: macos-latest
@@ -131,7 +170,7 @@ jobs:
         run: swift package describe
 
       - name: Swift Package iOS build
-        run: xcodebuild -scheme PolarBleSdk -destination "generic/platform=iOS" build
+        run: sh scripts/ci_xcodebuild_build.sh "${IOS_PROJECT}" PolarBleSdk "generic/platform=iOS" Debug
 
       - name: iOS XCTest gate
         run: sh scripts/ci_xcodebuild_test.sh "${IOS_PROJECT}" "${IOS_SCHEME}" "${IOS_DESTINATION}" /tmp/polar-ios-nightly.xcresult

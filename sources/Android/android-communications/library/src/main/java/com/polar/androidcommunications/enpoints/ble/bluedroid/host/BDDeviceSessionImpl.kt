@@ -38,7 +38,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
-import java.util.Objects
 import java.util.UUID
 import java.util.concurrent.LinkedBlockingDeque
 import kotlin.coroutines.resume
@@ -298,7 +297,7 @@ class BDDeviceSessionImpl internal constructor(
                             indicatesPairingProblem = Pair(true, status)
                             return false
                         } else {
-                            d(TAG, "using deprecated descriptor write")
+                            d(TAG, "using descriptor write compatibility path")
                             @Suppress("DEPRECATION")
                             descriptor.setValue(value)
                             @Suppress("DEPRECATION")
@@ -351,10 +350,8 @@ class BDDeviceSessionImpl internal constructor(
     @Throws(Exception::class)
     override fun transmitMessages(serviceUuid: UUID, characteristicUuid: UUID, packets: List<ByteArray>, withResponse: Boolean) {
         // note most likely this comes from a different thread
-        if (packets != null) {
-            for (packet in packets) {
-                transmitMessage(serviceUuid, characteristicUuid, packet, withResponse)
-            }
+        for (packet in packets) {
+            transmitMessage(serviceUuid, characteristicUuid, packet, withResponse)
         }
     }
 
@@ -362,7 +359,7 @@ class BDDeviceSessionImpl internal constructor(
     override fun transmitMessage(serviceUuid: UUID, characteristicUuid: UUID, packet: ByteArray, withResponse: Boolean) {
         // note most likely this comes from a different thread
         synchronized(gattMutex) {
-            if (gatt != null && packet != null) {
+            if (gatt != null) {
                 for (service in gatt!!.services) {
                     if (service.uuid == serviceUuid) {
                         for (characteristic in service.characteristics) {
@@ -658,7 +655,7 @@ class BDDeviceSessionImpl internal constructor(
                     attOperations.take()
                 }
                 if (!attOperations.isEmpty()) {
-                    val operation = Objects.requireNonNull(attOperations.peek())
+                    val operation = attOperations.peek() ?: return
                     if (BuildConfig.DEBUG) {
                         d(TAG, "send next: " + operation.characteristic.uuid + " op: " + operation.attributeOperation.toString())
                     }

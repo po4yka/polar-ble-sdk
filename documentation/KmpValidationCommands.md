@@ -108,19 +108,27 @@ cd sources/Android/android-communications
 
 ## Generated API Documentation Ownership
 
-Generated API documentation under `docs/polar-sdk-android` and `docs/polar-sdk-ios` is release output, not hand-edited migration planning documentation. Regenerate both API documentation trees with the repository entrypoint:
+Generated API documentation under `docs/polar-sdk-android` and `docs/polar-sdk-ios` is release output, not hand-edited migration planning documentation. The canonical CI-native generator is the Gradle task in `:repo-tools`; the shell script remains a compatibility entrypoint that delegates to it.
 
 ```bash
-scripts/generate_api_docs.sh
+cd sources/Android/android-communications
+./gradlew :repo-tools:generateApiDocs --no-daemon --warning-mode all
 ```
 
-During migration slices, this command must print no files unless the slice explicitly regenerates release API docs from the owning generators:
+Run the static policy mirror whenever docs-generation wiring, workflows, Dokka, DocC, or generated-doc ownership changes:
+
+```bash
+cd sources/Android/android-communications
+./gradlew :repo-tools:verifyApiDocsGenerationPolicy --no-daemon --warning-mode all
+```
+
+`scripts/generate_api_docs.sh` is still supported for local muscle memory, but it must only delegate to `:repo-tools:generateApiDocs`; it must not own `xcodebuild`, `docc`, Dokka, or HTML rewrite logic. During migration slices, this command must print no files unless the slice explicitly regenerates release API docs from the owning generators:
 
 ```bash
 git diff --name-only -- docs/polar-sdk-android docs/polar-sdk-ios
 ```
 
-If public APIs change, regenerate the relevant API docs as part of release readiness and review the generated diff separately from behavior migration changes.
+Nightly CI runs the Gradle packaging task on macOS and then checks `git diff --quiet -- docs/polar-sdk-android docs/polar-sdk-ios`. On mismatch it prints only compact `git diff --name-status` and `git diff --stat` output, then uploads one compressed `polar-generated-api-docs.tar.gz` artifact from `:repo-tools:packageGeneratedApiDocs` instead of uploading the full generated directory trees. If public APIs change, regenerate the relevant API docs as part of release readiness and review the generated diff separately from behavior migration changes.
 
 ## Hardware And Device Smoke Boundary
 

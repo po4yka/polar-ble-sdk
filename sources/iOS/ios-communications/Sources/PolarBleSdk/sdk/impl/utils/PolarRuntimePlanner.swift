@@ -30,6 +30,13 @@ enum PolarSharedFrameworkLinkGuard {
     }
 }
 
+enum PolarFileFacadePlanId {
+    static let listDirectorySuccess = "list-low-level-directory-success"
+    static let readFileSuccess = "read-low-level-file-success"
+    static let writeFileSuccess = "write-low-level-file-success"
+    static let deleteFileSuccess = "delete-low-level-file-success"
+}
+
 enum PolarRuntimePlanner {
     @discardableResult
     static func commandQuery(id: String, query: String, parameters: [String] = []) -> String {

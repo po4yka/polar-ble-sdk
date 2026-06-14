@@ -86,7 +86,7 @@ jobs:
         run: swift package describe
 
       - name: Swift Package iOS build
-        run: xcodebuild -scheme PolarBleSdk -destination "generic/platform=iOS" build
+        run: sh scripts/ci_xcodebuild_build.sh "${IOS_PROJECT}" PolarBleSdk "generic/platform=iOS" Debug
 
       - name: Build shared Apple XCFramework
         run: sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh --configuration Release --zip-output /tmp/polar-release-artifacts/ios/PolarBleSdkShared.xcframework.zip

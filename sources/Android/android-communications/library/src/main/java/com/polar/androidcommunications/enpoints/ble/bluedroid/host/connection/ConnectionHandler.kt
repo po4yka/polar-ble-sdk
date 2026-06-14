@@ -63,7 +63,7 @@ class ConnectionHandler(
     private var phySafeGuardJob: Job? = null
     private var mtuSafeGuardJob: Job? = null
     private var firstAttributeOperationJob: Job? = null
-    private val mutex = Object()
+    private val mutex = Any()
 
     fun setAutomaticReconnection(automaticReconnection: Boolean) {
         this.automaticReconnection = automaticReconnection
@@ -249,8 +249,8 @@ class ConnectionHandler(
                     updateSessionState(session, DeviceSessionState.SESSION_OPENING)
                     connectionInterface.connectDevice(session)
                 } else {
-                    // TODO set state to PARK
-                    BleLogger.w(TAG, "ble not powered exiting connecting state")
+                    updateSessionState(session, DeviceSessionState.SESSION_OPEN_PARK)
+                    BleLogger.w(TAG, "ble not powered, parking connection request")
                     changeState(session, ConnectionHandlerState.FREE)
                 }
             }

@@ -126,8 +126,7 @@ object BlePsFtpUtils {
         val packets: MutableList<ByteArray> = ArrayList()
         var next = 0
         do {
-            val temp = next // workaround for stupid java translator idiotisim
-            val packet = buildRfc76MessageFrame(data, temp, mtuSize, sequenceNumber)
+            val packet = buildRfc76MessageFrame(data, next, mtuSize, sequenceNumber)
             packets.add(packet)
             next = 1
         } while (data.available() > 0)

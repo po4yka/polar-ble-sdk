@@ -180,7 +180,7 @@ import UIKit
            resolvedFeatures.contains(PolarBleSdkFeature.feature_polar_spo2_test_data) ||
            resolvedFeatures.contains(PolarBleSdkFeature.feature_polar_watch_faces_configuration)) {
             clientList.append(BlePsFtpClient.init)
-            //TODO, why this is needed?
+            // FEEE advertises the Polar file transfer service used by PSFTP discovery.
             serviceList.append(CBUUID.init(string: "FEEE"))
         }
         

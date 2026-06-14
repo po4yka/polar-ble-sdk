@@ -61,7 +61,7 @@ jobs:
 
       - name: KMP policy mirror
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
-        run: ./gradlew :repo-tools:kmpNonGradleChecks --no-daemon --warning-mode all
+        run: ./gradlew :repo-tools:kmpNonGradleChecks :repo-tools:verifyApiDocsGenerationPolicy --no-daemon --warning-mode all
 
       - name: Generated API docs stay generator-owned
         shell: bash
@@ -161,7 +161,7 @@ jobs:
         run: swift package describe
 
       - name: Swift Package iOS build
-        run: xcodebuild -scheme PolarBleSdk -destination "generic/platform=iOS" build
+        run: sh scripts/ci_xcodebuild_build.sh "${IOS_PROJECT}" PolarBleSdk "generic/platform=iOS" Debug
 
       - name: iOS XCTest gate
         run: sh scripts/ci_xcodebuild_test.sh "${IOS_PROJECT}" "${IOS_SCHEME}" "${IOS_DESTINATION}" /tmp/polar-ios-xctest-ci.xcresult

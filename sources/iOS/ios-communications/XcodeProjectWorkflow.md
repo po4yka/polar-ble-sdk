@@ -10,7 +10,8 @@ This checkout currently uses a package-first workflow for source membership and 
 - `iOSCommunications` and `PolarBleSdk` both run the `Build PolarBleSdkShared KMP Framework` shell script phase before Swift compilation, using `scripts/build_kmp_ios_framework.sh` and the Android shared Gradle sources as declared inputs.
 - The iOS framework targets link the local KMP framework from `Generated/PolarBleSdkShared/$(PLATFORM_NAME)` through `FRAMEWORK_SEARCH_PATHS` and `OTHER_LDFLAGS`.
 - `PolarBleSdk` is the strict iOS public SDK target and must keep `OTHER_SWIFT_FLAGS = "$(inherited) -D POLAR_KMP_SHARED_REQUIRED"` for both Debug and Release.
-- `iOSCommunications` keeps `ENABLE_USER_SCRIPT_SANDBOXING = NO` because the KMP build phase reaches outside the Xcode project directory into the Android shared module.
+- `iOSCommunications` and `PolarBleSdk` keep `ENABLE_USER_SCRIPT_SANDBOXING = NO` because the KMP build phase reaches outside the Xcode project directory into the Android shared module; this produces one documented Xcode infrastructure warning that `scripts/ci_xcodebuild_build.sh` allowlists.
+- Debug framework builds keep `BUILD_LIBRARY_FOR_DISTRIBUTION = NO` so local and CI hygiene builds do not emit SwiftPM dependency library-evolution warnings; Release framework builds keep `BUILD_LIBRARY_FOR_DISTRIBUTION = YES` for distribution validation.
 - `PolarBleSdkWatchOs` intentionally does not run the KMP script phase and currently keeps only `SwiftProtobuf` as a SwiftPM product dependency.
 - `PolarBleSdkTests.xctestplan` and the `testdata` directory are test resources in the project test targets.
 - CocoaPods is intentionally absent; do not restore `Podfile`, `Pods`, `.podspec`, or committed `.xcworkspace` behavior that depends on CocoaPods.
@@ -51,7 +52,7 @@ Run these commands from the repository root unless a command specifies the Andro
 git diff --check
 swift package describe
 xcodebuild -list -project sources/iOS/ios-communications/iOSCommunications.xcodeproj
-xcodebuild -scheme PolarBleSdk -destination "generic/platform=iOS" build
+scripts/ci_xcodebuild_build.sh sources/iOS/ios-communications/iOSCommunications.xcodeproj PolarBleSdk "generic/platform=iOS" Debug
 scripts/ci_xcodebuild_test.sh sources/iOS/ios-communications/iOSCommunications.xcodeproj iOSCommunications 'platform=iOS Simulator,name=iPhone 17,OS=latest' /tmp/polar-ios-projectgen.xcresult
 cd sources/Android/android-communications && ./gradlew :repo-tools:iosXcodeValidationProbe :repo-tools:kmpNonGradleChecks --no-daemon --warning-mode all
 ```

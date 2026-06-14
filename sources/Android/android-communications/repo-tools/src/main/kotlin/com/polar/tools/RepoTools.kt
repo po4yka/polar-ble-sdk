@@ -15,6 +15,7 @@ fun main(args: Array<String>) {
         "verifyReleasePackagingPolicy" -> verifyReleasePackagingPolicy()
         "iosXcodeValidationProbe" -> iosXcodeValidationProbe()
         "validateSpmXcframeworkConsumption" -> validateSpmXcframeworkConsumption()
+        "verifyApiDocsGenerationPolicy" -> verifyApiDocsGenerationPolicy()
         else -> fail("Unknown repo-tools command: $command")
     }
 }
@@ -198,6 +199,50 @@ private fun validateSpmXcframeworkConsumption() {
         errors += "PolarBleSdkShared.xcframework path exists but is not a directory"
     }
     finish(errors, "SwiftPM fallback, remote binaryTarget configuration, and local PolarBleSdkShared binaryTarget validation passed")
+}
+
+private fun verifyApiDocsGenerationPolicy() {
+    val errors = mutableListOf<String>()
+    val script = repoRoot.resolve("scripts/generate_api_docs.sh")
+    val repoToolsBuild = repoRoot.resolve("sources/Android/android-communications/repo-tools/build.gradle.kts").readTextIfExists()
+    val libraryGradle = repoRoot.resolve("sources/Android/android-communications/library/build.gradle.kts").readTextIfExists()
+    val prWorkflow = repoRoot.resolve(".github/workflows/pr-checks.yml").readTextIfExists()
+    val nightlyWorkflow = repoRoot.resolve(".github/workflows/nightly.yml").readTextIfExists()
+    val androidDocs = repoRoot.resolve("docs/polar-sdk-android")
+    val iosDocs = repoRoot.resolve("docs/polar-sdk-ios/documentation/polarblesdk")
+
+    if (!script.isFile || !script.canExecute()) {
+        errors += "scripts/generate_api_docs.sh must exist and be executable"
+    } else {
+        val scriptText = script.readText()
+        listOf(":repo-tools:generateApiDocs", "--no-daemon", "--warning-mode all")
+            .filterNot { scriptText.contains(it) }
+            .mapTo(errors) { "scripts/generate_api_docs.sh must delegate to Gradle and include $it" }
+        listOf("xcodebuild docbuild", "docc process-archive", "perl -0pi")
+            .filter { scriptText.contains(it) }
+            .mapTo(errors) { "scripts/generate_api_docs.sh must not own docs generation implementation: found $it" }
+    }
+
+    listOf("generateApiDocs", "packageGeneratedApiDocs", ":library:dokkaGeneratePublicationHtml", "xcodebuild", "docbuild", "docc", "transform-for-static-hosting", "polar-generated-api-docs.tar.gz", "API_DOCS_DERIVED_DATA", "API_DOCS_IOS_HOSTING_BASE_PATH", "docs/polar-sdk-ios")
+        .filterNot { repoToolsBuild.contains(it) }
+        .mapTo(errors) { "repo-tools build must own docs generation and include $it" }
+    if (!libraryGradle.contains("alias(libs.plugins.dokka)") || !libraryGradle.contains("dokkaPublications.html")) {
+        errors += "Android docs generation must stay on Dokka HTML configuration"
+    }
+    listOf(":repo-tools:verifyApiDocsGenerationPolicy", "Generated API docs stay generator-owned")
+        .filterNot { prWorkflow.contains(it) }
+        .mapTo(errors) { ".github/workflows/pr-checks.yml missing $it" }
+    listOf(":repo-tools:packageGeneratedApiDocs", "git diff --quiet -- docs/polar-sdk-android docs/polar-sdk-ios", "git diff --name-status -- docs/polar-sdk-android docs/polar-sdk-ios", "polar-generated-api-docs.tar.gz", "Upload generated API docs archive")
+        .filterNot { nightlyWorkflow.contains(it) }
+        .mapTo(errors) { ".github/workflows/nightly.yml missing $it" }
+    if (!androidDocs.isDirectory || androidDocs.walkTopDown().none { file -> file.isFile && file.name == "index.html" }) {
+        errors += "Generated Android API docs must stay under docs/polar-sdk-android"
+    }
+    if (!iosDocs.isDirectory || iosDocs.walkTopDown().none { file -> file.isFile && file.name == "index.html" }) {
+        errors += "Generated iOS DocC static output must stay under docs/polar-sdk-ios/documentation/polarblesdk"
+    }
+
+    finish(errors, "API docs generation policy OK: Gradle owns Dokka, DocC, static hosting, and CI reproducibility gates")
 }
 
 private data class CommandResult(val exitCode: Int, val output: String, val timedOut: Boolean)

@@ -8,6 +8,10 @@ group = "com.github.polarofficial"
 version = "0.0.0-local"
 
 kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     jvm()
     android {
         namespace = "com.polar.shared"

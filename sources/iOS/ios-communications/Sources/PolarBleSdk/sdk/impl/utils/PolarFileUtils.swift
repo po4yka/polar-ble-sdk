@@ -75,9 +75,9 @@ class PolarFileUtils {
 
     func checkIfDirectoryIsEmpty(directoryPath: String, client: BlePsFtpClient) async throws -> Bool {
         let path = PolarRuntimePlanner.normalizeFileListFolderPath(directoryPath)
-        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "list-low-level-directory-success", command: "GET", path: path)
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: PolarFileFacadePlanId.listDirectorySuccess, command: "GET", path: path)
         let operation = plannedOperation ?? (.get, path)
-        try ensureFileFacadeRuntimePlan(id: "list-low-level-directory-success", command: "GET", path: path)
+        try ensureFileFacadeRuntimePlan(id: PolarFileFacadePlanId.listDirectorySuccess, command: "GET", path: path)
         let request = try PolarRuntimePlanner.fileOperationBytes(operation)
         do {
             let data = try await client.request(request)
@@ -95,9 +95,9 @@ class PolarFileUtils {
         guard let client = session?.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
-        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: PolarFileFacadePlanId.deleteFileSuccess, command: "REMOVE", path: filePath)
         let operation = plannedOperation ?? (.remove, filePath)
-        try ensureFileFacadeRuntimePlan(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
+        try ensureFileFacadeRuntimePlan(id: PolarFileFacadePlanId.deleteFileSuccess, command: "REMOVE", path: filePath)
         let request = try PolarRuntimePlanner.fileOperationBytes(operation)
         do {
             return try await client.request(request)
@@ -113,9 +113,9 @@ class PolarFileUtils {
             throw handleError(PolarErrors.serviceNotFound)
         }
         for filePath in filePaths {
-            let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
+            let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: PolarFileFacadePlanId.deleteFileSuccess, command: "REMOVE", path: filePath)
             let operation = plannedOperation ?? (.remove, filePath)
-            try ensureFileFacadeRuntimePlan(id: "delete-low-level-file-success", command: "REMOVE", path: filePath)
+            try ensureFileFacadeRuntimePlan(id: PolarFileFacadePlanId.deleteFileSuccess, command: "REMOVE", path: filePath)
             let request = try PolarRuntimePlanner.fileOperationBytes(operation)
             do {
                 _ = try await client.request(request)
@@ -136,9 +136,9 @@ class PolarFileUtils {
             guard let client = session?.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                 throw PolarErrors.serviceNotFound
             }
-            let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: filePath)
+            let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: PolarFileFacadePlanId.readFileSuccess, command: "GET", path: filePath)
             let operation = plannedOperation ?? (.get, filePath)
-            try ensureFileFacadeRuntimePlan(id: "read-low-level-file-success", command: "GET", path: filePath)
+            try ensureFileFacadeRuntimePlan(id: PolarFileFacadePlanId.readFileSuccess, command: "GET", path: filePath)
             let request = try PolarRuntimePlanner.fileOperationBytes(operation)
             return try await client.request(request)
         } catch {
@@ -148,9 +148,9 @@ class PolarFileUtils {
     }
 
     private func fetchRecursive(_ path: String, client: BlePsFtpClient, condition: @escaping (_ p: String) -> Bool, recurseDeep: Bool) async throws -> [(name: String, size: UInt64)] {
-        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: PolarFileFacadePlanId.readFileSuccess, command: "GET", path: path)
         let operation = plannedOperation ?? (.get, path)
-        try ensureFileFacadeRuntimePlan(id: "read-low-level-file-success", command: "GET", path: path)
+        try ensureFileFacadeRuntimePlan(id: PolarFileFacadePlanId.readFileSuccess, command: "GET", path: path)
         let request = try PolarRuntimePlanner.fileOperationBytes(operation)
         do {
             let data = try await client.request(request)
@@ -209,9 +209,9 @@ class PolarFileUtils {
             throw PolarErrors.serviceNotFound
         }
         let payloadHex = fileData.map { String(format: "%02x", $0) }.joined()
-        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: payloadHex)
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: PolarFileFacadePlanId.writeFileSuccess, command: "PUT", path: filePath, payloadHex: payloadHex)
         let operation = plannedOperation ?? (.put, filePath)
-        try ensureFileFacadeRuntimePlan(id: "write-low-level-file-success", command: "PUT", path: filePath, payloadHex: payloadHex)
+        try ensureFileFacadeRuntimePlan(id: PolarFileFacadePlanId.writeFileSuccess, command: "PUT", path: filePath, payloadHex: payloadHex)
         try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: fileData.count)
         let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
         let inputStream = InputStream(data: fileData)

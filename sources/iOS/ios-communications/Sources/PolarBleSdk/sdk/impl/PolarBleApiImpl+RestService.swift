@@ -324,9 +324,9 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
-        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "read-low-level-file-success", command: "GET", path: path)
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: PolarFileFacadePlanId.readFileSuccess, command: "GET", path: path)
         let operation = plannedOperation ?? (command: .get, path: path)
-        try ensureFileFacadeRuntimePlan(id: "read-low-level-file-success", command: "GET", path: path)
+        try ensureFileFacadeRuntimePlan(id: PolarFileFacadePlanId.readFileSuccess, command: "GET", path: path)
         let requestData = try PolarRuntimePlanner.fileOperationBytes(operation)
         let responseData = try await client.request(requestData)
         let data = responseData as Data
@@ -350,9 +350,9 @@ extension PolarBleApiImpl: PolarRestServiceApi {
             throw PolarErrors.serviceNotFound
         }
         let payloadHex = data.map { String(format: "%02x", $0) }.joined()
-        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
+        let plannedOperation = PolarRuntimePlanner.fileFacadeOperation(id: PolarFileFacadePlanId.writeFileSuccess, command: "PUT", path: path, payloadHex: payloadHex)
         let operation = plannedOperation ?? (command: command, path: path)
-        try ensureFileFacadeRuntimePlan(id: "write-low-level-file-success", command: "PUT", path: path, payloadHex: payloadHex)
+        try ensureFileFacadeRuntimePlan(id: PolarFileFacadePlanId.writeFileSuccess, command: "PUT", path: path, payloadHex: payloadHex)
         try PolarRuntimePlanner.ensurePsFtpWriteRuntimePlan(payloadSize: data.count)
         let proto = try PolarRuntimePlanner.fileOperationBytes(operation)
         let inputStream = InputStream(data: data)

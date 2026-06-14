@@ -12,7 +12,7 @@ This repository uses GitHub Actions for pull-request validation, nightly validat
 
 ## Pull Request Gates
 
-The repository policy job runs whitespace checks, `actionlint` for `.github/workflows/*.yml`, the Kotlin `:repo-tools:kmpNonGradleChecks` policy mirror, and generated API documentation cleanliness checks. The Android job runs the full `:library:testSdkDebugUnitTest` gate from `sources/Android/android-communications`. The shared KMP jobs run JVM/common, Android, metadata, and iOS framework compile/link checks. The iOS job runs `:repo-tools:iosXcodeValidationProbe`, `swift package describe`, a generic iOS `xcodebuild` package build, and the `iOSCommunications` XCTest scheme through `scripts/ci_xcodebuild_test.sh` against `iOSCommunications.xcodeproj`.
+The repository policy job runs whitespace checks, `actionlint` for `.github/workflows/*.yml`, the Kotlin `:repo-tools:kmpNonGradleChecks` policy mirror, the `:repo-tools:verifyApiDocsGenerationPolicy` documentation-generation policy mirror, and generated API documentation cleanliness checks. The Android job runs the full `:library:testSdkDebugUnitTest` gate from `sources/Android/android-communications`. The shared KMP jobs run JVM/common, Android, metadata, and iOS framework compile/link checks. The iOS job runs `:repo-tools:iosXcodeValidationProbe`, `swift package describe`, a generic iOS `xcodebuild` package build, and the `iOSCommunications` XCTest scheme through `scripts/ci_xcodebuild_test.sh` against `iOSCommunications.xcodeproj`.
 
 Product documentation under `documentation/products/` and issue-template-only changes are allowed to skip PR checks. KMP documentation, validation scripts, Gradle files, Android sources, iOS sources, workflows, and `testdata` changes must run the relevant checks.
 
@@ -24,7 +24,7 @@ CI/release remains artifact-only. Release automation does not publish to Maven, 
 
 The Android release artifact set has an Android internal project dependency during repository builds, then a local release pair for file consumers: `polar-ble-sdk.aar` and `polar-ble-sdk-shared.aar`. `scripts/verify_android_example_aar_consumption.sh` proves the example can consume that AAR pair, and `scripts/verify_android_shared_maven_metadata.sh` validates shared local Maven metadata in a build-local repository only. The Apple release artifact set uploads `PolarBleSdkShared.xcframework`, `PolarBleSdkShared.xcframework.zip`, and `PolarBleSdkShared.xcframework.zip.checksum`. Swift Package Manager is the supported Apple package path; release consumers use the uploaded zip through a remote `binaryTarget(url:checksum:)`, while clean checkouts continue to build through Swift fallback until a binary target URL/checksum is supplied.
 
-Generated API documentation under `docs/polar-sdk-android` and `docs/polar-sdk-ios` remains checked-in release output. Use `scripts/generate_api_docs.sh` for explicit release documentation regeneration. CI fails when those directories change outside an explicit release documentation regeneration change.
+Generated API documentation under `docs/polar-sdk-android` and `docs/polar-sdk-ios` remains checked-in release output. The canonical generator is the Gradle task `:repo-tools:generateApiDocs`, which owns Android Dokka, iOS DocC `docbuild`, static-hosting transformation, and iOS hosting-base rewrites. `scripts/generate_api_docs.sh` remains a thin compatibility entrypoint that delegates to that Gradle task. PR CI fails when those directories change outside an explicit release documentation regeneration change, and nightly CI runs `:repo-tools:packageGeneratedApiDocs` on macOS, checks reproducibility with `git diff --quiet -- docs/polar-sdk-android docs/polar-sdk-ios`, prints only a compact name/status and stat summary on mismatch, and uploads one compressed `polar-generated-api-docs.tar.gz` artifact instead of thousands of generated files.
 
 ## Local Equivalents
 
@@ -34,7 +34,7 @@ Run these commands before merging CI-sensitive changes:
 git diff --check
 actionlint .github/workflows/*.yml
 cd sources/Android/android-communications
-./gradlew :repo-tools:kmpNonGradleChecks :repo-tools:verifyReleasePackagingPolicy :repo-tools:iosXcodeValidationProbe --no-daemon --warning-mode all
+./gradlew :repo-tools:kmpNonGradleChecks :repo-tools:verifyReleasePackagingPolicy :repo-tools:verifyApiDocsGenerationPolicy :repo-tools:iosXcodeValidationProbe --no-daemon --warning-mode all
 ```
 
 ```bash
