@@ -283,9 +283,7 @@ dependencies: [
 ```
 or alternatively use [Xcode package manager](https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app) to add Swift package to your project.
 
-Swift Package Manager is the supported Apple package path. Shared KMP Apple consumption uses `PolarBleSdkShared.xcframework` as an SPM binary target when a release URL/checksum or local generated XCFramework is available; clean checkouts keep the Swift fallback behind `#if canImport(PolarBleSdkShared)`. CocoaPods is no longer supported; use SPM for new integrations and migrate existing Podfile-based integrations to the Swift package.
-
-> **Note:** Carthage is not supported.
+Swift Package Manager is the supported Apple package path. Shared KMP Apple consumption uses `PolarBleSdkShared.xcframework` as an SPM binary target when a release URL/checksum or local generated XCFramework is available; clean checkouts keep the Swift fallback behind `#if canImport(PolarBleSdkShared)`. Legacy package managers are not part of the supported SDK distribution surface.
 
 ### Setup your application
 * In your project target settings enable __Background Modes__, add  __Uses Bluetooth LE accessories__

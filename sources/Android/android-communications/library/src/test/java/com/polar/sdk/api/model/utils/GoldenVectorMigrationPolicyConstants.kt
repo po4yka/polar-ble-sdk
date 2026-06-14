@@ -883,6 +883,7 @@ internal val IOS_XCODE_PROBE_REQUIRED_TERMS = listOf(
     "expectedTargets",
     "expectedSchemes",
     "Podfile must not exist",
+    "iOSCommunications.xcworkspace must not exist",
     "coresimulator-unavailable"
 )
 internal val IOS_XCTEST_EXECUTION_GATE_REQUIRED_TERMS = listOf(

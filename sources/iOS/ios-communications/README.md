@@ -13,10 +13,8 @@ iOS Communications XCode project (i.e. `iOSCommunications.xcodeproj`) contains t
     * [To update dependencies](#to-update-dependencies)
 * [Install](#install)
     * [... using Swift Package Manager](#...-using-Swift-Package-Manager)
-    * [CocoaPods (unsupported)](#cocoapods-unsupported)
     * [... using XCFramework](#...-using-XCFramework)
     * [... using git submodules](#...-using-git-submodules)
-    * [... using Carthage](#...-using-Carthage)
 * [Usage](#usage)
 * [Debugging](#debugging)
 * [Project maintenance](XcodeProjectWorkflow.md)
@@ -36,11 +34,10 @@ iOS Communications XCode project (i.e. `iOSCommunications.xcodeproj`) contains t
  
 ## Install 
 
+Only Swift Package Manager, XCFramework, and direct Xcode project integration are supported.
+
 ### ... using Swift Package Manager 
 * iOS Communications project is made available via Swift Package. Please get familiar with [XCode help](https://developer.apple.com/documentation/swift_packages/adding_package_dependencies_to_your_app) how to take Swift Package into use on your project.
-
-### CocoaPods (unsupported)
-* CocoaPods is no longer supported for this repository. Use Swift Package Manager for package integration.
 
 ### ... using XCFramework
 * From `/scripts` folder run the `./build_ios_communications.sh` or  `./build_sdk.sh` depending on target of your choice. Both scripts builds the XCFrameworks. 
@@ -50,9 +47,6 @@ iOS Communications XCode project (i.e. `iOSCommunications.xcodeproj`) contains t
 * `git submodule add <repository_url>`
 * Drag and drop the iOS communications project file (i.e. `iOSCommunications.xcodeproj`) to yours Xcode project Project Navigator
 *  In your project choose the `Target → General → Frameworks, Libraries and Embedded Content → Press "+"`. From opened dialog select the target `iOSCommunications`, `PolarBleSdk` or `PolarBleSdkWatchOs` depending on your needs.  
-
-### ... using Carthage 
-* Not supported at the moment
 
 ## Usage
 * **Swift Concurrency and Combine**
@@ -69,13 +63,12 @@ iOS Communications XCode project (i.e. `iOSCommunications.xcodeproj`) contains t
 
 To debug the iOS communications or Polar BLE SDK target follow the steps provided below:
 
-1. Clone the iOS communications repository (this repository) by running `git clone <
-   repository_url>.
+1. Clone the iOS communications repository (this repository) by running `git clone <repository_url>`.
 2. Follow the steps below depending on which dependency your app uses.
 
 ### If you are using Swift Package Manager as a dependency in your app
 
-1. Open your app’s Xcode project or workspace.
+1. Open your app’s Xcode project.
 
 2. Select the Swift package’s folder (i.e. `/sources/iOS/ios-communications/`) in Finder and drag it into the Project navigator. This action adds your dependency’s Swift package as a local package to your project.
 

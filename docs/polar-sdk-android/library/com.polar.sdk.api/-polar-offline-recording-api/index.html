@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>PolarOfflineRecordingApi</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+        <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../index.html" tabindex="1">
+                    library
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
+                        data-filter=":library/sdkRelease">sdkRelease</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":library/sdkRelease"
+                                       data-filter=":library/sdkRelease"/>
+                                <span class="checkbox--icon"></span>
+                                sdkRelease
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    library
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="library::com.polar.sdk.api/PolarOfflineRecordingApi///PointingToDeclaration//705174137">
+  <div class="breadcrumbs"><a href="../../../index.html">library</a><span class="delimiter">/</span><a href="../index.html">com.polar.sdk.api</a><span class="delimiter">/</span><span class="current">PolarOfflineRecordingApi</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Polar</span><wbr></wbr><span>Offline</span><wbr></wbr><span>Recording</span><wbr></wbr><span><span>Api</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">PolarOfflineRecordingApi</a></div><p class="paragraph">Offline recording API.</p><p class="paragraph">Offline recording makes it possible to record <a href="../-polar-ble-api/-polar-device-data-type/index.html">PolarBleApi.PolarDeviceDataType</a> data to device memory. With Offline recording the Polar device and phone don't need to be connected all the time, as offline recording continues in Polar device even the BLE disconnects.</p><p class="paragraph">Offline records saved into the device can be encrypted. The <a href="../../com.polar.sdk.api.model/-polar-recording-secret/index.html">PolarRecordingSecret</a> is provided for <a href="start-offline-recording.html">startOfflineRecording</a> and <a href="set-offline-recording-trigger.html">setOfflineRecordingTrigger</a> when encryption is wanted. The <a href="../../com.polar.sdk.api.model/-polar-recording-secret/index.html">PolarRecordingSecret</a> with same key must be provided in <a href="get-offline-record.html">getOfflineRecord</a> to correctly decrypt the data in the device.</p><p class="paragraph">Requires features <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">FEATURE_POLAR_OFFLINE_RECORDING</a></p><p class="paragraph">Note, offline recording is supported in Polar Verity Sense device (starting from firmware version 2.1.0)</p><h4 class="tableheader">Inheritors</h4><div class="table"><div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-polar-ble-api/index.html">PolarBleApi</a></div></span></div><div></div></div></div></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="1638325242%2FFunctions%2F705174137" anchor-label="getAvailableOfflineRecordingDataTypes" id="1638325242%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-available-offline-recording-data-types.html"><span>get</span><wbr></wbr><span>Available</span><wbr></wbr><span>Offline</span><wbr></wbr><span>Recording</span><wbr></wbr><span>Data</span><wbr></wbr><span><span>Types</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1638325242%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-available-offline-recording-data-types.html"><span class="token function">getAvailableOfflineRecordingDataTypes</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../-polar-ble-api/-polar-device-data-type/index.html">PolarBleApi.PolarDeviceDataType</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Get the data types available in this device for offline recording. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a></p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1795651904%2FFunctions%2F705174137" anchor-label="getOfflineRecord" id="-1795651904%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-offline-record.html"><span>get</span><wbr></wbr><span>Offline</span><wbr></wbr><span><span>Record</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1795651904%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-offline-record.html"><span class="token function">getOfflineRecord</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">entry<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-offline-recording-entry/index.html">PolarOfflineRecordingEntry</a><span class="token punctuation">, </span></span><span class="parameter ">secret<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-recording-secret/index.html">PolarRecordingSecret</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-offline-recording-data/index.html">PolarOfflineRecordingData</a></div><div class="brief "><p class="paragraph">Fetch recording from the Polar device. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a></p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1300554466%2FFunctions%2F705174137" anchor-label="getOfflineRecordingStatus" id="1300554466%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-offline-recording-status.html"><span>get</span><wbr></wbr><span>Offline</span><wbr></wbr><span>Recording</span><wbr></wbr><span><span>Status</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1300554466%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-offline-recording-status.html"><span class="token function">getOfflineRecordingStatus</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../-polar-ble-api/-polar-device-data-type/index.html">PolarBleApi.PolarDeviceDataType</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Get current offline recording status. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a></p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-521301611%2FFunctions%2F705174137" anchor-label="getOfflineRecordingTriggerSetup" id="-521301611%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-offline-recording-trigger-setup.html"><span>get</span><wbr></wbr><span>Offline</span><wbr></wbr><span>Recording</span><wbr></wbr><span>Trigger</span><wbr></wbr><span><span>Setup</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-521301611%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-offline-recording-trigger-setup.html"><span class="token function">getOfflineRecordingTriggerSetup</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-offline-recording-trigger/index.html">PolarOfflineRecordingTrigger</a></div><div class="brief "><p class="paragraph">Retrieves the current offline recording trigger setup in the device. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a></p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="809185197%2FFunctions%2F705174137" anchor-label="getOfflineRecordWithProgress" id="809185197%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-offline-record-with-progress.html"><span>get</span><wbr></wbr><span>Offline</span><wbr></wbr><span>Record</span><wbr></wbr><span>With</span><wbr></wbr><span><span>Progress</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="809185197%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="get-offline-record-with-progress.html"><span class="token function">getOfflineRecordWithProgress</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">entry<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-offline-recording-entry/index.html">PolarOfflineRecordingEntry</a><span class="token punctuation">, </span></span><span class="parameter ">secret<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-recording-secret/index.html">PolarRecordingSecret</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-offline-recording-result/index.html">PolarOfflineRecordingResult</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Fetch recording from the Polar device with progress tracking. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a></p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1562342236%2FFunctions%2F705174137" anchor-label="getSplitOfflineRecord" id="-1562342236%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-split-offline-record.html"><span>get</span><wbr></wbr><span>Split</span><wbr></wbr><span>Offline</span><wbr></wbr><span><span>Record</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1562342236%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-split-offline-record.html"><span class="token function"><strike>getSplitOfflineRecord</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">entry<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-offline-recording-entry/index.html">PolarOfflineRecordingEntry</a><span class="token punctuation">, </span></span><span class="parameter ">secret<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-recording-secret/index.html">PolarRecordingSecret</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-offline-recording-data/index.html">PolarOfflineRecordingData</a></div><div class="brief "><p class="paragraph">Fetch split recording from the Polar device. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a></p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="439038643%2FFunctions%2F705174137" anchor-label="listOfflineRecordings" id="439038643%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-offline-recordings.html"><span>list</span><wbr></wbr><span>Offline</span><wbr></wbr><span><span>Recordings</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="439038643%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="list-offline-recordings.html"><span class="token function">listOfflineRecordings</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-offline-recording-entry/index.html">PolarOfflineRecordingEntry</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">List offline recordings stored in the device. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a></p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1661236299%2FFunctions%2F705174137" anchor-label="listSplitOfflineRecordings" id="1661236299%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-split-offline-recordings.html"><span>list</span><wbr></wbr><span>Split</span><wbr></wbr><span>Offline</span><wbr></wbr><span><span>Recordings</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1661236299%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="list-split-offline-recordings.html"><span class="token function"><strike>listSplitOfflineRecordings</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-offline-recording-entry/index.html">PolarOfflineRecordingEntry</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Lists all parts of all offline recordings (split and non-split) stored in the device. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a></p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1185816531%2FFunctions%2F705174137" anchor-label="removeOfflineRecord" id="1185816531%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="remove-offline-record.html"><span>remove</span><wbr></wbr><span>Offline</span><wbr></wbr><span><span>Record</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1185816531%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="remove-offline-record.html"><span class="token function">removeOfflineRecord</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">entry<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-offline-recording-entry/index.html">PolarOfflineRecordingEntry</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Removes offline recording from the device. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a></p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1615183484%2FFunctions%2F705174137" anchor-label="requestFullOfflineRecordingSettings" id="1615183484%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="request-full-offline-recording-settings.html"><span>request</span><wbr></wbr><span>Full</span><wbr></wbr><span>Offline</span><wbr></wbr><span>Recording</span><wbr></wbr><span><span>Settings</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1615183484%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="request-full-offline-recording-settings.html"><span class="token function">requestFullOfflineRecordingSettings</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">feature<span class="token operator">: </span><a href="../-polar-ble-api/-polar-device-data-type/index.html">PolarBleApi.PolarDeviceDataType</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></div><div class="brief "><p class="paragraph">Request all the settings available in the device. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a> The request returns the all capabilities of the requested streaming feature not limited by the current operation mode.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1011330099%2FFunctions%2F705174137" anchor-label="requestOfflineRecordingSettings" id="-1011330099%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="request-offline-recording-settings.html"><span>request</span><wbr></wbr><span>Offline</span><wbr></wbr><span>Recording</span><wbr></wbr><span><span>Settings</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1011330099%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="request-offline-recording-settings.html"><span class="token function">requestOfflineRecordingSettings</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">feature<span class="token operator">: </span><a href="../-polar-ble-api/-polar-device-data-type/index.html">PolarBleApi.PolarDeviceDataType</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></div><div class="brief "><p class="paragraph">Request the offline recording settings available in current operation mode. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a> This request shall be used before the offline recording is started to decide currently available settings. The available settings depend on the state of the device.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1934342864%2FFunctions%2F705174137" anchor-label="setOfflineRecordingTrigger" id="1934342864%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-offline-recording-trigger.html"><span>set</span><wbr></wbr><span>Offline</span><wbr></wbr><span>Recording</span><wbr></wbr><span><span>Trigger</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1934342864%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="set-offline-recording-trigger.html"><span class="token function">setOfflineRecordingTrigger</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">trigger<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-offline-recording-trigger/index.html">PolarOfflineRecordingTrigger</a><span class="token punctuation">, </span></span><span class="parameter ">secret<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-recording-secret/index.html">PolarRecordingSecret</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the offline recording triggers for a given Polar device. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a> The offline recording can be started automatically in the device by setting the triggers. The changes to the trigger settings will take effect on the next device startup.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="411748212%2FFunctions%2F705174137" anchor-label="startOfflineRecording" id="411748212%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-offline-recording.html"><span>start</span><wbr></wbr><span>Offline</span><wbr></wbr><span><span>Recording</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="411748212%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="start-offline-recording.html"><span class="token function">startOfflineRecording</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">feature<span class="token operator">: </span><a href="../-polar-ble-api/-polar-device-data-type/index.html">PolarBleApi.PolarDeviceDataType</a><span class="token punctuation">, </span></span><span class="parameter ">settings<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">secret<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-recording-secret/index.html">PolarRecordingSecret</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Start offline recording. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a></p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1867166931%2FFunctions%2F705174137" anchor-label="stopOfflineRecording" id="1867166931%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="stop-offline-recording.html"><span>stop</span><wbr></wbr><span>Offline</span><wbr></wbr><span><span>Recording</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1867166931%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="stop-offline-recording.html"><span class="token function">stopOfflineRecording</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">feature<span class="token operator">: </span><a href="../-polar-ble-api/-polar-device-data-type/index.html">PolarBleApi.PolarDeviceDataType</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Request to stop offline recording. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-f-f-l-i-n-e_-r-e-c-o-r-d-i-n-g/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING</a></p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>PolarWatchFaceComplication</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+        <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../index.html" tabindex="1">
+                    library
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
+                        data-filter=":library/sdkRelease">sdkRelease</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":library/sdkRelease"
+                                       data-filter=":library/sdkRelease"/>
+                                <span class="checkbox--icon"></span>
+                                sdkRelease
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    library
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="library::com.polar.sdk.api.model/PolarWatchFaceComplication///PointingToDeclaration//705174137">
+  <div class="breadcrumbs"><a href="../../../index.html">library</a><span class="delimiter">/</span><a href="../index.html">com.polar.sdk.api.model</a><span class="delimiter">/</span><span class="current">PolarWatchFaceComplication</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Polar</span><wbr></wbr><span>Watch</span><wbr></wbr><span>Face</span><wbr></wbr><span><span>Complication</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">enum </span><a href="index.html">PolarWatchFaceComplication</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="index.html">PolarWatchFaceComplication</a><span class="token operator">&gt; </span></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button><button class="section-tab" data-togglable="ENTRY">Entries</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="ENTRY">
+        <h2 class="tableheader">Entries</h2>
+        <div class="table"><a data-name="-404691154%2FClasslikes%2F705174137" anchor-label="ALARM" id="-404691154%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-a-l-a-r-m/index.html">ALARM</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-404691154%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-a-l-a-r-m/index.html">ALARM</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="298107117%2FClasslikes%2F705174137" anchor-label="ALTITUDE" id="298107117%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-a-l-t-i-t-u-d-e/index.html">ALTITUDE</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="298107117%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-a-l-t-i-t-u-d-e/index.html">ALTITUDE</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="297717914%2FClasslikes%2F705174137" anchor-label="ACTIVITY" id="297717914%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-a-c-t-i-v-i-t-y/index.html">ACTIVITY</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="297717914%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-a-c-t-i-v-i-t-y/index.html">ACTIVITY</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1582368854%2FClasslikes%2F705174137" anchor-label="BATTERY" id="-1582368854%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-b-a-t-t-e-r-y/index.html">BATTERY</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1582368854%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-b-a-t-t-e-r-y/index.html">BATTERY</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-877540256%2FClasslikes%2F705174137" anchor-label="BREATHING_EXERCISE" id="-877540256%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-b-r-e-a-t-h-i-n-g_-e-x-e-r-c-i-s-e/index.html">BREATHING_EXERCISE</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-877540256%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-b-r-e-a-t-h-i-n-g_-e-x-e-r-c-i-s-e/index.html">BREATHING_EXERCISE</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-134100399%2FClasslikes%2F705174137" anchor-label="CALORIES" id="-134100399%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-c-a-l-o-r-i-e-s/index.html">CALORIES</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-134100399%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-c-a-l-o-r-i-e-s/index.html">CALORIES</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-209898513%2FClasslikes%2F705174137" anchor-label="COMPASS" id="-209898513%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-c-o-m-p-a-s-s/index.html">COMPASS</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-209898513%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-c-o-m-p-a-s-s/index.html">COMPASS</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2052671156%2FClasslikes%2F705174137" anchor-label="COUNTDOWN_TIMER" id="2052671156%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-c-o-u-n-t-d-o-w-n_-t-i-m-e-r/index.html">COUNTDOWN_TIMER</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2052671156%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-c-o-u-n-t-d-o-w-n_-t-i-m-e-r/index.html">COUNTDOWN_TIMER</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1064318073%2FClasslikes%2F705174137" anchor-label="DATE" id="1064318073%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-d-a-t-e/index.html">DATE</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1064318073%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-d-a-t-e/index.html">DATE</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="714719045%2FClasslikes%2F705174137" anchor-label="DAYLIGHT" id="714719045%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-d-a-y-l-i-g-h-t/index.html">DAYLIGHT</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="714719045%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-d-a-y-l-i-g-h-t/index.html">DAYLIGHT</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1713957722%2FClasslikes%2F705174137" anchor-label="ECG" id="-1713957722%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-c-g/index.html">ECG</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1713957722%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-e-c-g/index.html">ECG</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-721632982%2FClasslikes%2F705174137" anchor-label="EMPTY" id="-721632982%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-m-p-t-y/index.html">EMPTY</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-721632982%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-e-m-p-t-y/index.html">EMPTY</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-460485455%2FClasslikes%2F705174137" anchor-label="FLASHLIGHT" id="-460485455%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-f-l-a-s-h-l-i-g-h-t/index.html">FLASHLIGHT</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-460485455%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-f-l-a-s-h-l-i-g-h-t/index.html">FLASHLIGHT</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-784018524%2FClasslikes%2F705174137" anchor-label="HEART_RATE" id="-784018524%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-h-e-a-r-t_-r-a-t-e/index.html">HEART_RATE</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-784018524%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-h-e-a-r-t_-r-a-t-e/index.html">HEART_RATE</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="536726272%2FClasslikes%2F705174137" anchor-label="JUMP_TEST" id="536726272%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-j-u-m-p_-t-e-s-t/index.html">JUMP_TEST</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="536726272%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-j-u-m-p_-t-e-s-t/index.html">JUMP_TEST</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1423046513%2FClasslikes%2F705174137" anchor-label="LATEST_TRAINING" id="-1423046513%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-l-a-t-e-s-t_-t-r-a-i-n-i-n-g/index.html">LATEST_TRAINING</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1423046513%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-l-a-t-e-s-t_-t-r-a-i-n-i-n-g/index.html">LATEST_TRAINING</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1081745633%2FClasslikes%2F705174137" anchor-label="NAVIGATION" id="-1081745633%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-n-a-v-i-g-a-t-i-o-n/index.html">NAVIGATION</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1081745633%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-n-a-v-i-g-a-t-i-o-n/index.html">NAVIGATION</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="160444716%2FClasslikes%2F705174137" anchor-label="NIGHTLY_RECHARGE" id="160444716%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-n-i-g-h-t-l-y_-r-e-c-h-a-r-g-e/index.html">NIGHTLY_RECHARGE</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="160444716%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-n-i-g-h-t-l-y_-r-e-c-h-a-r-g-e/index.html">NIGHTLY_RECHARGE</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-687840969%2FClasslikes%2F705174137" anchor-label="POLAR_LOGO" id="-687840969%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-p-o-l-a-r_-l-o-g-o/index.html">POLAR_LOGO</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-687840969%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-p-o-l-a-r_-l-o-g-o/index.html">POLAR_LOGO</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-337772709%2FClasslikes%2F705174137" anchor-label="SECONDS_ANALOG" id="-337772709%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s-e-c-o-n-d-s_-a-n-a-l-o-g/index.html">SECONDS_ANALOG</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-337772709%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-s-e-c-o-n-d-s_-a-n-a-l-o-g/index.html">SECONDS_ANALOG</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1153616789%2FClasslikes%2F705174137" anchor-label="SECONDS_DIGITAL" id="1153616789%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s-e-c-o-n-d-s_-d-i-g-i-t-a-l/index.html">SECONDS_DIGITAL</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1153616789%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-s-e-c-o-n-d-s_-d-i-g-i-t-a-l/index.html">SECONDS_DIGITAL</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="312394283%2FClasslikes%2F705174137" anchor-label="SPO2" id="312394283%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s-p-o2/index.html">SPO2</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="312394283%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-s-p-o2/index.html">SPO2</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-977346270%2FClasslikes%2F705174137" anchor-label="TIMER" id="-977346270%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-t-i-m-e-r/index.html">TIMER</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-977346270%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-t-i-m-e-r/index.html">TIMER</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="682193532%2FClasslikes%2F705174137" anchor-label="USER_NAME" id="682193532%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-u-s-e-r_-n-a-m-e/index.html">USER_NAME</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="682193532%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-u-s-e-r_-n-a-m-e/index.html">USER_NAME</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1150246737%2FClasslikes%2F705174137" anchor-label="WEATHER" id="1150246737%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-w-e-a-t-h-e-r/index.html">WEATHER</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1150246737%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-w-e-a-t-h-e-r/index.html">WEATHER</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1789669459%2FClasslikes%2F705174137" anchor-label="WEEKLY_SUMMARY" id="1789669459%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-w-e-e-k-l-y_-s-u-m-m-a-r-y/index.html">WEEKLY_SUMMARY</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1789669459%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><div class="block"><a href="-w-e-e-k-l-y_-s-u-m-m-a-r-y/index.html">WEEKLY_SUMMARY</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="TYPE">
+        <h2 class="tableheader">Types</h2>
+        <div class="table"><a data-name="-966401412%2FClasslikes%2F705174137" anchor-label="Companion" id="-966401412%2FClasslikes%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-966401412%2FClasslikes%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">object </span><a href="-companion/index.html">Companion</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="1286208876%2FProperties%2F705174137" anchor-label="complicationId" id="1286208876%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="complication-id.html"><span>complication</span><wbr></wbr><span><span>Id</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1286208876%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="complication-id.html">complicationId</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1712245925%2FProperties%2F705174137" anchor-label="entries" id="1712245925%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="entries.html"><span><span>entries</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1712245925%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="entries.html">entries</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.enums/-enum-entries/index.html">EnumEntries</a><span class="token operator">&lt;</span><a href="index.html">PolarWatchFaceComplication</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Returns a representation of an immutable list of all enum entries, in the order they're declared.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1256831862%2FProperties%2F705174137" anchor-label="id" id="-1256831862%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="id.html"><span><span>id</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1256831862%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="id.html">id</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-372974862%2FProperties%2F705174137" anchor-label="name" id="-372974862%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.polar.sdk.impl.utils/-calories-type/-b-m-r/index.html#-372974862%2FProperties%2F705174137"><span><span>name</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-372974862%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../com.polar.sdk.impl.utils/-calories-type/-b-m-r/index.html#-372974862%2FProperties%2F705174137">name</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-739389684%2FProperties%2F705174137" anchor-label="ordinal" id="-739389684%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../com.polar.sdk.impl.utils/-calories-type/-b-m-r/index.html#-739389684%2FProperties%2F705174137"><span><span>ordinal</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-739389684%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../com.polar.sdk.impl.utils/-calories-type/-b-m-r/index.html#-739389684%2FProperties%2F705174137">ordinal</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-1357150953%2FFunctions%2F705174137" anchor-label="valueOf" id="-1357150953%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="value-of.html"><span>value</span><wbr></wbr><span><span>Of</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1357150953%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">fun </span><a href="value-of.html"><span class="token function">valueOf</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">value<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">PolarWatchFaceComplication</a></div><div class="brief "><p class="paragraph">Returns the enum constant of this type with the specified name. The string must match exactly an identifier used to declare an enum constant in this type. (Extraneous whitespace characters are not permitted.)</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1129056669%2FFunctions%2F705174137" anchor-label="values" id="-1129056669%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="values.html"><span><span>values</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1129056669%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">fun </span><a href="values.html"><span class="token function">values</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><a href="index.html">PolarWatchFaceComplication</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Returns an array containing the constants of this enum type, in the order they're declared.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

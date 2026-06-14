@@ -24,7 +24,7 @@ CI/release remains artifact-only. Release automation does not publish to Maven, 
 
 The Android release artifact set has an Android internal project dependency during repository builds, then a local release pair for file consumers: `polar-ble-sdk.aar` and `polar-ble-sdk-shared.aar`. `scripts/verify_android_example_aar_consumption.sh` proves the example can consume that AAR pair, and `scripts/verify_android_shared_maven_metadata.sh` validates shared local Maven metadata in a build-local repository only. The Apple release artifact set uploads `PolarBleSdkShared.xcframework`, `PolarBleSdkShared.xcframework.zip`, and `PolarBleSdkShared.xcframework.zip.checksum`. Swift Package Manager is the supported Apple package path; release consumers use the uploaded zip through a remote `binaryTarget(url:checksum:)`, while clean checkouts continue to build through Swift fallback until a binary target URL/checksum is supplied.
 
-Generated API documentation under `docs/polar-sdk-android` and `docs/polar-sdk-ios` remains checked-in release output. CI fails when those directories change outside an explicit release documentation regeneration change.
+Generated API documentation under `docs/polar-sdk-android` and `docs/polar-sdk-ios` remains checked-in release output. Use `scripts/generate_api_docs.sh` for explicit release documentation regeneration. CI fails when those directories change outside an explicit release documentation regeneration change.
 
 ## Local Equivalents
 

@@ -13,7 +13,7 @@ This checkout currently uses a package-first workflow for source membership and 
 - `iOSCommunications` keeps `ENABLE_USER_SCRIPT_SANDBOXING = NO` because the KMP build phase reaches outside the Xcode project directory into the Android shared module.
 - `PolarBleSdkWatchOs` intentionally does not run the KMP script phase and currently keeps only `SwiftProtobuf` as a SwiftPM product dependency.
 - `PolarBleSdkTests.xctestplan` and the `testdata` directory are test resources in the project test targets.
-- CocoaPods is intentionally absent; do not restore `Podfile`, `Pods`, `.podspec`, or workspace behavior that depends on CocoaPods.
+- CocoaPods is intentionally absent; do not restore `Podfile`, `Pods`, `.podspec`, or committed `.xcworkspace` behavior that depends on CocoaPods.
 
 ## Chosen Path
 

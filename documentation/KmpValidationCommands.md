@@ -108,7 +108,13 @@ cd sources/Android/android-communications
 
 ## Generated API Documentation Ownership
 
-Generated API documentation under `docs/polar-sdk-android` and `docs/polar-sdk-ios` is release output, not hand-edited migration planning documentation. During migration slices, this command must print no files unless the slice explicitly regenerates release API docs from the owning generators:
+Generated API documentation under `docs/polar-sdk-android` and `docs/polar-sdk-ios` is release output, not hand-edited migration planning documentation. Regenerate both API documentation trees with the repository entrypoint:
+
+```bash
+scripts/generate_api_docs.sh
+```
+
+During migration slices, this command must print no files unless the slice explicitly regenerates release API docs from the owning generators:
 
 ```bash
 git diff --name-only -- docs/polar-sdk-android docs/polar-sdk-ios

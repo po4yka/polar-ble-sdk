@@ -111,15 +111,14 @@ components.matching { it.name == "sdkRelease" }.all {
     }
 }
 
-@Suppress("DEPRECATION")
-tasks.named<org.jetbrains.dokka.gradle.DokkaTask>("dokkaJavadoc").configure {
-    outputDirectory.set(file("docs/"))
-    dokkaSourceSets {
-        configureEach {
-            perPackageOption {
-                matchingRegex.set(".*\\.androidcommunications.*")
-                suppress.set(true)
-            }
+dokka {
+    dokkaPublications.html {
+        outputDirectory.set(rootProject.layout.projectDirectory.dir("../../../docs/polar-sdk-android"))
+    }
+    dokkaSourceSets.configureEach {
+        perPackageOption {
+            matchingRegex.set(".*\\.androidcommunications.*")
+            suppress.set(true)
         }
     }
 }

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>PolarActiveTimeData</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+        <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../index.html" tabindex="1">
+                    library
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
+                        data-filter=":library/sdkRelease">sdkRelease</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":library/sdkRelease"
+                                       data-filter=":library/sdkRelease"/>
+                                <span class="checkbox--icon"></span>
+                                sdkRelease
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    library
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="library::com.polar.sdk.api.model.activity/PolarActiveTimeData///PointingToDeclaration//705174137">
+  <div class="breadcrumbs"><a href="../../../index.html">library</a><span class="delimiter">/</span><a href="../index.html">com.polar.sdk.api.model.activity</a><span class="delimiter">/</span><span class="current">PolarActiveTimeData</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Polar</span><wbr></wbr><span>Active</span><wbr></wbr><span>Time</span><wbr></wbr><span><span>Data</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="index.html">PolarActiveTimeData</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>date<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/time/LocalDate.html">LocalDate</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>timeNonWear<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>timeSleep<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>timeSedentary<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>timeLightActivity<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>timeContinuousModerateActivity<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>timeIntermittentModerateActivity<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>timeContinuousVigorousActivity<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>timeIntermittentVigorousActivity<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()</span></span><span class="token punctuation">)</span></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="tableheader">Constructors</h2>
+        <div class="table"><a data-name="587932658%2FConstructors%2F705174137" anchor-label="PolarActiveTimeData" id="587932658%2FConstructors%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-togglable="CONSTRUCTOR" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-polar-active-time-data.html"><span>Polar</span><wbr></wbr><span>Active</span><wbr></wbr><span>Time</span><wbr></wbr><span><span>Data</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="587932658%2FConstructors%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">date<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/time/LocalDate.html">LocalDate</a><span class="token punctuation">, </span></span><span class="parameter ">timeNonWear<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter ">timeSleep<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter ">timeSedentary<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter ">timeLightActivity<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter ">timeContinuousModerateActivity<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter ">timeIntermittentModerateActivity<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter ">timeContinuousVigorousActivity<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()<span class="token punctuation">, </span></span><span class="parameter ">timeIntermittentVigorousActivity<span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a><span class="token operator"> = </span>PolarActiveTime()</span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="652632805%2FProperties%2F705174137" anchor-label="date" id="652632805%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="date.html"><span><span>date</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="652632805%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="date.html">date</a><span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/time/LocalDate.html">LocalDate</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-266208251%2FProperties%2F705174137" anchor-label="timeContinuousModerateActivity" id="-266208251%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="time-continuous-moderate-activity.html"><span>time</span><wbr></wbr><span>Continuous</span><wbr></wbr><span>Moderate</span><wbr></wbr><span><span>Activity</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-266208251%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="time-continuous-moderate-activity.html">timeContinuousModerateActivity</a><span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="425159794%2FProperties%2F705174137" anchor-label="timeContinuousVigorousActivity" id="425159794%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="time-continuous-vigorous-activity.html"><span>time</span><wbr></wbr><span>Continuous</span><wbr></wbr><span>Vigorous</span><wbr></wbr><span><span>Activity</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="425159794%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="time-continuous-vigorous-activity.html">timeContinuousVigorousActivity</a><span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1602516833%2FProperties%2F705174137" anchor-label="timeIntermittentModerateActivity" id="1602516833%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="time-intermittent-moderate-activity.html"><span>time</span><wbr></wbr><span>Intermittent</span><wbr></wbr><span>Moderate</span><wbr></wbr><span><span>Activity</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1602516833%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="time-intermittent-moderate-activity.html">timeIntermittentModerateActivity</a><span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2001082418%2FProperties%2F705174137" anchor-label="timeIntermittentVigorousActivity" id="-2001082418%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="time-intermittent-vigorous-activity.html"><span>time</span><wbr></wbr><span>Intermittent</span><wbr></wbr><span>Vigorous</span><wbr></wbr><span><span>Activity</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2001082418%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="time-intermittent-vigorous-activity.html">timeIntermittentVigorousActivity</a><span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1025529583%2FProperties%2F705174137" anchor-label="timeLightActivity" id="1025529583%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="time-light-activity.html"><span>time</span><wbr></wbr><span>Light</span><wbr></wbr><span><span>Activity</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1025529583%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="time-light-activity.html">timeLightActivity</a><span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-327211928%2FProperties%2F705174137" anchor-label="timeNonWear" id="-327211928%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="time-non-wear.html"><span>time</span><wbr></wbr><span>Non</span><wbr></wbr><span><span>Wear</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-327211928%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="time-non-wear.html">timeNonWear</a><span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2040256389%2FProperties%2F705174137" anchor-label="timeSedentary" id="2040256389%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="time-sedentary.html"><span>time</span><wbr></wbr><span><span>Sedentary</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2040256389%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="time-sedentary.html">timeSedentary</a><span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-485855843%2FProperties%2F705174137" anchor-label="timeSleep" id="-485855843%2FProperties%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="time-sleep.html"><span>time</span><wbr></wbr><span><span>Sleep</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-485855843%2FProperties%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">val </span><a href="time-sleep.html">timeSleep</a><span class="token operator">: </span><a href="../-polar-active-time/index.html">PolarActiveTime</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

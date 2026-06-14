@@ -37,6 +37,7 @@ private fun kmpNonGradleChecks() {
     val forbiddenActiveFiles = listOf(
         "PolarBleSdk.podspec",
         "sources/iOS/ios-communications/Podfile",
+        "sources/iOS/ios-communications/iOSCommunications.xcworkspace",
     )
     forbiddenActiveFiles.filter { repoRoot.resolve(it).exists() }.mapTo(errors) { "$it must be removed after SwiftPM migration" }
 
@@ -158,6 +159,7 @@ private fun iosXcodeValidationProbe() {
 
     if (!project.isDirectory) errors += "${project.relativeTo(repoRoot).path} is missing"
     if (iosRoot.resolve("Podfile").exists()) errors += "Podfile must not exist after SwiftPM migration"
+    if (iosRoot.resolve("iOSCommunications.xcworkspace").exists()) errors += "iOSCommunications.xcworkspace must not exist after SwiftPM migration"
     if (iosRoot.resolve("Pods").exists()) blockers += "pods-directory-present"
 
     if (errors.isEmpty()) {

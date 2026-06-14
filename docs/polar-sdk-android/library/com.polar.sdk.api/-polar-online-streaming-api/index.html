@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>PolarOnlineStreamingApi</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+        <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../index.html" tabindex="1">
+                    library
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
+                        data-filter=":library/sdkRelease">sdkRelease</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":library/sdkRelease"
+                                       data-filter=":library/sdkRelease"/>
+                                <span class="checkbox--icon"></span>
+                                sdkRelease
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    library
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="library::com.polar.sdk.api/PolarOnlineStreamingApi///PointingToDeclaration//705174137">
+  <div class="breadcrumbs"><a href="../../../index.html">library</a><span class="delimiter">/</span><a href="../index.html">com.polar.sdk.api</a><span class="delimiter">/</span><span class="current">PolarOnlineStreamingApi</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Polar</span><wbr></wbr><span>Online</span><wbr></wbr><span>Streaming</span><wbr></wbr><span><span>Api</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">PolarOnlineStreamingApi</a></div><p class="paragraph">Online streaming API.</p><p class="paragraph">Online streaming makes it possible to stream live online data from Polar device.</p><p class="paragraph">Requires features <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-n-l-i-n-e_-s-t-r-e-a-m-i-n-g/index.html">FEATURE_POLAR_ONLINE_STREAMING</a> or <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-h-r/index.html">PolarBleApi.PolarBleSdkFeature.FEATURE_HR</a></p><p class="paragraph">Note, online streaming is supported by VeritySense, H10 and OH1 devices</p><h4 class="tableheader">Inheritors</h4><div class="table"><div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-polar-ble-api/index.html">PolarBleApi</a></div></span></div><div></div></div></div></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-504804886%2FFunctions%2F705174137" anchor-label="getAvailableHRServiceDataTypes" id="-504804886%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-available-h-r-service-data-types.html"><span>get</span><wbr></wbr><span>Available</span><wbr></wbr><span>HRService</span><wbr></wbr><span>Data</span><wbr></wbr><span><span>Types</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-504804886%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-available-h-r-service-data-types.html"><span class="token function">getAvailableHRServiceDataTypes</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../-polar-ble-api/-polar-device-data-type/index.html">PolarBleApi.PolarDeviceDataType</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Find out if the HR service is available in the device. Use this API method in a case where the device does not support Polar Measurement Data service. In such a case using <a href="get-available-online-stream-data-types.html">getAvailableOnlineStreamDataTypes</a> will return error; use this method instead.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1048294340%2FFunctions%2F705174137" anchor-label="getAvailableOnlineStreamDataTypes" id="1048294340%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-available-online-stream-data-types.html"><span>get</span><wbr></wbr><span>Available</span><wbr></wbr><span>Online</span><wbr></wbr><span>Stream</span><wbr></wbr><span>Data</span><wbr></wbr><span><span>Types</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1048294340%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-available-online-stream-data-types.html"><span class="token function">getAvailableOnlineStreamDataTypes</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../-polar-ble-api/-polar-device-data-type/index.html">PolarBleApi.PolarDeviceDataType</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Get the data types available in this device for online streaming.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="341689725%2FFunctions%2F705174137" anchor-label="requestFullStreamSettings" id="341689725%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="request-full-stream-settings.html"><span>request</span><wbr></wbr><span>Full</span><wbr></wbr><span>Stream</span><wbr></wbr><span><span>Settings</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="341689725%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="request-full-stream-settings.html"><span class="token function">requestFullStreamSettings</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">feature<span class="token operator">: </span><a href="../-polar-ble-api/-polar-device-data-type/index.html">PolarBleApi.PolarDeviceDataType</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></div><div class="brief "><p class="paragraph">Request the settings available in the device. The request returns all capabilities of the requested streaming feature not limited by the current operation mode.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="124156814%2FFunctions%2F705174137" anchor-label="requestStreamSettings" id="124156814%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="request-stream-settings.html"><span>request</span><wbr></wbr><span>Stream</span><wbr></wbr><span><span>Settings</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="124156814%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="request-stream-settings.html"><span class="token function">requestStreamSettings</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">feature<span class="token operator">: </span><a href="../-polar-ble-api/-polar-device-data-type/index.html">PolarBleApi.PolarDeviceDataType</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></div><div class="brief "><p class="paragraph">Request the online stream settings available in current operation mode. This request shall be used before the stream is started to decide currently available settings. The available settings depend on the state of the device. For example, if any stream(s) or optical heart rate measurement is already enabled, then the device may limit the offer of possible settings for other stream feature.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1204827551%2FFunctions%2F705174137" anchor-label="startAccStreaming" id="1204827551%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-acc-streaming.html"><span>start</span><wbr></wbr><span>Acc</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1204827551%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="start-acc-streaming.html"><span class="token function">startAccStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">sensorSetting<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-accelerometer-data/index.html">PolarAccelerometerData</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Start ACC (Accelerometer) stream. ACC stream is stopped if the connection is closed, error occurs or flow collection is cancelled.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-148387161%2FFunctions%2F705174137" anchor-label="startEcgStreaming" id="-148387161%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-ecg-streaming.html"><span>start</span><wbr></wbr><span>Ecg</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-148387161%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="start-ecg-streaming.html"><span class="token function">startEcgStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">sensorSetting<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-ecg-data/index.html">PolarEcgData</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Start the ECG (Electrocardiography) stream. ECG stream is stopped if the connection is closed, error occurs or flow collection is cancelled.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2116506361%2FFunctions%2F705174137" anchor-label="startGyroStreaming" id="2116506361%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-gyro-streaming.html"><span>start</span><wbr></wbr><span>Gyro</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2116506361%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="start-gyro-streaming.html"><span class="token function">startGyroStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">sensorSetting<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-gyro-data/index.html">PolarGyroData</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Start Gyro stream. Gyro stream is stopped if the connection is closed, error occurs during start or flow collection is cancelled.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1230765527%2FFunctions%2F705174137" anchor-label="startHrStreaming" id="-1230765527%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-hr-streaming.html"><span>start</span><wbr></wbr><span>Hr</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1230765527%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="start-hr-streaming.html"><span class="token function">startHrStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-hr-data/index.html">PolarHrData</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Start heart rate stream. Heart rate stream is stopped if the connection is closed, error occurs or flow collection is cancelled.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1692805761%2FFunctions%2F705174137" anchor-label="startLocationStreaming" id="-1692805761%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-location-streaming.html"><span>start</span><wbr></wbr><span>Location</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1692805761%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="start-location-streaming.html"><span class="token function">startLocationStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">sensorSetting<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-location-data/index.html">PolarLocationData</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Start Location data stream. Location stream is stopped if the connection is closed, error occurs during start or flow collection is cancelled. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-n-l-i-n-e_-s-t-r-e-a-m-i-n-g/index.html">FEATURE_POLAR_ONLINE_STREAMING</a>. Before starting the stream it is recommended to query the available settings using <a href="request-stream-settings.html">requestStreamSettings</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-628668818%2FFunctions%2F705174137" anchor-label="startMagnetometerStreaming" id="-628668818%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-magnetometer-streaming.html"><span>start</span><wbr></wbr><span>Magnetometer</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-628668818%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="start-magnetometer-streaming.html"><span class="token function">startMagnetometerStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">sensorSetting<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-magnetometer-data/index.html">PolarMagnetometerData</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Start magnetometer stream. Magnetometer stream is stopped if the connection is closed, error occurs or flow collection is cancelled.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-897971195%2FFunctions%2F705174137" anchor-label="startPpgStreaming" id="-897971195%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-ppg-streaming.html"><span>start</span><wbr></wbr><span>Ppg</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-897971195%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="start-ppg-streaming.html"><span class="token function">startPpgStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">sensorSetting<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-ppg-data/index.html">PolarPpgData</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Start optical sensor PPG (Photoplethysmography) stream. PPG stream is stopped if the connection is closed, error occurs or flow collection is cancelled.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1522205290%2FFunctions%2F705174137" anchor-label="startPpiStreaming" id="-1522205290%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-ppi-streaming.html"><span>start</span><wbr></wbr><span>Ppi</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1522205290%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="start-ppi-streaming.html"><span class="token function">startPpiStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-ppi-data/index.html">PolarPpiData</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Start PPI (Pulse to Pulse interval) stream. PPI stream is stopped if the connection is closed, error occurs or flow collection is cancelled. Notice that there is a delay before PPI data stream starts.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-684869617%2FFunctions%2F705174137" anchor-label="startPressureStreaming" id="-684869617%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-pressure-streaming.html"><span>start</span><wbr></wbr><span>Pressure</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-684869617%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="start-pressure-streaming.html"><span class="token function">startPressureStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">sensorSetting<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-pressure-data/index.html">PolarPressureData</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Start Pressure data stream. Pressure data stream is stopped if the connection is closed, error occurs during start or flow collection is cancelled. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-n-l-i-n-e_-s-t-r-e-a-m-i-n-g/index.html">FEATURE_POLAR_ONLINE_STREAMING</a>. Before starting the stream it is recommended to query the available settings using <a href="request-stream-settings.html">requestStreamSettings</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="932109909%2FFunctions%2F705174137" anchor-label="startSkinTemperatureStreaming" id="932109909%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-skin-temperature-streaming.html"><span>start</span><wbr></wbr><span>Skin</span><wbr></wbr><span>Temperature</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="932109909%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="start-skin-temperature-streaming.html"><span class="token function">startSkinTemperatureStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">sensorSetting<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-temperature-data/index.html">PolarTemperatureData</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Start Skin Temperature data stream. SkinTemperature stream is stopped if the connection is closed, error occurs during start or flow collection is cancelled. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-n-l-i-n-e_-s-t-r-e-a-m-i-n-g/index.html">FEATURE_POLAR_ONLINE_STREAMING</a>. Before starting the stream it is recommended to query the available settings using <a href="request-stream-settings.html">requestStreamSettings</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1990616786%2FFunctions%2F705174137" anchor-label="startTemperatureStreaming" id="1990616786%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-temperature-streaming.html"><span>start</span><wbr></wbr><span>Temperature</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1990616786%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="start-temperature-streaming.html"><span class="token function">startTemperatureStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">sensorSetting<span class="token operator">: </span><a href="../../com.polar.sdk.api.model/-polar-sensor-setting/index.html">PolarSensorSetting</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="kotlinx.coroutines.flow/Flow///PointingToDeclaration/">Flow</span><span class="token operator">&lt;</span><a href="../../com.polar.sdk.api.model/-polar-temperature-data/index.html">PolarTemperatureData</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Start Temperature data stream. Temperature stream is stopped if the connection is closed, error occurs during start or flow collection is cancelled. Requires feature <a href="../-polar-ble-api/-polar-ble-sdk-feature/-f-e-a-t-u-r-e_-p-o-l-a-r_-o-n-l-i-n-e_-s-t-r-e-a-m-i-n-g/index.html">FEATURE_POLAR_ONLINE_STREAMING</a>. Before starting the stream it is recommended to query the available settings using <a href="request-stream-settings.html">requestStreamSettings</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="287653361%2FFunctions%2F705174137" anchor-label="stopHrStreaming" id="287653361%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="stop-hr-streaming.html"><span>stop</span><wbr></wbr><span>Hr</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="287653361%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="stop-hr-streaming.html"><span class="token function">stopHrStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Stops heart rate stream.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-968970092%2FFunctions%2F705174137" anchor-label="stopStreaming" id="-968970092%2FFunctions%2F705174137" data-filterable-set=":library/sdkRelease"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library/sdkRelease" data-filterable-set=":library/sdkRelease">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="stop-streaming.html"><span>stop</span><wbr></wbr><span><span>Streaming</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-968970092%2FFunctions%2F705174137"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library/sdkRelease"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="stop-streaming.html"><span class="token function">stopStreaming</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identifier<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">type<span class="token operator">: </span><span data-unresolved-link="com.polar.androidcommunications.api.ble.model.gatt.client.pmd/PmdMeasurementType///PointingToDeclaration/">PmdMeasurementType</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
