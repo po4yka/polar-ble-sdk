@@ -2,7 +2,7 @@
 
 Official SDK for Polar sensors and watches on **Android** (minSdk 26) and **iOS** (14.0+). Build apps that connect via Bluetooth LE and stream real-time heart rate, ECG, accelerometer, PPG, and more from Polar devices.
 
-The SDK API uses [ReactiveX](http://reactivex.io) for asynchronous operations.
+The current SDK APIs use Kotlin Coroutines on Android and Swift Concurrency on iOS, with Combine only where Apple APIs still expose publishers.
 
 ---
 
@@ -93,24 +93,22 @@ android {
 }
 ```
 
-2. Add the JitPack repository to your repositories settings
+2. Add the SDK artifacts from the release artifact bundle. Current CI/release policy is artifact-only: release automation uploads Android AARs and does not claim Maven Central, JitPack, or any other external registry publication. Local AAR consumers need both `polar-ble-sdk.aar` and `polar-ble-sdk-shared.aar`.
 
 ```gradle
-   ...
-    repositories {
-        ...
-        maven { url 'https://jitpack.io' }
-        ...
+repositories {
+    flatDir {
+        dirs 'libs'
     }
 }
 ```
 
-3. Add the dependency to Polar BLE SDK library. Also you will need the dependencies to [Kotlin Coroutines](https://kotlinlang.org/docs/coroutines-overview.html) to use the Polar BLE SDK Library
+3. Copy `polar-ble-sdk.aar` and `polar-ble-sdk-shared.aar` into the directory named above, then add the SDK and [Kotlin Coroutines](https://kotlinlang.org/docs/coroutines-overview.html) dependencies.
 ```gradle
 dependencies {
-    implementation 'com.github.polarofficial:polar-ble-sdk:${sdk_version}'
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-rx3:1.10.2"
+    implementation files('libs/polar-ble-sdk.aar')
+    implementation files('libs/polar-ble-sdk-shared.aar')
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0"
 }
 ```
 
@@ -252,7 +250,7 @@ public override fun onDestroy() {
 }
 ```
 
-4.  Connect to a Polar device using  `api.connectToDevice(<DEVICE_ID>)` where <DEVICE_ID> is the deviceID printed to your sensor,  using  `api.autoConnectToDevice(-50, null, null).subscribe()`  to connect nearby device or  `api.searchForDevice()` to scan and then select the device
+4.  Connect to a Polar device using `api.connectToDevice(<DEVICE_ID>)` where `<DEVICE_ID>` is the device ID printed on your sensor, call the suspend function `api.autoConnectToDevice(-50, null, null)` from a coroutine to connect a nearby device, or collect `api.searchForDevice()` to scan and then select the device.
 
 
 
@@ -271,18 +269,19 @@ public override fun onDestroy() {
 - Swift 5.9+
 
 ### Dependencies
-*  [RxSwift 6.0](https://github.com/ReactiveX/RxSwift) or above
-*  [Swift Protobuf 1.18.0](https://github.com/apple/swift-protobuf) or above
+*  [Swift Protobuf](https://github.com/apple/swift-protobuf) 1.6.0 or above, up to the next major version
+*  [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) 0.9.20 or above, up to the next major version
+*  Swift Concurrency for async APIs and `AsyncThrowingStream`; Combine is used only where SDK APIs still expose `AnyPublisher`
 ### Installation
 #### Swift Package Manager
 Add PolarBleSdk as a dependency to your `Package.swift` manifest
 
 ```swift
 dependencies: [
-    .package(name: "PolarBleSdk", url: "https://github.com/polarofficial/polar-ble-sdk.git", .upToNextMajor(from: "7.0.1"))
+    .package(url: "https://github.com/polarofficial/polar-ble-sdk.git", from: "8.0.0")
 ]
 ```
-or alternatively use [XCode package manager](https://developer.apple.com/documentation/swift_packages/adding_package_dependencies_to_your_app) to add Swift package to your project.
+or alternatively use [Xcode package manager](https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app) to add Swift package to your project.
 
 Swift Package Manager is the supported Apple package path. Shared KMP Apple consumption uses `PolarBleSdkShared.xcframework` as an SPM binary target when a release URL/checksum or local generated XCFramework is available; clean checkouts keep the Swift fallback behind `#if canImport(PolarBleSdkShared)`. CocoaPods is no longer supported; use SPM for new integrations and migrate existing Podfile-based integrations to the Swift package.
 
@@ -302,7 +301,6 @@ This is not required if you are using automatic connection.
 1. Import needed packages.
 ```swift
 import PolarBleSdk
-import RxSwift
 ```
 
 2. Load the default api implementation and implement desired protocols.
@@ -317,7 +315,6 @@ class MyController: UIViewController,
     // e.g. [.feature_hr, .feature_battery_info]
     var api = PolarBleApiDefaultImpl.polarImplementation(DispatchQueue.main, 
                                                           features: [.feature_hr])
-    let disposeBag = DisposeBag()
     var deviceId = "0A3BA92B" // TODO replace this with your device id
 
     override func viewDidLoad() {
@@ -352,14 +349,17 @@ class MyController: UIViewController,
         print("Feature \(feature) is ready.")
         if feature == .feature_hr {
             // Start HR streaming when feature is ready
-            api.startHrStreaming(identifier)
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { hrData in
-                    for sample in hrData.samples {
-                        print("HR: \(sample.hr) rrsMs: \(sample.rrsMs)")
+            Task {
+                do {
+                    for try await hrData in api.startHrStreaming(identifier) {
+                        for sample in hrData.samples {
+                            print("HR: \(sample.hr) rrsMs: \(sample.rrsMs)")
+                        }
                     }
-                })
-                .disposed(by: disposeBag)
+                } catch {
+                    print("HR stream failed: \(error)")
+                }
+            }
         }
     }
     
@@ -374,7 +374,7 @@ class MyController: UIViewController,
 }
 ```
 
-3. Connect to a Polar device using  `api.connectToDevice(id)` ,  `api.startAutoConnectToDevice(_ rssi: Int, service: CBUUID?, polarDeviceType: String?)` to connect nearby device or  `api.searchForDevice()` to scan and select the device
+3. Connect to a Polar device using `try api.connectToDevice(id)`, call `try await api.startAutoConnectToDevice(_ rssi: Int, service: CBUUID?, polarDeviceType: String?)` to connect a nearby device, or iterate `api.searchForDevice()` to scan and select the device.
 
 **Full example:** [examples/example-ios](examples/example-ios)
 
@@ -405,6 +405,8 @@ class MyController: UIViewController,
 - [KMP Shared Artifact Consumption](./documentation/KmpSharedArtifactConsumption.md) – Android AAR, SwiftPM/XCFramework, and rollback packaging contract
 - [KMP Modern Stack Audit](./documentation/KmpModernStackAudit.md) – Current source of truth for final shared ownership, platform-owned boundaries, packaging ownership, and green closeout validation
 - [CI/CD](./documentation/CiCd.md) – GitHub Actions validation, artifact-only release builds, and failure triage
+
+RxJava and RxSwift references in these migration guides describe historical migration paths for older SDK versions. They are not current SDK dependency requirements.
 
 [↑ Back to contents](#contents)
 
