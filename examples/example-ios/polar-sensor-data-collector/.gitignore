@@ -35,10 +35,6 @@ DerivedData/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 
-### CocoaPods ###
-Podfile.lock
-/Pods/
-
 ## Private keys for TestFlight
 private_keys/
 

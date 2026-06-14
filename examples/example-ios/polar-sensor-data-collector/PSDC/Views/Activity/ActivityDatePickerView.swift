@@ -19,10 +19,10 @@ struct ActivityDatePickerView: View {
             return dates
         } set: { selectedDates in
 
-            startDate = selectedDates.min()
+            startDate = boundaryDateComponents(in: selectedDates, by: <)
             
             if (selectedDates.count > 1) {
-                endDate = selectedDates.max()
+                endDate = boundaryDateComponents(in: selectedDates, by: >)
             } else {
                 endDate = startDate
             }
@@ -50,8 +50,8 @@ struct ActivityDatePickerView: View {
                             if (!dates.isEmpty) {
                                 var calendar = Calendar.current
                                 calendar.timeZone = TimeZone(abbreviation: "UTC")!
-                                let startDate = calendar.date(from: dates.min()!)!
-                                let endDate = calendar.date(from: dates.max()!)!
+                                let startDate = calendar.date(from: boundaryDateComponents(in: dates, by: <)!)!
+                                let endDate = calendar.date(from: boundaryDateComponents(in: dates, by: >)!)!
                                 bleSdkManager.activityRecordingData.startDate = startDate
                                 bleSdkManager.activityRecordingData.endDate = endDate
                                 showActivityView = true
@@ -121,14 +121,28 @@ struct ActivityDatePickerView: View {
         var currentDate = startDate
         dates = []
         dates.insert(startDate)
-        while(currentDate < endDate) {
-            let date: Date = calendar.date(from: currentDate)!
+        while let current = calendar.date(from: currentDate),
+              let end = calendar.date(from: endDate),
+              current < end {
+            let date: Date = current
             if let dateOfDay = calendar.date(byAdding: .day, value: 1, to: date) {
                 currentDate = calendar.dateComponents([.year, .month, .day], from: dateOfDay)
                 let components = calendar.dateComponents([.year, .month, .day], from: dateOfDay)
                 dates.insert(components)
             }
         }
+    }
+
+    private func boundaryDateComponents(in dates: Set<DateComponents>, by areInIncreasingOrder: (Date, Date) -> Bool) -> DateComponents? {
+        let calendar = Calendar.current
+        return dates
+            .compactMap { components -> (DateComponents, Date)? in
+                guard let date = calendar.date(from: components) else { return nil }
+                return (components, date)
+            }
+            .sorted { lhs, rhs in areInIncreasingOrder(lhs.1, rhs.1) }
+            .first?
+            .0
     }
 }
 
@@ -137,4 +151,3 @@ extension Array {
         return (self.isEmpty ? self.first as! Int : self.count - 1) / 2
     }
 }
-

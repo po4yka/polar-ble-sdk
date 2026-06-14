@@ -261,58 +261,51 @@ class ViewController: UIViewController,
         }
     }
     
-    // TODO Fix this function as this does not get compiled with the latest changes in PolarBleApiDefaultImpl.
-    /*func accFeatureReady(_ identifier: String) {
-            if accSwitch.isOn {
-                _ = api.requestStreamSettings(identifier, feature: PolarDeviceDataType.acc)
-                    .asObservable()
-                    .flatMap({ (settings) -> Observable<PolarSensorSetting> in
-                        if self.accSelected {
-                            return self.showSettingsSelection("ACC", settings: settings.settings[PolarSensorSetting.SettingType.sampleRate] ?? Set()).asObservable().map({ (value) -> PolarSensorSetting in
-                                var c = settings.settings.mapValues({ (set) -> UInt32 in
-                                    return set.max() ?? 0
-                                })
-                                c[PolarSensorSetting.SettingType.sampleRate] = UInt32(value)
-                                return PolarSensorSetting(c)
-                            })
-                        }
-                        return Observable.just(settings.maxSettings())
-                    })
-                    .flatMap({ (selected) -> Observable<PolarAccData> in
-                        self.collector.startACCStream(self.selectedDevice!.name)
-                        return self.api.startAccStreaming(identifier, settings: selected)
-                    })
-                    .observe(on: MainScheduler.instance)
-                    .subscribe{ e in
-                        switch e {
-                        case .next(let data):
-                            if self.previousAccData != nil {
-                                let delta = (data.timeStamp - self.previousAccData!.timeStamp) / UInt64(data.samples.count)
-                                var base = self.previousAccData!.timeStamp - (UInt64(self.previousAccData!.samples.count-1)*delta)
-                                self.previousAccData!.samples.forEach({ (arg0) in
-                                    let (x, y, z) = arg0
-                                    self.collector.streamAcc(base, x: x, y: y, z: z)
-                                    base += delta
-                                })
+    func accFeatureReady(_ identifier: String) {
+        guard accSwitch.isOn else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let settings = try await api.requestStreamSettings(identifier, feature: PolarDeviceDataType.acc)
+                let selected: PolarSensorSetting
+                if accSelected {
+                    let sampleRates = settings.settings[PolarSensorSetting.SettingType.sampleRate] ?? Set()
+                    let selectedSampleRate = await showSettingsSelection("ACC", settings: sampleRates)
+                    var maxSettings = settings.settings.mapValues { values in values.max() ?? 0 }
+                    maxSettings[PolarSensorSetting.SettingType.sampleRate] = UInt32(selectedSampleRate)
+                    selected = PolarSensorSetting(maxSettings)
+                } else {
+                    selected = settings.maxSettings()
+                }
+                await MainActor.run { collector.startACCStream(selectedDevice!.name) }
+                for try await data in api.startAccStreaming(identifier, settings: selected) {
+                    await MainActor.run {
+                        if let previousAccData {
+                            let delta = (data.timeStamp - previousAccData.timeStamp) / UInt64(data.samples.count)
+                            var base = previousAccData.timeStamp - (UInt64(previousAccData.samples.count - 1) * delta)
+                            previousAccData.samples.forEach { sample in
+                                collector.streamAcc(base, x: sample.x, y: sample.y, z: sample.z)
+                                base += delta
                             }
-                            self.previousAccData = data
-                            data.samples.forEach({ (arg0) in
-                                let (x, y, z) = arg0
-                                self.accX.text = "\(x)"
-                                self.accY.text = "\(y)"
-                                self.accZ.text = "\(z)"
-                            })
-                        case .error(let err):
-                            NSLog("ACC error: \(err)")
-                            self.accX.text = "-"
-                            self.accY.text = "-"
-                            self.accZ.text = "-"
-                        case .completed:
-                            break
+                        }
+                        previousAccData = data
+                        data.samples.forEach { sample in
+                            accX.text = "\(sample.x)"
+                            accY.text = "\(sample.y)"
+                            accZ.text = "\(sample.z)"
                         }
                     }
+                }
+            } catch {
+                print("ACC error: \(error)")
+                await MainActor.run {
+                    self.accX.text = "-"
+                    self.accY.text = "-"
+                    self.accZ.text = "-"
+                }
             }
-        } */
+        }
+    }
     
     func calculateBaseAndDelta(_ timeStamp0: UInt64, timeStamp1: UInt64, count0: UInt64, count1: UInt64) -> (base :UInt64, delta: UInt64) {
         let delta = (timeStamp1 - timeStamp0) / UInt64(count1)
@@ -320,57 +313,53 @@ class ViewController: UIViewController,
         return (base,delta)
     }
     
-    // TODO Fix this function as this does not get compiled with the latest changes in PolarBleApiDefaultImpl.
-    /* func ohrPPGFeatureReady(_ identifier: String) {
-        if ppgSwitch.isOn {
-            _ = api.requestStreamSettings(identifier, feature: PolarDeviceDataType.ppg)
-                .asObservable()
-                .flatMap({ (settings) -> Observable<PolarSensorSetting> in
-                    if self.ppgSelected {
-                        return self.showSettingsSelection("PPG", settings: settings.settings[PolarSensorSetting.SettingType.sampleRate] ?? Set()).asObservable().map({ (value) -> PolarSensorSetting in
-                            var c = settings.settings.mapValues({ (set) -> UInt32 in
-                                return set.max() ?? 0
-                            })
-                            c[PolarSensorSetting.SettingType.sampleRate] = UInt32(value)
-                            return PolarSensorSetting(c)
-                        })
-                    }
-                    return Observable.just(settings.maxSettings())
-                })
-                .flatMap({ (selected) -> Observable<PolarPpgData> in
-                    self.collector.startPPGStream(self.selectedDevice!.name)
-                    return self.api.startPpgStreaming(identifier, settings: selected)
-                })
-                .observe(on: MainScheduler.instance)
-                .subscribe{ e in
-                    switch e {
-                    case .next(let data):
-                        if self.previousPpgData != nil {
-                            let delta = (data.samples.first!.timeStamp - ((self.previousPpgData?.samples.first!.timeStamp)!)) / UInt64(data.samples.count)
-                            var base = self.previousPpgData!.samples.first!.timeStamp - (UInt64(self.previousPpgData!.samples.count-1)*delta)
-                            self.previousPpgData!.samples.forEach({ (arg0) in
-                                let (ppg0, ppg1, ppg2, ambient) = arg0
-                                self.collector.streamPpg(base, ppg0: ppg0, ppg1: ppg1, ppg2: ppg2, ambient: ambient)
+    func ohrPPGFeatureReady(_ identifier: String) {
+        guard ppgSwitch.isOn else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let settings = try await api.requestStreamSettings(identifier, feature: PolarDeviceDataType.ppg)
+                let selected: PolarSensorSetting
+                if ppgSelected {
+                    let sampleRates = settings.settings[PolarSensorSetting.SettingType.sampleRate] ?? Set()
+                    let selectedSampleRate = await showSettingsSelection("PPG", settings: sampleRates)
+                    var maxSettings = settings.settings.mapValues { values in values.max() ?? 0 }
+                    maxSettings[PolarSensorSetting.SettingType.sampleRate] = UInt32(selectedSampleRate)
+                    selected = PolarSensorSetting(maxSettings)
+                } else {
+                    selected = settings.maxSettings()
+                }
+                await MainActor.run { collector.startPPGStream(selectedDevice!.name) }
+                for try await data in api.startPpgStreaming(identifier, settings: selected) {
+                    await MainActor.run {
+                        if let previousPpgData,
+                           let firstPreviousSample = previousPpgData.samples.first,
+                           let firstCurrentSample = data.samples.first {
+                            let delta = (firstCurrentSample.timeStamp - firstPreviousSample.timeStamp) / UInt64(data.samples.count)
+                            var base = firstPreviousSample.timeStamp - (UInt64(previousPpgData.samples.count - 1) * delta)
+                            previousPpgData.samples.forEach { sample in
+                                collector.streamPpg(base, ppg0: sample.ppg0, ppg1: sample.ppg1, ppg2: sample.ppg2, ambient: sample.ambient)
                                 base += delta
-                            })
+                            }
                         }
-                        self.previousPpgData = data
-                        for item in data.samples {
-                            self.ppg0.text = "\(item.ppg0)"
-                            self.ppg1.text = "\(item.ppg1)"
-                            self.ppg2.text = "\(item.ppg2)"
+                        previousPpgData = data
+                        data.samples.forEach { sample in
+                            ppg0.text = "\(sample.ppg0)"
+                            ppg1.text = "\(sample.ppg1)"
+                            ppg2.text = "\(sample.ppg2)"
                         }
-                    case .error(let err):
-                        NSLog("PPG error: \(err)")
-                        self.ppg0.text = "-"
-                        self.ppg1.text = "-"
-                        self.ppg2.text = "-"
-                    case .completed:
-                        break
                     }
                 }
+            } catch {
+                print("PPG error: \(error)")
+                await MainActor.run {
+                    self.ppg0.text = "-"
+                    self.ppg1.text = "-"
+                    self.ppg2.text = "-"
+                }
+            }
         }
-    } */
+    }
     
     func ohrPPIFeatureReady(_ identifier: String) {
         if ppiSwitch.isOn {

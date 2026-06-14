@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D00D00000000000000000101 /* PolarBleSdk in Frameworks */ = {isa = PBXBuildFile; productRef = D00D00000000000000000102 /* PolarBleSdk */; };
 		6C2EDE8922B9FE370031AA17 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6C2EDE8822B9FE370031AA17 /* Assets.xcassets */; };
 		6C2EDE8C22B9FE370031AA17 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6C2EDE8A22B9FE370031AA17 /* LaunchScreen.storyboard */; };
 		8415B05A2C2C38FB00AA4C9B /* FirmwareUpdateFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8415B0592C2C38FB00AA4C9B /* FirmwareUpdateFeature.swift */; };
@@ -44,7 +45,6 @@
 		95B4F1032CEB7A880010E2B6 /* CheckFirmwareUpdateFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B4F1022CEB7A7C0010E2B6 /* CheckFirmwareUpdateFeature.swift */; };
 		95BA028D2D64B1030037F44E /* FilePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95BA028C2D64B1030037F44E /* FilePicker.swift */; };
 		95EA2BA22D40E7B200657DE5 /* SleepRecordingFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95EA2BA12D40E7A800657DE5 /* SleepRecordingFeature.swift */; };
-		A351DE3E496C95E54D00DBF8 /* Pods_PSDC.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E0F83EE20F06C3454E78C75 /* Pods_PSDC.framework */; };
 		AA74C2212BDA377D005E0908 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA74C2202BDA377D005E0908 /* ContentView.swift */; };
 		AA74C2232BDA39D6005E0908 /* PolarBleSdkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA74C2222BDA39D6005E0908 /* PolarBleSdkManager.swift */; };
 		AA74C2262BDA3A49005E0908 /* DeviceConnectionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA74C2252BDA3A49005E0908 /* DeviceConnectionState.swift */; };
@@ -114,13 +114,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		615B73AD746D631828334569 /* Pods-PSDC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PSDC.debug.xcconfig"; path = "Target Support Files/Pods-PSDC/Pods-PSDC.debug.xcconfig"; sourceTree = "<group>"; };
 		6C2EDE7E22B9FE360031AA17 /* PSDC.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PSDC.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6C2EDE8822B9FE370031AA17 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6C2EDE8B22B9FE370031AA17 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		6C2EDE8D22B9FE370031AA17 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		6E0F83EE20F06C3454E78C75 /* Pods_PSDC.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PSDC.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		6E1F146A9C2FB370434B433E /* Pods-PSDC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PSDC.release.xcconfig"; path = "Target Support Files/Pods-PSDC/Pods-PSDC.release.xcconfig"; sourceTree = "<group>"; };
 		8415B0592C2C38FB00AA4C9B /* FirmwareUpdateFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirmwareUpdateFeature.swift; sourceTree = "<group>"; };
 		841802B32F6A8600007A1D2E /* FileTransferFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTransferFeature.swift; sourceTree = "<group>"; };
 		841802B52F6AD678007A1D2E /* ActivityDataFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDataFeature.swift; sourceTree = "<group>"; };
@@ -158,8 +155,6 @@
 		95B4F1022CEB7A7C0010E2B6 /* CheckFirmwareUpdateFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckFirmwareUpdateFeature.swift; sourceTree = "<group>"; };
 		95BA028C2D64B1030037F44E /* FilePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePicker.swift; sourceTree = "<group>"; };
 		95EA2BA12D40E7A800657DE5 /* SleepRecordingFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepRecordingFeature.swift; sourceTree = "<group>"; };
-		A588B0DB25B81B7800F6D7A3 /* PolarBleSdk.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = PolarBleSdk.xcframework; path = dependencies/PolarBleSdk.xcframework; sourceTree = "<group>"; };
-		A588B0DE25B81B7D00F6D7A3 /* RxSwift.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = RxSwift.xcframework; path = dependencies/RxSwift.xcframework; sourceTree = "<group>"; };
 		AA74C2202BDA377D005E0908 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA74C2222BDA39D6005E0908 /* PolarBleSdkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolarBleSdkManager.swift; sourceTree = "<group>"; };
 		AA74C2252BDA3A49005E0908 /* DeviceConnectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceConnectionState.swift; sourceTree = "<group>"; };
@@ -191,7 +186,6 @@
 		AA74C25F2BDA3FD5005E0908 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AA74C2622BDA4FBA005E0908 /* SensorDatalogSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorDatalogSettingsView.swift; sourceTree = "<group>"; };
 		AA74C2672BDA7215005E0908 /* H10ExerciseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = H10ExerciseView.swift; sourceTree = "<group>"; };
-		AA7C73292BC4F871006C0645 /* Alamofire.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Alamofire.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA8047792EDEB21C00B66B10 /* TrainingSessionDatePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingSessionDatePickerView.swift; sourceTree = "<group>"; };
 		AAA0FE002BE9EF22005368A7 /* HrRecordingFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HrRecordingFeature.swift; sourceTree = "<group>"; };
 		AAA0FE022BEA354A005368A7 /* EcgRecordingFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EcgRecordingFeature.swift; sourceTree = "<group>"; };
@@ -220,7 +214,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			A351DE3E496C95E54D00DBF8 /* Pods_PSDC.framework in Frameworks */,
+				D00D00000000000000000101 /* PolarBleSdk in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -233,7 +227,6 @@
 				6C2EDE8022B9FE360031AA17 /* PSDC */,
 				6C2EDE7F22B9FE360031AA17 /* Products */,
 				6C2EDE9A22BA42070031AA17 /* Frameworks */,
-				6F9B5877CFCD0DFD62DE31CA /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -265,21 +258,8 @@
 		6C2EDE9A22BA42070031AA17 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				AA7C73292BC4F871006C0645 /* Alamofire.framework */,
-				A588B0DE25B81B7D00F6D7A3 /* RxSwift.xcframework */,
-				A588B0DB25B81B7800F6D7A3 /* PolarBleSdk.xcframework */,
-			6E0F83EE20F06C3454E78C75 /* Pods_PSDC.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		6F9B5877CFCD0DFD62DE31CA /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-			615B73AD746D631828334569 /* Pods-PSDC.debug.xcconfig */,
-			6E1F146A9C2FB370434B433E /* Pods-PSDC.release.xcconfig */,
-			);
-			path = Pods;
 			sourceTree = "<group>";
 		};
 		843A2B8A2F0E767F00F3B2EC /* Graph */ = {
@@ -507,13 +487,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6C2EDE9022B9FE370031AA17 /* Build configuration list for PBXNativeTarget "PSDC" */;
 			buildPhases = (
-			D03D8BA52416EABEF41014AE /* [CP] Check Pods Manifest.lock */,
-				9517B91A2E3A03E10079D6FA /* ShellScript */,
+				9517B91A2E3A03E10079D6FA /* Update Git Metadata */,
 				6C2EDE7A22B9FE360031AA17 /* Sources */,
 				6C2EDE7B22B9FE360031AA17 /* Frameworks */,
 				6C2EDE7C22B9FE360031AA17 /* Resources */,
 				A5560E23256400EF00C3F75D /* Embed Frameworks */,
-			632620F7664A9193CD73706E /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -522,6 +500,9 @@
 			name = PSDC;
 			productName = PSDC;
 			productReference = 6C2EDE7E22B9FE360031AA17 /* PSDC.app */;
+			packageProductDependencies = (
+				D00D00000000000000000102 /* PolarBleSdk */,
+			);
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -554,6 +535,9 @@
 				Base,
 			);
 			mainGroup = 6C2EDE7522B9FE350031AA17;
+			packageReferences = (
+				D00D00000000000000000103 /* XCLocalSwiftPackageReference "../../.." */,
+			);
 			productRefGroup = 6C2EDE7F22B9FE360031AA17 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -577,25 +561,8 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		632620F7664A9193CD73706E /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-PSDC/Pods-PSDC-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-PSDC/Pods-PSDC-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-PSDC/Pods-PSDC-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 
-		9517B91A2E3A03E10079D6FA /* ShellScript */ = {
+		9517B91A2E3A03E10079D6FA /* Update Git Metadata */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -604,35 +571,51 @@
 			);
 			inputPaths = (
 			);
+			name = "Update Git Metadata";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "# Get path to SDK using Podfile:\n\nPODFILE=\"Podfile\"\nPOD_NAME=\"PolarBleSdk\"\n\n# Extract non-comment lines containing the pod declaration\nLINE=$(grep -E \"^[^#]*pod ['\\\"]$POD_NAME['\\\"]\" \"$PODFILE\")\n\nif [[ -z \"$LINE\" ]]; then\n  echo \"Build run script phase error\"\n  echo \"Pod '$POD_NAME' not found in $PODFILE\"\n  exit 1\nfi\n\n# Extract the path using regex\n\nPATH=$(echo \"$LINE\" | grep -oE \":path\\s*=>\\s*['\\\"][^'\\\"]+['\\\"]|:path:\\s*['\\\"][^'\\\"]+['\\\"]\" | grep -oE \"['\\\"][^'\\\"]+['\\\"]\" | tr -d \"'\\\"\")\n\nPATH=$(eval echo \"$PATH\") # eval maybe unsafe?\n\nif [[ -n \"$PATH\" ]]; then\n  echo \"Path for pod '$POD_NAME': $PATH\"\nelse\n  echo \"No path found for pod '$POD_NAME'\"\nfi\n\npushd \"${PATH}\"\n\n# Get local git commit hash and branch for local PolarBleSDK\nsdk_git_commit=$(/usr/bin/git log -1 --format=\"%h\")\nsdk_branch=$(/usr/bin/git rev-parse --abbrev-ref HEAD)\n# Get locally modified file list for SDK:\nsdk_local_modifications=$(/usr/bin/git status --porcelain | /usr/bin/awk '/^ M/ {print $2}')\n\npopd\n\n# Get local git commit hash and branch for PSDC app\napp_git_commit=$(/usr/bin/git log -1 --format=\"%h\")\napp_branch=$(/usr/bin/git rev-parse --abbrev-ref HEAD)\n\necho \"app git commit/branch ${app_git_commit}/${app_branch}\"\necho \"sdk git commit/branch ${sdk_git_commit}/${sdk_branch}\"\n\n# Get locally modified file list for PSDC:\napp_local_modifications=$(/usr/bin/git status --porcelain | /usr/bin/awk '/^ M/ {print $2}')\n\ninfo_plist=\"${SRCROOT}/PSDC/Info.plist\"\n\n/usr/libexec/PlistBuddy -c \"Add :APP_GIT_COMMIT string '${app_git_commit}'\" \"${info_plist}\" || \\\n/usr/libexec/PlistBuddy -c \"Set :APP_GIT_COMMIT '${app_git_commit}'\" \"${info_plist}\"\n\n/usr/libexec/PlistBuddy -c \"Add :APP_GIT_BRANCH string '${app_branch}'\" \"${info_plist}\" || \\\n/usr/libexec/PlistBuddy -c \"Set :APP_GIT_BRANCH '${app_branch}'\" \"${info_plist}\"\n\n/usr/libexec/PlistBuddy -c \"Add :SDK_GIT_COMMIT string '${sdk_git_commit}'\" \"${info_plist}\" || \\\n/usr/libexec/PlistBuddy -c \"Set :SDK_GIT_COMMIT '${sdk_git_commit}'\" \"${info_plist}\"\n\n/usr/libexec/PlistBuddy -c \"Add :SDK_GIT_BRANCH string '${sdk_branch}'\" \"${info_plist}\" || \\\n/usr/libexec/PlistBuddy -c \"Set :SDK_GIT_BRANCH '${sdk_branch}'\" \"${info_plist}\"\n\n\n/usr/libexec/PlistBuddy -c \"Add :GIT_APP_LOCALLY_MODIFIED string '${app_local_modifications}'\" \"${info_plist}\" || \\\n/usr/libexec/PlistBuddy -c \"Set :GIT_APP_LOCALLY_MODIFIED  '${app_local_modifications}'\" \"${info_plist}\"\n\n/usr/libexec/PlistBuddy -c \"Add :GIT_SDK_LOCALLY_MODIFIED string '${sdk_local_modifications}'\" \"${info_plist}\" || \\\n/usr/libexec/PlistBuddy -c \"Set :GIT_SDK_LOCALLY_MODIFIED  '${sdk_local_modifications}'\" \"${info_plist}\"\n\n\n";
-		};
-		D03D8BA52416EABEF41014AE /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-PSDC-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
+			shellScript = "sdk_root=\"${SRCROOT}/../../..\"
+
+# Get local git commit hash and branch for local PolarBleSDK
+sdk_git_commit=$(/usr/bin/git -C \"${sdk_root}\" log -1 --format=\"%h\")
+sdk_branch=$(/usr/bin/git -C \"${sdk_root}\" rev-parse --abbrev-ref HEAD)
+# Get locally modified file list for SDK:
+sdk_local_modifications=$(/usr/bin/git -C \"${sdk_root}\" status --porcelain | /usr/bin/awk '/^ M/ {print $2}')
+
+# Get local git commit hash and branch for PSDC app
+app_git_commit=$(/usr/bin/git -C \"${SRCROOT}\" log -1 --format=\"%h\")
+app_branch=$(/usr/bin/git -C \"${SRCROOT}\" rev-parse --abbrev-ref HEAD)
+
+echo \"app git commit/branch ${app_git_commit}/${app_branch}\"
+echo \"sdk git commit/branch ${sdk_git_commit}/${sdk_branch}\"
+
+# Get locally modified file list for PSDC:
+app_local_modifications=$(/usr/bin/git -C \"${SRCROOT}\" status --porcelain | /usr/bin/awk '/^ M/ {print $2}')
+
+info_plist=\"${SRCROOT}/PSDC/Info.plist\"
+
+/usr/libexec/PlistBuddy -c \"Add :APP_GIT_COMMIT string '${app_git_commit}'\" \"${info_plist}\" || \
+/usr/libexec/PlistBuddy -c \"Set :APP_GIT_COMMIT '${app_git_commit}'\" \"${info_plist}\"
+
+/usr/libexec/PlistBuddy -c \"Add :APP_GIT_BRANCH string '${app_branch}'\" \"${info_plist}\" || \
+/usr/libexec/PlistBuddy -c \"Set :APP_GIT_BRANCH '${app_branch}'\" \"${info_plist}\"
+
+/usr/libexec/PlistBuddy -c \"Add :SDK_GIT_COMMIT string '${sdk_git_commit}'\" \"${info_plist}\" || \
+/usr/libexec/PlistBuddy -c \"Set :SDK_GIT_COMMIT '${sdk_git_commit}'\" \"${info_plist}\"
+
+/usr/libexec/PlistBuddy -c \"Add :SDK_GIT_BRANCH string '${sdk_branch}'\" \"${info_plist}\" || \
+/usr/libexec/PlistBuddy -c \"Set :SDK_GIT_BRANCH '${sdk_branch}'\" \"${info_plist}\"
+
+/usr/libexec/PlistBuddy -c \"Add :GIT_APP_LOCALLY_MODIFIED string '${app_local_modifications}'\" \"${info_plist}\" || \
+/usr/libexec/PlistBuddy -c \"Set :GIT_APP_LOCALLY_MODIFIED '${app_local_modifications}'\" \"${info_plist}\"
+
+/usr/libexec/PlistBuddy -c \"Add :GIT_SDK_LOCALLY_MODIFIED string '${sdk_local_modifications}'\" \"${info_plist}\" || \
+/usr/libexec/PlistBuddy -c \"Set :GIT_SDK_LOCALLY_MODIFIED '${sdk_local_modifications}'\" \"${info_plist}\"
+";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -750,6 +733,20 @@
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		D00D00000000000000000103 /* XCLocalSwiftPackageReference "../../.." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D00D00000000000000000102 /* PolarBleSdk */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PolarBleSdk;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		6C2EDE8E22B9FE370031AA17 /* Debug */ = {
@@ -878,7 +875,6 @@
 		};
 		6C2EDE9122B9FE370031AA17 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 615B73AD746D631828334569 /* Pods-PSDC.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PSDC/PSDC.entitlements;
@@ -912,7 +908,6 @@
 		};
 		6C2EDE9222B9FE370031AA17 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 6E1F146A9C2FB370434B433E /* Pods-PSDC.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PSDC/PSDC.entitlements;
