@@ -39,10 +39,8 @@ import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabil
 import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtility.Companion.isRecordingSupported
 import com.polar.androidcommunications.api.ble.model.polar.BlePolarDeviceCapabilitiesUtility.FileSystemType
 import com.polar.androidcommunications.enpoints.ble.bluedroid.host.BDDeviceListenerImpl
-import com.polar.androidcommunications.http.client.HttpResponseCodes
 import com.polar.androidcommunications.http.client.RetrofitClient
 import com.polar.androidcommunications.http.fwu.FirmwareUpdateApi
-import com.polar.androidcommunications.http.fwu.FirmwareUpdateRequest
 import com.polar.sdk.api.model.PolarExerciseSession
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.PolarBleApiCallbackProvider
@@ -2414,7 +2412,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     private suspend fun checkFirmwareUrlAvailabilityForUpdate(client: BlePsFtpClient, identifier: String): Triple<String?, String?, FirmwareUpdateStatus> {
         var result = checkFirmwareUrlAvailability(client, identifier)
         for (delayMillis in PolarRuntimePlannerAdapter.firmwareRetryDelaysMillis(maxRetries = 2)) {
-            if (!isRetryableFirmwareAvailabilityFailure(result.third)) {
+            if (!PolarFirmwareUpdateUtils.isRetryableFirmwareAvailabilityFailure(result.third)) {
                 return result
             }
             firmwareRetryDelay(delayMillis)
@@ -2423,62 +2421,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         return result
     }
 
-    private fun isRetryableFirmwareAvailabilityFailure(status: FirmwareUpdateStatus): Boolean {
-        if (status !is FirmwareUpdateStatus.FwUpdateFailed) {
-            return false
-        }
-        return PolarRuntimePlannerAdapter.firmwareAvailabilityFailureIsRetryable(status.details)
-    }
-
     private suspend fun checkFirmwareUrlAvailability(client: BlePsFtpClient, identifier: String): Triple<String?, String?, FirmwareUpdateStatus> {
-        val deviceInfo = PolarFirmwareUpdateUtils.readDeviceFirmwareInfo(client, identifier)
-        val firmwareUpdateApi = firmwareUpdateApiFactory()
-        val request = FirmwareUpdateRequest(
-            clientId = "polar-sensor-data-collector-android",
-            uuid = PolarDeviceUuid.fromDeviceId(identifier),
-            firmwareVersion = deviceInfo.deviceFwVersion,
-            hardwareCode = deviceInfo.deviceHardwareCode
-        )
-        val response = firmwareUpdateApi.checkFirmwareUpdate(request)
-        return when (response.code()) {
-            HttpResponseCodes.OK -> {
-                val firmwareUpdateResponse = response.body()
-                BleLogger.d(TAG, "Received firmware update response: $firmwareUpdateResponse")
-                if (firmwareUpdateResponse != null &&
-                    PolarRuntimePlannerAdapter.firmwareUpdateIsAvailable(deviceInfo.deviceFwVersion, firmwareUpdateResponse.version, firmwareUpdateResponse.fileUrl)) {
-                    val availablePlan = PolarRuntimePlannerAdapter.planFirmwareCheckUpdateAvailableWorkflow()
-                    require(availablePlan.statuses.last() == "checkFwUpdateAvailable")
-                    Triple(firmwareUpdateResponse.version, firmwareUpdateResponse.fileUrl, FirmwareUpdateStatus.FetchingFwUpdatePackage("Firmware available, fetching"))
-                } else {
-                    val notAvailablePlan = PolarRuntimePlannerAdapter.planFirmwareCheckUpdateNotAvailableWorkflow()
-                    require(notAvailablePlan.statuses.last() == "checkFwUpdateNotAvailable")
-                    Triple(null, null, FirmwareUpdateStatus.FwUpdateNotAvailable("No fw update available, device firmware version ${deviceInfo.deviceFwVersion}"))
-                }
-            }
-            HttpResponseCodes.NO_CONTENT -> {
-                val notAvailablePlan = PolarRuntimePlannerAdapter.planFirmwareCheckUpdateNotAvailableWorkflow()
-                require(notAvailablePlan.statuses.last() == "checkFwUpdateNotAvailable")
-                Triple(null, null, FirmwareUpdateStatus.FwUpdateNotAvailable("No firmware update available"))
-            }
-            HttpResponseCodes.BAD_REQUEST -> {
-                val errorBody = try { response.errorBody()?.string() ?: "Failed to read error body" } catch (e: Exception) { "Error reading error body: ${e.message}" }
-                BleLogger.e("TAG", "Bad request to firmware update API: $errorBody")
-                val clientFailurePlan = PolarRuntimePlannerAdapter.planFirmwareWorkflow(
-                    id = "client-request-failure",
-                    statuses = listOf("fwUpdateFailed")
-                )
-                require(clientFailurePlan.terminalError == "client-request-failure")
-                Triple(null, null, FirmwareUpdateStatus.FwUpdateFailed("Bad request to firmware update API: $errorBody"))
-            }
-            else -> {
-                val failedStatus = FirmwareUpdateStatus.FwUpdateFailed("Unexpected response code: ${response.code()}")
-                if (isRetryableFirmwareAvailabilityFailure(failedStatus)) {
-                    val retryableFailurePlan = PolarRuntimePlannerAdapter.planFirmwareRetryableServerFailureWorkflow()
-                    require(retryableFailurePlan.terminalError == "retryable-server-failure")
-                }
-                Triple(null, null, failedStatus)
-            }
-        }
+        return PolarFirmwareUpdateUtils.checkFirmwareUrlAvailability(client, identifier, firmwareUpdateApiFactory())
     }
 
     private suspend fun getFirmwareUpdatePackage(firmwareUrl: String): List<Pair<String, ByteArray>> {
