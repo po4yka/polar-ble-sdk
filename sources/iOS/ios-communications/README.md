@@ -19,6 +19,7 @@ iOS Communications XCode project (i.e. `iOSCommunications.xcodeproj`) contains t
     * [... using Carthage](#...-using-Carthage)
 * [Usage](#usage)
 * [Debugging](#debugging)
+* [Project maintenance](XcodeProjectWorkflow.md)
 
 ## Environment Requirements
 
@@ -27,8 +28,8 @@ iOS Communications XCode project (i.e. `iOSCommunications.xcodeproj`) contains t
 
 ## Dependencies
 * iOS Communications project is dependent on following libraries
-   * [RxSwift](https://github.com/ReactiveX/RxSwift)
    * [SwiftProtobuf](https://github.com/apple/swift-protobuf). `SwiftProtobuf` dependency is only required by the targets `PolarBleSdk` and `PolarBleSdkWatchOs`
+   * [ZIPFoundation](https://github.com/weichsel/ZIPFoundation). `ZIPFoundation` dependency is required by the iOS `iOSCommunications` and `PolarBleSdk` targets and the Swift package product.
    
 ### To update dependencies
  * the dependent libraries are referenced by Swift Package Manager. To update dependencies, modify `Package.swift` and the Xcode Swift package references.
@@ -54,8 +55,8 @@ iOS Communications XCode project (i.e. `iOSCommunications.xcodeproj`) contains t
 * Not supported at the moment
 
 ## Usage
-* **RxSwift**: 
-    * To use iOS Communications API's you must have [RxSwift](https://github.com/ReactiveX/RxSwift) added to your project. 
+* **Swift Concurrency and Combine**
+    * Use the async APIs directly and add `import Combine` only where your app consumes `AnyPublisher` streams.
 * **Permissions**
     * In project target settings enable __Background Modes__, add  __Uses Bluetooth LE accessories__
     * In your project target property list add the key  [NSBluetoothAlwaysUsageDescription](https://developer.apple.com/documentation/bundleresources/information_property_list/nsbluetoothalwaysusagedescription)
