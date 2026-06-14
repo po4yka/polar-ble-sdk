@@ -1,0 +1,18 @@
+name: Cache Kotlin Native
+description: Cache the Kotlin/Native toolchain using the Android Gradle and version catalog inputs that affect native compilation.
+inputs:
+  key-prefix:
+    description: Optional cache key prefix including trailing dash.
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Cache Kotlin Native
+      uses: actions/cache@v4
+      with:
+        path: ~/.konan
+        key: ${{ inputs.key-prefix }}konan-${{ runner.os }}-${{ hashFiles('sources/Android/android-communications/gradle/wrapper/gradle-wrapper.properties', 'sources/Android/android-communications/build.gradle.kts', 'sources/Android/android-communications/settings.gradle.kts', 'sources/Android/android-communications/shared/build.gradle.kts', 'sources/Android/android-communications/gradle/libs.versions.toml') }}
+        restore-keys: |
+          ${{ inputs.key-prefix }}konan-${{ runner.os }}-
+          konan-${{ runner.os }}-

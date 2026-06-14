@@ -79,20 +79,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Set up Android Gradle
+        uses: ./.github/actions/setup-android-gradle
 
       - name: Android SDK unit test gate
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
@@ -100,7 +88,7 @@ jobs:
 
       - name: Upload Android reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: ./.github/actions/upload-ci-artifact
         with:
           name: android-unit-reports
           path: |
@@ -124,29 +112,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Set up Android Gradle
+        uses: ./.github/actions/setup-android-gradle
 
       - name: Cache Kotlin Native
         if: runner.os == 'macOS'
-        uses: actions/cache@v4
-        with:
-          path: ~/.konan
-          key: konan-${{ runner.os }}-${{ hashFiles('sources/Android/android-communications/gradle/wrapper/gradle-wrapper.properties', 'sources/Android/android-communications/build.gradle', 'sources/Android/android-communications/shared/build.gradle') }}
-          restore-keys: |
-            konan-${{ runner.os }}-
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: ./.github/actions/cache-kotlin-native
 
       - name: Shared KMP gate
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
@@ -154,7 +125,7 @@ jobs:
 
       - name: Upload shared reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: ./.github/actions/upload-ci-artifact
         with:
           name: shared-kmp-${{ matrix.os }}-reports
           path: |
@@ -171,14 +142,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Cache SwiftPM
-        uses: actions/cache@v4
-        with:
-          path: |
-            .build
-            .swiftpm
-          key: swiftpm-${{ runner.os }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
-          restore-keys: |
-            swiftpm-${{ runner.os }}-
+        uses: ./.github/actions/cache-swiftpm
 
       - name: iOS Xcode validation probe
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
@@ -195,7 +159,7 @@ jobs:
 
       - name: Upload iOS result bundle
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: ./.github/actions/upload-ci-artifact
         with:
           name: ios-xctest-result
           path: /tmp/polar-ios-xctest-ci.xcresult

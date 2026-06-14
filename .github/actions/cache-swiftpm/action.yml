@@ -1,0 +1,20 @@
+name: Cache SwiftPM
+description: Cache Swift Package Manager build metadata and resolved dependencies.
+inputs:
+  key-prefix:
+    description: Optional cache key prefix including trailing dash.
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Cache SwiftPM
+      uses: actions/cache@v4
+      with:
+        path: |
+          .build
+          .swiftpm
+        key: ${{ inputs.key-prefix }}swiftpm-${{ runner.os }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+        restore-keys: |
+          ${{ inputs.key-prefix }}swiftpm-${{ runner.os }}-
+          swiftpm-${{ runner.os }}-

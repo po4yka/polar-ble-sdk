@@ -1,0 +1,25 @@
+name: Upload CI artifact
+description: Upload an artifact with repository-standard no-file and retention settings supplied by the caller.
+inputs:
+  name:
+    description: Artifact name.
+    required: true
+  path:
+    description: Artifact path or newline-delimited paths.
+    required: true
+  if-no-files-found:
+    description: Upload behavior when no files match.
+    required: true
+  retention-days:
+    description: Artifact retention in days.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        if-no-files-found: ${{ inputs.if-no-files-found }}
+        retention-days: ${{ inputs.retention-days }}
