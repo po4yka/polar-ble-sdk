@@ -2,9 +2,11 @@ strict: true
 
 included:
   - sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/api/PolarRestServiceApi.swift
+  - sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarCommandRuntimePlanner.swift
   - sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarRuntimePlanner.swift
   - sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarFileRuntimePlanner.swift
   - sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarRestFacadeRuntimePlanner.swift
+  - sources/iOS/ios-communications/Sources/PolarBleSdk/sdk/impl/utils/PolarStreamRuntimePlanner.swift
 
 excluded:
   - .build
