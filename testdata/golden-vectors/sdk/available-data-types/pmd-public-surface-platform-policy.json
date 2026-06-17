@@ -1,0 +1,198 @@
+{
+  "id": "pmd-public-surface-platform-policy",
+  "area": "sdk.available-data-types",
+  "case": "pmd_public_surface_platform_policy",
+  "source": "Shared available data type planner characterization consumed by common, Android, and iOS compatibility tests",
+  "description": "Pins PMD measurement names, public PolarDeviceDataType surface projection, HR-service availability, and public-to-PMD lookup boundaries for the available-data-types shared ownership slice.",
+  "input": {
+    "kind": "availableDataTypesPmdPublicSurfacePolicy",
+    "cases": [
+      {
+        "id": "offline-full-pmd-public-surface"
+      },
+      {
+        "id": "offline-ios-location-pressure-filter"
+      },
+      {
+        "id": "online-hr-service-merge"
+      },
+      {
+        "id": "online-no-hr-ios-location-filter"
+      },
+      {
+        "id": "hr-service-present"
+      },
+      {
+        "id": "hr-service-absent"
+      },
+      {
+        "id": "public-magnetometer-to-mag"
+      },
+      {
+        "id": "public-hr-to-offline-hr"
+      },
+      {
+        "id": "unknown-public-type-null"
+      }
+    ],
+    "pmdMeasurementTypeNames": [
+      "ECG",
+      "ACC",
+      "PPG",
+      "PPI",
+      "GYRO",
+      "MAG",
+      "PRESSURE",
+      "LOCATION",
+      "TEMPERATURE",
+      "SKIN_TEMP",
+      "OFFLINE_HR"
+    ],
+    "publicLookupCases": [
+      {
+        "id": "public-magnetometer-to-mag",
+        "publicDataTypeName": "MAGNETOMETER",
+        "expectedCommonPmdMeasurementTypeName": "MAG",
+        "expectedAndroidPmdMeasurementTypeName": "MAG",
+        "expectedIosPmdMeasurementTypeName": "MAG"
+      },
+      {
+        "id": "public-hr-to-offline-hr",
+        "publicDataTypeName": "HR",
+        "expectedCommonPmdMeasurementTypeName": "OFFLINE_HR",
+        "expectedAndroidPmdMeasurementTypeName": "OFFLINE_HR",
+        "expectedIosPmdMeasurementTypeName": "OFFLINE_HR"
+      },
+      {
+        "id": "unknown-public-type-null",
+        "publicDataTypeName": "UNKNOWN",
+        "expectedCommonPmdMeasurementTypeName": null,
+        "expectedAndroidPmdMeasurementTypeName": null,
+        "expectedIosPmdMeasurementTypeName": "UNKNOWN"
+      }
+    ]
+  },
+  "expected": {
+    "sharedOwnershipStatus": "sharedAvailableDataTypesPlanning",
+    "commonOfflineDataTypeNames": [
+      "ECG",
+      "ACC",
+      "PPG",
+      "PPI",
+      "GYRO",
+      "MAGNETOMETER",
+      "PRESSURE",
+      "LOCATION",
+      "TEMPERATURE",
+      "SKIN_TEMPERATURE",
+      "HR"
+    ],
+    "androidOfflineDataTypeNames": [
+      "ECG",
+      "ACC",
+      "PPG",
+      "PPI",
+      "GYRO",
+      "MAGNETOMETER",
+      "PRESSURE",
+      "LOCATION",
+      "TEMPERATURE",
+      "SKIN_TEMPERATURE",
+      "HR"
+    ],
+    "iosOfflineDataTypeNames": [
+      "ECG",
+      "ACC",
+      "PPG",
+      "PPI",
+      "GYRO",
+      "MAGNETOMETER",
+      "TEMPERATURE",
+      "SKIN_TEMPERATURE",
+      "HR"
+    ],
+    "commonOnlineDataTypeNamesWithHr": [
+      "HR",
+      "ECG",
+      "ACC",
+      "PPG",
+      "PPI",
+      "GYRO",
+      "MAGNETOMETER",
+      "PRESSURE",
+      "LOCATION",
+      "TEMPERATURE",
+      "SKIN_TEMPERATURE"
+    ],
+    "androidOnlineDataTypeNamesWithHr": [
+      "HR",
+      "ECG",
+      "ACC",
+      "PPG",
+      "PPI",
+      "GYRO",
+      "MAGNETOMETER",
+      "PRESSURE",
+      "LOCATION",
+      "TEMPERATURE",
+      "SKIN_TEMPERATURE"
+    ],
+    "iosOnlineDataTypeNamesWithHr": [
+      "HR",
+      "ECG",
+      "ACC",
+      "PPG",
+      "PPI",
+      "GYRO",
+      "MAGNETOMETER",
+      "PRESSURE",
+      "TEMPERATURE",
+      "SKIN_TEMPERATURE"
+    ],
+    "commonOnlineDataTypeNamesWithoutHr": [
+      "ECG",
+      "ACC",
+      "PPG",
+      "PPI",
+      "GYRO",
+      "MAGNETOMETER",
+      "PRESSURE",
+      "LOCATION",
+      "TEMPERATURE",
+      "SKIN_TEMPERATURE"
+    ],
+    "iosOnlineDataTypeNamesWithoutHr": [
+      "ECG",
+      "ACC",
+      "PPG",
+      "PPI",
+      "GYRO",
+      "MAGNETOMETER",
+      "PRESSURE",
+      "TEMPERATURE",
+      "SKIN_TEMPERATURE"
+    ],
+    "commonDecision": "Available-data-types shared ownership covers deterministic PMD measurement name to public data type planning, HR-service projection, and public-to-PMD lookup while PMD feature reads, HR service discovery, platform public enum projection, BLE transport execution, SwiftPM/watchOS fallback, and availability-query public error translation remain platform-owned.",
+    "commonRuntimePrototype": {
+      "status": "executable shared commonTest available-data-types policy guard",
+      "reason": "Declared because this vector is consumed by shared commonTest and platform runtime adapter tests before available-data-types runtime delegation moves further into shared."
+    }
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.sdk.impl.utils.PolarRuntimePlannerAdapterTest"
+    ],
+    "ios": [
+      "PolarDataUtilsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.AvailableDataTypesCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This vector expands the available-data-types ownership evidence only. It does not move platform feature reads, service discovery, public enum projection, or BLE execution into common code."
+}

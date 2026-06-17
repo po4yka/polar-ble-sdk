@@ -69,6 +69,38 @@ class PolarRuntimePlannerAdapterTest {
     }
 
     @Test
+    fun `available data types policy vector executes Android adapter surface`() {
+        val vector = loadAvailableDataTypesPolicyVector()
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val features = input.stringArray("pmdMeasurementTypeNames").mapTo(mutableSetOf(), ::pmdMeasurementType)
+
+        Assert.assertEquals("pmd-public-surface-platform-policy", vector.get("id").asString)
+        Assert.assertEquals("availableDataTypesPmdPublicSurfacePolicy", input.get("kind").asString)
+        Assert.assertEquals(AVAILABLE_DATA_TYPES_POLICY_CASE_IDS, input.objectArray("cases").map { it.get("id").asString })
+        Assert.assertEquals("sharedAvailableDataTypesPlanning", expected.get("sharedOwnershipStatus").asString)
+        Assert.assertEquals(
+            expected.stringArray("androidOfflineDataTypeNames").mapTo(mutableSetOf(), PolarDeviceDataType::valueOf),
+            PolarRuntimePlannerAdapter.availableOfflineRecordingDataTypes(features)
+        )
+        Assert.assertEquals(
+            expected.stringArray("androidOnlineDataTypeNamesWithHr").mapTo(mutableSetOf(), PolarDeviceDataType::valueOf),
+            PolarRuntimePlannerAdapter.availableOnlineStreamDataTypes(features, hasHrService = true)
+        )
+        Assert.assertFalse(PolarRuntimePlannerAdapter.availableOnlineStreamDataTypes(features, hasHrService = false).contains(PolarDeviceDataType.HR))
+        Assert.assertEquals(setOf(PolarDeviceDataType.HR), PolarRuntimePlannerAdapter.availableHrServiceDataTypes(hasHrService = true))
+        Assert.assertEquals(emptySet<PolarDeviceDataType>(), PolarRuntimePlannerAdapter.availableHrServiceDataTypes(hasHrService = false))
+        input.objectArray("publicLookupCases").forEach { lookup ->
+            val expectedMeasurementType = lookup.get("expectedAndroidPmdMeasurementTypeName")
+            Assert.assertEquals(
+                lookup.get("id").asString,
+                if (expectedMeasurementType.isJsonNull) null else expectedMeasurementType.asString,
+                PolarRuntimePlannerAdapter.pmdMeasurementTypeNameForPublicDataTypeName(lookup.get("publicDataTypeName").asString)
+            )
+        }
+    }
+
+    @Test
     fun `shared GNSS location projection routes through Android runtime adapter DTOs`() {
         val summary = PolarRuntimePlannerAdapter.PlannedGnssSatelliteSummary(
             gpsNbrOfSat = 1u,
@@ -145,6 +177,7 @@ class PolarRuntimePlannerAdapterTest {
 
         Assert.assertEquals("available-data-types-readiness", vector.get("id").asString)
         Assert.assertEquals("availableDataTypesReadiness", input.get("kind").asString)
+        Assert.assertEquals(listOf(AVAILABLE_DATA_TYPES_POLICY_VECTOR_PATH), input.getAsJsonArray("policyVectorPaths").map { it.asString })
         Assert.assertEquals(AVAILABLE_DATA_TYPES_BEHAVIOR_FAMILIES, input.getAsJsonArray("requiredBehaviorFamilies").map { it.asString })
         Assert.assertEquals("coveredBySharedContractCharacterization", expected.get("sharedOwnershipStatus").asString)
         Assert.assertEquals(AVAILABLE_DATA_TYPES_BEHAVIOR_FAMILIES, expected.getAsJsonArray("coveredBehaviorFamilies").map { it.asString })
@@ -1365,6 +1398,27 @@ class PolarRuntimePlannerAdapterTest {
         }
     }
 
+    private fun loadAvailableDataTypesPolicyVector(): JsonObject {
+        FileReader(findRepositoryRoot().resolve("testdata/golden-vectors/$AVAILABLE_DATA_TYPES_POLICY_VECTOR_PATH")).use { reader ->
+            return JsonParser.parseReader(reader).asJsonObject
+        }
+    }
+
+    private fun pmdMeasurementType(name: String): PmdMeasurementType {
+        return when (name) {
+            "MAG" -> PmdMeasurementType.MAGNETOMETER
+            else -> PmdMeasurementType.valueOf(name)
+        }
+    }
+
+    private fun JsonObject.stringArray(field: String): List<String> {
+        return getAsJsonArray(field).map { it.asString }
+    }
+
+    private fun JsonObject.objectArray(field: String): List<JsonObject> {
+        return getAsJsonArray(field).map { it.asJsonObject }
+    }
+
     private fun findRepositoryRoot(): File {
         val userDirectory = System.getProperty("user.dir") ?: error("user.dir is not set")
         var directory = File(userDirectory).absoluteFile
@@ -1460,6 +1514,18 @@ class PolarRuntimePlannerAdapterTest {
             "platform-client-readiness-boundary"
         )
         const val FEATURE_AVAILABILITY_COMMON_DECISION = "SDK feature availability shared ownership owns only deterministic service and capability preconditions in shared; GATT client lookup, clientReady waits, PMD feature reads, notification readiness, service discovery, BLE transport execution, and public callback/error behavior remain platform-owned."
+        const val AVAILABLE_DATA_TYPES_POLICY_VECTOR_PATH = "sdk/available-data-types/pmd-public-surface-platform-policy.json"
+        val AVAILABLE_DATA_TYPES_POLICY_CASE_IDS = listOf(
+            "offline-full-pmd-public-surface",
+            "offline-ios-location-pressure-filter",
+            "online-hr-service-merge",
+            "online-no-hr-ios-location-filter",
+            "hr-service-present",
+            "hr-service-absent",
+            "public-magnetometer-to-mag",
+            "public-hr-to-offline-hr",
+            "unknown-public-type-null"
+        )
         val AVAILABLE_DATA_TYPES_BEHAVIOR_FAMILIES = listOf(
             "offline-pmd-to-public-mapping",
             "online-pmd-to-public-mapping",

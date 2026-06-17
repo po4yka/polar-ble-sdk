@@ -6,6 +6,9 @@
   "description": "Pins available online/offline/HR-service data type behavior families that must remain covered before broader feature availability or PMD facade behavior moves into shared code.",
   "input": {
     "kind": "availableDataTypesReadiness",
+    "policyVectorPaths": [
+      "sdk/available-data-types/pmd-public-surface-platform-policy.json"
+    ],
     "requiredBehaviorFamilies": [
       "offline-pmd-to-public-mapping",
       "online-pmd-to-public-mapping",

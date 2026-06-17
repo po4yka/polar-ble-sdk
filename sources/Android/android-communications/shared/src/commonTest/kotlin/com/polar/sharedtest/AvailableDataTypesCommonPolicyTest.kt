@@ -62,6 +62,45 @@ class AvailableDataTypesCommonPolicyTest {
     }
 
     @Test
+    fun pmdPublicSurfacePolicyVectorExecutesSharedPlannerCases() {
+        val vector = loadGoldenVectorText(AVAILABLE_DATA_TYPES_POLICY_VECTOR_PATH)
+        val input = vector.objectValue("input")
+        val expected = vector.objectValue("expected")
+        val pmdTypes = input.stringArrayValue("pmdMeasurementTypeNames").toSet()
+
+        assertEquals("pmd-public-surface-platform-policy", vector.stringValue("id"))
+        assertEquals("availableDataTypesPmdPublicSurfacePolicy", input.stringValue("kind"))
+        assertEquals(AVAILABLE_DATA_TYPES_POLICY_CASE_IDS, input.objectArray("cases").map { it.stringValue("id") })
+        assertEquals("sharedAvailableDataTypesPlanning", expected.stringValue("sharedOwnershipStatus"))
+        assertEquals(
+            expected.stringArrayValue("commonOfflineDataTypeNames").toSet(),
+            PolarSdkModelMappers.availableOfflineRecordingDataTypeNames(pmdTypes)
+        )
+        assertEquals(
+            expected.stringArrayValue("iosOfflineDataTypeNames").toSet(),
+            PolarSdkModelMappers.availableOfflineRecordingDataTypeNames(pmdTypes, includeLocation = false, includePressure = false)
+        )
+        assertEquals(
+            expected.stringArrayValue("commonOnlineDataTypeNamesWithHr").toSet(),
+            PolarSdkModelMappers.availableOnlineStreamDataTypeNames(pmdTypes, hasHrService = true)
+        )
+        assertEquals(
+            expected.stringArrayValue("iosOnlineDataTypeNamesWithoutHr").toSet(),
+            PolarSdkModelMappers.availableOnlineStreamDataTypeNames(pmdTypes, hasHrService = false, includeLocation = false, includePressure = true)
+        )
+        assertEquals(setOf("HR"), PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService = true))
+        assertEquals(emptySet(), PolarSdkModelMappers.availableHrServiceDataTypeNames(hasHrService = false))
+        input.objectArray("publicLookupCases").forEach { lookup ->
+            val caseId = lookup.stringValue("id")
+            assertEquals(
+                lookup.nullableStringValue("expectedCommonPmdMeasurementTypeName"),
+                PolarSdkModelMappers.pmdMeasurementTypeNameForPublicDataTypeName(lookup.stringValue("publicDataTypeName")),
+                caseId
+            )
+        }
+    }
+
+    @Test
     fun availableDataTypesReadinessManifestNamesEverySharedContractBehaviorFamily() {
         val manifest = loadGoldenVectorText("sdk/available-data-types/available-data-types-readiness.json")
         val input = manifest.objectValue("input")
@@ -71,6 +110,7 @@ class AvailableDataTypesCommonPolicyTest {
 
         assertEquals("available-data-types-readiness", manifest.stringValue("id"))
         assertEquals("availableDataTypesReadiness", input.stringValue("kind"))
+        assertEquals(listOf(AVAILABLE_DATA_TYPES_POLICY_VECTOR_PATH), input.stringArrayValue("policyVectorPaths"))
         assertEquals(AVAILABLE_DATA_TYPES_READINESS_FAMILIES, input.stringArrayValue("requiredBehaviorFamilies"))
         assertEquals("coveredBySharedContractCharacterization", expected.stringValue("sharedOwnershipStatus"))
         assertEquals(AVAILABLE_DATA_TYPES_READINESS_FAMILIES, expected.stringArrayValue("coveredBehaviorFamilies"))
@@ -87,6 +127,18 @@ class AvailableDataTypesCommonPolicyTest {
     }
 
     private companion object {
+        const val AVAILABLE_DATA_TYPES_POLICY_VECTOR_PATH = "sdk/available-data-types/pmd-public-surface-platform-policy.json"
+        val AVAILABLE_DATA_TYPES_POLICY_CASE_IDS = listOf(
+            "offline-full-pmd-public-surface",
+            "offline-ios-location-pressure-filter",
+            "online-hr-service-merge",
+            "online-no-hr-ios-location-filter",
+            "hr-service-present",
+            "hr-service-absent",
+            "public-magnetometer-to-mag",
+            "public-hr-to-offline-hr",
+            "unknown-public-type-null"
+        )
         val AVAILABLE_DATA_TYPES_READINESS_FAMILIES = listOf(
             "offline-pmd-to-public-mapping",
             "online-pmd-to-public-mapping",

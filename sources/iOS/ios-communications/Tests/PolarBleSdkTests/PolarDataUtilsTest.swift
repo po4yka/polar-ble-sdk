@@ -6,6 +6,8 @@ import Foundation
 
 private let AVAILABLE_DATA_TYPES_READINESS_COMMON_DECISION = "Available-data-types shared ownership remains valid while this readiness manifest is executable from shared commonTest, Android and iOS data utility tests continue to pin offline and online PMD-to-public mapping, HR-service availability projection, iOS location/pressure filters, Android full public surface, public-to-PMD measurement lookup, unknown public type boundaries, PMD feature-read boundaries, HR-service discovery boundaries, public error mapping boundaries, platform vector references, and compile verification before broader availability facade behavior moves."
 private let AVAILABLE_DATA_TYPES_READINESS_FAMILIES = ["offline-pmd-to-public-mapping", "online-pmd-to-public-mapping", "hr-service-availability-projection", "ios-location-pressure-filter-boundary", "android-full-surface-boundary", "public-to-pmd-measurement-lookup", "unknown-public-type-null-boundary", "pmd-feature-read-platform-boundary", "hr-service-discovery-platform-boundary", "public-error-mapping-boundary", "platform-available-data-type-vector-reference-gate", "compile-verification-gate"]
+private let AVAILABLE_DATA_TYPES_POLICY_VECTOR_PATH = "sdk/available-data-types/pmd-public-surface-platform-policy.json"
+private let AVAILABLE_DATA_TYPES_POLICY_CASE_IDS = ["offline-full-pmd-public-surface", "offline-ios-location-pressure-filter", "online-hr-service-merge", "online-no-hr-ios-location-filter", "hr-service-present", "hr-service-absent", "public-magnetometer-to-mag", "public-hr-to-offline-hr", "unknown-public-type-null"]
 
 final class PolarDataUtilsTest: XCTestCase {
 
@@ -180,6 +182,43 @@ final class PolarDataUtilsTest: XCTestCase {
         XCTAssertEqual(PolarPmdMeasurementRuntimePlanner.availableHrServiceDataTypes(hasHrService: false), [])
     }
 
+    func testAvailableDataTypesPolicyVectorExecutesIosPlannerSurface() throws {
+        let vector = try GoldenVectorTestData.loadObject(AVAILABLE_DATA_TYPES_POLICY_VECTOR_PATH)
+        let input = try XCTUnwrap(vector["input"] as? [String: Any])
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
+        let pmdNames = try XCTUnwrap(input["pmdMeasurementTypeNames"] as? [String])
+        let pmdTypes = Set(try pmdNames.map(availableDataTypesPmdMeasurementType))
+        let cases = try XCTUnwrap(input["cases"] as? [[String: Any]])
+        let lookupCases = try XCTUnwrap(input["publicLookupCases"] as? [[String: Any]])
+
+        XCTAssertEqual(vector["id"] as? String, "pmd-public-surface-platform-policy")
+        XCTAssertEqual(input["kind"] as? String, "availableDataTypesPmdPublicSurfacePolicy")
+        XCTAssertEqual(cases.compactMap { $0["id"] as? String }, AVAILABLE_DATA_TYPES_POLICY_CASE_IDS)
+        XCTAssertEqual(expected["sharedOwnershipStatus"] as? String, "sharedAvailableDataTypesPlanning")
+        XCTAssertEqual(
+            PolarPmdMeasurementRuntimePlanner.availableOfflineRecordingDataTypes(from: pmdTypes),
+            Set(try XCTUnwrap(expected["iosOfflineDataTypeNames"] as? [String]).map(availableDataTypesPolarDeviceDataType))
+        )
+        XCTAssertEqual(
+            PolarPmdMeasurementRuntimePlanner.availableOnlineStreamDataTypes(from: pmdTypes, hasHrService: true),
+            Set(try XCTUnwrap(expected["iosOnlineDataTypeNamesWithHr"] as? [String]).map(availableDataTypesPolarDeviceDataType))
+        )
+        XCTAssertEqual(
+            PolarPmdMeasurementRuntimePlanner.availableOnlineStreamDataTypes(from: pmdTypes, hasHrService: false),
+            Set(try XCTUnwrap(expected["iosOnlineDataTypeNamesWithoutHr"] as? [String]).map(availableDataTypesPolarDeviceDataType))
+        )
+        XCTAssertEqual(PolarPmdMeasurementRuntimePlanner.availableHrServiceDataTypes(hasHrService: true), [.hr])
+        XCTAssertEqual(PolarPmdMeasurementRuntimePlanner.availableHrServiceDataTypes(hasHrService: false), [])
+        for lookup in lookupCases {
+            let caseId = try XCTUnwrap(lookup["id"] as? String)
+            XCTAssertEqual(
+                PolarPmdMeasurementRuntimePlanner.pmdMeasurementTypeName(forPublicDataTypeName: try XCTUnwrap(lookup["publicDataTypeName"] as? String)),
+                lookup["expectedIosPmdMeasurementTypeName"] as? String,
+                caseId
+            )
+        }
+    }
+
     func testAvailableDataTypesReadinessManifestPinsAvailabilityOwnership() throws {
         let vectorURL = try GoldenVectorTestData.repositoryRoot().appendingPathComponent("testdata/golden-vectors/sdk/available-data-types/available-data-types-readiness.json")
         let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: vectorURL)) as? [String: Any])
@@ -192,6 +231,7 @@ final class PolarDataUtilsTest: XCTestCase {
 
         XCTAssertEqual(manifest["id"] as? String, "available-data-types-readiness")
         XCTAssertEqual(input["kind"] as? String, "availableDataTypesReadiness")
+        XCTAssertEqual(try XCTUnwrap(input["policyVectorPaths"] as? [String]), [AVAILABLE_DATA_TYPES_POLICY_VECTOR_PATH])
         XCTAssertEqual(requiredFamilies, AVAILABLE_DATA_TYPES_READINESS_FAMILIES)
         XCTAssertEqual(expected["sharedOwnershipStatus"] as? String, "coveredBySharedContractCharacterization")
         XCTAssertEqual(coveredFamilies, AVAILABLE_DATA_TYPES_READINESS_FAMILIES)
@@ -722,6 +762,39 @@ final class PolarDataUtilsTest: XCTestCase {
         case "offline_hr": return .offline_hr
         case "gyro": return .gyro
         default: throw NSError(domain: "PolarDataUtilsTest", code: 5, userInfo: [NSLocalizedDescriptionKey: "Unknown PMD measurement type \(name)"])
+        }
+    }
+
+    private func availableDataTypesPmdMeasurementType(_ name: String) throws -> PmdMeasurementType {
+        switch name {
+        case "ECG": return .ecg
+        case "ACC": return .acc
+        case "PPG": return .ppg
+        case "PPI": return .ppi
+        case "GYRO": return .gyro
+        case "MAG": return .mgn
+        case "PRESSURE": return .pressure
+        case "LOCATION": return .location
+        case "TEMPERATURE": return .temperature
+        case "SKIN_TEMP": return .skinTemperature
+        case "OFFLINE_HR": return .offline_hr
+        default: throw NSError(domain: "PolarDataUtilsTest", code: 10, userInfo: [NSLocalizedDescriptionKey: "Unknown available-data-types PMD measurement type \(name)"])
+        }
+    }
+
+    private func availableDataTypesPolarDeviceDataType(_ name: String) throws -> PolarDeviceDataType {
+        switch name {
+        case "ECG": return .ecg
+        case "ACC": return .acc
+        case "PPG": return .ppg
+        case "PPI": return .ppi
+        case "GYRO": return .gyro
+        case "MAGNETOMETER": return .magnetometer
+        case "HR": return .hr
+        case "TEMPERATURE": return .temperature
+        case "PRESSURE": return .pressure
+        case "SKIN_TEMPERATURE": return .skinTemperature
+        default: throw NSError(domain: "PolarDataUtilsTest", code: 11, userInfo: [NSLocalizedDescriptionKey: "Unknown available-data-types public data type \(name)"])
         }
     }
 
