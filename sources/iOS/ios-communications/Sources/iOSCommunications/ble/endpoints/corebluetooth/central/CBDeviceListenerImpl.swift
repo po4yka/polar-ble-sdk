@@ -82,15 +82,14 @@ public class CBDeviceListenerImpl: NSObject, SDKCBCentralManagerDelegate {
     }
     
     fileprivate func updateSessionState(_ session: CBDeviceSessionImpl, state: BleDeviceSession.DeviceSessionState, error: Error? = nil) {
-        session.updateSessionState(state, error: error)
-        connectionStateSubject.send((session: session, state: state))
-        deviceSessionStateObserver?.stateChanged(session)
+        publishSessionState(session, state: state, error: error)
         if scanner.scanningNeeded() {
             scanner.enableScan()
         } else {
             scanner.disableScan()
         }
     }
+
     
     @available(iOS 10.0, *)
     fileprivate func btState2String(_ state: CBManagerState) -> String {
@@ -376,6 +375,15 @@ extension CBDeviceListenerImpl: CBScanningProtocol {
         queue.async(execute: {
             self.scanner.startScan()
         })
+    }
+}
+
+extension CBDeviceListenerImpl: ManualBleSessionStatePublisher {
+    func publishSessionState(_ session: BleDeviceSession, state: BleDeviceSession.DeviceSessionState, error: Error?) {
+        guard let session = session as? CBDeviceSessionImpl else { return }
+        session.updateSessionState(state, error: error)
+        connectionStateSubject.send((session: session, state: state))
+        deviceSessionStateObserver?.stateChanged(session)
     }
 }
 

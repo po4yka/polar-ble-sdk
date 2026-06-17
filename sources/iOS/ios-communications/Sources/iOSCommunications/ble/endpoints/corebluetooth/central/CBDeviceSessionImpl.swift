@@ -2,7 +2,7 @@ import Foundation
 import CoreBluetooth
 import Combine
 
-class CBDeviceSessionImpl: BleDeviceSession, CBPeripheralDelegate, BleAttributeTransportProtocol {
+class CBDeviceSessionImpl: BleDeviceSession, CBPeripheralDelegate, BleAttributeTransportProtocol, ManualBleGattOperationQueue {
     private(set) var peripheral: CBPeripheral
     private let central: CBCentralManager
     private let scanner: CBScanningProtocol

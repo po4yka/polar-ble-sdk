@@ -246,7 +246,7 @@ class BDDeviceListenerImpl(
         }
     }
 
-    private val connectionInterface: ConnectionInterface = object : ConnectionInterface {
+    private val connectionInterface: ManualBleConnectionController = object : ManualBleConnectionController {
         @SuppressLint("NewApi", "MissingPermission")
         override fun connectDevice(session: BDDeviceSessionImpl?) {
             var gatt: BluetoothGatt? = null

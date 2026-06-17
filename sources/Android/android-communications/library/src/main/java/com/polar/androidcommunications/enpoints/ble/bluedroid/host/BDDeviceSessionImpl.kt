@@ -50,7 +50,8 @@ class BDDeviceSessionImpl internal constructor(
     private val bondingManager: BDBondingListener,
     factory: BleGattFactory
 ) : BleDeviceSession(),
-    BleGattTxInterface {
+    BleGattTxInterface,
+    ManualBleGattOperationQueue {
     override var bluetoothDevice: BluetoothDevice = bluetoothDeviceParam
         set(value) {
             field = value
@@ -318,18 +319,28 @@ class BDDeviceSessionImpl internal constructor(
     }
 
     override fun gattClientRequestStopScanning() {
+        pauseScanningForGattOperation()
+    }
+
+    override fun pauseScanningForGattOperation() {
         d(TAG, "GATT client request stop scanning")
         handler.post { bleScanCallback.stopScan() }
     }
 
     override fun gattClientResumeScanning() {
+        resumeScanningAfterGattOperation()
+    }
+
+    override fun resumeScanningAfterGattOperation() {
         d(TAG, "GATT client request continue scanning")
         handler.post { bleScanCallback.startScan() }
     }
 
-    override fun transportQueueSize(): Int {
-        return attOperations.size
-    }
+    override fun transportQueueSize(): Int = queuedOperationCount()
+
+    override fun queuedOperationCount(): Int = attOperations.size
+
+    override fun isGattConnected(): Boolean = isConnected()
 
     fun handleDisconnection() {
         d(TAG, "disconnected")

@@ -29,7 +29,7 @@ internal class BDScanCallback(
     context: Context,
     private val bluetoothAdapter: BluetoothAdapter,
     private val scanCallbackInterface: BDScanCallbackInterface
-) {
+) : ManualBleScannerController {
     companion object {
         private const val TAG = "BDScanCallback"
         private const val POLAR_MANUFACTURER_ID = 0x006b
@@ -73,7 +73,7 @@ internal class BDScanCallback(
         fun isScanningNeeded(): Boolean
     }
 
-    fun setScanFilters(filters: List<ScanFilter?>?) {
+    override fun setScanFilters(filters: List<ScanFilter?>?) {
         stopScan()
         this.scanFilter = filters
         startScan()
@@ -84,28 +84,56 @@ internal class BDScanCallback(
         startScan()
     }
 
+    override fun restartScan() {
+        scanRestart()
+    }
+
     fun clientAdded() {
         commandState(ScanAction.CLIENT_START_SCAN)
+    }
+
+    override fun addScanClient() {
+        clientAdded()
     }
 
     fun clientRemoved() {
         commandState(ScanAction.CLIENT_REMOVED)
     }
 
+    override fun removeScanClient() {
+        clientRemoved()
+    }
+
     fun stopScan() {
         commandState(ScanAction.ADMIN_STOP_SCAN)
+    }
+
+    override fun pauseScanningForHostOperation() {
+        stopScan()
     }
 
     fun startScan() {
         commandState(ScanAction.ADMIN_START_SCAN)
     }
 
+    override fun resumeScanningAfterHostOperation() {
+        startScan()
+    }
+
     fun powerOn() {
         commandState(ScanAction.BLE_POWER_ON)
     }
 
+    override fun bluetoothPoweredOn() {
+        powerOn()
+    }
+
     fun powerOff() {
         commandState(ScanAction.BLE_POWER_OFF)
+    }
+
+    override fun bluetoothPoweredOff() {
+        powerOff()
     }
 
     private val leScanCallback: ScanCallback = object : ScanCallback() {

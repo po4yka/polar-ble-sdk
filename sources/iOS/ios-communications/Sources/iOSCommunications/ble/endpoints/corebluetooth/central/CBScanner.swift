@@ -2,7 +2,7 @@ import Foundation
 import CoreBluetooth
 import Combine
 
-class CBScanner {
+class CBScanner: ManualBleScannerController {
     
     enum ScannerState{
         case
