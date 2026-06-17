@@ -29,6 +29,7 @@ concurrency:
 
 env:
   ANDROID_PROJECT_DIR: sources/Android/android-communications
+  IOS_PROJECT: sources/iOS/ios-communications/iOSCommunications.xcodeproj
 
 jobs:
   release-policy:

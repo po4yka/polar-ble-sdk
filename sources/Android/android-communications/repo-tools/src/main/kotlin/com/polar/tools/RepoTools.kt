@@ -157,6 +157,8 @@ private fun verifyReleasePackagingPolicy() {
 
     listOf(
         ":repo-tools:verifyReleasePackagingPolicy",
+        "IOS_PROJECT: sources/iOS/ios-communications/iOSCommunications.xcodeproj",
+        "ci_xcodebuild_build.sh \"\${IOS_PROJECT}\"",
         "scripts/verify_android_example_aar_consumption.sh",
         "scripts/verify_android_shared_maven_metadata.sh",
         "package_kmp_xcframework.sh",
