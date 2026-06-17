@@ -29,6 +29,21 @@ final class CBDeviceListenerImplTest: XCTestCase {
         XCTAssertFalse(sut.automaticH10Mapping)
     }
 
+    func testAutomaticH10OrH9MappingRequiresFeatureFlagForH10() {
+        XCTAssertFalse(shouldApplyAutomaticH10OrH9Mapping(false, peripheralName: "Polar H10 12345678"))
+        XCTAssertTrue(shouldApplyAutomaticH10OrH9Mapping(true, peripheralName: "Polar H10 12345678"))
+    }
+
+    func testAutomaticH10OrH9MappingRequiresFeatureFlagForH9() {
+        XCTAssertFalse(shouldApplyAutomaticH10OrH9Mapping(false, peripheralName: "Polar H9 12345678"))
+        XCTAssertTrue(shouldApplyAutomaticH10OrH9Mapping(true, peripheralName: "Polar H9 12345678"))
+    }
+
+    func testAutomaticH10OrH9MappingIgnoresNilAndOtherNames() {
+        XCTAssertFalse(shouldApplyAutomaticH10OrH9Mapping(true, peripheralName: nil))
+        XCTAssertFalse(shouldApplyAutomaticH10OrH9Mapping(true, peripheralName: "Polar Verity Sense 12345678"))
+    }
+
     func testAutomaticReconnectionDefaultIsTrue() {
         XCTAssertTrue(sut.automaticReconnection)
     }

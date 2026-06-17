@@ -193,9 +193,7 @@ public class CBDeviceListenerImpl: NSObject, SDKCBCentralManagerDelegate {
     
     private func handleDeviceDiscovered(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         var session = self.session(peripheral)
-        if automaticH10Mapping &&
-            peripheral.name?.contains("H10") ?? false ||
-            peripheral.name?.contains("H9") ?? false {
+        if shouldApplyAutomaticH10OrH9Mapping(automaticH10Mapping, peripheralName: peripheral.name) {
             let items = peripheral.name?.split(separator: " ").map(String.init)
             let deviceId = items?.last
             if let old = self.sessions.fetch({ (impl) -> Bool in
@@ -362,6 +360,13 @@ public class CBDeviceListenerImpl: NSObject, SDKCBCentralManagerDelegate {
             }
         }
     }
+}
+
+func shouldApplyAutomaticH10OrH9Mapping(_ automaticH10Mapping: Bool, peripheralName: String?) -> Bool {
+    guard automaticH10Mapping, let peripheralName else {
+        return false
+    }
+    return peripheralName.contains("H10") || peripheralName.contains("H9")
 }
 
 extension CBDeviceListenerImpl: CBScanningProtocol {
