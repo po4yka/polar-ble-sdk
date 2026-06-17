@@ -172,7 +172,13 @@ class KmpValidationAndChecklistPolicyTest {
             violations += "scripts/validate_generated_xcode_project.sh must exist and be executable"
         } else {
             val script = validator.readText()
-            listOf("xcodegen generate", "xcodebuild -list", "Generated/PolarBleSdkShared/$(PLATFORM_NAME)", "POLAR_KMP_SHARED_REQUIRED")
+            listOf(
+                "xcodegen generate",
+                "xcodebuild -list",
+                "Generated/PolarBleSdkShared/$(PLATFORM_NAME)",
+                "POLAR_KMP_SHARED_REQUIRED",
+                "ManualBleTransportContractsTest.swift"
+            )
                 .filterNot { term -> script.contains(term) }
                 .mapTo(violations) { term -> "validate_generated_xcode_project.sh missing $term" }
         }

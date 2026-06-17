@@ -84,13 +84,14 @@ while IFS= read -r term; do
         exit 1
     fi
 done <<'EOF'
-Build PolarBleSdkShared shared Framework
+Build PolarBleSdkShared KMP Framework
 scripts/build_kmp_ios_framework.sh
 SwiftProtobuf
 ZIPFoundation
 POLAR_KMP_SHARED_REQUIRED
 Generated/PolarBleSdkShared/$(PLATFORM_NAME)
 PolarBleSdkTests.xctestplan
+ManualBleTransportContractsTest.swift
 EOF
 
 if [ "$build_candidate" -eq 1 ]; then

@@ -122,6 +122,13 @@ private fun validateGeneratedXcodeProject() {
     }
     if (!validator.isFile || !validator.canExecute()) {
         errors += "scripts/validate_generated_xcode_project.sh must exist and be executable"
+    } else {
+        val validatorText = validator.readText()
+        listOf("ManualBleTransportContractsTest.swift")
+            .filterNot { validatorText.contains(it) }
+            .mapTo(errors) {
+                "scripts/validate_generated_xcode_project.sh missing generated project registration guard for $it"
+            }
     }
     listOf("project.yml", "XcodeGen", "validate_generated_xcode_project.sh", ":repo-tools:validateGeneratedXcodeProject")
         .filterNot { workflow.contains(it) }
