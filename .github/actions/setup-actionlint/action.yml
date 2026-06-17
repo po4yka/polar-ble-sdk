@@ -1,0 +1,39 @@
+name: Set up actionlint
+description: Install a pinned actionlint release after SHA-256 verification.
+runs:
+  using: composite
+  steps:
+    - name: Install actionlint
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        version="1.7.12"
+        tool_dir="${RUNNER_TEMP}/actionlint-${version}"
+
+        case "$(uname -s)-$(uname -m)" in
+          Linux-x86_64)
+            archive_name="actionlint_${version}_linux_amd64.tar.gz"
+            expected_sha256="8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+            sha256_check="sha256sum -c -"
+            ;;
+          Darwin-arm64)
+            archive_name="actionlint_${version}_darwin_arm64.tar.gz"
+            expected_sha256="aba9ced2dee8d27fecca3dc7feb1a7f9a52caefa1eb46f3271ea66b6e0e6953f"
+            sha256_check="shasum -a 256 -c -"
+            ;;
+          *)
+            echo "Unsupported actionlint runner: $(uname -s)-$(uname -m)" >&2
+            exit 2
+            ;;
+        esac
+
+        url="https://github.com/rhysd/actionlint/releases/download/v${version}/${archive_name}"
+        archive_path="${RUNNER_TEMP}/${archive_name}"
+        mkdir -p "${tool_dir}"
+        curl -fsSL "${url}" -o "${archive_path}"
+        printf '%s  %s\n' "${expected_sha256}" "${archive_path}" | ${sha256_check}
+        tar -xzf "${archive_path}" -C "${tool_dir}" actionlint
+        chmod +x "${tool_dir}/actionlint"
+        "${tool_dir}/actionlint" -version
+        echo "${tool_dir}" >> "${GITHUB_PATH}"

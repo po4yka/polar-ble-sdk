@@ -30,6 +30,9 @@ private fun kmpNonGradleChecks() {
         "documentation/KmpModernStackAudit.md",
         "documentation/ReleasePublicationPolicy.md",
         ".github/dependabot.yml",
+        ".github/actions/setup-actionlint/action.yml",
+        ".github/actions/setup-swiftlint/action.yml",
+        ".github/actions/setup-xcodegen/action.yml",
         "sources/iOS/ios-communications/scripts/package_kmp_xcframework.sh",
         "sources/iOS/ios-communications/scripts/validate_spm_xcframework_consumption.sh",
         "sources/iOS/ios-communications/project.yml",
@@ -63,6 +66,9 @@ private fun kmpNonGradleChecks() {
     listOf("ruby ", "gem install cocoapods", "pod install", "pod lib lint", "CocoaPods generated artifacts")
         .filter { workflowText.contains(it) }
         .mapTo(errors) { "CI workflows must not contain $it" }
+    listOf("bash <(curl", "raw.githubusercontent.com/rhysd/actionlint", "brew install swiftlint", "brew install xcodegen")
+        .filter { workflowText.contains(it) }
+        .mapTo(errors) { "CI workflows must use pinned local setup actions instead of $it" }
 
     val packageSwift = repoRoot.resolve("Package.swift").readTextIfExists()
     listOf("POLAR_BLE_SDK_SHARED_BINARY_URL", "POLAR_BLE_SDK_SHARED_BINARY_CHECKSUM", ".binaryTarget", "PolarBleSdkShared.xcframework")
@@ -72,9 +78,31 @@ private fun kmpNonGradleChecks() {
     listOf(".github/workflows/pr-checks.yml", ".github/workflows/nightly.yml")
         .filterNot { path ->
             val workflow = repoRoot.resolve(path).readTextIfExists()
-            workflow.contains(":lintCheck") && workflow.contains("swiftlint lint --strict --config .swiftlint.yml")
+            workflow.contains(":lintCheck") &&
+                workflow.contains("uses: ./.github/actions/setup-actionlint") &&
+                workflow.contains("actionlint .github/workflows/*.yml") &&
+                workflow.contains("uses: ./.github/actions/setup-swiftlint") &&
+                workflow.contains("swiftlint lint --strict --config .swiftlint.yml")
         }
-        .mapTo(errors) { "$it must run Kotlin and Swift lint check-mode in CI" }
+        .mapTo(errors) { "$it must run pinned actionlint plus Kotlin and Swift lint check-mode in CI" }
+
+    listOf(".github/workflows/pr-checks.yml", ".github/workflows/nightly.yml", ".github/workflows/release-artifacts.yml")
+        .filterNot { path -> repoRoot.resolve(path).readTextIfExists().contains("uses: ./.github/actions/setup-xcodegen") }
+        .mapTo(errors) { "$it must use the pinned local XcodeGen setup action" }
+
+    mapOf(
+        ".github/actions/setup-actionlint/action.yml" to listOf("version=\"1.7.12\"", "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8", "aba9ced2dee8d27fecca3dc7feb1a7f9a52caefa1eb46f3271ea66b6e0e6953f", "sha256sum -c -", "shasum -a 256 -c -"),
+        ".github/actions/setup-swiftlint/action.yml" to listOf("version=\"0.63.3\"", "fb045e85e7cb3374f42a4840b6b85a0106302afa69035c0c6f29af4a44c810b6", "shasum -a 256 -c -"),
+        ".github/actions/setup-xcodegen/action.yml" to listOf("version=\"2.45.4\"", "090ec29491aad50aec10631bf6e62253fed733c50f3aab0f5ffc86bc170bdbef", "shasum -a 256 -c -"),
+    ).forEach { (path, requiredTerms) ->
+        val setupAction = repoRoot.resolve(path).readTextIfExists()
+        requiredTerms
+            .filterNot { setupAction.contains(it) }
+            .mapTo(errors) { "$path missing pinned setup term $it" }
+        listOf("brew install", "bash <(curl")
+            .filter { setupAction.contains(it) }
+            .mapTo(errors) { "$path must not use $it" }
+    }
 
     val validationDoc = repoRoot.resolve("documentation/KmpValidationCommands.md").readTextIfExists()
     listOf(":repo-tools:kmpNonGradleChecks", ":repo-tools:iosXcodeValidationProbe", ":repo-tools:validateGeneratedXcodeProject", ":repo-tools:verifyApiDocsGenerationPolicy", ":lintCheck", "scripts/lint_check.sh", ".swiftlint.yml", "SwiftLint check-mode", "Kotlin lint check-mode", "Swift Package Manager", "package_kmp_xcframework.sh", "ci_xcodebuild_test.sh", "fast", "full", "firmware", "PolarBleApiImplTests", "Generated Protobuf Ownership", "scripts/generate_swift_protobuf.sh")

@@ -1,8 +1,34 @@
 name: Set up XcodeGen
-description: Install XcodeGen when the macOS runner image does not already provide it.
+description: Install a pinned XcodeGen release after SHA-256 verification.
 runs:
   using: composite
   steps:
     - name: Install XcodeGen
       shell: bash
-      run: command -v xcodegen >/dev/null 2>&1 || brew install xcodegen
+      run: |
+        set -euo pipefail
+
+        version="2.45.4"
+        archive_name="xcodegen.zip"
+        expected_sha256="090ec29491aad50aec10631bf6e62253fed733c50f3aab0f5ffc86bc170bdbef"
+        url="https://github.com/yonaskolb/XcodeGen/releases/download/${version}/${archive_name}"
+        tool_root="${RUNNER_TEMP}/xcodegen-${version}"
+        archive_path="${RUNNER_TEMP}/xcodegen-${version}.zip"
+
+        case "$(uname -s)-$(uname -m)" in
+          Darwin-*)
+            ;;
+          *)
+            echo "Unsupported XcodeGen runner: $(uname -s)-$(uname -m)" >&2
+            exit 2
+            ;;
+        esac
+
+        rm -rf "${tool_root}"
+        mkdir -p "${tool_root}"
+        curl -fsSL "${url}" -o "${archive_path}"
+        printf '%s  %s\n' "${expected_sha256}" "${archive_path}" | shasum -a 256 -c -
+        unzip -q "${archive_path}" -d "${tool_root}"
+        chmod +x "${tool_root}/xcodegen/bin/xcodegen"
+        "${tool_root}/xcodegen/bin/xcodegen" --version
+        echo "${tool_root}/xcodegen/bin" >> "${GITHUB_PATH}"
