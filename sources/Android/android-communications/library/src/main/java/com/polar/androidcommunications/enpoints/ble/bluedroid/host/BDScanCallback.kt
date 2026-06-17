@@ -59,6 +59,7 @@ internal class BDScanCallback(
     private val scanPool: MutableList<Long> = CopyOnWriteArrayList()
     private val mainHandler = Handler(context.mainLooper)
     private val scope = CoroutineScope(Dispatchers.IO)
+    private val stateMutex = Any()
     private var state = ScannerState.IDLE
     var lowPowerEnabled = false
     var opportunistic = true
@@ -74,14 +75,18 @@ internal class BDScanCallback(
     }
 
     override fun setScanFilters(filters: List<ScanFilter?>?) {
-        stopScan()
-        this.scanFilter = filters
-        startScan()
+        synchronized(stateMutex) {
+            commandStateLocked(ScanAction.ADMIN_STOP_SCAN)
+            this.scanFilter = filters
+            commandStateLocked(ScanAction.ADMIN_START_SCAN)
+        }
     }
 
     fun scanRestart() {
-        stopScan()
-        startScan()
+        synchronized(stateMutex) {
+            commandStateLocked(ScanAction.ADMIN_STOP_SCAN)
+            commandStateLocked(ScanAction.ADMIN_START_SCAN)
+        }
     }
 
     override fun restartScan() {
@@ -158,6 +163,12 @@ internal class BDScanCallback(
     }
 
     private fun commandState(action: ScanAction) {
+        synchronized(stateMutex) {
+            commandStateLocked(action)
+        }
+    }
+
+    private fun commandStateLocked(action: ScanAction) {
         BleLogger.d(TAG, "commandState state:$state action: $action")
         when (state) {
             ScannerState.IDLE -> scannerIdleState(action)
@@ -167,9 +178,9 @@ internal class BDScanCallback(
     }
 
     private fun changeState(newState: ScannerState) {
-        commandState(ScanAction.EXIT)
+        commandStateLocked(ScanAction.EXIT)
         state = newState
-        commandState(ScanAction.ENTRY)
+        commandStateLocked(ScanAction.ENTRY)
     }
 
     private fun scannerIdleState(action: ScanAction) {
@@ -256,9 +267,13 @@ internal class BDScanCallback(
                 delayJob = scope.launch {
                     delay(sift)
                     mainHandler.post {
-                        BleLogger.d(TAG, "delayed scan starting")
-                        if (scanPool.isNotEmpty()) scanPool.removeAt(0)
-                        startLScan()
+                        synchronized(stateMutex) {
+                            if (state == ScannerState.SCANNING) {
+                                BleLogger.d(TAG, "delayed scan starting")
+                                if (scanPool.isNotEmpty()) scanPool.removeAt(0)
+                                startLScan()
+                            }
+                        }
                     }
                 }
                 return
@@ -292,9 +307,13 @@ internal class BDScanCallback(
                     while (true) {
                         delay(OPPORTUNISTIC_RESTART_INTERVAL_MS)
                         mainHandler.post {
-                            BleLogger.d(TAG, "RESTARTING scan to avoid opportunistic")
-                            stopScanning()
-                            callStartScanL(scanSettings)
+                            synchronized(stateMutex) {
+                                if (state == ScannerState.SCANNING) {
+                                    BleLogger.d(TAG, "RESTARTING scan to avoid opportunistic")
+                                    stopScanning()
+                                    callStartScanL(scanSettings)
+                                }
+                            }
                         }
                     }
                 }
