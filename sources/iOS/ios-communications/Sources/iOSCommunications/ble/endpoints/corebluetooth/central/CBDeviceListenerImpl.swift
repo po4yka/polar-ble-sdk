@@ -82,7 +82,7 @@ public class CBDeviceListenerImpl: NSObject, SDKCBCentralManagerDelegate {
     }
     
     fileprivate func updateSessionState(_ session: CBDeviceSessionImpl, state: BleDeviceSession.DeviceSessionState, error: Error? = nil) {
-        publishSessionState(session, state: state, error: error)
+        _ = publishSessionState(session, state: state, error: error)
         if scanner.scanningNeeded() {
             scanner.enableScan()
         } else {
@@ -379,11 +379,16 @@ extension CBDeviceListenerImpl: CBScanningProtocol {
 }
 
 extension CBDeviceListenerImpl: ManualBleSessionStatePublisher {
-    func publishSessionState(_ session: BleDeviceSession, state: BleDeviceSession.DeviceSessionState, error: Error?) {
-        guard let session = session as? CBDeviceSessionImpl else { return }
+    func publishSessionState(_ session: BleDeviceSession, state: BleDeviceSession.DeviceSessionState, error: Error?) -> ManualBleSessionStateEvent? {
+        guard let session = session as? CBDeviceSessionImpl else { return nil }
         session.updateSessionState(state, error: error)
         connectionStateSubject.send((session: session, state: state))
         deviceSessionStateObserver?.stateChanged(session)
+        return ManualBleSessionStateEvent(
+            previousState: session.previousState,
+            state: session.state,
+            errorDescription: error?.localizedDescription
+        )
     }
 }
 

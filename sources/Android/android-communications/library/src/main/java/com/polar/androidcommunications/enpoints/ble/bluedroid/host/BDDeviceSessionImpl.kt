@@ -342,6 +342,12 @@ class BDDeviceSessionImpl internal constructor(
 
     override fun isGattConnected(): Boolean = isConnected()
 
+    override fun gattQueueSnapshot(): ManualBleGattQueueSnapshot =
+        ManualBleGattQueueSnapshot(
+            queuedOperationCount = queuedOperationCount(),
+            isConnected = isGattConnected()
+        )
+
     fun handleDisconnection() {
         d(TAG, "disconnected")
         advertisementContent.resetAdvertisementData()

@@ -17,6 +17,14 @@ class CBScanner: ManualBleScannerController {
             case .scanning: return "SCANNING"
             }
         }
+
+        func manualBleScanState() -> ManualBleScanState {
+            switch self {
+            case .idle: return .idle
+            case .stopped: return .stopped
+            case .scanning: return .scanning
+            }
+        }
     }
     
     enum ScanAction {
@@ -99,6 +107,19 @@ class CBScanner: ManualBleScannerController {
 
     func powerOff() {
         queue.async { self.commandState(ScanAction.blePowerOff) }
+    }
+
+    func scannerSnapshot() -> ManualBleScannerSnapshot {
+        var snapshot: ManualBleScannerSnapshot!
+        queue.sync {
+            snapshot = ManualBleScannerSnapshot(
+                state: state.manualBleScanState(),
+                isScanning: isScanning,
+                adminStopCount: adminStops,
+                serviceFilterCount: services?.count ?? 0
+            )
+        }
+        return snapshot
     }
 
     private func commandState(_ action: ScanAction){

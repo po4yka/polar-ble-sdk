@@ -53,7 +53,13 @@ internal class BDScanCallback(
     }
 
     private enum class ScannerState {
-        IDLE, STOPPED, SCANNING
+        IDLE, STOPPED, SCANNING;
+
+        fun toManualBleScanState(): ManualBleScanState = when (this) {
+            IDLE -> ManualBleScanState.IDLE
+            STOPPED -> ManualBleScanState.STOPPED
+            SCANNING -> ManualBleScanState.SCANNING
+        }
     }
 
     private val scanPool: MutableList<Long> = CopyOnWriteArrayList()
@@ -139,6 +145,18 @@ internal class BDScanCallback(
 
     override fun bluetoothPoweredOff() {
         powerOff()
+    }
+
+    override fun scannerSnapshot(): ManualBleScannerSnapshot {
+        synchronized(stateMutex) {
+            return ManualBleScannerSnapshot(
+                state = state.toManualBleScanState(),
+                adminStopCount = adminStops,
+                scanFilterCount = scanFilter?.size ?: 0,
+                lowPowerEnabled = lowPowerEnabled,
+                opportunisticRestartEnabled = opportunistic
+            )
+        }
     }
 
     private val leScanCallback: ScanCallback = object : ScanCallback() {

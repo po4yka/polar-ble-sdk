@@ -29,6 +29,15 @@ final class ManualBleTransportContractsTest: XCTestCase {
         contract.setServices([CBUUID(string: "180D")])
         drain(queue)
         XCTAssertEqual([CBUUID(string: "180D")], scanner.services)
+        XCTAssertEqual(
+            ManualBleScannerSnapshot(
+                state: .scanning,
+                isScanning: true,
+                adminStopCount: 0,
+                serviceFilterCount: 1
+            ),
+            contract.scannerSnapshot()
+        )
     }
 
     func testManualSessionStatePublisherPreservesPreviousCurrentAndEmittedStates() {
@@ -38,10 +47,18 @@ final class ManualBleTransportContractsTest: XCTestCase {
         publisher.publishSessionState(session, state: .sessionOpening, error: nil)
         publisher.publishSessionState(session, state: .sessionOpen, error: nil)
         publisher.publishSessionState(session, state: .sessionClosing, error: nil)
-        publisher.publishSessionState(session, state: .sessionClosed, error: nil)
+        let event = publisher.publishSessionState(session, state: .sessionClosed, error: nil)
 
         XCTAssertEqual(.sessionClosing, session.previousState)
         XCTAssertEqual(.sessionClosed, session.state)
+        XCTAssertEqual(
+            ManualBleSessionStateEvent(
+                previousState: .sessionClosing,
+                state: .sessionClosed,
+                errorDescription: nil
+            ),
+            event
+        )
         XCTAssertEqual(["sessionOpening", "sessionOpen", "sessionClosing", "sessionClosed"], publisher.events)
     }
 
@@ -55,6 +72,14 @@ final class ManualBleTransportContractsTest: XCTestCase {
 
         XCTAssertFalse(queue.isConnected())
         XCTAssertFalse(queue.scanningPaused)
+        XCTAssertEqual(
+            ManualBleGattQueueSnapshot(
+                isConnected: false,
+                notificationQueueSize: 0,
+                hasPendingWriteWithoutResponse: false
+            ),
+            queue.gattQueueSnapshot()
+        )
         XCTAssertEqual(["connect", "pause", "resume", "disconnect"], queue.events)
     }
 
@@ -97,9 +122,14 @@ private final class FakeManualBleSession: BleDeviceSession {
 private final class FakeManualBleSessionStatePublisher: ManualBleSessionStatePublisher {
     private(set) var events = [String]()
 
-    func publishSessionState(_ session: BleDeviceSession, state: BleDeviceSession.DeviceSessionState, error: Error?) {
+    func publishSessionState(_ session: BleDeviceSession, state: BleDeviceSession.DeviceSessionState, error: Error?) -> ManualBleSessionStateEvent? {
         (session as! FakeManualBleSession).update(state, error: error)
         events.append(state.description())
+        return ManualBleSessionStateEvent(
+            previousState: session.previousState,
+            state: session.state,
+            errorDescription: error?.localizedDescription
+        )
     }
 }
 
@@ -130,5 +160,13 @@ private final class FakeManualBleGattOperationQueue: ManualBleGattOperationQueue
 
     func isConnected() -> Bool {
         connected
+    }
+
+    func gattQueueSnapshot() -> ManualBleGattQueueSnapshot {
+        ManualBleGattQueueSnapshot(
+            isConnected: connected,
+            notificationQueueSize: 0,
+            hasPendingWriteWithoutResponse: false
+        )
     }
 }

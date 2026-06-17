@@ -23,7 +23,6 @@ import io.mockk.unmockkAll
 import io.mockk.verify
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -66,7 +65,16 @@ class ManualBleHostContractsTest {
 
         verify(atLeast = 1) { bluetoothLeScanner.startScan(any<List<ScanFilter>>(), any<ScanSettings>(), any<ScanCallback>()) }
         verify(atLeast = 1) { bluetoothLeScanner.stopScan(any<ScanCallback>()) }
-        assertEquals("IDLE", privateField(scanner, "state").toString())
+        assertEquals(
+            ManualBleScannerSnapshot(
+                state = ManualBleScanState.IDLE,
+                adminStopCount = 0,
+                scanFilterCount = 3,
+                lowPowerEnabled = false,
+                opportunisticRestartEnabled = false
+            ),
+            contract.scannerSnapshot()
+        )
     }
 
     @Test
@@ -77,10 +85,17 @@ class ManualBleHostContractsTest {
         publisher.publishSessionState(session, BleDeviceSession.DeviceSessionState.SESSION_OPENING)
         publisher.publishSessionState(session, BleDeviceSession.DeviceSessionState.SESSION_OPEN)
         publisher.publishSessionState(session, BleDeviceSession.DeviceSessionState.SESSION_CLOSING)
-        publisher.publishSessionState(session, BleDeviceSession.DeviceSessionState.SESSION_CLOSED)
+        val event = publisher.publishSessionState(session, BleDeviceSession.DeviceSessionState.SESSION_CLOSED)
 
         assertEquals(BleDeviceSession.DeviceSessionState.SESSION_CLOSING, session.previousState)
         assertEquals(BleDeviceSession.DeviceSessionState.SESSION_CLOSED, session.sessionState)
+        assertEquals(
+            ManualBleSessionStateEvent(
+                previousState = BleDeviceSession.DeviceSessionState.SESSION_CLOSING,
+                state = BleDeviceSession.DeviceSessionState.SESSION_CLOSED
+            ),
+            event
+        )
         assertEquals(
             listOf("SESSION_OPENING", "SESSION_OPEN", "SESSION_CLOSING", "SESSION_CLOSED"),
             publisher.events
@@ -113,6 +128,10 @@ class ManualBleHostContractsTest {
 
         assertTrue(queue.isGattConnected())
         assertEquals(0, queue.queuedOperationCount())
+        assertEquals(
+            ManualBleGattQueueSnapshot(queuedOperationCount = 0, isConnected = true),
+            queue.gattQueueSnapshot()
+        )
         verify(exactly = 1) { scanCallback.stopScan() }
         verify(exactly = 1) { scanCallback.startScan() }
     }
@@ -138,9 +157,10 @@ class ManualBleHostContractsTest {
     private class FakeManualBleSessionStatePublisher : ManualBleSessionStatePublisher {
         val events = mutableListOf<String>()
 
-        override fun publishSessionState(session: BleDeviceSession, state: BleDeviceSession.DeviceSessionState) {
+        override fun publishSessionState(session: BleDeviceSession, state: BleDeviceSession.DeviceSessionState): ManualBleSessionStateEvent {
             (session as FakeManualBleSession).update(state)
             events += state.name
+            return ManualBleSessionStateEvent(session.previousState, session.sessionState)
         }
     }
 
@@ -164,11 +184,5 @@ class ManualBleHostContractsTest {
                 override fun isScanningNeeded(): Boolean = scanningNeeded.get()
             }
         ).also { it.opportunistic = false }
-    }
-
-    private fun privateField(target: Any, fieldName: String): Any {
-        val field = target.javaClass.getDeclaredField(fieldName)
-        field.isAccessible = true
-        return requireNotNull(field.get(target))
     }
 }

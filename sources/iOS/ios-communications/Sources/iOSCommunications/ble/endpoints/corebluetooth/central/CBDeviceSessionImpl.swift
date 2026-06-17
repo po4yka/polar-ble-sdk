@@ -218,6 +218,14 @@ class CBDeviceSessionImpl: BleDeviceSession, CBPeripheralDelegate, BleAttributeT
     func isConnected() -> Bool {
         return self.peripheral.state == CBPeripheralState.connected
     }
+
+    func gattQueueSnapshot() -> ManualBleGattQueueSnapshot {
+        return ManualBleGattQueueSnapshot(
+            isConnected: isConnected(),
+            notificationQueueSize: attNotifyQueue.size(),
+            hasPendingWriteWithoutResponse: pendingWriteData != nil
+        )
+    }
     
     func attributeOperationStarted(){
         queue.async {

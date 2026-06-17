@@ -4,6 +4,30 @@ import android.bluetooth.le.ScanFilter
 import com.polar.androidcommunications.api.ble.model.BleDeviceSession
 import com.polar.androidcommunications.enpoints.ble.bluedroid.host.connection.ConnectionInterface
 
+enum class ManualBleScanState {
+    IDLE,
+    STOPPED,
+    SCANNING
+}
+
+data class ManualBleScannerSnapshot(
+    val state: ManualBleScanState,
+    val adminStopCount: Int,
+    val scanFilterCount: Int,
+    val lowPowerEnabled: Boolean,
+    val opportunisticRestartEnabled: Boolean
+)
+
+data class ManualBleSessionStateEvent(
+    val previousState: BleDeviceSession.DeviceSessionState,
+    val state: BleDeviceSession.DeviceSessionState
+)
+
+data class ManualBleGattQueueSnapshot(
+    val queuedOperationCount: Int,
+    val isConnected: Boolean
+)
+
 internal interface ManualBleScannerController {
     fun setScanFilters(filters: List<ScanFilter?>?)
     fun restartScan()
@@ -13,12 +37,13 @@ internal interface ManualBleScannerController {
     fun resumeScanningAfterHostOperation()
     fun bluetoothPoweredOn()
     fun bluetoothPoweredOff()
+    fun scannerSnapshot(): ManualBleScannerSnapshot
 }
 
 internal interface ManualBleConnectionController : ConnectionInterface
 
 internal interface ManualBleSessionStatePublisher {
-    fun publishSessionState(session: BleDeviceSession, state: BleDeviceSession.DeviceSessionState)
+    fun publishSessionState(session: BleDeviceSession, state: BleDeviceSession.DeviceSessionState): ManualBleSessionStateEvent
 }
 
 internal interface ManualBleGattOperationQueue {
@@ -26,4 +51,5 @@ internal interface ManualBleGattOperationQueue {
     fun resumeScanningAfterGattOperation()
     fun queuedOperationCount(): Int
     fun isGattConnected(): Boolean
+    fun gattQueueSnapshot(): ManualBleGattQueueSnapshot
 }
