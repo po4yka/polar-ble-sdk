@@ -142,6 +142,9 @@ jobs:
       - name: Cache SwiftPM
         uses: ./.github/actions/cache-swiftpm
 
+      - name: Set up XcodeGen
+        uses: ./.github/actions/setup-xcodegen
+
       - name: iOS Xcode validation probe
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
         run: ./gradlew :repo-tools:iosXcodeValidationProbe --no-daemon --warning-mode all

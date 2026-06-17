@@ -96,6 +96,9 @@ jobs:
         with:
           key-prefix: release-
 
+      - name: Set up XcodeGen
+        uses: ./.github/actions/setup-xcodegen
+
       - name: Generated Xcode project validation
         working-directory: ${{ env.ANDROID_PROJECT_DIR }}
         run: ./gradlew :repo-tools:validateGeneratedXcodeProject --no-daemon --warning-mode all

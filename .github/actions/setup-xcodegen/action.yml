@@ -1,0 +1,8 @@
+name: Set up XcodeGen
+description: Install XcodeGen when the macOS runner image does not already provide it.
+runs:
+  using: composite
+  steps:
+    - name: Install XcodeGen
+      shell: bash
+      run: command -v xcodegen >/dev/null 2>&1 || brew install xcodegen
