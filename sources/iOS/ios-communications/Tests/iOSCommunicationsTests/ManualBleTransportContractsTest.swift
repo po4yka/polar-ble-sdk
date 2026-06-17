@@ -94,8 +94,74 @@ final class ManualBleTransportContractsTest: XCTestCase {
         XCTAssertTrue(publisher === listener)
     }
 
+    func testPublicBleLifecycleParityFixturePinsIosSdkVisibleBehavior() throws {
+        let vector = try GoldenVectorTestData.loadObject("sdk/ble-session/public-ble-lifecycle-parity.json")
+        let input = try XCTUnwrap(vector["input"] as? [String: Any])
+        let expected = try XCTUnwrap(vector["expected"] as? [String: Any])
+        let consumerTests = try XCTUnwrap(vector["consumerTests"] as? [String: Any])
+        let scenario = try XCTUnwrap(input["scenario"] as? [[String: Any]])
+        let errorMappings = try XCTUnwrap(expected["errorMappings"] as? [String: Any])
+
+        XCTAssertEqual(vector["id"] as? String, "public-ble-lifecycle-parity")
+        XCTAssertEqual(input["kind"] as? String, "publicBleLifecycleParityFixture")
+        XCTAssertEqual(scenario.compactMap { $0["event"] as? String }, requiredPublicBleParityScript)
+        XCTAssertEqual(expected["publicEvents"] as? [String], requiredPublicBleParityEvents)
+        XCTAssertEqual(expected["sessionStates"] as? [String], requiredPublicBleParityStates)
+        XCTAssertEqual(expected["readyFeatures"] as? [String], ["HR", "PSFTP"])
+        XCTAssertEqual(expected["scanPausePolicy"] as? [String], ["pauseBeforeGattOperation", "resumeAfterGattOperation"])
+        XCTAssertEqual(errorMappings["linkLoss"] as? String, "deviceDisconnected:linkLoss")
+        XCTAssertEqual(errorMappings["pairingProblem"] as? String, "pairingProblem")
+        XCTAssertEqual(consumerTests["android"] as? [String], ["com.polar.androidcommunications.enpoints.ble.bluedroid.host.ManualBleHostContractsTest"])
+        XCTAssertEqual(consumerTests["ios"] as? [String], ["ManualBleTransportContractsTest"])
+        XCTAssertEqual(consumerTests["commonPrototype"] as? [String], ["com.polar.sharedtest.BleSessionPlatformOwnershipCommonPolicyTest"])
+        XCTAssertEqual(expected["platformOwnership"] as? String, "manual_transport_platform_owned")
+    }
+
     private func drain(_ queue: DispatchQueue) {
         queue.sync { }
+    }
+
+    private var requiredPublicBleParityScript: [String] {
+        [
+            "scan_result",
+            "open_requested",
+            "service_discovery_complete",
+            "notification_enable_complete",
+            "stream_data",
+            "disconnect",
+            "reconnect_requested",
+            "session_reopened",
+            "pairing_problem"
+        ]
+    }
+
+    private var requiredPublicBleParityEvents: [String] {
+        [
+            "deviceDiscovered",
+            "sessionOpening",
+            "sessionOpen",
+            "featureReady:HR",
+            "featureReady:PSFTP",
+            "notificationEnabled:HR",
+            "notificationEnabled:PSFTP",
+            "streamStarted:HR",
+            "streamData:HR",
+            "deviceDisconnected:linkLoss",
+            "reconnectRequested",
+            "sessionOpen",
+            "pairingProblem"
+        ]
+    }
+
+    private var requiredPublicBleParityStates: [String] {
+        [
+            "SESSION_OPENING",
+            "SESSION_OPEN",
+            "SESSION_CLOSING",
+            "SESSION_CLOSED",
+            "SESSION_OPENING",
+            "SESSION_OPEN"
+        ]
     }
 }
 

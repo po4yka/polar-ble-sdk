@@ -13,6 +13,7 @@ import android.os.ParcelUuid
 import com.polar.androidcommunications.api.ble.model.BleDeviceSession
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattFactory
 import com.polar.androidcommunications.common.ble.BleUtils.EVENT_TYPE
+import com.polar.testutils.GoldenVectorTestData
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -137,6 +138,37 @@ class ManualBleHostContractsTest {
         verify(exactly = 1) { scanCallback.startScan() }
     }
 
+    @Test
+    fun `public BLE lifecycle parity fixture pins Android SDK visible behavior`() {
+        val vector = GoldenVectorTestData.loadObject("sdk/ble-session/public-ble-lifecycle-parity.json")
+        val input = vector.getAsJsonObject("input")
+        val expected = vector.getAsJsonObject("expected")
+        val consumerTests = vector.getAsJsonObject("consumerTests")
+
+        assertEquals("public-ble-lifecycle-parity", vector.get("id").asString)
+        assertEquals("publicBleLifecycleParityFixture", input.get("kind").asString)
+        assertEquals(REQUIRED_PUBLIC_BLE_PARITY_SCRIPT, input.getAsJsonArray("scenario").map { it.asJsonObject.get("event").asString })
+        assertEquals(REQUIRED_PUBLIC_BLE_PARITY_EVENTS, expected.getAsJsonArray("publicEvents").map { it.asString })
+        assertEquals(REQUIRED_PUBLIC_BLE_PARITY_STATES, expected.getAsJsonArray("sessionStates").map { it.asString })
+        assertEquals(listOf("HR", "PSFTP"), expected.getAsJsonArray("readyFeatures").map { it.asString })
+        assertEquals(
+            listOf("pauseBeforeGattOperation", "resumeAfterGattOperation"),
+            expected.getAsJsonArray("scanPausePolicy").map { it.asString }
+        )
+        assertEquals("deviceDisconnected:linkLoss", expected.getAsJsonObject("errorMappings").get("linkLoss").asString)
+        assertEquals("pairingProblem", expected.getAsJsonObject("errorMappings").get("pairingProblem").asString)
+        assertEquals(
+            listOf("com.polar.androidcommunications.enpoints.ble.bluedroid.host.ManualBleHostContractsTest"),
+            consumerTests.getAsJsonArray("android").map { it.asString }
+        )
+        assertEquals(listOf("ManualBleTransportContractsTest"), consumerTests.getAsJsonArray("ios").map { it.asString })
+        assertEquals(
+            listOf("com.polar.sharedtest.BleSessionPlatformOwnershipCommonPolicyTest"),
+            consumerTests.getAsJsonArray("commonPrototype").map { it.asString }
+        )
+        assertEquals("manual_transport_platform_owned", expected.get("platformOwnership").asString)
+    }
+
     private class FakeManualBleSession : BleDeviceSession() {
         fun update(state: DeviceSessionState) {
             previousState = sessionState
@@ -185,5 +217,44 @@ class ManualBleHostContractsTest {
                 override fun isScanningNeeded(): Boolean = scanningNeeded.get()
             }
         ).also { it.opportunistic = false }
+    }
+
+    private companion object {
+        val REQUIRED_PUBLIC_BLE_PARITY_SCRIPT = listOf(
+            "scan_result",
+            "open_requested",
+            "service_discovery_complete",
+            "notification_enable_complete",
+            "stream_data",
+            "disconnect",
+            "reconnect_requested",
+            "session_reopened",
+            "pairing_problem"
+        )
+
+        val REQUIRED_PUBLIC_BLE_PARITY_EVENTS = listOf(
+            "deviceDiscovered",
+            "sessionOpening",
+            "sessionOpen",
+            "featureReady:HR",
+            "featureReady:PSFTP",
+            "notificationEnabled:HR",
+            "notificationEnabled:PSFTP",
+            "streamStarted:HR",
+            "streamData:HR",
+            "deviceDisconnected:linkLoss",
+            "reconnectRequested",
+            "sessionOpen",
+            "pairingProblem"
+        )
+
+        val REQUIRED_PUBLIC_BLE_PARITY_STATES = listOf(
+            "SESSION_OPENING",
+            "SESSION_OPEN",
+            "SESSION_CLOSING",
+            "SESSION_CLOSED",
+            "SESSION_OPENING",
+            "SESSION_OPEN"
+        )
     }
 }

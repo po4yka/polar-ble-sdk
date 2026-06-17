@@ -1,0 +1,120 @@
+{
+  "id": "public-ble-lifecycle-parity",
+  "area": "sdk.ble-session",
+  "case": "public_ble_lifecycle_parity",
+  "source": "Android and iOS manual BLE parity fixture for public SDK-visible behavior while runtime transport remains platform-owned",
+  "description": "Pins the cross-platform public BLE lifecycle sequence that Android and iOS manual transports must preserve without moving BluetoothGatt or CoreBluetooth behavior into shared KMP.",
+  "input": {
+    "kind": "publicBleLifecycleParityFixture",
+    "device": {
+      "deviceId": "A1B2C3D4",
+      "address": "00:11:22:33:44:55",
+      "name": "Polar H10 A1B2C3D4",
+      "rssi": -48,
+      "connectable": true
+    },
+    "scenario": [
+      {
+        "event": "scan_result",
+        "publicBehavior": "device_discovered"
+      },
+      {
+        "event": "open_requested",
+        "publicBehavior": "session_opening"
+      },
+      {
+        "event": "service_discovery_complete",
+        "services": [
+          "180d",
+          "fb005c80-02e7-f387-1cad-8acd2d8df0c8"
+        ],
+        "publicBehavior": "features_ready"
+      },
+      {
+        "event": "notification_enable_complete",
+        "characteristics": [
+          "2a37",
+          "fb005c82-02e7-f387-1cad-8acd2d8df0c8"
+        ],
+        "publicBehavior": "hr_streaming_and_psftp_ready"
+      },
+      {
+        "event": "stream_data",
+        "feature": "hr",
+        "publicBehavior": "hr_stream_data"
+      },
+      {
+        "event": "disconnect",
+        "reason": "link_loss",
+        "publicBehavior": "link_loss_disconnect"
+      },
+      {
+        "event": "reconnect_requested",
+        "publicBehavior": "reconnect_attempt"
+      },
+      {
+        "event": "session_reopened",
+        "publicBehavior": "session_open"
+      },
+      {
+        "event": "pairing_problem",
+        "publicBehavior": "pairing_error"
+      }
+    ]
+  },
+  "expected": {
+    "publicEvents": [
+      "deviceDiscovered",
+      "sessionOpening",
+      "sessionOpen",
+      "featureReady:HR",
+      "featureReady:PSFTP",
+      "notificationEnabled:HR",
+      "notificationEnabled:PSFTP",
+      "streamStarted:HR",
+      "streamData:HR",
+      "deviceDisconnected:linkLoss",
+      "reconnectRequested",
+      "sessionOpen",
+      "pairingProblem"
+    ],
+    "sessionStates": [
+      "SESSION_OPENING",
+      "SESSION_OPEN",
+      "SESSION_CLOSING",
+      "SESSION_CLOSED",
+      "SESSION_OPENING",
+      "SESSION_OPEN"
+    ],
+    "readyFeatures": [
+      "HR",
+      "PSFTP"
+    ],
+    "scanPausePolicy": [
+      "pauseBeforeGattOperation",
+      "resumeAfterGattOperation"
+    ],
+    "errorMappings": {
+      "linkLoss": "deviceDisconnected:linkLoss",
+      "pairingProblem": "pairingProblem"
+    },
+    "platformOwnership": "manual_transport_platform_owned"
+  },
+  "consumerTests": {
+    "android": [
+      "com.polar.androidcommunications.enpoints.ble.bluedroid.host.ManualBleHostContractsTest"
+    ],
+    "ios": [
+      "ManualBleTransportContractsTest"
+    ],
+    "commonPrototype": [
+      "com.polar.sharedtest.BleSessionPlatformOwnershipCommonPolicyTest"
+    ]
+  },
+  "platforms": {
+    "android": true,
+    "ios": true,
+    "common": true
+  },
+  "notes": "This fixture is a parity contract for public SDK-visible behavior only. Android still owns BluetoothGatt, scanner lifecycle, MTU, cache, PHY, bonding, and Bluedroid callback handling; iOS still owns CoreBluetooth scanning, restoration, write-without-response readiness, background behavior, and CBError mapping."
+}
