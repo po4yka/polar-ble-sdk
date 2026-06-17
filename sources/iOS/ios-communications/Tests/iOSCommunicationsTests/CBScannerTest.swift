@@ -130,13 +130,14 @@ final class CBScannerTest: XCTestCase {
         XCTAssertEqual(.idle, sut.state)
     }
 
-    func testStopScanThenStartScanLeavesStateIdle() {
-        // Call stopScan twice — due to the adminStops counter behaviour
-        // (adminStops = +1 in stopped state always resets to 1) a single
-        // startScan() is sufficient to return to idle.
+    func testNestedStopScanRequiresMatchingStartScanBeforeReturningToIdle() {
         sut.stopScan()
         drainQueue()
         sut.stopScan()
+        drainQueue()
+        XCTAssertEqual(.stopped, sut.state)
+
+        sut.startScan()
         drainQueue()
         XCTAssertEqual(.stopped, sut.state)
 

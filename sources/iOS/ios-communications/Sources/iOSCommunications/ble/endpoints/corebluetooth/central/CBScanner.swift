@@ -175,7 +175,7 @@ class CBScanner: ManualBleScannerController {
                 BleLogger.trace("Scanner waiting last admin to call start scan admins count: \(adminStops)")
             }
         case .adminStopScan:
-            adminStops = +1
+            adminStops += 1
         case .blePowerOff:
             changeState(.idle)
         case .clientStartScan: fallthrough
