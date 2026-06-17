@@ -324,8 +324,8 @@ class BDDeviceListenerImplTest {
 
         sut.shutDown()
 
-        verify { scanCallback.stopScan() }
-        assertEquals(0, sut.deviceSessions()!!.size)
+        verify { scanCallback.shutdown() }
+        assertEquals(0, sut.deviceSessions().size)
     }
 
     @Test

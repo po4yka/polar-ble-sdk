@@ -19,6 +19,7 @@ import com.polar.androidcommunications.common.ble.BleUtils.EVENT_TYPE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
@@ -70,6 +71,7 @@ internal class BDScanCallback(
     var lowPowerEnabled = false
     var opportunistic = true
     private var adminStops = 0
+    private var shutdown = false
 
     private var delayJob: Job? = null
     private var opportunisticScanJob: Job? = null
@@ -82,6 +84,7 @@ internal class BDScanCallback(
 
     override fun setScanFilters(filters: List<ScanFilter?>?) {
         synchronized(stateMutex) {
+            if (shutdown) return
             commandStateLocked(ScanAction.ADMIN_STOP_SCAN)
             this.scanFilter = filters
             commandStateLocked(ScanAction.ADMIN_START_SCAN)
@@ -90,6 +93,7 @@ internal class BDScanCallback(
 
     fun scanRestart() {
         synchronized(stateMutex) {
+            if (shutdown) return
             commandStateLocked(ScanAction.ADMIN_STOP_SCAN)
             commandStateLocked(ScanAction.ADMIN_START_SCAN)
         }
@@ -154,9 +158,28 @@ internal class BDScanCallback(
                 adminStopCount = adminStops,
                 scanFilterCount = scanFilter?.size ?: 0,
                 lowPowerEnabled = lowPowerEnabled,
-                opportunisticRestartEnabled = opportunistic
+                opportunisticRestartEnabled = opportunistic,
+                isShutdown = shutdown
             )
         }
+    }
+
+    override fun shutdown() {
+        synchronized(stateMutex) {
+            if (shutdown) return
+            shutdown = true
+            if (state == ScannerState.SCANNING) {
+                stopScanning()
+            } else {
+                delayJob?.cancel()
+                delayJob = null
+            }
+            opportunisticScanJob?.cancel()
+            opportunisticScanJob = null
+            adminStops = 0
+            state = ScannerState.IDLE
+        }
+        scope.cancel()
     }
 
     private val leScanCallback: ScanCallback = object : ScanCallback() {
@@ -187,6 +210,7 @@ internal class BDScanCallback(
     }
 
     private fun commandStateLocked(action: ScanAction) {
+        if (shutdown) return
         BleLogger.d(TAG, "commandState state:$state action: $action")
         when (state) {
             ScannerState.IDLE -> scannerIdleState(action)

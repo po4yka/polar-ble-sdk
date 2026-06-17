@@ -15,7 +15,8 @@ data class ManualBleScannerSnapshot(
     val adminStopCount: Int,
     val scanFilterCount: Int,
     val lowPowerEnabled: Boolean,
-    val opportunisticRestartEnabled: Boolean
+    val opportunisticRestartEnabled: Boolean,
+    val isShutdown: Boolean
 )
 
 data class ManualBleSessionStateEvent(
@@ -38,6 +39,7 @@ internal interface ManualBleScannerController {
     fun bluetoothPoweredOn()
     fun bluetoothPoweredOff()
     fun scannerSnapshot(): ManualBleScannerSnapshot
+    fun shutdown()
 }
 
 internal interface ManualBleConnectionController : ConnectionInterface

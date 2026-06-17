@@ -173,7 +173,7 @@ class BDDeviceListenerImpl(
     override fun shutDown() {
         bondingManager.stopBroadcastReceiver()
         powerManager.stopBroadcastReceiver()
-        scanCallback.stopScan()
+        scanCallback.shutdown()
         sessions.sessions.accessAll<BDDeviceSessionImpl>() { obj ->
             (obj as BDDeviceSessionImpl).resetGatt()
         }

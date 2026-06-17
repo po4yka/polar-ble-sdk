@@ -11,11 +11,9 @@ import android.os.Looper
 import android.os.ParcelUuid
 import com.polar.androidcommunications.common.ble.BleUtils.EVENT_TYPE
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
-import io.mockk.runs
 import io.mockk.unmockkAll
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -85,9 +83,38 @@ class BDScanCallbackTest {
         assertEquals("STOPPED", scannerState(sut))
     }
 
+    @Test
+    fun shutdown_stopsScanningCancelsLifecycleAndIgnoresLaterCommands() {
+        val startCount = java.util.concurrent.atomic.AtomicInteger(0)
+        val stopCount = java.util.concurrent.atomic.AtomicInteger(0)
+        val sut = createSut(
+            bluetoothEnabled = true,
+            isScanningNeeded = { true },
+            onStartScan = { startCount.incrementAndGet() },
+            onStopScan = { stopCount.incrementAndGet() }
+        )
+        sut.opportunistic = true
+
+        sut.clientAdded()
+        assertEquals(1, startCount.get())
+        assertEquals("SCANNING", scannerState(sut))
+
+        sut.shutdown()
+        sut.startScan()
+        sut.clientAdded()
+        sut.powerOn()
+
+        assertEquals(1, startCount.get())
+        assertEquals(1, stopCount.get())
+        assertEquals("IDLE", scannerState(sut))
+        assertTrue(sut.scannerSnapshot().isShutdown)
+    }
+
     private fun createSut(
         bluetoothEnabled: Boolean,
-        isScanningNeeded: () -> Boolean
+        isScanningNeeded: () -> Boolean,
+        onStartScan: () -> Unit = {},
+        onStopScan: () -> Unit = {}
     ): BDScanCallback {
         val context = mockk<Context>()
         val bluetoothAdapter = mockk<BluetoothAdapter>()
@@ -101,8 +128,12 @@ class BDScanCallbackTest {
         every { context.mainLooper } returns mockk<Looper>(relaxed = true)
         every { bluetoothAdapter.isEnabled } returns bluetoothEnabled
         every { bluetoothAdapter.bluetoothLeScanner } returns scanner
-        every { scanner.startScan(any<List<ScanFilter>>(), any<ScanSettings>(), any<ScanCallback>()) } just runs
-        every { scanner.stopScan(any<ScanCallback>()) } just runs
+        every { scanner.startScan(any<List<ScanFilter>>(), any<ScanSettings>(), any<ScanCallback>()) } answers {
+            onStartScan()
+        }
+        every { scanner.stopScan(any<ScanCallback>()) } answers {
+            onStopScan()
+        }
 
         return BDScanCallback(context, bluetoothAdapter, callbackInterface)
     }

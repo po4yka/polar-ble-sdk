@@ -71,7 +71,8 @@ class ManualBleHostContractsTest {
                 adminStopCount = 0,
                 scanFilterCount = 3,
                 lowPowerEnabled = false,
-                opportunisticRestartEnabled = false
+                opportunisticRestartEnabled = false,
+                isShutdown = false
             ),
             contract.scannerSnapshot()
         )
