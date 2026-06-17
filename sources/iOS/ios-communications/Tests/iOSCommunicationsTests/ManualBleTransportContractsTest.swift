@@ -5,20 +5,30 @@ import CoreBluetooth
 @testable import iOSCommunications
 
 final class ManualBleTransportContractsTest: XCTestCase {
-    func testManualScannerContractRecordsScanLifecycleWithoutCoreBluetooth() {
-        let scanner = FakeManualBleScannerController()
+    func testManualScannerContractIsBackedByProductionCoreBluetoothScanner() {
+        let queue = DispatchQueue(label: "com.polar.test.manual-scanner-contract")
+        let central = MockCBCentralManager()
+        central.mockState = .poweredOn
+        let scanner = CBScanner(central, queue: queue, sessions: AtomicList<CBDeviceSessionImpl>())
+        let contract: ManualBleScannerController = scanner
 
-        scanner.addClient()
-        scanner.powerOn()
-        scanner.stopScan()
-        scanner.startScan()
-        scanner.setServices([CBUUID(string: "180D")])
-        scanner.removeClient()
-        scanner.powerOff()
+        contract.addClient()
+        drain(queue)
+        XCTAssertTrue(scanner.isScanning)
+        XCTAssertTrue(central.scanForPeripheralsCalled)
 
-        XCTAssertEqual(["client-added", "power-on", "stop", "start", "services:180D", "client-removed", "power-off"], scanner.events)
+        contract.stopScan()
+        drain(queue)
         XCTAssertFalse(scanner.isScanning)
-        XCTAssertEqual(0, scanner.clientCount)
+        XCTAssertTrue(central.stopScanCalled)
+
+        contract.startScan()
+        drain(queue)
+        XCTAssertTrue(scanner.isScanning)
+
+        contract.setServices([CBUUID(string: "180D")])
+        drain(queue)
+        XCTAssertEqual([CBUUID(string: "180D")], scanner.services)
     }
 
     func testManualSessionStatePublisherPreservesPreviousCurrentAndEmittedStates() {
@@ -47,45 +57,20 @@ final class ManualBleTransportContractsTest: XCTestCase {
         XCTAssertFalse(queue.scanningPaused)
         XCTAssertEqual(["connect", "pause", "resume", "disconnect"], queue.events)
     }
-}
 
-private final class FakeManualBleScannerController: ManualBleScannerController {
-    private(set) var events = [String]()
-    private(set) var clientCount = 0
-    private(set) var isScanning = false
+    func testManualSessionStatePublisherContractIsBackedByProductionDeviceListener() {
+        let listener = CBDeviceListenerImpl(
+            DispatchQueue(label: "com.polar.test.manual-session-publisher-contract"),
+            clients: [],
+            identifier: 0
+        )
 
-    func setServices(_ services: [CBUUID]?) {
-        let serviceList = services?.map(\.uuidString).joined(separator: ",") ?? "nil"
-        events.append("services:\(serviceList)")
+        let publisher: ManualBleSessionStatePublisher = listener
+        XCTAssertTrue(publisher === listener)
     }
 
-    func addClient() {
-        clientCount += 1
-        events.append("client-added")
-    }
-
-    func removeClient() {
-        clientCount -= 1
-        events.append("client-removed")
-    }
-
-    func stopScan() {
-        isScanning = false
-        events.append("stop")
-    }
-
-    func startScan() {
-        isScanning = true
-        events.append("start")
-    }
-
-    func powerOn() {
-        events.append("power-on")
-    }
-
-    func powerOff() {
-        isScanning = false
-        events.append("power-off")
+    private func drain(_ queue: DispatchQueue) {
+        queue.sync { }
     }
 }
 

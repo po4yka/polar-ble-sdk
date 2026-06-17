@@ -1,38 +1,72 @@
 package com.polar.androidcommunications.enpoints.ble.bluedroid.host
 
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanSettings
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.os.ParcelUuid
 import com.polar.androidcommunications.api.ble.model.BleDeviceSession
+import com.polar.androidcommunications.api.ble.model.gatt.BleGattFactory
+import com.polar.androidcommunications.common.ble.BleUtils.EVENT_TYPE
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkConstructor
+import io.mockk.mockkStatic
+import io.mockk.runs
+import io.mockk.unmockkAll
+import io.mockk.verify
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ManualBleHostContractsTest {
+    @Before
+    fun setUp() {
+        mockkStatic(ParcelUuid::class)
+        every { ParcelUuid.fromString(any()) } returns mockk(relaxed = true)
+
+        mockkConstructor(ScanFilter.Builder::class)
+        every { anyConstructed<ScanFilter.Builder>().setServiceUuid(any()) } returns mockk(relaxed = true)
+        every { anyConstructed<ScanFilter.Builder>().setManufacturerData(any(), any()) } returns mockk(relaxed = true)
+        every { anyConstructed<ScanFilter.Builder>().build() } returns mockk(relaxed = true)
+
+        mockkConstructor(ScanSettings.Builder::class)
+        every { anyConstructed<ScanSettings.Builder>().setScanMode(any()) } returns mockk(relaxed = true)
+        every { anyConstructed<ScanSettings.Builder>().build() } returns mockk(relaxed = true)
+    }
+
+    @After
+    fun tearDown() {
+        unmockkAll()
+    }
+
     @Test
-    fun `manual scanner contract records scan lifecycle without platform bluetooth`() {
-        val scanner = FakeManualBleScannerController()
+    fun `manual scanner contract is backed by production Android scan adapter`() {
+        val bluetoothAdapter = mockk<BluetoothAdapter>()
+        val bluetoothLeScanner = mockk<BluetoothLeScanner>(relaxed = true)
+        val scanningNeeded = AtomicBoolean(true)
+        val scanner = createProductionScanner(bluetoothAdapter, bluetoothLeScanner, scanningNeeded)
+        val contract: ManualBleScannerController = scanner
 
-        scanner.addScanClient()
-        scanner.bluetoothPoweredOn()
-        scanner.pauseScanningForHostOperation()
-        scanner.resumeScanningAfterHostOperation()
-        scanner.restartScan()
-        scanner.removeScanClient()
-        scanner.bluetoothPoweredOff()
+        contract.addScanClient()
+        contract.pauseScanningForHostOperation()
+        contract.resumeScanningAfterHostOperation()
+        scanningNeeded.set(false)
+        contract.removeScanClient()
 
-        assertEquals(
-            listOf(
-                "client-added",
-                "power-on",
-                "pause",
-                "resume",
-                "restart",
-                "client-removed",
-                "power-off"
-            ),
-            scanner.events
-        )
-        assertFalse(scanner.isPaused)
-        assertEquals(0, scanner.clientCount)
+        verify(atLeast = 1) { bluetoothLeScanner.startScan(any<List<ScanFilter>>(), any<ScanSettings>(), any<ScanCallback>()) }
+        verify(atLeast = 1) { bluetoothLeScanner.stopScan(any<ScanCallback>()) }
+        assertEquals("IDLE", privateField(scanner, "state").toString())
     }
 
     @Test
@@ -54,64 +88,33 @@ class ManualBleHostContractsTest {
     }
 
     @Test
-    fun `manual gatt queue contract exposes operation count scan pauses and connection state`() {
-        val queue = FakeManualBleGattOperationQueue()
+    fun `manual gatt queue contract is backed by production Android device session`() {
+        val context = mockk<Context>()
+        val bluetoothDevice = mockk<BluetoothDevice>(relaxed = true)
+        val scanCallback = mockk<BDScanCallback>(relaxed = true)
+        val bondingManager = mockk<BDBondingListener>(relaxed = true)
+        val factory = mockk<BleGattFactory>(relaxed = true)
+        val looper = mockk<Looper>(relaxed = true)
+        every { context.mainLooper } returns looper
+        every { bluetoothDevice.address } returns "00:11:22:33:44:55"
+        every { factory.getRemoteServices(any()) } returns emptySet()
+        mockkConstructor(Handler::class)
+        every { anyConstructed<Handler>().post(any()) } answers {
+            firstArg<Runnable>().run()
+            true
+        }
 
-        queue.connect()
-        queue.enqueueOperation()
+        val session = BDDeviceSessionImpl(context, bluetoothDevice, scanCallback, bondingManager, factory)
+        val queue: ManualBleGattOperationQueue = session
+
+        session.sessionState = BleDeviceSession.DeviceSessionState.SESSION_OPEN
         queue.pauseScanningForGattOperation()
-        queue.enqueueOperation()
         queue.resumeScanningAfterGattOperation()
-        queue.completeOperation()
 
         assertTrue(queue.isGattConnected())
-        assertEquals(1, queue.queuedOperationCount())
-        assertEquals(listOf("connect", "enqueue", "pause", "enqueue", "resume", "complete"), queue.events)
-        assertFalse(queue.scanningPaused)
-    }
-
-    private class FakeManualBleScannerController : ManualBleScannerController {
-        val events = mutableListOf<String>()
-        var clientCount = 0
-            private set
-        var isPaused = false
-            private set
-
-        override fun setScanFilters(filters: List<android.bluetooth.le.ScanFilter?>?) {
-            events += "filters"
-        }
-
-        override fun restartScan() {
-            events += "restart"
-        }
-
-        override fun addScanClient() {
-            clientCount += 1
-            events += "client-added"
-        }
-
-        override fun removeScanClient() {
-            clientCount -= 1
-            events += "client-removed"
-        }
-
-        override fun pauseScanningForHostOperation() {
-            isPaused = true
-            events += "pause"
-        }
-
-        override fun resumeScanningAfterHostOperation() {
-            isPaused = false
-            events += "resume"
-        }
-
-        override fun bluetoothPoweredOn() {
-            events += "power-on"
-        }
-
-        override fun bluetoothPoweredOff() {
-            events += "power-off"
-        }
+        assertEquals(0, queue.queuedOperationCount())
+        verify(exactly = 1) { scanCallback.stopScan() }
+        verify(exactly = 1) { scanCallback.startScan() }
     }
 
     private class FakeManualBleSession : BleDeviceSession() {
@@ -141,40 +144,31 @@ class ManualBleHostContractsTest {
         }
     }
 
-    private class FakeManualBleGattOperationQueue : ManualBleGattOperationQueue {
-        val events = mutableListOf<String>()
-        var scanningPaused = false
-            private set
-        private var connected = false
-        private var queueSize = 0
+    private fun createProductionScanner(
+        bluetoothAdapter: BluetoothAdapter,
+        bluetoothLeScanner: BluetoothLeScanner,
+        scanningNeeded: AtomicBoolean
+    ): BDScanCallback {
+        val context = mockk<Context>()
+        every { context.mainLooper } returns mockk<Looper>(relaxed = true)
+        every { bluetoothAdapter.isEnabled } returns true
+        every { bluetoothAdapter.bluetoothLeScanner } returns bluetoothLeScanner
+        every { bluetoothLeScanner.startScan(any<List<ScanFilter>>(), any<ScanSettings>(), any<ScanCallback>()) } just runs
+        every { bluetoothLeScanner.stopScan(any<ScanCallback>()) } just runs
+        return BDScanCallback(
+            context,
+            bluetoothAdapter,
+            object : BDScanCallback.BDScanCallbackInterface {
+                override fun deviceDiscovered(device: BluetoothDevice, rssi: Int, scanRecord: ByteArray, type: EVENT_TYPE) = Unit
+                override fun scanStartError(error: String) = Unit
+                override fun isScanningNeeded(): Boolean = scanningNeeded.get()
+            }
+        ).also { it.opportunistic = false }
+    }
 
-        fun connect() {
-            connected = true
-            events += "connect"
-        }
-
-        fun enqueueOperation() {
-            queueSize += 1
-            events += "enqueue"
-        }
-
-        fun completeOperation() {
-            queueSize -= 1
-            events += "complete"
-        }
-
-        override fun pauseScanningForGattOperation() {
-            scanningPaused = true
-            events += "pause"
-        }
-
-        override fun resumeScanningAfterGattOperation() {
-            scanningPaused = false
-            events += "resume"
-        }
-
-        override fun queuedOperationCount(): Int = queueSize
-
-        override fun isGattConnected(): Boolean = connected
+    private fun privateField(target: Any, fieldName: String): Any {
+        val field = target.javaClass.getDeclaredField(fieldName)
+        field.isAccessible = true
+        return requireNotNull(field.get(target))
     }
 }
