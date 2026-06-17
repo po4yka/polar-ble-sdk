@@ -79,7 +79,6 @@ class BleBasClientTest: XCTestCase {
         bleBasClient.processServiceData(characteristic, data: deviceNotifyingValidBatteryData1, err: error)
         let stream = bleBasClient.monitorBatteryStatus(true)
         let task = Task { try await self.collect(3, from: stream) }
-        try await Task.sleep(nanoseconds: 20_000_000)
 
         bleBasClient.processServiceData(characteristic, data: deviceNotifyingInvalidBatteryData1, err: error)
         bleBasClient.processServiceData(characteristic, data: deviceNotifyingValidBatteryData2, err: error)
@@ -110,7 +109,6 @@ class BleBasClientTest: XCTestCase {
         // Act
         let stream = bleBasClient.monitorBatteryStatus(true)
         let task = Task { await self.collectUntilError(stream) }
-        try await Task.sleep(nanoseconds: 20_000_000)
 
         bleBasClient.processServiceData(characteristic, data: deviceNotifyingBatteryData1, err: error)
         bleBasClient.processServiceData(characteristic, data: deviceNotifyingBatteryData2, err: error)
@@ -140,7 +138,6 @@ class BleBasClientTest: XCTestCase {
         let stream = bleBasClient.monitorChargingStatus(true)
         // stream yields cached (.unknown) immediately, then new value after processServiceData
         let task = Task { try await self.collect(2, from: stream) }
-        try await Task.sleep(nanoseconds: 20_000_000)
         bleBasClient.processServiceData(characteristic, data: batteryStatusData, err: status)
         let results = try await task.value
 
@@ -157,7 +154,6 @@ class BleBasClientTest: XCTestCase {
         // Act
         let stream = bleBasClient.monitorChargingStatus(true)
         let task = Task { try await self.collect(2, from: stream) }
-        try await Task.sleep(nanoseconds: 20_000_000)
         bleBasClient.processServiceData(characteristic, data: batteryStatusData, err: status)
         let results = try await task.value
 
@@ -174,7 +170,6 @@ class BleBasClientTest: XCTestCase {
         // Act
         let stream = bleBasClient.monitorChargingStatus(true)
         let task = Task { try await self.collect(2, from: stream) }
-        try await Task.sleep(nanoseconds: 20_000_000)
         bleBasClient.processServiceData(characteristic, data: batteryStatusData, err: status)
         let results = try await task.value
 
@@ -191,7 +186,6 @@ class BleBasClientTest: XCTestCase {
         // Act
         let stream = bleBasClient.monitorChargingStatus(true)
         let task = Task { try await self.collect(2, from: stream) }
-        try await Task.sleep(nanoseconds: 20_000_000)
         bleBasClient.processServiceData(characteristic, data: batteryStatusData, err: status)
         let results = try await task.value
 
@@ -242,7 +236,6 @@ class BleBasClientTest: XCTestCase {
         // Act — 1 cached + 10 processServiceData = 11 items
         let stream = bleBasClient.monitorPowerSourcesState(true)
         let task = Task { try await self.collect(11, from: stream) }
-        try await Task.sleep(nanoseconds: 20_000_000)
 
         bleBasClient.processServiceData(characteristic, data: batteryStatusDataBatteryNotPresent, err: status)
         bleBasClient.processServiceData(characteristic, data: batteryStatusDataBatteryPresent, err: status)

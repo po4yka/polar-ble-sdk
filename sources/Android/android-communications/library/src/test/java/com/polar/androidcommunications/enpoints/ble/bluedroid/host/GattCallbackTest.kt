@@ -220,15 +220,16 @@ class GattCallbackTest {
         every { sessions.getSession(gatt) } returns deviceSession
         every { deviceSession.serviceDiscovery } returns null
         every { deviceSession.handleServicesDiscovered() } just runs
-        every { connectionHandler.servicesDiscovered(deviceSession) } just runs
+        val servicesDiscoveredLatch = CountDownLatch(1)
+        every { connectionHandler.servicesDiscovered(deviceSession) } answers { servicesDiscoveredLatch.countDown() }
 
         val sut = GattCallback(connectionHandler, sessions)
 
         // Act
         sut.onServicesDiscovered(gatt, BluetoothGatt.GATT_SUCCESS)
 
-        // Assert (waits up to 2 seconds for async callback)
-        Thread.sleep(1000) // Give async scheduler time to process
+        val invoked = servicesDiscoveredLatch.await(2, TimeUnit.SECONDS)
+        assertTrue("Expected servicesDiscovered to be called", invoked)
         verify(exactly = 1) { deviceSession.handleServicesDiscovered() }
         verify(exactly = 1) { connectionHandler.servicesDiscovered(deviceSession) }
     }
@@ -274,15 +275,16 @@ class GattCallbackTest {
         every { sessions.getSession(gatt) } returns deviceSession
         every { deviceSession.serviceDiscovery } returns null
         every { deviceSession.serviceDiscovery = null } just runs
-        every { connectionHandler.disconnectDevice(deviceSession) } just runs
+        val disconnectLatch = CountDownLatch(1)
+        every { connectionHandler.disconnectDevice(deviceSession) } answers { disconnectLatch.countDown() }
 
         val sut = GattCallback(connectionHandler, sessions)
 
         // Act
         sut.onServicesDiscovered(gatt, 133) // Error status
 
-        // Assert
-        Thread.sleep(1000)
+        val invoked = disconnectLatch.await(2, TimeUnit.SECONDS)
+        assertTrue("Expected disconnectDevice to be called", invoked)
         verify(exactly = 1) { connectionHandler.disconnectDevice(deviceSession) }
         verify(exactly = 0) { connectionHandler.servicesDiscovered(any()) }
     }

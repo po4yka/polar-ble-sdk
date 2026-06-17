@@ -70,8 +70,6 @@ class BleHrClientTest: XCTestCase {
             return (collected, nil)
         }
 
-        try await Task.sleep(nanoseconds: 20_000_000)
-
         // Act
         bleHrClient.processServiceData(characteristic, data: Data([0x00, 1]), err: 0)
         bleHrClient.processServiceData(characteristic, data: Data([0x00, 2]), err: 0)
@@ -102,8 +100,6 @@ class BleHrClientTest: XCTestCase {
         let stream = bleHrClient.observeHrNotifications(true)
         let task = Task { try await self.collect(1, from: stream) }
 
-        try await Task.sleep(nanoseconds: 20_000_000)
-
         // Emit second value AFTER subscribing — should be received
         bleHrClient.processServiceData(characteristic, data: Data([0x00, 102]), err: 0)
 
@@ -122,8 +118,6 @@ class BleHrClientTest: XCTestCase {
         let characteristic = CBUUID(string: "2a37")
         let stream = bleHrClient.observeHrNotifications(true)
         let task = Task { try await self.collect(2, from: stream) }
-
-        try await Task.sleep(nanoseconds: 20_000_000)
 
         // Act
         bleHrClient.processServiceData(characteristic, data: Data([0x00, 0xFF]), err: 0)
@@ -153,8 +147,6 @@ class BleHrClientTest: XCTestCase {
         let stream = bleHrClient.observeHrNotifications(true)
         let task = Task { try await self.collect(2, from: stream) }
 
-        try await Task.sleep(nanoseconds: 20_000_000)
-
         bleHrClient.processServiceData(characteristic, data: Data([0x01, 0x80, 0x80]), err: 0)
         bleHrClient.processServiceData(characteristic, data: Data([0x01, 0x7F, 0x7F]), err: 0)
 
@@ -180,8 +172,6 @@ class BleHrClientTest: XCTestCase {
         let stream = bleHrClient.observeHrNotifications(true)
         let task = Task { try await self.collect(2, from: stream) }
 
-        try await Task.sleep(nanoseconds: 20_000_000)
-
         bleHrClient.processServiceData(characteristic, data: Data([0x06, 0xFF]), err: 0)
         bleHrClient.processServiceData(characteristic, data: Data([0x04, 0xFF]), err: 0)
 
@@ -200,8 +190,6 @@ class BleHrClientTest: XCTestCase {
         let characteristic = CBUUID(string: "2a37")
         let stream = bleHrClient.observeHrNotifications(true)
         let task = Task { try await self.collect(2, from: stream) }
-
-        try await Task.sleep(nanoseconds: 20_000_000)
 
         bleHrClient.processServiceData(characteristic, data: Data([0x02, 0x00]), err: 0)
         bleHrClient.processServiceData(characteristic, data: Data([0x00, 0x00]), err: 0)
@@ -222,8 +210,6 @@ class BleHrClientTest: XCTestCase {
         let stream = bleHrClient.observeHrNotifications(true)
         let task = Task { try await self.collect(2, from: stream) }
 
-        try await Task.sleep(nanoseconds: 20_000_000)
-
         bleHrClient.processServiceData(characteristic, data: Data([0x09, 0x00, 0x00, 0xFF, 0xFF]), err: 0)
         bleHrClient.processServiceData(characteristic, data: Data([0x08, 0x00, 0x7F, 0x80]), err: 0)
 
@@ -240,8 +226,6 @@ class BleHrClientTest: XCTestCase {
         let characteristic = CBUUID(string: "2a37")
         let stream = bleHrClient.observeHrNotifications(true)
         let task = Task { try await self.collect(3, from: stream) }
-
-        try await Task.sleep(nanoseconds: 20_000_000)
 
         bleHrClient.processServiceData(characteristic, data: Data([0x10, 0x00, 0xFF, 0xFF]), err: 0)
         bleHrClient.processServiceData(characteristic, data: Data([0x11, 0x00, 0x00, 0xFF, 0xFF, 0x7F, 0x80]), err: 0)
