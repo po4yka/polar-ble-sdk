@@ -79,7 +79,8 @@ internal class PolarTestUtils {
         let testDate = dateFromFolderNames(dayDate: date, timeDirName: timeDirName, tzOffsetMinutes: tzOffsetMinutes)
             ?? (proto.testTime != 0 ? Date(timeIntervalSince1970: TimeInterval(proto.testTime) / 1000.0) : nil)
             ?? date
-        if let projection = Spo2SharedProjection.fromShared(proto: proto, date: date, timeDirName: timeDirName, timeZoneOffsetMinutes: tzOffsetMinutes) {
+        let triggerType = spo2TriggerType(from: proto)
+        if let projection = Spo2SharedProjection.fromShared(proto: proto, date: date, timeDirName: timeDirName, timeZoneOffsetMinutes: tzOffsetMinutes, triggerType: triggerType) {
             return PolarSpo2TestData(
                 recordingDevice: projection.recordingDevice,
                 date: testDate,
@@ -108,7 +109,7 @@ internal class PolarTestUtils {
             heartRateVariabilityMs: proto.hasHeartRateVariabilityMs ? proto.heartRateVariabilityMs : nil,
             spo2HrvDeviationFromBaseline: proto.hasSpo2HrvDeviationFromBaseline ? PolarSpo2TestData.DeviationFromBaseline.fromSharedOrRaw(value: proto.spo2HrvDeviationFromBaseline.rawValue) : nil,
             altitudeMeters: proto.hasAltitudeMeters ? proto.altitudeMeters : nil,
-            triggerType: nil
+            triggerType: triggerType.flatMap(PolarSpo2TestData.Spo2TestTriggerType.fromSharedOrRaw)
         )
     }
 
@@ -135,6 +136,54 @@ internal class PolarTestUtils {
               let second = Int(timeDirName.suffix(2)) else { return nil }
         return (hour, minute, second)
     }
+
+    private static func spo2TriggerType(from proto: Data_PbSpo2TestResult) -> Int? {
+        guard let data = try? proto.serializedData() else { return nil }
+        return firstUnknownVarintField(in: data, fieldNumber: 13).flatMap { Int(exactly: $0) }
+    }
+
+    private static func firstUnknownVarintField(in data: Data, fieldNumber: UInt64) -> UInt64? {
+        var index = data.startIndex
+        while index < data.endIndex {
+            guard let key = readVarint(from: data, index: &index) else { return nil }
+            let currentFieldNumber = key >> 3
+            let wireType = key & 0x07
+            switch wireType {
+            case 0:
+                guard let value = readVarint(from: data, index: &index) else { return nil }
+                if currentFieldNumber == fieldNumber {
+                    return value
+                }
+            case 1:
+                guard data.distance(from: index, to: data.endIndex) >= 8 else { return nil }
+                index = data.index(index, offsetBy: 8)
+            case 2:
+                guard let length = readVarint(from: data, index: &index), length <= UInt64(data.distance(from: index, to: data.endIndex)) else { return nil }
+                index = data.index(index, offsetBy: Int(length))
+            case 5:
+                guard data.distance(from: index, to: data.endIndex) >= 4 else { return nil }
+                index = data.index(index, offsetBy: 4)
+            default:
+                return nil
+            }
+        }
+        return nil
+    }
+
+    private static func readVarint(from data: Data, index: inout Data.Index) -> UInt64? {
+        var value: UInt64 = 0
+        var shift: UInt64 = 0
+        while index < data.endIndex && shift < 64 {
+            let byte = data[index]
+            index = data.index(after: index)
+            value |= UInt64(byte & 0x7f) << shift
+            if byte < 0x80 {
+                return value
+            }
+            shift += 7
+        }
+        return nil
+    }
 }
 
 private struct Spo2SharedProjection {
@@ -150,8 +199,8 @@ private struct Spo2SharedProjection {
     let altitudeMeters: Float?
     let triggerType: String?
 
-    static func fromShared(proto: Data_PbSpo2TestResult, date: Date, timeDirName: String, timeZoneOffsetMinutes: Int?) -> Spo2SharedProjection? {
-        guard let fields = PolarSpo2RuntimePlanner.projectionFields(proto: proto, date: date, timeDirName: timeDirName, timeZoneOffsetMinutes: timeZoneOffsetMinutes) else { return nil }
+    static func fromShared(proto: Data_PbSpo2TestResult, date: Date, timeDirName: String, timeZoneOffsetMinutes: Int?, triggerType: Int?) -> Spo2SharedProjection? {
+        guard let fields = PolarSpo2RuntimePlanner.projectionFields(proto: proto, date: date, timeDirName: timeDirName, timeZoneOffsetMinutes: timeZoneOffsetMinutes, triggerType: triggerType) else { return nil }
         guard fields.count == 11 else { return nil }
         return Spo2SharedProjection(
             recordingDevice: fields[0].nilIfEmpty,
@@ -203,7 +252,7 @@ private enum PolarSpo2RuntimePlanner {
         #endif
     }
 
-    static func projectionFields(proto: Data_PbSpo2TestResult, date: Date, timeDirName: String, timeZoneOffsetMinutes: Int?) -> [String]? {
+    static func projectionFields(proto: Data_PbSpo2TestResult, date: Date, timeDirName: String, timeZoneOffsetMinutes: Int?, triggerType: Int?) -> [String]? {
         #if canImport(PolarBleSdkShared)
         return PolarIosSharedBridge.shared.spo2ProjectionFields(
             date: dateFormat.string(from: date),
@@ -219,7 +268,7 @@ private enum PolarSpo2RuntimePlanner {
             heartRateVariabilityMs: proto.hasHeartRateVariabilityMs ? String(proto.heartRateVariabilityMs) : "",
             spo2HrvDeviationFromBaseline: proto.hasSpo2HrvDeviationFromBaseline ? String(proto.spo2HrvDeviationFromBaseline.rawValue) : "",
             altitudeMeters: proto.hasAltitudeMeters ? String(proto.altitudeMeters) : "",
-            triggerType: ""
+            triggerType: triggerType.map(String.init) ?? ""
         ).split(separator: "\u{1F}", omittingEmptySubsequences: false).map(String.init)
         #else
         return nil

@@ -122,8 +122,11 @@ class BleGattClientBaseTest: XCTestCase {
         // Arrange
         let someBleCharacteristicUUID = CBUUID(string: "12ff")
         let notifyRequestExpectation = expectation(description: "notification enable is requested")
-        mockGattServiceTransmitterImpl.setCharacteristicNotifyHandler = { _, _, _, _ in
+        mockGattServiceTransmitterImpl.setCharacteristicNotifyHandler = { parent, _, characteristicUuid, notify in
             notifyRequestExpectation.fulfill()
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
+                parent.notifyDescriptorWritten(characteristicUuid, enabled: notify, err: 0)
+            }
         }
         var completed = false
         let completionExpectation = expectation(description: "publisher completes after descriptor write")
@@ -150,8 +153,6 @@ class BleGattClientBaseTest: XCTestCase {
         XCTAssertEqual(someBleCharacteristicUUID, mockGattServiceTransmitterImpl.setCharacteristicsNotifyCache.first?.characteristicUuid)
         XCTAssertEqual(true, mockGattServiceTransmitterImpl.setCharacteristicsNotifyCache.first?.notify)
         XCTAssertFalse(completed)
-
-        bleGattClientBase.notifyDescriptorWritten(someBleCharacteristicUUID, enabled: true, err: 0)
 
         wait(for: [completionExpectation], timeout: 1.0)
         XCTAssertTrue(completed)

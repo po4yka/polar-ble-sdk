@@ -548,7 +548,22 @@ class PolarTestUtilsTests: XCTestCase {
             proto.spo2HrvDeviationFromBaseline = try XCTUnwrap(Data_PbDeviationFromBaseline(rawValue: value.intValue), id)
         }
         if let value = fields["altitudeMeters"] as? NSNumber { proto.altitudeMeters = value.floatValue }
+        if let value = fields["triggerType"] as? NSNumber {
+            var data = try proto.serializedData()
+            appendVarint(13 << 3, to: &data)
+            appendVarint(UInt64(value.intValue), to: &data)
+            proto = try Data_PbSpo2TestResult(serializedBytes: data)
+        }
         return proto
+    }
+
+    private func appendVarint(_ value: UInt64, to data: inout Data) {
+        var remaining = value
+        while remaining >= 0x80 {
+            data.append(UInt8(remaining & 0x7f) | 0x80)
+            remaining >>= 7
+        }
+        data.append(UInt8(remaining))
     }
 
     private func assertSpo2Result(_ actual: PolarSpo2TestData, expected: [String: Any], id: String) throws {

@@ -755,7 +755,7 @@ private let FIRMWARE_WORKFLOW_SCENARIOS = [
 
 private let FIRMWARE_WORKFLOW_SHARED_OWNERSHIP_REQUIREMENT = "Shared ownership of firmware update orchestration requires injectable fake network, fake filesystem or zip extraction, and fake BLE write dependencies that can reproduce update availability, download failures, invalid packages, sorted package writes, reboot success, and terminal device errors."
 
-private let FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, finalization step planning, reboot success, non-system reboot failure, and terminal device errors into typed common workflow states before shared ownership"
+private let FIRMWARE_WORKFLOW_COMMON_DECISION = "separate device-info parsing, server availability, retryable server failures, package download, zip extraction, file ordering, BLE write progress, finalization step planning, reboot success, non-system reboot failure, and terminal device errors into typed common workflow states under shared ownership"
 
 private let FIRMWARE_WORKFLOW_ANDROID_PRODUCTION_EVIDENCE = "BDBleApiImpl and PolarFirmwareUpdateUtils consume shared planning for device-info path, payload entry filtering, firmware file ordering/write paths, PSFTP write progress throttling, retry delay execution, finalization step planning, reboot response success, non-system reboot failure, and battery-too-low terminal write policy while keeping network, zip parsing, backup, reconnect, filesystem, and BLE writes platform-owned."
 

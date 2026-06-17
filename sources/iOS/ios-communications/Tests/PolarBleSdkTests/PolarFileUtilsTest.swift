@@ -769,7 +769,7 @@ private let FILE_FACADE_RUNTIME_OPERATION_IDS = [
 
 private let FILE_FACADE_RUNTIME_POLICY_COMMON_DECISION = "A shared file facade runtime may own deterministic GET/PUT/REMOVE planning, empty read payloads, write progress consumption, and payload capture only after platform facades keep public error mapping, read/write/delete request and response-error propagation, and directory-list traversal policies pinned."
 
-private let FILE_FACADE_RUNTIME_MIGRATION_DECISION = "Promote low-level file facade planning only after read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
+private let FILE_FACADE_RUNTIME_MIGRATION_DECISION = "Promote low-level file facade planning only while read/write/delete public APIs reference this vector, directory traversal remains covered by list-files vectors, and runtime-error-policy.json keeps malformed directory, response-error, transport-error, empty read payload, delete request failure, write progress success, and write-stream failure behavior pinned."
 
 private let FILE_FACADE_RUNTIME_READINESS_FAMILIES = [
     "low-level-file-path-gate",
