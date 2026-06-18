@@ -418,6 +418,12 @@ private func serializedTlvEntries(_ data: Data) throws -> [Data] {
             valueSize = 4
         case .security:
             valueSize = 16
+        case .derivedMeasurementMethod, .sourceMeasurementType, .derivedMeasurementSettingsGroupId:
+            valueSize = 1
+        case .sourceMeasurementSampleRate:
+            valueSize = 2
+        case .sourceMeasurementRange, .derivedMeasurementTimeWindow:
+            valueSize = 4
         case .unknown:
             throw NSError(domain: "PmdSettingTest", code: 7, userInfo: [NSLocalizedDescriptionKey: "Serialized PMD setting entry has unknown type"])
         }

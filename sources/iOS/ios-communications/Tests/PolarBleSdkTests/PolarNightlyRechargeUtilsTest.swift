@@ -4,6 +4,11 @@ import XCTest
 class PolarNightlyRechargeUtilsTests: XCTestCase {
     
     var mockClient: MockBlePsFtpClient!
+    private static var utcCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar
+    }
 
     override func setUpWithError() throws {
         mockClient = MockBlePsFtpClient(gattServiceTransmitter: MockPolarGattServiceTransmitter())
@@ -14,7 +19,7 @@ class PolarNightlyRechargeUtilsTests: XCTestCase {
     }
 
     func testNightlyRechargeReadHeaderUsesSharedFileFacadePlanning() throws {
-        let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
+        let date = try XCTUnwrap(Self.utcCalendar.date(from: DateComponents(year: 2026, month: 1, day: 2)))
 
         let operation = PolarNightlyRechargeUtils.nightlyRechargeReadOperation(date: date)
         XCTAssertEqual(operation.command, .get)
@@ -133,8 +138,10 @@ class PolarNightlyRechargeUtilsTests: XCTestCase {
     func testNightlyRechargeGoldenVectorsMapProtoToPublicModel() async throws {
         let vectors = try loadNightlyRechargeGoldenVectors()
         XCTAssertFalse(vectors.isEmpty, "Expected nightly recharge golden vectors")
-        let date = try XCTUnwrap(DateComponents(calendar: Calendar.current, year: 2026, month: 1, day: 2).date)
+        let date = try XCTUnwrap(Self.utcCalendar.date(from: DateComponents(year: 2026, month: 1, day: 2)))
         let dateFormatter = DateFormatter()
+        dateFormatter.calendar = Self.utcCalendar
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)!
         dateFormatter.dateFormat = "yyyyMMdd"
         let expectedPath = "/U/0/\(dateFormatter.string(from: date))/NR/NR.BPB"
 

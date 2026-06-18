@@ -6505,6 +6505,9 @@ private final class CancellableFirmwareUpdateService: PolarBleSdk.FirmwareUpdate
             throw CancellationError()
         }
     }
+}
+
+private extension PolarBleApiImplTests {
 
     // MARK: - setSensorInitiatedSecurityMode
 

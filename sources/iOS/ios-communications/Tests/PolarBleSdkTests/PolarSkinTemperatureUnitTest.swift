@@ -8,6 +8,11 @@ import XCTest
 class PolarSkinTemperatureUtilsTests: XCTestCase {
     
     var mockClient: MockBlePsFtpClient!
+    private static var utcCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar
+    }
 
     override func setUpWithError() throws {
         mockClient = MockBlePsFtpClient(gattServiceTransmitter: MockPolarGattServiceTransmitter())
@@ -18,7 +23,7 @@ class PolarSkinTemperatureUtilsTests: XCTestCase {
     }
 
     func testSkinTemperatureReadHeaderUsesSharedFileFacadePlanning() throws {
-        let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
+        let date = try XCTUnwrap(Self.utcCalendar.date(from: DateComponents(year: 2026, month: 1, day: 2)))
 
         let operation = PolarSkinTemperatureUtils.skinTemperatureReadOperation(date: date)
         XCTAssertEqual(operation.command, .get)

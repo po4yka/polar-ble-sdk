@@ -226,6 +226,12 @@ private extension PmdSetting.PmdSettingType {
         case "CHANNELS": self = .channels
         case "FACTOR": self = .factor
         case "SECURITY": self = .security
+        case "DERIVED_MEASUREMENT_METHOD": self = .derivedMeasurementMethod
+        case "SOURCE_MEASUREMENT_TYPE": self = .sourceMeasurementType
+        case "SOURCE_MEASUREMENT_SAMPLE_RATE": self = .sourceMeasurementSampleRate
+        case "SOURCE_MEASUREMENT_RANGE": self = .sourceMeasurementRange
+        case "DERIVED_MEASUREMENT_TIME_WINDOW": self = .derivedMeasurementTimeWindow
+        case "DERIVED_MEASUREMENT_SETTINGS_GROUP_ID": self = .derivedMeasurementSettingsGroupId
         default: return nil
         }
     }
@@ -240,6 +246,12 @@ private extension PmdSetting.PmdSettingType {
         case .channels: sharedName = "CHANNELS"
         case .factor: sharedName = "FACTOR"
         case .security: sharedName = "SECURITY"
+        case .derivedMeasurementMethod: sharedName = "DERIVED_MEASUREMENT_METHOD"
+        case .sourceMeasurementType: sharedName = "SOURCE_MEASUREMENT_TYPE"
+        case .sourceMeasurementSampleRate: sharedName = "SOURCE_MEASUREMENT_SAMPLE_RATE"
+        case .sourceMeasurementRange: sharedName = "SOURCE_MEASUREMENT_RANGE"
+        case .derivedMeasurementTimeWindow: sharedName = "DERIVED_MEASUREMENT_TIME_WINDOW"
+        case .derivedMeasurementSettingsGroupId: sharedName = "DERIVED_MEASUREMENT_SETTINGS_GROUP_ID"
         case .unknown: return rawValue
         }
         guard let code = PmdSettingRuntimePlanner.settingTypeCode(name: sharedName) else { return rawValue }

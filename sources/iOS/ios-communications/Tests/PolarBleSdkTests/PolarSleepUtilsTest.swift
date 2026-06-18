@@ -9,6 +9,11 @@ import XCTest
 class PolarSleepUtilsTests: XCTestCase {
 
     var mockClient: MockBlePsFtpClient!
+    private static var utcCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar
+    }
 
     override func setUpWithError() throws {
         mockClient = MockBlePsFtpClient(gattServiceTransmitter: MockPolarGattServiceTransmitter())
@@ -19,7 +24,7 @@ class PolarSleepUtilsTests: XCTestCase {
     }
 
     func testSleepReadHeadersUseSharedFileFacadePlanning() throws {
-        let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
+        let date = try XCTUnwrap(Self.utcCalendar.date(from: DateComponents(year: 2026, month: 1, day: 2)))
 
         let sleepOperation = PolarSleepUtils.sleepDataReadOperation(date: date)
         XCTAssertEqual(sleepOperation.command, .get)

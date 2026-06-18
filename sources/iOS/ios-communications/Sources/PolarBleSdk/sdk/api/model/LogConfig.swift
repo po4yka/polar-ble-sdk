@@ -6,6 +6,7 @@ import PolarBleSdkShared
 #endif
 
 let LOG_CONFIG_PATH = "/SDLOGS.BPB"
+let SERVICE_DATALOG_CONFIG_FILEPATH = LOG_CONFIG_PATH
 
 public struct LogConfig {
 

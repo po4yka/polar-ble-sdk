@@ -42,6 +42,8 @@ internal class PolarDataUtils {
             return "OFFLINE_RECORDING"
         case .offline_hr:
             return "OFFLINE_HR"
+        case .derivedMeasurement:
+            return "DERIVED_MEASUREMENT"
         case .unknown_type:
             return "UNKNOWN"
         }
@@ -84,6 +86,7 @@ internal class PolarDataUtils {
         case "TEMPERATURE": return PmdMeasurementType.temperature
         case "SKIN_TEMP": return PmdMeasurementType.skinTemperature
         case "PRESSURE": return PmdMeasurementType.pressure
+        case "DERIVED_MEASUREMENT": return PmdMeasurementType.derivedMeasurement
         default: return fallbackPmdClientMeasurementType(fromSharedRuntimeFeatureName: sharedName)
         }
     }

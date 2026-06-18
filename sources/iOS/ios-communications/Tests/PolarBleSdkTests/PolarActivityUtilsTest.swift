@@ -7,6 +7,11 @@ import XCTest
 class PolarActivityUtilsTests: XCTestCase {
 
     var mockClient: MockBlePsFtpClient!
+    private static var utcCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar
+    }
     
     override func setUpWithError() throws {
         mockClient = MockBlePsFtpClient(gattServiceTransmitter: MockPolarGattServiceTransmitter())
@@ -17,7 +22,7 @@ class PolarActivityUtilsTests: XCTestCase {
     }
 
     func testActivityReadHeadersUseSharedFileFacadePlanning() throws {
-        let date = try XCTUnwrap(DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 1, day: 2).date)
+        let date = try XCTUnwrap(Self.utcCalendar.date(from: DateComponents(year: 2026, month: 1, day: 2)))
 
         let activityDirectoryOperation = PolarActivityUtils.activityDirectoryReadOperation(date: date)
         XCTAssertEqual(activityDirectoryOperation.command, .get)

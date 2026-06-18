@@ -163,6 +163,18 @@ public nonisolated struct Protocol_PbPFtpFactoryResetParams: Sendable {
   /// Clears the value of `otaFwupdate`. Subsequent reads from it will return its default value.
   public mutating func clearOtaFwupdate() {self._otaFwupdate = nil}
 
+  /// If true, the device should go to hibernate instead of the shelf/storage mode. Hibernate consumes slightly
+  /// more battery than storage mode, but retains device time. In hibernate battery should last for tens, or even
+  /// hundreds of days.
+  public var hibernate: Bool {
+    get {_hibernate ?? false}
+    set {_hibernate = newValue}
+  }
+  /// Returns true if `hibernate` has been explicitly set.
+  public var hasHibernate: Bool {self._hibernate != nil}
+  /// Clears the value of `hibernate`. Subsequent reads from it will return its default value.
+  public mutating func clearHibernate() {self._hibernate = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -170,6 +182,7 @@ public nonisolated struct Protocol_PbPFtpFactoryResetParams: Sendable {
   fileprivate var _sleep: Bool? = nil
   fileprivate var _doFactoryDefaults: Bool? = nil
   fileprivate var _otaFwupdate: Bool? = nil
+  fileprivate var _hibernate: Bool? = nil
 }
 
 public nonisolated struct Protocol_PbPFtpStopSyncParams: Sendable {
@@ -672,7 +685,7 @@ nonisolated extension Protocol_MediaControlCommand: SwiftProtobuf._ProtoNameProv
 
 nonisolated extension Protocol_PbPFtpFactoryResetParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".PbPFtpFactoryResetParams"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}sleep\0\u{3}do_factory_defaults\0\u{3}ota_fwupdate\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}sleep\0\u{3}do_factory_defaults\0\u{3}ota_fwupdate\0\u{1}hibernate\0")
 
   public var isInitialized: Bool {
     if self._sleep == nil {return false}
@@ -688,6 +701,7 @@ nonisolated extension Protocol_PbPFtpFactoryResetParams: SwiftProtobuf.Message, 
       case 1: try { try decoder.decodeSingularBoolField(value: &self._sleep) }()
       case 2: try { try decoder.decodeSingularBoolField(value: &self._doFactoryDefaults) }()
       case 3: try { try decoder.decodeSingularBoolField(value: &self._otaFwupdate) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self._hibernate) }()
       default: break
       }
     }
@@ -707,6 +721,9 @@ nonisolated extension Protocol_PbPFtpFactoryResetParams: SwiftProtobuf.Message, 
     try { if let v = self._otaFwupdate {
       try visitor.visitSingularBoolField(value: v, fieldNumber: 3)
     } }()
+    try { if let v = self._hibernate {
+      try visitor.visitSingularBoolField(value: v, fieldNumber: 4)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -714,6 +731,7 @@ nonisolated extension Protocol_PbPFtpFactoryResetParams: SwiftProtobuf.Message, 
     if lhs._sleep != rhs._sleep {return false}
     if lhs._doFactoryDefaults != rhs._doFactoryDefaults {return false}
     if lhs._otaFwupdate != rhs._otaFwupdate {return false}
+    if lhs._hibernate != rhs._hibernate {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

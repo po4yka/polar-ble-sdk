@@ -5,7 +5,7 @@ import CoreBluetooth
 import Combine
 
 /// Data types available in Polar devices for online streaming or offline recording.
-public enum PolarDeviceDataType: CaseIterable {
+public enum PolarDeviceDataType: CaseIterable, Sendable {
     case ecg
     case acc
     case ppg

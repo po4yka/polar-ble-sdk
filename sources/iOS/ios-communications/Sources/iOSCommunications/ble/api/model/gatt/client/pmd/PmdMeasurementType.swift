@@ -122,6 +122,8 @@ private extension PmdMeasurementType {
             self = .offline_recording
         case "OFFLINE_HR":
             self = .offline_hr
+        case "DERIVED_MEASUREMENT":
+            self = .derivedMeasurement
         default:
             return nil
         }
