@@ -16,6 +16,7 @@ struct DeviceSettingsView: View {
     @State private var isPpiModeLedAnimationEnabled = false
     @State private var isPerformingFirmwareUpdate = false
     @State private var isPerformingMultiBleStatusGet = false
+    @State private var isPerformingSensorInitiatedSecurityModeGet = false
     @State private var isObservingDeviceToHostNotifications = false
     @State private var showNotificationsAsAlerts = UserDefaults.standard.bool(forKey: "showUNNotificationsAsAlerts")
     
@@ -116,22 +117,25 @@ struct DeviceSettingsView: View {
                         .disabled(bleSdkManager.firmwareUpdateFeature.inProgress == false)
                         .padding(.top, 8)
                         
-                        Button("Set time",
-                               action: {
-                            Task {
-                                isPerformingTimeSet = true
-                                await bleSdkManager.setTime()
-                                isPerformingTimeSet = false
-                            }
-                        })
-                        .buttonStyle(SecondaryButtonStyle(buttonState: getTimeButtonState()))
-                        .disabled(isPerformingTimeSet)
-                        .overlay {
-                            if isPerformingTimeSet {
-                                ProgressView()
+                        if bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem {
+                            Button("Set time",
+                                   action: {
+                                Task {
+                                    isPerformingTimeSet = true
+                                    await bleSdkManager.setTime()
+                                    isPerformingTimeSet = false
+                                }
+                            })
+                            .buttonStyle(SecondaryButtonStyle(buttonState: getTimeButtonState()))
+                            .disabled(isPerformingTimeSet)
+                            .overlay {
+                                if isPerformingTimeSet {
+                                    ProgressView()
+                                }
                             }
                         }
-                        if bleSdkManager.fileTransferFeature.isSupported  {
+                        if bleSdkManager.fileTransferFeature.isSupported &&
+                            bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem {
                             Button("Get time",
                                    action: {
                                 isPerformingTimeGet = true
@@ -149,7 +153,8 @@ struct DeviceSettingsView: View {
                                 }
                             }
                         }
-                        if bleSdkManager.fileTransferFeature.isSupported {
+                        if bleSdkManager.fileTransferFeature.isSupported &&
+                            bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem {
                             Button("Get disk space",
                                    action: {
                                 isPerformingDiskSpaceGet = true
@@ -168,7 +173,8 @@ struct DeviceSettingsView: View {
                             }
                         }
                         
-                        if bleSdkManager.fileTransferFeature.isSupported {
+                        if bleSdkManager.fileTransferFeature.isSupported &&
+                            bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem {
                             Button(bleSdkManager.sdkModeFeature.isEnabled ? "Disable SDK mode" : "Enable SDK mode",
                                    action: {
                                 bleSdkManager.sdkModeToggle()
@@ -189,23 +195,26 @@ struct DeviceSettingsView: View {
                         isPerformingSdkModeStatusGet = false
                     }
                     
-                    Button(isSdkModeLedAnimationEnabled ? "Enable SDK mode LED animation" : "Disable SDK mode LED animation",
-                           action: {
-                        Task {
-                            let ledConfig = LedConfig(sdkModeLedEnabled: isSdkModeLedAnimationEnabled, ppiModeLedEnabled: !isPpiModeLedAnimationEnabled)
-                            await bleSdkManager.setLedConfig(ledConfig: ledConfig)
-                            isSdkModeLedAnimationEnabled = !isSdkModeLedAnimationEnabled
-                        }
-                    }).buttonStyle(SecondaryButtonStyle(buttonState: ButtonState.released))
-                    
-                    Button(isPpiModeLedAnimationEnabled ? "Enable PPI mode LED animation" : "Disable PPI mode LED animation",
-                           action: {
-                        Task {
-                            let ledConfig = LedConfig(sdkModeLedEnabled: !isSdkModeLedAnimationEnabled, ppiModeLedEnabled: isPpiModeLedAnimationEnabled)
-                            await bleSdkManager.setLedConfig(ledConfig: ledConfig)
-                            isPpiModeLedAnimationEnabled = !isPpiModeLedAnimationEnabled
-                        }
-                    }).buttonStyle(SecondaryButtonStyle(buttonState: ButtonState.released))
+                    if (bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem) {
+                        
+                        Button(isSdkModeLedAnimationEnabled ? "Enable SDK mode LED animation" : "Disable SDK mode LED animation",
+                               action: {
+                            Task {
+                                let ledConfig = LedConfig(sdkModeLedEnabled: isSdkModeLedAnimationEnabled, ppiModeLedEnabled: !isPpiModeLedAnimationEnabled)
+                                await bleSdkManager.setLedConfig(ledConfig: ledConfig)
+                                isSdkModeLedAnimationEnabled = !isSdkModeLedAnimationEnabled
+                            }
+                        }).buttonStyle(SecondaryButtonStyle(buttonState: ButtonState.released))
+                        
+                        Button(isPpiModeLedAnimationEnabled ? "Enable PPI mode LED animation" : "Disable PPI mode LED animation",
+                               action: {
+                            Task {
+                                let ledConfig = LedConfig(sdkModeLedEnabled: !isSdkModeLedAnimationEnabled, ppiModeLedEnabled: isPpiModeLedAnimationEnabled)
+                                await bleSdkManager.setLedConfig(ledConfig: ledConfig)
+                                isPpiModeLedAnimationEnabled = !isPpiModeLedAnimationEnabled
+                            }
+                        }).buttonStyle(SecondaryButtonStyle(buttonState: ButtonState.released))
+                    }
                     
                     Button(bleSdkManager.isObservingDeviceToHostNotifications ? "Stop observing device notifications" : "Start observing device notifications",
                            action: {
@@ -251,7 +260,8 @@ struct DeviceSettingsView: View {
                         }
                     }).buttonStyle(SecondaryButtonStyle(buttonState: ButtonState.released))
                     
-                    if bleSdkManager.fileTransferFeature.isSupported {
+                    if bleSdkManager.fileTransferFeature.isSupported &&
+                        bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem {
                         Button("Do physical data config") {
                             if bleSdkManager.checkIfDeviceIdSet() {
                                 showPhysicalDataConfig = true
@@ -279,7 +289,8 @@ struct DeviceSettingsView: View {
                         }
                         .buttonStyle(SecondaryButtonStyle(buttonState: .released))
                     }
-                    if bleSdkManager.fileTransferFeature.isSupported {
+                    if bleSdkManager.fileTransferFeature.isSupported &&
+                        bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem {
                         Button("Get physical data config") {
                             Task {
                                 let info = await bleSdkManager.getUserPhysicalConfiguration()
@@ -321,7 +332,8 @@ struct DeviceSettingsView: View {
                             Text(errorMessage)
                         }
                     }
-                    if bleSdkManager.fileTransferFeature.isSupported {
+                    if bleSdkManager.fileTransferFeature.isSupported &&
+                        bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem {
                         Button("Get FTU status",
                                action: {
                             Task {
@@ -330,7 +342,8 @@ struct DeviceSettingsView: View {
                         })
                         .buttonStyle(SecondaryButtonStyle(buttonState: ButtonState.released))
                     }
-                    if bleSdkManager.fileTransferFeature.isSupported {
+                    if bleSdkManager.fileTransferFeature.isSupported &&
+                        bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem{
                         Button("Set up exercise") {
                             if bleSdkManager.checkIfDeviceIdSet() {
                                 showExercise = true
@@ -382,7 +395,7 @@ struct DeviceSettingsView: View {
                             }).buttonStyle(SecondaryButtonStyle(buttonState: ButtonState.released))
                         }
                     }
-                    
+
                     Button(bleSdkManager.multiBleFeature.isEnabled ? "Disable multi BLE mode" : "Enable multi BLE mode",
                            action: {
                         bleSdkManager.multiBLEModeToggle()
@@ -396,10 +409,29 @@ struct DeviceSettingsView: View {
                     }
                     .task {
                         isPerformingMultiBleStatusGet = true
-                        await await bleSdkManager.getMultiBleModeStatus()
+                        await bleSdkManager.getMultiBleModeStatus()
                         isPerformingMultiBleStatusGet = false
                     }
-                    if bleSdkManager.fileTransferFeature.isSupported {
+
+                    Button(bleSdkManager.sensorInitiatedSecurityModeSupported.isEnabled ? "Disable sensor initiated security mode" : "Enable sensor initiated security mode",
+                           action: {
+                        bleSdkManager.getSensorInitiatedSecurityModeToggle()
+                    })
+                    .buttonStyle(SecondaryButtonStyle(buttonState: getSensorInitiatedSecurityModeButtonState()))
+                    .disabled(isPerformingSensorInitiatedSecurityModeGet || !bleSdkManager.sensorInitiatedSecurityModeSupported.isSupported)
+                    .overlay {
+                        if isPerformingSensorInitiatedSecurityModeGet {
+                            ProgressView()
+                        }
+                    }
+                    .task {
+                        isPerformingSensorInitiatedSecurityModeGet = true
+                        await bleSdkManager.getSensorInitiatedSecurityModeStatus()
+                        isPerformingSensorInitiatedSecurityModeGet = false
+                    }
+
+                    if bleSdkManager.fileTransferFeature.isSupported &&
+                        bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem {
                         HStack {
                             Button("Delete data") {
                                 showSettingsView = false
@@ -414,7 +446,8 @@ struct DeviceSettingsView: View {
                         }.padding(.top, 20)
                             .buttonStyle(SecondaryButtonStyle(buttonState: ButtonState.released))
                     }
-                    if bleSdkManager.fileTransferFeature.isSupported {
+                    if bleSdkManager.fileTransferFeature.isSupported &&
+                        bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem {
                         HStack {
                             Button("Delete telemetry data") {
                                 showTelemetryDeleteAlert = true
@@ -433,7 +466,8 @@ struct DeviceSettingsView: View {
                             Text("Are you sure you want to delete telemetry data?")
                         }
                     }
-                    if bleSdkManager.fileTransferFeature.isSupported {
+                    if bleSdkManager.fileTransferFeature.isSupported &&
+                        bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem {
                         HStack {
                             Button("Delete date folders") {
                                 showSettingsView = false
@@ -449,33 +483,35 @@ struct DeviceSettingsView: View {
                         }.padding(.bottom, 10)
                             .buttonStyle(SecondaryButtonStyle(buttonState: ButtonState.released))
                     }
-                    HStack {
-                        Button("Do user device settings config") {
-                            if bleSdkManager.checkIfDeviceIdSet() {
-                                showUserDeviceSettingsConfig = true
-                            } else {
-                                errorMessage = "No device ID available"
-                                showError = true
-                            }
-                        }
-                        .sheet(isPresented: $showUserDeviceSettingsConfig) {
-                            if let deviceId = bleSdkManager.deviceId {
-                                VStack {
-                                    UserDeviceSettingsView(deviceId: deviceId)
-                                        .environmentObject(bleSdkManager)
-#if targetEnvironment(macCatalyst)
-                                    Button("Close", action: {
-                                        showUserDeviceSettingsConfig = false
-                                    })
-                                    .padding(.bottom)
-                                    .padding(.top)
-#endif
+                    if bleSdkManager.deviceConnectionState.get().hasSAGRFCFileSystem {
+                        HStack {
+                            Button("Do user device settings config") {
+                                if bleSdkManager.checkIfDeviceIdSet() {
+                                    showUserDeviceSettingsConfig = true
+                                } else {
+                                    errorMessage = "No device ID available"
+                                    showError = true
                                 }
-                            } else {
-                                Text("No device ID available")
                             }
+                            .sheet(isPresented: $showUserDeviceSettingsConfig) {
+                                if let deviceId = bleSdkManager.deviceId {
+                                    VStack {
+                                        UserDeviceSettingsView(deviceId: deviceId)
+                                            .environmentObject(bleSdkManager)
+#if targetEnvironment(macCatalyst)
+                                        Button("Close", action: {
+                                            showUserDeviceSettingsConfig = false
+                                        })
+                                        .padding(.bottom)
+                                        .padding(.top)
+#endif
+                                    }
+                                } else {
+                                    Text("No device ID available")
+                                }
+                            }
+                            .buttonStyle(SecondaryButtonStyle(buttonState: .released))
                         }
-                        .buttonStyle(SecondaryButtonStyle(buttonState: .released))
                     }
                     if bleSdkManager.fileTransferFeature.isSupported {
                         HStack(spacing: 0) {
@@ -557,7 +593,17 @@ struct DeviceSettingsView: View {
                     .padding(.top, 10)
 
                     if bleSdkManager.fileTransferFeature.isSupported {
-                        
+                        HStack {
+                            Button("Set hibernate mode",
+                                   action: {
+                                Task {
+                                    await bleSdkManager.setHibernateMode()
+                                }
+                            }).buttonStyle(SecondaryButtonStyle(buttonState: ButtonState.released))
+                        }
+                    }
+                    if bleSdkManager.fileTransferFeature.isSupported {
+
                         Button(action: {
                             if !bleSdkManager.checkIfDeviceIdSet() {
                                 errorMessage = "No device ID available"
@@ -652,6 +698,17 @@ struct DeviceSettingsView: View {
         return ButtonState.disabled
     }
 
+    func getSensorInitiatedSecurityModeButtonState() -> ButtonState {
+        if bleSdkManager.sensorInitiatedSecurityModeSupported.isSupported {
+            if  bleSdkManager.sensorInitiatedSecurityModeSupported.isEnabled {
+                return ButtonState.pressedDown
+            } else {
+                return ButtonState.released
+            }
+        }
+        return ButtonState.disabled
+    }
+
     func getFirmwareFileButtonText() -> String {
         return selectedFirmwareFileURL?.lastPathComponent ?? "Select file"
     }
@@ -696,11 +753,11 @@ struct DeviceSettingsView_Previews: PreviewProvider {
         chargeStatus: .unknown
     )
 
-    private static let deviceTimeSetupFeature = DeviceTimeSetupFeature(
+    private static let deviceTimeSetupFeature = FeatureSupported(
         isSupported: true
     )
 
-    private static let sdkModeFeature = SdkModeFeature(
+    private static let sdkModeFeature = FeatureSupported(
         isSupported: true,
         isEnabled: true
     )

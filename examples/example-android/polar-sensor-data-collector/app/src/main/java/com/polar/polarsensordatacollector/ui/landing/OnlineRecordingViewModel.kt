@@ -10,6 +10,7 @@ import com.polar.polarsensordatacollector.DataCollector
 import com.polar.polarsensordatacollector.repository.DeviceConnectionState
 import com.polar.polarsensordatacollector.repository.PolarDeviceRepository
 import com.polar.polarsensordatacollector.ui.graph.AccDataHolder
+import com.polar.polarsensordatacollector.ui.graph.EcgDataHolder
 import com.polar.polarsensordatacollector.ui.graph.HrDataHolder
 import com.polar.polarsensordatacollector.ui.utils.MessageUiState
 import com.polar.polarsensordatacollector.utils.StreamUtils
@@ -28,6 +29,8 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.IOException
+import java.time.Duration
+import java.time.Instant
 import java.util.*
 import javax.inject.Inject
 
@@ -141,6 +144,14 @@ class OnlineRecordingViewModel @Inject constructor(
 ) : ViewModel() {
     companion object {
         private const val TAG = "OnlineRecordingViewModel"
+        private val POLAR_EPOCH_INSTANT: Instant = Instant.parse("2000-01-01T00:00:00Z")
+        private const val NANOS_PER_SECOND = 1_000_000_000L
+    }
+
+    private fun phoneCalendarTimeAsPolarEpochNs(): Long {
+        val now = Instant.now()
+        val duration = Duration.between(POLAR_EPOCH_INSTANT, now)
+        return duration.seconds * NANOS_PER_SECOND + duration.nano
     }
 
     private val deviceId = state.get<String>(ONLINE_OFFLINE_KEY_DEVICE_ID)
@@ -163,6 +174,19 @@ class OnlineRecordingViewModel @Inject constructor(
 
     private val _uiStreamingState = MutableStateFlow(LiveRecordingUiState())
     val uiStreamingState: StateFlow<LiveRecordingUiState> = _uiStreamingState.asStateFlow()
+
+    private val _checkedDataTypes = MutableStateFlow<Set<PolarBleApi.PolarDeviceDataType>>(emptySet())
+    val checkedDataTypes: StateFlow<Set<PolarBleApi.PolarDeviceDataType>> = _checkedDataTypes.asStateFlow()
+
+    fun setChecked(feature: PolarBleApi.PolarDeviceDataType, checked: Boolean) {
+        _checkedDataTypes.update { current ->
+            if (checked) current + feature else current - feature
+        }
+    }
+
+    fun clearAllChecked() {
+        _checkedDataTypes.value = emptySet()
+    }
 
     private val _uiAccStreamDataState = MutableStateFlow(AccSampleDataUiState("", null, null))
     val uiAccStreamDataState: StateFlow<AccSampleDataUiState> = _uiAccStreamDataState.asStateFlow()
@@ -367,6 +391,7 @@ class OnlineRecordingViewModel @Inject constructor(
             PolarBleApi.PolarDeviceDataType.ECG -> {
                 polarDeviceStreamingRepository.stopStreaming(deviceId, PmdMeasurementType.ECG)
                 settingsCache[feature]?.selectedSettings?.let { updateStreamingRecordingState(deviceId, feature, StreamingFeatureState.STATES.STOPPED, it) }
+                EcgDataHolder.clear()
             }
             PolarBleApi.PolarDeviceDataType.ACC -> {
                 polarDeviceStreamingRepository.stopStreaming(deviceId, PmdMeasurementType.ACC)
@@ -428,6 +453,12 @@ class OnlineRecordingViewModel @Inject constructor(
                 }
                 .collect { polarEcgData ->
                     logEcgData(polarEcgData)
+                    polarEcgData.samples.forEach { s ->
+                        when (s) {
+                            is EcgSample -> EcgDataHolder.updateEcg(s.voltage)
+                            is FecgSample -> EcgDataHolder.updateEcg(s.ecg)
+                        }
+                    }
                     val sampleRate = if (polarEcgData.samples.size > 1) StreamUtils.calculateSampleRate(polarEcgData.samples[0].timeStamp, polarEcgData.samples[1].timeStamp) else 0.0
                     _uiEcgStreamDataState.update { EcgSampleDataUiState(deviceId = deviceId, sampleRate, polarEcgData) }
                 }
@@ -680,7 +711,7 @@ class OnlineRecordingViewModel @Inject constructor(
     @Throws(IOException::class)
     private fun logHrData(hrSampleData: PolarHrData) {
         for (sample in hrSampleData.samples) {
-            collector.logHr(System.nanoTime(), data = sample)
+            collector.logHr(phoneCalendarTimeAsPolarEpochNs(), data = sample)
         }
     }
 

@@ -55,11 +55,11 @@ import UIKit
     private let readyFeaturesLock = NSLock()
     var serviceList = [CBUUID.init(string: "180D")]
     let features:Set<PolarBleSdkFeature>
-    let dateFormatter = ISO8601DateFormatter()
     let PMDFilePath = "/PMDFILES.TXT"
     public private(set) var serviceClientUtils: PolarServiceClientUtils
     var fileUtils: PolarFileUtils
-    
+    var lastDerivedMethodsCache = [String: [Int: Set<Int>]]()
+
     required public init(_ queue: DispatchQueue, features: Set<PolarBleSdkFeature>, restoreIdentifier: String? = nil) {
         let resolvedFeatures = features.isEmpty ? Set(PolarBleSdkFeature.allCases) : features
         var clientList: [(_ gattServiceTransmitter: BleAttributeTransportProtocol) -> BleGattClientBase] = []
@@ -301,7 +301,7 @@ import UIKit
         return Future<FeatureState, Never> { promise in
             Task {
                 let features = (try? await pmdClient.readFeature(true)) ?? Set<PmdMeasurementType>()
-                promise(.success(features.contains { $0.isDataType() } ? .ready : .notAvailable))
+                promise(.success(features.contains { $0.isRawMeasurementDataType() } ? .ready : .notAvailable))
             }
         }.eraseToAnyPublisher()
     }
@@ -944,21 +944,46 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
     func startAutoConnectToDevice(_ rssi: Int, service: CBUUID?, polarDeviceType: String?) async throws {
-        let publisher = listener.search(serviceList, identifiers: nil, fetchKnownDevices: true)
+        logMessage("[autoConnect] startAutoConnectToDevice: rssi=\(rssi) service=\(service?.uuidString ?? "nil") deviceType=\(polarDeviceType ?? "nil")")
+
+        let timeoutInterval: TimeInterval = 2.0
+        var collectedSessions: [BleDeviceSession] = []
+        var firstMatchDate: Date? = nil
+
+        try await listener.search(serviceList, identifiers: nil, fetchKnownDevices: false)
             .filter { (sess: BleDeviceSession) -> Bool in
-                return sess.advertisementContent.medianRssi >= rssi &&
-                sess.isConnectable() &&
-                (polarDeviceType == nil || polarDeviceType == sess.advertisementContent.polarDeviceType) &&
-                (service == nil || sess.advertisementContent.containsService(service!))
+                let medianRssi  = Int(sess.advertisementContent.medianRssi)
+                let connectable = sess.isConnectable()
+                let typeOk      = polarDeviceType == nil || polarDeviceType == sess.advertisementContent.polarDeviceType
+                let serviceOk   = service == nil || sess.advertisementContent.containsService(service!)
+                let passes      = medianRssi >= rssi && connectable && typeOk && serviceOk
+                if passes && firstMatchDate == nil {
+                    firstMatchDate = Date()
+                }
+                return passes
             }
-            .prefix(1)
-        try await publisher.asyncForEach { session in
-            self.logMessage("auto connect search complete")
-#if os(watchOS)
-            session.connectionType = .directConnection
-#endif
-            self.listener.openSessionDirect(session)
+            .prefix(while: { _ in
+                guard let start = firstMatchDate else { return true }
+                return Date().timeIntervalSince(start) < timeoutInterval
+            })
+            .asyncForEach { session in
+                collectedSessions.append(session)
+            }
+
+        let sorted = collectedSessions.sorted { Int($0.advertisementContent.rssiFilter.rssi) > Int($1.advertisementContent.rssiFilter.rssi) }
+        guard let best = sorted.first else {
+            logMessage("[autoConnect] search complete — no matching device found")
+            return
         }
+
+        let deviceId = best.advertisementContent.polarDeviceIdUntouched.isEmpty
+            ? best.address.uuidString : best.advertisementContent.polarDeviceIdUntouched
+        logMessage("[autoConnect] connecting to best candidate: device=\(deviceId) rssi=\(best.advertisementContent.rssiFilter.rssi)")
+#if os(watchOS)
+        best.connectionType = .directConnection
+#endif
+        listener.openSessionDirect(best)
+        logMessage("[autoConnect] search complete")
     }
     
     func connectToDevice(_ identifier: String) throws {
@@ -1111,6 +1136,10 @@ extension PolarBleApiImpl: PolarBleApi  {
         let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as! BlePsFtpClient
         guard BlePolarDeviceCapabilitiesUtility.isRecordingSupported(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
         let data = try await client.query(Protocol_PbPFtpQuery.requestRecordingStatus.rawValue, parameters: nil)
+        guard data.length > 0 else {
+            self.logMessage("request recording status for \(identifier) returned empty data, defaulting to not recording")
+            return (ongoing: false, entryId: "")
+        }
         let result = try Protocol_PbRequestRecordingStatusResult(serializedBytes: data as Data)
         return (ongoing: result.recordingOn, entryId: result.hasSampleDataIdentifier ? result.sampleDataIdentifier : "")
     }
@@ -1250,6 +1279,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         let status = try await client.readMeasurementStatus()
         var activeOfflineRecordings = [PolarDeviceDataType: Bool]()
         for element in status {
+            guard element.0 != .derivedMeasurement else { continue }
             let polarFeature = try PolarDataUtils.mapToPolarFeature(from: element.0)
             activeOfflineRecordings[polarFeature] = (element.1 == .offline_measurement_active || element.1 == .online_offline_measurement_active)
         }
@@ -1284,6 +1314,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                             dateFormatter.calendar = .init(identifier: .iso8601)
                             dateFormatter.locale = Locale(identifier: "en_US_POSIX")
                             dateFormatter.dateFormat = "yyyyMMddHHmmss"
+                            dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
                             guard components.count >= 6,
                                   entry.size > 0,
                                   let date = dateFormatter.date(from: String(components[2] + components[4])) else { continue }
@@ -1356,6 +1387,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var polarTemperatureData: PolarOfflineRecordingData?
         var polarSkinTemperatureData: PolarOfflineRecordingData?
         var polarEmptyData: PolarOfflineRecordingData?
+        var polarDerivedAccData: PolarOfflineRecordingData?
         let lastTimestamp: UInt64 = 0
 
         for subRecordingIndex in indices {
@@ -1378,10 +1410,13 @@ extension PolarBleApiImpl: PolarBleApi  {
                     fileData: dataResult as Data,
                     type: PolarDataUtils.mapToPmdClientMeasurementType(from: entry.type),
                     secret: pmdSecret,
-                    lastTimestamp: lastTimestamp
+                    lastTimestamp: lastTimestamp,
+                    hintDerivedMethods: lastDerivedMethodsCache[identifier]?[entry.groupId]
                 )
                 let settings: PolarSensorSetting = offlineRecordingData.recordingSettings?.mapToPolarSettings() ?? PolarSensorSetting()
                 switch offlineRecordingData.data {
+                case let derivedData as DerivedAccData:
+                    polarDerivedAccData = processDerivedAccData(derivedData, polarDerivedAccData, offlineRecordingData)
                 case let accData as AccData:
                     polarAccData = processAccData(accData, polarAccData, offlineRecordingData, settings)
                 case let gyroData as GyrData:
@@ -1408,7 +1443,7 @@ extension PolarBleApiImpl: PolarBleApi  {
             }
         }
 
-        for dataObject in [polarAccData, polarGyroData, polarMagData, polarPpgData, polarPpiData, polarHrData, polarTemperatureData, polarSkinTemperatureData, polarEmptyData] {
+        for dataObject in [polarDerivedAccData, polarAccData, polarGyroData, polarMagData, polarPpgData, polarPpiData, polarHrData, polarTemperatureData, polarSkinTemperatureData, polarEmptyData] {
             if let data = dataObject { return data }
         }
         throw PolarErrors.polarOfflineRecordingError(description: "Invalid data")
@@ -1569,6 +1604,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                         dateFormatter.calendar = .init(identifier: .iso8601)
                         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
                         dateFormatter.dateFormat = "yyyyMMddHHmmss"
+                        dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
                         guard components.count >= 6,
                               let date = dateFormatter.date(from: String(components[2] + components[4])) else { continue }
                         guard let pmdMeasurementType = try? OfflineRecordingUtils.mapOfflineRecordingFileNameToMeasurementType(fileName: String(components[5])),
@@ -1608,6 +1644,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         case is OfflineHrData: return .hrOfflineRecordingData((offlineRecData.data as! OfflineHrData).mapToPolarData(), startTime: offlineRecData.startTime)
         case is TemperatureData: return .temperatureOfflineRecordingData((offlineRecData.data as! TemperatureData).mapToPolarData(), startTime: offlineRecData.startTime)
         case is SkinTemperatureData: return .skinTemperatureOfflineRecordingData((offlineRecData.data as! SkinTemperatureData).mapToPolarData(), startTime: offlineRecData.startTime)
+        case is DerivedAccData: return processDerivedAccData(offlineRecData.data as! DerivedAccData, nil, offlineRecData)
         case is EmptyData: return .emptyData(startTime: offlineRecData.startTime)
         default: throw PolarErrors.polarOfflineRecordingError(description: "GetOfflineRecording failed. Data type is not supported.")
         }
@@ -1870,6 +1907,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                     dateFormatter.calendar = .init(identifier: .iso8601)
                     dateFormatter.locale = Locale(identifier: "en_US_POSIX")
                     dateFormatter.dateFormat = "yyyyMMddHHmmss"
+                    dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
                     for entry in entries {
                         let components = entry.name.split(separator: "/")
                         if fsType == .polarFileSystemV2, components.count >= 5 {
@@ -1962,38 +2000,6 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
 
-    func getSDLogConfiguration(_ identifier: String) async throws -> SDLogConfig {
-        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
-        guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        guard .polarFileSystemV2 == BlePolarDeviceCapabilitiesUtility.fileSystemType(session.advertisementContent.polarDeviceType) else { throw PolarErrors.operationNotSupported }
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = .get
-        operation.path = SERVICE_DATALOG_CONFIG_FILEPATH
-        let request = try operation.serializedData()
-        BleLogger.trace("Sensor datalog get. Device: \(identifier) Path: \(operation.path)")
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, parameters: nil)
-        let data = try await client.request(request)
-        let sensorDataLog = try Data_PbSensorDataLog(serializedBytes: data as Data)
-        let logConfig = SDLogConfig.fromProto(proto: sensorDataLog)
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, parameters: nil)
-        return logConfig
-    }
-
-
-    func setSDLogConfiguration(_ identifier: String, logConfiguration: SDLogConfig) async throws {
-        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
-        guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let sdLogConfigProto = try SDLogConfig.toProto(sdLogConfig: logConfiguration).serializedData()
-        var operation = Protocol_PbPFtpOperation()
-        operation.command = .put
-        operation.path = SERVICE_DATALOG_CONFIG_FILEPATH
-        let proto = try operation.serializedData()
-        BleLogger.trace("Sensor datalog set. Device: \(identifier) Path: \(operation.path)")
-        let inputStream = InputStream(data: Data(sdLogConfigProto))
-        for try await _ in client.write(proto as NSData, data: inputStream) {}
-    }
-
-    
     func doFirstTimeUse(_ identifier: String, ftuConfig: PolarFirstTimeUseConfig) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.deviceError(description: "Failed to fetch GATT client.") }
@@ -2329,14 +2335,21 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
     
     func getSteps(identifier: String, fromDate: Date, toDate: Date) async throws -> [PolarStepsData] {
+        guard toDate >= fromDate else {
+            BleLogger.error("getSteps: Invalid date range: toDate \(toDate) is before fromDate \(fromDate)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
+        
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
-        let calendar = Calendar.current
         var datesList = [Date]()
-        var currentDate = fromDate
-        while currentDate <= toDate {
+        let startOfFrom = PolarTimeUtils.utcCalendar.startOfDay(for: fromDate)
+        let startOfTo = PolarTimeUtils.utcCalendar.startOfDay(for: toDate)
+        var currentDate = startOfFrom
+        while currentDate <= startOfTo {
             datesList.append(currentDate)
-            if let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate) { currentDate = nextDate } else { break }
+            guard let nextDate = PolarTimeUtils.utcCalendar.date(byAdding: .day, value: 1, to: currentDate) else { break }
+            currentDate = nextDate
         }
         var results = [PolarStepsData]()
         for date in datesList {
@@ -2348,6 +2361,12 @@ extension PolarBleApiImpl: PolarBleApi  {
 
 
     func getDistance(identifier: String, fromDate: Date, toDate: Date) async throws -> [PolarDistanceData] {
+        
+        guard toDate >= fromDate else {
+            BleLogger.error("getDistance: Invalid date range: toDate \(toDate) is before fromDate \(fromDate)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
+        
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let calendar = Calendar.current
@@ -2367,6 +2386,10 @@ extension PolarBleApiImpl: PolarBleApi  {
 
 
     func get247HrSamples(identifier: String, fromDate: Date, toDate: Date) async throws -> [Polar247HrSamplesData] {
+        guard toDate >= fromDate else {
+            BleLogger.error("get247HrSamples: Invalid date range: toDate \(toDate) is before fromDate \(fromDate)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         return try await PolarAutomaticSamplesUtils.read247HrSamples(client: client, fromDate: fromDate, toDate: toDate)
@@ -2374,6 +2397,10 @@ extension PolarBleApiImpl: PolarBleApi  {
 
     
     func get247PPiSamples(identifier: String, fromDate: Date, toDate: Date) async throws -> [Polar247PPiSamplesData] {
+        guard toDate >= fromDate else {
+            BleLogger.error("get247PPiSamples: Invalid date range: toDate \(toDate) is before fromDate \(fromDate)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         return try await PolarAutomaticSamplesUtils.read247PPiSamples(client: client, fromDate: fromDate, toDate: toDate)
@@ -2381,6 +2408,11 @@ extension PolarBleApiImpl: PolarBleApi  {
 
 
     func getNightlyRecharge(identifier: String, fromDate: Date, toDate: Date) async throws -> [PolarNightlyRechargeData] {
+        guard toDate >= fromDate else {
+            BleLogger.error("getNightlyRecharge: Invalid date range: toDate \(toDate) is before fromDate \(fromDate)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
+        
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let calendar = Calendar.current
@@ -2401,6 +2433,10 @@ extension PolarBleApiImpl: PolarBleApi  {
 
     
     func getCalories(identifier: String, fromDate: Date, toDate: Date, caloriesType: CaloriesType) async throws -> [PolarCaloriesData] {
+        guard toDate >= fromDate else {
+            BleLogger.error("getCalories: Invalid date range: toDate \(toDate) is before fromDate \(fromDate)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let calendar = Calendar.current
@@ -2420,6 +2456,10 @@ extension PolarBleApiImpl: PolarBleApi  {
 
 
     func getActivitySampleData(identifier: String, fromDate: Date, toDate: Date) async throws -> [PolarActivityDayData] {
+        guard toDate >= fromDate else {
+            BleLogger.error("getActivitySampleData: Invalid date range: toDate \(toDate) is before fromDate \(fromDate)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let calendar = Calendar.current
@@ -2439,6 +2479,10 @@ extension PolarBleApiImpl: PolarBleApi  {
 
     
     func getDailySummaryData(identifier: String, fromDate: Date, toDate: Date) async throws -> [PolarDailySummary] {
+        guard toDate >= fromDate else {
+            BleLogger.error("getDailySummaryData: Invalid date range: toDate \(toDate) is before fromDate \(fromDate)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
         let calendar = Calendar.current
@@ -2566,6 +2610,17 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
     
+    func setHibernateMode(_ identifier: String) async throws {
+        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+        guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
+        var builder = Protocol_PbPFtpFactoryResetParams()
+        builder.sleep = true
+        builder.doFactoryDefaults = false
+        builder.hibernate = true
+        BleLogger.trace("Send hibernate notification to device \(identifier).")
+        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.reset.rawValue, parameters: try builder.serializedData() as NSData)
+    }
+
     func turnDeviceOff(_ identifier: String) async throws {
         let session = try serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { throw PolarErrors.serviceNotFound }
@@ -2622,6 +2677,7 @@ extension PolarBleApiImpl: PolarBleApi  {
     func deleteStoredDeviceData(_ identifier: String, dataType: PolarStoredDataType.StoredDataType, until: Date?) async throws {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd"
+        formatter.timeZone = TimeZone(abbreviation: "UTC")
         let entryPattern = dataType.rawValue
         var condition: (_ p: String) -> Bool
         var folderPath: String = "/U/0"
@@ -2678,8 +2734,12 @@ extension PolarBleApiImpl: PolarBleApi  {
         let calendar = Calendar.current
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd"
-        dateFormatter.timeZone = TimeZone.current
+        dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
         guard let to = toDate, let from = fromDate else { throw PolarErrors.dateTimeFormatFailed(description: "Invalid from and/or to date") }
+        if let from = fromDate, let to = toDate, to < from {
+            BleLogger.error("deleteDeviceDateFolders: Invalid date range: toDate \(to) is before fromDate \(from)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
         var validDates = Set<Date>()
         var currentDate = try from.localDate()
         let toLocalDate = try to.localDate()
@@ -2688,13 +2748,27 @@ extension PolarBleApiImpl: PolarBleApi  {
             if let next = calendar.date(byAdding: .day, value: 1, to: currentDate) { currentDate = next } else { break }
         }
         let condition: (_ p: String) -> Bool = { entry in
-            if entry.hasSuffix("/") {
-                if let d = dateFormatter.date(from: String(entry.dropLast())) { return validDates.contains(d) }
-            }
-            return false
+        let trimmedFolderPath = entry.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+          let folderName = trimmedFolderPath.components(separatedBy: "/").last ?? ""
+
+          let folderRegex = "^[0-9]{8}$"
+          let folderTest = NSPredicate(format: "SELF MATCHES %@", folderRegex)
+
+          guard folderTest.evaluate(with: folderName) else {
+              BleLogger.trace("Skipping non-date folder: \(entry)")
+              return false
+          }
+
+          let validDateStrings = validDates.map { dateFormatter.string(from: $0) }
+          if validDateStrings.contains(folderName) {
+              BleLogger.trace("Folder \(folderName) is in valid date range, deleting")
+              return true
+          } else {
+              return false
+          }
         }
         for try await folder in fileUtils.listFiles(identifier: identifier, folderPath: path, condition: condition, recurseDeep: false) {
-            try await fileUtils.deleteDataDirectory(identifier: identifier, directoryPath: folder)
+            let _ = try await fileUtils.removeSingleFile(identifier: identifier, filePath: folder)
         }
     }
 
@@ -2840,6 +2914,25 @@ extension PolarBleApiImpl: PolarBleApi  {
         let session = try await serviceClientUtils.waitPfcClientReady(identifier)
         guard let client = session.fetchGattClient(BlePfcClient.PFC_SERVICE) as? BlePfcClient else { throw PolarErrors.serviceNotFound }
         let response = try await client.sendControlPointCommand(BlePfcClient.PfcMessage.pfcRequestMultiConnectionSetting, value: UInt8(0))
+        if response.payload.isEmpty { return false }
+        return response.payload[0] == 1
+    }
+    
+    func setSensorInitiatedSecurityMode(identifier: String, enable: Bool) async throws {
+        let session = try serviceClientUtils.sessionPfcClientReady(identifier)
+        guard let client = session.fetchGattClient(BlePfcClient.PFC_SERVICE) as? BlePfcClient else { throw PolarErrors.serviceNotFound }
+        let enableValue: UInt8 = enable ? 1 : 0
+        BleLogger.trace("Send sensor initiated security mode value to device \(identifier) with mode \(enable).")
+        let response = try await client.sendControlPointCommand(BlePfcClient.PfcMessage.pfcConfigureSensorInitiatedSecurityMode, value: enableValue)
+        if response.status != .success { throw PolarErrors.operationNotSupported }
+    }
+
+    
+    func getSensorInitiatedSecurityMode(identifier: String) async throws -> Bool {
+        let session = try await serviceClientUtils.waitPfcClientReady(identifier)
+        guard let client = session.fetchGattClient(BlePfcClient.PFC_SERVICE) as? BlePfcClient else { throw PolarErrors.serviceNotFound }
+        BleLogger.trace("Request sensor initiated security mode value from device \(identifier).")
+        let response = try await client.sendControlPointCommand(BlePfcClient.PfcMessage.pfcRequestSensorInitiatedSecurityMode, value: UInt8(0))
         if response.payload.isEmpty { return false }
         return response.payload[0] == 1
     }
@@ -3022,6 +3115,26 @@ extension PolarBleApiImpl: PolarBleApi  {
         throw PolarErrors.polarBleSdkInternalException(description: "Timeout waiting for device \(identifier) to be ready")
     }
 
+
+    private func processDerivedAccData(
+        _ derivedData: DerivedAccData,
+        _ existingData: PolarOfflineRecordingData?,
+        _ offlineRecordingData: OfflineRecordingData<Any>
+    ) -> PolarOfflineRecordingData {
+        let polarSettings = offlineRecordingData.recordingSettings?.mapToPolarSettings()
+        let polarDerived = PolarDataUtils.mapPmdClientDerivedAccDataToPolarDerivedAcc(derivedData)
+        switch existingData {
+        case let .derivedAccOfflineRecordingData(existing, startTime, existingSettings):
+            let merged = PolarDerivedAccData(samples: existing.samples + polarDerived.samples)
+            return .derivedAccOfflineRecordingData(merged, startTime: startTime, settings: existingSettings)
+        default:
+            return .derivedAccOfflineRecordingData(
+                polarDerived,
+                startTime: offlineRecordingData.startTime,
+                settings: polarSettings
+            )
+        }
+    }
 
     private func processAccData(
         _ accData: AccData,

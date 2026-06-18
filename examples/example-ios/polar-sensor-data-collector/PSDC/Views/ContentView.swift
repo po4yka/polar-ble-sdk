@@ -100,7 +100,7 @@ struct ContentView: View {
                         self.isSearchingDevices = !(self.isSearchingDevices)
                     }
 
-                if case .noDevice = bleSdkManager.deviceConnectionState {
+                if !bleSdkManager.deviceConnectionState.isConnected {
                     Button("Listen HR Broadcasts", action: {
                         self.showHrBroadcastView = true
                     })
@@ -110,16 +110,11 @@ struct ContentView: View {
                         HrBroadcastView()
                             .environmentObject(bleSdkManager)
                     }
-                } else if case .disconnected = bleSdkManager.deviceConnectionState {
-                    Button("Listen HR Broadcasts", action: {
-                        self.showHrBroadcastView = true
+                    Button("Auto Connect", action: {
+                        bleSdkManager.autoConnect()
                     })
                     .buttonStyle(PrimaryButtonStyle(buttonState: getSearchButtonState()))
                     .disabled(!bleSdkManager.isBluetoothOn)
-                    .sheet(isPresented: $showHrBroadcastView) {
-                        HrBroadcastView()
-                            .environmentObject(bleSdkManager)
-                    }
                 }
                 
                 Text("\(bleSdkManager.connectedDevicesText)")
@@ -158,8 +153,8 @@ struct ContentView: View {
         }, message: {
             Text(appState.bleSdkManager.generalMessage?.text ?? "?")
         })
-        .onChange(of: appState.bleSdkManager.generalMessage?.text) { text in
-           presenting = text != nil
+        .onChange(of: appState.bleSdkManager.generalMessage?.id) { id in
+           presenting = id != nil
         }
     }
     
@@ -298,7 +293,7 @@ struct OperationModesTabView: View {
                 DeviceSettingsView()
                     .environmentObject(bleSdkManager)
             case .logging:
-                SensorDatalogSettingsView()
+                LoggingSettingsView()
                     .environmentObject(bleSdkManager)
             case .activityRecordingView:
                 ActivityRecordingView()

@@ -26,7 +26,8 @@ import com.polar.sdk.api.model.sleep.PolarNightlyRechargeData
 import com.polar.sdk.api.model.PolarSkinTemperatureData
 import com.polar.sdk.api.model.activity.Polar247PPiSamplesData
 import com.polar.sdk.api.model.activity.PolarActiveTimeData
-import com.polar.sdk.api.model.PolarWatchFaceConfig
+import com.polar.sdk.api.model.PolarDerivedMeasurementSettings
+import com.polar.sdk.api.model.PolarDerivedMeasurementSettingsGroup
 import com.polar.sdk.api.model.trainingsession.PolarTrainingSessionReference
 import com.polar.sdk.api.model.activity.PolarActivitySamplesDayData
 import com.polar.sdk.api.model.activity.PolarDailySummaryData
@@ -167,6 +168,9 @@ class PolarDeviceRepository @Inject constructor(
     private val _deviceSupportsSettings: MutableStateFlow<Boolean> = MutableStateFlow(false)
     var deviceSupportsSettings: StateFlow<Boolean> = _deviceSupportsSettings.asStateFlow()
 
+    private val _isSensorInitiatedSecurityModeEnabled: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    var isSensorInitiatedSecurityModeEnabled: StateFlow<Boolean> = _isSensorInitiatedSecurityModeEnabled.asStateFlow()
+
     private val _offlineExerciseV2Supported: MutableStateFlow<Map<String, Boolean>> =
         MutableStateFlow(emptyMap())
     val offlineExerciseV2Supported: StateFlow<Map<String, Boolean>> =
@@ -261,6 +265,13 @@ class PolarDeviceRepository @Inject constructor(
                 collector.startSkinTemperatureLog(logIdentifier, startTime = offlineRecData.startTime)
                 for (sample in offlineRecData.data.samples) {
                     collector.logSkinTemperature(timeStamp = sample.timeStamp, temperature = sample.temperature)
+                }
+                return collector.finalizeAllStreams().toList().first()
+            }
+            is PolarOfflineRecordingData.DerivedAccOfflineRecording -> {
+                collector.startDerivedAccLog(logIdentifier, startTime = offlineRecData.startTime)
+                for (sample in offlineRecData.data.samples) {
+                    collector.logDerivedSample(sample)
                 }
                 return collector.finalizeAllStreams().toList().first()
             }
@@ -621,6 +632,8 @@ class PolarDeviceRepository @Inject constructor(
 
     suspend fun setWarehouseSleep(deviceId: String) = withContext(Dispatchers.IO) { api.setWareHouseSleep(deviceId) }
 
+    suspend fun setHibernateMode(deviceId: String) = withContext(Dispatchers.IO) { api.setHibernateMode(deviceId) }
+
     suspend fun turnDeviceOff(deviceId: String) = withContext(Dispatchers.IO) { api.turnDeviceOff(deviceId) }
 
     fun observeDeviceToHostNotifications(deviceId: String): Flow<com.polar.sdk.api.PolarD2HNotificationData> {
@@ -727,6 +740,43 @@ class PolarDeviceRepository @Inject constructor(
         }
     }
 
+    suspend fun requestDerivedMeasurementGroupIds(deviceId: String, sourceType: PolarBleApi.PolarDeviceDataType): ResultOfRequest<Set<Int>> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            ResultOfRequest.Success(api.requestDerivedMeasurementGroupIds(deviceId, sourceType))
+        } catch (e: Exception) {
+            Log.e(TAG, "requestDerivedMeasurementGroupIds failed for $sourceType on $deviceId: ${e.message}")
+            ResultOfRequest.Failure("Failed to get derived measurement group IDs", e)
+        }
+    }
+
+    suspend fun requestDerivedMeasurementSettingsGroup(deviceId: String, groupId: Int): ResultOfRequest<PolarDerivedMeasurementSettingsGroup> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            ResultOfRequest.Success(api.requestDerivedMeasurementSettingsGroup(deviceId, groupId))
+        } catch (e: Exception) {
+            Log.e(TAG, "requestDerivedMeasurementSettingsGroup failed for groupId=$groupId on $deviceId: ${e.message}")
+            ResultOfRequest.Failure("Failed to get derived measurement settings group", e)
+        }
+    }
+
+    suspend fun startDerivedOfflineRecording(deviceId: String, settings: PolarDerivedMeasurementSettings): ResultOfRequest<Nothing> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val secret = security.getSecretKey(deviceId)?.let { PolarRecordingSecret(it.encoded) }
+            api.startDerivedOfflineRecording(deviceId, settings, secret)
+            ResultOfRequest.Success()
+        } catch (e: Exception) {
+            ResultOfRequest.Failure("Derived offline recording start failed", e)
+        }
+    }
+
+    suspend fun stopDerivedOfflineRecording(deviceId: String): ResultOfRequest<Nothing> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            api.stopDerivedOfflineRecording(deviceId)
+            ResultOfRequest.Success()
+        } catch (e: Exception) {
+            ResultOfRequest.Failure("Derived offline recording stop failed", e)
+        }
+    }
+
     suspend fun requestOfflineRecordingStatus(deviceId: String): ResultOfRequest<List<PolarBleApi.PolarDeviceDataType>> = withContext(Dispatchers.IO) {
         return@withContext try {
             ResultOfRequest.Success(api.getOfflineRecordingStatus(deviceId))
@@ -763,6 +813,10 @@ class PolarDeviceRepository @Inject constructor(
 
     suspend fun getMultiBleModeEnabled(deviceId: String) = withContext(Dispatchers.IO) {
         _isMultiBleModeEnabled.update { getBleMultiConnectionMode(deviceId) }
+    }
+
+    suspend fun getSensorInitiatedSecurityModeEnabled(deviceId: String) = withContext(Dispatchers.IO) {
+        _isSensorInitiatedSecurityModeEnabled.update { getSensorInitiatedSecurityMode(deviceId) }
     }
 
     suspend fun toggleSecurity(deviceId: String, enable: Boolean) = withContext(Dispatchers.IO) {
@@ -1016,6 +1070,20 @@ class PolarDeviceRepository @Inject constructor(
         }
     }
 
+    private suspend fun getSensorInitiatedSecurityMode(deviceId: String): Boolean {
+        return try {
+            val result = api.getSensorInitiatedSecurityMode(deviceId)
+            _isSensorInitiatedSecurityModeEnabled.update { result }
+            result
+        } catch (e: Exception) {
+            Log.e(TAG, "getSensorInitiatedSecurityMode failed. Error $e")
+            false
+        }
+    }
+
+    suspend fun setSensorInitiatedSecurityMode(deviceId: String, enable: Boolean) =
+        withContext(Dispatchers.IO) { api.setSensorInitiatedSecurityMode(deviceId, enable) }
+
     suspend fun setTelemetryEnabled(deviceId: String, enabled: Boolean) = withContext(Dispatchers.IO) {
         api.setTelemetryEnabled(deviceId, enabled)
     }
@@ -1161,6 +1229,16 @@ class PolarDeviceRepository @Inject constructor(
             return@withContext try {
                 api.setWatchFaceConfig(deviceId, config)
                 ResultOfRequest.Success(Unit)
+            } catch (e: Exception) {
+                ResultOfRequest.Failure(e.message.toString(), e)
+            }
+        }
+
+    suspend fun exportDeviceLogs(deviceId: String): ResultOfRequest<List<com.polar.sdk.api.model.PolarDeviceLog>> =
+        withContext(Dispatchers.IO) {
+            return@withContext try {
+                val logs = api.exportDeviceLogs(deviceId)
+                ResultOfRequest.Success(logs)
             } catch (e: Exception) {
                 ResultOfRequest.Failure(e.message.toString(), e)
             }

@@ -393,6 +393,26 @@ open class BlePmdClient: BleGattClientBase, @unchecked Sendable {
         }
     }
 
+    func queryDerivedMeasurementSettingsGroup(_ groupId: Int) async throws -> PmdSetting {
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<PmdSetting, Error>) in
+            baseSerialDispatchQueue.async {
+                do {
+                    BleLogger.trace("queryDerivedMeasurementSettingsGroup: groupId=\(groupId)")
+                    let response = try self.sendControlPointCommand(Data([
+                        PmdControlPointCommandClientToService.GET_DERIVED_MEASUREMENT_SETTINGS_GROUP,
+                        UInt8(groupId & 0xFF)
+                    ]))
+                    if response.errorCode == .success {
+                        do { continuation.resume(returning: try PmdSetting(response.parameters as Data)) }
+                        catch { continuation.resume(throwing: error) }
+                    } else {
+                        continuation.resume(throwing: BleGattException.gattAttributeError(errorCode: response.errorCode.rawValue, errorDescription: response.errorCode.description))
+                    }
+                } catch { continuation.resume(throwing: error) }
+            }
+        }
+    }
+
     func queryFullSettings(_ type: PmdMeasurementType, _ recordingType: PmdRecordingType) async throws -> PmdSetting {
         return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<PmdSetting, Error>) in
             baseSerialDispatchQueue.async {
@@ -514,7 +534,7 @@ open class BlePmdClient: BleGattClientBase, @unchecked Sendable {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             baseSerialDispatchQueue.async {
                 do {
-                    guard type.isDataType() else {
+                    guard type.isRawMeasurementDataType() else {
                         continuation.resume()
                         return
                     }

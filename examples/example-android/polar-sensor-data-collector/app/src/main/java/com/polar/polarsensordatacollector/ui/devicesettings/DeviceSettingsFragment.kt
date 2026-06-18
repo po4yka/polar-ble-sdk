@@ -19,6 +19,7 @@ import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.util.Pair
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -36,6 +37,7 @@ import com.google.gson.GsonBuilder
 import com.polar.polarsensordatacollector.R
 import com.polar.polarsensordatacollector.repository.SdkMode
 import com.polar.polarsensordatacollector.ui.activity.ActivityRecordingFragmentDirections
+import com.polar.polarsensordatacollector.ui.landing.MainViewModel
 import com.polar.polarsensordatacollector.ui.exercise.ExerciseActivity
 import com.polar.polarsensordatacollector.ui.genericapi.GenericApiActivity
 import com.polar.polarsensordatacollector.ui.utils.showSnackBar
@@ -59,6 +61,7 @@ class DeviceSettingsFragment : Fragment(R.layout.fragment_device_settings) {
     }
 
     private val viewModel: DeviceSettingsViewModel by viewModels()
+    private val mainViewModel: MainViewModel by activityViewModels()
 
     private lateinit var sdkModeGroup: ConstraintLayout
     private lateinit var sdkModeToggleButton: Button
@@ -106,6 +109,7 @@ class DeviceSettingsFragment : Fragment(R.layout.fragment_device_settings) {
 
     private lateinit var setWareHouseSleepGroup: ConstraintLayout
     private lateinit var setWareHouseSleepButton: Button
+    private lateinit var setHibernateModeButton: Button
     private lateinit var setWareHouseSleepHeader: TextView
 
     private lateinit var setTurnDeviceOffGroup: ConstraintLayout
@@ -147,6 +151,10 @@ class DeviceSettingsFragment : Fragment(R.layout.fragment_device_settings) {
     private lateinit var bleMultiConnectionEnableHeader: TextView
     private lateinit var bleMultiConnectionEnableButton: Button
     private lateinit var bleMultiConnectionEnabledSwitch: SwitchMaterial
+
+    private lateinit var sensorInitiatedSecurityModeEnableHeader: TextView
+    private lateinit var sensorInitiatedSecurityModeEnableButton: Button
+    private lateinit var sensorInitiatedSecurityModeEnableSwitch: SwitchMaterial
 
     private lateinit var sleepRecordingStateHeader: TextView
     private lateinit var forceStopSleepButton: Button
@@ -282,6 +290,13 @@ class DeviceSettingsFragment : Fragment(R.layout.fragment_device_settings) {
             }
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiSensorInitiatedSecurityModeState.collect { sensorInitiatedSecurityModeStateChange(it)
+                }
+            }
+        }
+
         sdkModeToggleButton.setOnClickListener {
             viewModel.sdkModeToggle()
         }
@@ -330,7 +345,8 @@ class DeviceSettingsFragment : Fragment(R.layout.fragment_device_settings) {
         }
 
         doRestartButton.setOnClickListener {
-            viewModel.doRestart()
+                viewModel.doRestart()
+                mainViewModel.requestRemoveOnlineOfflineFragments()
         }
 
         dofactoryResetButton.setOnClickListener {
@@ -339,6 +355,7 @@ class DeviceSettingsFragment : Fragment(R.layout.fragment_device_settings) {
                 .setMessage(getString(R.string.confirm_factory_reset))
                 .setPositiveButton(getString(R.string.confirm)) { _, _ ->
                     viewModel.doFactoryReset()
+                    mainViewModel.requestRemoveOnlineOfflineFragments()
                 }
                 .setNegativeButton(getString(R.string.cancel), null)
                 .show()
@@ -346,10 +363,17 @@ class DeviceSettingsFragment : Fragment(R.layout.fragment_device_settings) {
 
         setWareHouseSleepButton.setOnClickListener {
             viewModel.setWarehouseSleep()
+            mainViewModel.requestRemoveOnlineOfflineFragments()
+        }
+
+        setHibernateModeButton.setOnClickListener {
+            viewModel.setHibernateMode()
+            mainViewModel.requestRemoveOnlineOfflineFragments()
         }
 
         setTurnDeviceOffButton.setOnClickListener {
             viewModel.setTurnDeviceOff()
+            mainViewModel.requestRemoveOnlineOfflineFragments()
         }
 
         doFirmwareUpdateButton.setOnClickListener {
@@ -524,6 +548,11 @@ class DeviceSettingsFragment : Fragment(R.layout.fragment_device_settings) {
             viewModel.setBleMultiConnection(enabled = enableDisableBleMultiConnection)
         }
 
+        sensorInitiatedSecurityModeEnableButton.setOnClickListener {
+            val enableSensorInitiatedSecurityMode = sensorInitiatedSecurityModeEnableSwitch.isChecked
+            viewModel.setSensorInitiatedSecurityMode(enabled = enableSensorInitiatedSecurityMode)
+        }
+
         view.findViewById<Button>(R.id.watch_face_complications_button).setOnClickListener {
             com.polar.polarsensordatacollector.ui.watchface.WatchFaceActivity.launch(requireContext())
         }
@@ -579,6 +608,7 @@ class DeviceSettingsFragment : Fragment(R.layout.fragment_device_settings) {
         setWareHouseSleepGroup = view.findViewById(R.id.set_warehouse_sleep_group)
         setWareHouseSleepButton = view.findViewById(R.id.set_warehouse_sleep_button)
         setWareHouseSleepHeader = view.findViewById(R.id.set_warehouse_sleep_button_header)
+        setHibernateModeButton = view.findViewById(R.id.set_hibernate_mode_button)
 
         setTurnDeviceOffGroup = view.findViewById(R.id.set_warehouse_sleep_group)
         setTurnDeviceOffButton = view.findViewById(R.id.set_turn_device_off_button)
@@ -641,6 +671,12 @@ class DeviceSettingsFragment : Fragment(R.layout.fragment_device_settings) {
             view.findViewById(R.id.multi_ble_settings_header)
         bleMultiConnectionEnabledSwitch =
             view.findViewById(R.id.multi_ble_settings_enabled)
+
+        sensorInitiatedSecurityModeEnableButton = view.findViewById(R.id.sensor_initiated_security_mode_enable_button)
+        sensorInitiatedSecurityModeEnableHeader =
+            view.findViewById(R.id.sensor_initiated_security_mode_enable_header)
+        sensorInitiatedSecurityModeEnableSwitch =
+            view.findViewById(R.id.sensor_initiated_security_mode_enable_switch)
 
         forceStopSleepButton = view.findViewById(R.id.force_stop_sleep_button)
         forceStopSleepGroup = view.findViewById(R.id.force_stop_sleep_group)
@@ -769,6 +805,10 @@ class DeviceSettingsFragment : Fragment(R.layout.fragment_device_settings) {
 
     private fun bleMultiConnectionStateChange(status: BleMultiConnectionUiState) {
         bleMultiConnectionEnabledSwitch.isChecked = status.isEnabled
+    }
+
+    private fun sensorInitiatedSecurityModeStateChange(status: SensorInitiatedSecurityModeUiState) {
+        sensorInitiatedSecurityModeEnableSwitch.isChecked = status.isEnabled
     }
 
     private fun showDataDeleteDatePicker() {

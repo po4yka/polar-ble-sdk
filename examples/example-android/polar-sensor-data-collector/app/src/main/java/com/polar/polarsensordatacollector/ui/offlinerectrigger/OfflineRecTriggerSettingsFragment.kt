@@ -178,17 +178,17 @@ class OfflineRecTriggerSettingsFragment : Fragment(R.layout.fragment_offline_tri
     private fun userSelectsOfflineSettings(settingsUiState: OfflineRecTriggerSettingsUiState?) {
         if (settingsUiState != null && settingsUiState.settings.currentlyAvailable != null) {
             DialogUtility.showAllSettingsDialog(
-                requireActivity(),
-                settingsUiState.settings.currentlyAvailable.settings,
-                settingsUiState.settings.currentlyAvailable.settings,
+                requireActivity() as android.app.Activity,
+                settingsUiState.settings.currentlyAvailable.settings.toMap(),
+                settingsUiState.settings.currentlyAvailable.settings.toMap(),
                 settingsUiState.settings.selectedSettings
             ).toFlowable()
                 .doFinally {
                     getRecTriggerSettingsButtonView(settingsUiState.feature)?.isEnabled = true
                 }
-                .subscribe({ settings: Map<PolarSensorSetting.SettingType, Int>? ->
+                .subscribe({ (settings, _) ->
                     Log.d(TAG, "Dialog completed with settings $settings")
-                    settings?.let {
+                    settings.let {
                         offlineTriggerViewModel.updateSelectedStreamSettings(settingsUiState.feature, it)
                     }
                 }, { error: Throwable ->

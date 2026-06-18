@@ -396,6 +396,144 @@ class PolarFileUtilsTest {
     }
 
     @Test
+    fun testGetFile_Success() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val path = "/ERRORLOG.BPB"
+        val fileBytes = "error log content".toByteArray()
+        val outputStream = ByteArrayOutputStream().apply { write(fileBytes) }
+        val (client, listener, _) = mockBleConnection(deviceId)
+
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        coEvery { client.request(any<ByteArray>()) } returns outputStream
+
+        // Act
+        val result = PolarFileUtils.getFile(deviceId, path, listener, "TestTag")
+
+        // Assert
+        Assert.assertTrue(fileBytes.contentEquals(result))
+        verify(exactly = 1) { client.isServiceDiscovered }
+        coVerify(exactly = 1) { client.request(any()) }
+    }
+
+    @Test
+    fun testGetFile_SendsCorrectGetCommand() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val path = "/SYSLOG.TXT"
+        val (client, listener, _) = mockBleConnection(deviceId)
+
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        coEvery { client.request(any<ByteArray>()) } returns ByteArrayOutputStream()
+
+        val expectedRequest = PftpRequest.PbPFtpOperation.newBuilder()
+            .setCommand(PftpRequest.PbPFtpOperation.Command.GET)
+            .setPath(path)
+            .build()
+            .toByteArray()
+
+        // Act
+        PolarFileUtils.getFile(deviceId, path, listener, "TestTag")
+
+        // Assert
+        coVerify(exactly = 1) { client.request(match { it.contentEquals(expectedRequest) }) }
+    }
+
+    @Test
+    fun testGetFile_Throws_When_NoSession() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val listener = mockk<BleDeviceListener>()
+        val sessions = mockk<Set<BleDeviceSession>>()
+
+        every { listener.deviceSessions() } returns sessions
+        every { sessions.iterator().hasNext() } returns false
+
+        // Act & Assert
+        try {
+            PolarFileUtils.getFile(deviceId, "/ERRORLOG.BPB", listener, "TestTag")
+            Assert.fail("Expected PolarDeviceNotFound")
+        } catch (e: PolarDeviceNotFound) {
+            // expected
+        }
+    }
+
+    @Test
+    fun testGetFile_Throws_When_NoFtpClient() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val listener = mockk<BleDeviceListener>()
+        val session = mockk<BleDeviceSession>()
+        val sessions = mockk<Set<BleDeviceSession>>()
+        val advContent = mockk<BleAdvertisementContent>()
+        val client = mockk<BlePsFtpClient>()
+
+        every { listener.deviceSessions() } returns sessions
+        every { sessions.iterator().hasNext() } returns true
+        every { sessions.iterator().next() } returns session
+        every { session.advertisementContent } returns advContent
+        every { session.advertisementContent.polarDeviceId } returns deviceId
+        every { session.polarDeviceType } returns "Polar360"
+        every { session.sessionState } returns BleDeviceSession.DeviceSessionState.SESSION_OPEN
+        every { session.fetchClient(any()) } returns client
+        every { client.isServiceDiscovered } returns false
+
+        // Act & Assert
+        try {
+            PolarFileUtils.getFile(deviceId, "/ERRORLOG.BPB", listener, "TestTag")
+            Assert.fail("Expected PolarServiceNotAvailable")
+        } catch (e: PolarServiceNotAvailable) {
+            // expected
+        }
+        coVerify(exactly = 0) { client.request(any()) }
+    }
+
+    @Test
+    fun testGetFile_Throws_When_FileSystemNotSupported() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val (client, listener, session) = mockBleConnection(deviceId)
+
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.H10_FILE_SYSTEM
+        every { session.polarDeviceType } returns "h10"
+
+        // Act & Assert
+        try {
+            PolarFileUtils.getFile(deviceId, "/ERRORLOG.BPB", listener, "TestTag")
+            Assert.fail("Expected PolarOperationNotSupported")
+        } catch (e: PolarOperationNotSupported) {
+            // expected
+        }
+        verify(exactly = 1) { client.isServiceDiscovered }
+        coVerify(exactly = 0) { client.request(any()) }
+    }
+
+    @Test
+    fun testGetFile_Propagates_FtpRequestError() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val (client, listener, _) = mockBleConnection(deviceId)
+        val responseError = BlePsFtpUtils.PftpResponseError("Checksum failure", 204)
+
+        mockkObject(BlePolarDeviceCapabilitiesUtility)
+        every { getFileSystemType(any()) } returns BlePolarDeviceCapabilitiesUtility.FileSystemType.POLAR_FILE_SYSTEM_V2
+        coEvery { client.request(any<ByteArray>()) } throws responseError
+
+        // Act & Assert
+        try {
+            PolarFileUtils.getFile(deviceId, "/TRC1.BIN", listener, "TestTag")
+            Assert.fail("Expected exception")
+        } catch (e: BlePsFtpUtils.PftpResponseError) {
+            Assert.assertEquals(204, e.error)
+        }
+        verify(exactly = 1) { client.isServiceDiscovered }
+        coVerify(exactly = 1) { client.request(any()) }
+    }
+
+    @Test
     fun testFetchRecursively_Handles_Error103_NoSuchFileOrDirectory() = runTest {
         // Arrange
         val deviceId = "E123456F"

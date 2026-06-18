@@ -122,6 +122,24 @@ class PolarFileUtils {
         }
     }
 
+    func tryFetchFile(client: BlePsFtpClient, path: String) async -> Data? {
+        do {
+            var operation = Protocol_PbPFtpOperation()
+            operation.command = .get
+            operation.path = path
+            let request = try operation.serializedData()
+            let data = try await client.request(request)
+            return data as Data
+        } catch {
+            if case let BlePsFtpException.responseError(code) = error, code == 103 {
+                BleLogger.trace("tryFetchFile: \(path) not found on device, skipping")
+            } else {
+                BleLogger.error("tryFetchFile: \(path) skipped (\(error.localizedDescription))")
+            }
+            return nil
+        }
+    }
+
     func getFile(identifier: String, filePath: String) async throws -> NSData {
         do {
             let session = try serviceClientUtils?.sessionFtpClientReady(identifier)

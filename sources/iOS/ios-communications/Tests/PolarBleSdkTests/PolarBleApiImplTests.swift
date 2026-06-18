@@ -18,6 +18,9 @@ final class PolarBleApiImplTests: XCTestCase {
     private var h10MockClient: MockBlePsFtpClient!
     private var h10MockSession: MockH10BleDeviceSession!
     private var h10Api: PolarBleApiImplWithMockH10Session!
+    private var pfcMockClient: MockBlePfcClient!
+    private var pfcMockSession: MockPfcBleDeviceSession!
+    private var pfcApi: MockPfcBleApiImpl!
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Set-up / Tear-down
@@ -38,11 +41,16 @@ final class PolarBleApiImplTests: XCTestCase {
         h10MockClient = MockBlePsFtpClient(gattServiceTransmitter: h10Gatt)
         h10MockSession = MockH10BleDeviceSession(mockFtpClient: h10MockClient)
         h10Api = PolarBleApiImplWithMockH10Session(mockDeviceSession: h10MockSession)
+        let pfcGatt = MockPolarGattServiceTransmitter()
+        pfcMockClient = MockBlePfcClient(gattServiceTransmitter: pfcGatt)
+        pfcMockSession = MockPfcBleDeviceSession(mockPfcClient: pfcMockClient)
+        pfcApi = MockPfcBleApiImpl(mockPfcSession: pfcMockSession)
     }
 
     override func tearDownWithError() throws {
         v2MockClient = nil; v2MockSession = nil; v2Api = nil
         h10MockClient = nil; h10MockSession = nil; h10Api = nil
+        pfcMockClient = nil; pfcMockSession = nil; pfcApi = nil
         cancellables.removeAll()
     }
 
@@ -542,6 +550,19 @@ final class PolarBleApiImplTests: XCTestCase {
         let opened = try XCTUnwrap(autoConnectApi.openedSessions.first)
         XCTAssertEqual(opened.advertisementContent.polarDeviceType, "360")
         XCTAssertEqual(opened.advertisementContent.medianRssi, -60)
+    }
+
+    func test_startAutoConnectToDevice_sessionInOpenParkState_isOpened() {
+        autoConnectApi = MockAutoConnectBleApiImpl(mockDeviceSession: v2MockSession)
+        let exp = XCTestExpectation(description: "completed")
+        autoConnectApi.startAutoConnectToDevice(-80, service: nil, polarDeviceType: nil)
+            .sink(receiveCompletion: { _ in exp.fulfill() }, receiveValue: { _ in }).store(in: &cancellables)
+        let session = makeAutoSession(rssi: -70)
+        session.state = .sessionOpenPark
+        autoConnectApi.searchSubject.send(session)
+        wait(for: [exp], timeout: 2)
+        XCTAssertEqual(autoConnectApi.openedSessions.count, 1,
+                       "A .sessionOpenPark session must be opened by startAutoConnectToDevice")
     }
 
     // MARK: - disconnectFromDevice helpers
@@ -1492,5 +1513,250 @@ final class PolarBleApiImplTests: XCTestCase {
 
         // Assert
         XCTAssertEqual(h10MockClient.requestCalls.count, 1)
+    }
+
+    // MARK: - setSensorInitiatedSecurityMode
+
+    func test_setSensorInitiatedSecurityMode_enable_sendsCommandWithValue1() throws {
+        // Arrange
+        pfcMockClient.commandReturnValue = .success(Pfc.PfcResponse())
+
+        // Act
+        try awaitVoidAsync { [self] in
+            try await pfcApi.setSensorInitiatedSecurityMode(identifier: deviceId, enable: true)
+        }
+
+        // Assert – exactly one command was sent with opcode 14 (pfcConfigureSensorInitiatedSecurityMode) and enable value 1
+        XCTAssertEqual(pfcMockClient.commandCalls.count, 1)
+        XCTAssertEqual(pfcMockClient.commandCalls.first?.command, .pfcConfigureSensorInitiatedSecurityMode)
+        XCTAssertEqual(pfcMockClient.commandCalls.first?.value, [1])
+    }
+
+    func test_setSensorInitiatedSecurityMode_disable_sendsCommandWithValue0() throws {
+        // Arrange
+        pfcMockClient.commandReturnValue = .success(Pfc.PfcResponse())
+
+        // Act
+        try awaitVoidAsync { [self] in
+            try await pfcApi.setSensorInitiatedSecurityMode(identifier: deviceId, enable: false)
+        }
+
+        // Assert – command sent with disable value 0
+        XCTAssertEqual(pfcMockClient.commandCalls.count, 1)
+        XCTAssertEqual(pfcMockClient.commandCalls.first?.command, .pfcConfigureSensorInitiatedSecurityMode)
+        XCTAssertEqual(pfcMockClient.commandCalls.first?.value, [0])
+    }
+
+    func test_setSensorInitiatedSecurityMode_nonSuccessResponse_throwsOperationNotSupported() {
+        // Arrange – device returns an error status (errorNotSupported = 2)
+        let errorResponse = Pfc.PfcResponse(data: Data([0xF0, 0x0E, UInt8(Pfc.PfcResponse.PfcResponseCodes.errorNotSupported.rawValue)]))
+        pfcMockClient.commandReturnValue = .success(errorResponse)
+
+        // Act
+        let error = awaitErrorAsync { [self] in
+            try await pfcApi.setSensorInitiatedSecurityMode(identifier: deviceId, enable: true)
+        }
+
+        // Assert
+        XCTAssertNotNil(error)
+        if case PolarErrors.operationNotSupported = error! { } else {
+            XCTFail("Expected PolarErrors.operationNotSupported, got \(String(describing: error))")
+        }
+    }
+
+    func test_setSensorInitiatedSecurityMode_sessionNotReady_propagatesError() {
+        // Arrange – make sessionPfcClientReady throw a device-not-found error
+        pfcApi.pfcServiceUtils.stubError = PolarErrors.deviceNotFound
+
+        // Act
+        let error = awaitErrorAsync { [self] in
+            try await pfcApi.setSensorInitiatedSecurityMode(identifier: deviceId, enable: true)
+        }
+
+        // Assert – the error is forwarded and no command was dispatched
+        XCTAssertNotNil(error)
+        XCTAssertTrue(pfcMockClient.commandCalls.isEmpty)
+    }
+
+    func test_setSensorInitiatedSecurityMode_pfcServiceNotFound_throwsServiceNotFound() {
+        // Arrange – replace the session with one that has no PFC GATT client
+        let noServiceSession = MockBleDeviceSession(mockFtpClient: v2MockClient)
+        pfcApi.pfcServiceUtils.stubSession = noServiceSession
+
+        // Act
+        let error = awaitErrorAsync { [self] in
+            try await pfcApi.setSensorInitiatedSecurityMode(identifier: deviceId, enable: true)
+        }
+
+        // Assert
+        XCTAssertNotNil(error)
+        if case PolarErrors.serviceNotFound = error! { } else {
+            XCTFail("Expected PolarErrors.serviceNotFound, got \(String(describing: error))")
+        }
+    }
+
+    // MARK: - getSensorInitiatedSecurityMode
+
+    func test_getSensorInitiatedSecurityMode_payloadEnabled_returnsTrue() throws {
+        // Arrange – device returns payload byte 0x01 (enabled)
+        // Data layout: [responseCode, opCode(0x0F), status(success=1), payload(0x01)]
+        let enabledResponse = Pfc.PfcResponse(data: Data([0xF0, 0x0F, 0x01, 0x01]))
+        pfcMockClient.commandReturnValue = .success(enabledResponse)
+
+        // Act
+        let result = try awaitSingleAsync { [self] in
+            try await pfcApi.getSensorInitiatedSecurityMode(identifier: deviceId)
+        }
+
+        // Assert
+        XCTAssertTrue(result)
+        XCTAssertEqual(pfcMockClient.commandCalls.count, 1)
+        XCTAssertEqual(pfcMockClient.commandCalls.first?.command, .pfcRequestSensorInitiatedSecurityMode)
+        XCTAssertEqual(pfcMockClient.commandCalls.first?.value, [0])
+    }
+
+    func test_getSensorInitiatedSecurityMode_payloadDisabled_returnsFalse() throws {
+        // Arrange – device returns payload byte 0x00 (disabled)
+        let disabledResponse = Pfc.PfcResponse(data: Data([0xF0, 0x0F, 0x01, 0x00]))
+        pfcMockClient.commandReturnValue = .success(disabledResponse)
+
+        // Act
+        let result = try awaitSingleAsync { [self] in
+            try await pfcApi.getSensorInitiatedSecurityMode(identifier: deviceId)
+        }
+
+        // Assert
+        XCTAssertFalse(result)
+    }
+
+    func test_getSensorInitiatedSecurityMode_emptyPayload_returnsFalse() throws {
+        // Arrange – device returns no extra payload bytes (only responseCode, opCode, status)
+        let emptyPayloadResponse = Pfc.PfcResponse(data: Data([0xF0, 0x0F, 0x01]))
+        pfcMockClient.commandReturnValue = .success(emptyPayloadResponse)
+
+        // Act
+        let result = try awaitSingleAsync { [self] in
+            try await pfcApi.getSensorInitiatedSecurityMode(identifier: deviceId)
+        }
+
+        // Assert – empty payload is treated as disabled
+        XCTAssertFalse(result)
+    }
+
+    func test_getSensorInitiatedSecurityMode_sendsCorrectCommand() throws {
+        // Arrange
+        pfcMockClient.commandReturnValue = .success(Pfc.PfcResponse(data: Data([0xF0, 0x0F, 0x01])))
+
+        // Act
+        _ = try awaitSingleAsync { [self] in
+            try await pfcApi.getSensorInitiatedSecurityMode(identifier: deviceId)
+        }
+
+        // Assert – exactly one pfcRequestSensorInitiatedSecurityMode command with value 0
+        XCTAssertEqual(pfcMockClient.commandCalls.count, 1)
+        XCTAssertEqual(pfcMockClient.commandCalls.first?.command, .pfcRequestSensorInitiatedSecurityMode)
+        XCTAssertEqual(pfcMockClient.commandCalls.first?.value, [0])
+    }
+
+    func test_getSensorInitiatedSecurityMode_sessionNotReady_propagatesError() {
+        // Arrange – make waitPfcClientReady throw a device-not-found error
+        pfcApi.pfcServiceUtils.stubError = PolarErrors.deviceNotFound
+
+        // Act
+        let error = awaitErrorAsync { [self] in
+            try await pfcApi.getSensorInitiatedSecurityMode(identifier: deviceId)
+        }
+
+        // Assert – the error is forwarded and no command was dispatched
+        XCTAssertNotNil(error)
+        XCTAssertTrue(pfcMockClient.commandCalls.isEmpty)
+    }
+
+    func test_getSensorInitiatedSecurityMode_pfcServiceNotFound_throwsServiceNotFound() {
+        // Arrange – replace the session with one that has no PFC GATT client
+        let noServiceSession = MockBleDeviceSession(mockFtpClient: v2MockClient)
+        pfcApi.pfcServiceUtils.stubSession = noServiceSession
+
+        // Act
+        let error = awaitErrorAsync { [self] in
+            try await pfcApi.getSensorInitiatedSecurityMode(identifier: deviceId)
+        }
+
+        // Assert
+        XCTAssertNotNil(error)
+        if case PolarErrors.serviceNotFound = error! { } else {
+            XCTFail("Expected PolarErrors.serviceNotFound, got \(String(describing: error))")
+        }
+    }
+
+    func test_getSensorInitiatedSecurityMode_commandThrows_propagatesError() {
+        // Arrange – command returns a transport error
+        let transportError = BleGattException.gattTransportNotAvailable
+        pfcMockClient.commandReturnValue = .failure(transportError)
+
+        // Act
+        let error = awaitErrorAsync { [self] in
+            try await pfcApi.getSensorInitiatedSecurityMode(identifier: deviceId)
+        }
+
+        // Assert – the BLE error is propagated
+        XCTAssertNotNil(error)
+        if case BleGattException.gattTransportNotAvailable = error! { } else {
+            XCTFail("Expected gattTransportNotAvailable, got \(String(describing: error))")
+        }
+    }
+
+    // MARK: - setHibernateMode
+
+    func test_setHibernateMode_sendsResetNotificationWithHibernateTrueSleepTrueDoFactoryDefaultsFalse() throws {
+        // Arrange
+        // Act
+        try awaitVoidAsync { [self] in try await v2Api.setHibernateMode(deviceId) }
+
+        // Assert – exactly one RESET notification was sent
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1)
+        XCTAssertEqual(
+            v2MockClient.sendNotificationCalls.first?.notification,
+            Protocol_PbPFtpHostToDevNotification.reset.rawValue,
+            "Expected RESET notification"
+        )
+
+        let paramsData = try XCTUnwrap(v2MockClient.sendNotificationCalls.first?.parameters) as Data
+        let params = try Protocol_PbPFtpFactoryResetParams(serializedBytes: paramsData)
+        XCTAssertTrue(params.hibernate, "hibernate should be true")
+        XCTAssertTrue(params.sleep, "sleep should be true to initiate low-power mode")
+        XCTAssertFalse(params.doFactoryDefaults, "doFactoryDefaults should be false")
+    }
+
+    func test_setHibernateMode_doesNotTriggerFactoryDefaultsAndSetsHibernateFlag() throws {
+        // Arrange
+        // Act
+        try awaitVoidAsync { [self] in try await v2Api.setHibernateMode(deviceId) }
+
+        // Assert – hibernate is true and factory defaults are not triggered
+        let paramsData = try XCTUnwrap(v2MockClient.sendNotificationCalls.first?.parameters) as Data
+        let params = try Protocol_PbPFtpFactoryResetParams(serializedBytes: paramsData)
+        XCTAssertTrue(params.hibernate, "Hibernate flag must be set to true")
+        XCTAssertFalse(params.doFactoryDefaults, "Hibernate mode must not trigger factory defaults")
+    }
+
+    func test_setHibernateMode_sendsExactlyOneNotification() throws {
+        // Arrange
+        // Act
+        try awaitVoidAsync { [self] in try await v2Api.setHibernateMode(deviceId) }
+
+        // Assert
+        XCTAssertEqual(v2MockClient.sendNotificationCalls.count, 1, "Expected exactly one notification to be sent")
+    }
+
+    func test_setHibernateMode_notificationError_propagatesError() {
+        // Arrange – make sendNotification throw
+        v2MockClient.sendNotificationError = NSError(domain: "ble", code: 42)
+
+        // Act
+        let error = awaitErrorAsync { [self] in try await v2Api.setHibernateMode(deviceId) }
+
+        // Assert
+        XCTAssertNotNil(error)
     }
 }

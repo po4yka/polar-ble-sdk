@@ -11,6 +11,7 @@ import com.polar.polarsensordatacollector.repository.ResultOfRequest
 import com.polar.polarsensordatacollector.ui.landing.ONLINE_OFFLINE_KEY_DEVICE_ID
 import com.polar.sdk.api.model.Errorlog
 import com.polar.sdk.api.model.LogConfig
+import com.polar.sdk.api.model.PolarDeviceLog
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,7 @@ internal class LoggingViewModel @Inject constructor(
     }
 
     private val deviceId = state.get<String>(ONLINE_OFFLINE_KEY_DEVICE_ID) ?: throw Exception("Logging viewModel must know the deviceId")
+    val uiDeviceId: String get() = deviceId
 
     private val _uiLogConfigState = MutableStateFlow(LogConfig())
     val uiLogConfigState: StateFlow<LogConfig> = _uiLogConfigState.asStateFlow()
@@ -120,7 +122,6 @@ internal class LoggingViewModel @Inject constructor(
             updateLogConfigState(_uiLogConfigState.value.copy(sleepLogEnabled = !_uiLogConfigState.value.sleepLogEnabled!!))
         }
     }
-
     fun fetchErrorLog() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -132,6 +133,15 @@ internal class LoggingViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching errorlog", e)
+            }
+        }
+    }
+
+    fun exportDeviceLogs(onSuccess: (List<PolarDeviceLog>) -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            when (val result = polarDeviceStreamingRepository.exportDeviceLogs(deviceId)) {
+                is ResultOfRequest.Success -> result.value?.let { onSuccess(it) } ?: onError("No logs returned from device")
+                is ResultOfRequest.Failure -> onError(result.message)
             }
         }
     }

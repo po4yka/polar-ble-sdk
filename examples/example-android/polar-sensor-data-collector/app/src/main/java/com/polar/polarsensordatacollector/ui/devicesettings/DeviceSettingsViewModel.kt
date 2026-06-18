@@ -73,6 +73,10 @@ data class DeviceToHostNotificationsUiState(
     val isObserving: Boolean = false
 )
 
+data class SensorInitiatedSecurityModeUiState(
+    val isEnabled: Boolean = false
+)
+
 @HiltViewModel
 internal class DeviceSettingsViewModel @Inject constructor(
     private val polarDeviceStreamingRepository: PolarDeviceRepository,
@@ -84,7 +88,10 @@ internal class DeviceSettingsViewModel @Inject constructor(
         private const val TAG = "DeviceSettingsViewModel"
     }
 
-    private val deviceId = state.get<String>(ONLINE_OFFLINE_KEY_DEVICE_ID) ?: throw Exception("Device settings viewModel must know the deviceId")
+    private val deviceId: String = state.get<String>(ONLINE_OFFLINE_KEY_DEVICE_ID) ?: throw Exception("Device settings viewModel must know the deviceId")
+
+    private val _uiDeviceId = MutableStateFlow(deviceId)
+    val uiDeviceId: StateFlow<String> = _uiDeviceId.asStateFlow()
 
     private val _uiShowError: MutableStateFlow<MessageUiState> = MutableStateFlow(MessageUiState("", ""))
     val uiShowError: StateFlow<MessageUiState> = _uiShowError.asStateFlow()
@@ -119,6 +126,9 @@ internal class DeviceSettingsViewModel @Inject constructor(
 
     private var _uiMultiBleModeState = MutableStateFlow(BleMultiConnectionUiState())
     val uiMultiBleModeState: StateFlow<BleMultiConnectionUiState> = _uiMultiBleModeState.asStateFlow()
+
+    private var _uiSensorInitiatedSecurityModeState = MutableStateFlow(SensorInitiatedSecurityModeUiState())
+    val uiSensorInitiatedSecurityModeState: StateFlow<SensorInitiatedSecurityModeUiState> = _uiSensorInitiatedSecurityModeState.asStateFlow()
 
     private val _sleepRecordingState = MutableStateFlow(SleepRecordingState(enabled = null))
     val sleepRecordingState: StateFlow<SleepRecordingState> = _sleepRecordingState.asStateFlow()
@@ -176,6 +186,13 @@ internal class DeviceSettingsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            polarDeviceStreamingRepository.isSensorInitiatedSecurityModeEnabled
+                .collect { isEnabled ->
+                    _uiSensorInitiatedSecurityModeState.update { SensorInitiatedSecurityModeUiState(isEnabled) }
+                }
+        }
+
+        viewModelScope.launch {
             polarDeviceStreamingRepository.deviceSupportsSettings
                 .collect { support ->
                     _uiSettingsSupportUiState.update { support }
@@ -194,6 +211,7 @@ internal class DeviceSettingsViewModel @Inject constructor(
         getSdkModeStatus()
         getSecurityStatus()
         getBleMultiConnectionModeStatus()
+        getSensorInitiatedSecurityModeEnabledStatus()
         setDeviceUserLocationDefault()
         observeSleepRecordingState()
         checkFirmwareUpdate()
@@ -515,6 +533,17 @@ internal class DeviceSettingsViewModel @Inject constructor(
         }
     }
 
+    fun setHibernateMode() {
+        viewModelScope.launch {
+            try {
+                polarDeviceStreamingRepository.setHibernateMode(deviceId)
+                Log.d(TAG, "Hibernate mode set for device $deviceId")
+            } catch (error: Exception) {
+                Log.e(TAG, "Setting hibernate mode failed: $error")
+            }
+        }
+    }
+
     fun setTurnDeviceOff() {
         viewModelScope.launch {
             try {
@@ -554,6 +583,17 @@ internal class DeviceSettingsViewModel @Inject constructor(
                 Log.d(TAG, "Set BLE dual connection mode to $enabled on device $deviceId.")
             } catch (error: Exception) {
                 Log.e(TAG, "Setting BLE dual connection mode to $enabled failed: $error")
+            }
+        }
+    }
+
+    fun setSensorInitiatedSecurityMode(enabled: Boolean = false) {
+        viewModelScope.launch {
+            try {
+                polarDeviceStreamingRepository.setSensorInitiatedSecurityMode(deviceId, enabled)
+                Log.d(TAG, "Set sensor initiated security mode to $enabled on device $deviceId.")
+            } catch (error: Exception) {
+                Log.e(TAG, "Set sensor initiated security mode to $enabled failed: $error")
             }
         }
     }
@@ -678,6 +718,13 @@ internal class DeviceSettingsViewModel @Inject constructor(
         Log.d(TAG, "getBleMultiConnectionMode()")
         viewModelScope.launch(Dispatchers.IO) {
             polarDeviceStreamingRepository.getMultiBleModeEnabled(deviceId)
+        }
+    }
+
+    private fun getSensorInitiatedSecurityModeEnabledStatus() {
+        Log.d(TAG, "getSensorInitiatedSecurityMode()")
+        viewModelScope.launch(Dispatchers.IO) {
+            polarDeviceStreamingRepository.getSensorInitiatedSecurityModeEnabled(deviceId)
         }
     }
 

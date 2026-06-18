@@ -34,13 +34,14 @@ class PolarBleDeviceManager: ObservableObject {
     
     func setSearchPrefix(_ prefix: String) {
         deviceSearchNamePrefix = prefix
+        startDevicesSearch()
+    }
+    
+    func startDevicesSearch() {
         searchDevicesTask?.cancel()
         searchDevicesTask = nil
         deviceSearch.foundDevices.removeAll()
         deviceSearch.isSearching = .notStarted
-    }
-    
-    func startDevicesSearch() {
         searchDevicesTask = Task {
             await searchDevicesAsync()
         }
