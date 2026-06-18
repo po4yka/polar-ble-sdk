@@ -505,6 +505,91 @@ final class PolarFileUtilsTest: XCTestCase {
         }
     }
 
+    func testTryFetchFile_success_returnsData() async throws {
+        // Arrange
+        let expectedData = Data("log content".utf8)
+        mockClient.requestReturnValue = .success(expectedData)
+
+        // Act
+        let result = await fileUtils.tryFetchFile(client: mockClient, path: "/ERRORLOG.BPB")
+
+        // Assert
+        XCTAssertEqual(result, expectedData)
+        XCTAssertEqual(mockClient.requestCalls.count, 1)
+        let op = try Protocol_PbPFtpOperation(serializedBytes: mockClient.requestCalls[0])
+        XCTAssertEqual(op.command, .get)
+        XCTAssertEqual(op.path, "/ERRORLOG.BPB")
+    }
+
+    func testTryFetchFile_fileNotFound_returnsNil() async {
+        // Arrange: error 103 = NO_SUCH_FILE_OR_DIRECTORY
+        mockClient.requestReturnValue = .failure(BlePsFtpException.responseError(errorCode: 103))
+
+        // Act
+        let result = await fileUtils.tryFetchFile(client: mockClient, path: "/ERRORLOG.BPB")
+
+        // Assert
+        XCTAssertNil(result)
+    }
+
+    func testTryFetchFile_otherError_returnsNil() async {
+        // Arrange: any non-404 error is also a soft failure
+        mockClient.requestReturnValue = .failure(BlePsFtpException.responseError(errorCode: 500))
+
+        // Act
+        let result = await fileUtils.tryFetchFile(client: mockClient, path: "/SYSLOG.TXT")
+
+        // Assert
+        XCTAssertNil(result)
+    }
+
+    func testTryFetchFile_deviceError_returnsNil() async {
+        // Arrange
+        mockClient.requestReturnValue = .failure(PolarErrors.deviceNotConnected)
+
+        // Act
+        let result = await fileUtils.tryFetchFile(client: mockClient, path: "/SYSLOG.TXT")
+
+        // Assert
+        XCTAssertNil(result)
+    }
+
+    func testTryFetchFile_emptyData_returnsEmptyData() async {
+        // Arrange: a file that exists but is empty
+        mockClient.requestReturnValue = .success(Data())
+
+        // Act
+        let result = await fileUtils.tryFetchFile(client: mockClient, path: "/TRC1.BIN")
+
+        // Assert
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result, Data())
+    }
+
+    func testTryFetchFile_multipleSequentialCalls_eachUsesCorrectPath() async throws {
+        // Arrange: first path exists, second does not
+        let trc1Data = Data("trc1".utf8)
+        mockClient.requestReturnValues = [
+            .success(trc1Data),
+            .failure(BlePsFtpException.responseError(errorCode: 103))
+        ]
+
+        // Act
+        let result1 = await fileUtils.tryFetchFile(client: mockClient, path: "/TRC1.BIN")
+        let result2 = await fileUtils.tryFetchFile(client: mockClient, path: "/TRC2.BIN")
+
+        // Assert
+        XCTAssertEqual(result1, trc1Data)
+        XCTAssertNil(result2)
+        XCTAssertEqual(mockClient.requestCalls.count, 2)
+
+        let op1 = try Protocol_PbPFtpOperation(serializedBytes: mockClient.requestCalls[0])
+        XCTAssertEqual(op1.path, "/TRC1.BIN")
+
+        let op2 = try Protocol_PbPFtpOperation(serializedBytes: mockClient.requestCalls[1])
+        XCTAssertEqual(op2.path, "/TRC2.BIN")
+    }
+
     // MARK: - Helpers
 
     private func makeDirectoryResponses() -> [String: [Protocol_PbPFtpEntry]] {

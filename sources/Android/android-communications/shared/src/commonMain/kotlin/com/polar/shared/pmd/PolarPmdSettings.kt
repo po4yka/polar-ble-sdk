@@ -20,7 +20,13 @@ enum class PolarPmdSettingType(val code: Int, val valueSize: Int?) {
     RANGE_MILLIUNIT(3, 4),
     CHANNELS(4, 1),
     FACTOR(5, 4),
-    SECURITY(6, null);
+    SECURITY(6, null),
+    DERIVED_MEASUREMENT_METHOD(7, 1),
+    SOURCE_MEASUREMENT_TYPE(8, 1),
+    SOURCE_MEASUREMENT_SAMPLE_RATE(9, 2),
+    SOURCE_MEASUREMENT_RANGE(10, 4),
+    DERIVED_MEASUREMENT_TIME_WINDOW(11, 4),
+    DERIVED_MEASUREMENT_SETTINGS_GROUP_ID(12, 1);
 
     companion object {
         fun fromCode(code: Int): PolarPmdSettingType? {
@@ -57,12 +63,19 @@ object PolarPmdSettings {
         val bytes = mutableListOf<Byte>()
         SELECTED_SETTING_ORDER.forEach { type ->
             val value = selected[type]
-            if (value != null && type != PolarPmdSettingType.FACTOR) {
+            if (value != null && type != PolarPmdSettingType.FACTOR && type != PolarPmdSettingType.SOURCE_MEASUREMENT_RANGE) {
                 val valueSize = type.valueSize ?: return@forEach
                 bytes += type.code.toByte()
-                bytes += 1
-                repeat(valueSize) { index ->
-                    bytes += ((value shr (index * 8)) and 0xFF).toByte()
+                if (type == PolarPmdSettingType.DERIVED_MEASUREMENT_METHOD) {
+                    val methodIds = (0..15).filter { bit -> ((value shr bit) and 1) == 1 }
+                    if (methodIds.isEmpty()) return@forEach
+                    bytes += methodIds.size.toByte()
+                    methodIds.forEach { methodId -> bytes += methodId.toByte() }
+                } else {
+                    bytes += 1
+                    repeat(valueSize) { index ->
+                        bytes += ((value shr (index * 8)) and 0xFF).toByte()
+                    }
                 }
             }
         }
@@ -75,7 +88,13 @@ object PolarPmdSettings {
         PolarPmdSettingType.RANGE,
         PolarPmdSettingType.RANGE_MILLIUNIT,
         PolarPmdSettingType.CHANNELS,
-        PolarPmdSettingType.FACTOR
+        PolarPmdSettingType.FACTOR,
+        PolarPmdSettingType.DERIVED_MEASUREMENT_METHOD,
+        PolarPmdSettingType.SOURCE_MEASUREMENT_TYPE,
+        PolarPmdSettingType.SOURCE_MEASUREMENT_SAMPLE_RATE,
+        PolarPmdSettingType.SOURCE_MEASUREMENT_RANGE,
+        PolarPmdSettingType.DERIVED_MEASUREMENT_TIME_WINDOW,
+        PolarPmdSettingType.DERIVED_MEASUREMENT_SETTINGS_GROUP_ID
     )
 }
 

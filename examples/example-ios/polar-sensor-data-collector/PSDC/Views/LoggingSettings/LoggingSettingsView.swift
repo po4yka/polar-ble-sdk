@@ -3,8 +3,9 @@
 import Foundation
 import SwiftUI
 import PolarBleSdk
+import Zip
 
-struct SensorDatalogSettingsView: View {
+struct LoggingSettingsView: View {
     
     @EnvironmentObject private var bleSdkManager: PolarBleSdkManager
     @State private var isAccLoggingEnabled = false
@@ -25,23 +26,35 @@ struct SensorDatalogSettingsView: View {
     
     @State private var isShareSheetPresented = false
     @State private var logFileURL: URL?
-    
+    @State private var isLoading = true
+
+    @State private var isExportingDeviceLogs = false
+    @State private var isDeviceLogsSharePresented = false
+    @State private var deviceLogsZipURL: URL?
+    @State private var exportDeviceLogsError: String?
+    @State private var showExportDeviceLogsAlert = false
+
     var body: some View {
         if case .connected = bleSdkManager.deviceConnectionState,
            bleSdkManager.deviceInfoFeature.isSupported {
             VStack {
-                Button(accTitle,
+                if isLoading {
+                    Spacer()
+                    ProgressView("Loading log settings…")
+                    Spacer()
+                } else {
+                    Button(accTitle,
                        action: {
                     Task{
                         isAccLoggingEnabled = !isAccLoggingEnabled
                         accTitle = getButtonText(measurement: "acc")
-                        guard var sdLogConfig = bleSdkManager.sdLogConfig else { return }
-                        sdLogConfig.accelerationLogEnabled = isAccLoggingEnabled
-                        bleSdkManager.setSDLogSettings(logConfig: sdLogConfig)
+                        guard var logConfig = bleSdkManager.logConfig else { return }
+                        logConfig.accelerationLogEnabled = isAccLoggingEnabled
+                        bleSdkManager.setLogConfig(logConfig: logConfig)
                     }
                 }).task {
-                    if ((bleSdkManager.sdLogConfig?.accelerationLogEnabled) != nil) {
-                        isAccLoggingEnabled = bleSdkManager.sdLogConfig!.accelerationLogEnabled!
+                    if ((bleSdkManager.logConfig?.accelerationLogEnabled) != nil) {
+                        isAccLoggingEnabled = bleSdkManager.logConfig!.accelerationLogEnabled!
                         accTitle = getButtonText(measurement: "acc")
                     }
                 }
@@ -52,13 +65,13 @@ struct SensorDatalogSettingsView: View {
                     Task{
                         isCaloriesLoggingEnabled = !isCaloriesLoggingEnabled
                         calTitle = getButtonText(measurement: "cal")
-                        guard var sdLogConfig = bleSdkManager.sdLogConfig else { return }
-                        sdLogConfig.caloriesLogEnabled = isCaloriesLoggingEnabled
-                        bleSdkManager.setSDLogSettings(logConfig: sdLogConfig)
+                        guard var logConfig = bleSdkManager.logConfig else { return }
+                        logConfig.caloriesLogEnabled = isCaloriesLoggingEnabled
+                        bleSdkManager.setLogConfig(logConfig: logConfig)
                     }
                 }).task {
-                    if (bleSdkManager.sdLogConfig?.caloriesLogEnabled) != nil {
-                        isCaloriesLoggingEnabled = bleSdkManager.sdLogConfig!.caloriesLogEnabled!
+                    if (bleSdkManager.logConfig?.caloriesLogEnabled) != nil {
+                        isCaloriesLoggingEnabled = bleSdkManager.logConfig!.caloriesLogEnabled!
                         calTitle = getButtonText(measurement: "cal")
                     }
                 }
@@ -69,13 +82,13 @@ struct SensorDatalogSettingsView: View {
                     Task{
                         isMetLoggingEnabled = !isMetLoggingEnabled
                         metTitle = getButtonText(measurement: "met")
-                        guard var sdLogConfig = bleSdkManager.sdLogConfig else { return }
-                        sdLogConfig.metLogEnabled = isMetLoggingEnabled
-                        bleSdkManager.setSDLogSettings(logConfig: sdLogConfig)
+                        guard var logConfig = bleSdkManager.logConfig else { return }
+                        logConfig.metLogEnabled = isMetLoggingEnabled
+                        bleSdkManager.setLogConfig(logConfig: logConfig)
                     }
                 }).task {
-                    if (bleSdkManager.sdLogConfig?.metLogEnabled) != nil {
-                        isMetLoggingEnabled = bleSdkManager.sdLogConfig!.metLogEnabled!
+                    if (bleSdkManager.logConfig?.metLogEnabled) != nil {
+                        isMetLoggingEnabled = bleSdkManager.logConfig!.metLogEnabled!
                         metTitle = getButtonText(measurement: "met")
                     }
                 }
@@ -86,13 +99,13 @@ struct SensorDatalogSettingsView: View {
                     Task{
                         isOhrLoggingEnabled = !isOhrLoggingEnabled
                         ohrTitle = getButtonText(measurement: "ohr")
-                        guard var sdLogConfig = bleSdkManager.sdLogConfig else { return }
-                        sdLogConfig.ohrLogEnabled = isOhrLoggingEnabled
-                        bleSdkManager.setSDLogSettings(logConfig: sdLogConfig)
+                        guard var logConfig = bleSdkManager.logConfig else { return }
+                        logConfig.ohrLogEnabled = isOhrLoggingEnabled
+                        bleSdkManager.setLogConfig(logConfig: logConfig)
                     }
                 }).task {
-                    if (bleSdkManager.sdLogConfig?.ohrLogEnabled) != nil {
-                        isOhrLoggingEnabled = bleSdkManager.sdLogConfig!.ohrLogEnabled!
+                    if (bleSdkManager.logConfig?.ohrLogEnabled) != nil {
+                        isOhrLoggingEnabled = bleSdkManager.logConfig!.ohrLogEnabled!
                         ohrTitle = getButtonText(measurement: "ohr")
                     }
                 }
@@ -103,13 +116,13 @@ struct SensorDatalogSettingsView: View {
                     Task{
                         isPPiLoggingEnabled = !isPPiLoggingEnabled
                         ppiTitle = getButtonText(measurement: "ppi")
-                        guard var sdLogConfig = bleSdkManager.sdLogConfig else { return }
-                        sdLogConfig.ppiLogEnabled = isPPiLoggingEnabled
-                        bleSdkManager.setSDLogSettings(logConfig: sdLogConfig)
+                        guard var logConfig = bleSdkManager.logConfig else { return }
+                        logConfig.ppiLogEnabled = isPPiLoggingEnabled
+                        bleSdkManager.setLogConfig(logConfig: logConfig)
                     }
                 }).task {
-                    if (bleSdkManager.sdLogConfig?.ppiLogEnabled) != nil {
-                        isPPiLoggingEnabled = bleSdkManager.sdLogConfig!.ppiLogEnabled!
+                    if (bleSdkManager.logConfig?.ppiLogEnabled) != nil {
+                        isPPiLoggingEnabled = bleSdkManager.logConfig!.ppiLogEnabled!
                         ppiTitle = getButtonText(measurement: "ppi")
                     }
                 }
@@ -120,13 +133,13 @@ struct SensorDatalogSettingsView: View {
                     Task{
                         isSleepLoggingEnabled = !isSleepLoggingEnabled
                         sleepTitle = getButtonText(measurement: "sleep")
-                        guard var sdLogConfig = bleSdkManager.sdLogConfig else { return }
-                        sdLogConfig.sleepLogEnabled = isSleepLoggingEnabled
-                        bleSdkManager.setSDLogSettings(logConfig: sdLogConfig)
+                        guard var logConfig = bleSdkManager.logConfig else { return }
+                        logConfig.sleepLogEnabled = isSleepLoggingEnabled
+                        bleSdkManager.setLogConfig(logConfig: logConfig)
                     }
                 }).task {
-                    if (bleSdkManager.sdLogConfig?.sleepLogEnabled) != nil {
-                        isSleepLoggingEnabled = bleSdkManager.sdLogConfig!.sleepLogEnabled!
+                    if (bleSdkManager.logConfig?.sleepLogEnabled) != nil {
+                        isSleepLoggingEnabled = bleSdkManager.logConfig!.sleepLogEnabled!
                         sleepTitle = getButtonText(measurement: "sleep")
                     }
                 }
@@ -137,13 +150,13 @@ struct SensorDatalogSettingsView: View {
                     Task{
                         isSkinTempLoggingEnabled = !isSkinTempLoggingEnabled
                         skinTempTitle = getButtonText(measurement: "skinTemp")
-                        guard var sdLogConfig = bleSdkManager.sdLogConfig else { return }
-                        sdLogConfig.skinTemperatureLogEnabled = isSkinTempLoggingEnabled
-                        bleSdkManager.setSDLogSettings(logConfig: sdLogConfig)
+                        guard var logConfig = bleSdkManager.logConfig else { return }
+                        logConfig.skinTemperatureLogEnabled = isSkinTempLoggingEnabled
+                        bleSdkManager.setLogConfig(logConfig: logConfig)
                     }
                 }).task {
-                    if (bleSdkManager.sdLogConfig?.skinTemperatureLogEnabled) != nil {
-                        isSkinTempLoggingEnabled = bleSdkManager.sdLogConfig!.skinTemperatureLogEnabled!
+                    if (bleSdkManager.logConfig?.skinTemperatureLogEnabled) != nil {
+                        isSkinTempLoggingEnabled = bleSdkManager.logConfig!.skinTemperatureLogEnabled!
                         skinTempTitle = getButtonText(measurement: "skinTemp")
                     }
                 }
@@ -159,18 +172,120 @@ struct SensorDatalogSettingsView: View {
                         isShareSheetPresented = true
                     }
                 }
-                .padding(.bottom)
+                .buttonStyle(SecondaryButtonStyle(buttonState: .pressedDown))
                 .sheet(isPresented: $isShareSheetPresented) {
                     if let url = logFileURL {
                         ExportLogsView(text: "Export PSDC app logs", fileURL: url)
                     }
-                }.onAppear() {
-                    Task {
-                        await bleSdkManager.getSDLogSettings()
-                        logFileURL = getLogFile()
+                }
+
+                ZStack {
+                    Button("Export device logs and telemetry") {
+                        Task {
+                            await exportDeviceLogs()
+                        }
+                    }
+                    .buttonStyle(SecondaryButtonStyle(buttonState: .pressedDown))
+                    .disabled(isExportingDeviceLogs)
+                    .opacity(isExportingDeviceLogs ? 0 : 1)
+
+                    if isExportingDeviceLogs {
+                        ProgressView()
                     }
                 }
+                .padding(.bottom)
+                .alert("Export Device Logs", isPresented: $showExportDeviceLogsAlert) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    if let error = exportDeviceLogsError {
+                        Text("Export failed: \(error)")
+                    } else {
+                        Text("No log files found on device.")
+                    }
+                }
+                .sheet(isPresented: $isDeviceLogsSharePresented) {
+                    if let url = deviceLogsZipURL {
+                        ExportLogsView(text: "Export Device Logs", fileURL: url)
+                    }
+                }
+                } // end else
             }
+            .onAppear() {
+                Task {
+                    await bleSdkManager.getLogConfig()
+                    if let config = bleSdkManager.logConfig {
+                        if let val = config.accelerationLogEnabled {
+                            isAccLoggingEnabled = val
+                            accTitle = getButtonText(measurement: "acc")
+                        }
+                        if let val = config.caloriesLogEnabled {
+                            isCaloriesLoggingEnabled = val
+                            calTitle = getButtonText(measurement: "cal")
+                        }
+                        if let val = config.metLogEnabled {
+                            isMetLoggingEnabled = val
+                            metTitle = getButtonText(measurement: "met")
+                        }
+                        if let val = config.ohrLogEnabled {
+                            isOhrLoggingEnabled = val
+                            ohrTitle = getButtonText(measurement: "ohr")
+                        }
+                        if let val = config.ppiLogEnabled {
+                            isPPiLoggingEnabled = val
+                            ppiTitle = getButtonText(measurement: "ppi")
+                        }
+                        if let val = config.sleepLogEnabled {
+                            isSleepLoggingEnabled = val
+                            sleepTitle = getButtonText(measurement: "sleep")
+                        }
+                        if let val = config.skinTemperatureLogEnabled {
+                            isSkinTempLoggingEnabled = val
+                            skinTempTitle = getButtonText(measurement: "skinTemp")
+                        }
+                    }
+                    logFileURL = getLogFile()
+                    isLoading = false
+                }
+            }
+        }
+    }
+
+    private func exportDeviceLogs() async {
+        isExportingDeviceLogs = true
+        exportDeviceLogsError = nil
+        defer { isExportingDeviceLogs = false }
+
+        do {
+            let logs = try await bleSdkManager.exportDeviceLogs()
+            if logs.isEmpty {
+                showExportDeviceLogsAlert = true
+                return
+            }
+
+            let tempDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("device_logs_\(Int(Date().timeIntervalSince1970))", isDirectory: true)
+            try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+            var fileURLs: [URL] = []
+            for log in logs {
+                let filename = (log.path as NSString).lastPathComponent
+                let fileURL = tempDir.appendingPathComponent(filename)
+                try log.data.write(to: fileURL)
+                fileURLs.append(fileURL)
+            }
+
+            let deviceId = bleSdkManager.deviceId ?? "device"
+            let zipFileName = "device_logs_\(deviceId)_\(Int(Date().timeIntervalSince1970)).zip"
+            let zipURL = FileManager.default.temporaryDirectory.appendingPathComponent(zipFileName)
+
+            try Zip.zipFiles(paths: fileURLs, zipFilePath: zipURL, password: nil, progress: nil)
+
+            deviceLogsZipURL = zipURL
+            isDeviceLogsSharePresented = true
+        } catch {
+            NSLog("Export device logs failed: \(error)")
+            exportDeviceLogsError = error.localizedDescription
+            showExportDeviceLogsAlert = true
         }
     }
 

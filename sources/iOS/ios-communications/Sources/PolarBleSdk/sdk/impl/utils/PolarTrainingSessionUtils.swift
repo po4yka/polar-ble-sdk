@@ -14,6 +14,7 @@ internal class PolarTrainingSessionUtils {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(abbreviation: "UTC")
         return formatter
     }()
     
@@ -21,6 +22,7 @@ internal class PolarTrainingSessionUtils {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMddHHmmss"
         formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(abbreviation: "UTC")
         return formatter
     }()
 
@@ -138,6 +140,11 @@ internal class PolarTrainingSessionUtils {
         fromDate: Date? = nil,
         toDate: Date? = nil
     ) async throws -> [PolarTrainingSessionReference] {
+        if let from = fromDate, let to = toDate, to < from {
+            BleLogger.error("getTrainingSessions: Invalid date range: toDate \(to) is before fromDate \(from)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
+
         BleLogger.trace("getTrainingSessions: fromDate=\(String(describing: fromDate)), toDate=\(String(describing: toDate))")
         var updatedReferences: [PolarTrainingSessionReference] = []
         var trainingSessionSummaryPaths: Set<String> = []

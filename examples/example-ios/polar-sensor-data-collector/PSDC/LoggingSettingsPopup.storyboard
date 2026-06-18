@@ -12,7 +12,7 @@
         <!--Sensor Datalog Settings View Controller-->
         <scene sceneID="s0d-6b-0kx">
             <objects>
-                <viewController storyboardIdentifier="SensorDatalogSettingsViewController" modalPresentationStyle="overCurrentContext" id="Y6W-OH-hqX" customClass="SensorDatalogSettingsViewController" customModule="PSDC" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="LoggingSettingsViewController" modalPresentationStyle="overCurrentContext" id="Y6W-OH-hqX" customClass="LoggingSettingsViewController" customModule="PSDC" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="5EZ-qb-Rvc">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -21,16 +21,16 @@
                                 <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <subviews>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="NuJ-eg-T1E" userLabel="sdLogSetButton">
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="NuJ-eg-T1E" userLabel="setButton">
                                         <rect key="frame" x="46" y="573" width="90" height="35"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Set"/>
                                         <connections>
-                                            <action selector="setSDLogButtonSelected:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="jay-vc-MDe"/>
+                                            <action selector="setLogSettingsButtonSelected:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="jay-vc-MDe"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="KKh-Hx-c0n" userLabel="SsdLogCancelButton">
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="KKh-Hx-c0n" userLabel="cancelButton">
                                         <rect key="frame" x="237" y="573" width="90" height="35"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <state key="normal" title="Button"/>
@@ -41,7 +41,7 @@
                                             <action selector="cancel:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="C2c-E7-4Ls"/>
                                         </connections>
                                     </button>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Sensor Datalog configuration" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Jnn-wq-MFO">
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Logging configuration" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Jnn-wq-MFO">
                                         <rect key="frame" x="33" y="30" width="281" height="42"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
@@ -138,8 +138,8 @@
                         <outlet property="caloriesSwitch" destination="9q9-yv-DL1" id="JNn-e7-rno"/>
                         <outlet property="metSwitch" destination="KfL-yH-JK8" id="Z1r-HX-QP6"/>
                         <outlet property="ohrSwitch" destination="ojC-Qq-LOV" id="mZp-Bd-c7T"/>
-                        <outlet property="sdLogCancelButton" destination="KKh-Hx-c0n" id="T8V-ww-Xhu"/>
-                        <outlet property="sdLogSetButton" destination="NuJ-eg-T1E" id="Jnw-Pq-Knj"/>
+                        <outlet property="cancelButton" destination="KKh-Hx-c0n" id="T8V-ww-Xhu"/>
+                        <outlet property="setButton" destination="NuJ-eg-T1E" id="Jnw-Pq-Knj"/>
                         <outlet property="skinTempSwitch" destination="LaE-tO-KwO" id="7ww-bq-rv2"/>
                         <outlet property="sleepSwitch" destination="UY5-uT-CdF" id="nHj-rs-ZpJ"/>
                     </connections>

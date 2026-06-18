@@ -15,7 +15,42 @@ class PmdSetting {
         RANGE_MILLIUNIT(3),
         CHANNELS(4),
         FACTOR(5),
-        SECURITY(6);
+        SECURITY(6),
+
+        /**
+         * Derived measurement method bitmask
+         * In selected map, stored as bitmask where bit N = method N selected.
+         * Multiple method IDs are serialized individually (1 byte each) in the BLE packet.
+         */
+        DERIVED_MEASUREMENT_METHOD(7),
+
+        /**
+         * Source measurement type for derived measurement.
+         * Value is the numeric value of the source PmdMeasurementType (e.g. 2 for ACC).
+         */
+        SOURCE_MEASUREMENT_TYPE(8),
+
+        /**
+         * Source measurement sample rate in Hz.
+         */
+        SOURCE_MEASUREMENT_SAMPLE_RATE(9),
+
+        /**
+         * Source measurement range chosen by device — returned in start response only,
+         * not sent in Request Measurement Start.
+         */
+        SOURCE_MEASUREMENT_RANGE(10),
+
+        /**
+         * Derived measurement time window in milliseconds.
+         * Determines the output cadence, e.g. 1000 ms = 1 Hz output.
+         */
+        DERIVED_MEASUREMENT_TIME_WINDOW(11),
+
+        /**
+         * Derived measurement settings group ID.
+         */
+        DERIVED_MEASUREMENT_SETTINGS_GROUP_ID(12);
     }
 
     // available settings
@@ -96,6 +131,12 @@ class PmdSetting {
                 PmdSettingType.CHANNELS -> 1
                 PmdSettingType.FACTOR -> 4
                 PmdSettingType.SECURITY -> 16
+                PmdSettingType.DERIVED_MEASUREMENT_METHOD -> 1     // 1 byte per method ID
+                PmdSettingType.SOURCE_MEASUREMENT_TYPE -> 1
+                PmdSettingType.SOURCE_MEASUREMENT_SAMPLE_RATE -> 2
+                PmdSettingType.SOURCE_MEASUREMENT_RANGE -> 4  // milliunit range (same width as RANGE_MILLIUNIT)
+                PmdSettingType.DERIVED_MEASUREMENT_TIME_WINDOW -> 4
+                PmdSettingType.DERIVED_MEASUREMENT_SETTINGS_GROUP_ID -> 1
             }
         }
 
@@ -115,6 +156,11 @@ class PmdSetting {
         }
 
         private fun validateSetting(setting: Map.Entry<PmdSettingType, Int>) {
+            // DERIVED_MEASUREMENT_METHOD stores a bitmask (bits 0-9 correspond to methods 0-9);
+            // skip the standard byte-range check since the bitmask may exceed 0xFF.
+            if (setting.key == PmdSettingType.DERIVED_MEASUREMENT_METHOD) {
+                return
+            }
             val fieldSize = typeToFieldSize(setting.key)
             val value = setting.value
             if (fieldSize == 1 && (value < 0x0 || 0xFF < value)) {

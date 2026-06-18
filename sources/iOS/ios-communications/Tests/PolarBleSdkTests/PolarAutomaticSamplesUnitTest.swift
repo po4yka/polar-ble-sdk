@@ -111,9 +111,8 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
 
     func testRead247HrSamples_FilterOutSamplesOutsideDateRange() async throws {
         // Arrange
-        let calendar = Calendar(identifier: .gregorian)
-        let fromDate = calendar.date(from: DateComponents(year: 2024, month: 11, day: 20, hour: 0, minute: 0, second: 0))!
-        let toDate = calendar.date(from: DateComponents(year: 2024, month: 11, day: 9, hour: 0, minute: 0, second: 0))!
+        let fromDate = PolarTimeUtils.utcCalendar.date(from: DateComponents(year: 2024, month: 11, day: 19, hour: 0, minute: 0, second: 0))!
+        let toDate = PolarTimeUtils.utcCalendar.date(from: DateComponents(year: 2024, month: 11, day: 20, hour: 0, minute: 0, second: 0))!
 
         let mockDirectoryContent = try Protocol_PbPFtpDirectory.with {
             $0.entries = [
@@ -256,9 +255,8 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
 
     func testRead247PPiSamples_filterOutSamplesOutsideDateRange() async throws {
         // Arrange
-        let calendar = Calendar(identifier: .gregorian)
-        let fromDate = calendar.date(from: DateComponents(timeZone: TimeZone.gmt, year: 2525, month: 2, day: 24, hour: 0, minute: 0, second: 0))!
-        let toDate = calendar.date(from: DateComponents(timeZone: TimeZone.gmt, year: 2525, month: 2, day: 25, hour: 0, minute: 0, second: 0))!
+        let fromDate = PolarTimeUtils.utcCalendar.date(from: DateComponents(timeZone: TimeZone.gmt, year: 2525, month: 2, day: 24, hour: 0, minute: 0, second: 0))!
+        let toDate = PolarTimeUtils.utcCalendar.date(from: DateComponents(timeZone: TimeZone.gmt, year: 2525, month: 2, day: 25, hour: 0, minute: 0, second: 0))!
 
         let mockDirectoryContent = try Protocol_PbPFtpDirectory.with {
             $0.entries = [

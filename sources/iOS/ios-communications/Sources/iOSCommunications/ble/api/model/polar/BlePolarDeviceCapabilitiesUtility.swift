@@ -265,7 +265,7 @@ open class BlePolarDeviceCapabilitiesUtility {
 
     /// Check if device supports recording start and stop over BLE.
     /// - Parameter deviceType: device type (case-insensitive)
-    /// - Returns: true if recording is supported
+    /// - Returns: true if H10 exercise recording is supported
     public static func isRecordingSupported(_ deviceType: String) -> Bool {
         guard ensureInitialized() else { return false }
         #if canImport(PolarBleSdkShared)

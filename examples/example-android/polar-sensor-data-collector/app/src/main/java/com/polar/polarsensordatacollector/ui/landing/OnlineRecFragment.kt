@@ -23,6 +23,7 @@ import com.polar.polarsensordatacollector.DataCollector
 import com.polar.polarsensordatacollector.R
 import com.polar.polarsensordatacollector.service.OnlineStreamService
 import com.polar.polarsensordatacollector.ui.graph.AccGraphFragment
+import com.polar.polarsensordatacollector.ui.graph.EcgGraphFragment
 import com.polar.polarsensordatacollector.ui.graph.HrGraphFragment
 import com.polar.polarsensordatacollector.ui.utils.DataViewer
 import com.polar.polarsensordatacollector.ui.utils.DialogUtility.showAllSettingsDialog
@@ -84,6 +85,7 @@ class OnlineRecFragment : Fragment(R.layout.fragment_online_rec) {
 
     private lateinit var hrGraphButton: Button
     private lateinit var accGraphButton: Button
+    private lateinit var ecgGraphButton: Button
 
     private lateinit var viewButton: ImageButton
     private lateinit var shareButton: ImageButton
@@ -281,10 +283,10 @@ class OnlineRecFragment : Fragment(R.layout.fragment_online_rec) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val settings: Map<SettingType, Int> = showAllSettingsDialog(
-                    requireActivity(),
-                    availableStreamSettingsUiState.settings.currentlyAvailable.settings,
-                    availableStreamSettingsUiState.settings.allPossibleSettings.settings,
+                val (settings, _) = showAllSettingsDialog(
+                    requireActivity() as android.app.Activity,
+                    availableStreamSettingsUiState.settings.currentlyAvailable.settings.toMap(),
+                    availableStreamSettingsUiState.settings.allPossibleSettings.settings.toMap(),
                     availableStreamSettingsUiState.settings.selectedSettings
                 )
                     .subscribeOn(AndroidSchedulers.mainThread())
@@ -361,6 +363,10 @@ class OnlineRecFragment : Fragment(R.layout.fragment_online_rec) {
         }
         ppgRecordingLive = view.findViewById(R.id.ppg_data_section)
         ecgRecordingLive = view.findViewById(R.id.ecg_data_section)
+        ecgGraphButton = ecgRecordingLive.findViewById(R.id.open_ecg_graph_button)
+        ecgGraphButton.setOnClickListener {
+            openEcgGraph()
+        }
         ppiRecordingLive = view.findViewById(R.id.ppi_data_section)
         pressureRecordingLive = view.findViewById(R.id.pressure_data_section)
         locRecordingLive = view.findViewById(R.id.loc_data_section)
@@ -407,9 +413,11 @@ class OnlineRecFragment : Fragment(R.layout.fragment_online_rec) {
                             OnlineStreamService.stopService(requireContext())
                         }
                         streamingFeatureSettingsToggle(feature, true)
+                        cb.setOnCheckedChangeListener(null)
                         cb.isEnabled = true
                         cb.isChecked = false
                     }
+                    onlineViewModel.clearAllChecked()
                 } ?: run {
                     showToast("No device selected")
                 }
@@ -546,6 +554,7 @@ class OnlineRecFragment : Fragment(R.layout.fragment_online_rec) {
             printHrLiveData(
                 hr = it.hr,
                 rrAvailable = it.rrAvailable,
+                rrs = it.rrs,
                 rrsMs = it.rrsMs,
                 contactSupported = it.contactStatusSupported,
                 contactStatus = it.contactStatus
@@ -665,7 +674,7 @@ class OnlineRecFragment : Fragment(R.layout.fragment_online_rec) {
         }
     }
 
-    private fun printHrLiveData(hr: Int, rrAvailable: Boolean, rrsMs: List<Int>, contactSupported: Boolean, contactStatus: Boolean) {
+    private fun printHrLiveData(hr: Int, rrAvailable: Boolean, rrs: List<Int>, rrsMs: List<Int>, contactSupported: Boolean, contactStatus: Boolean) {
         // data_0: BPM
         val recordingLiveHeader0 = hrRecordingLive.findViewById<TextView>(R.id.data_0_header)
         val recordingLiveData0 = hrRecordingLive.findViewById<TextView>(R.id.data_0)
@@ -690,9 +699,11 @@ class OnlineRecFragment : Fragment(R.layout.fragment_online_rec) {
         val rrRow = hrRecordingLive.findViewById<View>(R.id.second_data_row)
         val rrHeader = hrRecordingLive.findViewById<TextView>(R.id.second_data_header)
         val rrData = hrRecordingLive.findViewById<TextView>(R.id.second_data)
-        rrHeader.text = getString(R.string.hr_label_rrsms)
-        rrData.text = if (rrAvailable && rrsMs.isNotEmpty()) {
-            rrsMs.joinToString(", ")
+        rrHeader.text = getString(R.string.hr_label_rr_raw_ms)
+        rrData.text = if (rrAvailable && (rrs.isNotEmpty() || rrsMs.isNotEmpty())) {
+            val rawText = if (rrs.isEmpty()) "NA" else rrs.joinToString(", ")
+            val msText = if (rrsMs.isEmpty()) "NA" else rrsMs.joinToString(", ")
+            "RR: $rawText | RR ms: $msText"
         } else {
             getString(R.string.hr_rr_not_available)
         }
@@ -837,6 +848,7 @@ class OnlineRecFragment : Fragment(R.layout.fragment_online_rec) {
                 recordingLiveData2.text = ecgSample.status.toString()
             }
         }
+        ecgGraphButton.visibility = VISIBLE
     }
 
     private fun printPpgLiveData(polarPpgData: PolarPpgData) {
@@ -1227,6 +1239,13 @@ class OnlineRecFragment : Fragment(R.layout.fragment_online_rec) {
             view.visibility = VISIBLE
             getOnlineRecStartStopButton(feature).visibility = GONE
             setupOnlineRecSettings(feature)
+
+            val cb = getOnlineRecordingCheckBox(feature)
+            cb.setOnCheckedChangeListener(null)
+            cb.isChecked = onlineViewModel.checkedDataTypes.value.contains(feature)
+            cb.setOnCheckedChangeListener { _, isChecked ->
+                onlineViewModel.setChecked(feature, isChecked)
+            }
         } else {
             view.visibility = GONE
         }
@@ -1404,6 +1423,10 @@ class OnlineRecFragment : Fragment(R.layout.fragment_online_rec) {
 
     private fun openAccGraph() {
         AccGraphFragment().show(parentFragmentManager, null)
+    }
+
+    private fun openEcgGraph() {
+        EcgGraphFragment().show(parentFragmentManager, null)
     }
 
     override fun onDestroy() {

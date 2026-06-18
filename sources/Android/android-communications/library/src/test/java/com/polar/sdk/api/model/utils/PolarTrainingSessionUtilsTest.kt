@@ -44,6 +44,18 @@ class PolarTrainingSessionUtilsTest {
 
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss", Locale.ENGLISH)
 
+    private fun PolarTrainingSessionReference.normalized(): PolarTrainingSessionReference =
+        copy(
+            trainingDataTypes = trainingDataTypes.sortedBy { it.name },
+            exercises = exercises
+                .map { exercise ->
+                    exercise.copy(
+                        exerciseDataTypes = exercise.exerciseDataTypes.sortedBy { it.name }
+                    )
+                }
+                .sortedBy { it.index }
+        )
+
     @Test
     fun `training session read and delete headers use shared file facade planning`() {
         val reference = PolarTrainingSessionReference(
@@ -286,7 +298,10 @@ class PolarTrainingSessionUtilsTest {
         job.join()
 
         // Assert
-        assertEquals(expectedReferences, emitted)
+        assertEquals(
+            expectedReferences.filterNotNull().map { it.normalized() }.sortedBy { it.path },
+            emitted.map { it.normalized() }.sortedBy { it.path }
+        )
 
         coVerify {
             client.request(PftpRequest.PbPFtpOperation.newBuilder().setCommand(PftpRequest.PbPFtpOperation.Command.GET).setPath("/U/0/").build().toByteArray())

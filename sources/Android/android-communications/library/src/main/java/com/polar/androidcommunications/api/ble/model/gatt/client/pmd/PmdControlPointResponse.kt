@@ -10,9 +10,9 @@ class PmdControlPointResponse(data: ByteArray) {
     private val parsed = PolarRuntimePlannerAdapter.pmdControlPointResponse(data)
 
     val responseCode: Byte = parsed.responseCode.toByte()
-    val opCode: PmdControlPointCommandClientToService = PmdControlPointCommandClientToService.values()[parsed.opCodeValue]
+    val opCode: PmdControlPointCommandClientToService? = PmdControlPointCommandClientToService.fromCode(parsed.opCodeValue)
     val measurementType: Byte = parsed.measurementType.toByte()
-    val status: PmdControlPointResponseCode = PmdControlPointResponseCode.values()[parsed.statusValue]
+    val status: PmdControlPointResponseCode = PmdControlPointResponseCode.fromId(parsed.statusValue)
     val more: Boolean
     var parameters: ByteArray
 
@@ -31,7 +31,19 @@ class PmdControlPointResponse(data: ByteArray) {
         ERROR_INVALID_NUMBER_OF_CHANNELS(11),
         ERROR_INVALID_STATE(12),
         ERROR_DEVICE_IN_CHARGER(13),
-        ERROR_DISK_FULL(14);
+        ERROR_DISK_FULL(14),
+        ERROR_INVALID_SOURCE_MEASUREMENT_TYPE(15),
+        ERROR_INVALID_SOURCE_MEASUREMENT_RATE(16),
+        ERROR_INVALID_DERIVED_MEASUREMENT_SETTINGS_GROUP(17),
+        ERROR_INVALID_DERIVED_MEASUREMENT_METHOD(18),
+
+        /** Catch-all for any future/unknown error codes returned by the device. */
+        UNKNOWN_ERROR(-1);
+
+        companion object {
+            fun fromId(id: Int): PmdControlPointResponseCode =
+                values().firstOrNull { it.numVal == id } ?: UNKNOWN_ERROR
+        }
     }
 
     init {

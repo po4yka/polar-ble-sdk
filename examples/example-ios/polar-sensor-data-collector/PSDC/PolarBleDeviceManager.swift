@@ -8,21 +8,21 @@ import CoreBluetooth
 /// maintains one PolarBleSdkManager instance per connected device
 @MainActor
 class PolarBleDeviceManager: ObservableObject {
-    
+
     @Published var isBluetoothOn: Bool
     @Published var deviceSearch: DeviceSearch = DeviceSearch()
-    
+
     public var deviceSearchNamePrefix:String = ""
-    
+
     // Single shared api instance used for both scanning and device connections.
     // Sharing ensures peripherals discovered during scan are in the same session
     // map that connectToDevice looks up — preventing "session not found" errors.
     private var api =
         PolarBleApiDefaultImpl.polarImplementation(DispatchQueue.main, features: [], restoreIdentifier: "com.polar.PolarSensorDataCollector-iOS.scan")
-    
+
     private var h10ExerciseEntry: PolarExerciseEntry?
     private var searchDevicesTask: Task<Void, Never>? = nil
-    
+
     private var managersByDeviceId: [String: (PolarDeviceInfo, PolarBleSdkManager)] = [:]
 
     init() {
@@ -31,27 +31,28 @@ class PolarBleDeviceManager: ObservableObject {
         api.powerStateObserver = self
         api.logger = self
     }
-    
+
     func setSearchPrefix(_ prefix: String) {
         deviceSearchNamePrefix = prefix
+        startDevicesSearch()
+    }
+
+    func startDevicesSearch() {
         searchDevicesTask?.cancel()
         searchDevicesTask = nil
         deviceSearch.foundDevices.removeAll()
         deviceSearch.isSearching = .notStarted
-    }
-    
-    func startDevicesSearch() {
         searchDevicesTask = Task {
             await searchDevicesAsync()
         }
     }
-    
+
     func stopDevicesSearch() {
         searchDevicesTask?.cancel()
         searchDevicesTask = nil
         deviceSearch.isSearching = DeviceSearchState.success
     }
-    
+
     private func searchDevicesAsync() async {
         deviceSearch.foundDevices.removeAll()
         deviceSearch.isSearching = DeviceSearchState.inProgress
@@ -93,18 +94,18 @@ class PolarBleDeviceManager: ObservableObject {
         }
         return manager
     }
-    
+
     func disconnect(_ device: PolarDeviceInfo) -> (PolarDeviceInfo, PolarBleSdkManager)? {
         if let (_, manager) = managersByDeviceId[device.deviceId] {
             manager.disconnectFromDevice(device: device)
         }
         return managersByDeviceId.values.first
     }
-    
+
     func disconnectAll() {
         managersByDeviceId.values.forEach { $0.1.disconnectFromDevice(device: $0.0) }
     }
-    
+
     func connectedDevices() -> [PolarDeviceInfo] {
         let connectedDevices = managersByDeviceId.values.compactMap { (deviceInfo, manager) in
             manager.deviceId == deviceInfo.deviceId ? deviceInfo : nil

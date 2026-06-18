@@ -255,8 +255,12 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
     suspend fun querySettings(type: PmdMeasurementType, recordingType: PmdRecordingType = PmdRecordingType.ONLINE): PmdSetting = withContext(Dispatchers.IO) {
         val measurementType = type.numVal
         val requestByte = recordingType.asBitField() or measurementType
+        BleLogger.d(TAG, "querySettings: ▶ GET_MEASUREMENT_SETTINGS type=$type recordingType=$recordingType requestByte=0x${requestByte.toString(16).uppercase().padStart(2, '0')}")
         val response = sendControlPointCommand(PmdControlPointCommandClientToService.GET_MEASUREMENT_SETTINGS, requestByte.toByte())
-        PmdSetting(response.parameters)
+        BleLogger.d(TAG, "querySettings: ◀ response parameters (${response.parameters.size} bytes): ${response.parameters.joinToString(" ") { "0x${it.toInt().and(0xFF).toString(16).uppercase().padStart(2, '0')}" }}")
+        val setting = PmdSetting(response.parameters)
+        BleLogger.d(TAG, "querySettings: parsed PmdSetting for $type/$recordingType: $setting")
+        setting
     }
 
     /**
@@ -269,6 +273,24 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
         val requestByte = recordingType.asBitField() or measurementType
         val response = sendControlPointCommand(PmdControlPointCommandClientToService.GET_SDK_MODE_MEASUREMENT_SETTINGS, requestByte.toByte())
         PmdSetting(response.parameters)
+    }
+
+     /**
+      * Query the available settings for one Derived Measurement Settings Group.
+      *
+      * @param groupId the Derived Measurement Settings Group ID to query
+      * @return [PmdSetting] with the available derived measurement settings on success, throws on error
+      */
+    suspend fun queryDerivedMeasurementSettingsGroup(groupId: Int): PmdSetting = withContext(Dispatchers.IO) {
+        BleLogger.d(TAG, "queryDerivedMeasurementSettingsGroup: ▶ GET_DERIVED_MEASUREMENT_SETTINGS_GROUP groupId=0x${groupId.toString(16).uppercase()}")
+        val response = sendControlPointCommand(
+            PmdControlPointCommandClientToService.GET_DERIVED_MEASUREMENT_SETTINGS_GROUP,
+            byteArrayOf(groupId.toByte())
+        )
+        BleLogger.d(TAG, "queryDerivedMeasurementSettingsGroup: ◀ response parameters (${response.parameters.size} bytes): ${response.parameters.joinToString(" ") { "0x${it.toInt().and(0xFF).toString(16).uppercase().padStart(2,'0')}" }}")
+        val setting = PmdSetting(response.parameters)
+        BleLogger.d(TAG, "queryDerivedMeasurementSettingsGroup: parsed PmdSetting for groupId=0x${groupId.toString(16).uppercase()}: $setting")
+        setting
     }
 
     /**
@@ -337,6 +359,7 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
                 PmdMeasurementType.TEMPERATURE -> measurementStatus[PmdMeasurementType.TEMPERATURE] = PmdActiveMeasurement.fromStatusResponse(parameter)
                 PmdMeasurementType.SKIN_TEMP -> measurementStatus[PmdMeasurementType.SKIN_TEMP] = PmdActiveMeasurement.fromStatusResponse(parameter)
                 PmdMeasurementType.OFFLINE_HR -> measurementStatus[PmdMeasurementType.OFFLINE_HR] = PmdActiveMeasurement.fromStatusResponse(parameter)
+                PmdMeasurementType.DERIVED_MEASUREMENT -> measurementStatus[PmdMeasurementType.DERIVED_MEASUREMENT] = PmdActiveMeasurement.fromStatusResponse(parameter)
                 else -> {}
             }
         }

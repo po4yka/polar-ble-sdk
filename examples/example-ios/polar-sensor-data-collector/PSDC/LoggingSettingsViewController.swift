@@ -1,8 +1,7 @@
-
 import UIKit
 import PolarBleSdk
 
-class SensorDatalogSettingsViewController: UIViewController {
+class LoggingSettingsViewController: UIViewController {
     
     var available = Set<UInt16>()
     var api: PolarBleApi!
@@ -16,21 +15,21 @@ class SensorDatalogSettingsViewController: UIViewController {
     @IBOutlet weak var caloriesSwitch: UISwitch!
     @IBOutlet weak var sleepSwitch: UISwitch!
     
-    @IBOutlet weak var sdLogCancelButton: UIButton!
-    @IBOutlet weak var sdLogSetButton: UIButton!
-    var logConfig: SDLogConfig?
-    
+    @IBOutlet weak var cancelButton: UIButton!
+    @IBOutlet weak var setButton: UIButton!
+    var logConfig: LogConfig?
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        sdLogCancelButton.layer.cornerRadius = 10
-        sdLogCancelButton.clipsToBounds = true
-        sdLogSetButton.layer.cornerRadius = 10
-        sdLogSetButton.clipsToBounds = true
-        
+        cancelButton.layer.cornerRadius = 10
+        cancelButton.clipsToBounds = true
+        setButton.layer.cornerRadius = 10
+        setButton.clipsToBounds = true
+
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let config = try await api.getSDLogConfiguration(deviceId)
+                let config = try await api.getLogConfig(deviceId)
                 logConfig = config
                 ohrSwitch.isOn = config.ohrLogEnabled
                 accSwitch.isOn = config.accelerationLogEnabled
@@ -39,14 +38,14 @@ class SensorDatalogSettingsViewController: UIViewController {
                 caloriesSwitch.isOn = config.caloriesLogEnabled
                 sleepSwitch.isOn = config.sleepLogEnabled
             } catch {
-                print("Failed to load sensor datalog settings, \(error)")
+                print("Failed to load logging settings, \(error)")
                 dismiss(animated: false)
             }
         }
     }
     
-    @IBAction func setSDLogButtonSelected(_ sender: Any) {
-        setSDLogSettings()
+    @IBAction func setLogSettingsButtonSelected(_ sender: Any) {
+        setLogSettings()
         self.dismiss(animated: false)
     }
     
@@ -81,8 +80,8 @@ class SensorDatalogSettingsViewController: UIViewController {
         self.logConfig?.sleepLogEnabled = sleepSwitch.isOn
     }
     
-    func setSDLogSettings() {
-    
+    func setLogSettings() {
+
         self.logConfig?.accelerationLogEnabled = accSwitch.isOn
         self.logConfig?.ohrLogEnabled = ohrSwitch.isOn
         self.logConfig?.skinTemperatureLogEnabled = skinTempSwitch.isOn
@@ -92,10 +91,10 @@ class SensorDatalogSettingsViewController: UIViewController {
         
         Task.detached {
             do {
-                try await self.api.setSDLogConfiguration(self.deviceId, logConfiguration: self.logConfig!).value
+                try await self.api.setLogConfig(self.deviceId, logConfig: self.logConfig!).value
             }
             catch let err {
-                NSLog("Setting Sensor Datalog failed: \(err)")
+                NSLog("Setting log config failed: \(err)")
             }
         }
     }

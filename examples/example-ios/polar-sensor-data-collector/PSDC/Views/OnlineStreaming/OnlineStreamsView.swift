@@ -9,6 +9,7 @@ struct OnlineStreamsView: View {
     @State private var urlToShare: IdentifiableURL?
     @State private var showHrGraph = false
     @State private var showAccGraph = false
+    @State private var showEcgGraph = false
 
     struct ShownData: Identifiable {
         let dataType: String
@@ -46,7 +47,8 @@ struct OnlineStreamsView: View {
                 }
                 OnlineStreamValues(
                     showHrGraph: $showHrGraph,
-                    showAccGraph: $showAccGraph
+                    showAccGraph: $showAccGraph,
+                    showEcgGraph: $showEcgGraph
                 )
             }
             .fullScreenCover(item: $bleSdkManager.onlineStreamSettings) { streamSettings in
@@ -99,45 +101,45 @@ struct OnlineStreamsView: View {
                     }
                 }
             }
+            .onChange(of: showEcgGraph) { newValue in
+                if newValue {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        presentEcgGraph()
+                    }
+                }
+            }
         }
     }
     
+    private func presentFullScreenModal(_ viewController: UIViewController, onFailure: () -> Void) {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
+            onFailure()
+            return
+        }
+
+        var topController = rootViewController
+        while let presented = topController.presentedViewController {
+            topController = presented
+        }
+
+        viewController.modalPresentationStyle = .fullScreen
+        topController.present(viewController, animated: true)
+    }
+
     private func presentHrGraph() {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootViewController = windowScene.windows.first?.rootViewController else {
-            showHrGraph = false
-            return
-        }
-
-        var topController = rootViewController
-        while let presented = topController.presentedViewController {
-            topController = presented
-        }
-
-        let hrGraphVC = HrGraphViewController(onClose: {
-            showHrGraph = false
-        })
-        hrGraphVC.modalPresentationStyle = .fullScreen
-        topController.present(hrGraphVC, animated: true)
+        presentFullScreenModal(HrGraphViewController(onClose: { showHrGraph = false }),
+                               onFailure: { showHrGraph = false })
     }
-    
+
     private func presentAccGraph() {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootViewController = windowScene.windows.first?.rootViewController else {
-            showAccGraph = false
-            return
-        }
+        presentFullScreenModal(AccGraphViewController(onClose: { showAccGraph = false }),
+                               onFailure: { showAccGraph = false })
+    }
 
-        var topController = rootViewController
-        while let presented = topController.presentedViewController {
-            topController = presented
-        }
-
-        let accGraphVC = AccGraphViewController(onClose: {
-            showAccGraph = false
-        })
-        accGraphVC.modalPresentationStyle = .fullScreen
-        topController.present(accGraphVC, animated: true)
+    private func presentEcgGraph() {
+        presentFullScreenModal(EcgGraphViewController(onClose: { showEcgGraph = false }),
+                               onFailure: { showEcgGraph = false })
     }
 }
 
@@ -205,6 +207,7 @@ struct OnlineStreamValues: View {
     @EnvironmentObject private var bleSdkManager: PolarBleSdkManager
     @Binding var showHrGraph: Bool
     @Binding var showAccGraph: Bool
+    @Binding var showEcgGraph: Bool
 
     var body: some View {
         
@@ -219,6 +222,11 @@ struct OnlineStreamValues: View {
                                 .font(.system(size: 16)).bold()
                             Text("Voltage: \(bleSdkManager.ecgRecordingData.voltage)µV ")
                                 .font(.system(size: 14))
+
+                            GraphButton {
+                                showEcgGraph = true
+                            }
+                            .padding(.top, 4)
                         }
                     }
                 case .acc:

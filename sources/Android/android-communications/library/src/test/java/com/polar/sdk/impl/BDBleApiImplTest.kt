@@ -4621,10 +4621,207 @@ class BDBleApiImplTest {
         }
     }
 
+    @Test
+    fun `getSensorInitiatedSecurityMode returns true when device payload byte is 1`() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FEATURES_CONFIGURATION_SERVICE))
+        val (pfcClient, _) = mockPfcConnection(deviceId)
+
+        // data[0]=responseCode, data[1]=opCode, data[2]=status, data[3]=payload[0]=1 (enabled)
+        val response = BlePfcClient.PfcResponse(
+            byteArrayOf(0x02, BlePfcClient.PfcMessage.PFC_REQUEST_SENSOR_INITIATED_SECURITY_MODE.numVal.toByte(), 0x01, 0x01)
+        )
+        coEvery { pfcClient.sendControlPointCommand(BlePfcClient.PfcMessage.PFC_REQUEST_SENSOR_INITIATED_SECURITY_MODE, 0) } returns response
+
+        try {
+            // Act
+            val result = api.getSensorInitiatedSecurityMode(deviceId)
+
+            // Assert
+            Assert.assertTrue("Expected getSensorInitiatedSecurityMode to return true when payload byte is 1", result)
+        } finally {
+            unmockkObject(PolarServiceClientUtils)
+        }
+    }
+
+    @Test
+    fun `getSensorInitiatedSecurityMode returns false when device payload byte is 0`() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FEATURES_CONFIGURATION_SERVICE))
+        val (pfcClient, _) = mockPfcConnection(deviceId)
+
+        // data[3]=payload[0]=0 (disabled)
+        val response = BlePfcClient.PfcResponse(
+            byteArrayOf(0x02, BlePfcClient.PfcMessage.PFC_REQUEST_SENSOR_INITIATED_SECURITY_MODE.numVal.toByte(), 0x01, 0x00)
+        )
+        coEvery { pfcClient.sendControlPointCommand(BlePfcClient.PfcMessage.PFC_REQUEST_SENSOR_INITIATED_SECURITY_MODE, 0) } returns response
+
+        try {
+            // Act
+            val result = api.getSensorInitiatedSecurityMode(deviceId)
+
+            // Assert
+            Assert.assertFalse("Expected getSensorInitiatedSecurityMode to return false when payload byte is 0", result)
+        } finally {
+            unmockkObject(PolarServiceClientUtils)
+        }
+    }
+
+    @Test
+    fun `getSensorInitiatedSecurityMode returns false when device response has no payload`() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FEATURES_CONFIGURATION_SERVICE))
+        val (pfcClient, _) = mockPfcConnection(deviceId)
+
+        // Only 3 bytes → no payload (payload remains null)
+        val response = BlePfcClient.PfcResponse(
+            byteArrayOf(0x02, BlePfcClient.PfcMessage.PFC_REQUEST_SENSOR_INITIATED_SECURITY_MODE.numVal.toByte(), 0x01)
+        )
+        coEvery { pfcClient.sendControlPointCommand(BlePfcClient.PfcMessage.PFC_REQUEST_SENSOR_INITIATED_SECURITY_MODE, 0) } returns response
+
+        try {
+            // Act
+            val result = api.getSensorInitiatedSecurityMode(deviceId)
+
+            // Assert
+            Assert.assertFalse("Expected getSensorInitiatedSecurityMode to return false when payload is absent", result)
+        } finally {
+            unmockkObject(PolarServiceClientUtils)
+        }
+    }
+
+    @Test
+    fun `setSensorInitiatedSecurityMode enable=true completes successfully when device responds with status 1`() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FEATURES_CONFIGURATION_SERVICE))
+        val (pfcClient, _) = mockPfcConnection(deviceId)
+
+        // data[0]=responseCode, data[1]=opCode, data[2]=status(1=success)
+        val successResponse = BlePfcClient.PfcResponse(
+            byteArrayOf(0x02, BlePfcClient.PfcMessage.PFC_CONFIGURE_SENSOR_INITIATED_SECURITY_MODE.numVal.toByte(), 0x01)
+        )
+        coEvery { pfcClient.sendControlPointCommand(BlePfcClient.PfcMessage.PFC_CONFIGURE_SENSOR_INITIATED_SECURITY_MODE, 1) } returns successResponse
+
+        try {
+            // Act & Assert – should complete without throwing
+            api.setSensorInitiatedSecurityMode(deviceId, enable = true)
+        } finally {
+            unmockkObject(PolarServiceClientUtils)
+        }
+    }
+
+    @Test
+    fun `setSensorInitiatedSecurityMode enable=false completes successfully when device responds with status 1`() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FEATURES_CONFIGURATION_SERVICE))
+        val (pfcClient, _) = mockPfcConnection(deviceId)
+
+        val successResponse = BlePfcClient.PfcResponse(
+            byteArrayOf(0x02, BlePfcClient.PfcMessage.PFC_CONFIGURE_SENSOR_INITIATED_SECURITY_MODE.numVal.toByte(), 0x01)
+        )
+        coEvery { pfcClient.sendControlPointCommand(BlePfcClient.PfcMessage.PFC_CONFIGURE_SENSOR_INITIATED_SECURITY_MODE, 0) } returns successResponse
+
+        try {
+            // Act & Assert – should complete without throwing
+            api.setSensorInitiatedSecurityMode(deviceId, enable = false)
+        } finally {
+            unmockkObject(PolarServiceClientUtils)
+        }
+    }
+
+    @Test
+    fun `setSensorInitiatedSecurityMode throws PolarOperationNotSupported when device responds with status other than 1`() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FEATURES_CONFIGURATION_SERVICE))
+        val (pfcClient, _) = mockPfcConnection(deviceId)
+
+        // status = 0x00 means not supported
+        val failResponse = BlePfcClient.PfcResponse(
+            byteArrayOf(0x02, BlePfcClient.PfcMessage.PFC_CONFIGURE_SENSOR_INITIATED_SECURITY_MODE.numVal.toByte(), 0x00)
+        )
+        coEvery { pfcClient.sendControlPointCommand(BlePfcClient.PfcMessage.PFC_CONFIGURE_SENSOR_INITIATED_SECURITY_MODE, any<Int>()) } returns failResponse
+
+        try {
+            // Act & Assert
+            Assert.assertThrows(PolarOperationNotSupported::class.java) {
+                kotlinx.coroutines.runBlocking {
+                    api.setSensorInitiatedSecurityMode(deviceId, enable = true)
+                }
+            }
+        } finally {
+            unmockkObject(PolarServiceClientUtils)
+        }
+    }
+
+    @Test
+    fun `setHibernateMode sends RESET notification with hibernate=true sleep=true doFactoryDefaults=false`() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_DEVICE_CONTROL))
+        val (client, _) = mockPsFtpConnection(deviceId)
+
+        val capturedNotificationIds = mutableListOf<Int>()
+        val capturedNotificationParams = mutableListOf<ByteArray?>()
+        coEvery {
+            client.sendNotification(capture(capturedNotificationIds), captureNullable(capturedNotificationParams))
+        } just runs
+
+        try {
+            // Act
+            api.setHibernateMode(deviceId)
+        } finally {
+            unmockkObject(PolarServiceClientUtils)
+        }
+
+        // Assert
+        Assert.assertEquals("Expected exactly one notification", 1, capturedNotificationIds.size)
+        Assert.assertEquals(
+            "Expected RESET notification",
+            PftpNotification.PbPFtpHostToDevNotification.RESET.ordinal,
+            capturedNotificationIds[0]
+        )
+
+        val params = PftpNotification.PbPFtpFactoryResetParams.parseFrom(capturedNotificationParams[0])
+        Assert.assertTrue("hibernate should be true", params.hibernate)
+        Assert.assertTrue("sleep should be true to initiate low-power mode", params.sleep)
+        Assert.assertFalse("doFactoryDefaults should be false", params.doFactoryDefaults)
+    }
+
+    @Test
+    fun `setHibernateMode does not trigger factory defaults and sets hibernate flag`() = runTest {
+        // Arrange
+        val deviceId = "E123456F"
+        val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_DEVICE_CONTROL))
+        val (client, _) = mockPsFtpConnection(deviceId)
+
+        val capturedParams = mutableListOf<ByteArray?>()
+        coEvery {
+            client.sendNotification(any(), captureNullable(capturedParams))
+        } just runs
+
+        try {
+            // Act
+            api.setHibernateMode(deviceId)
+        } finally {
+            unmockkObject(PolarServiceClientUtils)
+        }
+
+        val params = PftpNotification.PbPFtpFactoryResetParams.parseFrom(capturedParams[0])
+        Assert.assertFalse("Hibernate mode must not trigger factory defaults", params.doFactoryDefaults)
+        Assert.assertTrue("Hibernate flag must be set to true", params.hibernate)
+    }
+
     private fun mockPsFtpConnection(
         deviceId: String,
         polarDeviceType: String = "ignite3"
     ): Pair<BlePsFtpClient, BleDeviceSession> {
+
         val client = mockk<BlePsFtpClient>()
         val session = mockk<BleDeviceSession>()
         val advContent = mockk<BleAdvertisementContent>()

@@ -66,6 +66,30 @@ internal object PolarTrainingSessionUtils {
         return PolarRuntimePlannerAdapter.fileOperationCommand(plan) to PolarRuntimePlannerAdapter.fileOperationPath(plan)
     }
 
+    internal data class TrainingSessionNode(
+        val date: String?,
+        val time: String?,
+        val path: String,
+        val dataType: PolarTrainingSessionDataTypes,
+        val fileSize: Long,
+        var children: MutableList<TrainingSessionChildNode> = mutableListOf()
+    )
+
+    internal data class TrainingSessionChildNode(
+        val exerciseIndex: Int,
+        val date: String?,
+        val time: String?,
+        var children: MutableList<ExerciseNode> = mutableListOf()
+    )
+
+    internal data class ExerciseNode(
+        val date: String?,
+        val time: String?,
+        val path: String,
+        val dataType: PolarExerciseDataTypes,
+        val fileSize: Long,
+    )
+
     fun getTrainingSessionReferences(
         client: BlePsFtpClient,
         fromDate: LocalDate? = null,
@@ -113,8 +137,8 @@ internal object PolarTrainingSessionUtils {
             }
 
         BleLogger.d(TAG, "Collected ${references.size} training session references:")
-        references.forEachIndexed { index, ref ->
-            BleLogger.d(TAG, "[$index] date=${ref.date}, totalSize=${ref.fileSize} bytes, path=${ref.path}")
+        references.forEachIndexed { exerciseIndex, ref ->
+            BleLogger.d(TAG, "[$exerciseIndex] date=${ref.date}, totalSize=${ref.fileSize} bytes, path=${ref.path}")
             BleLogger.d(TAG, "  Training data types: ${ref.trainingDataTypes}")
             ref.exercises.forEach { exercise ->
                 BleLogger.d(TAG, "  Exercise ${exercise.index}: ${exercise.fileSizes.values.sum()} bytes")

@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
 abstract class PolarBleApi(val features: Set<PolarBleSdkFeature>) : PolarOnlineStreamingApi,
     PolarOfflineRecordingApi, PolarH10OfflineExerciseApi, PolarSdkModeApi, PolarFirmwareUpdateApi,
     PolarActivityApi, PolarSleepApi, PolarRestServiceApi, PolarTemperatureApi, PolarTrainingSessionApi,
-    PolarBleLowLevelApi, PolarDeviceToHostNotificationsApi, PolarTestApi, PolarWatchFaceApi {
+    PolarBleLowLevelApi, PolarDeviceToHostNotificationsApi, PolarTestApi, PolarWatchFaceApi, PolarLoggingApi {
 
     /**
      * Features available in Polar BLE SDK library
@@ -421,22 +421,6 @@ abstract class PolarBleApi(val features: Set<PolarBleSdkFeature>) : PolarOnlineS
      */
     abstract suspend fun doRestart(identifier: String)
 
-    /**
-     * Get [LogConfig] from device. Requires feature [PolarBleSdkFeature.FEATURE_POLAR_DEVICE_CONTROL]
-     *
-     * @param identifier Polar device ID or BT address
-    + @return [LogConfig] or error
-     */
-    abstract suspend fun getLogConfig(identifier: String): LogConfig
-
-    /**
-     * Set [LogConfig] for device. Requires feature [PolarBleSdkFeature.FEATURE_POLAR_DEVICE_CONTROL]
-     *
-     * @param identifier Polar device ID or BT address
-     * @param logConfig new [LogConfig]
-    + @return Success or error
-     */
-    abstract suspend fun setLogConfig(identifier: String, logConfig: LogConfig)
 
     /**
      * Set warehouse sleep setting to a given device. Requires feature [PolarBleSdkFeature.FEATURE_POLAR_DEVICE_CONTROL] Warehouse sleep does factory reset to the device
@@ -446,6 +430,16 @@ abstract class PolarBleApi(val features: Set<PolarBleSdkFeature>) : PolarOnlineS
      * @return Success or error
      */
     abstract suspend fun setWareHouseSleep(identifier: String)
+
+    /**
+     * Set hibernate mode on a given device. Requires feature [PolarBleSdkFeature.FEATURE_POLAR_DEVICE_CONTROL]
+     * Hibernate mode puts the device into a low-power state that retains device time, unlike
+     * warehouse sleep (storage mode). Battery should last for tens, or even hundreds of days in hibernate.
+     *
+     * @param identifier Polar device ID or BT address
+     * @return Success or error
+     */
+    abstract suspend fun setHibernateMode(identifier: String)
 
     /**
      * Turn of device by setting the device to sleep state. Requires feature [PolarBleSdkFeature.FEATURE_POLAR_DEVICE_CONTROL]
@@ -629,6 +623,23 @@ abstract class PolarBleApi(val features: Set<PolarBleSdkFeature>) : PolarOnlineS
      * @return true if multi BLE connection has been enabled, false otherwise.
      */
     abstract suspend fun getMultiBLEConnectionMode(identifier: String): Boolean
+
+    /**
+     * Enable Sensor Initiated Security Mode on a given device. Requires feature [PolarBleSdkFeature.FEATURE_POLAR_FEATURES_CONFIGURATION_SERVICE]
+     *
+     * @param identifier Polar device ID or BT address
+     * @param enable, set to true to enable, false to disable Sensor Initiated Security Mode.
+     * @return Success or error
+     */
+    abstract suspend fun setSensorInitiatedSecurityMode(identifier: String, enable: Boolean)
+
+    /**
+     * Request Sensor Initiated Security Mode status from device. Requires feature [PolarBleSdkFeature.FEATURE_POLAR_FEATURES_CONFIGURATION_SERVICE]
+     *
+     * @param identifier Polar device ID or BT address
+     * @return true if Sensor Initiated Security Mode is enabled, `false` otherwise
+     */
+    abstract suspend fun getSensorInitiatedSecurityMode(identifier: String): Boolean
 
     /**
      * Notify device of the incoming data transfer operation(s). By using this method the device will

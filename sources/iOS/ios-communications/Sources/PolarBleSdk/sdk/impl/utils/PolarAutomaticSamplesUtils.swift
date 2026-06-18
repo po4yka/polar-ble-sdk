@@ -10,6 +10,7 @@ private let AUTOMATIC_SAMPLES_DIRECTORY = "AUTOS/"
 private let AUTOMATIC_SAMPLES_PATTERN = #"AUTOS\d{3}\.BPB"#
 private let TAG = "PolarAutomaticSamplesUtils"
 
+
 internal class PolarAutomaticSamplesUtils {
     static func automaticSamplesDirectoryReadOperation() -> (command: Protocol_PbPFtpOperation.Command, path: String) {
         return automaticSamplesReadOperation(id: "automatic-samples-read-directory", path: automaticSamplesDirectoryPath())
@@ -35,6 +36,12 @@ internal class PolarAutomaticSamplesUtils {
     }
 
     static func read247HrSamples(client: BlePsFtpClient, fromDate: Date, toDate: Date) async throws -> [Polar247HrSamplesData] {
+
+        guard toDate >= fromDate else {
+            BleLogger.error(TAG, "Invalid date range: toDate \(toDate) is before fromDate \(fromDate)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
+
         BleLogger.trace(TAG, "read247HrSamples: from \(fromDate) to \(toDate)")
         let plannedListOperation = automaticSamplesDirectoryReadOperation()
         let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedListOperation))
@@ -55,7 +62,7 @@ internal class PolarAutomaticSamplesUtils {
                 let sampleDate = DateComponents(year: Int(sampleDateProto.year), month: Int(sampleDateProto.month), day: Int(sampleDateProto.day))
                 guard requestedDays.contains(basicDateString(sampleDateProto)) else { continue }
                 let samples = try Polar247HrSamplesData.fromPbHrDataSamples(samples: sampleSessions.samples)
-                let date = Calendar.current.dateComponents([.year, .month, .day], from: Calendar.current.date(from: sampleDate)!)
+                let date = PolarTimeUtils.utcCalendar.dateComponents([.year, .month, .day], from: PolarTimeUtils.utcCalendar.date(from: sampleDate)!)
                 results.append(Polar247HrSamplesData(date: date, samples: samples))
             } catch {
                 BleLogger.error(TAG, "Failed to parse HR in \(fileName): \(error)")
@@ -65,6 +72,12 @@ internal class PolarAutomaticSamplesUtils {
     }
 
     static func read247PPiSamples(client: BlePsFtpClient, fromDate: Date, toDate: Date) async throws -> [Polar247PPiSamplesData] {
+
+        guard toDate >= fromDate else {
+            BleLogger.error(TAG, "Invalid date range: toDate \(toDate) is before fromDate \(fromDate)")
+            throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
+        }
+
         BleLogger.trace(TAG, "read247PPiSamples: from \(fromDate) to \(toDate)")
         let plannedListOperation = automaticSamplesDirectoryReadOperation()
         let response = try await client.request(try PolarRuntimePlanner.fileOperationBytes(plannedListOperation))
@@ -85,7 +98,7 @@ internal class PolarAutomaticSamplesUtils {
                 let sampleDate = DateComponents(year: Int(sampleDateProto.year), month: Int(sampleDateProto.month), day: Int(sampleDateProto.day))
                 guard requestedDays.contains(basicDateString(sampleDateProto)) else { continue }
                 let samples = sampleSessions.ppiSamples.map { Polar247PPiSamplesData.fromPbPPiDataSamples(ppiData: $0) }
-                let date = Calendar.current.dateComponents([.year, .month, .day], from: Calendar.current.date(from: sampleDate)!)
+                let date = PolarTimeUtils.utcCalendar.dateComponents([.year, .month, .day], from: PolarTimeUtils.utcCalendar.date(from: sampleDate)!)
                 results.append(Polar247PPiSamplesData(date: date, samples: samples))
             } catch {
                 BleLogger.error(TAG, "Failed to parse PPI in \(fileName): \(error)")

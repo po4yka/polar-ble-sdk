@@ -235,9 +235,16 @@ class MockSearchAdvertisementContent: BleAdvertisementContent {
     var mockName: String = ""
     var mockPolarDeviceType: String = ""
     var mockPolarDeviceIdUntouched: String = ""
-    var mockMedianRssi: Int32 = -70
+    var mockMedianRssi: Int32 = -70 {
+        didSet { rssiFilter.processRssiValueUpdated(mockMedianRssi) }
+    }
     var mockIsConnectable: Bool = true
     var mockContainsService: Bool = true
+
+    override init() {
+        super.init()
+        rssiFilter.processRssiValueUpdated(-70)
+    }
 
     override var name: String { mockName }
     override var polarDeviceType: String { mockPolarDeviceType }
@@ -306,7 +313,7 @@ class MockAutoConnectBleApiImpl {
     func startAutoConnectToDevice(_ rssi: Int, service: CBUUID?, polarDeviceType: String?) -> AnyPublisher<Never, Error> {
         return searchSubject
             .filter { sess -> Bool in
-                return sess.advertisementContent.medianRssi >= rssi &&
+                return Int(sess.advertisementContent.medianRssi) >= rssi &&
                     sess.isConnectable() &&
                     (polarDeviceType == nil || polarDeviceType == sess.advertisementContent.polarDeviceType) &&
                     (service == nil || sess.advertisementContent.containsService(service!))
@@ -410,6 +417,89 @@ struct _MockSearchSubjectProxy {
     let owner: MockHrBroadcastBleApiImpl
     func send(_ session: BleDeviceSession) { owner.send(session) }
     func send(completion: Subscribers.Completion<Error>) { owner.sendCompletion(completion) }
+}
+
+// MARK: - MockBlePfcClient
+
+class MockBlePfcClient: BlePfcClient {
+    var commandCalls: [(command: BlePfcClient.PfcMessage, value: [UInt8])] = []
+    var commandReturnValue: Result<Pfc.PfcResponse, Error> = .success(Pfc.PfcResponse())
+
+    override public func sendControlPointCommand(_ command: BlePfcClient.PfcMessage, value: [UInt8]) async throws -> Pfc.PfcResponse {
+        commandCalls.append((command: command, value: value))
+        switch commandReturnValue {
+        case .success(let response): return response
+        case .failure(let error): throw error
+        }
+    }
+}
+
+// MARK: - BleDeviceSession backed by MockBlePfcClient
+
+class MockPfcBleDeviceSession: BleDeviceSession {
+    let mockPfcClient: MockBlePfcClient
+    private let pfcClientBase: BleGattClientBase
+
+    init(mockPfcClient: MockBlePfcClient) {
+        self.mockPfcClient = mockPfcClient
+        pfcClientBase = unsafeBitCast(mockPfcClient, to: BleGattClientBase.self)
+        super.init(UUID(), advertisementContent: MockAdvertisementContent())
+    }
+
+    override func fetchGattClient(_ serviceUuid: CBUUID) -> BleGattClientBase? {
+        serviceUuid == BlePfcClient.PFC_SERVICE ? pfcClientBase : nil
+    }
+}
+
+// MARK: - ServiceClientUtils stub for PFC tests
+
+class MockPfcServiceClientUtils: PolarServiceClientUtils {
+    var stubSession: BleDeviceSession?
+    var stubError: Error?
+
+    required init(listener: CBDeviceListenerImpl) {
+        super.init(listener: listener)
+    }
+
+    override func sessionPfcClientReady(_ identifier: String) throws -> BleDeviceSession {
+        if let error = stubError { throw error }
+        return stubSession!
+    }
+
+    override func waitPfcClientReady(_ identifier: String) async throws -> BleDeviceSession {
+        if let error = stubError { throw error }
+        return stubSession!
+    }
+
+    override func sessionFtpClientReady(_ identifier: String) throws -> BleDeviceSession {
+        throw PolarErrors.serviceNotFound
+    }
+}
+
+// MARK: - PolarBleApiImpl subclass for PFC tests
+
+class MockPfcBleApiImpl: PolarBleApiImpl {
+    required init(_ queue: DispatchQueue, features: Set<PolarBleSdkFeature>, restoreIdentifier: String? = nil) {
+        fatalError("use init(mockPfcSession:)")
+    }
+
+    init(mockPfcSession: MockPfcBleDeviceSession) {
+        pfcSession = mockPfcSession
+        super.init(DispatchQueue(label: "test.pfc"), features: [], restoreIdentifier: nil)
+    }
+
+    let pfcSession: MockPfcBleDeviceSession
+
+    private lazy var _pfcServiceUtils: MockPfcServiceClientUtils = {
+        let utils = MockPfcServiceClientUtils(listener: MockCBDeviceListenerImpl())
+        utils.stubSession = pfcSession
+        return utils
+    }()
+
+    override var serviceClientUtils: PolarServiceClientUtils { _pfcServiceUtils }
+
+    /// Exposes the mock utils so individual tests can modify `stubSession` or `stubError`.
+    var pfcServiceUtils: MockPfcServiceClientUtils { _pfcServiceUtils }
 }
 
 // MARK: - MockBlePmdClient
@@ -585,6 +675,7 @@ class MockDisconnectBleApiImpl {
 
 public class MockBlePsFtpClient: BlePsFtpClient, @unchecked Sendable {
     private let requestCallsLock = NSLock()
+    private let queryCallsLock = NSLock()
     public var requestCalls: [Data] = []
     public var requestReturnValues: [Result<Data, Error>] = []
     public var requestReturnValueClosure: ((Data) async throws -> Data)?
@@ -634,18 +725,20 @@ public class MockBlePsFtpClient: BlePsFtpClient, @unchecked Sendable {
     }
 
     override public func query(_ id: Int, parameters: NSData?) async throws -> NSData {
+        queryCallsLock.lock()
         queryCalls.append((id: id, parameters: parameters))
         if let closure = queryReturnValueClosure {
+            queryCallsLock.unlock()
             return NSData(data: try await closure(id, parameters))
         }
+        let result: Result<Data, Error>
         if !queryReturnValues.isEmpty {
-            let result = queryReturnValues.removeFirst()
-            switch result {
-            case .success(let data): return NSData(data: data)
-            case .failure(let error): throw error
-            }
+            result = queryReturnValues.removeFirst()
+        } else {
+            result = queryReturnValue ?? .success(Data())
         }
-        switch queryReturnValue ?? .success(Data()) {
+        queryCallsLock.unlock()
+        switch result {
         case .success(let data): return NSData(data: data)
         case .failure(let error): throw error
         }

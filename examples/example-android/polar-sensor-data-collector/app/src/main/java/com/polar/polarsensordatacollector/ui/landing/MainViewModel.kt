@@ -17,8 +17,11 @@ import com.polar.sdk.api.model.PolarHrBroadcastData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -88,6 +91,9 @@ class MainViewModel @Inject constructor(
     val hrData: StateFlow<PolarHrBroadcastData?> = _hrData.asStateFlow()
 
     private var hrJob: kotlinx.coroutines.Job? = null
+
+    private val _removeOnlineOfflineFragments = MutableSharedFlow<Unit>()
+    val removeOnlineOfflineFragments: SharedFlow<Unit> = _removeOnlineOfflineFragments.asSharedFlow()
 
     enum class DeviceConnectionStates {
         PHONE_BLE_OFF, NOT_CONNECTED, CONNECTING_TO_SELECTED_DEVICE, CONNECTED, DISCONNECTING_FROM_SELECTED_DEVICE
@@ -191,6 +197,12 @@ class MainViewModel @Inject constructor(
 
     fun isConnected(): Boolean {
         return _uiConnectionState.value.state == DeviceConnectionStates.CONNECTED
+    }
+
+    fun requestRemoveOnlineOfflineFragments() {
+        viewModelScope.launch {
+            _removeOnlineOfflineFragments.emit(Unit)
+        }
     }
 
     private fun deviceDisconnected(deviceId: String) {

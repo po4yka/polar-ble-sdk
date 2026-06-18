@@ -5,10 +5,10 @@ import Foundation
 import PolarBleSdkShared
 #endif
 
-let SERVICE_DATALOG_CONFIG_FILEPATH="/SDLOGS.BPB"
+let LOG_CONFIG_PATH = "/SDLOGS.BPB"
 
-public struct SDLogConfig {
-    
+public struct LogConfig {
+
     public var ohrLogEnabled: Bool? = nil
     public var ppiLogEnabled: Bool? = nil
     public var accelerationLogEnabled: Bool? = nil
@@ -65,9 +65,9 @@ public struct SDLogConfig {
         self.magnetometerFrequency = magnetometerFrequency
     }
     
-    static func fromProto(proto: Data_PbSensorDataLog) -> SDLogConfig {
-        
-        return SDLogConfig(
+    static func fromProto(proto: Data_PbSensorDataLog) -> LogConfig {
+
+        return LogConfig(
             ppiLogEnabled: proto.hasPpiLogEnabled ? proto.ppiLogEnabled : nil,
             accelerationLogEnabled: proto.hasAccelerationLogEnabled ? proto.accelerationLogEnabled : nil,
             caloriesLogEnabled: proto.hasCaloriesLogEnabled ? proto.caloriesLogEnabled : nil,
@@ -96,39 +96,39 @@ public struct SDLogConfig {
         )
     }
     
-    static func toProto(sdLogConfig: SDLogConfig) -> Data_PbSensorDataLog{
+    static func toProto(logConfig: LogConfig) -> Data_PbSensorDataLog {
         var pbSensorDataLog = Data_PbSensorDataLog()
-        
-        if (sdLogConfig.ohrLogEnabled != nil) {pbSensorDataLog.ohrLogEnabled = sdLogConfig.ohrLogEnabled!}
-        if (sdLogConfig.ppiLogEnabled != nil) {pbSensorDataLog.ppiLogEnabled = sdLogConfig.ppiLogEnabled!}
-        if (sdLogConfig.accelerationLogEnabled != nil) {pbSensorDataLog.accelerationLogEnabled = sdLogConfig.accelerationLogEnabled!}
-        if (sdLogConfig.caloriesLogEnabled != nil) {pbSensorDataLog.caloriesLogEnabled = sdLogConfig.caloriesLogEnabled!}
-        if (sdLogConfig.gpsLogEnabled != nil) {pbSensorDataLog.gpsLogEnabled = sdLogConfig.gpsLogEnabled!}
-        if (sdLogConfig.gpsNmeaLogEnabled != nil) {pbSensorDataLog.gpsNmeaLogEnabled = sdLogConfig.gpsNmeaLogEnabled!}
-        if (sdLogConfig.magnetometerLogEnabled != nil) {pbSensorDataLog.magnetometerLogEnabled = sdLogConfig.magnetometerLogEnabled!}
-        if (sdLogConfig.tapLogEnabled != nil) {pbSensorDataLog.tapLogEnabled = sdLogConfig.tapLogEnabled!}
-        if (sdLogConfig.barometerLogEnabled != nil) {pbSensorDataLog.barometerLogEnabled = sdLogConfig.barometerLogEnabled!}
-        if (sdLogConfig.gyroscopeLogEnabled != nil) {pbSensorDataLog.gyroscopeLogEnabled = sdLogConfig.gyroscopeLogEnabled!}
-        if (sdLogConfig.sleepLogEnabled != nil) {pbSensorDataLog.sleepLogEnabled = sdLogConfig.sleepLogEnabled!}
-        if (sdLogConfig.slopeLogEnabled != nil) {pbSensorDataLog.slopeLogEnabled = sdLogConfig.slopeLogEnabled!}
-        if (sdLogConfig.ambientLightLogEnabled != nil) {pbSensorDataLog.ambientLightLogEnabled = sdLogConfig.ambientLightLogEnabled!}
-        if (sdLogConfig.tlrLogEnabled != nil) {pbSensorDataLog.tlrLogEnabled = sdLogConfig.tlrLogEnabled!}
-        if (sdLogConfig.ondemandLogEnabled != nil) {pbSensorDataLog.ondemandLogEnabled = sdLogConfig.ondemandLogEnabled!}
-        if (sdLogConfig.capsenseLogEnabled != nil) {pbSensorDataLog.capsenseLogEnabled = sdLogConfig.capsenseLogEnabled!}
-        if (sdLogConfig.fusionLogEnabled != nil) {pbSensorDataLog.fusionLogEnabled = sdLogConfig.fusionLogEnabled!}
-        if (sdLogConfig.metLogEnabled != nil) {pbSensorDataLog.metLogEnabled = sdLogConfig.metLogEnabled!}
-        if (sdLogConfig.verticalAccLogEnabled != nil) {pbSensorDataLog.verticalAccLogEnabled = sdLogConfig.verticalAccLogEnabled!}
-        if (sdLogConfig.amdLogEnabled != nil) {pbSensorDataLog.amdLogEnabled = sdLogConfig.amdLogEnabled!}
-        if (sdLogConfig.skinTemperatureLogEnabled != nil) {pbSensorDataLog.skinTemperatureLogEnabled = sdLogConfig.skinTemperatureLogEnabled!}
-        if (sdLogConfig.compassLogEnabled != nil) {pbSensorDataLog.compassLogEnabled = sdLogConfig.compassLogEnabled!}
-        if (sdLogConfig.speed3DLogEnabled != nil) {pbSensorDataLog.speed3DLogEnabled = sdLogConfig.speed3DLogEnabled!}
-        if let magnetometerFrequency = sdLogConfig.magnetometerFrequency {
+
+        if (logConfig.ohrLogEnabled != nil) {pbSensorDataLog.ohrLogEnabled = logConfig.ohrLogEnabled!}
+        if (logConfig.ppiLogEnabled != nil) {pbSensorDataLog.ppiLogEnabled = logConfig.ppiLogEnabled!}
+        if (logConfig.accelerationLogEnabled != nil) {pbSensorDataLog.accelerationLogEnabled = logConfig.accelerationLogEnabled!}
+        if (logConfig.caloriesLogEnabled != nil) {pbSensorDataLog.caloriesLogEnabled = logConfig.caloriesLogEnabled!}
+        if (logConfig.gpsLogEnabled != nil) {pbSensorDataLog.gpsLogEnabled = logConfig.gpsLogEnabled!}
+        if (logConfig.gpsNmeaLogEnabled != nil) {pbSensorDataLog.gpsNmeaLogEnabled = logConfig.gpsNmeaLogEnabled!}
+        if (logConfig.magnetometerLogEnabled != nil) {pbSensorDataLog.magnetometerLogEnabled = logConfig.magnetometerLogEnabled!}
+        if (logConfig.tapLogEnabled != nil) {pbSensorDataLog.tapLogEnabled = logConfig.tapLogEnabled!}
+        if (logConfig.barometerLogEnabled != nil) {pbSensorDataLog.barometerLogEnabled = logConfig.barometerLogEnabled!}
+        if (logConfig.gyroscopeLogEnabled != nil) {pbSensorDataLog.gyroscopeLogEnabled = logConfig.gyroscopeLogEnabled!}
+        if (logConfig.sleepLogEnabled != nil) {pbSensorDataLog.sleepLogEnabled = logConfig.sleepLogEnabled!}
+        if (logConfig.slopeLogEnabled != nil) {pbSensorDataLog.slopeLogEnabled = logConfig.slopeLogEnabled!}
+        if (logConfig.ambientLightLogEnabled != nil) {pbSensorDataLog.ambientLightLogEnabled = logConfig.ambientLightLogEnabled!}
+        if (logConfig.tlrLogEnabled != nil) {pbSensorDataLog.tlrLogEnabled = logConfig.tlrLogEnabled!}
+        if (logConfig.ondemandLogEnabled != nil) {pbSensorDataLog.ondemandLogEnabled = logConfig.ondemandLogEnabled!}
+        if (logConfig.capsenseLogEnabled != nil) {pbSensorDataLog.capsenseLogEnabled = logConfig.capsenseLogEnabled!}
+        if (logConfig.fusionLogEnabled != nil) {pbSensorDataLog.fusionLogEnabled = logConfig.fusionLogEnabled!}
+        if (logConfig.metLogEnabled != nil) {pbSensorDataLog.metLogEnabled = logConfig.metLogEnabled!}
+        if (logConfig.verticalAccLogEnabled != nil) {pbSensorDataLog.verticalAccLogEnabled = logConfig.verticalAccLogEnabled!}
+        if (logConfig.amdLogEnabled != nil) {pbSensorDataLog.amdLogEnabled = logConfig.amdLogEnabled!}
+        if (logConfig.skinTemperatureLogEnabled != nil) {pbSensorDataLog.skinTemperatureLogEnabled = logConfig.skinTemperatureLogEnabled!}
+        if (logConfig.compassLogEnabled != nil) {pbSensorDataLog.compassLogEnabled = logConfig.compassLogEnabled!}
+        if (logConfig.speed3DLogEnabled != nil) {pbSensorDataLog.speed3DLogEnabled = logConfig.speed3DLogEnabled!}
+        if let magnetometerFrequency = logConfig.magnetometerFrequency {
             pbSensorDataLog.magnetometerLogFrequency = magnetometerLogFrequencyProtoValue(value: magnetometerFrequency)
         }
-        if let logTrigger = sdLogConfig.logTrigger {
+        if let logTrigger = logConfig.logTrigger {
             pbSensorDataLog.logTrigger = logTriggerProtoValue(value: logTrigger)
         }
-        
+
         return pbSensorDataLog
     }
 
@@ -156,6 +156,14 @@ public struct SDLogConfig {
         }
         #endif
         return Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: value)!
+    }
+}
+
+public typealias SDLogConfig = LogConfig
+
+extension LogConfig {
+    static func toProto(sdLogConfig: LogConfig) -> Data_PbSensorDataLog {
+        return toProto(logConfig: sdLogConfig)
     }
 }
 
