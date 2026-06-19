@@ -144,16 +144,26 @@ public struct PolarFirstTimeUseConfig {
         let utcTimeZone = TimeZone(secondsFromGMT: 0)!
         let components = calendar.dateComponents(in: utcTimeZone, from: deviceTimeDate)
 
+        guard let year = components.year,
+              let month = components.month,
+              let day = components.day,
+              let hour = components.hour,
+              let minute = components.minute,
+              let second = components.second else {
+            BleLogger.error("Failed to decompose deviceTimeDate into calendar components")
+            return nil
+        }
+
         let lastModified = PbSystemDateTime.with {
             $0.date = PbDate.with {
-                $0.year = UInt32(components.year!)
-                $0.month = UInt32(components.month!)
-                $0.day = UInt32(components.day!)
+                $0.year = UInt32(year)
+                $0.month = UInt32(month)
+                $0.day = UInt32(day)
             }
             $0.time = PbTime.with {
-                $0.hour = UInt32(components.hour!)
-                $0.minute = UInt32(components.minute!)
-                $0.seconds = UInt32(components.second!)
+                $0.hour = UInt32(hour)
+                $0.minute = UInt32(minute)
+                $0.seconds = UInt32(second)
             }
             $0.trusted = true
         }
