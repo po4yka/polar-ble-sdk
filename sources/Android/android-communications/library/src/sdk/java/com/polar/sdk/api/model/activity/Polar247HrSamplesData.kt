@@ -66,7 +66,8 @@ enum class AutomaticSampleTriggerType(val value: Int) {
     companion object {
         infix fun fromProto(value: Int): AutomaticSampleTriggerType {
             return PolarSdkModelAdapter.automaticHrTriggerName(value)?.let { sharedName ->
-                entries.first { trigger -> trigger.name == sharedName }
+                entries.firstOrNull { trigger -> trigger.name == sharedName }
+                    ?: error("Unknown trigger name '$sharedName' for proto value $value")
             } ?: error("Unknown automatic sample trigger type $value")
         }
     }
