@@ -4014,29 +4014,30 @@ private extension PpgData {
         var dataType: PpgDataType! = .unknown
 
         for sample in self.samples {
+            guard let ts = sample.timeStamp else { continue }
             if (sample.frameType == PmdDataFrameType.type_0) {
                 let ppgData = sample as! PpgDataFrameType0
-                polarSamples.append((timeStamp: sample.timeStamp!, channelSamples: [ppgData.ppgDataSamples[0], ppgData.ppgDataSamples[1], ppgData.ppgDataSamples[2], ppgData.ambientSample ], statusBits: nil ))
+                polarSamples.append((timeStamp: ts, channelSamples: [ppgData.ppgDataSamples[0], ppgData.ppgDataSamples[1], ppgData.ppgDataSamples[2], ppgData.ambientSample ], statusBits: nil ))
                 dataType = PpgDataType.ppg3_ambient1
             }  else if (sample.frameType == PmdDataFrameType.type_6) {
                 let ppgData = sample as! PpgDataFrameType6
-                polarSamples.append((timeStamp: sample.timeStamp!, channelSamples: [ppgData.sportId], statusBits: nil))
+                polarSamples.append((timeStamp: ts, channelSamples: [ppgData.sportId], statusBits: nil))
                 dataType = PpgDataType.ppg1
             } else if (sample.frameType == PmdDataFrameType.type_7) {
                 let ppgData = sample as! PpgDataFrameType7
-                polarSamples.append((timeStamp: sample.timeStamp!, channelSamples: ppgData.ppgDataSamples, statusBits: nil))
+                polarSamples.append((timeStamp: ts, channelSamples: ppgData.ppgDataSamples, statusBits: nil))
                 dataType = PpgDataType.ppg17
             } else if (sample.frameType == PmdDataFrameType.type_10) {
                 let ppgData = sample as! PpgDataFrameType10
-                polarSamples.append((timeStamp: sample.timeStamp!, channelSamples: ppgData.greenSamples + ppgData.redSamples + ppgData.irSamples, statusBits: ppgData.statusBits))
+                polarSamples.append((timeStamp: ts, channelSamples: ppgData.greenSamples + ppgData.redSamples + ppgData.irSamples, statusBits: ppgData.statusBits))
                 dataType = PpgDataType.ppg21
             } else if (sample.frameType == PmdDataFrameType.type_9) {
                 let ppgData = sample as! PpgDataFrameType9
-                polarSamples.append((timeStamp: sample.timeStamp!, channelSamples: ppgData.ppgDataSamples, statusBits: nil))
+                polarSamples.append((timeStamp: ts, channelSamples: ppgData.ppgDataSamples, statusBits: nil))
                 dataType = PpgDataType.ppg3
             } else if (sample.frameType == PmdDataFrameType.type_13) {
                 let ppgData = sample as! PpgDataFrameType13
-                polarSamples.append((timeStamp: sample.timeStamp!, channelSamples: [ppgData.ppgDataSamples[0], ppgData.ppgDataSamples[1]], statusBits: ppgData.statusBits ))
+                polarSamples.append((timeStamp: ts, channelSamples: [ppgData.ppgDataSamples[0], ppgData.ppgDataSamples[1]], statusBits: ppgData.statusBits ))
                 dataType = PpgDataType.ppg2
             }
         }
