@@ -48,8 +48,10 @@ class PolarSensorSetting {
         TM_SKIN_TEMPERATURE(1),
         TM_CORE_TEMPERATURE(2)
     }
-    var settings: MutableMap<SettingType, Set<Int>> = mutableMapOf()
-        private set
+    private val _settings: MutableMap<SettingType, Set<Int>> = mutableMapOf()
+
+    val settings: Map<SettingType, Set<Int>>
+        get() = _settings
 
     /**
      * Constructor with selected settings
@@ -63,7 +65,7 @@ class PolarSensorSetting {
             if (value <= 0) {
                 throw PolarInvalidSensorSettingsError("Invalid value $value for $key, must be > 0")
             }
-            this.settings[key] = setOf(value)
+            _settings[key] = setOf(value)
         }
     }
 
@@ -75,9 +77,9 @@ class PolarSensorSetting {
      */
     @Throws(PolarInvalidSensorSettingsError::class)
     internal constructor(setting: List<Pair<SettingType, Set<Int>>>) {
-        settings = setting.toMap().toMutableMap()
+        _settings.putAll(setting.toMap())
 
-        for ((key, values) in settings) {
+        for ((key, values) in _settings) {
             if (values.isEmpty()) {
                 throw PolarInvalidSensorSettingsError("Missing value for $key")
             }
