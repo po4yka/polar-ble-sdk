@@ -136,27 +136,27 @@ public struct LogConfig {
     private static func logTriggerProtoValue(value: Int) -> Data_PbSensorDataLog.PbLogTrigger {
         #if canImport(PolarBleSdkShared)
         guard value >= Int(Int32.min) && value <= Int(Int32.max) else {
-            return Data_PbSensorDataLog.PbLogTrigger(rawValue: value)!
+            return Data_PbSensorDataLog.PbLogTrigger(rawValue: value) ?? .logTriggerSystem
         }
         if let sharedValue = SDLogConfigRuntimePlanner.logTriggerValue(value: value),
            let proto = Data_PbSensorDataLog.PbLogTrigger(rawValue: Int(truncating: sharedValue)) {
             return proto
         }
         #endif
-        return Data_PbSensorDataLog.PbLogTrigger(rawValue: value)!
+        return Data_PbSensorDataLog.PbLogTrigger(rawValue: value) ?? .logTriggerSystem
     }
 
     private static func magnetometerLogFrequencyProtoValue(value: Int) -> Data_PbSensorDataLog.PbMagnetometerLogFrequency {
         #if canImport(PolarBleSdkShared)
         guard value >= Int(Int32.min) && value <= Int(Int32.max) else {
-            return Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: value)!
+            return Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: value) ?? .magLog10Hz
         }
         if let sharedValue = SDLogConfigRuntimePlanner.magnetometerFrequencyValue(value: value),
            let proto = Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: Int(truncating: sharedValue)) {
             return proto
         }
         #endif
-        return Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: value)!
+        return Data_PbSensorDataLog.PbMagnetometerLogFrequency(rawValue: value) ?? .magLog10Hz
     }
 }
 
