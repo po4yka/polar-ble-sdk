@@ -169,7 +169,7 @@ class ConnectionHandler(
                 val uuids = if (content.containsKey(AD_TYPE.GAP_ADTYPE_16BIT_MORE)) content[AD_TYPE.GAP_ADTYPE_16BIT_MORE] else content[AD_TYPE.GAP_ADTYPE_16BIT_COMPLETE]
                 var i = 0
                 if (uuids != null) {
-                    while (i < uuids.size) {
+                    while (i + 1 < uuids.size) {
                         val hexUUid = String.format("%02X%02X", uuids[i + 1], uuids[i])
                         if (session.connectionUuids.contains(hexUUid)) {
                             return true
