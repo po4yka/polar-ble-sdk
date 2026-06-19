@@ -64,7 +64,7 @@ public struct PolarFirstTimeUseConfig {
                     return proto
                 }
                 #endif
-                return Data_PbUserTrainingBackground.TrainingBackground(rawValue: trainingBackground.rawValue)!
+                return Data_PbUserTrainingBackground.TrainingBackground(rawValue: trainingBackground.rawValue) ?? .occasional
             }
         }
 
