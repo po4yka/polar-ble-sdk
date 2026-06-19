@@ -903,6 +903,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                     recurseDeep = true)
                     .map { entry: Pair<String, Long> ->
                         val components = entry.first.split("/").toTypedArray()
+                        if (components.size <= 5) {
+                            throw PolarInvalidArgument("Malformed POLAR_FILE_SYSTEM_V2 exercise path: ${entry.first}")
+                        }
                         val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss", Locale.getDefault())
                         val date = LocalDateTime.parse(components[3] + " " + components[5], dateTimeFormatter)
                         PolarExerciseEntry(entry.first, date, components[3] + components[5])
@@ -918,6 +921,9 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                     recurseDeep = true)
                     .map { entry: Pair<String, Long> ->
                         val components = entry.first.split("/").toTypedArray()
+                        if (components.size <= 1) {
+                            throw PolarInvalidArgument("Malformed H10 exercise path: ${entry.first}")
+                        }
                         PolarExerciseEntry(entry.first, LocalDateTime.now(), components[1])
                     }
                     .catch { throwable -> throw handleError(throwable) }
