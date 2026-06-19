@@ -69,6 +69,7 @@ class BDDeviceListenerImpl(
     private var powerStateChangedCallback: BlePowerStateChangedCallback? = null
     private var preferredMTU = ConnectionHandler.POLAR_PREFERRED_MTU
     private val scope = CoroutineScope(Dispatchers.IO)
+    @Volatile
     private var indicatesPairingProblem: kotlin.Pair<Boolean, Int> = kotlin.Pair(false, -1)
 
     override fun bleActive(): Boolean {
