@@ -485,8 +485,11 @@ internal class PolarTrainingSessionUtils {
         var status: Int32 = Z_OK
         let bufferSize = 16384
         var output = Data(capacity: data.count * 2)
-        data.withUnsafeBytes { (srcPointer: UnsafeRawBufferPointer) in
-            stream.next_in = UnsafeMutablePointer<Bytef>(mutating: srcPointer.bindMemory(to: Bytef.self).baseAddress!)
+        try data.withUnsafeBytes { (srcPointer: UnsafeRawBufferPointer) throws in
+            guard let base = srcPointer.bindMemory(to: Bytef.self).baseAddress else {
+                throw NSError(domain: "DecompressionError", code: Int(Z_DATA_ERROR), userInfo: [NSLocalizedDescriptionKey: "Empty or nil input buffer"])
+            }
+            stream.next_in = UnsafeMutablePointer<Bytef>(mutating: base)
             stream.avail_in = uInt(data.count)
             status = inflateInit2_(&stream, 15 + 16, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
         }
