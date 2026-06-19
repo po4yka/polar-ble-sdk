@@ -4,14 +4,15 @@ import android.bluetooth.BluetoothGattCharacteristic
 
 class AttributeOperation : Comparable<AttributeOperation> {
     override fun compareTo(another: AttributeOperation): Int {
-        if (another.attributeOperation == AttributeOperationCommand.DESCRIPTOR_WRITE &&
-            another.isPartOfPrimaryService
-        ) {
-            return 1
-        } else if (another.attributeOperation == AttributeOperationCommand.DESCRIPTOR_WRITE) {
-            return 0
+        return this.priority().compareTo(another.priority())
+    }
+
+    private fun priority(): Int {
+        return when {
+            attributeOperation == AttributeOperationCommand.DESCRIPTOR_WRITE && isPartOfPrimaryService -> 0
+            attributeOperation == AttributeOperationCommand.DESCRIPTOR_WRITE -> 1
+            else -> 2
         }
-        return -1
     }
 
     enum class AttributeOperationCommand {
