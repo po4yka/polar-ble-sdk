@@ -17,9 +17,6 @@ import com.polar.sdk.api.errors.PolarDeviceNotFound
 import com.polar.sdk.api.errors.PolarInvalidArgument
 import com.polar.sdk.api.errors.PolarNotificationNotEnabled
 import com.polar.sdk.api.errors.PolarServiceNotAvailable
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
 import java.util.UUID
 
 private val ANDROID_BLUETOOTH_ADDRESS_REGEX = Regex("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
@@ -27,7 +24,7 @@ private val ANDROID_BLUETOOTH_ADDRESS_REGEX = Regex("^([0-9A-Fa-f]{2}[:-]){5}([0
 internal object PolarServiceClientUtils {
 
     @Throws(Throwable::class)
-    internal suspend fun sessionHrClientReady(identifier: String, listener: BleDeviceListener?): BleDeviceSession {
+    internal fun sessionHrClientReady(identifier: String, listener: BleDeviceListener?): BleDeviceSession {
         val session = sessionServiceReady(identifier, HR_SERVICE, listener)
         val client = session.fetchClient(HR_SERVICE) as BleHrClient? ?: throw PolarServiceNotAvailable()
         val hrMeasurementChr = client.getNotificationAtomicInteger(HR_MEASUREMENT)
@@ -38,7 +35,7 @@ internal object PolarServiceClientUtils {
     }
 
     @Throws(Throwable::class)
-    internal suspend fun sessionPmdClientReady(identifier: String, listener: BleDeviceListener?): BleDeviceSession {
+    internal fun sessionPmdClientReady(identifier: String, listener: BleDeviceListener?): BleDeviceSession {
         val session = sessionServiceReady(identifier, BlePMDClient.PMD_SERVICE, listener)
         val client = session.fetchClient(BlePMDClient.PMD_SERVICE) as BlePMDClient? ?: throw PolarServiceNotAvailable()
         val pair = client.getNotificationAtomicInteger(BlePMDClient.PMD_CP)
@@ -50,7 +47,7 @@ internal object PolarServiceClientUtils {
     }
 
     @Throws(Throwable::class)
-    internal suspend fun sessionPsFtpClientReady(identifier: String, listener: BleDeviceListener?): BleDeviceSession {
+    internal fun sessionPsFtpClientReady(identifier: String, listener: BleDeviceListener?): BleDeviceSession {
         val session = sessionServiceReady(identifier, BlePsFtpUtils.RFC77_PFTP_SERVICE, listener)
         val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as BlePsFtpClient? ?: throw PolarServiceNotAvailable()
         val pair = client.getNotificationAtomicInteger(BlePsFtpUtils.RFC77_PFTP_MTU_CHARACTERISTIC)
@@ -61,7 +58,7 @@ internal object PolarServiceClientUtils {
     }
 
     @Throws(Throwable::class)
-    internal suspend fun sessionPsPfcClientReady(identifier: String, listener: BleDeviceListener?): BleDeviceSession {
+    internal fun sessionPsPfcClientReady(identifier: String, listener: BleDeviceListener?): BleDeviceSession {
         val session = sessionServiceReady(identifier, PFC_SERVICE, listener)
         val client = session.fetchClient(PFC_SERVICE) as BlePfcClient? ?: throw PolarServiceNotAvailable()
         if (client.isServiceDiscovered) {
@@ -71,7 +68,7 @@ internal object PolarServiceClientUtils {
     }
 
     @Throws(Throwable::class)
-    internal suspend fun sessionServiceReady(identifier: String, service: UUID, listener: BleDeviceListener?): BleDeviceSession {
+    internal fun sessionServiceReady(identifier: String, service: UUID, listener: BleDeviceListener?): BleDeviceSession {
         val session = fetchSession(identifier, listener)
             ?: throw PolarDeviceNotFound()
 
@@ -155,14 +152,17 @@ internal object PolarServiceClientUtils {
         return null
     }
 
-    private suspend fun waitForServiceDiscovery(client: BleGattBase, timeoutMs: Long): Boolean {
+    private fun waitForServiceDiscovery(client: BleGattBase, timeoutMs: Long): Boolean {
         val start = System.currentTimeMillis()
         while (!client.isServiceDiscovered) {
-            currentCoroutineContext().ensureActive()
             if (System.currentTimeMillis() - start > timeoutMs) {
                 return false
             }
-            delay(100)
+            try {
+                Thread.sleep(100)
+            } catch (ie: InterruptedException) {
+                return false
+            }
         }
         return true
     }
