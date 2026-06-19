@@ -22,6 +22,7 @@ internal class GattCallback(
 ) : BluetoothGattCallback() {
 
     private val scope = CoroutineScope(Dispatchers.IO)
+    @Volatile
     private var indicatesPairingProblem: Pair<Boolean, Int> = Pair(false, -1)
 
     fun cancel() {
