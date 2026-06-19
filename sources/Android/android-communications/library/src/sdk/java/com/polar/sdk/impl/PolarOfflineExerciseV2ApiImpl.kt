@@ -22,6 +22,7 @@ import fi.polar.remote.representation.protobuf.Structures
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import protocol.PftpError.PbPFtpError
 import protocol.PftpRequest
@@ -144,42 +145,48 @@ class PolarOfflineExerciseV2ApiImpl(
     }
 
     override fun listOfflineExercisesV2(identifier: String, directoryPath: String): Flow<PolarExerciseEntry> {
-        val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
-        val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as? BlePsFtpClient
-            ?: throw PolarServiceNotAvailable()
+        return flow {
+            val session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
+            val client = session.fetchClient(BlePsFtpUtils.RFC77_PFTP_SERVICE) as? BlePsFtpClient
+                ?: throw PolarServiceNotAvailable()
 
-        return PolarFileUtils.fetchRecursively(
-            client = client,
-            path = directoryPath,
-            condition = { entry ->
-                entry == PolarOfflineExerciseV2Api.EXERCISE_SAMPLES_FILE ||
-                        entry.endsWith("/${PolarOfflineExerciseV2Api.EXERCISE_SAMPLES_FILE}") ||
-                        entry.endsWith("/")
-            },
-            tag = TAG,
-            recurseDeep = true
-        )
-            .filter { entry ->
-                !entry.first.endsWith("/") &&
-                        entry.first.endsWith(PolarOfflineExerciseV2Api.EXERCISE_SAMPLES_FILE)
-            }
-            .map { entry ->
-                val components = entry.first.split("/").toTypedArray()
-                val fileName = components.lastOrNull() ?: entry.first
-                PolarExerciseEntry(
-                    path = entry.first,
-                    date = LocalDateTime.now(),
-                    identifier = fileName
-                )
-            }
-            .catch { throwable ->
-                if (throwable is PftpResponseError && throwable.error == PbPFtpError.SYSTEM_BUSY.number) {
-                    BleLogger.e(TAG, "Device BUSY (202) - Stop exercise first")
-                    throw Exception("Device is BUSY (202) - Exercise running. Stop exercise first before listing.")
-                } else {
-                    throw handleError(throwable)
+            val entries = PolarFileUtils.fetchRecursively(
+                client = client,
+                path = directoryPath,
+                condition = { entry ->
+                    entry == PolarOfflineExerciseV2Api.EXERCISE_SAMPLES_FILE ||
+                            entry.endsWith("/${PolarOfflineExerciseV2Api.EXERCISE_SAMPLES_FILE}") ||
+                            entry.endsWith("/")
+                },
+                tag = TAG,
+                recurseDeep = true
+            )
+                .filter { entry ->
+                    !entry.first.endsWith("/") &&
+                            entry.first.endsWith(PolarOfflineExerciseV2Api.EXERCISE_SAMPLES_FILE)
                 }
-            }
+                .map { entry ->
+                    val components = entry.first.split("/").toTypedArray()
+                    val fileName = components.lastOrNull() ?: entry.first
+                    // DM exercise paths do not encode a date; LocalDateTime.MIN is used as a
+                    // sentinel indicating that the exercise date is unavailable from listing.
+                    PolarExerciseEntry(
+                        path = entry.first,
+                        date = LocalDateTime.MIN,
+                        identifier = fileName
+                    )
+                }
+                .catch { throwable ->
+                    if (throwable is PftpResponseError && throwable.error == PbPFtpError.SYSTEM_BUSY.number) {
+                        BleLogger.e(TAG, "Device BUSY (202) - Stop exercise first")
+                        throw Exception("Device is BUSY (202) - Exercise running. Stop exercise first before listing.")
+                    } else {
+                        throw handleError(throwable)
+                    }
+                }
+
+            entries.collect { emit(it) }
+        }
     }
 
     override suspend fun fetchOfflineExerciseV2(
