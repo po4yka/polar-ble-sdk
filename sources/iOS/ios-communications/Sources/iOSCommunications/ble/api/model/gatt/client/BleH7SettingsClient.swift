@@ -85,11 +85,15 @@ public class BleH7SettingsClient: BleGattClientBase, @unchecked Sendable {
                     }
                     self.inputQueue.removeAll()
                     let packet = try self.readSettingsValue()
-                    guard packet.first?.1 == 0 else {
-                        continuation.resume(throwing: BleGattException.gattAttributeError(errorCode: packet.first?.1 ?? -1))
+                    guard let packetEntry = packet.first else {
+                        continuation.resume(throwing: BleGattException.gattAttributeError(errorCode: -1))
                         return
                     }
-                    let bytes = packet.first!.0
+                    guard packetEntry.1 == 0 else {
+                        continuation.resume(throwing: BleGattException.gattAttributeError(errorCode: packetEntry.1))
+                        return
+                    }
+                    let bytes = packetEntry.0
                     let khzValue = (bytes[0] & 0x02) >> 1
                     let broadcastValue = (bytes[0] & 0x01)
                     switch command {
@@ -104,7 +108,11 @@ public class BleH7SettingsClient: BleGattClientBase, @unchecked Sendable {
                                                                          characteristicUuid: self.H7_SETTINGS_CHARACTERISTIC,
                                                                          packet: Data(values), withResponse: true)
                         let response = try self.readSettingsValue()
-                        continuation.resume(returning: H7SettingsResponse(data: (response.first?.0)!))
+                        guard let responseEntry = response.first else {
+                            continuation.resume(throwing: BleGattException.gattAttributeError(errorCode: -1))
+                            return
+                        }
+                        continuation.resume(returning: H7SettingsResponse(data: responseEntry.0))
                     case .h7RequestCurrentSettings:
                         continuation.resume(returning: H7SettingsResponse(broadcastValue: broadcastValue, khzValue: khzValue))
                     }
