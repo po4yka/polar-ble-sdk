@@ -3382,6 +3382,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
     private fun stopPmdStreaming(session: BleDeviceSession, client: BlePMDClient, type: PmdMeasurementType) {
         if (session.sessionState == DeviceSessionState.SESSION_OPEN) {
+            stopPmdStreamingJob[session.address]?.cancel()
             stopPmdStreamingJob[session.address] = apiScope.launch {
                 try {
                     client.stopMeasurement(type)
@@ -3857,6 +3858,12 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             deviceAvailableFeaturesJob[address]?.cancel()
             deviceAvailableFeaturesJob.remove(address)
         }
+
+        if (stopPmdStreamingJob.containsKey(address)) {
+            stopPmdStreamingJob[address]?.cancel()
+            stopPmdStreamingJob.remove(address)
+        }
+
         readyFeaturesMap.remove(session.polarDeviceId.ifEmpty { address })
     }
 
