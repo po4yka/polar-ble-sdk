@@ -99,7 +99,7 @@ class BleHrClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, HR
                 val rrsMs = mutableListOf<Int>()
                 if (rrPresent == 1) {
                     val len = data.size
-                    while (offset < len) {
+                    while (offset + 1 < len) {
                         val rrValue = (data[offset].toInt() and 0xFF) + (data[offset + 1].toInt() and 0xFF shl 8)
                         offset += 2
                         val rrMs = mapRr1024ToRrMs(rrValue)
