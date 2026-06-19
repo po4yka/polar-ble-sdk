@@ -513,14 +513,14 @@ class BDDeviceSessionImpl internal constructor(
                     }
                 }
             }
+            operations.sort()
+            attOperations.clear()
+            attOperations.addAll(operations)
         }
         val uuidList: List<UUID> = ArrayList(serviceUuids)
         ChannelUtils.emitNext(servicesSubscriberAtomicList) { channel ->
             channel.trySend(uuidList)
         }
-        operations.sort()
-        attOperations.clear()
-        attOperations.addAll(operations)
     }
 
     private fun handleServiceDiscovered(operations: MutableList<AttributeOperation>, service: BluetoothGattService) {
