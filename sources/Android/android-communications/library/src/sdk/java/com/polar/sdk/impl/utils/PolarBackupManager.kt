@@ -188,7 +188,16 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
         return DeviceFolderEntries(entriesList)
     }
 
-    private suspend fun fetchRecursively(path: String): List<Pair<String, Long>> {
+    private suspend fun fetchRecursively(
+        path: String,
+        currentDepth: Int = 0,
+        maxDepth: Int = 20
+    ): List<Pair<String, Long>> {
+        if (currentDepth > maxDepth) {
+            BleLogger.w(TAG, "fetchRecursively: max depth $maxDepth exceeded at path: $path, stopping recursion")
+            return emptyList()
+        }
+
         val plan = PolarRuntimePlannerAdapter.planFileFacade("backup-read-directory", "GET", path)
         val response = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(plan))
         val dir = PbPFtpDirectory.parseFrom(response.toByteArray())
@@ -198,7 +207,7 @@ class PolarBackupManager(private val client: BlePsFtpClient) {
 
         return entries.flatMap { (entryPath, size) ->
             if (entryPath.endsWith("/")) {
-                fetchRecursively(entryPath)
+                fetchRecursively(entryPath, currentDepth + 1, maxDepth)
             } else {
                 listOf(entryPath to size)
             }
