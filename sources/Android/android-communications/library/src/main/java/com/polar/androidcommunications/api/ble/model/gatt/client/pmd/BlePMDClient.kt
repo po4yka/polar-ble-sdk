@@ -21,6 +21,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.nio.ByteBuffer
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -45,10 +46,10 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
     private var pmdFeatureData: ByteArray? = null
     private val controlPointMutex = Object()
     private val mutexFeature = Object()
-    private var previousTimeStampMap = mutableMapOf<Pair<PmdMeasurementType, PmdDataFrame.PmdDataFrameType?>, ULong>()
+    private val previousTimeStampMap = ConcurrentHashMap<Pair<PmdMeasurementType, PmdDataFrame.PmdDataFrameType?>, ULong>()
 
     @VisibleForTesting
-    val currentSettings: MutableMap<PmdMeasurementType, PmdSetting> = mutableMapOf()
+    val currentSettings: MutableMap<PmdMeasurementType, PmdSetting> = ConcurrentHashMap()
     private val pmdCpEnabled: AtomicInteger?
     private val pmdDataEnabled: AtomicInteger?
 
@@ -69,7 +70,7 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
             pmdFeatureData = null
             mutexFeature.notifyAll()
         }
-        previousTimeStampMap = mutableMapOf()
+        previousTimeStampMap.clear()
     }
 
     private fun getFactor(type: PmdMeasurementType): Float {
@@ -474,7 +475,7 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
      */
     suspend fun stopMeasurement(type: PmdMeasurementType) = withContext(Dispatchers.IO) {
         sendControlPointCommand(PmdControlPointCommandClientToService.STOP_MEASUREMENT, byteArrayOf(type.numVal.toByte()))
-        previousTimeStampMap = mutableMapOf()
+        previousTimeStampMap.clear()
     }
 
     internal fun monitorEcgNotifications(checkConnection: Boolean): Flow<EcgData> {
