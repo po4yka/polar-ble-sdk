@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -52,8 +54,8 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
      * false = uses attribute operation WRITE_NO_RESPONSE
      */
     private val useAttributeLevelResponse = AtomicBoolean(false)
-    private val pftpOperationMutex = Any()
-    private val pftpNotificationMutex = Any()
+    private val pftpOperationMutex = Mutex()
+    private val pftpNotificationMutex = Mutex()
     private val pftpWaitNotificationMutex = Any()
     private val pftpWaitNotificationSharedMutex = Any()
     @Volatile private var _sharedWaitNotificationFlow: Flow<PftpNotificationMessage>? = null
@@ -231,7 +233,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
         try {
             var requestData: MutableList<ByteArray> = ArrayList()
             var previousCallback: ProgressCallback? = null
-            synchronized(pftpOperationMutex) {
+            pftpOperationMutex.withLock {
                 if (pftpMtuEnabled?.get() == ATT_SUCCESS) {
                     d(TAG, "Start request")
                     previousCallback = this@BlePsFtpClient.progressCallback
@@ -261,7 +263,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                         requestData.clear()
                         readResponse(outputStream, protocolTimeoutSeconds)
                         this@BlePsFtpClient.progressCallback = previousCallback
-                        return@synchronized outputStream
+                        outputStream
                     } catch (ex: InterruptedException) {
                         e(TAG, "Request interrupted. Exception: " + ex.message)
                         this@BlePsFtpClient.progressCallback = previousCallback
@@ -330,7 +332,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
     ): Flow<Long> = channelFlow {
         txInterface.gattClientRequestStopScanning()
         try {
-            synchronized(pftpOperationMutex) {
+            pftpOperationMutex.withLock {
                 if (pftpMtuEnabled?.get() == ATT_SUCCESS) {
                     d(TAG, "Start write")
                     currentOperationWrite.set(true)
@@ -395,7 +397,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                         } catch (ex: InterruptedException) {
                             e(TAG, "Frame sending interrupted!")
                             handleMtuInterrupted(totalStream.available() != 0, counter)
-                            return@synchronized
+                            return@withLock
                         }
                     } while (totalStream.available() != 0)
 
@@ -405,7 +407,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                         readResponse(response, timeoutSeconds)
                     } catch (ex: InterruptedException) {
                         e(TAG, "write interrupted while reading response")
-                        return@synchronized
+                        return@withLock
                     }
                     // channel completes naturally on scope exit
                     PolarRuntimePlannerAdapter.planPsFtpWriteAck(payloadSize)
@@ -459,7 +461,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
      */
     suspend fun query(id: Int, parameters: ByteArray?): ByteArrayOutputStream = withContext(Dispatchers.IO) {
         try {
-            synchronized(pftpOperationMutex) {
+            pftpOperationMutex.withLock {
                 if (pftpMtuEnabled?.get() == ATT_SUCCESS) {
                     d(TAG, "Send query id: $id")
                     resetMtuPipe()
@@ -482,7 +484,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                         waitPacketsWritten(packetsWritten, mtuWaiting, packetCount, protocolTimeoutSeconds)
                         requs = mutableListOf()
                         readResponse(response, protocolTimeoutSeconds)
-                        return@synchronized response
+                        response
                     } catch (ex: InterruptedException) {
                         e(TAG, "Query $id interrupted")
                         val packetsSent = requs.isNotEmpty()
@@ -511,7 +513,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
      */
     suspend fun sendNotification(id: Int, parameters: ByteArray?) = withContext(Dispatchers.IO) {
         try {
-            synchronized(pftpNotificationMutex) {
+            pftpNotificationMutex.withLock {
                 if (txInterface.isConnected()) {
                     if (pftpD2HNotificationEnabled?.get() == ATT_SUCCESS) {
                         d(TAG, "Send notification id: $id")
