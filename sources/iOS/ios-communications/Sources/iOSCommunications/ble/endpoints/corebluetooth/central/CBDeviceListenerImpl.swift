@@ -530,8 +530,11 @@ extension CBDeviceListenerImpl: BleDeviceListener {
         let tearDownPublishers = session.gattClients.map { client -> AnyPublisher<Never, Error> in
             return client.tearDown()
         }
-        
-        Publishers.MergeMany(tearDownPublishers)
+
+        // Use a box so the cancellable can capture itself and release on completion,
+        // preventing accumulation in the shared cancellables set across reconnect cycles.
+        var cancellable: AnyCancellable?
+        cancellable = Publishers.MergeMany(tearDownPublishers)
             .timeout(.milliseconds(SESSION_TEAR_DOWN_TIMEOUT_MS), scheduler: DispatchQueue.main)
             .catch { error -> Empty<Never, Error> in
                 BleLogger.trace("Catched error while closing the session \(session.advertisementContent.name). Error \(error)")
@@ -544,7 +547,7 @@ extension CBDeviceListenerImpl: BleDeviceListener {
                 // will fire and handleDisconnected will move it to .sessionClosed.
                 self.manager.cancelPeripheralConnection((session as! CBDeviceSessionImpl).peripheral)
                 BleLogger.trace("Completed session close tear down for session \(session.advertisementContent.name)")
+                cancellable = nil
             }, receiveValue: { _ in })
-            .store(in: &cancellables)
     }
 }
