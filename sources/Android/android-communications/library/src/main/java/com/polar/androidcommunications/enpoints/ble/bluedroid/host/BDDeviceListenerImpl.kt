@@ -117,7 +117,7 @@ class BDDeviceListenerImpl(
             if (fetchKnownDevices) {
                 val devices = btManager.getDevicesMatchingConnectionStates(
                     BluetoothProfile.GATT,
-                    intArrayOf(BluetoothProfile.STATE_CONNECTED or BluetoothProfile.STATE_CONNECTING)
+                    intArrayOf(BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_CONNECTING)
                 )
                 for (device in devices) {
                     if (device.type == BluetoothDevice.DEVICE_TYPE_LE && sessions.getSession(device) == null) {
