@@ -84,7 +84,7 @@ enum class PPiSampleTriggerType(val value: Int) {
     companion object {
         infix fun from(value: PbPpIntervalRecordingTriggerType): PPiSampleTriggerType{
             PolarSdkModelAdapter.ppiSampleTriggerName(value.number)?.let { sharedName ->
-                return entries.first { trigger -> trigger.name == sharedName }
+                entries.firstOrNull { trigger -> trigger.name == sharedName }?.let { return it }
             }
             return when(value) {
                 PbPpIntervalRecordingTriggerType.PPI_TRIGGER_TYPE_MANUAL -> TRIGGER_TYPE_MANUAL
