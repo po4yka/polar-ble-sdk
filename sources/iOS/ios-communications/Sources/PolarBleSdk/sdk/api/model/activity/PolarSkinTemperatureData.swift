@@ -43,14 +43,14 @@ public class PolarSkinTemperatureData {
     }
 
     public struct PolarSkinTemperatureDataSample: Codable {
-        public let recordingTimeDeltaMs: UInt64!
-        public let temperature: Float!
+        public let recordingTimeDeltaMs: UInt64
+        public let temperature: Float
     }
 
     public struct PolarSkinTemperatureResult: Codable {
-        public let date: Date!
-        public let sensorLocation: SkinTemperatureSensorLocation!
-        public let measurementType: SkinTemperatureMeasurementType!
+        public let date: Date
+        public let sensorLocation: SkinTemperatureSensorLocation
+        public let measurementType: SkinTemperatureMeasurementType
         public let skinTemperatureList: [PolarSkinTemperatureDataSample]?
     }
 
