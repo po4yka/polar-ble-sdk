@@ -3447,23 +3447,21 @@ extension PolarBleApiImpl: PolarBleApi  {
 
 
     private func dateFromStringWOTime(dateFrom: String) -> Date {
-
-        let year = Int(String(dateFrom[dateFrom.index(dateFrom.startIndex, offsetBy: 0)..<dateFrom.index(dateFrom.endIndex, offsetBy: -4)]))
-        let month = Int(String(dateFrom[dateFrom.index(dateFrom.startIndex , offsetBy: 4)..<dateFrom.index(dateFrom.endIndex, offsetBy: -2)]))
-        let day = Int(String(dateFrom[dateFrom.index(dateFrom.startIndex, offsetBy: 6)..<dateFrom.index(dateFrom.endIndex, offsetBy: 0)]))
-
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(abbreviation: "UTC")!
-
-        var datecomponents = DateComponents()
-        datecomponents.year = year
-        datecomponents.month = month
-        datecomponents.day = day
-        datecomponents.hour = 0
-        datecomponents.minute = 0
-        datecomponents.second = 0
-
-        return calendar.date(from: datecomponents)!
+        // Parse an 8-character "yyyyMMdd" string. Use DateFormatter to avoid
+        // brittle manual index arithmetic and to handle invalid components safely.
+        guard dateFrom.count == 8 else {
+            BleLogger.error("dateFromStringWOTime: unexpected date string length \(dateFrom.count) for '\(dateFrom)', returning epoch")
+            return Date(timeIntervalSince1970: 0)
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd"
+        formatter.timeZone = TimeZone(abbreviation: "UTC")
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        guard let date = formatter.date(from: dateFrom) else {
+            BleLogger.error("dateFromStringWOTime: failed to parse date string '\(dateFrom)', returning epoch")
+            return Date(timeIntervalSince1970: 0)
+        }
+        return date
     }
 
     private func writeFirmwareToDeviceAsync(identifier: String, firmwareFilePath: String, firmwareBytes: Data) -> AsyncThrowingStream<UInt, Error> {
