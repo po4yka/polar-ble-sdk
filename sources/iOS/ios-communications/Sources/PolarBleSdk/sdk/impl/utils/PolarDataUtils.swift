@@ -96,7 +96,9 @@ internal class PolarDataUtils {
         case "HR": return PmdMeasurementType.offline_hr
         case "MAGNETOMETER": return PmdMeasurementType.mgn
         case "SKIN_TEMPERATURE": return PmdMeasurementType.skinTemperature
-        default: fatalError("Error when map shared measurement type \(sharedName) to PMD feature")
+        default:
+            BleLogger.error("Unknown shared measurement type name '\(sharedName)'; returning .unknown_type")
+            return .unknown_type
         }
     }
     
