@@ -9,6 +9,7 @@ import com.polar.androidcommunications.common.ble.AtomicSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -23,13 +24,13 @@ abstract class BleGattBase {
     protected var serviceUuid: UUID
 
     // List of all service characteristics, value is boolean if this is a automatic read/notification
-    private val characteristics = HashMap<UUID, Boolean>()
+    private val characteristics = ConcurrentHashMap<UUID, Boolean>()
 
     // List of all service characteristics to read automatically
-    private val characteristicsRead = HashMap<UUID, Boolean>()
+    private val characteristicsRead = ConcurrentHashMap<UUID, Boolean>()
 
     // List of all service characteristics to be enabled automatically, pair contains property and atomic boolean
-    private val mandatoryNotificationCharacteristics = HashMap<UUID, AtomicInteger>()
+    private val mandatoryNotificationCharacteristics = ConcurrentHashMap<UUID, AtomicInteger>()
 
     // List of all characteristics that are available
     private val availableCharacteristics = AtomicSet<UUID>()
