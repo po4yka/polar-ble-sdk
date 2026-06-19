@@ -77,6 +77,7 @@ class BDDeviceSessionImpl internal constructor(
     private val servicesSubscriberAtomicList = AtomicSet<Channel<List<UUID>>>()
     val rssiObservers: AtomicSet<Channel<Int>> = AtomicSet()
     private var scope = CoroutineScope(Dispatchers.IO)
+    @Volatile
     private var indicatesPairingProblem: Pair<Boolean, Int> = Pair(false, -1)
     private val handler = Handler(context.mainLooper)
 
