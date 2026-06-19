@@ -103,6 +103,10 @@ private enum HtsTemperatureRuntimePlanner {
     #endif
 
     private static func localTemperatureMeasurement(data: Data) -> BleHtsClient.TemperatureMeasurement {
+        guard data.count >= 5 else {
+            BleLogger.error("localTemperatureMeasurement: data too short (\(data.count) bytes), expected >= 5")
+            return BleHtsClient.TemperatureMeasurement(temperatureCelsius: 0.0, temperatureFahrenheit: 0.0)
+        }
         let flags = UInt8(data[0])
         let isFahrenheit = (flags & 0x01) != 0
         let exponent = Int8(bitPattern: data[4])
