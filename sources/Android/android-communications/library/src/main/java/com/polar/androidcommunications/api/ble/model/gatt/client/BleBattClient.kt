@@ -46,9 +46,11 @@ class BleBattClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, 
     private val cachedBatteryPercentage = AtomicInteger(UNDEFINED_BATTERY_PERCENTAGE)
 
     private val batteryChargeStateObservers = AtomicSet<Channel<ChargeState>>()
+    @Volatile
     private var cachedChargeState: ChargeState = ChargeState.UNKNOWN
 
     private var powerSourcesStateObservers = AtomicSet<Channel<PowerSourcesState>>()
+    @Volatile
     private var cachedPowerSourcesState =
         PowerSourcesState(BatteryPresentState.UNKNOWN, PowerSourceState.UNKNOWN, PowerSourceState.UNKNOWN)
 
