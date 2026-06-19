@@ -155,8 +155,12 @@ private extension Data {
         var bytes = [UInt8]()
         var index = hexBytes.startIndex
         while index < hexBytes.endIndex {
-            let nextIndex = hexBytes.index(index, offsetBy: 2)
-            bytes.append(UInt8(hexBytes[index..<nextIndex], radix: 16)!)
+            let nextIndex = hexBytes.index(index, offsetBy: 2, limitedBy: hexBytes.endIndex) ?? hexBytes.endIndex
+            guard let byte = UInt8(hexBytes[index..<nextIndex], radix: 16) else {
+                self.init()
+                return
+            }
+            bytes.append(byte)
             index = nextIndex
         }
         self.init(bytes)
