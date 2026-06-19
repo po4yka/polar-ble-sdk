@@ -2926,6 +2926,14 @@ extension PolarBleApiImpl: PolarBleApi  {
 
 
     func deleteStoredDeviceData(_ identifier: String, dataType: PolarStoredDataType.StoredDataType, until: Date?) async throws {
+        switch dataType {
+        case .ACTIVITY, .DAILY_SUMMARY, .NIGHTLY_RECOVERY, .SLEEP, .SKIN_CONTACT_CHANGES, .SKINTEMP, .SLEEP_SCORE, .AUTO_SAMPLE:
+            guard until != nil else {
+                throw PolarErrors.invalidArgument(description: "'until' date is required for data type \(dataType)")
+            }
+        default:
+            break
+        }
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd"
         formatter.timeZone = TimeZone(abbreviation: "UTC")
