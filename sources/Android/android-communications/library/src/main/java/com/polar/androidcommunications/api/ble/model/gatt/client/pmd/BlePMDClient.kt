@@ -427,7 +427,9 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
         val settingsBytes = if (triggerStatus == PmdOfflineRecTriggerStatus.TRIGGER_ENABLED) {
             val settingBytes = setting?.serializeSelected() ?: byteArrayOf()
             val securityBytes = secret?.serializeToPmdSettings() ?: byteArrayOf()
-            byteArrayOf((settingBytes + securityBytes).size.toByte()) + settingBytes + securityBytes
+            val totalSize = (settingBytes + securityBytes).size
+            require(totalSize <= 255) { "PMD settings payload too large: $totalSize bytes" }
+            byteArrayOf((totalSize and 0xFF).toByte()) + settingBytes + securityBytes
         } else {
             byteArrayOf()
         }
