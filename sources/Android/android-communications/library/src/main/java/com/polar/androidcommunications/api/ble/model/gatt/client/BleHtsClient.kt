@@ -29,7 +29,7 @@ class BleHtsClient(txInterface: BleGattTxInterface) :
     )
 
     companion object {
-        val TAG: String = ::javaClass.name
+        val TAG: String = BleHtsClient::class.java.simpleName
         const val TEMP_ACCURACY: Int = 100
     }
 
