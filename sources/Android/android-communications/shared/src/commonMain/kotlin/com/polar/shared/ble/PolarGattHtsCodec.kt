@@ -15,6 +15,7 @@ object PolarGattHtsCodec {
     private const val TEMP_ACCURACY: Int = 100
 
     fun parseTemperatureMeasurement(data: ByteArray): TemperatureMeasurement {
+        require(data.size >= 5) { "malformedHtsMeasurement" }
         val flags = data[0].toInt() and 0xFF
         val isFahrenheit = (flags and 0x01) != 0
         val mantissa = (data[1].toInt() and 0xFF) or ((data[2].toInt() and 0xFF) shl 8) or ((data[3].toInt() and 0xFF) shl 16)
