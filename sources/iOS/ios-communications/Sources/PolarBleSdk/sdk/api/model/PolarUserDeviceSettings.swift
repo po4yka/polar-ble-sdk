@@ -258,10 +258,22 @@ public class PolarUserDeviceSettings {
            let sharedLocation = PolarUserDeviceSettings.DeviceLocation(rawValue: sharedName) {
             result.deviceLocation = sharedLocation
         } else {
-            result.deviceLocation = PolarUserDeviceSettings.DeviceLocation.allCases[pbUserDeviceSettings.generalSettings.deviceLocation.rawValue]
+            let rawValue = pbUserDeviceSettings.generalSettings.deviceLocation.rawValue
+            if DeviceLocation.allCases.indices.contains(rawValue) {
+                result.deviceLocation = DeviceLocation.allCases[rawValue]
+            } else {
+                NSLog("PolarUserDeviceSettings: device location rawValue %d out of range, defaulting to UNDEFINED", rawValue)
+                result.deviceLocation = .UNDEFINED
+            }
         }
         #else
-        result.deviceLocation = PolarUserDeviceSettings.DeviceLocation.allCases[pbUserDeviceSettings.generalSettings.deviceLocation.rawValue]
+        let rawValue = pbUserDeviceSettings.generalSettings.deviceLocation.rawValue
+        if DeviceLocation.allCases.indices.contains(rawValue) {
+            result.deviceLocation = DeviceLocation.allCases[rawValue]
+        } else {
+            NSLog("PolarUserDeviceSettings: device location rawValue %d out of range, defaulting to UNDEFINED", rawValue)
+            result.deviceLocation = .UNDEFINED
+        }
         #endif
         
         if pbUserDeviceSettings.hasUsbConnectionSettings {
@@ -299,7 +311,12 @@ public class PolarUserDeviceSettings {
         }
         #endif
 
-        return String(describing: DeviceLocation.allCases[deviceLocationIndex])
+        if DeviceLocation.allCases.indices.contains(deviceLocationIndex) {
+            return String(describing: DeviceLocation.allCases[deviceLocationIndex])
+        } else {
+            NSLog("PolarUserDeviceSettings: deviceLocationIndex %d out of range in getStringValue, returning UNDEFINED", deviceLocationIndex)
+            return String(describing: DeviceLocation.UNDEFINED)
+        }
     }
     
     public static func getDeviceLocation(deviceLocation: String) -> DeviceLocation {
