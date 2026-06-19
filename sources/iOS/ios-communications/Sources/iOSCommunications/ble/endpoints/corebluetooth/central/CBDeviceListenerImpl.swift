@@ -292,7 +292,10 @@ public class CBDeviceListenerImpl: NSObject, SDKCBCentralManagerDelegate {
     
     func startReadRSSI() {
         if self.readRSSITimer == nil {
-            self.readRSSITimer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(self.readRSSIForConnectedSession), userInfo: nil, repeats: true)
+            DispatchQueue.main.async {
+                guard self.readRSSITimer == nil else { return }
+                self.readRSSITimer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(self.readRSSIForConnectedSession), userInfo: nil, repeats: true)
+            }
         }
     }
 
