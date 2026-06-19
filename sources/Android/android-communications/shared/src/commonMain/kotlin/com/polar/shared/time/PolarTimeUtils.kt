@@ -52,11 +52,11 @@ object PolarTimeUtils {
         return minutes * SECONDS_PER_MINUTE
     }
 
-    fun durationToMillis(duration: PolarDurationFields): Long {
-        return duration.hours.toLong() * MILLIS_PER_HOUR +
-            duration.minutes.toLong() * MILLIS_PER_MINUTE +
-            duration.seconds.toLong() * MILLIS_PER_SECOND +
-            duration.millis.toLong()
+    fun durationToMillis(duration: PolarDurationFields): Int {
+        return duration.hours * MILLIS_PER_HOUR +
+            duration.minutes * MILLIS_PER_MINUTE +
+            duration.seconds * MILLIS_PER_SECOND +
+            duration.millis
     }
 
     fun timeString(time: PolarTimeFields): String {
