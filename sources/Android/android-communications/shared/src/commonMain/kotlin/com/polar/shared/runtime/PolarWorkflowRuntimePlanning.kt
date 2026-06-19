@@ -303,7 +303,7 @@ object PolarWorkflowRuntimePlanning {
     }
 
     fun parseBackupTextForAndroid(backupText: String): List<String> {
-        return backupText.lineSequence().toMutableSet().toList()
+        return backupText.lines().filter { it.isNotEmpty() }
     }
 
     fun parseBackupTextForIos(backupText: String): List<String> {
