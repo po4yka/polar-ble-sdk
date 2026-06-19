@@ -193,7 +193,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     private val filter =
         BleSearchPreFilter { content: BleAdvertisementContent -> content.polarDeviceId.isNotEmpty() && content.polarDeviceType != "mobile" }
     private var listener: BleDeviceListener? = null
-    private var devicesStateMonitorJob: Job? = null
+    @Volatile private var devicesStateMonitorJob: Job? = null
     private var deviceSessionState: DeviceSessionState? = null
     private var callback: PolarBleApiCallbackProvider? = null
     private var logger: PolarBleApiLogger? = null
