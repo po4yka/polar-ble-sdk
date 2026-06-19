@@ -25,6 +25,14 @@ internal struct PmdControlPointResponse {
             return
         }
         #endif
+        guard data.count >= 4 else {
+            response = 0
+            opCode = 0
+            type = PmdMeasurementType.fromId(id: 0)
+            errorCode = PmdResponseCode.unknown_error
+            more = false
+            return
+        }
         response = data[0]
         opCode = data[1]
         type = PmdMeasurementType.fromId(id: data[2])
