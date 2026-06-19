@@ -235,8 +235,8 @@ public class PpgData {
         while offset < frame.dataContent.count {
             let numIntTs =
             frame.dataContent[offset..<(offset + TYPE_4_NUM_INTS_SIZE)].map(Int32.init)
-            
-            offset += TYPE_9_NUM_INTS_SIZE
+
+            offset += TYPE_4_NUM_INTS_SIZE
             var channel1GainTs = [Int32]()
             for (index, value) in frame.dataContent[offset..<(offset + TYPE_4_CHANNEL_0_AND_1_SIZE)]
                 .enumerated() {
