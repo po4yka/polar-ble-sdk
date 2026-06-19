@@ -51,7 +51,7 @@ public class PressureData {
 
         for (index, sample) in samples.enumerated() {
             let pressure: Float
-            pressure = Float(sample[1])
+            pressure = Float(sample[0])
             pressureSamples.append(PressureSample(timeStamp: timeStamps[index], pressure: pressure))
         }
 
