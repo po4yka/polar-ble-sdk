@@ -4,6 +4,7 @@ import com.polar.sdk.api.model.PolarFirstTimeUseConfig.Gender
 import com.polar.sdk.api.model.PolarFirstTimeUseConfig.TypicalDay
 import java.time.LocalDate
 
+import com.polar.androidcommunications.api.ble.BleLogger
 import fi.polar.remote.representation.protobuf.Types
 import java.time.format.DateTimeFormatter
 import fi.polar.remote.representation.protobuf.PhysData
@@ -161,12 +162,16 @@ data class PolarFirstTimeUseConfig(
         }.build()
     }
 
+private const val TAG = "PolarFirstTimeUseConfig"
+
 fun PhysData.PbUserPhysData.toPolarPhysicalConfiguration(): PolarPhysicalConfiguration {
     val gender = when (PolarSdkModelAdapter.firstTimeUseGenderName(gender.value.number)) {
         "MALE" -> Gender.MALE
         "FEMALE" -> Gender.FEMALE
-        null -> throw IllegalArgumentException("Unknown gender: ${gender.value}")
-        else -> throw IllegalArgumentException("Unknown gender: ${gender.value}")
+        else -> {
+            BleLogger.w(TAG, "Unknown gender value ${gender.value.number}, defaulting to MALE")
+            Gender.MALE
+        }
     }
 
     val birthDate = LocalDate.of(birthday.value.year, birthday.value.month, birthday.value.day)
