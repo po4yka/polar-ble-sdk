@@ -62,7 +62,11 @@ internal class PolarAutomaticSamplesUtils {
                 let sampleDate = DateComponents(year: Int(sampleDateProto.year), month: Int(sampleDateProto.month), day: Int(sampleDateProto.day))
                 guard requestedDays.contains(basicDateString(sampleDateProto)) else { continue }
                 let samples = try Polar247HrSamplesData.fromPbHrDataSamples(samples: sampleSessions.samples)
-                let date = PolarTimeUtils.utcCalendar.dateComponents([.year, .month, .day], from: PolarTimeUtils.utcCalendar.date(from: sampleDate)!)
+                guard let resolvedDate = PolarTimeUtils.utcCalendar.date(from: sampleDate) else {
+                    BleLogger.error(TAG, "Invalid date components in \(fileName), skipping")
+                    continue
+                }
+                let date = PolarTimeUtils.utcCalendar.dateComponents([.year, .month, .day], from: resolvedDate)
                 results.append(Polar247HrSamplesData(date: date, samples: samples))
             } catch {
                 BleLogger.error(TAG, "Failed to parse HR in \(fileName): \(error)")
@@ -98,7 +102,11 @@ internal class PolarAutomaticSamplesUtils {
                 let sampleDate = DateComponents(year: Int(sampleDateProto.year), month: Int(sampleDateProto.month), day: Int(sampleDateProto.day))
                 guard requestedDays.contains(basicDateString(sampleDateProto)) else { continue }
                 let samples = sampleSessions.ppiSamples.map { Polar247PPiSamplesData.fromPbPPiDataSamples(ppiData: $0) }
-                let date = PolarTimeUtils.utcCalendar.dateComponents([.year, .month, .day], from: PolarTimeUtils.utcCalendar.date(from: sampleDate)!)
+                guard let resolvedDate = PolarTimeUtils.utcCalendar.date(from: sampleDate) else {
+                    BleLogger.error(TAG, "Invalid date components in \(fileName), skipping")
+                    continue
+                }
+                let date = PolarTimeUtils.utcCalendar.dateComponents([.year, .month, .day], from: resolvedDate)
                 results.append(Polar247PPiSamplesData(date: date, samples: samples))
             } catch {
                 BleLogger.error(TAG, "Failed to parse PPI in \(fileName): \(error)")
