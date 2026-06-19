@@ -99,7 +99,7 @@ public class BleBasClient: BleGattClientBase, @unchecked Sendable {
         }
         let dataHex = data.map { String(format: "%02X", $0) }.joined(separator: " ")
         BleLogger.trace("Parsing charge state from data: \(dataHex)")
-        guard data.count > 0 else { return .unknown }
+        guard data.count >= 2 else { return .unknown }
         let chargeStateValue = (data[1] & 0x60) >> 5
         switch chargeStateValue {
         case 1: return .charging
@@ -117,7 +117,7 @@ public class BleBasClient: BleGattClientBase, @unchecked Sendable {
                 wirelessExternalPowerConnected: powerSourceState(fromSharedName: shared.wirelessExternalPowerConnected)
             )
         }
-        guard data.count > 0 else {
+        guard data.count >= 2 else {
             return PowerSourcesState(batteryPresent: .unknown, wiredExternalPowerConnected: .unknown, wirelessExternalPowerConnected: .unknown)
         }
         let batteryPresent: BatteryPresentState = (data[1] & 0x01) == 1 ? .present : .notPresent
