@@ -301,7 +301,7 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
     suspend fun readFeature(checkConnection: Boolean): Set<PmdMeasurementType> = withContext(Dispatchers.IO) {
         if (!checkConnection || txInterface.isConnected()) {
             synchronized(mutexFeature) {
-                if (pmdFeatureData == null) {
+                while (pmdFeatureData == null) {
                     mutexFeature.wait()
                 }
                 pmdFeatureData?.let { return@withContext PmdMeasurementType.fromByteArray(it) }
