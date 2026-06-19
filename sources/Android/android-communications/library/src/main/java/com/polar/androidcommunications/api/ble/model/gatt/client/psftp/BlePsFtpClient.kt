@@ -644,13 +644,7 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
         val sequenceNumber = Rfc76SequenceNumber()
         val response = PftpRfc76ResponseHeader()
         do {
-            if (txInterface.isConnected()) {
-                synchronized(mtuInputQueue) {
-                    if (mtuInputQueue.isEmpty()) {
-                        (mtuInputQueue as Object).wait(timeoutSeconds * 1000L)
-                    }
-                }
-            } else {
+            if (!txInterface.isConnected()) {
                 throw BleDisconnected("Connection lost during read response")
             }
             val packet = mtuInputQueue.poll(timeoutSeconds, TimeUnit.SECONDS)
