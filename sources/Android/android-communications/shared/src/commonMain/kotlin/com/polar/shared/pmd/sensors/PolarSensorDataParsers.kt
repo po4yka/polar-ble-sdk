@@ -810,23 +810,39 @@ private fun List<PolarSkinTemperatureSample>.withSkinTemperatureTimeStamps(frame
 
 private fun getTimeStamps(frame: PolarPmdDataFrame, samplesSize: Int): List<ULong> {
     require(samplesSize > 0) { "malformedFrame" }
-    val delta = if (frame.previousTimeStamp == 0uL) {
+    return if (frame.previousTimeStamp == 0uL) {
         require(frame.sampleRate > 0) { "malformedFrame" }
-        1_000_000_000.0 / frame.sampleRate.toDouble()
+        // Use integer nanosecond arithmetic to avoid Double precision loss.
+        // step = 1_000_000_000 / sampleRate in nanoseconds (integer division).
+        // The remainder is distributed one extra nanosecond per sample so that
+        // the last sample lands exactly on frame.timeStamp.
+        val stepNs = 1_000_000_000uL / frame.sampleRate.toULong()
+        val remainder = 1_000_000_000uL % frame.sampleRate.toULong()
+        require(frame.timeStamp >= stepNs * (samplesSize - 1).toULong()) { "malformedFrame" }
+        val start = frame.timeStamp - stepNs * (samplesSize - 1).toULong()
+        require(start > 0uL) { "malformedFrame" }
+        List(samplesSize) { index ->
+            // Distribute remainder: add 1 ns to the first `remainder` intervals.
+            val extraNs = if (index.toULong() < remainder) index.toULong() else remainder
+            start + stepNs * index.toULong() + extraNs
+        }
     } else {
         require(frame.timeStamp > frame.previousTimeStamp) { "malformedFrame" }
-        (frame.timeStamp - frame.previousTimeStamp).toDouble() / samplesSize.toDouble()
+        val span = frame.timeStamp - frame.previousTimeStamp
+        val stepNs = span / samplesSize.toULong()
+        val remainder = span % samplesSize.toULong()
+        require(frame.timeStamp >= span) { "malformedFrame" }
+        val start = frame.previousTimeStamp + stepNs
+        require(start > 0uL) { "malformedFrame" }
+        // Build samplesSize - 1 interpolated timestamps then append frame.timeStamp
+        // so the last sample is always exactly aligned with the frame boundary.
+        val result = MutableList(samplesSize - 1) { index ->
+            val extraNs = if ((index + 1).toULong() <= remainder) index.toULong() else remainder
+            start + stepNs * index.toULong() + extraNs
+        }
+        result += frame.timeStamp
+        result
     }
-    require(frame.timeStamp.toDouble() >= delta * samplesSize.toDouble()) { "malformedFrame" }
-    val start = if (frame.previousTimeStamp == 0uL) {
-        frame.timeStamp.toDouble() - delta * (samplesSize - 1)
-    } else {
-        frame.previousTimeStamp.toDouble() + delta
-    }
-    require(start > 0.0) { "malformedFrame" }
-    val result = MutableList(samplesSize - 1) { index -> round(start + delta * index).toULong() }
-    result += frame.timeStamp
-    return result
 }
 
 private fun parseIntegrationGainSamples(frame: PolarPmdDataFrame, sampleSize: Int, numIntSize: Int, channelSize: Int, factory: (ULong, List<UInt>, List<UInt>, List<UInt>) -> PolarPpgSample): List<PolarPpgSample> {
