@@ -3812,7 +3812,13 @@ extension PolarBleApiImpl: PolarBleApi  {
                     let client = session.fetchGattClient(BlePmdClient.PMD_SERVICE) as! BlePmdClient
                     try await client.startMeasurement(type, settings: settings.map2PmdSetting())
                     defer {
-                        Task { try? await client.stopMeasurement(type) }
+                        Task {
+                            do {
+                                try await client.stopMeasurement(type)
+                            } catch {
+                                BleLogger.error("stopMeasurement(\(type)) failed: \(error)")
+                            }
+                        }
                     }
                     for try await value in observer(client) { continuation.yield(value) }
                     continuation.finish()
