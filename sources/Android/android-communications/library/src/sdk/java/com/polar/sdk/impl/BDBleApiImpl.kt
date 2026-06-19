@@ -2759,6 +2759,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             }
         } catch (error: Throwable) {
             BleLogger.e(TAG, "Error while trying to delete offline recordings from device $identifier, error: $error")
+            throw error
         }
     }
 
@@ -2814,6 +2815,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 }
         } catch (error: Throwable) {
             BleLogger.e(TAG, "Error while trying to delete telemetry files from device $identifier, error: $error")
+            throw error
         }
     }
 
