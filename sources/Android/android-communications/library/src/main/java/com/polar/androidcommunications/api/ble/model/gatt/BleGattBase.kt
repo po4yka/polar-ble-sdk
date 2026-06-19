@@ -6,11 +6,10 @@ import com.polar.androidcommunications.api.ble.exceptions.BleAttributeError
 import com.polar.androidcommunications.api.ble.exceptions.BleCharacteristicNotFound
 import com.polar.androidcommunications.api.ble.exceptions.BleDisconnected
 import com.polar.androidcommunications.common.ble.AtomicSet
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -54,13 +53,18 @@ abstract class BleGattBase {
     // mtu size with att layer
     private val attMtuSize = AtomicInteger(DEFAULT_ATT_MTU_SIZE)
 
+    // Flows for coroutine-native waiting without blocking dispatcher threads
+    private val serviceDiscoveredFlow = MutableStateFlow(false)
+
+    // Per-characteristic notification status flows; value mirrors mandatoryNotificationCharacteristics AtomicInteger
+    private val notificationStatusFlows = ConcurrentHashMap<UUID, MutableStateFlow<Int>>()
+
     /**
      * @return true if the current service is the most primary one
      */
     // flag to set client as primary
     @JvmField
     var isPrimaryService: Boolean = false
-    protected val serviceDiscovered: AtomicBoolean = AtomicBoolean(false)
 
     // sets flag that this client/service requires as a whole encryption
     var isEncryptionRequired: Boolean = false
@@ -85,16 +89,11 @@ abstract class BleGattBase {
         availableCharacteristics.clear()
         availableReadableCharacteristics.clear()
         availableWritableCharacteristics.clear()
-        for (integer in mandatoryNotificationCharacteristics.values) {
-            synchronized(integer) {
-                integer.set(-1)
-                (integer as Object).notifyAll()
-            }
+        for ((uuid, integer) in mandatoryNotificationCharacteristics) {
+            integer.set(-1)
+            notificationStatusFlows[uuid]?.value = -1
         }
-        synchronized(serviceDiscovered) {
-            serviceDiscovered.set(false)
-            (serviceDiscovered as Object).notifyAll()
-        }
+        serviceDiscoveredFlow.value = false
         mtuSize.set(DEFAULT_MTU_SIZE)
         attMtuSize.set(DEFAULT_ATT_MTU_SIZE)
     }
@@ -139,18 +138,13 @@ abstract class BleGattBase {
     fun descriptorWritten(characteristic: UUID, active: Boolean, status: Int) {
         val integer = getNotificationAtomicInteger(characteristic)
         if (integer != null) {
-            synchronized(integer) {
-                if (status == ATT_SUCCESS) {
-                    if (active) {
-                        integer.set(status)
-                    } else {
-                        integer.set(ATT_NOTIFY_OR_INDICATE_OFF)
-                    }
-                } else {
-                    integer.set(status)
-                }
-                (integer as Object).notifyAll()
+            val newValue = if (status == ATT_SUCCESS) {
+                if (active) status else ATT_NOTIFY_OR_INDICATE_OFF
+            } else {
+                status
             }
+            integer.set(newValue)
+            notificationStatusFlows[characteristic]?.value = newValue
         }
     }
 
@@ -160,13 +154,10 @@ abstract class BleGattBase {
     }
 
     val isServiceDiscovered: Boolean
-        get() = serviceDiscovered.get()
+        get() = serviceDiscoveredFlow.value
 
     fun setServiceDiscovered(discovered: Boolean) {
-        synchronized(serviceDiscovered) {
-            serviceDiscovered.set(discovered)
-            (serviceDiscovered as Object).notifyAll()
-        }
+        serviceDiscoveredFlow.value = discovered
     }
 
     fun containsCharacteristicRead(characteristic: UUID): Boolean {
@@ -254,6 +245,7 @@ abstract class BleGattBase {
         )
         if (containsNotifyCharacteristic(characteristic)) {
             mandatoryNotificationCharacteristics.remove(characteristic)
+            notificationStatusFlows.remove(characteristic)
         }
         if (containsCharacteristic(characteristic)) {
             characteristics.remove(characteristic)
@@ -265,8 +257,8 @@ abstract class BleGattBase {
                 characteristic
             )
         ) {
-            mandatoryNotificationCharacteristics[characteristic] =
-                AtomicInteger(-1)
+            mandatoryNotificationCharacteristics[characteristic] = AtomicInteger(-1)
+            notificationStatusFlows[characteristic] = MutableStateFlow(-1)
         }
         if ((properties and PROPERTY_READ) != 0 && !containsCharacteristicRead(characteristic)) {
             characteristicsRead[characteristic] = true
@@ -308,15 +300,11 @@ abstract class BleGattBase {
      * @param checkConnection optionally check is currently connected
      * @throws BleDisconnected if connection is lost while waiting
      */
-    suspend fun waitServiceDiscovered(checkConnection: Boolean) = withContext(Dispatchers.IO) {
+    suspend fun waitServiceDiscovered(checkConnection: Boolean) {
         if (!checkConnection || txInterface.isConnected()) {
-            synchronized(serviceDiscovered) {
-                if (!serviceDiscovered.get()) {
-                    (serviceDiscovered as Object).wait()
-                }
-                if (!txInterface.isConnected() || !serviceDiscovered.get()) {
-                    throw BleDisconnected()
-                }
+            serviceDiscoveredFlow.first { it }
+            if (!txInterface.isConnected() || !serviceDiscoveredFlow.value) {
+                throw BleDisconnected()
             }
         } else {
             throw BleDisconnected()
@@ -332,29 +320,18 @@ abstract class BleGattBase {
      * @throws BleAttributeError if the notification/indication setup failed
      * @throws BleCharacteristicNotFound if the characteristic is not registered
      */
-    suspend fun waitNotificationEnabled(uuid: UUID, checkConnection: Boolean) = withContext(Dispatchers.IO) {
-        val integer = getNotificationAtomicInteger(uuid)
+    suspend fun waitNotificationEnabled(uuid: UUID, checkConnection: Boolean) {
+        val statusFlow = notificationStatusFlows[uuid]
             ?: throw BleCharacteristicNotFound()
         if (!checkConnection || txInterface.isConnected()) {
-            when {
-                integer.get() == ATT_SUCCESS -> return@withContext
-                integer.get() != -1 -> throw BleAttributeError(
-                    "Failed to set characteristic notification or indication ", integer.get()
+            // Suspend without blocking a dispatcher thread until status leaves the pending (-1) state.
+            // MutableStateFlow.first { } re-checks after every emission, providing the same
+            // while-loop guard that prevents acting on spurious or stale values.
+            val status = statusFlow.first { it != -1 }
+            if (status != ATT_SUCCESS) {
+                throw BleAttributeError(
+                    "Failed to set characteristic notification or indication ", status
                 )
-                else -> {
-                    synchronized(integer) {
-                        (integer as Object).wait()
-                    }
-                    if (integer.get() != ATT_SUCCESS) {
-                        if (integer.get() != -1) {
-                            throw BleAttributeError(
-                                "Failed to set characteristic notification or indication ", integer.get()
-                            )
-                        } else {
-                            throw BleDisconnected()
-                        }
-                    }
-                }
             }
         } else {
             throw BleDisconnected()
