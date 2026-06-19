@@ -68,7 +68,7 @@ internal object PolarTimeUtils {
     }
 
     fun pbLocalTimeToJavaLocalDateTime(pbLocalTime: PftpRequest.PbPFtpSetLocalTimeParams): LocalDateTime {
-        val zoneId = ZoneOffset.ofTotalSeconds(pbLocalTime.tzOffset * 60)
+        val zoneId = ZoneOffset.ofTotalSeconds(tzOffsetMinutesToTotalSeconds(pbLocalTime.tzOffset))
         return ZonedDateTime.of(
             pbLocalTime.date.year,
             pbLocalTime.date.month,
@@ -82,7 +82,7 @@ internal object PolarTimeUtils {
     }
 
     fun pbLocalTimeToZonedDateTime(pbLocalTime: PftpRequest.PbPFtpSetLocalTimeParams): ZonedDateTime {
-        val zoneOffset = ZoneOffset.ofTotalSeconds(pbLocalTime.tzOffset * 60)
+        val zoneOffset = ZoneOffset.ofTotalSeconds(tzOffsetMinutesToTotalSeconds(pbLocalTime.tzOffset))
         return ZonedDateTime.of(
             pbLocalTime.date.year,
             pbLocalTime.date.month,
@@ -96,7 +96,7 @@ internal object PolarTimeUtils {
     }
 
     fun pbLocalDateTimeToZonedDateTime(pbDateTime: PbLocalDateTime): ZonedDateTime {
-        val zoneId = ZoneOffset.ofTotalSeconds(pbDateTime.timeZoneOffset * 60)
+        val zoneId = ZoneOffset.ofTotalSeconds(tzOffsetMinutesToTotalSeconds(pbDateTime.timeZoneOffset))
         return ZonedDateTime.of(
             pbDateTime.date.year,
             pbDateTime.date.month,
@@ -115,7 +115,7 @@ internal object PolarTimeUtils {
      */
     fun pbLocalDateTimeToLocalDateTimeWithOptionalTz(pbDateTime: PbLocalDateTime): LocalDateTime {
         val tz = if (pbDateTime.hasTimeZoneOffset()) {
-            ZoneOffset.ofTotalSeconds(pbDateTime.timeZoneOffset * 60)
+            ZoneOffset.ofTotalSeconds(tzOffsetMinutesToTotalSeconds(pbDateTime.timeZoneOffset))
         } else {
             ZoneOffset.UTC
         }
@@ -259,5 +259,15 @@ internal object PolarTimeUtils {
             .setMinute(minute)
             .setSeconds(second)
             .setMillis(millis)
+    }
+
+    /**
+     * Converts a timezone offset expressed in minutes to total seconds, clamping the input to the
+     * valid IANA range of -720..840 minutes (UTC-12:00..UTC+14:00) to prevent integer overflow and
+     * to ensure ZoneOffset.ofTotalSeconds does not throw DateTimeException on malformed device data.
+     */
+    private fun tzOffsetMinutesToTotalSeconds(offsetMinutes: Int): Int {
+        val clamped = offsetMinutes.coerceIn(-720, 840)
+        return TimeUnit.SECONDS.convert(clamped.toLong(), TimeUnit.MINUTES).toInt()
     }
 }
