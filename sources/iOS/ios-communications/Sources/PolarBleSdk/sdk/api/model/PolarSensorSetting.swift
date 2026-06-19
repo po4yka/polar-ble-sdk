@@ -64,9 +64,11 @@ public struct PolarSensorSetting {
     public func maxSettings() -> PolarSensorSetting {
         let selected = settings.reduce(into: [:]) { (result, arg1) in
             let (key, value) = arg1
-            result[key] = value.max() ?? 0
-        } as [SettingType : UInt32]
-        return try! PolarSensorSetting(selected)
+            if let maxValue = value.max() {
+                result[key] = Set([maxValue])
+            }
+        } as [SettingType : Set<UInt32>]
+        return PolarSensorSetting(selected)
     }
 }
 
