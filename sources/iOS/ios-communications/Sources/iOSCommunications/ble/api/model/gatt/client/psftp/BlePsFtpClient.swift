@@ -419,13 +419,8 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
                             } else {
                                 response = (pCounter % UInt64(self.packetChunks.get())) == 0
                             }
-                            if next == 0 {
-                                try self.transmitMtuPacket(packet, canceled: BlockOperation(), response: response, timeout: timeout)
-                                BleLogger.trace("Transmitted first MTU packet with size: \(packet.count) bytes")
-                            } else {
-                                try self.transmitMtuPacket(packet, canceled: block ?? BlockOperation(), response: response, timeout: timeout)
-                                BleLogger.trace("Transmitted MTU packet with size: \(packet.count) bytes")
-                            }
+                            try self.transmitMtuPacket(packet, canceled: block ?? BlockOperation(), response: response, timeout: timeout)
+                            BleLogger.trace("Transmitted MTU packet with size: \(packet.count) bytes")
                             next = 1
                             totalTransmitted += Int64(packet.count - 1)
                             var transferred: Int64 = 0
