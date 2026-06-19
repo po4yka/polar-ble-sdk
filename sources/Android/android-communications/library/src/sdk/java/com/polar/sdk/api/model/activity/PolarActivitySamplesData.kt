@@ -9,16 +9,16 @@ import java.time.LocalDateTime
  * [PolarActivitySamplesData] data for given [startTime].
  */
 
-data class PolarActivitySamplesData(var startTime: LocalDateTime? = null,
-                                    var metRecordingInterval: Int? = null,
-                                    var metSamples: List<Float> = emptyList(),
-                                    var stepRecordingInterval: Int? = null,
-                                    var stepSamples: List<Int> = emptyList(),
-                                    var activityInfoList: List<PolarActivityInfo> = emptyList()
+data class PolarActivitySamplesData(val startTime: LocalDateTime? = null,
+                                    val metRecordingInterval: Int? = null,
+                                    val metSamples: List<Float> = emptyList(),
+                                    val stepRecordingInterval: Int? = null,
+                                    val stepSamples: List<Int> = emptyList(),
+                                    val activityInfoList: List<PolarActivityInfo> = emptyList()
     )
 
-data class PolarActivitySamplesDayData(var polarActivitySamplesDataList: List<PolarActivitySamplesData>? = null)
-data class PolarActivityInfo(var activityClass: PolarActivityClass?, var timeStamp: LocalDateTime, var factor: Float)
+data class PolarActivitySamplesDayData(val polarActivitySamplesDataList: List<PolarActivitySamplesData>? = null)
+data class PolarActivityInfo(val activityClass: PolarActivityClass?, val timeStamp: LocalDateTime, val factor: Float)
 
 enum class PolarActivityClass(val value: Int) {
     SLEEP(1),
