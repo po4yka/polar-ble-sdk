@@ -204,12 +204,14 @@ class CBDeviceSessionImpl: BleDeviceSession, CBPeripheralDelegate, BleAttributeT
     }
     
     func sendNextAttNotify(_ remove: Bool, enableNotify enabled: Bool = true) {
-        if(remove && attNotifyQueue.size() > 0){
-            attNotifyQueue.remove({ (item) -> Bool in
-                return item === attNotifyQueue.items[0]
-            })
+        if remove {
+            // pop() atomically removes the first item while holding the lock,
+            // eliminating the TOCTOU race from the previous remove(closure) pattern.
+            _ = try? attNotifyQueue.pop()
         }
-        if let chr = attNotifyQueue.items.first {
+        // fetch(_:) holds the NSCondition lock for the full peek, preventing a
+        // race between size() > 0 and reading .items directly.
+        if let chr = attNotifyQueue.fetch({ _ in true }) {
             BleLogger.trace("send next att notify: \(chr.description)")
             peripheral.setNotifyValue(enabled, for: chr)
         }
