@@ -59,6 +59,7 @@ class BDDeviceSessionImpl internal constructor(
         }
     // gatt is the only shared object between threads
     val gattMutex: Any = Any()
+    @Volatile
     var serviceDiscovery: Job? = null
 
     private val attOperations = LinkedBlockingDeque<AttributeOperation>()
