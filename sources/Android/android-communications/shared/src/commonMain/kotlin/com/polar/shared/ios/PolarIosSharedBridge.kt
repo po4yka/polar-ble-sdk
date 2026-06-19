@@ -148,7 +148,7 @@ object PolarIosSharedBridge {
         }
     }
 
-    fun millisToNanos(milliseconds: Int): Int {
+    fun millisToNanos(milliseconds: Int): Long {
         return PolarTimeUtils.millisToNanos(milliseconds)
     }
 
@@ -164,7 +164,7 @@ object PolarIosSharedBridge {
         return PolarTimeUtils.minutesToSeconds(minutes)
     }
 
-    fun durationToMillis(hours: Int, minutes: Int, seconds: Int, millis: Int): Int {
+    fun durationToMillis(hours: Int, minutes: Int, seconds: Int, millis: Int): Long {
         return PolarTimeUtils.durationToMillis(
             PolarDurationFields(
                 hours = hours,

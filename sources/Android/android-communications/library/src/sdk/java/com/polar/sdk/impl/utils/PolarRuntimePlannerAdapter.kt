@@ -1912,7 +1912,7 @@ internal object PolarRuntimePlannerAdapter {
         ).toPlanned()
     }
 
-    fun millisToNanos(milliseconds: Int): Int {
+    fun millisToNanos(milliseconds: Int): Long {
         return PolarTimeUtils.millisToNanos(milliseconds)
     }
 
@@ -1920,7 +1920,7 @@ internal object PolarRuntimePlannerAdapter {
         return PolarTimeUtils.secondsToMinutes(seconds)
     }
 
-    fun durationMillis(hours: Int, minutes: Int, seconds: Int, millis: Int): Int {
+    fun durationMillis(hours: Int, minutes: Int, seconds: Int, millis: Int): Long {
         return PolarTimeUtils.durationToMillis(PolarDurationFields(hours, minutes, seconds, millis))
     }
 
