@@ -577,7 +577,9 @@ class BDDeviceSessionImpl internal constructor(
                         client.processServiceDataWritten(characteristic.uuid, status)
                     }
                 }
-                processNextAttributeOperation(true)
+                synchronized(gattMutex) {
+                    processNextAttributeOperation(true)
+                }
             }
         }
     }
@@ -594,7 +596,9 @@ class BDDeviceSessionImpl internal constructor(
                 }
             }
             else -> {
-                processNextAttributeOperation(true)
+                synchronized(gattMutex) {
+                    processNextAttributeOperation(true)
+                }
                 val client = fetchClient(service.uuid)
                 if (client != null && client.containsCharacteristic(characteristic.uuid)) {
                     client.processServiceData(characteristic.uuid, value, status, false)
@@ -614,7 +618,9 @@ class BDDeviceSessionImpl internal constructor(
 
     fun handleDescriptorRead(descriptor: BluetoothGattDescriptor?, value: ByteArray?, status: Int) {
         d(TAG, "onDescriptorRead status: $status")
-        processNextAttributeOperation(true)
+        synchronized(gattMutex) {
+            processNextAttributeOperation(true)
+        }
     }
 
     fun handleDescriptorWrite(service: BluetoothGattService, characteristic: BluetoothGattCharacteristic, value: ByteArray?, status: Int) {
@@ -632,7 +638,9 @@ class BDDeviceSessionImpl internal constructor(
                 }
             }
             else -> {
-                processNextAttributeOperation(true)
+                synchronized(gattMutex) {
+                    processNextAttributeOperation(true)
+                }
                 val disable = byteArrayOf(0x00, 0x00)
                 var activated = !disable.contentEquals(value)
                 if (status != BleGattBase.ATT_SUCCESS) activated = false
@@ -654,14 +662,18 @@ class BDDeviceSessionImpl internal constructor(
     }
 
     fun handleAuthenticationComplete() {
-        processNextAttributeOperation(false)
+        synchronized(gattMutex) {
+            processNextAttributeOperation(false)
+        }
         for (gattClient in clients) {
             gattClient.authenticationCompleted()
         }
     }
 
     private fun handleAuthenticationFailed(e: Throwable) {
-        processNextAttributeOperation(false)
+        synchronized(gattMutex) {
+            processNextAttributeOperation(true)
+        }
         for (gattClient in clients) {
             gattClient.authenticationFailed(e)
         }
