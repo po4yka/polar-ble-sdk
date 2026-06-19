@@ -88,7 +88,7 @@ open class BlePmdClient: BleGattClientBase, @unchecked Sendable {
     public static let PMD_DATA    = CBUUID(string: "FB005C82-02E7-F387-1CAD-8ACD2D8DF0C8")
 
     let pmdCpResponseQueue = AtomicList<Data>()
-    var features: Data?
+    private let features = AtomicType<Data?>(initialValue: nil)
 
     // MARK: - Streams
     private let accStreams         = StreamContinuationList<AccData>()
@@ -119,7 +119,7 @@ open class BlePmdClient: BleGattClientBase, @unchecked Sendable {
         clearStreamObservers(error: BleGattException.gattDisconnected)
         featureWaiters.finish(throwing: BleGattException.gattDisconnected)
         pmdCpResponseQueue.removeAll()
-        features = nil
+        features.set(nil)
         previousTimeStamp.set([:])
     }
 
@@ -167,7 +167,7 @@ open class BlePmdClient: BleGattClientBase, @unchecked Sendable {
         if chr.isEqual(BlePmdClient.PMD_CP) {
             if err == 0 {
                 if data[0] == 0x0f {
-                    features = data
+                    features.set(data)
                     let types = PmdMeasurementType.fromByteArray(data)
                     featureWaiters.yield(types)
                     featureWaiters.finish()
@@ -340,7 +340,7 @@ open class BlePmdClient: BleGattClientBase, @unchecked Sendable {
     }
 
     public func readFeature(_ checkConnection: Bool) async throws -> Set<PmdMeasurementType> {
-        if let f = features { return PmdMeasurementType.fromByteArray(f) }
+        if let f = features.get() { return PmdMeasurementType.fromByteArray(f) }
         let stream = featureWaiters.makeStream(transport: gattServiceTransmitter, checkConnection: checkConnection)
         for try await types in stream {
             return types
