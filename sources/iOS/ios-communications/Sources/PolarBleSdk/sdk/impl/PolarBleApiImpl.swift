@@ -4123,8 +4123,10 @@ private extension Date {
 // This extension keeps the wrong TimeZone information (UTC) in the localDate object although the date and time are returned for the CURRENT time zone.
 extension Date {
     func localDate() throws -> Date {
-        let nowUTC = Date()
-        let timeZoneOffset = Double(TimeZone.current.secondsFromGMT(for: nowUTC))
+        // Use secondsFromGMT(for: self) so the DST offset is computed for the
+        // target date, not for the current instant. Using Date() here would
+        // produce the wrong offset when self and now straddle a DST transition.
+        let timeZoneOffset = Double(TimeZone.current.secondsFromGMT(for: self))
         guard let localDate = Calendar.current.date(byAdding: .second, value: Int(timeZoneOffset), to: self) else {
             throw PolarErrors.invalidArgument(description: "Null date value found.")
         }
