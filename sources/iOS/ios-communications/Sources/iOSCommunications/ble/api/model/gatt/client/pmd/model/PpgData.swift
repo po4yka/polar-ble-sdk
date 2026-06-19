@@ -10,74 +10,74 @@ public class PpgData {
     var samples: [PpgSample]
     
     protocol PpgSample {
-        var timeStamp: UInt64! { get }
-        var frameType: PmdDataFrameType! { get }
+        var timeStamp: UInt64 { get }
+        var frameType: PmdDataFrameType { get }
     }
-    
+
     struct PpgDataFrameType0: PpgSample {
-        let timeStamp: UInt64!
-        let frameType: PmdDataFrameType!
-        let ppgDataSamples: [Int32]!
-        let ambientSample: Int32!
+        let timeStamp: UInt64
+        let frameType: PmdDataFrameType
+        let ppgDataSamples: [Int32]
+        let ambientSample: Int32
     }
 
     struct PpgDataFrameType4: PpgSample {
-        let timeStamp: UInt64!
-        let frameType: PmdDataFrameType!
-        let ppgDataSamples: [Int32]!
+        let timeStamp: UInt64
+        let frameType: PmdDataFrameType
+        let ppgDataSamples: [Int32]
     }
-    
+
     struct PpgDataFrameType5: PpgSample {
-        let timeStamp: UInt64!
-        let frameType: PmdDataFrameType!
-        let operationMode: UInt64!
+        let timeStamp: UInt64
+        let frameType: PmdDataFrameType
+        let operationMode: UInt64
     }
-    
+
     struct PpgDataFrameType6: PpgSample {
-        let timeStamp: UInt64!
-        let frameType: PmdDataFrameType!
-        let sportId: Int32!
+        let timeStamp: UInt64
+        let frameType: PmdDataFrameType
+        let sportId: Int32
     }
-    
+
     struct PpgDataFrameType7: PpgSample {
-        let timeStamp: UInt64!
-        let frameType: PmdDataFrameType!
-        let ppgDataSamples: [Int32]!
+        let timeStamp: UInt64
+        let frameType: PmdDataFrameType
+        let ppgDataSamples: [Int32]
     }
-    
+
     struct PpgDataFrameType8: PpgSample {
-        let timeStamp: UInt64!
-        let frameType: PmdDataFrameType!
-        let ppgDataSamples: [Int32]!
+        let timeStamp: UInt64
+        let frameType: PmdDataFrameType
+        let ppgDataSamples: [Int32]
         let statusBits: [Int8]?
     }
-    
+
     struct PpgDataFrameType9: PpgSample {
-        let timeStamp: UInt64!
-        let frameType: PmdDataFrameType!
-        let ppgDataSamples: [Int32]!
+        let timeStamp: UInt64
+        let frameType: PmdDataFrameType
+        let ppgDataSamples: [Int32]
     }
-    
+
     struct PpgDataFrameType10: PpgSample {
-        let timeStamp: UInt64!
-        let frameType: PmdDataFrameType!
-        let greenSamples: [Int32]!
-        let redSamples: [Int32]!
-        let irSamples: [Int32]!
+        let timeStamp: UInt64
+        let frameType: PmdDataFrameType
+        let greenSamples: [Int32]
+        let redSamples: [Int32]
+        let irSamples: [Int32]
         let statusBits: [Int8]?
     }
-    
+
     struct PpgDataFrameType13: PpgSample {
-        let timeStamp: UInt64!
-        let frameType: PmdDataFrameType!
-        let ppgDataSamples: [Int32]!
+        let timeStamp: UInt64
+        let frameType: PmdDataFrameType
+        let ppgDataSamples: [Int32]
         let statusBits: [Int8]?
     }
-    
+
     struct PpgDataFrameType14: PpgSample {
-        let timeStamp: UInt64!
-        let frameType: PmdDataFrameType!
-        let ppgDataSamples: [Int32]!
+        let timeStamp: UInt64
+        let frameType: PmdDataFrameType
+        let ppgDataSamples: [Int32]
     }
     
     init(timeStamp: UInt64 = 0, samples: [PpgSample] = []) {
