@@ -171,7 +171,12 @@ public class PolarUserDeviceSettings {
 
         var proto = Data_PbUserDeviceSettings()
         var generalSettings = Data_PbUserDeviceGeneralSettings()
-        generalSettings.deviceLocation = PbDeviceLocation.init(rawValue: userDeviceSettings.deviceLocation.toInt())!
+        if let pbLocation = PbDeviceLocation(rawValue: userDeviceSettings.deviceLocation.toInt()) {
+            generalSettings.deviceLocation = pbLocation
+        } else {
+            NSLog("PolarUserDeviceSettings: unknown deviceLocation index %d, falling back to undefined", userDeviceSettings.deviceLocation.toInt())
+            generalSettings.deviceLocation = PbDeviceLocation(rawValue: 0) ?? .undefined
+        }
         proto.generalSettings = generalSettings
         proto.lastModified = PolarTimeUtils.dateToPbSystemDateTime(date: Date())
 
