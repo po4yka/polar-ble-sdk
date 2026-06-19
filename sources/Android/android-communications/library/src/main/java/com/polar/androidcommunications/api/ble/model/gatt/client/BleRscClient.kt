@@ -42,6 +42,11 @@ class BleRscClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, R
         if (status == ATT_SUCCESS && data.isNotEmpty()) {
             if (characteristic == RSC_MEASUREMENT) {
                 // Bluetooth RSC flags are packed into the first byte.
+                // Mandatory fields: flags (1) + speed (2) + cadence (1) = 4 bytes minimum.
+                if (data.size < 4) {
+                    w(TAG, "RSC measurement packet too short (${data.size} bytes), skipped")
+                    return
+                }
                 var index = 0
                 val flags = data[index++].toLong()
                 val strideLenPresent = (flags and 0x01L) == 0x01L
@@ -54,11 +59,21 @@ class BleRscClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, R
                 var strideLength: Long = 0
                 var totalDistance: Long = 0
 
-                if (strideLenPresent) strideLength =
-                    ((data[index++].toInt() and 0xFF) or ((data[index++].toInt() and 0xFF) shl 8)).toLong()
+                if (strideLenPresent) {
+                    if (data.size < index + 2) {
+                        w(TAG, "RSC measurement packet too short for stride length (${data.size} bytes), skipped")
+                        return
+                    }
+                    strideLength = ((data[index++].toInt() and 0xFF) or ((data[index++].toInt() and 0xFF) shl 8)).toLong()
+                }
 
-                if (totalDistancePresent) totalDistance =
-                    ((data[index++].toInt() and 0xFF) or ((data[index++].toInt() and 0xFF) shl 8) or ((data[index++].toInt() and 0xFF) shl 16) or ((data[index].toInt() and 0xFF) shl 24)).toLong()
+                if (totalDistancePresent) {
+                    if (data.size < index + 4) {
+                        w(TAG, "RSC measurement packet too short for total distance (${data.size} bytes), skipped")
+                        return
+                    }
+                    totalDistance = ((data[index++].toInt() and 0xFF) or ((data[index++].toInt() and 0xFF) shl 8) or ((data[index++].toInt() and 0xFF) shl 16) or ((data[index].toInt() and 0xFF) shl 24)).toLong()
+                }
 
                 val finalStrideLength = strideLength
                 val finalTotalDistance = totalDistance
@@ -76,6 +91,10 @@ class BleRscClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, R
                     )
                 }
             } else if (characteristic == RSC_FEATURE) {
+                if (data.size < 2) {
+                    w(TAG, "RSC feature packet too short (${data.size} bytes), skipped")
+                    return
+                }
                 val feature = (data[0].toInt() or (data[1].toInt() shl 8)).toLong()
                 d(TAG, "RSC Feature Characteristic read: $feature")
             }
