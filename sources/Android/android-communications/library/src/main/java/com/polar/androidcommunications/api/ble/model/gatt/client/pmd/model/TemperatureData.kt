@@ -45,8 +45,8 @@ internal class TemperatureData {
 
             val timeStamps = PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp = frame.previousTimeStamp, frameTimeStamp = frame.timeStamp, samplesSize = samples.size, frame.sampleRate)
             for ((index, sample) in samples.withIndex()) {
-                val pressure = if (frame.factor != 1.0f) intBitsToFloat(sample[0]) * frame.factor else intBitsToFloat(sample[0])
-                temperatureData.temperatureSamples.add(TemperatureSample(timeStamp = timeStamps[index], pressure))
+                val temperature = if (frame.factor != 1.0f) intBitsToFloat(sample[0]) * frame.factor else intBitsToFloat(sample[0])
+                temperatureData.temperatureSamples.add(TemperatureSample(timeStamp = timeStamps[index], temperature))
             }
             return temperatureData
         }
