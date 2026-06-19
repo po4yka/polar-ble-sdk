@@ -30,14 +30,14 @@ data class PolarDurationFields(
 )
 
 object PolarTimeUtils {
-    private const val NANOS_PER_MILLI = 1_000_000
+    private const val NANOS_PER_MILLI = 1_000_000L
     private const val SECONDS_PER_MINUTE = 60
     private const val MILLIS_PER_SECOND = 1_000
     private const val MILLIS_PER_MINUTE = 60 * MILLIS_PER_SECOND
     private const val MILLIS_PER_HOUR = 60 * MILLIS_PER_MINUTE
 
-    fun millisToNanos(milliseconds: Int): Int {
-        return milliseconds * NANOS_PER_MILLI
+    fun millisToNanos(milliseconds: Int): Long {
+        return milliseconds.toLong() * NANOS_PER_MILLI
     }
 
     fun nanosToMillis(nanoseconds: Int): Int {
