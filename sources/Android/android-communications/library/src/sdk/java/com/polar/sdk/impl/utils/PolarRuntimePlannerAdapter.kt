@@ -637,6 +637,9 @@ internal object PolarRuntimePlannerAdapter {
     }
 
     fun convertArrayToSignedInt(data: ByteArray, offset: Int, length: Int): Int {
+        require(offset >= 0 && length > 0 && offset + length <= data.size) {
+            "convertArrayToSignedInt: invalid range offset=$offset length=$length dataSize=${data.size}"
+        }
         return convertArrayToSignedInt(data.copyOfRange(offset, offset + length))
     }
 
