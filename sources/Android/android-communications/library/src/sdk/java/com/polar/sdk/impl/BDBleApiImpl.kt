@@ -3845,7 +3845,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
     companion object {
         private const val TAG = "BDBleApiImpl"
-        private var instance: BDBleApiImpl? = null
+        @Volatile private var instance: BDBleApiImpl? = null
 
         @Throws(PolarBleSdkInstanceException::class, BleNotAvailableInDevice::class)
         fun getInstance(context: Context, features: Set<PolarBleSdkFeature>): BDBleApiImpl {
@@ -3856,9 +3856,11 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 } else {
                     throw PolarBleSdkInstanceException("Attempt to create Polar BLE API with features " + resolvedFeatures + ". Instance with features " + instance!!.features + " already exists")
                 }
-            } ?: run {
-                instance = BDBleApiImpl(context, resolvedFeatures)
-                instance!!
+            } ?: synchronized(BDBleApiImpl::class.java) {
+                instance ?: run {
+                    instance = BDBleApiImpl(context, resolvedFeatures)
+                    instance!!
+                }
             }
         }
 
