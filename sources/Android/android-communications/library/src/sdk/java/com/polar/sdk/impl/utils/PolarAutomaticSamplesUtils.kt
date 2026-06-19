@@ -47,16 +47,21 @@ internal object PolarAutomaticSamplesUtils {
         val requestedDays = requestedBasicDays(fromDate, toDate)
 
         for (fileName in filteredFiles) {
-            val fileOperation = automaticSamplesFileReadOperation(fileName)
-            val filePath = fileOperation.second
-            BleLogger.d(TAG, "Sending GET request for file: $filePath")
-            val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
-            val sampleSessions = PbAutomaticSampleSessions.parseFrom(fileResponse.toByteArray())
-            val sampleDate = PolarTimeUtils.pbDateToLocalDate(sampleSessions.day)
-            if (sampleDate.format(DateTimeFormatter.BASIC_ISO_DATE) in requestedDays) {
-                hrSamplesDataList.add(Polar247HrSamplesData.fromProto(sampleSessions))
-            } else {
-                BleLogger.d(TAG, "Sample date $sampleDate is out of range: $fromDate to $toDate")
+            try {
+                val fileOperation = automaticSamplesFileReadOperation(fileName)
+                val filePath = fileOperation.second
+                BleLogger.d(TAG, "Sending GET request for file: $filePath")
+                val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
+                val sampleSessions = PbAutomaticSampleSessions.parseFrom(fileResponse.toByteArray())
+                val sampleDate = PolarTimeUtils.pbDateToLocalDate(sampleSessions.day)
+                if (sampleDate.format(DateTimeFormatter.BASIC_ISO_DATE) in requestedDays) {
+                    hrSamplesDataList.add(Polar247HrSamplesData.fromProto(sampleSessions))
+                } else {
+                    BleLogger.d(TAG, "Sample date $sampleDate is out of range: $fromDate to $toDate")
+                }
+            } catch (error: Throwable) {
+                BleLogger.w(TAG, "read247HrSamples() failed for file: $fileName, error: $error")
+                continue
             }
         }
 
@@ -78,19 +83,24 @@ internal object PolarAutomaticSamplesUtils {
         val requestedDays = requestedBasicDays(fromDate, toDate)
 
         for (fileName in filteredFiles) {
-            val fileOperation = automaticSamplesFileReadOperation(fileName)
-            val filePath = fileOperation.second
-            BleLogger.d(TAG, "Sending GET request for file: $filePath")
-            val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
-            val sampleSessions = PbAutomaticSampleSessions.parseFrom(fileResponse.toByteArray())
-            val sampleDateProto = sampleSessions.day
-            val sampleDateForCheck = LocalDate.of(sampleDateProto.year, sampleDateProto.month, sampleDateProto.day)
-            for (sample in sampleSessions.ppiSamplesList) {
-                if (sampleDateForCheck.format(DateTimeFormatter.BASIC_ISO_DATE) in requestedDays) {
-                    ppiSamplesDataList.add(Polar247PPiSamplesData(sampleDateForCheck, fromPbPPiDataSamples(sample)))
-                } else {
-                    BleLogger.d(TAG, "Sample date $sampleDateForCheck is out of range: $fromDate to $toDate")
+            try {
+                val fileOperation = automaticSamplesFileReadOperation(fileName)
+                val filePath = fileOperation.second
+                BleLogger.d(TAG, "Sending GET request for file: $filePath")
+                val fileResponse = client.request(PolarRuntimePlannerAdapter.fileOperationBytes(fileOperation))
+                val sampleSessions = PbAutomaticSampleSessions.parseFrom(fileResponse.toByteArray())
+                val sampleDateProto = sampleSessions.day
+                val sampleDateForCheck = LocalDate.of(sampleDateProto.year, sampleDateProto.month, sampleDateProto.day)
+                for (sample in sampleSessions.ppiSamplesList) {
+                    if (sampleDateForCheck.format(DateTimeFormatter.BASIC_ISO_DATE) in requestedDays) {
+                        ppiSamplesDataList.add(Polar247PPiSamplesData(sampleDateForCheck, fromPbPPiDataSamples(sample)))
+                    } else {
+                        BleLogger.d(TAG, "Sample date $sampleDateForCheck is out of range: $fromDate to $toDate")
+                    }
                 }
+            } catch (error: Throwable) {
+                BleLogger.w(TAG, "read247PPiSamples() failed for file: $fileName, error: $error")
+                continue
             }
         }
 
