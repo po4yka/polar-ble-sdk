@@ -79,7 +79,7 @@ public struct LogConfig {
             barometerLogEnabled: proto.hasBarometerLogEnabled ? proto.barometerLogEnabled : nil,
             gyroscopeLogEnabled: proto.hasGyroscopeLogEnabled ? proto.gyroscopeLogEnabled : nil,
             sleepLogEnabled: proto.hasSleepLogEnabled ? proto.sleepLogEnabled : nil,
-            slopeLogEnabled: proto.slopeLogEnabled ? proto.slopeLogEnabled : nil,
+            slopeLogEnabled: proto.hasSlopeLogEnabled ? proto.slopeLogEnabled : nil,
             ambientLightLogEnabled: proto.hasAmbientLightLogEnabled ? proto.ambientLightLogEnabled : nil,
             tlrLogEnabled: proto.hasTlrLogEnabled ? proto.tlrLogEnabled : nil,
             ondemandLogEnabled: proto.hasOndemandLogEnabled ? proto.ondemandLogEnabled : nil,
