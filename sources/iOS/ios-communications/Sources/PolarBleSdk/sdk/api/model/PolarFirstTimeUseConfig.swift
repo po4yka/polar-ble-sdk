@@ -94,14 +94,28 @@ public struct PolarFirstTimeUseConfig {
         deviceTime: String,
         typicalDay: TypicalDay,
         sleepGoalMinutes: Int
-    ) {
-        assert(height >= 90.0 && height <= 240.0, "Height must be between 90 and 240 cm")
-        assert(weight >= 15.0 && weight <= 300.0, "Weight must be between 15 and 300 kg")
-        assert(maxHeartRate >= 100 && maxHeartRate <= 240, "Max heart rate must be between 100 and 240 bpm")
-        assert(restingHeartRate >= 20 && restingHeartRate <= 120, "Resting heart rate must be between 20 and 120 bpm")
-        assert(trainingBackground.rawValue >= 10 && trainingBackground.rawValue <= 60, "Training background out of range")
-        assert(vo2Max >= 10 && vo2Max <= 95, "VO2 max must be between 10 and 95")
-        assert(sleepGoalMinutes >= 300 && sleepGoalMinutes <= 660, "Sleep goal must be between 300 and 660 minutes")
+    ) throws {
+        guard height >= 90.0 && height <= 240.0 else {
+            throw PolarErrors.invalidArgument(description: "Height must be between 90 and 240 cm")
+        }
+        guard weight >= 15.0 && weight <= 300.0 else {
+            throw PolarErrors.invalidArgument(description: "Weight must be between 15 and 300 kg")
+        }
+        guard maxHeartRate >= 100 && maxHeartRate <= 240 else {
+            throw PolarErrors.invalidArgument(description: "Max heart rate must be between 100 and 240 bpm")
+        }
+        guard restingHeartRate >= 20 && restingHeartRate <= 120 else {
+            throw PolarErrors.invalidArgument(description: "Resting heart rate must be between 20 and 120 bpm")
+        }
+        guard trainingBackground.rawValue >= 10 && trainingBackground.rawValue <= 60 else {
+            throw PolarErrors.invalidArgument(description: "Training background out of range")
+        }
+        guard vo2Max >= 10 && vo2Max <= 95 else {
+            throw PolarErrors.invalidArgument(description: "VO2 max must be between 10 and 95")
+        }
+        guard sleepGoalMinutes >= 300 && sleepGoalMinutes <= 660 else {
+            throw PolarErrors.invalidArgument(description: "Sleep goal must be between 300 and 660 minutes")
+        }
 
         self.gender = gender
         self.birthDate = birthDate
