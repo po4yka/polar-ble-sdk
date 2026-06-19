@@ -11,6 +11,14 @@ public struct Pfc {
         public let securityModeSupported: Bool
 
         init(_ data: Data) {
+            guard data.count >= 2 else {
+                broadcastSupported       = false
+                khzSupported             = false
+                multiConnectionSupported = false
+                antPlusSupported         = false
+                securityModeSupported    = false
+                return
+            }
             broadcastSupported       = (data[0] & 0x01) == 0x01
             khzSupported             = (data[0] & 0x02) == 0x02
             multiConnectionSupported = (data[0] & 0x80) == 0x80
