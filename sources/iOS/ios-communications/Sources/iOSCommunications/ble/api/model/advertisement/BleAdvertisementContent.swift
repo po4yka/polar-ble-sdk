@@ -85,7 +85,7 @@ public class BleAdvertisementContent {
                     didContainHrData = true
                     break
                 default:
-                    while offset < content.count {
+                    outerLoop: while offset < content.count {
                         let gpbDataBit = content[offset] & 0x40
                         switch gpbDataBit {
                         case 0:
@@ -93,8 +93,10 @@ public class BleAdvertisementContent {
                                 polarHrAdvertisementData.processPolarManufacturerData(content.subdata(in: offset..<content.count))
                                 didContainHrData = true
                             }
+                            guard offset + 3 <= content.count else { break outerLoop }
                             offset += 3
                         default:
+                            guard offset + 1 < content.count else { break outerLoop }
                             offset += (Int(content[offset+1]) + 2)
                         }
                     }
