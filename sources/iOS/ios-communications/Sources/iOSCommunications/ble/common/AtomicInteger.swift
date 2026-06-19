@@ -29,13 +29,14 @@ class AtomicInteger {
     
     /// increment by 1 current value, signal condition and return value
     ///
-    /// - Returns: current value
+    /// - Returns: value after increment
     internal func incrementAndGet() -> Int{
         lock.lock()
         val += 1
+        let result = val
         lock.signal()
         lock.unlock()
-        return get()
+        return result
     }
 
     /// increment by 1 current value and signal condition
@@ -50,13 +51,14 @@ class AtomicInteger {
     
     /// reduce by 1 current value, signal condition and return
     ///
-    /// - Returns: current value
+    /// - Returns: value after decrement
     internal func decrementAndGet() -> Int{
         lock.lock()
         val -= 1
+        let result = val
         lock.signal()
         lock.unlock()
-        return get()
+        return result
     }
     
     /// reset set value to 0 and signal condition
