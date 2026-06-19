@@ -85,23 +85,25 @@ class BleDisClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, D
                     }
                 }
 
+                val disInfoSnapshot: List<DisInfo>
+                synchronized(disInformationDataSet) {
+                    disInfoSnapshot = disInformationDataSet.toList()
+                }
                 ChannelUtils.emitNext(disInfoObservers) { observer ->
-                    disInformationDataSet.stream()
+                    disInfoSnapshot.stream()
                         .filter { info: DisInfo ->
                             (characteristic == SYSTEM_ID && info.key == SYSTEM_ID_HEX) ||
                                 (characteristic.toString() == info.key)
                         }
                         .findFirst().ifPresent { info -> observer.trySend(info) }
-                    synchronized(disInformationDataSet) {
-                        val validUuids =
-                            disInformationDataSet.stream()
-                                .map(DisInfo::key)
-                                .filter { s: String -> this.isValidUUIDString(s) }
-                                .map { name: String? -> UUID.fromString(name) }
-                                .collect(Collectors.toSet())
-                        if (hasAllAvailableReadableCharacteristics(validUuids)) {
-                            observer.close()
-                        }
+                    val validUuids =
+                        disInfoSnapshot.stream()
+                            .map(DisInfo::key)
+                            .filter { s: String -> this.isValidUUIDString(s) }
+                            .map { name: String? -> UUID.fromString(name) }
+                            .collect(Collectors.toSet())
+                    if (hasAllAvailableReadableCharacteristics(validUuids)) {
+                        observer.close()
                     }
                 }
             } else {
