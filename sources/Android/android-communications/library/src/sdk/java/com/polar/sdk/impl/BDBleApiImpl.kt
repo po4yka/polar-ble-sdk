@@ -182,14 +182,14 @@ fun planSetLocalTimeV2ForCurrentZone(localTime: LocalDateTime) =
 class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleSdkFeature>) : PolarBleApi(features), BlePowerStateChangedCallback, PolarTrainingSessionApi,
     PolarBleLowLevelApi, PolarOfflineExerciseV2Api, PolarTestApi, PolarDerivedMeasurementApi {
 
-    private val connectSubscriptions: MutableMap<String, Job> = mutableMapOf()
+    private val connectSubscriptions: MutableMap<String, Job> = ConcurrentHashMap()
     private val apiScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val readyFeaturesMap = ConcurrentHashMap<String, Set<PolarBleApi.PolarBleSdkFeature>>()
 
-    private val lastDerivedMethodsCache: MutableMap<String, Set<Int>> = mutableMapOf()
-    private val deviceDataMonitorJob: MutableMap<String?, Job> = mutableMapOf()
-    private val deviceAvailableFeaturesJob: MutableMap<String?, Job> = mutableMapOf()
-    private val stopPmdStreamingJob: MutableMap<String?, Job> = mutableMapOf()
+    private val lastDerivedMethodsCache: MutableMap<String, Set<Int>> = ConcurrentHashMap()
+    private val deviceDataMonitorJob: MutableMap<String?, Job> = ConcurrentHashMap()
+    private val deviceAvailableFeaturesJob: MutableMap<String?, Job> = ConcurrentHashMap()
+    private val stopPmdStreamingJob: MutableMap<String?, Job> = ConcurrentHashMap()
     private val filter =
         BleSearchPreFilter { content: BleAdvertisementContent -> content.polarDeviceId.isNotEmpty() && content.polarDeviceType != "mobile" }
     private var listener: BleDeviceListener? = null
