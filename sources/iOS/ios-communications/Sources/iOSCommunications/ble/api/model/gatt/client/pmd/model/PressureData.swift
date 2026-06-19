@@ -43,7 +43,6 @@ public class PressureData {
         }
         #endif
 
-        let pressureData = PressureData()
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_0_CHANNELS_IN_SAMPLE, resolution: TYPE_0_SAMPLE_SIZE_IN_BITS)
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
 
@@ -55,7 +54,7 @@ public class PressureData {
             pressureSamples.append(PressureSample(timeStamp: timeStamps[index], pressure: pressure))
         }
 
-        return pressureData
+        return PressureData(samples: pressureSamples)
     }
 
     private static func dataFromRawType0(frame: PmdDataFrame) throws -> PressureData {
