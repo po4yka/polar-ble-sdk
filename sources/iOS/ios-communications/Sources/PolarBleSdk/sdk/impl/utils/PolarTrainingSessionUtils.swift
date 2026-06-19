@@ -402,7 +402,9 @@ internal class PolarTrainingSessionUtils {
             case "M":
                 continue
             default:
-                return nil
+                // Unknown row type: skip this row to allow forward-compatibility rather than
+                // aborting the entire reconstruction plan on an unrecognized row.
+                continue
             }
         }
         return TrainingSessionPayloadReconstructionPlan(
