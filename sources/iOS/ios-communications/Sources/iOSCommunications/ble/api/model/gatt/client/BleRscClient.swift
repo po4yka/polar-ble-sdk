@@ -26,6 +26,8 @@ public class BleRscClient: BleGattClientBase, @unchecked Sendable {
     override public func processServiceData(_ chr: CBUUID, data: Data, err: Int) {
         if err == 0 {
             if chr.isEqual(RSC_MEASUREMENT) {
+                // Minimum packet: flags(1) + speed(2) + cadence(1) = 4 bytes
+                guard data.count >= 4 else { return }
                 var index = 0
                 let flags = data[0]
                 index += 1
@@ -40,11 +42,13 @@ public class BleRscClient: BleGattClientBase, @unchecked Sendable {
                 var strideLength = 0
                 var totalDistance = 0.0
                 if strideLenPresent {
+                    guard data.count >= index + 2 else { return }
                     strideLength = Int(UInt16(data[index]) | UInt16(UInt16(data[index + 1]) << 8))
                     index += 2
                 }
                 if totalDistancePresent {
-                    var distance = 0
+                    guard data.count >= index + 4 else { return }
+                    var distance: UInt32 = 0
                     memcpy(&distance, (data.subdata(in: index..<(index + 4)) as NSData).bytes, 4)
                     totalDistance = Double(distance) * 0.1
                 }
