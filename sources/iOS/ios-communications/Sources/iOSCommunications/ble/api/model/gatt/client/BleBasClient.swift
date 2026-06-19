@@ -12,8 +12,8 @@ public class BleBasClient: BleGattClientBase, @unchecked Sendable {
 
     var cachedBatteryPercentage = AtomicInteger(initialValue: UNDEFINED_BATTERY_PERCENTAGE)
 
-    var cachedChargeState = ChargeState.unknown
-    var cachedPowerSourcesState = PowerSourcesState(batteryPresent: .unknown, wiredExternalPowerConnected: .unknown, wirelessExternalPowerConnected: .unknown)
+    var cachedChargeState = AtomicType<ChargeState>(initialValue: .unknown)
+    var cachedPowerSourcesState = AtomicType<PowerSourcesState>(initialValue: PowerSourcesState(batteryPresent: .unknown, wiredExternalPowerConnected: .unknown, wirelessExternalPowerConnected: .unknown))
 
     private let batteryStreams = StreamContinuationList<Int>()
     private let chargeStreams = StreamContinuationList<ChargeState>()
@@ -62,7 +62,7 @@ public class BleBasClient: BleGattClientBase, @unchecked Sendable {
         super.disconnected()
         cachedBatteryPercentage.set(BleBasClient.UNDEFINED_BATTERY_PERCENTAGE)
         batteryStreams.finish(throwing: BleGattException.gattDisconnected)
-        cachedChargeState = .unknown
+        cachedChargeState.set(.unknown)
         chargeStreams.finish(throwing: BleGattException.gattDisconnected)
         powerSourceStreams.finish(throwing: BleGattException.gattDisconnected)
     }
@@ -79,13 +79,15 @@ public class BleBasClient: BleGattClientBase, @unchecked Sendable {
                 cachedBatteryPercentage.set(Int(level))
                 batteryStreams.yield(Int(level))
             } else if chr == BleBasClient.BATTERY_STATUS_CHARACTERISTIC {
-                cachedChargeState = parseChargeState(from: data)
-                trace.append(" charge state: \(cachedChargeState)")
-                cachedPowerSourcesState = parsePowerSourcesState(from: data)
-                trace.append(" power sources state: \(cachedPowerSourcesState)")
+                let chargeState = parseChargeState(from: data)
+                cachedChargeState.set(chargeState)
+                trace.append(" charge state: \(chargeState)")
+                let powerSourcesState = parsePowerSourcesState(from: data)
+                cachedPowerSourcesState.set(powerSourcesState)
+                trace.append(" power sources state: \(powerSourcesState)")
                 BleLogger.trace(trace)
-                chargeStreams.yield(cachedChargeState)
-                powerSourceStreams.yield(cachedPowerSourcesState)
+                chargeStreams.yield(chargeState)
+                powerSourceStreams.yield(powerSourcesState)
             }
         } else {
             trace.append(" err: \(err)")
@@ -158,7 +160,7 @@ public class BleBasClient: BleGattClientBase, @unchecked Sendable {
     /// AsyncThrowingStream for monitoring charging status updates.
     public func monitorChargingStatus(_ checkConnection: Bool) -> AsyncThrowingStream<ChargeState, Error> {
         let stream = chargeStreams.makeStream(transport: gattServiceTransmitter, checkConnection: checkConnection)
-        let cached = cachedChargeState
+        let cached = cachedChargeState.get()
         return AsyncThrowingStream { continuation in
             continuation.yield(cached)
             Task {
@@ -173,7 +175,7 @@ public class BleBasClient: BleGattClientBase, @unchecked Sendable {
     /// AsyncThrowingStream for monitoring power sources status updates.
     public func monitorPowerSourcesState(_ checkConnection: Bool) -> AsyncThrowingStream<PowerSourcesState, Error> {
         let stream = powerSourceStreams.makeStream(transport: gattServiceTransmitter, checkConnection: checkConnection)
-        let cached = cachedPowerSourcesState
+        let cached = cachedPowerSourcesState.get()
         return AsyncThrowingStream { continuation in
             continuation.yield(cached)
             Task {
@@ -194,7 +196,7 @@ public class BleBasClient: BleGattClientBase, @unchecked Sendable {
     }
 
     public func getChargeState() -> ChargeState {
-        return cachedChargeState
+        return cachedChargeState.get()
     }
 
     private func chargeState(fromSharedName name: String) -> ChargeState {
