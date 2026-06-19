@@ -180,7 +180,8 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
 
     @Throws(Exception::class)
     private fun receiveControlPointPacket(command: Byte): ByteArray {
-
+        val maxRetries = 10
+        var retries = 0
         var pair: Pair<ByteArray, Int>? = null
         var dataFetchedFromQueue = false
 
@@ -190,10 +191,19 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
                 dataFetchedFromQueue = true
             } else if (headPair.second != 0) {
                 BleLogger.e(TAG, "Received PMD CP packet with nonzero status ${headPair.second}")
+                if (++retries >= maxRetries) {
+                    throw Exception("Pmd control point received too many invalid packets (nonzero status), giving up after $maxRetries attempts")
+                }
             } else if (headPair.first.size < 2) {
                 BleLogger.e(TAG, "Received PMD CP packet with unexpected byte array size ${headPair.first.size}")
+                if (++retries >= maxRetries) {
+                    throw Exception("Pmd control point received too many invalid packets (size < 2), giving up after $maxRetries attempts")
+                }
             } else if (headPair.first[1] != command) {
                 BleLogger.e(TAG, "Received PMD CP packet with unexpected command byte ${headPair.first[1]}, expected ${command}")
+                if (++retries >= maxRetries) {
+                    throw Exception("Pmd control point received too many invalid packets (unexpected command), giving up after $maxRetries attempts")
+                }
             } else { // valid
                 pair = headPair
                 dataFetchedFromQueue = true
