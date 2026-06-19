@@ -4043,7 +4043,7 @@ private extension PpgData {
         var dataType: PpgDataType! = .unknown
 
         for sample in self.samples {
-            guard let ts = sample.timeStamp else { continue }
+            let ts = sample.timeStamp
             if (sample.frameType == PmdDataFrameType.type_0) {
                 let ppgData = sample as! PpgDataFrameType0
                 polarSamples.append((timeStamp: ts, channelSamples: [ppgData.ppgDataSamples[0], ppgData.ppgDataSamples[1], ppgData.ppgDataSamples[2], ppgData.ambientSample ], statusBits: nil ))
