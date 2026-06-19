@@ -12,10 +12,13 @@ final class ZipFirmwarePackageExtractor: FirmwarePackageExtracting {
         let temporaryDirectory = FileManager.default.temporaryDirectory
 
         let zipFilePath = temporaryDirectory.appendingPathComponent(UUID().uuidString + ".zip")
+        let destinationURL = temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: zipFilePath)
+            try? FileManager.default.removeItem(at: destinationURL)
+        }
         do {
             try zippedData.write(to: zipFilePath)
-
-            let destinationURL = temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
             try FileManager.default.unzipItem(at: zipFilePath, to: destinationURL)
 
@@ -35,9 +38,6 @@ final class ZipFirmwarePackageExtractor: FirmwarePackageExtracting {
                 fileDataDictionary[fileName] = decompressedData
                 BleLogger.trace("Extracted file: \(fileName) - Size: \(decompressedData.count) bytes")
             }
-
-            try FileManager.default.removeItem(at: zipFilePath)
-            try FileManager.default.removeItem(at: destinationURL)
 
             return fileDataDictionary
         } catch {
