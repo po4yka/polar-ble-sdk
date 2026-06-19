@@ -37,7 +37,7 @@ enum class PmdMeasurementType(val numVal: UByte) {
         }
 
         fun fromByteArray(data: ByteArray): Set<PmdMeasurementType> {
-
+            if (data.size < 3) return emptySet()
             val measurementTypes: MutableSet<PmdMeasurementType> = mutableSetOf()
             if ((data[1].toUInt() and 0x01u) != 0u) measurementTypes.add(ECG)
             if ((data[1].toUInt() and 0x02u) != 0u) measurementTypes.add(PPG)
