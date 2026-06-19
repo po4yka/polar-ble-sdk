@@ -129,7 +129,11 @@ internal class EcgData {
             val timeStamps = PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp = frame.previousTimeStamp, frameTimeStamp = frame.timeStamp, samplesSize = samplesSize, frame.sampleRate)
             var timeStampIndex = 0
             while (offset < frame.dataContent.size) {
-                val microVolts = (frame.dataContent[offset].toInt() and 0xFF) or ((frame.dataContent[offset + 1].toInt() and 0xFF) shl 8) or ((frame.dataContent[offset + 2].toInt() and 0x03) shl 16) and 0x3FFFFF
+                var microVolts = (frame.dataContent[offset].toInt() and 0xFF) or ((frame.dataContent[offset + 1].toInt() and 0xFF) shl 8) or ((frame.dataContent[offset + 2].toInt() and 0x03) shl 16) and 0x3FFFFF
+                // Sign-extend 22-bit two's complement: if bit 21 is set the value is negative.
+                if (microVolts and 0x200000 != 0) {
+                    microVolts = microVolts or 0xFFC00000.toInt()
+                }
                 val ecgDataTag = ((frame.dataContent[offset + 2].toInt() and 0x1C) shr 2).toByte()
                 val paceDataTag = ((frame.dataContent[offset + 2].toInt() and 0xE0) shr 5).toByte()
                 offset += step
