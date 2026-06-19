@@ -656,7 +656,7 @@ public class PpgData {
                 }
             }
             var statusBits = [Int8]()
-            let _ = String(Int32(sample[16] & 0xFFFFFF), radix: 2).map(String.init).forEach { statusBits.append(Int8($0)!) }
+            let _ = String(Int32(sample[16] & 0xFFFFFF), radix: 2).map(String.init).forEach { statusBits.append(Int8($0) ?? 0) }
             
             ppgSamplesFrameType7.append( PpgDataFrameType7( timeStamp: timeStamps[index], frameType: frame.frameType, ppgDataSamples: channelSamples))
         }
@@ -719,7 +719,7 @@ public class PpgData {
                 }
             }
             var statusBits = [Int8]()
-            let _ = String(Int32(sample[24] & 0xFFFFFF), radix: 2).map(String.init).forEach { statusBits.append(Int8($0)!) }
+            let _ = String(Int32(sample[24] & 0xFFFFFF), radix: 2).map(String.init).forEach { statusBits.append(Int8($0) ?? 0) }
             ppgSamplesFrameType8.append( PpgDataFrameType8( timeStamp: timeStamps[index], frameType: frame.frameType, ppgDataSamples: channelSamples, statusBits: statusBits))
         }
 
@@ -808,7 +808,7 @@ public class PpgData {
                 }
             }
 
-            let _ = String(Int32(sample[sample.endIndex - 1]), radix: 2).map(String.init).forEach { statusBits.append(Int8($0)!) }
+            let _ = String(Int32(sample[sample.endIndex - 1]), radix: 2).map(String.init).forEach { statusBits.append(Int8($0) ?? 0) }
             
             // Frame type10 status bits are expected to be 20-bit of length but may come in
             // with less bits (e.g. 18-bit status data) as wrist units can omit MSB zero bits.
@@ -895,7 +895,7 @@ public class PpgData {
                     return item
                 }
             }
-            let _ = String(Int32(sample[2] & 0xFFFFFF), radix: 2).map(String.init).forEach { statusBits.append(Int8($0)!) }
+            let _ = String(Int32(sample[2] & 0xFFFFFF), radix: 2).map(String.init).forEach { statusBits.append(Int8($0) ?? 0) }
             ppgSamplesFrameType13.append( PpgDataFrameType13( timeStamp: timeStamps[index], frameType: frame.frameType, ppgDataSamples: channelSamples, statusBits: statusBits))
         }
         return PpgData(timeStamp: frame.timeStamp, samples: ppgSamplesFrameType13)
