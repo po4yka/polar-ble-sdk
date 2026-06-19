@@ -39,8 +39,8 @@ internal class PolarSkinTemperatureUtils {
             let skinTemp = try Data_TemperatureMeasurementPeriod(serializedBytes: Data(response))
             return PolarSkinTemperatureData.PolarSkinTemperatureResult(
                 date: date,
-                sensorLocation: sensorLocation(from: skinTemp.sensorLocation),
-                measurementType: measurementType(from: skinTemp.measurementType),
+                sensorLocation: sensorLocation(from: skinTemp.sensorLocation) ?? .SL_UNKNOWN,
+                measurementType: measurementType(from: skinTemp.measurementType) ?? .TM_UNKNOWN,
                 skinTemperatureList: PolarSkinTemperatureData.fromPbTemperatureMeasurementSamples(pbTemperatureMeasurementData: skinTemp.temperatureMeasurementSamples)
             )
         } catch {
