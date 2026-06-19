@@ -12,7 +12,8 @@ public struct Psd {
         public let skinContactStatus: Int
         public let skinContactSupported: Int
 
-        init(_ data: Data) {
+        init?(_ data: Data) {
+            guard data.count >= 5 else { return nil }
             rc = Int(data[0])
             hr = Int(data[1])
             let sub1 = data.subdata(in: 2..<data.count)
@@ -96,7 +97,9 @@ public class BlePsdClient: BleGattClientBase, @unchecked Sendable {
         if chr.isEqual(BlePsdClient.PSD_PP) {
             stride(from: 0, to: data.count, by: PSD_PP_DATA_SIZE).forEach { start in
                 let end = min(start + PSD_PP_DATA_SIZE, data.count)
-                ppStreams.yield(Psd.PPData(data.subdata(in: start..<end)))
+                if let ppData = Psd.PPData(data.subdata(in: start..<end)) {
+                    ppStreams.yield(ppData)
+                }
             }
         } else if chr.isEqual(BlePsdClient.PSD_CP) {
             psdCpInputQueue.push([data: err])
