@@ -1137,7 +1137,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         return accumulator.getResult() ?: throw PolarOfflineRecordingError("No data was recorded")
     }
 
-    private fun extractLastTimestamp(data: Any): ULong? {
+    private fun extractLastTimestamp(data: Any?): ULong? {
         return when (data) {
             is AccData -> data.accSamples.lastOrNull()?.timeStamp
             is DerivedAccData -> data.derivedSamples.lastOrNull()?.timeStamp
@@ -2945,7 +2945,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             val entries = PolarTestUtils.readSpo2TestProtoFromDayDirectory(client, date)
             for (entry in entries) {
                 try {
-                    result.add(PolarTestUtils.mapSpo2TestEntry(entry))
+                    PolarTestUtils.mapSpo2TestEntry(entry)?.let { result.add(it) }
                 } catch (error: Throwable) {
                     BleLogger.w(TAG, "getSpo2Test() failed to parse SPO2 proto for date $date timedir ${entry.timeDirName}, error: $error")
                 }
