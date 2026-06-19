@@ -24,16 +24,19 @@ public class BleHrClient: BleGattClientBase, @unchecked Sendable {
 
     override public func processServiceData(_ chr: CBUUID, data: Data, err: Int) {
         if chr.isEqual(BleHrClient.HR_MEASUREMENT) && err == 0 {
+            guard data.count >= 1 else { return }
             var offset = 0
             let hrFormat = data[0] & 0x01
             let sensorContact = ((data[0] & 0x06) >> 1) == 0x03
             let contactSupported = (data[0] & 0x04) != 0
             let energyExpended = (data[0] & 0x08) >> 3
             let rrPresent = (data[0] & 0x10) >> 4
+            guard data.count >= (hrFormat == 1 ? 3 : 2) else { return }
             let hrValue = hrFormat == 1 ? (Int(data[1]) + (Int(data[2]) << 8)) : Int(data[1])
             offset = Int(hrFormat) + 2
             var energy = 0
             if energyExpended == 1 {
+                guard data.count >= offset + 2 else { return }
                 energy = Int(data[offset]) + (Int(data[offset + 1]) << 8)
                 offset += 2
             }
@@ -41,7 +44,7 @@ public class BleHrClient: BleGattClientBase, @unchecked Sendable {
             var rrsMs = [Int]()
             if rrPresent == 1 {
                 let len = data.count
-                while offset < len {
+                while offset + 1 < len {
                     let rrValueRaw = Int(data[offset]) | (Int(data[offset + 1]) << 8)
                     offset += 2
                     rrs.append(rrValueRaw)
