@@ -65,7 +65,7 @@ public class BleDisClient: BleGattClientBase, @unchecked Sendable {
             }
             disStreams.yield((chr, asciiRepresentation))
             if allReceived {
-                disStreams.finish(throwing: BleGattException.gattOperationModeChange(description: "DIS read complete"))
+                disStreams.finish()
             }
 
             if chr == BleDisClient.SYSTEM_ID {
@@ -77,7 +77,7 @@ public class BleDisClient: BleGattClientBase, @unchecked Sendable {
                 disStringKeyStreams.yield((chr.uuidString, asciiRepresentation))
             }
             if allReceived {
-                disStringKeyStreams.finish(throwing: BleGattException.gattOperationModeChange(description: "DIS read complete"))
+                disStringKeyStreams.finish()
             }
         }
     }
