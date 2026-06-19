@@ -54,7 +54,7 @@ public struct PolarSensorSetting {
     func map2PmdSetting() -> PmdSetting {
         return PmdSetting(settings.reduce(into: [:]) { (result, arg1) in
             let (key, value) = arg1
-            result[PmdSetting.PmdSettingType.fromSharedOrRaw(code: Int(key.rawValue))]=value.first!
+            result[PmdSetting.PmdSettingType.fromSharedOrRaw(code: Int(key.rawValue))]=value.first ?? 0
         })
     }
     
