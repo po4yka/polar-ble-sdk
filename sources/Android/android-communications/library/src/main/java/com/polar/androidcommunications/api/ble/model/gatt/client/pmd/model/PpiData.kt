@@ -49,6 +49,7 @@ internal class PpiData {
             var offset = 0
             while (offset < frame.dataContent.size) {
                 val finalOffset = offset
+                if (finalOffset + 6 > frame.dataContent.size) break
                 val sample = frame.dataContent.copyOfRange(finalOffset, finalOffset + 6)
 
                 val hr = sample[0].toInt() and 0xFF
