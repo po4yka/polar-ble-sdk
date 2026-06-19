@@ -125,6 +125,9 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
 
         mtuWaiting.set(false)
         notificationWaiting.set(false)
+        synchronized(pftpWaitNotificationSharedMutex) {
+            _sharedWaitNotificationFlow = null
+        }
     }
 
     override fun processServiceData(
