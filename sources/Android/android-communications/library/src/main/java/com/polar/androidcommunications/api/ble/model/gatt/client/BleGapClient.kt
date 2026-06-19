@@ -37,7 +37,7 @@ class BleGapClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, G
         if (status == ATT_SUCCESS) {
             synchronized(gapInformation) {
                 if (data.isNotEmpty()) {
-                    gapInformation[characteristic] = data.toString()
+                    gapInformation[characteristic] = String(data, Charsets.UTF_8)
                 }
             }
 
