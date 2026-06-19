@@ -161,7 +161,7 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
                 guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { return false }
                 return try await checkDmExerciseSupport(client)
             } catch {
-                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                try await Task.sleep(nanoseconds: 5_000_000_000)
             }
         }
         throw PolarErrors.timeout(description: "Timeout while waiting for device session, deviceId: \(identifier)")
