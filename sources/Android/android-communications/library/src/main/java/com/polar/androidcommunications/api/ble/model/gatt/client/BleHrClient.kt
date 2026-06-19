@@ -86,10 +86,12 @@ class BleHrClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, HR
                 val contactSupported = data[0].toInt() and 0x04 != 0
                 val energyExpended = data[0].toInt() and 0x08 shr 3
                 val rrPresent = data[0].toInt() and 0x10 shr 4
+                if (hrFormat == 1 && data.size < 3) return
                 val hrValue: Int = (if (hrFormat == 1) (data[1].toInt() and 0xFF) + (data[2].toInt() shl 8) else data[1]).toInt() and if (hrFormat == 1) 0x0000FFFF else 0x000000FF
                 var offset = hrFormat + 2
                 var energy = 0
                 if (energyExpended == 1) {
+                    if (data.size < offset + 2) return
                     energy = (data[offset].toInt() and 0xFF) + (data[offset + 1].toInt() and 0xFF shl 8)
                     offset += 2
                 }
