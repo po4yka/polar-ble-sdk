@@ -47,6 +47,7 @@ import UIKit
     let queue: DispatchQueue
     let scheduler: DispatchQueue
     var connectSubscriptions = [String: Task<Void, Never>]()
+    private let connectSubscriptionsLock = NSLock()
     var featureCheckSubscriptions = [String: AnyCancellable]()
     private var hrMulticasts = [String: MulticastAsyncStream<BleHrClient.BleHrNotification>]()
     /// Tracks which SDK features are currently ready, keyed by device identifier.
@@ -1093,7 +1094,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         if session == nil ||
             session?.state == BleDeviceSession.DeviceSessionState.sessionClosed ||
             session?.state == BleDeviceSession.DeviceSessionState.sessionClosing {
-            connectSubscriptions[identifier]?.cancel()
+            connectSubscriptionsLock.withLock { connectSubscriptions[identifier]?.cancel() }
             session = nil
         }
         if session != nil {
@@ -1102,7 +1103,7 @@ extension PolarBleApiImpl: PolarBleApi  {
 #endif
             self.listener.openSessionDirect(session!)
         } else {
-            connectSubscriptions[identifier] = Task {
+            let task = Task {
                 do {
                     try await self.listener.search(self.serviceList, identifiers: nil, fetchKnownDevices: true)
                         .receive(on: self.scheduler)
@@ -1121,6 +1122,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                     self.logMessage("\(error)")
                 }
             }
+            connectSubscriptionsLock.withLock { connectSubscriptions[identifier] = task }
         }
     }
 
@@ -1132,7 +1134,7 @@ extension PolarBleApiImpl: PolarBleApi  {
                 listener.closeSessionDirect(session)
             }
         }
-        connectSubscriptions.removeValue(forKey: identifier)?.cancel()
+        connectSubscriptionsLock.withLock { connectSubscriptions.removeValue(forKey: identifier) }?.cancel()
     }
 
     func isFeatureReady(_ identifier: String, feature: PolarBleSdkFeature) -> Bool {
