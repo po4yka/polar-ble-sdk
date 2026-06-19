@@ -170,7 +170,7 @@ class BlePsdClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
     private fun splitPP(data: ByteArray): List<ByteArray> {
         var offset = 0
         val components: MutableList<ByteArray> = ArrayList()
-        while (offset < data.size) {
+        while (offset + 7 <= data.size) {
             components.add(Arrays.copyOfRange(data, offset, offset + 7))
             offset += 7
         }
