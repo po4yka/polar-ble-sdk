@@ -42,6 +42,7 @@ data class PolarFirstTimeUseConfig(
         require(vo2Max in VO2_MAX_MIN..VO2_MAX_MAX) { "VO2 max must be between $VO2_MAX_MIN and $VO2_MAX_MAX" }
         require(trainingBackground in TRAINING_BACKGROUND_VALUES) { "Training background must be one of the following values: ${TRAINING_BACKGROUND_VALUES.joinToString()}" }
         require(sleepGoalMinutes in SLEEP_GOAL_RANGE_MINUTES) { "Sleep goal must be between ${SLEEP_GOAL_RANGE_MINUTES.first} and ${SLEEP_GOAL_RANGE_MINUTES.last} minutes" }
+        require(runCatching { ZonedDateTime.parse(deviceTime, DateTimeFormatter.ISO_DATE_TIME) }.isSuccess) { "deviceTime must be a valid ISO 8601 date-time string" }
     }
 
     companion object {
