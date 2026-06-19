@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import protocol.PftpNotification.PbPftpDHRestApiEvent
 
+private const val TAG = "PolarDeviceRestApiUtils"
+
 fun BlePsFtpClient.receiveRestApiEventData(identifier: String): Flow<Array<ByteArray>> {
     return waitForNotification()
         .filter { PolarRuntimePlannerAdapter.d2hNotificationTypeName(it.id) == "REST_API_EVENT" }
@@ -25,14 +27,13 @@ fun BlePsFtpClient.receiveRestApiEventData(identifier: String): Flow<Array<ByteA
 }
 
 fun BlePsFtpClient.receiveRestApiEvents(identifier: String): Flow<List<String>> {
-    val tag = "BlePsFtpClient"
     return receiveRestApiEventData(identifier)
         .map { array -> array.map { it.toString(Charsets.UTF_8) } }
         .onEach { item ->
-            BleLogger.d(tag, "Receive REST API events emitted item: $item")
+            BleLogger.d(TAG, "Receive REST API events for $identifier emitted item: $item")
         }
         .catch { error ->
-            BleLogger.d(tag, "Receive REST API events Error occurred: ${error.message}")
+            BleLogger.d(TAG, "Receive REST API events for $identifier error occurred: ${error.message}")
             throw error
         }
 }
