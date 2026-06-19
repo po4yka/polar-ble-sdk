@@ -1511,7 +1511,7 @@ extension PolarBleApiImpl: PolarBleApi  {
         var polarSkinTemperatureData: PolarOfflineRecordingData?
         var polarEmptyData: PolarOfflineRecordingData?
         var polarDerivedAccData: PolarOfflineRecordingData?
-        let lastTimestamp: UInt64 = 0
+        var lastTimestamp: UInt64 = 0
 
         for subRecordingIndex in indices {
             let subRecordingPath: String
@@ -1539,22 +1539,31 @@ extension PolarBleApiImpl: PolarBleApi  {
                 switch offlineRecordingData.data {
                 case let derivedData as DerivedAccData:
                     polarDerivedAccData = processDerivedAccData(derivedData, polarDerivedAccData, offlineRecordingData)
+                    lastTimestamp = derivedData.derivedSamples.last?.timeStamp ?? lastTimestamp
                 case let accData as AccData:
                     polarAccData = processAccData(accData, polarAccData, offlineRecordingData, settings)
+                    lastTimestamp = accData.samples.last?.timeStamp ?? lastTimestamp
                 case let gyroData as GyrData:
                     polarGyroData = processGyroData(gyroData, polarGyroData, offlineRecordingData, settings)
+                    lastTimestamp = gyroData.samples.last?.timeStamp ?? lastTimestamp
                 case let magData as MagData:
                     polarMagData = processMagData(magData, polarMagData, offlineRecordingData, settings)
+                    lastTimestamp = magData.samples.last?.timeStamp ?? lastTimestamp
                 case let ppgData as PpgData:
                     polarPpgData = processPpgData(ppgData, polarPpgData, offlineRecordingData, settings)
+                    lastTimestamp = ppgData.samples.last?.timeStamp ?? lastTimestamp
                 case let ppiData as PpiData:
                     polarPpiData = processPpiData(ppiData, polarPpiData, offlineRecordingData)
+                    lastTimestamp = ppiData.samples.last?.timeStamp ?? lastTimestamp
                 case let hrData as OfflineHrData:
                     polarHrData = processHrData(hrData, polarHrData, offlineRecordingData)
+                    // OfflineHrSample has no timeStamp field; lastTimestamp is unchanged for HR sub-recordings
                 case let temperatureData as TemperatureData:
                     polarTemperatureData = processTemperatureData(temperatureData, polarTemperatureData, offlineRecordingData)
+                    lastTimestamp = temperatureData.samples.last?.timeStamp ?? lastTimestamp
                 case let skinTemperatureData as SkinTemperatureData:
                     polarSkinTemperatureData = processSkinTemperatureData(skinTemperatureData, polarSkinTemperatureData, offlineRecordingData)
+                    lastTimestamp = skinTemperatureData.samples.last?.timeStamp ?? lastTimestamp
                 case _ as EmptyData:
                     polarEmptyData = processEmptyData(offlineRecordingData)
                 default:
