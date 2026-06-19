@@ -6,7 +6,7 @@ import com.polar.androidcommunications.common.ble.BleUtils.AD_TYPE
 import com.polar.androidcommunications.common.ble.BleUtils.EVENT_TYPE
 import com.polar.sdk.api.model.PolarSdkModelAdapter
 import java.util.ArrayList
-import java.util.HashMap
+import java.util.concurrent.ConcurrentHashMap
 
 class BleAdvertisementContent {
 
@@ -20,14 +20,14 @@ class BleAdvertisementContent {
      * new advertisement data arrives
      */
     @JvmField
-    val advertisementData = HashMap<AD_TYPE, ByteArray>()
+    val advertisementData = ConcurrentHashMap<AD_TYPE, ByteArray>()
 
     /**
      * The latest up to date advertisement data. When new advertisement data
      * arrives the matching data fields are updated, rest are kept in previous values
      */
     @JvmField
-    val advertisementDataAll = HashMap<AD_TYPE, ByteArray>()
+    val advertisementDataAll = ConcurrentHashMap<AD_TYPE, ByteArray>()
 
     /**
      * @return Advertised local name <BR></BR>
@@ -124,7 +124,7 @@ class BleAdvertisementContent {
     }
 
     @VisibleForTesting
-    fun processAdvManufacturerData(advertisementData: HashMap<AD_TYPE, ByteArray>, polarHrAdvertisement: BlePolarHrAdvertisement) {
+    fun processAdvManufacturerData(advertisementData: Map<AD_TYPE, ByteArray>, polarHrAdvertisement: BlePolarHrAdvertisement) {
         var didContainHrData = false
         if (advertisementData.containsKey(AD_TYPE.GAP_ADTYPE_MANUFACTURER_SPECIFIC)) {
             val content = advertisementData[AD_TYPE.GAP_ADTYPE_MANUFACTURER_SPECIFIC]
@@ -141,7 +141,7 @@ class BleAdvertisementContent {
     }
 
     @VisibleForTesting
-    fun getNameFromAdvData(advertisementData: HashMap<AD_TYPE, ByteArray>): String {
+    fun getNameFromAdvData(advertisementData: Map<AD_TYPE, ByteArray>): String {
         if (advertisementData.containsKey(AD_TYPE.GAP_ADTYPE_LOCAL_NAME_COMPLETE)) {
             advertisementData[AD_TYPE.GAP_ADTYPE_LOCAL_NAME_COMPLETE]?.let {
                 return String(it)
