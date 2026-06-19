@@ -2478,8 +2478,16 @@ extension PolarBleApiImpl: PolarBleApi  {
                         continuation.yield(.fwUpdateFailed(details: "Error: \(error)"))
                         continuation.finish(throwing: self.handleError(error))
                     } else {
-                        continuation.yield(.fwUpdateCompletedSuccessfully(details: "Firmware update to \(firmwareVersionInfo) completed successfully"))
-                        continuation.finish()
+                        // H10 reboots after writing SYSUPDAT.IMG, which causes a BLE disconnect.
+                        // Only treat a gattDisconnected as an expected post-write reboot; all other
+                        // errors are genuine failures that must be surfaced to the caller.
+                        if case BleGattException.gattDisconnected = error {
+                            continuation.yield(.fwUpdateCompletedSuccessfully(details: "Firmware update to \(firmwareVersionInfo) completed successfully"))
+                            continuation.finish()
+                        } else {
+                            continuation.yield(.fwUpdateFailed(details: "Error: \(error)"))
+                            continuation.finish(throwing: self.handleError(error))
+                        }
                     }
                 }
             }
