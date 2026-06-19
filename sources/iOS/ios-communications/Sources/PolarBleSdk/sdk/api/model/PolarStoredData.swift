@@ -46,7 +46,7 @@ public class PolarStoredDataType {
     }
     
     public struct PolarStoredDataTypeResult: Codable {
-        public var storedDataType: StoredDataType!
+        public var storedDataType: StoredDataType = .UNDEFINED
     }
     
     public static func getStringValue(dataTypeLocationIndex: Int) -> String {
@@ -56,6 +56,9 @@ public class PolarStoredDataType {
         }
         #endif
 
+        guard StoredDataType.allCases.indices.contains(dataTypeLocationIndex) else {
+            return String(describing: StoredDataType.UNDEFINED)
+        }
         return String(describing: StoredDataType.allCases[dataTypeLocationIndex])
     }
     
