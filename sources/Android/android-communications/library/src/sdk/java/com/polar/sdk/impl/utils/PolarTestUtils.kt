@@ -1,5 +1,6 @@
 package com.polar.sdk.impl.utils
 
+import com.google.protobuf.InvalidProtocolBufferException
 import com.polar.androidcommunications.api.ble.BleLogger
 import com.polar.androidcommunications.api.ble.model.gatt.client.psftp.BlePsFtpClient
 import com.polar.sdk.api.model.DeviationFromBaseline
@@ -78,9 +79,14 @@ internal object PolarTestUtils {
         }
     }
 
-    fun mapSpo2TestEntry(entry: Spo2TestEntry): PolarSpo2TestData {
-        val proto = Spo2TestResult.PbSpo2TestResult.parseFrom(entry.protoBytes)
-        return mapSpo2TestProto(proto, entry.date, entry.timeDirName)
+    fun mapSpo2TestEntry(entry: Spo2TestEntry): PolarSpo2TestData? {
+        return try {
+            val proto = Spo2TestResult.PbSpo2TestResult.parseFrom(entry.protoBytes)
+            mapSpo2TestProto(proto, entry.date, entry.timeDirName)
+        } catch (e: InvalidProtocolBufferException) {
+            BleLogger.w(TAG, "mapSpo2TestEntry() failed to parse SPO2 proto for date ${entry.date} timedir ${entry.timeDirName}: $e")
+            null
+        }
     }
 
     internal fun mapSpo2TestProto(
