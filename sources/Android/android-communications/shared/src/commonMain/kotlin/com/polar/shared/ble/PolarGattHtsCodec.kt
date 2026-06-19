@@ -18,7 +18,8 @@ object PolarGattHtsCodec {
         require(data.size >= 5) { "malformedHtsMeasurement" }
         val flags = data[0].toInt() and 0xFF
         val isFahrenheit = (flags and 0x01) != 0
-        val mantissa = (data[1].toInt() and 0xFF) or ((data[2].toInt() and 0xFF) shl 8) or ((data[3].toInt() and 0xFF) shl 16)
+        var mantissa = (data[1].toInt() and 0xFF) or ((data[2].toInt() and 0xFF) shl 8) or ((data[3].toInt() and 0xFF) shl 16)
+        if (mantissa and 0x800000 != 0) mantissa = mantissa or (-1 shl 24)
         val exponent = data[4].toInt()
         val temperature = ((mantissa * 10.0.pow(exponent.toDouble()).toFloat() * TEMP_ACCURACY).roundToInt() / TEMP_ACCURACY.toFloat())
         val celsius = if (!isFahrenheit) temperature else (temperature - 32.0f) * 5.0f / 9.0f
