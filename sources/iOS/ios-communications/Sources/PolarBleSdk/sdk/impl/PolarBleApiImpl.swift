@@ -3168,7 +3168,9 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
 
-    func waitForConnection(_ identifier: String, timeoutSeconds: Int = 60) async throws {
+    func waitForConnection(_ identifier: String) async throws {
+        // Internal timeout bounds the wait so a never-connecting device cannot leak the Task forever.
+        let timeoutSeconds = 60
         let deadline = Date().addingTimeInterval(Double(timeoutSeconds))
         while Date() < deadline {
             if let session = try? serviceClientUtils.fetchSession(identifier), session.state == .sessionOpen { return }
