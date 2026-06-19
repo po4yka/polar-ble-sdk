@@ -699,6 +699,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             }
             .collect { session -> collected.add(session) }
         val list = collected.sortedWith { s1, s2 -> if (s1.rssi > s2.rssi) -1 else 1 }
+        if (list.isEmpty()) throw PolarDeviceNotFound()
         openConnection(list[0])
         log("auto connect search complete")
     }
