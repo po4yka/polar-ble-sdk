@@ -21,11 +21,11 @@ public struct Polar247PPiSamplesData: Codable {
     ///  - ppiErrorEstimateList: list of error estimate  values in the sample session
     ///  - statusList: status values in the sample session
     public struct PolarPpiDataSample: Codable {
-        public let startTime: String!
-        public let triggerType: PPiSampleTriggerType!
-        public let ppiValueList: [Int32]!
-        public let ppiErrorEstimateList: [Int32]!
-        public let statusList: [PPiSampleStatus]!
+        public let startTime: String?
+        public let triggerType: PPiSampleTriggerType?
+        public let ppiValueList: [Int32]
+        public let ppiErrorEstimateList: [Int32]
+        public let statusList: [PPiSampleStatus]
     }
 
     public enum PPiSampleTriggerType: String, Codable {
