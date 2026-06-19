@@ -56,7 +56,7 @@ class CBScanner: ManualBleScannerController {
     var state = ScannerState.idle
     let scanSubject = PassthroughSubject<BleDeviceSession, Never>()
     private var clientCount = 0
-    var scanCancellable: AnyCancellable?
+    var scanTimer: DispatchSourceTimer?
     var services: [CBUUID]?
     var adminStops = 0
     let sessions: AtomicList<CBDeviceSessionImpl>
@@ -212,21 +212,22 @@ class CBScanner: ManualBleScannerController {
         case .entry:
             BleLogger.trace("start scan services: \(String(describing: services))")
             central.scanForPeripherals(withServices: services, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
-            scanCancellable = Timer.publish(every: 10, on: .main, in: .default)
-                .autoconnect()
-                .receive(on: queue)
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    BleLogger.trace("Scanning next:")
-                    self.central.stopScan()
-                    self.central.scanForPeripherals(withServices: self.services, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
-                }
+            let timer = DispatchSource.makeTimerSource(queue: queue)
+            timer.schedule(deadline: .now() + 10, repeating: 10)
+            timer.setEventHandler { [weak self] in
+                guard let self else { return }
+                BleLogger.trace("Scanning next:")
+                self.central.stopScan()
+                self.central.scanForPeripherals(withServices: self.services, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+            }
+            timer.resume()
+            scanTimer = timer
         case .exit:
             if central.state == .poweredOn {
                 central.stopScan()
             }
-            scanCancellable?.cancel()
-            scanCancellable = nil
+            scanTimer?.cancel()
+            scanTimer = nil
         case .clientStartScan:
             break
         case .clientRemoved where !scanningNeeded():
