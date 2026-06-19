@@ -12,6 +12,13 @@ class PmdDataFrame(
     companion object {
         private const val DELTA_FRAME_BIT_MASK = 0x80.toByte()
         private const val FRAME_TYPE_BIT_MASK = 0x7F.toByte()
+        private const val MIN_FRAME_SIZE = 10
+    }
+
+    init {
+        require(data.size >= MIN_FRAME_SIZE) {
+            "PMD data frame too short: ${data.size} (minimum $MIN_FRAME_SIZE bytes required)"
+        }
     }
 
     val measurementType: PmdMeasurementType = PmdMeasurementType.fromId(data[0])
