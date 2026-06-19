@@ -37,7 +37,9 @@ class PolarServiceClientUtils {
 
     func sessionPfcClientReady(_ identifier: String) throws -> BleDeviceSession {
         let session = try sessionServiceReady(identifier, service: BlePfcClient.PFC_SERVICE)
-        let client = session.fetchGattClient(BlePfcClient.PFC_SERVICE) as! BlePfcClient
+        guard let client = session.fetchGattClient(BlePfcClient.PFC_SERVICE) as? BlePfcClient else {
+            throw PolarErrors.serviceNotFound
+        }
         if client.isServiceDiscovered() { return session }
         throw PolarErrors.notificationNotEnabled
     }
@@ -56,7 +58,9 @@ class PolarServiceClientUtils {
     func waitPfcClientReady(_ identifier: String) async throws -> BleDeviceSession {
         let session = try await waitForServiceDiscovered(identifier, service: BlePfcClient.PFC_SERVICE)
         for _ in 0..<10 {
-            let client = session.fetchGattClient(BlePfcClient.PFC_SERVICE) as! BlePfcClient
+            guard let client = session.fetchGattClient(BlePfcClient.PFC_SERVICE) as? BlePfcClient else {
+                throw PolarErrors.serviceNotFound
+            }
             if client.isServiceDiscovered() && client.pfcEnabled.get() == 0 {
                 return session
             }
