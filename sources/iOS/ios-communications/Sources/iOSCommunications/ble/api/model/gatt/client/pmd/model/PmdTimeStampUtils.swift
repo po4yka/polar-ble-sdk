@@ -18,7 +18,7 @@ internal class PmdTimeStampUtils {
         }
 
         let startTimeStamp:Double
-        if (previousFrameTimeStamp <= 0) {
+        if previousFrameTimeStamp == 0 {
             startTimeStamp = try firstSampleTimeFromSampleRate(frameTimeStamp, timeStampDelta, samplesSize)
         } else {
             startTimeStamp = firstSampleTimeFromTimeStamps(previousFrameTimeStamp, timeStampDelta)
