@@ -760,7 +760,7 @@ private fun parseDeltaFrameRefSamples(value: ByteArray, channels: Int, resolutio
 private fun parseDeltaFrame(bytes: ByteArray, channels: Int, bitWidth: Int, totalBitLength: Int): List<List<Int>> {
     var offset = 0
     val samples = mutableListOf<List<Int>>()
-    val signMask = Int.MAX_VALUE shl (bitWidth - 1)
+    val signMask = (-1 shl (bitWidth - 1))
     while (offset < totalBitLength) {
         samples += (0 until channels).map {
             var value = 0
