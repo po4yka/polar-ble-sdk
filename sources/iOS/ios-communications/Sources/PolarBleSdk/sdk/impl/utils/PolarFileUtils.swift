@@ -44,10 +44,12 @@ class PolarFileUtils {
         if let sharedDecision = PolarRuntimePlanner.storedDataDateIsOnOrBefore(day: sampleDay, cutoffDate: cutoffDate) {
             return sharedDecision
         }
-        let result = calendar.compare(
-            dateFromStringWOTime(dateFrom: sampleDay),
-            to: dateFromStringWOTime(dateFrom: cutoffDate),
-            toGranularity: .day)
+        guard let sampleDate = dateFromStringWOTime(dateFrom: sampleDay),
+              let cutoffDate = dateFromStringWOTime(dateFrom: cutoffDate) else {
+            BleLogger.error("checkAutoSampleFile: failed to parse date strings '\(sampleDay)' or '\(cutoffDate)'")
+            return false
+        }
+        let result = calendar.compare(sampleDate, to: cutoffDate, toGranularity: .day)
         return result == .orderedSame || result == .orderedAscending
     }
 
@@ -207,7 +209,11 @@ class PolarFileUtils {
         return error
     }
 
-    private func dateFromStringWOTime(dateFrom: String) -> Date {
+    private func dateFromStringWOTime(dateFrom: String) -> Date? {
+        guard dateFrom.count >= 8 else {
+            BleLogger.error("dateFromStringWOTime: input '\(dateFrom)' is shorter than 8 characters")
+            return nil
+        }
         let year = Int(String(dateFrom[dateFrom.index(dateFrom.startIndex, offsetBy: 0)..<dateFrom.index(dateFrom.endIndex, offsetBy: -4)]))
         let month = Int(String(dateFrom[dateFrom.index(dateFrom.startIndex, offsetBy: 4)..<dateFrom.index(dateFrom.endIndex, offsetBy: -2)]))
         let day = Int(String(dateFrom[dateFrom.index(dateFrom.startIndex, offsetBy: 6)..<dateFrom.index(dateFrom.endIndex, offsetBy: 0)]))
@@ -216,7 +222,11 @@ class PolarFileUtils {
         var dc = DateComponents()
         dc.year = year; dc.month = month; dc.day = day
         dc.hour = 0; dc.minute = 0; dc.second = 0
-        return calendar.date(from: dc)!
+        guard let result = calendar.date(from: dc) else {
+            BleLogger.error("dateFromStringWOTime: could not form a valid date from '\(dateFrom)'")
+            return nil
+        }
+        return result
     }
 
     // MARK: - BLE Low Level APIs
