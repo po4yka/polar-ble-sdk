@@ -556,7 +556,7 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
                 }
             }
             val samples: MutableList<List<Int>> = ArrayList()
-            val mask = Int.MAX_VALUE shl bitWidth - 1
+            val mask = -1 shl bitWidth
             while (offset < totalBitLength) {
                 val channelSamples: MutableList<Int> = ArrayList()
                 var channelCount = 0
