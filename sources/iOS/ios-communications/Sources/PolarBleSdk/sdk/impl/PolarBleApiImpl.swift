@@ -138,6 +138,7 @@ import UIKit
         }
     }
 
+    /// Access must be serialized with readyFeaturesLock.
     var lastDerivedMethodsCache = [String: [Int: Set<Int>]]()
     required public init(_ queue: DispatchQueue, features: Set<PolarBleSdkFeature>, restoreIdentifier: String? = nil) {
         let resolvedFeatures = features.isEmpty ? Set(PolarBleSdkFeature.allCases) : features
@@ -1526,12 +1527,13 @@ extension PolarBleApiImpl: PolarBleApi  {
             let dataResult = try await client.request(request)
             do {
                 let pmdSecret = try secret.map { try PolarDataUtils.mapToPmdSecret(from: $0) }
+                let hintDerivedMethods = readyFeaturesLock.withLock { lastDerivedMethodsCache[identifier]?[entry.groupId] }
                 let offlineRecordingData = try OfflineRecordingData<Any>.parseDataFromOfflineFile(
                     fileData: dataResult as Data,
                     type: PolarDataUtils.mapToPmdClientMeasurementType(from: entry.type),
                     secret: pmdSecret,
                     lastTimestamp: lastTimestamp,
-                    hintDerivedMethods: lastDerivedMethodsCache[identifier]?[entry.groupId]
+                    hintDerivedMethods: hintDerivedMethods
                 )
                 let settings: PolarSensorSetting = offlineRecordingData.recordingSettings?.mapToPolarSettings() ?? PolarSensorSetting()
                 switch offlineRecordingData.data {
