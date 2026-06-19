@@ -111,6 +111,8 @@ class PolarOfflineRecordingUtils {
             let recordingPath = parts[1]
             let pathComponents = recordingPath.split(separator: "/")
             guard pathComponents.count >= 6,
+                  String(pathComponents[2]).matches("^[0-9]{8}$"),
+                  String(pathComponents[4]).matches("^[0-9]{6}$"),
                   let deviceDataType = try? PolarOfflineRecordingUtils.mapOfflineRecordingFileNameToDeviceDataType(fileName: String(pathComponents[5])),
                   let date = formatter.date(from: String(pathComponents[2]) + " " + String(pathComponents[4])) else { continue }
             entries.append(PolarOfflineRecordingEntry(path: String(recordingPath), size: UInt(String(parts[0])) ?? 0, date: date, type: deviceDataType))
