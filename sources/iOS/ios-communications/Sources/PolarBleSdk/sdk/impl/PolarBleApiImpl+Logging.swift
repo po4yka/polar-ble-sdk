@@ -62,11 +62,16 @@ extension PolarBleApiImpl: PolarLoggingApi {
         let request = try operation.serializedData()
         BleLogger.trace("getLogConfig: device=\(identifier) path=\(operation.path)")
         try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.initializeSession.rawValue, parameters: nil)
-        let data = try await client.request(request)
-        let sensorDataLog = try Data_PbSensorDataLog(serializedBytes: data as Data)
-        let logConfig = LogConfig.fromProto(proto: sensorDataLog)
-        try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, parameters: nil)
-        return logConfig
+        do {
+            let data = try await client.request(request)
+            let sensorDataLog = try Data_PbSensorDataLog(serializedBytes: data as Data)
+            let logConfig = LogConfig.fromProto(proto: sensorDataLog)
+            try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, parameters: nil)
+            return logConfig
+        } catch {
+            try await client.sendNotification(Protocol_PbPFtpHostToDevNotification.terminateSession.rawValue, parameters: nil)
+            throw error
+        }
     }
 
     func setLogConfig(_ identifier: String, logConfig: LogConfig) async throws {
