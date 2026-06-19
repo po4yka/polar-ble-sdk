@@ -46,7 +46,7 @@ public struct PolarFirstTimeUseConfig {
             return proto
         }
         #endif
-        return Data_PbUserTypicalDay.TypicalDay(rawValue: typicalDay.rawValue)!
+        return Data_PbUserTypicalDay.TypicalDay(rawValue: typicalDay.rawValue) ?? .mostlySitting
     }
 
     public enum TrainingBackground: Int {
