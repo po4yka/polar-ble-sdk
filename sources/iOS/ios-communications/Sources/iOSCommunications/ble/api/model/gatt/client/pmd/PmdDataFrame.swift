@@ -17,7 +17,11 @@ struct PmdDataFrame {
          _ getPreviousTimeStamp: (PmdMeasurementType, PmdDataFrameType) -> UInt64,
          _ getFactor: (PmdMeasurementType) -> Float,
          _ getSampleRate: (PmdMeasurementType) -> UInt) throws {
-        
+
+        guard data.count >= 10 else {
+            throw BleGattException.gattDataError(description: "PMD data frame too short: \(data.count) bytes")
+        }
+
         measurementType = PmdMeasurementType.fromId(id: data[0])
         let timeBytes = data.subdata(in: 1..<9) as NSData
         var tempTimeStamp: UInt64 = 0
