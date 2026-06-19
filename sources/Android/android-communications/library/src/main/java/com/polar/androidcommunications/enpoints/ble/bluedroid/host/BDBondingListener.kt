@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import com.polar.androidcommunications.api.ble.BleLogger.Companion.d
 import com.polar.androidcommunications.common.ble.AtomicSet
 
@@ -42,7 +43,12 @@ class BDBondingListener(private val context: Context) {
     private var mReceiver: BroadcastReceiver? = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val action = intent.action
-            val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+            val device = if (Build.VERSION.SDK_INT >= 33) {
+                intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+            }
             if (device != null && action != null) {
                 if (action == BluetoothDevice.ACTION_BOND_STATE_CHANGED) {
                     val state =
