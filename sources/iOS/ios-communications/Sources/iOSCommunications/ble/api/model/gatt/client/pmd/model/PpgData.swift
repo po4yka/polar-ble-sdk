@@ -646,7 +646,6 @@ public class PpgData {
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_7_CHANNELS_IN_SAMPLE, resolution: TYPE_7_SAMPLE_SIZE_IN_BITS)
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
         var ppgSamplesFrameType7 = [PpgSample]()
-        var statusBits = [Int8]()
         for (index, sample) in samples.enumerated() {
             let channelSamples = sample.map{ item in
                 if (frame.factor != 1.0) {
@@ -656,6 +655,7 @@ public class PpgData {
                     return item
                 }
             }
+            var statusBits = [Int8]()
             let _ = String(Int32(sample[16] & 0xFFFFFF), radix: 2).map(String.init).forEach { statusBits.append(Int8($0)!) }
             
             ppgSamplesFrameType7.append( PpgDataFrameType7( timeStamp: timeStamps[index], frameType: frame.frameType, ppgDataSamples: channelSamples))
@@ -708,8 +708,7 @@ public class PpgData {
         let samples = Pmd.parseDeltaFramesToSamples(frame.dataContent, channels: TYPE_8_CHANNELS_IN_SAMPLE, resolution: TYPE_8_SAMPLE_SIZE_IN_BITS)
         let timeStamps = try PmdTimeStampUtils.getTimeStamps(previousFrameTimeStamp: frame.previousTimeStamp, frameTimeStamp: frame.timeStamp, samplesSize: UInt(samples.count), sampleRate: frame.sampleRate)
         var ppgSamplesFrameType8 = [PpgSample]()
-        var statusBits = [Int8]()
-        
+
         for (index, sample) in samples.enumerated() {
             let channelSamples = sample[0..<24].map{ item in
                 if (frame.factor != 1.0) {
@@ -719,6 +718,7 @@ public class PpgData {
                     return item
                 }
             }
+            var statusBits = [Int8]()
             let _ = String(Int32(sample[24] & 0xFFFFFF), radix: 2).map(String.init).forEach { statusBits.append(Int8($0)!) }
             ppgSamplesFrameType8.append( PpgDataFrameType8( timeStamp: timeStamps[index], frameType: frame.frameType, ppgDataSamples: channelSamples, statusBits: statusBits))
         }
@@ -781,9 +781,9 @@ public class PpgData {
         )
         var ppgSamples = [PpgSample]()
         var timeStampIndex = 0
-        var statusBits = [Int8]()
         for (index, sample) in samples.enumerated() {
-            
+            var statusBits = [Int8]()
+
             let greenSamples = sample[0..<8].map { sample in
                 if (frame.factor != Float(1.0)) {
                     Int32((Float(sample) * frame.factor))
@@ -884,9 +884,9 @@ public class PpgData {
         )
 
         var ppgSamplesFrameType13 = [PpgSample]()
-        var statusBits = [Int8]()
 
         for (index, sample) in samples.enumerated() {
+            var statusBits = [Int8]()
             let channelSamples = sample[0..<2].map{ item in
                 if (frame.factor != 1.0) {
                     return Int32(Float(item) * frame.factor)
