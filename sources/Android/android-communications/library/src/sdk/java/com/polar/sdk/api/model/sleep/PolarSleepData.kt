@@ -87,7 +87,7 @@ fun fromPbSleepwakePhasesListProto(pbSleepwakePhasesList: List<PbSleepWakePhase>
     var sleepwakePhasesList = mutableListOf<SleepWakePhase>()
 
     for (pbSleepWakePhase in pbSleepwakePhasesList) {
-        sleepwakePhasesList.add(SleepWakePhase(pbSleepWakePhase.secondsFromSleepStart, SleepWakeState.from(pbSleepWakePhase.sleepwakeState.number)!!))
+        sleepwakePhasesList.add(SleepWakePhase(pbSleepWakePhase.secondsFromSleepStart, SleepWakeState.from(pbSleepWakePhase.sleepwakeState.number) ?: SleepWakeState.UNKNOWN))
     }
     return sleepwakePhasesList
 }
