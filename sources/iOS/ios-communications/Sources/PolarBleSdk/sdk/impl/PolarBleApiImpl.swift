@@ -4046,6 +4046,7 @@ private extension PpgData {
 
 private extension TemperatureData {
     func mapToPolarData() -> PolarTemperatureData {
+        guard !samples.isEmpty else { return PolarTemperatureData(timeStamp: 0, samples: []) }
         var polarSamples: [(timeStamp: UInt64, temperature: Float)] = []
         for sample in self.samples {
             polarSamples.append((timeStamp: sample.timeStamp, temperature: sample.temperature ))
@@ -4056,6 +4057,7 @@ private extension TemperatureData {
 
 private extension PressureData {
     func mapToPolarData() -> PolarPressureData {
+        guard !samples.isEmpty else { return PolarPressureData(timeStamp: 0, samples: []) }
         var polarSamples: [(timeStamp: UInt64, pressure: Float)] = []
         for sample in self.samples {
             polarSamples.append((timeStamp: sample.timeStamp, pressure: sample.pressure ))
@@ -4066,6 +4068,7 @@ private extension PressureData {
 
 private extension SkinTemperatureData {
     func mapToPolarData() -> PolarTemperatureData {
+        guard !samples.isEmpty else { return PolarTemperatureData(timeStamp: 0, samples: []) }
         var polarSamples: [(timeStamp: UInt64, temperature: Float)] = []
         for sample in self.samples {
             polarSamples.append((timeStamp: sample.timeStamp, temperature: sample.skinTemperature ))
