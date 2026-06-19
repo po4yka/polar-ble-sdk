@@ -69,32 +69,32 @@ public class PolarSleepData {
     }
 
     public struct PolarSleepAnalysisResult: Codable {
-        public let sleepStartTime: Date!
-        public let sleepEndTime: Date!
-        public let lastModified: Date!
-        public let sleepGoalMinutes: UInt32!
-        public let sleepWakePhases: [SleepWakePhase]!
+        public let sleepStartTime: Date?
+        public let sleepEndTime: Date?
+        public let lastModified: Date?
+        public let sleepGoalMinutes: UInt32?
+        public let sleepWakePhases: [SleepWakePhase]?
         public let snoozeTime: [Date]?
         public let alarmTime: Date?
-        public let sleepStartOffsetSeconds: Int32!
-        public let sleepEndOffsetSeconds: Int32!
+        public let sleepStartOffsetSeconds: Int32?
+        public let sleepEndOffsetSeconds: Int32?
         public let userSleepRating: SleepRating?
         public let deviceId: String?
         public let batteryRanOut: Bool?
-        public let sleepCycles: [SleepCycle]!
+        public let sleepCycles: [SleepCycle]?
         public let sleepResultDate: DateComponents?
         public let originalSleepRange: OriginalSleepRange?
         public var sleepSkinTemperatureResult: SleepSkinTemperatureResult?
     }
 
     public struct SleepWakePhase: Codable {
-        public var secondsFromSleepStart: UInt32!
-        public var state: SleepWakeState!
+        public var secondsFromSleepStart: UInt32?
+        public var state: SleepWakeState?
     }
 
     public struct SleepCycle: Codable {
-        public let secondsFromSleepStart: UInt32!
-        public let sleepDepthStart: Float!
+        public let secondsFromSleepStart: UInt32?
+        public let sleepDepthStart: Float?
     }
 
     public struct OriginalSleepRange: Codable {
