@@ -6,8 +6,6 @@ import Foundation
 import PolarBleSdkShared
 #endif
 
-public var polarDailySummary: PolarDailySummary?
-
 public struct PolarDailySummary: Codable {
     public var date: Date
     public var activityCalories: UInt32
