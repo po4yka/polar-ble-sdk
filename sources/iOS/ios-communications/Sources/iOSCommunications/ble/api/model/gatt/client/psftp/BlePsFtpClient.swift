@@ -23,7 +23,12 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
     
     private let PROTOCOL_TIMEOUT_EXTENDED = TimeInterval(900)
     
-    internal var progressCallback: BlePsFtpProgressCallback?
+    private let progressCallbackLock = NSLock()
+    private var _progressCallback: BlePsFtpProgressCallback?
+    internal var progressCallback: BlePsFtpProgressCallback? {
+        get { progressCallbackLock.withLock { _progressCallback } }
+        set { progressCallbackLock.withLock { _progressCallback = newValue } }
+    }
 
     let mtuInputQueue=AtomicList<[Data: Int]>()
     let packetsWritten=AtomicInteger(initialValue:0)
