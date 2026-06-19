@@ -1124,16 +1124,43 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         count: Int,
         accumulator: OfflineRecordingAccumulator
     ): PolarOfflineRecordingData {
-        val lastTimestamp = 0uL
+        var lastTimestamp = 0uL
         for (subRecordingIndex in 0 until count) {
             val subRecordingPath = getSubRecordingPath(entry.path, subRecordingIndex).ifBlank { entry.path }
             BleLogger.d(TAG, "Offline record get. Device: $identifier Path: $subRecordingPath Secret used: ${secret != null}, lastTimestamp: $lastTimestamp")
             val byteArrayOutputStream = client.request(buildPftpGetRequest(subRecordingPath))
             val offlineRecordingData = parseOfflineRecordingData(byteArrayOutputStream, entry, secret, lastTimestamp,
                 hintDerivedMethods = lastDerivedMethodsCache[identifier])
+            lastTimestamp = extractLastTimestamp(offlineRecordingData.data) ?: lastTimestamp
             processOfflineData(offlineRecordingData, accumulator)
         }
         return accumulator.getResult() ?: throw PolarOfflineRecordingError("No data was recorded")
+    }
+
+    private fun extractLastTimestamp(data: Any): ULong? {
+        return when (data) {
+            is AccData -> data.accSamples.lastOrNull()?.timeStamp
+            is DerivedAccData -> data.derivedSamples.lastOrNull()?.timeStamp
+            is GyrData -> data.gyrSamples.lastOrNull()?.timeStamp
+            is MagData -> data.magSamples.lastOrNull()?.timeStamp
+            is PpgData -> (data.ppgSamples.lastOrNull() as? PpgDataSample)?.let {
+                when (it) {
+                    is PpgData.PpgDataFrameType0 -> it.timeStamp
+                    is PpgData.PpgDataFrameType4 -> it.timeStamp
+                    is PpgData.PpgDataFrameType5 -> it.timeStamp
+                    is PpgData.PpgDataFrameType7 -> it.timeStamp
+                    is PpgData.PpgDataFrameType8 -> it.timeStamp
+                    is PpgData.PpgDataFrameType9 -> it.timeStamp
+                    is PpgData.PpgDataFrameType10 -> it.timeStamp
+                    is PpgData.PpgDataFrameType13 -> it.timeStamp
+                    is PpgData.PpgDataFrameType14 -> it.timeStamp
+                    else -> null
+                }
+            }
+            is TemperatureData -> data.temperatureSamples.lastOrNull()?.timeStamp
+            is SkinTemperatureData -> data.skinTemperatureSamples.lastOrNull()?.timeStamp
+            else -> null
+        }
     }
 
     private fun processAccData(
