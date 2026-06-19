@@ -11,6 +11,8 @@ import com.polar.androidcommunications.api.ble.exceptions.BleTimeout
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattBase
 import com.polar.androidcommunications.api.ble.model.gatt.BleGattTxInterface
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
 import java.util.UUID
@@ -25,7 +27,7 @@ class BlePfcClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
     private var pfcFeature: PfcFeature? = null
     private val mutexFeature = ReentrantLock()
     private val pfcCpEnabled: AtomicInteger?
-    private val pfcMutex = Any()
+    private val pfcMutex = Mutex()
 
     enum class PfcMessage(val numVal: Int) {
         PFC_UNKNOWN(0),
@@ -207,35 +209,37 @@ class BlePfcClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
      * @return [PfcResponse] on success
      * @throws Throwable on any error
      */
-    suspend fun sendControlPointCommand(command: PfcMessage, params: ByteArray? = null): PfcResponse = withContext(Dispatchers.IO) {
-        if (params == null) return@withContext PfcResponse()
-        synchronized(pfcMutex) {
+    suspend fun sendControlPointCommand(command: PfcMessage, params: ByteArray? = null): PfcResponse {
+        if (params == null) return PfcResponse()
+        return pfcMutex.withLock {
             if (pfcCpEnabled?.get() == ATT_SUCCESS) {
                 pfcCpInputQueue.clear()
-                when (command) {
-                    PfcMessage.PFC_CONFIGURE_ANT_PLUS_SETTING,
-                    PfcMessage.PFC_CONFIGURE_MULTI_CONNECTION_SETTING,
-                    PfcMessage.PFC_CONFIGURE_BLE_MODE,
-                    PfcMessage.PFC_CONFIGURE_WHISPER_MODE,
-                    PfcMessage.PFC_CONFIGURE_BROADCAST,
-                    PfcMessage.PFC_CONFIGURE_5KHZ,
-                    PfcMessage.PFC_CONFIGURE_SENSOR_INITIATED_SECURITY_MODE -> {
-                        val bb = ByteBuffer.allocate(1 + params.size)
-                        bb.put(command.numVal.toByte())
-                        bb.put(params)
-                        return@synchronized sendPfcCommandAndProcessResponse(bb.array())
+                withContext(Dispatchers.IO) {
+                    when (command) {
+                        PfcMessage.PFC_CONFIGURE_ANT_PLUS_SETTING,
+                        PfcMessage.PFC_CONFIGURE_MULTI_CONNECTION_SETTING,
+                        PfcMessage.PFC_CONFIGURE_BLE_MODE,
+                        PfcMessage.PFC_CONFIGURE_WHISPER_MODE,
+                        PfcMessage.PFC_CONFIGURE_BROADCAST,
+                        PfcMessage.PFC_CONFIGURE_5KHZ,
+                        PfcMessage.PFC_CONFIGURE_SENSOR_INITIATED_SECURITY_MODE -> {
+                            val bb = ByteBuffer.allocate(1 + params.size)
+                            bb.put(command.numVal.toByte())
+                            bb.put(params)
+                            sendPfcCommandAndProcessResponse(bb.array())
+                        }
+                        PfcMessage.PFC_REQUEST_MULTI_CONNECTION_SETTING,
+                        PfcMessage.PFC_REQUEST_ANT_PLUS_SETTING,
+                        PfcMessage.PFC_REQUEST_WHISPER_MODE,
+                        PfcMessage.PFC_REQUEST_BROADCAST_SETTING,
+                        PfcMessage.PFC_REQUEST_5KHZ_SETTING,
+                        PfcMessage.PFC_REQUEST_SECURITY_MODE,
+                        PfcMessage.PFC_REQUEST_SENSOR_INITIATED_SECURITY_MODE -> {
+                            val packet = byteArrayOf(command.numVal.toByte())
+                            sendPfcCommandAndProcessResponse(packet)
+                        }
+                        else -> throw BleNotSupported("Unknown pfc command acquired")
                     }
-                    PfcMessage.PFC_REQUEST_MULTI_CONNECTION_SETTING,
-                    PfcMessage.PFC_REQUEST_ANT_PLUS_SETTING,
-                    PfcMessage.PFC_REQUEST_WHISPER_MODE,
-                    PfcMessage.PFC_REQUEST_BROADCAST_SETTING,
-                    PfcMessage.PFC_REQUEST_5KHZ_SETTING,
-                    PfcMessage.PFC_REQUEST_SECURITY_MODE,
-                    PfcMessage.PFC_REQUEST_SENSOR_INITIATED_SECURITY_MODE -> {
-                        val packet = byteArrayOf(command.numVal.toByte())
-                        return@synchronized sendPfcCommandAndProcessResponse(packet)
-                    }
-                    else -> throw BleNotSupported("Unknown pfc command acquired")
                 }
             } else {
                 throw BleCharacteristicNotificationNotEnabled("PFC control point not enabled")
