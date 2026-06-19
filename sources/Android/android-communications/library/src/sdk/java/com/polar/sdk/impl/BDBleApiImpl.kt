@@ -3473,12 +3473,17 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         }
         deviceAvailableFeaturesJob[session.address] = featureCheckJob
 
+        // Create a composite supervisor scope for all per-device monitoring coroutines so that
+        // tearDownDevice can cancel them all by cancelling one tracked job.
+        val deviceMonitorParent = SupervisorJob()
+        val deviceMonitorScope = CoroutineScope(apiScope.coroutineContext + deviceMonitorParent)
+
         val hrClient = session.fetchClient(HR_SERVICE) as? BleHrClient
         if (hrClient != null) {
             if (deviceId != null) {
                 callback?.bleSdkFeatureReady(deviceId, PolarBleSdkFeature.FEATURE_HR)
             }
-            apiScope.launch {
+            deviceMonitorScope.launch {
                 try {
                     hrClient.observeHrNotifications(true)
                         .collect { data ->
@@ -3502,7 +3507,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
             }
         }
 
-        val dataMonitorJob = apiScope.launch {
+        deviceMonitorScope.launch {
             try {
                 val discoveredServices = session.monitorServicesDiscovered(true).await()
                 for (uuid in discoveredServices) {
@@ -3623,7 +3628,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                 BleLogger.e(TAG, "Error while monitoring session services: $throwable")
             }
         }
-        deviceDataMonitorJob[session.address] = dataMonitorJob
+        deviceDataMonitorJob[session.address] = deviceMonitorParent
     }
 
     private suspend fun checkAndReportFeatureReadiness(
