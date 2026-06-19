@@ -65,7 +65,8 @@ class BlePsdClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
         constructor(data: ByteArray) {
             if (data.size > 2) {
                 responseCode = data[0]
-                opCode = PsdMessage.entries[data[1].toInt()]
+                val rawOpCode = data[1].toInt()
+                opCode = PsdMessage.entries.firstOrNull { it.numVal == rawOpCode } ?: PsdMessage.PSD_UNKNOWN
                 status = data[2]
                 if (data.size > 3) {
                     payload = data[3]
