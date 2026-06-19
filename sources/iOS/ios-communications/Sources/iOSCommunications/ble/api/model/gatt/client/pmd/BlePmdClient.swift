@@ -218,7 +218,7 @@ open class BlePmdClient: BleGattClientBase, @unchecked Sendable {
         do {
             frame = try PmdDataFrame(data: data, getPreviousFrameTimeStamp, getFactor, getSampleRate)
         } catch {
-            print("Couldn't parse the data frame. Reason: \(error)")
+            BleLogger.error("Couldn't parse the data frame. Reason: \(error)")
             return
         }
         setPreviousFrameTimeStamp(frame.measurementType, frame.frameType, frame.timeStamp)
