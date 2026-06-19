@@ -3168,11 +3168,13 @@ extension PolarBleApiImpl: PolarBleApi  {
     }
 
 
-    func waitForConnection(_ identifier: String) async throws {
-        while true {
+    func waitForConnection(_ identifier: String, timeoutSeconds: Int = 60) async throws {
+        let deadline = Date().addingTimeInterval(Double(timeoutSeconds))
+        while Date() < deadline {
             if let session = try? serviceClientUtils.fetchSession(identifier), session.state == .sessionOpen { return }
             try await Task.sleep(nanoseconds: 100_000_000)
         }
+        throw PolarErrors.timeout(description: "Timeout waiting for device \(identifier) to connect")
     }
 
 
