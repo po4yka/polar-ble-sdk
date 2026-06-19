@@ -58,6 +58,7 @@ class BlePfcClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
         constructor()
 
         constructor(data: ByteArray) {
+            if (data.size < 3) return
             responseCode = data[0]
             opCode = mapOpCode(data[1].toInt())
             status = data[2]
@@ -102,12 +103,14 @@ class BlePfcClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
         var sensorInitiatedSecurityModeSupported: Boolean = false
 
         constructor(data: ByteArray) {
+            if (data.isEmpty()) return
             broadcastSupported = (data[0].toInt() and 0x01) == 1
             khzSupported = ((data[0].toInt() and 0x02) shr 1) == 1
             otaUpdateSupported = ((data[0].toInt() and 0x04) shr 2) == 1
             whisperModeSupported = ((data[0].toInt() and 0x10) shr 4) == 1
             bleModeConfigureSupported = ((data[0].toInt() and 0x40) shr 6) == 1
             multiConnectionSupported = ((data[0].toInt() and 0x80) shr 7) == 1
+            if (data.size < 2) return
             antSupported = (data[1].toInt() and 0x01) == 1
             securityModeSupported = ((data[1].toInt() and 0x02) shr 1) == 1
             sensorInitiatedSecurityModeSupported = ((data[1].toInt() and 0x08) shr 3) === 1
