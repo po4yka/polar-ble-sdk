@@ -55,8 +55,12 @@ internal data class PmdOfflineTrigger(
                 val triggerMeasurementType = PmdMeasurementType.fromId(bytes[offset])
                 offset += TRIGGER_MEASUREMENT_TYPE_FIELD_LENGTH
                 if (triggerStatus == PmdOfflineRecTriggerStatus.TRIGGER_ENABLED) {
-                    val triggerSettingsLength = bytes[offset]
+                    val triggerSettingsLength = bytes[offset].toInt() and 0xFF
                     offset += TRIGGER_MEASUREMENT_SETTINGS_SIZE_FIELD_LENGTH
+                    if (offset + triggerSettingsLength > bytes.size) {
+                        BleLogger.e(TAG, "Malformed offline trigger packet: settings length $triggerSettingsLength exceeds remaining bytes ${bytes.size - offset}")
+                        return PmdOfflineTrigger(triggerMode = triggerMode, triggers = triggers)
+                    }
                     val settingBytes = bytes.sliceArray(offset until (offset + triggerSettingsLength))
                     val pmdSetting = if (settingBytes.isNotEmpty()) {
                         PmdSetting(settingBytes)
