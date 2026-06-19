@@ -1437,6 +1437,9 @@ internal object PolarRuntimePlannerAdapter {
     }
 
     fun firmwareWriteProgressPercent(bytesWritten: Long, payloadSize: Int): Long {
+        require(bytesWritten <= Int.MAX_VALUE) {
+            "firmwareWriteProgressPercent: bytesWritten=$bytesWritten exceeds Int.MAX_VALUE; would truncate"
+        }
         return PolarWorkflowRuntimePlanning.firmwareWriteProgressPercent(bytesWritten.toInt(), payloadSize).toLong()
     }
 
@@ -1470,6 +1473,12 @@ internal object PolarRuntimePlannerAdapter {
         timeSinceLastEmitMs: Long,
         maxEmitIntervalMs: Long = 5_000L
     ): Boolean {
+        require(lastBytesWritten <= Int.MAX_VALUE) {
+            "shouldEmitFirmwareWriteProgress: lastBytesWritten=$lastBytesWritten exceeds Int.MAX_VALUE; would truncate"
+        }
+        require(bytesWritten <= Int.MAX_VALUE) {
+            "shouldEmitFirmwareWriteProgress: bytesWritten=$bytesWritten exceeds Int.MAX_VALUE; would truncate"
+        }
         return PolarWorkflowRuntimePlanning.shouldEmitFirmwareWriteProgress(
             lastBytesWritten = lastBytesWritten.toInt(),
             bytesWritten = bytesWritten.toInt(),
