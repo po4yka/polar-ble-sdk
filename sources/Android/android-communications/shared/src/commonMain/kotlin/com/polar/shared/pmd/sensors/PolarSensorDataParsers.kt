@@ -517,7 +517,7 @@ object PolarSensorDataParser {
     }
 
     private fun parseGnssRawType3(frame: PolarPmdDataFrame): List<PolarGnssLocationSample> {
-        val samples = mutableListOf<PolarGnssLocationSample>()
+        val rawRecords = mutableListOf<Triple<UInt, Pair<UByte, String>, UInt>>() // (measurementPeriod, (statusFlags, nmeaMessage), messageLength)
         var offset = 0
         while (offset < frame.dataContent.size) {
             if (offset + 7 > frame.dataContent.size) throw IllegalArgumentException("malformedFrame")
@@ -530,7 +530,18 @@ object PolarSensorDataParser {
             if (offset + messageLength.toInt() > frame.dataContent.size) throw IllegalArgumentException("malformedFrame")
             val nmeaMessage = frame.dataContent.copyOfRange(offset, offset + messageLength.toInt()).decodeToString()
             offset += messageLength.toInt()
-            samples += PolarGnssNmeaSample(frame.timeStamp, measurementPeriod, messageLength, statusFlags, nmeaMessage)
+            rawRecords += Triple(measurementPeriod, Pair(statusFlags, nmeaMessage), messageLength)
+        }
+        // Assign per-sample timestamps by walking backwards from frame.timeStamp using
+        // each record's measurementPeriod (milliseconds -> nanoseconds), consistent with
+        // how types 0-2 distribute timestamps via getTimeStamps.
+        val samples = mutableListOf<PolarGnssNmeaSample>()
+        var currentTimestamp = frame.timeStamp
+        for (record in rawRecords.asReversed()) {
+            val (measurementPeriod, flagsAndMessage, messageLength) = record
+            val (statusFlags, nmeaMessage) = flagsAndMessage
+            samples.add(0, PolarGnssNmeaSample(currentTimestamp, measurementPeriod, messageLength, statusFlags, nmeaMessage))
+            currentTimestamp -= measurementPeriod.toULong() * 1_000_000uL
         }
         return samples
     }
