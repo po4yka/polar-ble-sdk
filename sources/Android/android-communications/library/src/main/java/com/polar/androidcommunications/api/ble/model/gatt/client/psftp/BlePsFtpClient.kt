@@ -475,13 +475,15 @@ class BlePsFtpClient(txInterface: BleGattTxInterface) :
                             BlePsFtpUtils.RFC77_PFTP_MTU_CHARACTERISTIC,
                             requs, false
                         )
-                        waitPacketsWritten(packetsWritten, mtuWaiting, requs.size, protocolTimeoutSeconds)
+                        val packetCount = requs.size
+                        waitPacketsWritten(packetsWritten, mtuWaiting, packetCount, protocolTimeoutSeconds)
                         requs = mutableListOf()
                         readResponse(response, protocolTimeoutSeconds)
                         return@synchronized response
                     } catch (ex: InterruptedException) {
                         e(TAG, "Query $id interrupted")
-                        if (requs.isEmpty()) {
+                        val packetsSent = requs.isNotEmpty()
+                        if (packetsSent) {
                             handleMtuInterrupted(true, requs.size)
                         }
                         throw ex
