@@ -85,13 +85,18 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
         mtuOperationQueue.cancelAllOperations()
         sendNotificationOperationQueue.cancelAllOperations()
         waitNotificationOperationQueue.cancelAllOperations()
-        mtuInputQueue.removeAll()
-        notificationInputQueue.removeAll()
-        packetsWritten.set(0)
-        notificationPacketsWritten.set(0)
+        // Signal all blocking conditions so in-flight operations observe the
+        // cancel flag immediately and do not hold waitUntilAllOperationsAreFinished
+        // for the full PROTOCOL_TIMEOUT (up to 90 s).
+        mtuInputQueue.removeAll()          // internally calls lock.signal()
+        notificationInputQueue.removeAll() // internally calls lock.signal()
+        packetsWritten.signal()            // wakes any waitPacketsWritten caller
+        notificationPacketsWritten.signal()
         mtuOperationQueue.waitUntilAllOperationsAreFinished()
         sendNotificationOperationQueue.waitUntilAllOperationsAreFinished()
         waitNotificationOperationQueue.waitUntilAllOperationsAreFinished()
+        packetsWritten.set(0)
+        notificationPacketsWritten.set(0)
     }
     
     override public func processServiceData(_ chr: CBUUID , data: Data , err: Int ){
