@@ -320,7 +320,7 @@ public class PpgData {
         var offset = 0
 
         while (offset < frame.dataContent.count) {
-            let operationMode = TypeUtils.convertArrayToUnsignedInt64(frame.dataContent, offset: 0, size: offset + TYPE_5_SAMPLE_SIZE_IN_BYTES)
+            let operationMode = TypeUtils.convertArrayToUnsignedInt64(frame.dataContent, offset: offset, size: TYPE_5_SAMPLE_SIZE_IN_BYTES)
             offset += TYPE_5_SAMPLE_SIZE_IN_BYTES
             ppgSamples.append(PpgDataFrameType5(timeStamp: timeStamps[timeStampIndex], frameType: frame.frameType, operationMode: operationMode))
             timeStampIndex+=1
