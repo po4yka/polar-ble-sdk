@@ -343,8 +343,13 @@ abstract class PolarBleApi(val features: Set<PolarBleSdkFeature>) : PolarOnlineS
      * @return Single observable which emits device time in LocalDateTime instance when observable is subscribed
      * @deprecated Use [getLocalTimeWithZone] instead to also get timezone
      */
-    @Deprecated("Use getLocalTimeWithZone() instead to also get timezone", ReplaceWith("getLocalTimeWithZone(identifier)"))
-    abstract suspend fun getLocalTime(identifier: String): LocalDateTime
+    @Deprecated(
+        "Use getLocalTimeWithZone() instead to also get timezone",
+        ReplaceWith("getLocalTimeWithZone(identifier)"),
+        DeprecationLevel.ERROR
+    )
+    open suspend fun getLocalTime(identifier: String): LocalDateTime =
+        getLocalTimeWithZone(identifier).toLocalDateTime()
 
     /**
      * Get current time and timezone from device. Requires feature [PolarBleSdkFeature.FEATURE_POLAR_DEVICE_TIME_SETUP].
