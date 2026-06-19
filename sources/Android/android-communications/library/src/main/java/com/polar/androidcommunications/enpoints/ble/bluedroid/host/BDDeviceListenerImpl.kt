@@ -299,28 +299,31 @@ class BDDeviceListenerImpl(
 
         @SuppressLint("MissingPermission")
         override fun disconnectDevice(session: BDDeviceSessionImpl?) {
-            synchronized(session!!.gattMutex) {
+            if (session == null) return
+            synchronized(session.gattMutex) {
                 if (session.gatt != null) session.gatt!!.disconnect()
             }
         }
 
         @SuppressLint("MissingPermission")
         override fun cancelDeviceConnection(session: BDDeviceSessionImpl?) {
-            synchronized(session!!.gattMutex) {
+            if (session == null) return
+            synchronized(session.gattMutex) {
                 if (session.gatt != null) session.gatt!!.disconnect()
             }
         }
 
         @SuppressLint("MissingPermission")
         override fun setMtu(session: BDDeviceSessionImpl?): Boolean {
+            if (session == null) return false
             var result = false
             if (preferredMTU == ConnectionHandler.MTU_SKIP_NEGOTIATION || isMtuNegotiationBroken(getBrand(), getModel())) {
-                if (session!!.gatt != null) {
+                if (session.gatt != null) {
                     gattCallback.onMtuChanged(session.gatt!!, BleGattBase.DEFAULT_ATT_MTU_SIZE, 0)
                 }
                 result = true
             } else {
-                synchronized(session!!.gattMutex) {
+                synchronized(session.gattMutex) {
                     if (session.gatt != null) {
                         result = session.gatt!!.requestMtu(preferredMTU)
                     }
@@ -331,8 +334,9 @@ class BDDeviceListenerImpl(
 
         @SuppressLint("MissingPermission")
         override fun startServiceDiscovery(session: BDDeviceSessionImpl?): Boolean {
+            if (session == null) return false
             var result = false
-            synchronized(session!!.gattMutex) {
+            synchronized(session.gattMutex) {
                 if (session.gatt != null) {
                     session.gatt!!.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED)
                     result = session.gatt!!.discoverServices()
