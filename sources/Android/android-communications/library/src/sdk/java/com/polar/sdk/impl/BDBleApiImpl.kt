@@ -150,6 +150,7 @@ import com.polar.sdk.api.model.PolarWatchFaceComplication
 import com.polar.sdk.api.model.PolarWatchFaceConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -321,7 +322,8 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
     override fun isFeatureReady(deviceId: String, feature: PolarBleSdkFeature): Boolean {
         return try {
-            return when (feature) {
+            runBlocking {
+            when (feature) {
                 PolarBleSdkFeature.FEATURE_POLAR_ONLINE_STREAMING -> {
                     PolarServiceClientUtils.sessionHrClientReady(deviceId, listener)
                     PolarServiceClientUtils.sessionPmdClientReady(deviceId, listener)
@@ -432,6 +434,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
                     PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, listener)
                     true
                 }
+            }
             }
         } catch (ignored: Throwable) {
             false
@@ -881,7 +884,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
     override fun listExercises(identifier: String): Flow<PolarExerciseEntry> {
         val session = try {
-            PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
+            runBlocking { PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener) }
         } catch (error: Throwable) {
             return kotlinx.coroutines.flow.flow { throw error }
         }
@@ -1351,7 +1354,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     @Suppress("OVERRIDE_DEPRECATION")
     override fun listSplitOfflineRecordings(identifier: String): Flow<PolarOfflineRecordingEntry> {
         val session = try {
-            PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
+            runBlocking { PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener) }
         } catch (error: Throwable) {
             return flow { throw error }
         }
@@ -2230,7 +2233,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
 
     override fun startHrStreaming(identifier: String): Flow<PolarHrData> {
         val session = try {
-            PolarServiceClientUtils.sessionServiceReady(identifier, HR_SERVICE, listener)
+            runBlocking { PolarServiceClientUtils.sessionServiceReady(identifier, HR_SERVICE, listener) }
         } catch (e: Exception) {
             return flow { throw e }
         }
@@ -2328,7 +2331,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
     }
 
     override fun stopStreaming(identifier: String, type: PmdMeasurementType) {
-        val session = PolarServiceClientUtils.sessionPmdClientReady(identifier, listener)
+        val session = runBlocking { PolarServiceClientUtils.sessionPmdClientReady(identifier, listener) }
         val client = session.fetchClient(BlePMDClient.PMD_SERVICE) as BlePMDClient?
         if (client != null) {
             stopPmdStreaming(session, client, type)
@@ -3398,7 +3401,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session: BleDeviceSession
         val client: BleBattClient
         try {
-            session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
+            session = runBlocking { PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener) }
             client = session.fetchClient(BATTERY_SERVICE) as BleBattClient?
                 ?: throw PolarServiceNotAvailable()
         } catch (e: Throwable) {
@@ -3413,7 +3416,7 @@ class BDBleApiImpl private constructor(context: Context, features: Set<PolarBleS
         val session: BleDeviceSession
         val client: BleBattClient
         try {
-            session = PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener)
+            session = runBlocking { PolarServiceClientUtils.sessionPsFtpClientReady(identifier, listener) }
             client = session.fetchClient(BATTERY_SERVICE) as BleBattClient?
                 ?: throw PolarServiceNotAvailable()
         } catch (e: Throwable) {

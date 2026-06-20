@@ -13,6 +13,7 @@ import com.polar.sdk.api.errors.PolarOperationNotSupported
 import com.polar.sdk.api.errors.PolarServiceNotAvailable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.map
 import protocol.PftpError.PbPFtpError
 import protocol.PftpRequest
@@ -51,7 +52,7 @@ internal object PolarFileUtils {
         tag: String
     ): Flow<String> {
         val session = try {
-            sessionPsFtpClientReady(identifier, listener = listener)
+            runBlocking { sessionPsFtpClientReady(identifier, listener = listener) }
         } catch (error: Throwable) {
             return flow { throw error }
         }
