@@ -44,12 +44,13 @@ class PolarServiceClientUtils {
         throw PolarErrors.notificationNotEnabled
     }
 
-    internal func sessionFtpClientReady(_ identifier: String) throws -> BleDeviceSession {
-        let session = try sessionServiceReady(identifier, service: BlePsFtpClient.PSFTP_SERVICE)
-        let startTime = Date()
-        while Date().timeIntervalSince(startTime) < 5.0 {
+    internal func sessionFtpClientReady(_ identifier: String) async throws -> BleDeviceSession {
+        // Cancellation-aware wait: Task.sleep suspends instead of blocking the calling thread,
+        // and service discovery is awaited via the shared async helper.
+        let session = try await waitForServiceDiscovered(identifier, service: BlePsFtpClient.PSFTP_SERVICE)
+        for _ in 0..<50 {
             if PolarServiceClientUtils.psFtpNotificationsEnabled(session) { return session }
-            Thread.sleep(forTimeInterval: 0.1)
+            try await Task.sleep(nanoseconds: 100_000_000) // 100ms
         }
         throw PolarErrors.notificationNotEnabled
     }

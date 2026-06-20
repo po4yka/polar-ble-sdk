@@ -303,7 +303,7 @@ internal enum PolarWatchFaceUtils {
 
     static func readWatchFaceConfigFields(_ identifier: String,
                                           serviceClientUtils: PolarServiceClientUtils) async throws -> WatchfaceConfigFields {
-        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
@@ -328,7 +328,7 @@ internal enum PolarWatchFaceUtils {
         existingFields.complicationIds = int32Ids
         BleLogger.trace("\(TAG): writeWatchFaceComplicationInts: merged=\(existingFields)")
 
-        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }

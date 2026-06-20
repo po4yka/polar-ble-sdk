@@ -84,7 +84,7 @@ extension PolarBleApiImpl: PolarSleepApi {
         if fromDate > toDate {
             throw PolarErrors.invalidArgument(description: "toDate cannot be smaller than fromDate.")
         }
-        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }

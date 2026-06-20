@@ -9,7 +9,7 @@ import Foundation
 extension PolarBleApiImpl: PolarLoggingApi {
 
     func exportDeviceLogs(_ identifier: String) async throws -> [PolarDeviceLog] {
-        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
@@ -49,7 +49,7 @@ extension PolarBleApiImpl: PolarLoggingApi {
     }
 
     func getLogConfig(_ identifier: String) async throws -> LogConfig {
-        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
@@ -75,7 +75,7 @@ extension PolarBleApiImpl: PolarLoggingApi {
     }
 
     func setLogConfig(_ identifier: String, logConfig: LogConfig) async throws {
-        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }

@@ -12,7 +12,7 @@ extension PolarBleApiImpl: PolarTemperatureApi {
                  throw PolarErrors.invalidArgument(description: "toDate must be greater than or equal to fromDate")
              }
 
-        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }

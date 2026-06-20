@@ -5,7 +5,7 @@ extension PolarBleApiImpl: PolarDeviceToHostNotificationsApi {
         return AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let session = try self.serviceClientUtils.sessionFtpClientReady(identifier)
+                    let session = try await self.serviceClientUtils.sessionFtpClientReady(identifier)
                     guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                         continuation.finish(throwing: PolarErrors.serviceNotFound)
                         return

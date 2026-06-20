@@ -46,7 +46,7 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
         sportProfile: PolarExerciseSession.SportProfile
     ) async throws -> OfflineExerciseStartResult {
         do {
-            let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+            let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
             guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                 throw PolarErrors.serviceNotFound
             }
@@ -74,7 +74,7 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
 
     func stopOfflineExerciseV2(identifier: String) async throws {
         do {
-            let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+            let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
             guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                 throw PolarErrors.serviceNotFound
             }
@@ -89,7 +89,7 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
 
     func getOfflineExerciseStatusV2(identifier: String) async throws -> Bool {
         do {
-            let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+            let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
             guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                 throw PolarErrors.serviceNotFound
             }
@@ -120,7 +120,7 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
 
     func fetchOfflineExerciseV2(identifier: String, entry: PolarExerciseEntry) async throws -> PolarExerciseData {
         do {
-            let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+            let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
             guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                 throw PolarErrors.serviceNotFound
             }
@@ -140,7 +140,7 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
 
     func removeOfflineExerciseV2(identifier: String, entry: PolarExerciseEntry) async throws {
         do {
-            let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+            let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
             guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                 throw PolarErrors.serviceNotFound
             }
@@ -157,7 +157,7 @@ extension PolarBleApiImpl: PolarOfflineExerciseV2Api {
         let timeoutAt = Date().addingTimeInterval(10)
         while Date() < timeoutAt {
             do {
-                let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+                let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
                 guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else { return false }
                 return try await checkDmExerciseSupport(client)
             } catch {

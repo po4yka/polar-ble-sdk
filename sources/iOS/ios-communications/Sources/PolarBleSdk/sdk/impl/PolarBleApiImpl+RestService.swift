@@ -173,7 +173,7 @@ extension PolarBleApiImpl: PolarRestServiceApi {
     }
 
     private func getDataFromPath(identifier: String, path: String) async throws -> Data {
-        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
@@ -198,7 +198,7 @@ extension PolarBleApiImpl: PolarRestServiceApi {
     }
 
     private func pFtpWriteOperation(identifier: String, command: Protocol_PbPFtpOperation.Command, path: String, data: Data) async throws {
-        let session = try serviceClientUtils.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils.sessionFtpClientReady(identifier)
         guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
@@ -236,7 +236,7 @@ extension PolarBleApiImpl: PolarRestServiceApi {
         return AsyncThrowingStream { continuation in
             Task {
                 do {
-                    let session = try self.serviceClientUtils.sessionFtpClientReady(identifier)
+                    let session = try await self.serviceClientUtils.sessionFtpClientReady(identifier)
                     guard let client = session.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                         continuation.finish(throwing: PolarErrors.serviceNotFound)
                         return

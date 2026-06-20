@@ -15,7 +15,7 @@ class PolarFileUtils {
         return AsyncThrowingStream { continuation in
             Task {
                 do {
-                    let session = try self.serviceClientUtils?.sessionFtpClientReady(identifier)
+                    let session = try await self.serviceClientUtils?.sessionFtpClientReady(identifier)
                     guard let client = session?.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                         continuation.finish(throwing: PolarErrors.serviceNotFound)
                         return
@@ -55,7 +55,7 @@ class PolarFileUtils {
 
     func deleteDataDirectory(identifier: String, directoryPath: String) async throws {
         do {
-            let session = try serviceClientUtils?.sessionFtpClientReady(identifier)
+            let session = try await serviceClientUtils?.sessionFtpClientReady(identifier)
             guard let client = session?.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                 throw PolarErrors.serviceNotFound
             }
@@ -93,7 +93,7 @@ class PolarFileUtils {
     }
 
     func removeSingleFile(identifier: String, filePath: String) async throws -> NSData {
-        let session = try serviceClientUtils?.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils?.sessionFtpClientReady(identifier)
         guard let client = session?.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
@@ -110,7 +110,7 @@ class PolarFileUtils {
     }
 
     func removeMultipleFiles(identifier: String, filePaths: [String]) async throws {
-        let session = try serviceClientUtils?.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils?.sessionFtpClientReady(identifier)
         guard let client = session?.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw handleError(PolarErrors.serviceNotFound)
         }
@@ -152,7 +152,7 @@ class PolarFileUtils {
 
     func getFile(identifier: String, filePath: String) async throws -> NSData {
         do {
-            let session = try serviceClientUtils?.sessionFtpClientReady(identifier)
+            let session = try await serviceClientUtils?.sessionFtpClientReady(identifier)
             guard let client = session?.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
                 throw PolarErrors.serviceNotFound
             }
@@ -232,7 +232,7 @@ class PolarFileUtils {
     // MARK: - BLE Low Level APIs
 
     func writeFile(identifier: String, filePath: String, fileData: Data) async throws {
-        let session = try serviceClientUtils?.sessionFtpClientReady(identifier)
+        let session = try await serviceClientUtils?.sessionFtpClientReady(identifier)
         guard let client = session?.fetchGattClient(BlePsFtpClient.PSFTP_SERVICE) as? BlePsFtpClient else {
             throw PolarErrors.serviceNotFound
         }
