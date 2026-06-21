@@ -63,8 +63,8 @@ class SkinTemperatureDomainCommonPolicyTest {
                     assertEquals("map-unrecognized-measurement-and-sensor-location-to-null-in-shared-models", policy, caseId)
                     assertNull(model.measurementType, "$caseId shared unknown measurement policy")
                     assertNull(model.sensorLocation, "$caseId shared unknown sensor-location policy")
-                    assertNull(platformExpectations.objectValue("ios").optionalStringValue("sensorLocation"), "$caseId linked iOS shared unknown sensor-location policy")
-                    assertNull(platformExpectations.objectValue("ios").optionalStringValue("measurementType"), "$caseId linked iOS shared unknown measurement policy")
+                    assertEquals("SL_UNKNOWN", platformExpectations.objectValue("ios").optionalStringValue("sensorLocation"), "$caseId linked iOS public unknown sensor-location policy")
+                    assertEquals("TM_UNKNOWN", platformExpectations.objectValue("ios").optionalStringValue("measurementType"), "$caseId linked iOS public unknown measurement policy")
                 }
             }
         }
