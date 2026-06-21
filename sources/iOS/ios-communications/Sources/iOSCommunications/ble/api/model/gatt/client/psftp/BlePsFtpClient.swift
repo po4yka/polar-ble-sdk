@@ -402,7 +402,6 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
                     let localDataStream = InputStream(data: dataBytes)
                     totalStream.open(); localDataStream.open()
                     defer { totalStream.close(); localDataStream.close() }
-                    var next = 0
                     var pCounter: UInt64 = 0
                     var response = false
                     let payloadSize = Int64(dataBytes.count)
@@ -421,7 +420,6 @@ open class BlePsFtpClient: BleGattClientBase, @unchecked Sendable {
                             }
                             try self.transmitMtuPacket(packet, canceled: block ?? BlockOperation(), response: response, timeout: timeout)
                             BleLogger.trace("Transmitted MTU packet with size: \(packet.count) bytes")
-                            next = 1
                             totalTransmitted += Int64(packet.count - 1)
                             var transferred: Int64 = 0
                             let component = totalTransmitted - headerSize - Int64(2)

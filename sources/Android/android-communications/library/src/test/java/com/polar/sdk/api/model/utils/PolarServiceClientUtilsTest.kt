@@ -17,6 +17,7 @@ import com.polar.sdk.api.errors.PolarServiceNotAvailable
 import com.polar.sdk.impl.utils.PolarServiceClientUtils
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Assert.fail
 import org.junit.Test
@@ -50,7 +51,7 @@ class PolarServiceClientUtilsTest {
         every { client.getNotificationAtomicInteger(any()) } returns AtomicInteger(0) // 0 is BleGattBase.ATT_SUCCESS
 
         // Act
-        val testHrSession = PolarServiceClientUtils.sessionHrClientReady(deviceId, listener)
+        val testHrSession = runBlocking { PolarServiceClientUtils.sessionHrClientReady(deviceId, listener) }
 
         // Assert
         Assert.assertEquals(testHrSession.sessionState, BleDeviceSession.DeviceSessionState.SESSION_OPEN)
@@ -76,7 +77,7 @@ class PolarServiceClientUtilsTest {
 
         // Act&Assert
         try {
-            PolarServiceClientUtils.sessionHrClientReady(deviceId, listener)
+            runBlocking { PolarServiceClientUtils.sessionHrClientReady(deviceId, listener) }
             fail("testSessionHrClientReadyThrows, sessionHrClientReady did not throw when no connection to device.")
         } catch (e: Exception) {
             Assert.assertEquals(true,  PolarDeviceDisconnected().toString().contentEquals(e.toString()))
@@ -106,7 +107,7 @@ class PolarServiceClientUtilsTest {
         every { client.getNotificationAtomicInteger(any()) } returns AtomicInteger(0) // 0 is BleGattBase.ATT_SUCCESS
 
         // Act
-        val testPMDSession = PolarServiceClientUtils.sessionPmdClientReady(deviceId, listener)
+        val testPMDSession = runBlocking { PolarServiceClientUtils.sessionPmdClientReady(deviceId, listener) }
 
         // Assert
         Assert.assertEquals(testPMDSession.sessionState, BleDeviceSession.DeviceSessionState.SESSION_OPEN)
@@ -132,7 +133,7 @@ class PolarServiceClientUtilsTest {
 
         // Act&Assert
         try {
-            PolarServiceClientUtils.sessionPmdClientReady(deviceId, listener)
+            runBlocking { PolarServiceClientUtils.sessionPmdClientReady(deviceId, listener) }
             fail("Test sessionPmdClientThrows failed: sessionPmdClientReady did not throw when no connection to device.")
         } catch (e: Exception) {
             Assert.assertEquals(true,  PolarDeviceDisconnected().toString().contentEquals(e.toString()))
@@ -162,7 +163,7 @@ class PolarServiceClientUtilsTest {
         every { client.getNotificationAtomicInteger(any()) } returns AtomicInteger(0) // 0 is BleGattBase.ATT_SUCCESS
 
         // Act
-        val testFtpSession = PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, listener)
+        val testFtpSession = runBlocking { PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, listener) }
 
         // Assert
         Assert.assertEquals(testFtpSession.sessionState, BleDeviceSession.DeviceSessionState.SESSION_OPEN)
@@ -188,7 +189,7 @@ class PolarServiceClientUtilsTest {
 
         // Act&Assert
         try {
-            PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, listener)
+            runBlocking { PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, listener) }
             fail("Test sessionPsFtpClientReady failed: sessionPsFtpClientReady did not throw when no connection to device.")
         } catch (e: Exception) {
             Assert.assertEquals(true,  PolarDeviceDisconnected().toString().contentEquals(e.toString()))
@@ -218,7 +219,7 @@ class PolarServiceClientUtilsTest {
         every { client.getNotificationAtomicInteger(any()) } returns AtomicInteger(0) // 0 is BleGattBase.ATT_SUCCESS
 
         // Act
-        val testPfcSession = PolarServiceClientUtils.sessionPsPfcClientReady(deviceId, listener)
+        val testPfcSession = runBlocking { PolarServiceClientUtils.sessionPsPfcClientReady(deviceId, listener) }
 
         // Assert
         Assert.assertEquals(testPfcSession.sessionState, BleDeviceSession.DeviceSessionState.SESSION_OPEN)
@@ -244,7 +245,7 @@ class PolarServiceClientUtilsTest {
 
         // Act&Assert
         try {
-            PolarServiceClientUtils.sessionPsPfcClientReady(deviceId, listener)
+            runBlocking { PolarServiceClientUtils.sessionPsPfcClientReady(deviceId, listener) }
             fail("Test sessionPsPfcClientReady failed: sessionPsPfcClientReady did not throw when no connection to device.")
         } catch (e: Exception) {
             Assert.assertEquals(true,  PolarDeviceDisconnected().toString().contentEquals(e.toString()))
@@ -274,7 +275,7 @@ class PolarServiceClientUtilsTest {
         every { client.getNotificationAtomicInteger(any()) } returns AtomicInteger(0) // 0 is BleGattBase.ATT_SUCCESS
 
         // Act
-        val testSessionService = PolarServiceClientUtils.sessionServiceReady(deviceId, HR_SERVICE, listener)
+        val testSessionService = runBlocking { PolarServiceClientUtils.sessionServiceReady(deviceId, HR_SERVICE, listener) }
 
         // Assert
         Assert.assertEquals(testSessionService.sessionState, BleDeviceSession.DeviceSessionState.SESSION_OPEN)
@@ -290,7 +291,7 @@ class PolarServiceClientUtilsTest {
 
         // Act&Assert
         try {
-            PolarServiceClientUtils.sessionServiceReady(deviceId, HR_SERVICE, listener)
+            runBlocking { PolarServiceClientUtils.sessionServiceReady(deviceId, HR_SERVICE, listener) }
             fail("Test testSessionServiceThrowsWhenDeviceNotFound failed: sessionServiceReady did not throw when no device found.")
         } catch (e: Exception) {
             Assert.assertEquals(true,  PolarDeviceNotFound().toString().contentEquals(e.toString()))
@@ -316,7 +317,7 @@ class PolarServiceClientUtilsTest {
 
         // Act&Assert
         try {
-            PolarServiceClientUtils.sessionServiceReady(deviceId, HR_SERVICE, listener)
+            runBlocking { PolarServiceClientUtils.sessionServiceReady(deviceId, HR_SERVICE, listener) }
             fail("Test testSessionServiceThrowsWhenDeviceDisconnected failed: sessionServiceReady did not throw when no connection to device.")
         } catch (e: Exception) {
             Assert.assertEquals(true,  PolarDeviceDisconnected().toString().contentEquals(e.toString()))
@@ -343,7 +344,7 @@ class PolarServiceClientUtilsTest {
 
         // Act&Assert
         try {
-            PolarServiceClientUtils.sessionServiceReady(deviceId, UUID.randomUUID(), listener)
+            runBlocking { PolarServiceClientUtils.sessionServiceReady(deviceId, UUID.randomUUID(), listener) }
             fail("Test testSessionServiceThrowsWhenNoDeviceBleClient failed: sessionServiceReady did not throw when device does not support required Ble client.")
         } catch (e: Exception) {
             Assert.assertEquals(true,  PolarServiceNotAvailable().toString().contentEquals(e.toString()))
@@ -372,7 +373,7 @@ class PolarServiceClientUtilsTest {
 
         // Act&Assert
         try {
-            PolarServiceClientUtils.sessionServiceReady(deviceId, UUID.randomUUID(), listener)
+            runBlocking { PolarServiceClientUtils.sessionServiceReady(deviceId, UUID.randomUUID(), listener) }
             fail("Test testSessionServiceThrowsWhenNoClientService failed: sessionServiceReady did not throw when device Ble client does not have required service.")
         } catch (e: Exception) {
             Assert.assertEquals(true,  PolarServiceNotAvailable().toString().contentEquals(e.toString()))
@@ -473,7 +474,7 @@ class PolarServiceClientUtilsTest {
 
         // Act&Assert
         try {
-            PolarServiceClientUtils.sessionServiceReady(deviceId, UUID.randomUUID(), listener)
+            runBlocking { PolarServiceClientUtils.sessionServiceReady(deviceId, UUID.randomUUID(), listener) }
             fail("Test testFetchSessionThrows failed: fetchSession did not throw when device does not match deviceID filters.")
         } catch (e: Exception) {
             Assert.assertEquals(true,  PolarInvalidArgument().toString().contentEquals(e.toString()))
@@ -516,7 +517,7 @@ class PolarServiceClientUtilsTest {
 
         // Act&Assert
         try {
-            PolarServiceClientUtils.sessionServiceReady(deviceId, UUID.randomUUID(), listener)
+            runBlocking { PolarServiceClientUtils.sessionServiceReady(deviceId, UUID.randomUUID(), listener) }
             fail("Test testFetchSessionThrows failed: fetchSession did not throw when device does not match deviceID filters.")
         } catch (e: Exception) {
             Assert.assertEquals(true,  PolarDeviceDisconnected().toString().contentEquals(e.toString()))

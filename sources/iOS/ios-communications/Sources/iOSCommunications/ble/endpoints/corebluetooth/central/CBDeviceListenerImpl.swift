@@ -549,5 +549,6 @@ extension CBDeviceListenerImpl: BleDeviceListener {
                 BleLogger.trace("Completed session close tear down for session \(session.advertisementContent.name)")
                 cancellable = nil
             }, receiveValue: { _ in })
+        _ = cancellable
     }
 }

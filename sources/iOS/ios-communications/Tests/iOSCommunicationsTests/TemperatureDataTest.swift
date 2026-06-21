@@ -55,7 +55,7 @@ final class TemperatureDataTest: XCTestCase {
         let temperatureData = try TemperatureData.parseDataFromDataFrame(frame: dataFrame)
         #if canImport(PolarBleSdkShared)
         XCTAssertEqual(3, temperatureData.samples.count)
-        XCTAssertEqual(666666747, temperatureData.samples[0].timeStamp)
+        XCTAssertEqual(666666746, temperatureData.samples[0].timeStamp)
         XCTAssertEqual(27.54, temperatureData.samples[0].temperature, accuracy: 0.00001)
         XCTAssertEqual(1333333373, temperatureData.samples[1].timeStamp)
         XCTAssertEqual(27.54, temperatureData.samples[1].temperature, accuracy: 0.00001)

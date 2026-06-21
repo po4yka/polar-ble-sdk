@@ -1826,7 +1826,7 @@ final class PolarBleApiImplTests: XCTestCase {
         components.month = 1
         components.day = 2
         let birthDate = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: components))
-        let config = PolarFirstTimeUseConfig(
+        let config = try PolarFirstTimeUseConfig(
             gender: .male,
             birthDate: birthDate,
             height: 180.5,
@@ -1865,7 +1865,7 @@ final class PolarBleApiImplTests: XCTestCase {
 
     func test_firstTimeUsePhysicalConfigEnumMappingPreservesProtoValues() throws {
         let birthDate = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: DateComponents(year: 1990, month: 1, day: 2)))
-        let config = PolarFirstTimeUseConfig(
+        let config = try PolarFirstTimeUseConfig(
             gender: .female,
             birthDate: birthDate,
             height: 170.0,
@@ -1907,7 +1907,7 @@ final class PolarBleApiImplTests: XCTestCase {
 
     func test_doFirstTimeUse_writesUserIdAndPhysicalConfigBetweenSyncNotifications() throws {
         let birthDate = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: DateComponents(year: 1992, month: 3, day: 4)))
-        let config = PolarFirstTimeUseConfig(
+        let config = try PolarFirstTimeUseConfig(
             gender: .female,
             birthDate: birthDate,
             height: 171.5,
@@ -1976,7 +1976,7 @@ final class PolarBleApiImplTests: XCTestCase {
     func test_doFirstTimeUse_userIdWriteFailurePropagatesWithoutTerminateNotifications() throws {
         try assertFileFacadeRuntimePolicyVectorContains("write-low-level-file-stream-failure")
         let birthDate = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: DateComponents(year: 1991, month: 2, day: 3)))
-        let config = PolarFirstTimeUseConfig(
+        let config = try PolarFirstTimeUseConfig(
             gender: .male,
             birthDate: birthDate,
             height: 181.0,

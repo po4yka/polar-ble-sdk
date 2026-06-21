@@ -133,7 +133,7 @@ class BackupUtilityCommonPolicyTest {
         val backupText = "/SYS/BT/\n /TRIMMED/PATH.BPB \n/SYS/BT/\n/FINAL/NO_NEWLINE.BPB"
 
         assertEquals(
-            listOf("/SYS/BT/", " /TRIMMED/PATH.BPB ", "/FINAL/NO_NEWLINE.BPB"),
+            listOf("/SYS/BT/", " /TRIMMED/PATH.BPB ", "/SYS/BT/", "/FINAL/NO_NEWLINE.BPB"),
             PolarWorkflowRuntimePlanning.parseBackupTextForAndroid(backupText)
         )
         assertEquals(

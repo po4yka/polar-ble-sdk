@@ -698,8 +698,8 @@ class BDBleApiImplTest {
         val api = BDBleApiImpl.getInstance(context, setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_POLAR_FIRMWARE_UPDATE))
         val (client, psFtpSession) = mockPsFtpConnection(deviceId)
         val (pfcClient, pfcSession) = mockPfcConnection(deviceId)
-        every { PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, any()) } returns psFtpSession
-        every { PolarServiceClientUtils.sessionPsPfcClientReady(deviceId, any()) } returns pfcSession
+        coEvery { PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, any()) } returns psFtpSession
+        coEvery { PolarServiceClientUtils.sessionPsPfcClientReady(deviceId, any()) } returns pfcSession
         val deviceInfo = Device.PbDeviceInfo.newBuilder()
             .setDeviceVersion(PbVersion.newBuilder().setMajor(1).setMinor(2).setPatch(0))
             .setModelName("Model")
@@ -4835,7 +4835,7 @@ class BDBleApiImplTest {
         every { client.getNotificationAtomicInteger(any()) } returns AtomicInteger(0)
 
         mockkObject(PolarServiceClientUtils)
-        every { PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, any()) } returns session
+        coEvery { PolarServiceClientUtils.sessionPsFtpClientReady(deviceId, any()) } returns session
 
         return Pair(client, session)
     }
@@ -4860,7 +4860,7 @@ class BDBleApiImplTest {
         every { client.getNotificationAtomicInteger(any()) } returns AtomicInteger(0)
 
         mockkObject(PolarServiceClientUtils)
-        every { PolarServiceClientUtils.sessionPmdClientReady(deviceId, any()) } returns session
+        coEvery { PolarServiceClientUtils.sessionPmdClientReady(deviceId, any()) } returns session
 
         return Pair(client, session)
     }
@@ -4879,7 +4879,7 @@ class BDBleApiImplTest {
         every { client.getNotificationAtomicInteger(any()) } returns AtomicInteger(0)
 
         mockkObject(PolarServiceClientUtils)
-        every { PolarServiceClientUtils.sessionPsPfcClientReady(deviceId, any()) } returns session
+        coEvery { PolarServiceClientUtils.sessionPsPfcClientReady(deviceId, any()) } returns session
 
         return Pair(client, session)
     }

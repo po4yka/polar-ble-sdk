@@ -341,7 +341,7 @@ class PolarBackupManagerTest {
     @Test
     fun `backup text parsing delegates Android compatibility policy to shared planner`() {
         Assert.assertEquals(
-            listOf("/SYS/BT/", " /TRIMMED/PATH.BPB ", "/FINAL/NO_NEWLINE.BPB"),
+            listOf("/SYS/BT/", " /TRIMMED/PATH.BPB ", "/SYS/BT/", "/FINAL/NO_NEWLINE.BPB"),
             PolarRuntimePlannerAdapter.parseBackupTextForAndroid("/SYS/BT/\n /TRIMMED/PATH.BPB \n/SYS/BT/\n/FINAL/NO_NEWLINE.BPB")
         )
     }

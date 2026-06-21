@@ -1,6 +1,5 @@
 package com.polar.sharedtest
 
-import kotlin.math.round
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -180,20 +179,28 @@ class AccParserCommonPolicyTest {
 
     private fun List<AccSample>.withTimeStamps(previousTimeStamp: Long, frameTimeStamp: Long, sampleRate: Int): List<AccSample> {
         if (isEmpty()) return this
-        val delta = if (previousTimeStamp == 0L) {
-            if (sampleRate <= 0) 0.0 else NANOSECONDS_PER_SECOND.toDouble() / sampleRate.toDouble()
+        val timestamps = if (previousTimeStamp == 0L) {
+            require(sampleRate > 0) { "malformedFrame" }
+            val stepNs = NANOSECONDS_PER_SECOND / sampleRate.toLong()
+            val remainder = NANOSECONDS_PER_SECOND % sampleRate.toLong()
+            val start = frameTimeStamp - stepNs * (size - 1).toLong()
+            List(size) { index ->
+                val extraNs = if (index.toLong() < remainder) index.toLong() else remainder
+                start + stepNs * index.toLong() + extraNs
+            }
         } else {
-            (frameTimeStamp - previousTimeStamp).toDouble() / size.toDouble()
+            val span = frameTimeStamp - previousTimeStamp
+            val stepNs = span / size.toLong()
+            val remainder = span % size.toLong()
+            val start = previousTimeStamp + stepNs
+            MutableList(size - 1) { index ->
+                val extraNs = if ((index + 1).toLong() <= remainder) index.toLong() else remainder
+                start + stepNs * index.toLong() + extraNs
+            }.apply {
+                add(frameTimeStamp)
+            }
         }
-        val first = if (previousTimeStamp == 0L) {
-            frameTimeStamp.toDouble() - delta * (size - 1)
-        } else {
-            previousTimeStamp.toDouble() + delta
-        }
-        return mapIndexed { index, sample ->
-            val timeStamp = if (index == lastIndex) frameTimeStamp else round(first + delta * index).toLong()
-            sample.copy(timeStamp = timeStamp)
-        }
+        return mapIndexed { index, sample -> sample.copy(timeStamp = timestamps[index]) }
     }
 
     private fun ByteArray.readSignedInt(offset: Int, size: Int): Int {

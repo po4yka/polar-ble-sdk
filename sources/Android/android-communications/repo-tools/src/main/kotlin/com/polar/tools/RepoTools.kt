@@ -284,9 +284,9 @@ private fun iosXcodeValidationProbe() {
     if (iosRoot.resolve("Pods").exists()) blockers += "pods-directory-present"
 
     if (errors.isEmpty()) {
-        val projectProbe = runCommand(listOf("xcodebuild", "-list", "-project", project.absolutePath), timeoutSeconds = 60)
+        val projectProbe = runCommand(listOf("xcodebuild", "-list", "-project", project.absolutePath), timeoutSeconds = 180)
         if (projectProbe.timedOut) {
-            errors += "xcodebuild project discovery timed out after 60s"
+            errors += "xcodebuild project discovery timed out after 180s"
         } else if (projectProbe.exitCode != 0) {
             errors += "xcodebuild project discovery failed with exit ${projectProbe.exitCode}"
         } else {

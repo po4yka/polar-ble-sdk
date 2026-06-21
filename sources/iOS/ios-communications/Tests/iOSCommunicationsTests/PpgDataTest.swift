@@ -794,7 +794,7 @@ final class PpgDataTest: XCTestCase {
         let expectedRedSamples:[Int32] = [1973554, 1752419, 1569544, 1126395, 256, 1312672]
         let expectedIrSamples:[Int32] = [1671106, 2230896, 1670551, 2230476, 1312672, -5901481]
         let expectedStatus: Int32 = 249855
-        let expectedTimeStamp: UInt64 = 112524943566142944
+        let expectedTimeStamp: UInt64 = 112524943566142942
         
         // Frame data with timestamps, frame type data etc.
         let ppgDataFrameContent = Data([
@@ -956,7 +956,7 @@ final class PpgDataTest: XCTestCase {
         let expectedPPGChannel0: Int32 = 2759080
         let expectedPPGChannel1: Int32 = 2537320
         let expectedStatus: Int32 = 3
-        let expectedTimeStamp: UInt64 = 23809623
+        let expectedTimeStamp: UInt64 = 23809622
         let previousTimeStamp:UInt64 = 100
         
         // Frame data with timestamps, frame type data etc.

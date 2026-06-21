@@ -177,8 +177,8 @@ class PolarSkinTemperatureUtilsTests: XCTestCase {
 
     private func assertSkinTemperatureResult(_ actual: PolarSkinTemperatureData.PolarSkinTemperatureResult?, expected: [String: Any], id: String) throws {
         let result = try XCTUnwrap(actual, id)
-        try assertOptionalString(result.sensorLocation.map { $0.rawValue }, expected, "sensorLocation", id: id)
-        try assertOptionalString(result.measurementType.map { $0.rawValue }, expected, "measurementType", id: id)
+        try assertOptionalString(result.sensorLocation.rawValue, expected, "sensorLocation", id: id)
+        try assertOptionalString(result.measurementType.rawValue, expected, "measurementType", id: id)
         let expectedSamples = try XCTUnwrap(expected["samples"] as? [[String: Any]], id)
         XCTAssertEqual(result.skinTemperatureList?.count, expectedSamples.count, id)
         for (index, expectedSample) in expectedSamples.enumerated() {

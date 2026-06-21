@@ -14,7 +14,7 @@ final class AccDataTest: XCTestCase {
         // index                                                   data:
         // 0        type                                           02 (ACC)
         // 1..9     timestamp                                      00 94 35 77 00 00 00 00
-        let timeStamp:UInt64 = 2000000000
+        let timeStamp:UInt64 = 2000000012
         // 10       frame type                                     01
         
         let accDataFrameHeader = Data([
@@ -160,7 +160,7 @@ final class AccDataTest: XCTestCase {
             0x76, 0xF9
         ])
         let delta = try PmdTimeStampUtils.deltaFromTimeStamps(previousTimeStamp, timeStamp, UInt(amountOfSamples))
-        let expectedFirstSampleTimeStamp:UInt64 = UInt64(round(Double(previousTimeStamp) + delta))
+        let expectedFirstSampleTimeStamp:UInt64 = 35087817
         
         let range = 8
         let factor:Float = 2.44E-4

@@ -75,7 +75,7 @@ class MockPolarServiceClientUtils: PolarServiceClientUtils {
         return mockSession
     }
 
-    override func sessionFtpClientReady(_ identifier: String) throws -> BleDeviceSession {
+    override func sessionFtpClientReady(_ identifier: String) async throws -> BleDeviceSession {
         return mockSession
     }
 
@@ -114,7 +114,7 @@ class MockPolarH10ServiceClientUtils: PolarServiceClientUtils {
         fatalError("init(listener:) has not been implemented")
     }
 
-    override func sessionFtpClientReady(_ identifier: String) throws -> BleDeviceSession {
+    override func sessionFtpClientReady(_ identifier: String) async throws -> BleDeviceSession {
         return mockSession
     }
 }
@@ -471,7 +471,7 @@ class MockPfcServiceClientUtils: PolarServiceClientUtils {
         return stubSession!
     }
 
-    override func sessionFtpClientReady(_ identifier: String) throws -> BleDeviceSession {
+    override func sessionFtpClientReady(_ identifier: String) async throws -> BleDeviceSession {
         throw PolarErrors.serviceNotFound
     }
 }
@@ -584,7 +584,7 @@ class MockPmdServiceClientUtils: PolarServiceClientUtils {
         return stubSession!
     }
 
-    override func sessionFtpClientReady(_ identifier: String) throws -> BleDeviceSession {
+    override func sessionFtpClientReady(_ identifier: String) async throws -> BleDeviceSession {
         throw PolarErrors.serviceNotFound
     }
 }
@@ -626,7 +626,7 @@ class MockDisconnectPolarServiceClientUtils: PolarServiceClientUtils {
         return stubSession
     }
 
-    override func sessionFtpClientReady(_ identifier: String) throws -> BleDeviceSession {
+    override func sessionFtpClientReady(_ identifier: String) async throws -> BleDeviceSession {
         throw PolarErrors.serviceNotFound
     }
 }
@@ -661,11 +661,13 @@ class MockDisconnectBleApiImpl {
 
     func listOfflineRecordings(_ identifier: String) -> AsyncThrowingStream<PolarOfflineRecordingEntry, Error> {
         AsyncThrowingStream { continuation in
-            do {
-                _ = try await _disconnectServiceUtils.sessionFtpClientReady(identifier)
-                continuation.finish(throwing: PolarErrors.serviceNotFound)
-            } catch {
-                continuation.finish(throwing: error)
+            Task {
+                do {
+                    _ = try await _disconnectServiceUtils.sessionFtpClientReady(identifier)
+                    continuation.finish(throwing: PolarErrors.serviceNotFound)
+                } catch {
+                    continuation.finish(throwing: error)
+                }
             }
         }
     }

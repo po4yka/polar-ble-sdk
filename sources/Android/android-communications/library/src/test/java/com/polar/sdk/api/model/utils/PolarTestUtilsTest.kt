@@ -307,7 +307,7 @@ class PolarTestUtilsTest {
 
         val entry = Spo2TestEntry(date = date, timeDirName = "083906", protoBytes = protoBytes)
         val result = PolarTestUtils.mapSpo2TestEntry(entry)
-
+            ?: error("Expected SpO2 test entry to map to PolarSpo2TestData")
         assertEquals("0004BF3D", result.recordingDevice)
         assertEquals(97, result.bloodOxygenPercent)
         assertEquals(63u, result.averageHeartRateBpm)

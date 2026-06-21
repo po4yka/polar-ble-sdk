@@ -12,7 +12,6 @@ import org.junit.Test
 import java.io.File
 import java.io.FileReader
 import kotlin.math.abs
-import kotlin.math.round
 
 internal class AccDataTest {
     @Rule
@@ -26,7 +25,7 @@ internal class AccDataTest {
         // index                                                   data:
         // 0        type                                           02 (ACC)
         // 1..9     timestamp                                      00 94 35 77 00 00 00 00
-        val timeStamp = 2000000000uL
+        val timeStamp = 2000000012uL
         // 10       frame type                                     01
 
         val accDataFrameHeader = byteArrayOf(
@@ -171,8 +170,7 @@ internal class AccDataTest {
             0x6C.toByte(), 0x8F.toByte(), 0x1F.toByte(), 0xCB.toByte(), 0xDA.toByte(), 0xE3.toByte(), 0xC7.toByte(), 0xA2.toByte(),
             0x76.toByte(), 0xF9.toByte()
         )
-        val delta = PmdTimeStampUtils.deltaFromTimeStamps(previousTimeStamp, timeStamp, amountOfSamples)
-        val expectedFirstSampleTimeStamp = round(previousTimeStamp.toDouble() + delta).toULong()
+        val expectedFirstSampleTimeStamp = 35087817uL
 
         val range = 8
         val factor = 2.44E-4f

@@ -567,7 +567,7 @@ class BDDeviceListenerImplTest {
         every {
             bluetoothManager.getDevicesMatchingConnectionStates(
                 BluetoothProfile.GATT,
-                intArrayOf(BluetoothProfile.STATE_CONNECTED or BluetoothProfile.STATE_CONNECTING)
+                intArrayOf(BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_CONNECTING)
             )
         } returns connectedDevices
 

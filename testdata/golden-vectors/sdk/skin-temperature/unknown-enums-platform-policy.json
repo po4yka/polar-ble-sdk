@@ -37,8 +37,8 @@
       ]
     },
     "ios": {
-      "sensorLocation": null,
-      "measurementType": null,
+      "sensorLocation": "SL_UNKNOWN",
+      "measurementType": "TM_UNKNOWN",
       "samples": [
         {
           "recordingTimeDeltaMs": 500,

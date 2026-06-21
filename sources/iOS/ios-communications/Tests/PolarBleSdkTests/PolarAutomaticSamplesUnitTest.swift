@@ -451,7 +451,7 @@ class PolarAutomaticSamplesUtilsTests: XCTestCase {
         let expected = try expectedForIOS(vector)
 
         XCTAssertEqual(actual.startTime, try XCTUnwrap(expected["startTime"] as? String))
-        XCTAssertEqual(actual.triggerType.rawValue, try XCTUnwrap(expected["triggerType"] as? String))
+        XCTAssertEqual(actual.triggerType?.rawValue, try XCTUnwrap(expected["triggerType"] as? String))
         XCTAssertEqual(actual.ppiValueList.map { Int($0) }, try XCTUnwrap(expected["ppiValueList"] as? [Int]))
         XCTAssertEqual(actual.ppiErrorEstimateList.map { Int($0) }, try XCTUnwrap(expected["ppiErrorEstimateList"] as? [Int]))
         let expectedStatuses = try XCTUnwrap(expected["statusList"] as? [[String: Any]])

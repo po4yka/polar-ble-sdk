@@ -133,10 +133,10 @@ class PolarSleepUtilsTests: XCTestCase {
         XCTAssertEqual(sleepData.userSleepRating, mockSleepData.userSleepRating)
         XCTAssertEqual(sleepData.originalSleepRange?.startTime, mockSleepData.originalSleepRange?.startTime)
         XCTAssertEqual(sleepData.originalSleepRange?.endTime, mockSleepData.originalSleepRange?.endTime)
-        XCTAssertEqual(sleepData.sleepCycles.first?.secondsFromSleepStart, mockSleepData.sleepCycles.first?.secondsFromSleepStart)
-        XCTAssertEqual(sleepData.sleepCycles.first?.sleepDepthStart, mockSleepData.sleepCycles.first?.sleepDepthStart)
-        XCTAssertEqual(sleepData.sleepWakePhases.first?.secondsFromSleepStart, mockSleepData.sleepWakePhases.first?.secondsFromSleepStart)
-        XCTAssertEqual(sleepData.sleepWakePhases.first?.state, mockSleepData.sleepWakePhases.first?.state)
+        XCTAssertEqual(sleepData.sleepCycles?.first?.secondsFromSleepStart, mockSleepData.sleepCycles?.first?.secondsFromSleepStart)
+        XCTAssertEqual(sleepData.sleepCycles?.first?.sleepDepthStart, mockSleepData.sleepCycles?.first?.sleepDepthStart)
+        XCTAssertEqual(sleepData.sleepWakePhases?.first?.secondsFromSleepStart, mockSleepData.sleepWakePhases?.first?.secondsFromSleepStart)
+        XCTAssertEqual(sleepData.sleepWakePhases?.first?.state, mockSleepData.sleepWakePhases?.first?.state)
     }
 
     func testSleepRatingProtoMappingUsesSharedKnownValuesAndPreservesUnknownNilPolicy() {
@@ -234,16 +234,18 @@ class PolarSleepUtilsTests: XCTestCase {
         let sleepData = try await PolarSleepUtils.readSleepFromDayDirectory(client: mockClient, date: Date())
 
         let expectedPhases = try XCTUnwrap(expected["sleepWakePhases"] as? [[String: Any]])
-        XCTAssertEqual(sleepData.sleepWakePhases.count, expectedPhases.count)
+        let sleepWakePhases = try XCTUnwrap(sleepData.sleepWakePhases)
+        XCTAssertEqual(sleepWakePhases.count, expectedPhases.count)
         for (index, phase) in expectedPhases.enumerated() {
-            XCTAssertEqual(sleepData.sleepWakePhases[index].secondsFromSleepStart, UInt32(try XCTUnwrap(phase["secondsFromSleepStart"] as? Int)))
-            XCTAssertEqual(sleepData.sleepWakePhases[index].state.rawValue, try XCTUnwrap(phase["state"] as? String))
+            XCTAssertEqual(sleepWakePhases[index].secondsFromSleepStart, UInt32(try XCTUnwrap(phase["secondsFromSleepStart"] as? Int)))
+            XCTAssertEqual(sleepWakePhases[index].state?.rawValue, try XCTUnwrap(phase["state"] as? String))
         }
         let expectedCycles = try XCTUnwrap(expected["sleepCycles"] as? [[String: Any]])
-        XCTAssertEqual(sleepData.sleepCycles.count, expectedCycles.count)
+        let sleepCycles = try XCTUnwrap(sleepData.sleepCycles)
+        XCTAssertEqual(sleepCycles.count, expectedCycles.count)
         for (index, cycle) in expectedCycles.enumerated() {
-            XCTAssertEqual(sleepData.sleepCycles[index].secondsFromSleepStart, UInt32(try XCTUnwrap(cycle["secondsFromSleepStart"] as? Int)))
-            XCTAssertEqual(sleepData.sleepCycles[index].sleepDepthStart, Float(try XCTUnwrap(cycle["sleepDepthStart"] as? Double)), accuracy: 0.0001)
+            XCTAssertEqual(sleepCycles[index].secondsFromSleepStart, UInt32(try XCTUnwrap(cycle["secondsFromSleepStart"] as? Int)))
+            XCTAssertEqual(try XCTUnwrap(sleepCycles[index].sleepDepthStart), Float(try XCTUnwrap(cycle["sleepDepthStart"] as? Double)), accuracy: 0.0001)
         }
     }
 
@@ -274,13 +276,13 @@ class PolarSleepUtilsTests: XCTestCase {
         let sleepData = try await PolarSleepUtils.readSleepFromDayDirectory(client: mockClient, date: Date())
 
         XCTAssertEqual(sleepData.sleepGoalMinutes, UInt32(try XCTUnwrap(commonExpected["sleepGoalMinutes"] as? Int)))
-        XCTAssertEqual(sleepData.sleepWakePhases.count, try XCTUnwrap(commonExpected["sleepWakePhaseCount"] as? Int))
+        XCTAssertEqual(sleepData.sleepWakePhases?.count, try XCTUnwrap(commonExpected["sleepWakePhaseCount"] as? Int))
         XCTAssertEqual(try XCTUnwrap(sleepData.snoozeTime).count, try XCTUnwrap(commonExpected["snoozeTimeCount"] as? Int))
         XCTAssertNil(sleepData.alarmTime)
         XCTAssertEqual(sleepData.sleepStartOffsetSeconds, Int32(try XCTUnwrap(commonExpected["sleepStartOffsetSeconds"] as? Int)))
         XCTAssertEqual(sleepData.sleepEndOffsetSeconds, Int32(try XCTUnwrap(commonExpected["sleepEndOffsetSeconds"] as? Int)))
         XCTAssertNil(sleepData.userSleepRating)
-        XCTAssertEqual(sleepData.sleepCycles.count, try XCTUnwrap(commonExpected["sleepCycleCount"] as? Int))
+        XCTAssertEqual(sleepData.sleepCycles?.count, try XCTUnwrap(commonExpected["sleepCycleCount"] as? Int))
         XCTAssertEqual(sleepData.sleepResultDate?.year, 2024)
         XCTAssertEqual(sleepData.sleepResultDate?.month, 5)
         XCTAssertEqual(sleepData.sleepResultDate?.day, 6)

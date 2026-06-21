@@ -569,7 +569,8 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
                 }
             }
             val samples: MutableList<List<Int>> = ArrayList()
-            val mask = -1 shl bitWidth
+            val signBit = 1 shl (bitWidth - 1)
+            val mask = if (bitWidth == Int.SIZE_BITS) 0 else -1 shl bitWidth
             while (offset < totalBitLength) {
                 val channelSamples: MutableList<Int> = ArrayList()
                 var channelCount = 0
@@ -579,7 +580,7 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
                     for (i in bits.indices) {
                         value = value or ((if (bits[i]) 0x01 else 0x00) shl i)
                     }
-                    if (value and mask != 0) {
+                    if (value and signBit != 0) {
                         value = value or mask
                     }
                     offset += bitWidth
@@ -652,4 +653,3 @@ class BlePMDClient(txInterface: BleGattTxInterface) : BleGattBase(txInterface, P
         pmdDataEnabled = getNotificationAtomicInteger(PMD_DATA)
     }
 }
-

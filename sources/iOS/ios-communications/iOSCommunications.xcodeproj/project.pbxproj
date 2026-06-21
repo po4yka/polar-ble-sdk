@@ -264,10 +264,12 @@
 		A57728B92FB6700000855884 /* PolarRestServiceApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289C2FB6700000855884 /* PolarRestServiceApi.swift */; };
 		A57728B827CE860600855884 /* PolarSensorSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289C27CE860600855884 /* PolarSensorSetting.swift */; };
 		A57728B927CE860600855884 /* PolarSensorSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289C27CE860600855884 /* PolarSensorSetting.swift */; };
+		A57728B927CE860600855885 /* PolarSensorSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289C27CE860600855884 /* PolarSensorSetting.swift */; };
 		A57728BA27CE860600855884 /* PolarBleApiDefaultImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289D27CE860600855884 /* PolarBleApiDefaultImpl.swift */; };
 		A57728BB27CE860600855884 /* PolarBleApiDefaultImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289D27CE860600855884 /* PolarBleApiDefaultImpl.swift */; };
 		A57728BC27CE860600855884 /* PolarErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289F27CE860600855884 /* PolarErrors.swift */; };
 		A57728BD27CE860600855884 /* PolarErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289F27CE860600855884 /* PolarErrors.swift */; };
+		A57728BD27CE860600855885 /* PolarErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A577289F27CE860600855884 /* PolarErrors.swift */; };
 		A57D050A292254E2002824D9 /* BlePmdClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D0509292254E2002824D9 /* BlePmdClient.swift */; };
 		A57D050B292254E2002824D9 /* BlePmdClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D0509292254E2002824D9 /* BlePmdClient.swift */; };
 		A57D050C292254E2002824D9 /* BlePmdClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D0509292254E2002824D9 /* BlePmdClient.swift */; };
@@ -1865,6 +1867,8 @@
 				AABCBC5D2D08494A00364101 /* SkinTemperatureData.swift in Sources */,
 				6C32C6D7220AD3CA006615C3 /* CBScanningProtocol.swift in Sources */,
 				84D0098B2C85D41800AB4C43 /* PolarFirstTimeUseConfig.swift in Sources */,
+				A57728B927CE860600855885 /* PolarSensorSetting.swift in Sources */,
+				A57728BD27CE860600855885 /* PolarErrors.swift in Sources */,
 				6C4A6A311CC0BA2400E3AD73 /* BlePfcClient.swift in Sources */,
 				A57D0529292F60E3002824D9 /* AccData.swift in Sources */,
 				AA1FF1A12FA9F50000FB1234 /* DerivedAccData.swift in Sources */,
